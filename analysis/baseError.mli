@@ -30,7 +30,7 @@ module type Error = sig
   type t = {
     location: Location.Instantiated.t;
     kind: kind;
-    signature: Define.signature Node.t
+    signature: Define.signature Node.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
 

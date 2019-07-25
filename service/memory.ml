@@ -151,7 +151,7 @@ type bytes = int
 
 type configuration = {
   heap_handle: Hack_parallel.Std.SharedMem.handle;
-  minor_heap_size: bytes
+  minor_heap_size: bytes;
 }
 
 let configuration : configuration option ref = ref None
@@ -173,14 +173,15 @@ let initialize log_level =
          overhead. *)
       Gc.set { (Gc.get ()) with Gc.minor_heap_size; space_overhead };
       let shared_mem_config =
-        { SharedMemory.global_size = initial_heap_size;
+        {
+          SharedMemory.global_size = initial_heap_size;
           heap_size = initial_heap_size;
           dep_table_pow = 19;
           hash_table_pow = 22;
           shm_dirs = ["/dev/shm"; "/pyre"];
           shm_min_avail = 1024 * 1024 * 512;
           (* 512 MB *)
-          log_level
+          log_level;
         }
       in
       let heap_handle = SharedMemory.init shared_mem_config in

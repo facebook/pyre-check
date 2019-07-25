@@ -8,7 +8,7 @@ open Analysis
 
 type types_by_path = {
   path: PyrePath.t;
-  types_by_location: (Location.Instantiated.t * Type.t) list option
+  types_by_location: (Location.Instantiated.t * Type.t) list option;
 }
 
 val evict : state:State.t -> Reference.t -> unit

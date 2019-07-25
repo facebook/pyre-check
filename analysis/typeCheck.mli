@@ -11,7 +11,7 @@ module Error = AnalysisError
 module ErrorMap : sig
   type key = {
     location: Location.Instantiated.t;
-    kind: int
+    kind: int;
   }
   [@@deriving compare, sexp]
 
@@ -60,7 +60,7 @@ module type Signature = sig
     state: t;
     resolved: Type.t;
     resolved_annotation: Annotation.t option;
-    base: base option
+    base: base option;
   }
   [@@deriving show]
 

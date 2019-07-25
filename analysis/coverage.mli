@@ -10,7 +10,7 @@ type t = {
   partial: int;
   untyped: int;
   ignore: int;
-  crashes: int
+  crashes: int;
 }
 [@@deriving eq, show]
 
@@ -52,7 +52,7 @@ type aggregate = {
   strict_coverage: int;
   declare_coverage: int;
   default_coverage: int;
-  source_files: int
+  source_files: int;
 }
 
 val coverage : number_of_files:int -> sources:Reference.t list -> aggregate

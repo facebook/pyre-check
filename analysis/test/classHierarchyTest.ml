@@ -595,12 +595,13 @@ let test_instantiate_predecessors_parameters _ =
   let assert_instantiates_to ~source ~target expected =
     let handler = variadic_order in
     let order =
-      { TypeOrder.handler;
+      {
+        TypeOrder.handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes = (fun _ ~protocol_assumptions:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         any_is_bottom = false;
-        protocol_assumptions = TypeOrder.ProtocolAssumptions.empty
+        protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
       }
     in
     let step ~predecessor_variables ~parameters =

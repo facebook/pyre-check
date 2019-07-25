@@ -14,7 +14,7 @@ exception Untracked of Type.t
 module Target : sig
   type t = {
     target: int;
-    parameters: Type.OrderedTypes.t
+    parameters: Type.OrderedTypes.t;
   }
   [@@deriving compare, eq, sexp, show]
 
@@ -55,7 +55,7 @@ type t = {
   edges: Target.t list Int.Table.t;
   backedges: Target.Set.t Int.Table.t;
   indices: int Type.Primitive.Table.t;
-  annotations: Type.Primitive.t Int.Table.t
+  annotations: Type.Primitive.t Int.Table.t;
 }
 [@@deriving show]
 
@@ -167,9 +167,10 @@ val instantiate_predecessors_parameters
   :  (module Handler) ->
   source:Type.t ->
   target:Type.Primitive.t ->
-  step:(predecessor_variables:Type.OrderedTypes.t ->
-       parameters:Type.OrderedTypes.t ->
-       TypeConstraints.Solution.t option) ->
+  step:
+    (predecessor_variables:Type.OrderedTypes.t ->
+    parameters:Type.OrderedTypes.t ->
+    TypeConstraints.Solution.t option) ->
   Type.OrderedTypes.t Option.t
 
 module Builder : sig

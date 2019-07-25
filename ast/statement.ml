@@ -16,13 +16,13 @@ module Record = struct
       docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
-      parent: Reference.t option (* The class owning the method. *)
+      parent: Reference.t option; (* The class owning the method. *)
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     type 'statement record = {
       signature: signature;
-      body: 'statement list
+      body: 'statement list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
@@ -33,7 +33,7 @@ module Record = struct
       bases: Expression.t Expression.Call.Argument.t list;
       body: 'statement list;
       decorators: Expression.t list;
-      docstring: string option
+      docstring: string option;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
@@ -44,7 +44,7 @@ module Record = struct
       iterator: Expression.t;
       body: 'statement list;
       orelse: 'statement list;
-      async: bool
+      async: bool;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
@@ -53,7 +53,7 @@ module Record = struct
     type 'statement record = {
       items: (Expression.t * Expression.t option) list;
       body: 'statement list;
-      async: bool
+      async: bool;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
@@ -62,7 +62,7 @@ module Record = struct
     type 'statement handler = {
       kind: Expression.t option;
       name: Identifier.t option;
-      handler_body: 'statement list
+      handler_body: 'statement list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -70,7 +70,7 @@ module Record = struct
       body: 'statement list;
       handlers: 'statement handler list;
       orelse: 'statement list;
-      finally: 'statement list
+      finally: 'statement list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
@@ -85,7 +85,7 @@ module While = struct
   type 'statement t = {
     test: Expression.t;
     body: 'statement list;
-    orelse: 'statement list
+    orelse: 'statement list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -94,7 +94,7 @@ module If = struct
   type 'statement t = {
     test: Expression.t;
     body: 'statement list;
-    orelse: 'statement list
+    orelse: 'statement list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -102,13 +102,16 @@ end
 module Assert = struct
   type 'statement origin =
     | Assertion
-    | If of { statement: 'statement; true_branch: bool }
+    | If of {
+        statement: 'statement;
+        true_branch: bool;
+      }
     | While
 
   and 'statement t = {
     test: Expression.t;
     message: Expression.t option;
-    origin: 'statement origin
+    origin: 'statement origin;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -116,13 +119,13 @@ end
 module Import = struct
   type import = {
     name: Reference.t;
-    alias: Reference.t option
+    alias: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = {
     from: Reference.t option;
-    imports: import list
+    imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -132,7 +135,7 @@ module Assign = struct
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t;
-    parent: Reference.t option
+    parent: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -142,7 +145,7 @@ end
 module Raise = struct
   type t = {
     expression: Expression.t option;
-    from: Expression.t option
+    from: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -150,7 +153,7 @@ end
 module Return = struct
   type t = {
     is_implicit: bool;
-    expression: Expression.t option
+    expression: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -198,7 +201,7 @@ module Attribute = struct
     setter: bool;
     static: bool;
     toplevel: bool;
-    value: Expression.t option
+    value: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -221,7 +224,8 @@ module Attribute = struct
       ~name
       ()
     =
-    { name;
+    {
+      name;
       annotation;
       defines;
       value;
@@ -233,7 +237,7 @@ module Attribute = struct
       final;
       static;
       frozen;
-      implicit
+      implicit;
     }
     |> Node.create ~location
 
@@ -258,24 +262,26 @@ module Define = struct
     type t = Record.Define.signature [@@deriving compare, eq, sexp, show, hash]
 
     let create_toplevel ~qualifier =
-      { name = Reference.create ?prefix:qualifier "$toplevel";
+      {
+        name = Reference.create ?prefix:qualifier "$toplevel";
         parameters = [];
         decorators = [];
         docstring = None;
         return_annotation = None;
         async = false;
-        parent = None
+        parent = None;
       }
 
 
     let create_class_toplevel ~parent =
-      { name = Reference.create ~prefix:parent "$class_toplevel";
+      {
+        name = Reference.create ~prefix:parent "$class_toplevel";
         parameters = [];
         decorators = [];
         docstring = None;
         return_annotation = None;
         async = false;
-        parent = Some parent
+        parent = Some parent;
       }
 
 
@@ -416,17 +422,20 @@ module Define = struct
 
   let contains_call { body; _ } name =
     let matches = function
-      | { Node.value =
+      | {
+          Node.value =
             Expression
-              { Node.value =
+              {
+                Node.value =
                   Expression.Call
-                    { callee =
+                    {
+                      callee =
                         { Node.value = Expression.Name (Expression.Name.Identifier identifier); _ };
-                      _
+                      _;
                     };
-                _
+                _;
               };
-          _
+          _;
         }
         when String.equal identifier name ->
           true
@@ -470,15 +479,13 @@ module Define = struct
       | Assign { Assign.target; annotation; value; _ } -> (
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
-            | { Node.value =
-                  Name
-                    (Name.Attribute
-                      { base = { Node.value = Name (Name.Identifier self); _ };
-                        attribute = name;
-                        _
-                      });
-                _
-              }
+            | {
+             Node.value =
+               Name
+                 (Name.Attribute
+                   { base = { Node.value = Name (Name.Identifier self); _ }; attribute = name; _ });
+             _;
+            }
               when Identifier.equal self (self_identifier define) ->
                 let attribute =
                   Attribute.create
@@ -509,14 +516,16 @@ module Define = struct
                 match toplevel, annotation, target, value with
                 | ( true,
                     None,
-                    { Node.value =
+                    {
+                      Node.value =
                         Name
                           (Name.Attribute
-                            { base = { Node.value = Name (Name.Identifier _); _ };
+                            {
+                              base = { Node.value = Name (Name.Identifier _); _ };
                               attribute = target;
-                              _
+                              _;
                             });
-                      _
+                      _;
                     },
                     { Node.value = Name (Name.Identifier value); _ } )
                   when is_reassignment target value ->
@@ -548,33 +557,40 @@ module Define = struct
                   Some annotation
                 else
                   Some
-                    { Node.location;
+                    {
+                      Node.location;
                       value =
                         Call
-                          { callee =
-                              { Node.location;
+                          {
+                            callee =
+                              {
+                                Node.location;
                                 value =
                                   Name
                                     (Name.Attribute
-                                       { base =
-                                           { Node.location;
+                                       {
+                                         base =
+                                           {
+                                             Node.location;
                                              value =
                                                Name
                                                  (Name.Attribute
-                                                    { base =
-                                                        { Node.location;
-                                                          value = Name (Name.Identifier "typing")
+                                                    {
+                                                      base =
+                                                        {
+                                                          Node.location;
+                                                          value = Name (Name.Identifier "typing");
                                                         };
                                                       attribute = "Union";
-                                                      special = false
-                                                    })
+                                                      special = false;
+                                                    });
                                            };
                                          attribute = "__getitem__";
-                                         special = true
-                                       })
+                                         special = true;
+                                       });
                               };
-                            arguments = [{ Call.Argument.name = None; value = argument_value }]
-                          }
+                            arguments = [{ Call.Argument.name = None; value = argument_value }];
+                          };
                     }
           in
           { Node.location; value = { attribute with Attribute.annotation } }
@@ -595,28 +611,33 @@ module Define = struct
             @ gather_nested_statements ~toplevel:false finally
         | With { RecordWith.body; _ } -> gather_nested_statements ~toplevel:false body
         | Expression
-            { Node.value =
+            {
+              Node.value =
                 Call
-                  { callee =
-                      { Node.value =
+                  {
+                    callee =
+                      {
+                        Node.value =
                           Name
                             (Name.Attribute
-                              { base = { Node.value = Name (Name.Identifier self); _ };
+                              {
+                                base = { Node.value = Name (Name.Identifier self); _ };
                                 attribute = name;
-                                _
+                                _;
                               });
-                        _
+                        _;
                       };
-                    _
+                    _;
                   };
-              _
+              _;
             }
           when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
             let inline = function
-              | { Node.value =
+              | {
+                  Node.value =
                     Define { signature = { name = callee; parent = Some parent; _ }; body };
-                  _
+                  _;
                 }
                 when Reference.equal callee (Reference.create ~prefix:parent name) ->
                   Some body
@@ -663,33 +684,40 @@ module Define = struct
           match return_annotation with
           | Some ({ Node.location; value = Name _ } as name) ->
               Some
-                { Node.location;
+                {
+                  Node.location;
                   value =
                     Call
-                      { callee =
-                          { Node.location;
+                      {
+                        callee =
+                          {
+                            Node.location;
                             value =
                               Name
                                 (Name.Attribute
-                                   { base =
-                                       { Node.location;
+                                   {
+                                     base =
+                                       {
+                                         Node.location;
                                          value =
                                            Name
                                              (Name.Attribute
-                                                { base =
-                                                    { Node.location;
-                                                      value = Name (Name.Identifier "typing")
+                                                {
+                                                  base =
+                                                    {
+                                                      Node.location;
+                                                      value = Name (Name.Identifier "typing");
                                                     };
                                                   attribute = "ClassVar";
-                                                  special = false
-                                                })
+                                                  special = false;
+                                                });
                                        };
                                      attribute = "__getitem__";
-                                     special = true
-                                   })
+                                     special = true;
+                                   });
                           };
-                        arguments = [{ Call.Argument.name = None; value = name }]
-                      }
+                        arguments = [{ Call.Argument.name = None; value = name }];
+                      };
                 }
           | _ -> None
         in
@@ -752,22 +780,26 @@ module Class = struct
   let is_frozen { decorators; _ } =
     let is_frozen_dataclass decorator =
       match decorator with
-      | { Node.value =
-            Expression.Call
-              { callee =
-                  { Node.value =
-                      Name
-                        (Name.Attribute
-                          { base = { value = Name (Name.Identifier "dataclasses"); _ };
-                            attribute = "dataclass";
-                            _
-                          });
-                    _
-                  };
-                arguments
-              };
-          _
-        } ->
+      | {
+       Node.value =
+         Expression.Call
+           {
+             callee =
+               {
+                 Node.value =
+                   Name
+                     (Name.Attribute
+                       {
+                         base = { value = Name (Name.Identifier "dataclasses"); _ };
+                         attribute = "dataclass";
+                         _;
+                       });
+                 _;
+               };
+             arguments;
+           };
+       _;
+      } ->
           let has_frozen_argument Expression.Call.Argument.{ name; value } =
             match name, value with
             | Some { Node.value; _ }, { Node.value = Expression.True; _ } ->
@@ -786,9 +818,10 @@ module Class = struct
       match value with
       (* Handle multiple assignments on same line *)
       | Assign
-          { Assign.target = { Node.value = Tuple targets; _ };
+          {
+            Assign.target = { Node.value = Tuple targets; _ };
             value = { Node.value = Tuple values; _ };
-            _
+            _;
           } ->
           let add_attribute map ({ Node.location; _ } as target) value =
             Attribute.name ~parent:name target
@@ -813,21 +846,25 @@ module Class = struct
                   | { Node.value = Call _; _ }
                   | { Node.value = Name _; _ } ->
                       Some
-                        { value with
+                        {
+                          value with
                           Node.value =
                             Call
-                              { callee =
-                                  { Node.location;
+                              {
+                                callee =
+                                  {
+                                    Node.location;
                                     value =
                                       Name
                                         (Name.Attribute
-                                           { base = value;
+                                           {
+                                             base = value;
                                              attribute = "__getitem__";
-                                             special = true
-                                           })
+                                             special = true;
+                                           });
                                   };
-                                arguments = [{ Call.Argument.name = None; value = index }]
-                              }
+                                arguments = [{ Call.Argument.name = None; value = index }];
+                              };
                         }
                   | _ -> None
                 in
@@ -872,10 +909,11 @@ module Class = struct
         | { Node.location; value = Define define } -> (
           match Define.property_attribute ~location define with
           | Some
-              ( { Node.value =
+              ( {
+                  Node.value =
                     { Attribute.name; setter = new_setter; annotation = new_annotation; _ } as
                     attribute;
-                  _
+                  _;
                 } as attribute_node ) ->
               let merged_attribute =
                 let existing_attribute = Identifier.SerializableMap.find_opt name map in
@@ -884,10 +922,11 @@ module Class = struct
                     { attribute with Attribute.annotation; value = new_annotation; setter = true }
                     |> fun edited -> { attribute_node with Node.value = edited }
                 | Some { Node.value = { Attribute.setter = false; annotation; _ }; _ }, true ->
-                    { attribute with
+                    {
+                      attribute with
                       Attribute.annotation = new_annotation;
                       value = annotation;
-                      setter = true
+                      setter = true;
                     }
                     |> fun edited -> { attribute_node with Node.value = edited }
                 | _ -> attribute_node
@@ -936,66 +975,81 @@ module Class = struct
             let open Expression in
             let annotation =
               let meta_annotation =
-                { Node.location;
+                {
+                  Node.location;
                   value =
                     Call
-                      { callee =
-                          { Node.location;
+                      {
+                        callee =
+                          {
+                            Node.location;
                             value =
                               Name
                                 (Name.Attribute
-                                   { base =
-                                       { Node.location;
+                                   {
+                                     base =
+                                       {
+                                         Node.location;
                                          value =
                                            Name
                                              (Name.Attribute
-                                                { base =
-                                                    { Node.location;
-                                                      value = Name (Name.Identifier "typing")
+                                                {
+                                                  base =
+                                                    {
+                                                      Node.location;
+                                                      value = Name (Name.Identifier "typing");
                                                     };
                                                   attribute = "Type";
-                                                  special = false
-                                                })
+                                                  special = false;
+                                                });
                                        };
                                      attribute = "__getitem__";
-                                     special = true
-                                   })
+                                     special = true;
+                                   });
                           };
                         arguments =
-                          [ { Call.Argument.name = None;
+                          [ {
+                              Call.Argument.name = None;
                               value =
-                                Expression.from_reference ~location:Location.Reference.any name
-                            } ]
-                      }
+                                Expression.from_reference ~location:Location.Reference.any name;
+                            } ];
+                      };
                 }
               in
-              { Node.location;
+              {
+                Node.location;
                 value =
                   Call
-                    { callee =
-                        { Node.location;
+                    {
+                      callee =
+                        {
+                          Node.location;
                           value =
                             Name
                               (Name.Attribute
-                                 { base =
-                                     { Node.location;
+                                 {
+                                   base =
+                                     {
+                                       Node.location;
                                        value =
                                          Name
                                            (Name.Attribute
-                                              { base =
-                                                  { Node.location;
-                                                    value = Name (Name.Identifier "typing")
+                                              {
+                                                base =
+                                                  {
+                                                    Node.location;
+                                                    value = Name (Name.Identifier "typing");
                                                   };
                                                 attribute = "ClassVar";
-                                                special = false
-                                              })
+                                                special = false;
+                                              });
                                      };
                                    attribute = "__getitem__";
-                                   special = true
-                                 })
+                                   special = true;
+                                 });
                         };
-                      arguments = [{ Call.Argument.name = None; value = meta_annotation }]
-                    }
+                      arguments = [{ Call.Argument.name = None; value = meta_annotation }];
+                    };
               }
             in
             let attribute_name = Reference.last name in
@@ -1018,9 +1072,10 @@ module Class = struct
         in
         match value with
         | Assign
-            { Assign.target = { Node.value = target_value; _ };
+            {
+              Assign.target = { Node.value = target_value; _ };
               value = { Node.value = List attributes; location };
-              _
+              _;
             }
           when is_slots target_value ->
             let add_attribute map { Node.value; _ } =
@@ -1070,10 +1125,11 @@ module Class = struct
             in
             match List.find ~f:is_stub stub with
             | Some
-                { Node.value =
+                {
+                  Node.value =
                     Assign
                       { Assign.annotation; value = { Node.value = Expression.Ellipsis; _ }; _ };
-                  _
+                  _;
                 } ->
                 let updated_assign =
                   { Node.location; value = Assign { assign with Assign.annotation } }
@@ -1081,17 +1137,20 @@ module Class = struct
                 ( updated_assign :: updated,
                   List.filter ~f:(fun statement -> not (is_stub statement)) undefined )
             | _ -> statement :: updated, undefined )
-        | { Node.location;
-            value = Define ({ Record.Define.signature = { name; parameters; _ }; _ } as define)
-          } -> (
+        | {
+         Node.location;
+         value = Define ({ Record.Define.signature = { name; parameters; _ }; _ } as define);
+        } -> (
             let is_stub = function
-              | { Node.value =
+              | {
+                  Node.value =
                     Define
-                      { signature =
+                      {
+                        signature =
                           { Record.Define.name = stub_name; parameters = stub_parameters; _ };
-                        _
+                        _;
                       };
-                  _
+                  _;
                 }
                 when Reference.equal name stub_name
                      && List.length parameters = List.length stub_parameters ->
@@ -1100,9 +1159,10 @@ module Class = struct
             in
             match List.find ~f:is_stub stub with
             | Some
-                { Node.value =
+                {
+                  Node.value =
                     Define ({ signature = { parameters; return_annotation; _ }; _ } as stub);
-                  _
+                  _;
                 }
               when Define.is_stub stub ->
                 let updated_signature = { define.signature with parameters; return_annotation } in
@@ -1138,15 +1198,17 @@ module Class = struct
   let is_abstract { bases; _ } =
     let abstract_metaclass { Expression.Call.Argument.value; _ } =
       match value with
-      | { Node.value =
-            Expression.Name
-              (Name.Attribute
-                { base = { Node.value = Name (Name.Identifier "abc"); _ };
-                  attribute = "ABCMeta" | "ABC";
-                  _
-                });
-          _
-        } ->
+      | {
+       Node.value =
+         Expression.Name
+           (Name.Attribute
+             {
+               base = { Node.value = Name (Name.Identifier "abc"); _ };
+               attribute = "ABCMeta" | "ABC";
+               _;
+             });
+       _;
+      } ->
           true
       | _ -> false
     in
@@ -1158,33 +1220,39 @@ module Class = struct
       match name, value with
       | ( None,
           Expression.Call
-            { callee =
-                { Node.value =
+            {
+              callee =
+                {
+                  Node.value =
                     Name
                       (Name.Attribute
-                        { base =
-                            { Node.value =
+                        {
+                          base =
+                            {
+                              Node.value =
                                 Name
                                   (Name.Attribute
-                                    { base = { Node.value = Name (Name.Identifier typing); _ };
+                                    {
+                                      base = { Node.value = Name (Name.Identifier typing); _ };
                                       attribute = "Protocol";
-                                      _
+                                      _;
                                     });
-                              _
+                              _;
                             };
                           attribute = "__getitem__";
-                          _
+                          _;
                         });
-                  _
+                  _;
                 };
-              _
+              _;
             } )
       | ( None,
           Name
             (Name.Attribute
-              { base = { Node.value = Name (Name.Identifier typing); _ };
+              {
+                base = { Node.value = Name (Name.Identifier typing); _ };
                 attribute = "Protocol";
-                _
+                _;
               }) )
         when String.equal typing "typing" || String.equal typing "typing_extensions" ->
           true
@@ -1204,30 +1272,36 @@ module For = struct
       let value =
         let create_call base iterator next =
           Call
-            { callee =
-                { Node.location;
+            {
+              callee =
+                {
+                  Node.location;
                   value =
                     Name
                       (Name.Attribute
-                         { base =
-                             { Node.location;
+                         {
+                           base =
+                             {
+                               Node.location;
                                value =
                                  Call
-                                   { callee =
-                                       { Node.location;
+                                   {
+                                     callee =
+                                       {
+                                         Node.location;
                                          value =
                                            Name
                                              (Name.Attribute
-                                                { base; attribute = iterator; special = true })
+                                                { base; attribute = iterator; special = true });
                                        };
-                                     arguments = []
-                                   }
+                                     arguments = [];
+                                   };
                              };
                            attribute = next;
-                           special = true
-                         })
+                           special = true;
+                         });
                 };
-              arguments = []
+              arguments = [];
             }
         in
         if async then
@@ -1255,18 +1329,21 @@ module With = struct
             let open Expression in
             let enter_call =
               let create_call call_name =
-                { Node.location;
+                {
+                  Node.location;
                   value =
                     Call
-                      { callee =
-                          { Node.location;
+                      {
+                        callee =
+                          {
+                            Node.location;
                             value =
                               Name
                                 (Name.Attribute
-                                   { base = expression; attribute = call_name; special = true })
+                                   { base = expression; attribute = call_name; special = true });
                           };
-                        arguments = []
-                      }
+                        arguments = [];
+                      };
                 }
               in
               if async then
@@ -1289,31 +1366,37 @@ module Try = struct
   let preamble { kind; name; _ } =
     let open Expression in
     let assume ~location ~target ~annotation =
-      [ { Node.location;
+      [ {
+          Node.location;
           value =
             Assign
-              { Assign.target;
+              {
+                Assign.target;
                 annotation = None;
                 value = Node.create ~location Ellipsis;
-                parent = None
-              }
+                parent = None;
+              };
         };
-        { Node.location;
+        {
+          Node.location;
           value =
             Assert
-              { Assert.test =
-                  { Node.location;
+              {
+                Assert.test =
+                  {
+                    Node.location;
                     value =
                       Call
-                        { callee = { Node.location; value = Name (Name.Identifier "isinstance") };
+                        {
+                          callee = { Node.location; value = Name (Name.Identifier "isinstance") };
                           arguments =
                             [ { Call.Argument.name = None; value = target };
-                              { Call.Argument.name = None; value = annotation } ]
-                        }
+                              { Call.Argument.name = None; value = annotation } ];
+                        };
                   };
                 message = None;
-                origin = Assert.Assertion
-              }
+                origin = Assert.Assertion;
+              };
         } ]
     in
     match kind, name with
@@ -1321,34 +1404,41 @@ module Try = struct
         assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
     | Some { Node.location; value = Tuple values; _ }, Some name ->
         let annotation =
-          { Node.location;
+          {
+            Node.location;
             value =
               Call
-                { callee =
-                    { Node.location;
+                {
+                  callee =
+                    {
+                      Node.location;
                       value =
                         Name
                           (Name.Attribute
-                             { base =
-                                 { Node.location;
+                             {
+                               base =
+                                 {
+                                   Node.location;
                                    value =
                                      Name
                                        (Name.Attribute
-                                          { base =
-                                              { Node.location;
-                                                value = Name (Name.Identifier "typing")
+                                          {
+                                            base =
+                                              {
+                                                Node.location;
+                                                value = Name (Name.Identifier "typing");
                                               };
                                             attribute = "Union";
-                                            special = false
-                                          })
+                                            special = false;
+                                          });
                                  };
                                attribute = "__getitem__";
-                               special = true
-                             })
+                               special = true;
+                             });
                     };
                   arguments =
-                    [{ Call.Argument.name = None; value = { Node.location; value = Tuple values } }]
-                }
+                    [{ Call.Argument.name = None; value = { Node.location; value = Tuple values } }];
+                };
           }
         in
         assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
@@ -1376,9 +1466,10 @@ let extract_docstring statements =
         String.concat ~sep:"\n" (first :: rest)
   in
   match statements with
-  | { Node.value =
+  | {
+      Node.value =
         Expression { Node.value = Expression.String { Expression.StringLiteral.value; _ }; _ };
-      _
+      _;
     }
     :: _ ->
       Some (unindent value)
@@ -1461,8 +1552,9 @@ module PrettyPrinter = struct
 
   and pp_define
       formatter
-      { Define.signature = { name; parameters; decorators; return_annotation; async; parent; _ };
-        body
+      {
+        Define.signature = { name; parameters; decorators; return_annotation; async; parent; _ };
+        body;
       }
     =
     let return_annotation =

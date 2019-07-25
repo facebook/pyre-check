@@ -9,7 +9,7 @@ module AstReference = Reference
 
 type position = {
   line: int;
-  column: int
+  column: int;
 }
 [@@deriving compare, eq, sexp, hash, to_yojson]
 
@@ -26,7 +26,7 @@ let pp_position format { line; column } = Format.fprintf format "%d:%d" line col
 type 'path location = {
   path: 'path;
   start: position;
-  stop: position
+  stop: position;
 }
 [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -91,13 +91,15 @@ module Reference = struct
 
   let create ~start ~stop =
     let create position =
-      { line = position.Lexing.pos_lnum;
-        column = position.Lexing.pos_cnum - position.Lexing.pos_bol
+      {
+        line = position.Lexing.pos_lnum;
+        column = position.Lexing.pos_cnum - position.Lexing.pos_bol;
       }
     in
-    { path = SourcePath.qualifier_of_relative start.Lexing.pos_fname;
+    {
+      path = SourcePath.qualifier_of_relative start.Lexing.pos_fname;
       start = create start;
-      stop = create stop
+      stop = create stop;
     }
 
 
@@ -135,8 +137,9 @@ module Instantiated = struct
 
   let create ~start ~stop =
     let create position =
-      { line = position.Lexing.pos_lnum;
-        column = position.Lexing.pos_cnum - position.Lexing.pos_bol
+      {
+        line = position.Lexing.pos_lnum;
+        column = position.Lexing.pos_cnum - position.Lexing.pos_bol;
       }
     in
     { path = start.Lexing.pos_fname; start = create start; stop = create stop }

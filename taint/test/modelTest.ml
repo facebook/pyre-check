@@ -297,10 +297,11 @@ let test_invalid_models _ =
     in
     let configuration =
       TaintConfiguration.
-        { sources = ["A"; "B"];
+        {
+          sources = ["A"; "B"];
           sinks = ["X"; "Y"];
           features = ["featureA"; "featureB"];
-          rules = []
+          rules = [];
         }
     in
     let error_message =

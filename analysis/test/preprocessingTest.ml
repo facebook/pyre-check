@@ -192,9 +192,10 @@ let test_expand_format_string _ =
     "f'foo{1+2}'"
     "foo{1+2}"
     [ +Call
-         { callee =
+         {
+           callee =
              +Name (Name.Attribute { base = +Integer 1; attribute = "__add__"; special = true });
-           arguments = [{ Call.Argument.name = None; value = +Integer 2 }]
+           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
          } ];
 
   (* Ensure we fix up locations. *)
@@ -210,9 +211,10 @@ let test_expand_format_string _ =
             ~start:(1, 0)
             ~stop:(1, 9)
             (String
-               { StringLiteral.kind =
+               {
+                 StringLiteral.kind =
                    StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Integer 1)];
-                 value = "foo{1}"
+                 value = "foo{1}";
                })) ];
   assert_locations
     "f'foo{123}a{456}'"
@@ -221,28 +223,31 @@ let test_expand_format_string _ =
             ~start:(1, 0)
             ~stop:(1, 17)
             (String
-               { StringLiteral.kind =
+               {
+                 StringLiteral.kind =
                    StringLiteral.Format
                      [ node ~start:(1, 6) ~stop:(1, 9) (Integer 123);
                        node ~start:(1, 12) ~stop:(1, 15) (Integer 456) ];
-                 value = "foo{123}a{456}"
+                 value = "foo{123}a{456}";
                })) ];
   assert_locations
     "return f'foo{123}a{456}'"
     [ +Return
-         { is_implicit = false;
+         {
+           is_implicit = false;
            expression =
              Some
                (node
                   ~start:(1, 7)
                   ~stop:(1, 24)
                   (String
-                     { StringLiteral.kind =
+                     {
+                       StringLiteral.kind =
                          StringLiteral.Format
                            [ node ~start:(1, 13) ~stop:(1, 16) (Integer 123);
                              node ~start:(1, 19) ~stop:(1, 22) (Integer 456) ];
-                       value = "foo{123}a{456}"
-                     }))
+                       value = "foo{123}a{456}";
+                     }));
          } ];
   assert_locations
     {|
@@ -256,12 +261,13 @@ let test_expand_format_string _ =
             ~start:(2, 0)
             ~stop:(5, 3)
             (String
-               { StringLiteral.kind =
+               {
+                 StringLiteral.kind =
                    StringLiteral.Format
                      [ node ~start:(3, 4) ~stop:(3, 7) (Integer 123);
                        node ~start:(3, 10) ~stop:(3, 13) (Integer 456);
                        node ~start:(4, 2) ~stop:(4, 5) (Integer 789) ];
-                 value = "\nfoo{123}a{456}\nb{789}\n"
+                 value = "\nfoo{123}a{456}\nb{789}\n";
                })) ]
 
 
@@ -1683,16 +1689,18 @@ let test_expand_implicit_returns _ =
       (Source.create
          ~relative:handle
          [ +Define
-              { signature =
-                  { name = !&"foo";
+              {
+                signature =
+                  {
+                    name = !&"foo";
                     parameters = [];
                     decorators = [];
                     docstring = None;
                     return_annotation = None;
                     async = false;
-                    parent = None
+                    parent = None;
                   };
-                body = expected_body
+                body = expected_body;
               } ])
   in
   assert_expand_implicit_returns
@@ -1755,9 +1763,10 @@ let test_expand_implicit_returns _ =
        def foo() -> int:
          pass
      |}
-    { Location.path = !&"test";
+    {
+      Location.path = !&"test";
       start = { Location.line = 3; Location.column = 2 };
-      stop = { Location.line = 3; Location.column = 6 }
+      stop = { Location.line = 3; Location.column = 6 };
     };
   assert_implicit_return_location
     {|
@@ -1771,9 +1780,10 @@ let test_expand_implicit_returns _ =
          elif x:
            return 2
      |}
-    { Location.path = !&"test";
+    {
+      Location.path = !&"test";
       start = { Location.line = 10; Location.column = 6 };
-      stop = { Location.line = 10; Location.column = 14 }
+      stop = { Location.line = 10; Location.column = 14 };
     };
   assert_implicit_return_location
     {|
@@ -1786,9 +1796,10 @@ let test_expand_implicit_returns _ =
          else:
            pass
        |}
-    { Location.path = !&"test";
+    {
+      Location.path = !&"test";
       start = { Location.line = 9; Location.column = 4 };
-      stop = { Location.line = 9; Location.column = 8 }
+      stop = { Location.line = 9; Location.column = 8 };
     };
   assert_implicit_return_location
     {|
@@ -1805,9 +1816,10 @@ let test_expand_implicit_returns _ =
              if x:
                pass
        |}
-    { Location.path = !&"test";
+    {
+      Location.path = !&"test";
       start = { Location.line = 13; Location.column = 8 };
-      stop = { Location.line = 13; Location.column = 12 }
+      stop = { Location.line = 13; Location.column = 12 };
     };
   assert_implicit_return_location
     {|
@@ -1822,9 +1834,10 @@ let test_expand_implicit_returns _ =
            else:
              pass
        |}
-    { Location.path = !&"test";
+    {
+      Location.path = !&"test";
       start = { Location.line = 11; Location.column = 6 };
-      stop = { Location.line = 11; Location.column = 10 }
+      stop = { Location.line = 11; Location.column = 10 };
     }
 
 
@@ -1839,70 +1852,80 @@ let test_defines _ =
       |> List.map ~f:Node.value )
   in
   let create_define name =
-    { Define.signature =
-        { name = !&name;
+    {
+      Define.signature =
+        {
+          name = !&name;
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = None
+          parent = None;
         };
-      body = [+Expression (+Float 1.0)]
+      body = [+Expression (+Float 1.0)];
     }
   in
   let create_toplevel body =
-    { Define.signature =
-        { name = !&"$toplevel";
+    {
+      Define.signature =
+        {
+          name = !&"$toplevel";
           parameters = [];
           decorators = [];
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = None
+          parent = None;
         };
-      body
+      body;
     }
   in
   let create_class_toplevel ~parent ~body =
-    { Define.signature =
-        { name = !&(parent ^ ".$class_toplevel");
+    {
+      Define.signature =
+        {
+          name = !&(parent ^ ".$class_toplevel");
           parameters = [];
           decorators = [];
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = Some (Reference.create parent)
+          parent = Some (Reference.create parent);
         };
-      body
+      body;
     }
   in
   let define = create_define "foo" in
   assert_defines [+Define define] [create_toplevel [+Define define]; define];
   let inner =
-    { Define.signature =
-        { name = !&"foo";
+    {
+      Define.signature =
+        {
+          name = !&"foo";
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = None
+          parent = None;
         };
-      body = [+Expression (+Float 1.0)]
+      body = [+Expression (+Float 1.0)];
     }
   in
   let define =
-    { Define.signature =
-        { name = !&"foo";
+    {
+      Define.signature =
+        {
+          name = !&"foo";
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = None
+          parent = None;
         };
-      body = [+Expression (+Float 1.0); +Define inner]
+      body = [+Expression (+Float 1.0); +Define inner];
     }
   in
   assert_defines [+Define define] [create_toplevel [+Define define]; define];
@@ -1932,23 +1955,26 @@ let test_classes _ =
       class_defines
   in
   let class_define =
-    { Class.name = !&"foo";
+    {
+      Class.name = !&"foo";
       bases = [];
       body =
         [ +Define
-             { signature =
-                 { name = !&"bar";
+             {
+               signature =
+                 {
+                   name = !&"bar";
                    parameters = [];
                    decorators = [];
                    docstring = None;
                    return_annotation = None;
                    async = false;
-                   parent = Some !&"foo"
+                   parent = Some !&"foo";
                  };
-               body = [+Pass]
+               body = [+Pass];
              } ];
       decorators = [];
-      docstring = None
+      docstring = None;
     }
   in
   assert_classes [+Class class_define] [class_define];

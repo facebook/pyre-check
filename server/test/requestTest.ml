@@ -362,10 +362,11 @@ let test_process_type_check_request context =
 
 
 let test_process_get_definition_request context =
-  let { ScratchServer.configuration = { Configuration.Analysis.local_root; _ } as configuration;
-        state;
-        _
-      }
+  let {
+    ScratchServer.configuration = { Configuration.Analysis.local_root; _ } as configuration;
+    state;
+    _;
+  }
     =
     ScratchServer.start
       ~context
@@ -405,25 +406,29 @@ let test_process_get_definition_request context =
       let open LanguageServer.Types in
       let result =
         let response_location
-            { Ast.Location.path;
+            {
+              Ast.Location.path;
               start = { Ast.Location.line = start_line; column = start_column };
-              stop = { Ast.Location.line = stop_line; column = stop_column }
+              stop = { Ast.Location.line = stop_line; column = stop_column };
             }
           =
-          { (* Temporary paths are OS-dependent. *)
+          {
+            (* Temporary paths are OS-dependent. *)
             Location.uri = Path.uri (Path.create_relative ~root:local_root ~relative:path);
             range =
-              { start = { Position.line = start_line; character = start_column };
-                end_ = { Position.line = stop_line; character = stop_column }
-              }
+              {
+                start = { Position.line = start_line; character = start_column };
+                end_ = { Position.line = stop_line; character = stop_column };
+              };
           }
         in
         response >>| response_location |> Option.to_list
       in
-      { TextDocumentDefinitionResponse.jsonrpc = "2.0";
+      {
+        TextDocumentDefinitionResponse.jsonrpc = "2.0";
         id = int_request_id 0;
         result = Some result;
-        error = None
+        error = None;
       }
       |> TextDocumentDefinitionResponse.to_yojson
     in
@@ -448,27 +453,30 @@ let test_process_get_definition_request context =
     ~line:4
     ~column:9
     (Some
-       { Location.path = "library.py";
+       {
+         Location.path = "library.py";
          start = { Location.line = 0; column = 0 };
-         stop = { Location.line = 0; column = 26 }
+         stop = { Location.line = 0; column = 26 };
        })
 
 
 let test_create_annotation_edit context =
   let root = bracket_tmpdir context |> Path.create_absolute in
   let mock_missing_annotation : Analysis.Error.missing_annotation =
-    { name = Reference.create "x";
+    {
+      name = Reference.create "x";
       annotation = Some (Type.Literal (Integer 1));
       given_annotation = None;
       evidence_locations = [Location.Instantiated.any];
-      thrown_at_source = true
+      thrown_at_source = true;
     }
   in
   let mock_mismatch : Analysis.Error.mismatch =
-    { actual = Type.integer;
+    {
+      actual = Type.integer;
       actual_expressions = [];
       expected = Type.string;
-      due_to_invariance = false
+      due_to_invariance = false;
     }
   in
   let location = { Location.Instantiated.any with start = { line = 0; column = 0 } } in
@@ -499,14 +507,16 @@ let test_create_annotation_edit context =
       |}
     ~expected_text:" -> int"
     ~expected_range:
-      { LanguageServer.Types.Range.start = { line = 0; character = 9 };
-        end_ = { line = 0; character = 9 }
+      {
+        LanguageServer.Types.Range.start = { line = 0; character = 9 };
+        end_ = { line = 0; character = 9 };
       }
     ~error:
       (Some
-         { Analysis.Error.location;
+         {
+           Analysis.Error.location;
            kind = Analysis.Error.MissingReturnAnnotation mock_missing_annotation;
-           signature = +mock_signature
+           signature = +mock_signature;
          });
   assert_edit
     ~source:{|
@@ -514,14 +524,16 @@ let test_create_annotation_edit context =
     |}
     ~expected_text:": int"
     ~expected_range:
-      { LanguageServer.Types.Range.start = { line = 0; character = 1 };
-        end_ = { line = 0; character = 1 }
+      {
+        LanguageServer.Types.Range.start = { line = 0; character = 1 };
+        end_ = { line = 0; character = 1 };
       }
     ~error:
       (Some
-         { Analysis.Error.location;
+         {
+           Analysis.Error.location;
            kind = Analysis.Error.MissingGlobalAnnotation mock_missing_annotation;
-           signature = +mock_signature
+           signature = +mock_signature;
          });
   assert_edit
     ~source:{|
@@ -530,14 +542,16 @@ let test_create_annotation_edit context =
     |}
     ~expected_text:": int"
     ~expected_range:
-      { LanguageServer.Types.Range.start = { line = 0; character = 9 };
-        end_ = { line = 0; character = 9 }
+      {
+        LanguageServer.Types.Range.start = { line = 0; character = 9 };
+        end_ = { line = 0; character = 9 };
       }
     ~error:
       (Some
-         { Analysis.Error.location;
+         {
+           Analysis.Error.location;
            kind = Analysis.Error.MissingParameterAnnotation mock_missing_annotation;
-           signature = +mock_signature
+           signature = +mock_signature;
          });
   assert_edit
     ~source:{|
@@ -546,16 +560,18 @@ let test_create_annotation_edit context =
     |}
     ~expected_text:": int"
     ~expected_range:
-      { LanguageServer.Types.Range.start = { line = 1; character = 5 };
-        end_ = { line = 1; character = 5 }
+      {
+        LanguageServer.Types.Range.start = { line = 1; character = 5 };
+        end_ = { line = 1; character = 5 };
       }
     ~error:
       (Some
-         { Analysis.Error.location;
+         {
+           Analysis.Error.location;
            kind =
              Analysis.Error.MissingAttributeAnnotation
                { parent = Type.Any; missing_annotation = mock_missing_annotation };
-           signature = +mock_signature
+           signature = +mock_signature;
          });
   assert_edit
     ~source:{|
@@ -564,20 +580,23 @@ let test_create_annotation_edit context =
     |}
     ~expected_text:"-> int:"
     ~expected_range:
-      { LanguageServer.Types.Range.start = { line = 0; character = 11 };
-        end_ = { line = 0; character = 18 }
+      {
+        LanguageServer.Types.Range.start = { line = 0; character = 11 };
+        end_ = { line = 0; character = 18 };
       }
     ~error:
       (Some
-         { Analysis.Error.location;
+         {
+           Analysis.Error.location;
            kind =
              Analysis.Error.IncompatibleReturnType
-               { mismatch = mock_mismatch;
+               {
+                 mismatch = mock_mismatch;
                  is_implicit = false;
                  is_unimplemented = false;
-                 define_location = { Location.Reference.any with start = { line = 0; column = 0 } }
+                 define_location = { Location.Reference.any with start = { line = 0; column = 0 } };
                };
-           signature = +mock_signature
+           signature = +mock_signature;
          });
   assert_edit
     ~source:{|
@@ -585,25 +604,28 @@ let test_create_annotation_edit context =
       |}
     ~expected_text:": int "
     ~expected_range:
-      { LanguageServer.Types.Range.start = { line = 0; character = 1 };
-        end_ = { line = 0; character = 7 }
+      {
+        LanguageServer.Types.Range.start = { line = 0; character = 1 };
+        end_ = { line = 0; character = 7 };
       }
     ~error:
       (Some
-         { Analysis.Error.location;
+         {
+           Analysis.Error.location;
            kind =
              Analysis.Error.IncompatibleVariableType
                { name = !&"x"; mismatch = mock_mismatch; declare_location = location };
-           signature = +mock_signature
+           signature = +mock_signature;
          })
 
 
 let test_open_document_state context =
-  let { ScratchServer.configuration = { Configuration.Analysis.local_root; _ };
-        server_configuration;
-        state;
-        _
-      }
+  let {
+    ScratchServer.configuration = { Configuration.Analysis.local_root; _ };
+    server_configuration;
+    state;
+    _;
+  }
     =
     ScratchServer.start ~context ["a.py", ""; "b.py", ""]
   in

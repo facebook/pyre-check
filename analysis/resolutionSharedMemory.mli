@@ -8,7 +8,7 @@ open Ast
 
 type annotation_map = {
   precondition: Annotation.t Reference.Map.Tree.t;
-  postcondition: Annotation.t Reference.Map.Tree.t
+  postcondition: Annotation.t Reference.Map.Tree.t;
 }
 [@@deriving eq]
 (** Maps a key, unique to each statement for a function CFG, to type annotations. They key is

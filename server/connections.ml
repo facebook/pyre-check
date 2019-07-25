@@ -75,8 +75,9 @@ end) : Connections = struct
     Mutex.critical_section lock ~f:(fun () ->
         let ({ State.persistent_clients; _ } as cached_connections) = !connections in
         connections :=
-          { cached_connections with
-            persistent_clients = Map.set persistent_clients ~key:socket ~data:0
+          {
+            cached_connections with
+            persistent_clients = Map.set persistent_clients ~key:socket ~data:0;
           })
 
 

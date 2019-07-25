@@ -14,7 +14,7 @@ end
 module RelativePath = struct
   type t = {
     root: path;
-    relative: path
+    relative: path;
   }
   [@@deriving compare, eq, show, sexp, hash]
 

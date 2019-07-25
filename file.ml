@@ -8,7 +8,7 @@ open Pyre
 
 type t = {
   path: Path.t;
-  content: string option
+  content: string option;
 }
 [@@deriving eq, show, sexp, hash]
 

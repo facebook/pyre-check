@@ -11,7 +11,7 @@ val parse_lsp
 
 type response = {
   state: State.t;
-  response: Protocol.response option
+  response: Protocol.response option;
 }
 
 (* Exposed for testing. *)
@@ -19,7 +19,7 @@ module AnnotationEdit : sig
   type t = {
     new_text: string;
     range: LanguageServer.Types.Range.t;
-    title: string
+    title: string;
   }
 
   val range : t -> LanguageServer.Types.Range.t

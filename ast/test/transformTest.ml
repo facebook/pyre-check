@@ -68,47 +68,55 @@ let test_transform _ =
     0;
   assert_modifying_source
     [ +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body =
              [ +If
-                  { If.test = +Integer 2;
+                  {
+                    If.test = +Integer 2;
                     body = [+Expression (+Integer 3)];
-                    orelse = [+Expression (+Integer 4)]
+                    orelse = [+Expression (+Integer 4)];
                   } ];
-           orelse = [+Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5)];
          } ]
     [ +If
-         { If.test = +Integer 2;
+         {
+           If.test = +Integer 2;
            body =
              [ +If
-                  { If.test = +Integer 3;
+                  {
+                    If.test = +Integer 3;
                     body = [+Expression (+Integer 4)];
-                    orelse = [+Expression (+Integer 5)]
+                    orelse = [+Expression (+Integer 5)];
                   } ];
-           orelse = [+Expression (+Integer 6)]
+           orelse = [+Expression (+Integer 6)];
          } ]
     0;
   assert_modifying_source
     ~shallow:true
     [ +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body =
              [ +If
-                  { If.test = +Integer 2;
+                  {
+                    If.test = +Integer 2;
                     body = [+Expression (+Integer 3)];
-                    orelse = [+Expression (+Integer 4)]
+                    orelse = [+Expression (+Integer 4)];
                   } ];
-           orelse = [+Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5)];
          } ]
     [ +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body =
              [ +If
-                  { If.test = +Integer 2;
+                  {
+                    If.test = +Integer 2;
                     body = [+Expression (+Integer 3)];
-                    orelse = [+Expression (+Integer 4)]
+                    orelse = [+Expression (+Integer 4)];
                   } ];
-           orelse = [+Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5)];
          } ]
     0
 
@@ -166,36 +174,42 @@ let test_expansion _ =
       +Expression (+Float 2.0) ];
   assert_expanded_source
     [ +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body = [+Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5)];
          } ]
     [ +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body = [+Expression (+Integer 3); +Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5); +Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5); +Expression (+Integer 5)];
          };
       +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body = [+Expression (+Integer 3); +Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5); +Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5); +Expression (+Integer 5)];
          } ];
   assert_expanded_source
     ~shallow:true
     [ +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body = [+Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5)];
          } ]
     [ +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body = [+Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5)];
          };
       +If
-         { If.test = +Integer 1;
+         {
+           If.test = +Integer 1;
            body = [+Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5)]
+           orelse = [+Expression (+Integer 5)];
          } ]
 
 

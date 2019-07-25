@@ -12,7 +12,7 @@ module BooleanOperator : sig
   type 'expression t = {
     left: 'expression;
     operator: operator;
-    right: 'expression
+    right: 'expression;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -35,7 +35,7 @@ module Record : sig
     type 'expression record = {
       left: 'expression;
       operator: operator;
-      right: 'expression
+      right: 'expression;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -50,7 +50,7 @@ module Record : sig
 
     type 'expression record = {
       operator: operator;
-      operand: 'expression
+      operand: 'expression;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -61,7 +61,7 @@ module Name : sig
     type 'expression t = {
       base: 'expression;
       attribute: Identifier.t;
-      special: bool
+      special: bool;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -76,14 +76,14 @@ module Call : sig
   module Argument : sig
     type 'expression t = {
       name: Identifier.t Node.t option;
-      value: 'expression
+      value: 'expression;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   type 'expression t = {
     callee: 'expression;
-    arguments: 'expression Argument.t list
+    arguments: 'expression Argument.t list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -91,7 +91,7 @@ end
 module Lambda : sig
   type 'expression t = {
     parameters: 'expression Parameter.t list;
-    body: 'expression
+    body: 'expression;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -100,7 +100,7 @@ module Ternary : sig
   type 'expression t = {
     target: 'expression;
     test: 'expression;
-    alternative: 'expression
+    alternative: 'expression;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -108,13 +108,13 @@ end
 module Dictionary : sig
   type 'expression entry = {
     key: 'expression;
-    value: 'expression
+    value: 'expression;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type 'expression t = {
     entries: 'expression entry list;
-    keywords: 'expression list
+    keywords: 'expression list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -124,13 +124,13 @@ module Comprehension : sig
     target: 'expression;
     iterator: 'expression;
     conditions: 'expression list;
-    async: bool
+    async: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type ('element, 'expression) t = {
     element: 'element;
-    generators: 'expression generator list
+    generators: 'expression generator list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -151,7 +151,7 @@ module StringLiteral : sig
 
     type t = {
       value: string;
-      kind: kind
+      kind: kind;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -164,7 +164,7 @@ module StringLiteral : sig
 
   and 'expression t = {
     value: string;
-    kind: 'expression kind
+    kind: 'expression kind;
   }
   [@@deriving compare, eq, sexp, show, hash]
 

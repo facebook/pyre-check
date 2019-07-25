@@ -34,7 +34,7 @@ end
 module Make (Transformer : Transformer) : sig
   type result = {
     state: Transformer.t;
-    source: Source.t
+    source: Source.t;
   }
 
   val source : result -> Source.t
@@ -45,7 +45,7 @@ end
 module MakeStatementTransformer (Transformer : StatementTransformer) : sig
   type result = {
     state: Transformer.t;
-    source: Source.t
+    source: Source.t;
   }
 
   val source : result -> Source.t

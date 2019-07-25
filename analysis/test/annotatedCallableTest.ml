@@ -23,16 +23,18 @@ let test_return_annotation _ =
             def bar(): pass
         |}
       in
-      { Statement.Define.signature =
-          { name = !&"derp";
+      {
+        Statement.Define.signature =
+          {
+            name = !&"derp";
             parameters = [];
             decorators = [];
             docstring = None;
             return_annotation;
             async;
-            parent = None
+            parent = None;
           };
-        body = [+Pass]
+        body = [+Pass];
       }
       |> fun define ->
       Callable.return_annotation ~define ~resolution:(Environment.resolution environment ())
@@ -49,16 +51,18 @@ let test_return_annotation _ =
 let test_apply_decorators _ =
   let create_define ~decorators ~parameters ~return_annotation =
     let decorators = List.map ~f:parse_single_expression decorators in
-    { Statement.Define.signature =
-        { name = !&"define";
+    {
+      Statement.Define.signature =
+        {
+          name = !&"define";
           parameters;
           decorators;
           docstring = None;
           return_annotation;
           async = false;
-          parent = None
+          parent = None;
         };
-      body = [+Pass]
+      body = [+Pass];
     }
   in
   (* Contextlib related tests *)
@@ -165,11 +169,12 @@ let test_create_overload _ =
       def foo(x: int) -> None:
         pass
     |}
-    { Type.Callable.annotation = Type.none;
+    {
+      Type.Callable.annotation = Type.none;
       parameters =
         Type.Callable.Defined
           [Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer }];
-      define_location = None
+      define_location = None;
     }
 
 

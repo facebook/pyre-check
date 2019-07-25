@@ -21,7 +21,8 @@ let concrete_connect ?parameters =
 
 let parse_attributes ~parse_annotation ~class_name =
   let parse_attribute (name, annotation) =
-    { Attribute.annotation = Annotation.create (parse_annotation annotation);
+    {
+      Attribute.annotation = Annotation.create (parse_annotation annotation);
       async = false;
       class_attribute = false;
       defined = true;
@@ -31,7 +32,7 @@ let parse_attributes ~parse_annotation ~class_name =
       parent = Type.Primitive class_name;
       property = None;
       static = false;
-      value = Ast.Node.create_with_default_location Ast.Expression.Ellipsis
+      value = Ast.Node.create_with_default_location Ast.Expression.Ellipsis;
     }
     |> Ast.Node.create_with_default_location
   in
@@ -45,45 +46,49 @@ let less_or_equal
     handler
   =
   always_less_or_equal
-    { handler;
+    {
+      handler;
       constructor;
       attributes;
       is_protocol;
       any_is_bottom = false;
-      protocol_assumptions = ProtocolAssumptions.empty
+      protocol_assumptions = ProtocolAssumptions.empty;
     }
 
 
 let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
   is_compatible_with
-    { handler;
+    {
+      handler;
       constructor;
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
-      protocol_assumptions = ProtocolAssumptions.empty
+      protocol_assumptions = ProtocolAssumptions.empty;
     }
 
 
 let join ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
   join
-    { handler;
+    {
+      handler;
       constructor;
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
-      protocol_assumptions = ProtocolAssumptions.empty
+      protocol_assumptions = ProtocolAssumptions.empty;
     }
 
 
 let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
   meet
-    { handler;
+    {
+      handler;
       constructor;
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
-      protocol_assumptions = ProtocolAssumptions.empty
+      protocol_assumptions = ProtocolAssumptions.empty;
     }
 
 
@@ -2482,12 +2487,13 @@ let test_solve_less_or_equal _ =
         >>| Class.constructor ~instantiated ~resolution
       in
       let handler = Environment.class_hierarchy environment in
-      { handler;
+      {
+        handler;
         constructor;
         attributes;
         is_protocol;
         any_is_bottom = false;
-        protocol_assumptions = ProtocolAssumptions.empty
+        protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
     let parse_annotation annotation =
@@ -3033,12 +3039,13 @@ let test_solve_less_or_equal _ =
 let test_is_consistent_with _ =
   let is_consistent_with =
     let order =
-      { handler = default;
+      {
+        handler = default;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes = (fun _ ~protocol_assumptions:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         any_is_bottom = false;
-        protocol_assumptions = ProtocolAssumptions.empty
+        protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
     is_consistent_with order
@@ -3232,12 +3239,13 @@ let test_instantiate_protocol_parameters _ =
         | _ -> false
       in
       let handler = Environment.class_hierarchy environment in
-      { handler;
+      {
+        handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes;
         is_protocol;
         any_is_bottom = false;
-        protocol_assumptions = ProtocolAssumptions.empty
+        protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
     assert_equal
@@ -3414,12 +3422,13 @@ let test_mark_escaped_as_escaped _ =
   let result =
     let handler = Environment.class_hierarchy environment in
     let handler =
-      { handler;
+      {
+        handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes = (fun _ ~protocol_assumptions:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         any_is_bottom = false;
-        protocol_assumptions = ProtocolAssumptions.empty
+        protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
     let constraints = TypeConstraints.empty in

@@ -74,10 +74,11 @@ let get_completion_item ~range ~item_name ~item_type =
       | _ -> item_name, item_name
     in
     Some
-      { LanguageServer.Types.CompletionItems.label = display_text;
+      {
+        LanguageServer.Types.CompletionItems.label = display_text;
         kind;
         detail = type_string;
-        textEdit = { range; newText = new_text }
+        textEdit = { range; newText = new_text };
       }
 
 
@@ -90,9 +91,10 @@ let get_class_attributes_list
   let position = Position.from_pyre_position ~line ~column in
   let text_edit_range = { Range.start = position; end_ = position } in
   let filter_name_and_type
-      { Node.value =
+      {
+        Node.value =
           { Annotated.Attribute.name = item_name; annotation = { annotation = item_type; _ }; _ };
-        _
+        _;
       }
     =
     get_completion_item ~range:text_edit_range ~item_name ~item_type

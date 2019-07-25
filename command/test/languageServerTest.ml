@@ -722,14 +722,16 @@ let test_language_server_hover_request _ =
     let open TextDocumentPositionParameters in
     let open TextDocumentIdentifier in
     let open Position in
-    { jsonrpc = "2.0";
+    {
+      jsonrpc = "2.0";
       id = int_request_id 0;
       method_ = "textDocument/hover";
       parameters =
         Some
-          { textDocument = { uri = "file:///some/uri.py"; version = None };
-            position = { line = 3; character = 5 }
-          }
+          {
+            textDocument = { uri = "file:///some/uri.py"; version = None };
+            position = { line = 3; character = 5 };
+          };
     }
   in
   match HoverRequest.of_yojson (Yojson.Safe.from_string message) with
@@ -743,8 +745,9 @@ let test_language_server_hover_response _ =
       ~id:(int_request_id 1)
       ~result:
         (Some
-           { HoverResponse.location = Ast.Location.Instantiated.any;
-             contents = "Hover response contents"
+           {
+             HoverResponse.location = Ast.Location.Instantiated.any;
+             contents = "Hover response contents";
            })
     |> HoverResponse.to_yojson
     |> Yojson.Safe.sort
@@ -772,10 +775,11 @@ let test_request_parser context =
   let file_handle = "filename.py" in
   let symlink_handle = "symlink.py" in
   let stub_handle = "stub.pyi" in
-  let { ScratchServer.configuration;
-        state = { Server.State.symlink_targets_to_sources; _ } as state;
-        _
-      }
+  let {
+    ScratchServer.configuration;
+    state = { Server.State.symlink_targets_to_sources; _ } as state;
+    _;
+  }
     =
     ScratchServer.start ~context [file_handle, ""; symlink_handle, ""; stub_handle, ""]
   in
@@ -794,28 +798,33 @@ let test_request_parser context =
   Hashtbl.set symlink_targets_to_sources ~key:(Path.absolute symlink_target) ~data:symlink_source;
 
   let open_message path =
-    { DidOpenTextDocument.jsonrpc = "2.0";
+    {
+      DidOpenTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didOpen";
       parameters =
         Some
-          { DidOpenTextDocumentParameters.textDocument =
-              { TextDocumentItem.uri = "file://" ^ Path.absolute path;
+          {
+            DidOpenTextDocumentParameters.textDocument =
+              {
+                TextDocumentItem.uri = "file://" ^ Path.absolute path;
                 languageId = "python";
                 version = 2;
-                text = "file content goes here"
-              }
-          }
+                text = "file content goes here";
+              };
+          };
     }
     |> DidOpenTextDocument.to_yojson
   in
   let close_message =
-    { DidCloseTextDocument.jsonrpc = "2.0";
+    {
+      DidCloseTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didClose";
       parameters =
         Some
-          { DidCloseTextDocumentParameters.textDocument =
-              { TextDocumentIdentifier.uri = "file://" ^ Path.absolute file_path; version = None }
-          }
+          {
+            DidCloseTextDocumentParameters.textDocument =
+              { TextDocumentIdentifier.uri = "file://" ^ Path.absolute file_path; version = None };
+          };
     }
     |> DidCloseTextDocument.to_yojson
   in
@@ -828,39 +837,46 @@ let test_request_parser context =
     |> Yojson.Safe.sort
   in
   let change_message =
-    { DidChangeTextDocument.jsonrpc = "2.0";
+    {
+      DidChangeTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didChange";
       parameters =
         Some
-          { DidChangeTextDocumentParameters.textDocument =
-              { VersionedTextDocumentIdentifier.uri = "file://" ^ Path.absolute file_path;
-                version = 1
+          {
+            DidChangeTextDocumentParameters.textDocument =
+              {
+                VersionedTextDocumentIdentifier.uri = "file://" ^ Path.absolute file_path;
+                version = 1;
               };
-            contentChanges = [{ text = "changed source"; range = None; rangeLength = None }]
-          }
+            contentChanges = [{ text = "changed source"; range = None; rangeLength = None }];
+          };
     }
     |> DidChangeTextDocument.to_yojson
   in
   let update_message =
-    { UpdateFiles.jsonrpc = "2.0";
+    {
+      UpdateFiles.jsonrpc = "2.0";
       method_ = "updateFiles";
       parameters =
         Some
-          { UpdateFilesParameters.files =
+          {
+            UpdateFilesParameters.files =
               [Path.absolute file_path; Path.absolute symlink_source; Path.absolute stub_path];
-            invalidated = []
-          }
+            invalidated = [];
+          };
     }
     |> UpdateFiles.to_yojson
   in
   let display_type_errors_message =
-    { LanguageServer.Types.DisplayTypeErrors.jsonrpc = "2.0";
+    {
+      LanguageServer.Types.DisplayTypeErrors.jsonrpc = "2.0";
       method_ = "displayTypeErrors";
       parameters =
         Some
-          { LanguageServer.Types.DisplayTypeErrorsParameters.files =
-              [Path.absolute file_path; Path.absolute symlink_source; Path.absolute stub_path]
-          }
+          {
+            LanguageServer.Types.DisplayTypeErrorsParameters.files =
+              [Path.absolute file_path; Path.absolute symlink_source; Path.absolute stub_path];
+          };
     }
     |> LanguageServer.Types.DisplayTypeErrors.to_yojson
   in

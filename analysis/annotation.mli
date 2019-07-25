@@ -11,7 +11,7 @@ type scope =
 and immutable = {
   scope: scope;
   original: Type.t;
-  final: bool
+  final: bool;
 }
 
 and mutability =
@@ -20,7 +20,7 @@ and mutability =
 
 and t = {
   annotation: Type.t;
-  mutability: mutability
+  mutability: mutability;
 }
 [@@deriving compare, eq, show, hash, sexp]
 

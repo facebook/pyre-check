@@ -16,7 +16,7 @@ module BooleanOperator = struct
   type 'expression t = {
     left: 'expression;
     operator: operator;
-    right: 'expression
+    right: 'expression;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -52,7 +52,7 @@ module Record = struct
     type 'expression record = {
       left: 'expression;
       operator: operator;
-      right: 'expression
+      right: 'expression;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -96,7 +96,7 @@ module Record = struct
 
     type 'expression record = {
       operator: operator;
-      operand: 'expression
+      operand: 'expression;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -117,7 +117,7 @@ module Name = struct
     type 'expression t = {
       base: 'expression;
       attribute: Identifier.t;
-      special: bool
+      special: bool;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
@@ -132,14 +132,14 @@ module Call = struct
   module Argument = struct
     type 'expression t = {
       name: Identifier.t Node.t option;
-      value: 'expression
+      value: 'expression;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   type 'expression t = {
     callee: 'expression;
-    arguments: 'expression Argument.t list
+    arguments: 'expression Argument.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -147,7 +147,7 @@ end
 module Lambda = struct
   type 'expression t = {
     parameters: 'expression Parameter.t list;
-    body: 'expression
+    body: 'expression;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -156,7 +156,7 @@ module Ternary = struct
   type 'expression t = {
     target: 'expression;
     test: 'expression;
-    alternative: 'expression
+    alternative: 'expression;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -164,13 +164,13 @@ end
 module Dictionary = struct
   type 'expression entry = {
     key: 'expression;
-    value: 'expression
+    value: 'expression;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type 'expression t = {
     entries: 'expression entry list;
-    keywords: 'expression list
+    keywords: 'expression list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -180,13 +180,13 @@ module Comprehension = struct
     target: 'expression;
     iterator: 'expression;
     conditions: 'expression list;
-    async: bool
+    async: bool;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type ('element, 'expression) t = {
     element: 'element;
-    generators: 'expression generator list
+    generators: 'expression generator list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -207,7 +207,7 @@ module StringLiteral = struct
 
     type t = {
       value: string;
-      kind: kind
+      kind: kind;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -223,7 +223,7 @@ module StringLiteral = struct
 
   and 'expression t = {
     value: string;
-    kind: 'expression kind
+    kind: 'expression kind;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -318,11 +318,13 @@ module ComparisonOperator = struct
     >>| fun name ->
     let arguments = [{ Call.Argument.name = None; value = right }] in
     Call
-      { callee =
-          { Node.location;
-            value = Name (Name.Attribute { base = left; attribute = name; special = true })
+      {
+        callee =
+          {
+            Node.location;
+            value = Name (Name.Attribute { base = left; attribute = name; special = true });
           };
-        arguments
+        arguments;
       }
     |> Node.create ~location
 end
@@ -340,11 +342,13 @@ module UnaryOperator = struct
     | Positive -> Some "__pos__" )
     >>| fun name ->
     Call
-      { callee =
-          { Node.location;
-            value = Name (Name.Attribute { base = operand; attribute = name; special = true })
+      {
+        callee =
+          {
+            Node.location;
+            value = Name (Name.Attribute { base = operand; attribute = name; special = true });
           };
-        arguments = []
+        arguments = [];
       }
     |> Node.create ~location
 end
@@ -353,19 +357,22 @@ let negate ({ Node.location; value } as node) =
   match value with
   | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand } -> operand
   | ComparisonOperator { ComparisonOperator.operator = ComparisonOperator.IsNot; left; right } ->
-      { Node.location;
+      {
+        Node.location;
         value =
-          ComparisonOperator { ComparisonOperator.operator = ComparisonOperator.Is; left; right }
+          ComparisonOperator { ComparisonOperator.operator = ComparisonOperator.Is; left; right };
       }
   | ComparisonOperator { ComparisonOperator.operator = ComparisonOperator.Is; left; right } ->
-      { Node.location;
+      {
+        Node.location;
         value =
           ComparisonOperator
-            { ComparisonOperator.operator = ComparisonOperator.IsNot; left; right }
+            { ComparisonOperator.operator = ComparisonOperator.IsNot; left; right };
       }
   | _ ->
-      { Node.location;
-        value = UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = node }
+      {
+        Node.location;
+        value = UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = node };
       }
 
 
@@ -389,9 +396,10 @@ let rec normalize { Node.location; value } =
           value
       | BooleanOperator { BooleanOperator.left; operator; right } ->
           BooleanOperator
-            { BooleanOperator.operator = BooleanOperator.inverse operator;
+            {
+              BooleanOperator.operator = BooleanOperator.inverse operator;
               left = normalize (negate left);
-              right = normalize (negate right)
+              right = normalize (negate right);
             }
       | _ -> unary )
     | _ -> value
@@ -566,8 +574,9 @@ let delocalize_qualified = function
   | { Node.location; value = Name (Name.Identifier identifier) } ->
       { Node.location; value = Name (Name.Identifier (Identifier.sanitized identifier)) }
   | { Node.location; value = Name (Name.Attribute ({ attribute; _ } as name)) } ->
-      { Node.location;
-        value = Name (Name.Attribute { name with attribute = Identifier.sanitized attribute })
+      {
+        Node.location;
+        value = Name (Name.Attribute { name with attribute = Identifier.sanitized attribute });
       }
   | expression -> expression
 
@@ -604,9 +613,10 @@ let arguments_location
   =
   match List.rev arguments with
   | [] ->
-      { Location.path;
+      {
+        Location.path;
         start = callee_end;
-        stop = { callee_end with column = callee_end.Location.column + 2 }
+        stop = { callee_end with column = callee_end.Location.column + 2 };
       }
   | { Call.Argument.value = { Node.location = { Location.stop; _ }; _ }; _ } :: _ ->
       { Location.path; start = callee_end; stop = { stop with column = stop.Location.column + 1 } }

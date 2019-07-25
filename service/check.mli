@@ -8,7 +8,7 @@ open Analysis
 type result = {
   module_tracker: ModuleTracker.t;
   environment: Environment.t;
-  errors: Error.t list
+  errors: Error.t list;
 }
 
 val analyze_sources

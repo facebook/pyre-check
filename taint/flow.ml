@@ -10,7 +10,7 @@ open Domains
 
 type flow = {
   source_taint: ForwardTaint.t;
-  sink_taint: BackwardTaint.t
+  sink_taint: BackwardTaint.t;
 }
 [@@deriving sexp]
 
@@ -18,7 +18,7 @@ type flows = flow list [@@deriving sexp]
 
 type candidate = {
   flows: flows;
-  location: Location.t
+  location: Location.t;
 }
 [@@deriving sexp]
 
@@ -26,7 +26,7 @@ type issue = {
   code: int;
   flow: flow;
   issue_location: Location.t;
-  define: Statement.Define.t Node.t
+  define: Statement.Define.t Node.t;
 }
 [@@deriving sexp]
 
@@ -61,7 +61,7 @@ let generate_source_sink_matches ~location ~source_tree ~sink_tree =
 
 type flow_state = {
   matched: flows;
-  rest: flows
+  rest: flows;
 }
 [@@deriving sexp]
 
@@ -97,10 +97,11 @@ let partition_flow ?sources ?sinks flow =
     | true, false -> { matched; rest = [{ flow with sink_taint = excluded_sink_taint }] }
     | false, true -> { matched; rest = [{ flow with source_taint = excluded_source_taint }] }
     | false, false ->
-        { matched;
+        {
+          matched;
           rest =
             [ { source_taint = excluded_source_taint; sink_taint = included_sink_taint };
-              { flow with sink_taint = excluded_sink_taint } ]
+              { flow with sink_taint = excluded_sink_taint } ];
         }
 
 
@@ -131,8 +132,9 @@ let generate_issues ~define { location; flows } =
           let join_sink_taint sink_taints =
             List.fold sink_taints ~init:BackwardTaint.bottom ~f:BackwardTaint.join
           in
-          { source_taint = join_source_taint (List.map flows ~f:get_source_taint);
-            sink_taint = join_sink_taint (List.map flows ~f:get_sink_taint)
+          {
+            source_taint = join_source_taint (List.map flows ~f:get_source_taint);
+            sink_taint = join_sink_taint (List.map flows ~f:get_sink_taint);
           }
         in
         let flow = join_flows matched in

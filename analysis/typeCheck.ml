@@ -13,7 +13,7 @@ module Error = AnalysisError
 module ErrorMap = struct
   type key = {
     location: Location.Instantiated.t;
-    kind: int
+    kind: int;
   }
   [@@deriving compare, sexp]
 
@@ -71,7 +71,7 @@ module type Signature = sig
     state: t;
     resolved: Type.t;
     resolved_annotation: Annotation.t option;
-    base: base option
+    base: base option;
   }
   [@@deriving show]
 
@@ -87,17 +87,17 @@ end
 module State (Context : Context) = struct
   type nested_define_state = {
     nested_resolution: Resolution.t;
-    nested_bottom: bool
+    nested_bottom: bool;
   }
 
   type nested_define = {
     nested: Define.t;
-    initial: nested_define_state
+    initial: nested_define_state;
   }
 
   type partitioned = {
     consistent_with_boundary: Type.t;
-    not_consistent_with_boundary: Type.t option
+    not_consistent_with_boundary: Type.t option;
   }
 
   and t = {
@@ -106,7 +106,7 @@ module State (Context : Context) = struct
     check_return: bool;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
-    resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
+    resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t;
   }
 
   let pp_nested_define format { nested = { Define.signature = { name; _ }; _ }; _ } =
@@ -180,12 +180,13 @@ module State (Context : Context) = struct
       ?(resolution_fixpoint = Int.Map.Tree.empty)
       ()
     =
-    { resolution;
+    {
+      resolution;
       errors;
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom;
-      resolution_fixpoint
+      resolution_fixpoint;
     }
 
 
@@ -349,15 +350,17 @@ module State (Context : Context) = struct
                           ~location
                           ~kind:
                             (Error.UninitializedAttribute
-                               { name;
+                               {
+                                 name;
                                  parent = Annotated.Class.annotation definition;
                                  mismatch =
-                                   { Error.expected;
+                                   {
+                                     Error.expected;
                                      actual = Type.optional expected;
                                      actual_expressions = [];
-                                     due_to_invariance = false
+                                     due_to_invariance = false;
                                    };
-                                 kind = Class
+                                 kind = Class;
                                })
                           ~define:Context.define
                       in
@@ -384,7 +387,8 @@ module State (Context : Context) = struct
                             Error.InvalidAssignment (FinalAttribute (Reference.create name))
                           else
                             Error.InconsistentOverride
-                              { overridden_method = name;
+                              {
+                                overridden_method = name;
                                 parent =
                                   Attribute.parent overridden_attribute
                                   |> Type.show
@@ -397,7 +401,7 @@ module State (Context : Context) = struct
                                        ~actual
                                        ~actual_expression:None
                                        ~expected
-                                       ~covariant:false)
+                                       ~covariant:false);
                               }
                         in
                         Error.create ~location ~kind ~define:Context.define :: errors
@@ -467,8 +471,9 @@ module State (Context : Context) = struct
                   ~location
                   ~kind:
                     (Error.AbstractClass
-                       { class_name = AnnotatedClass.name definition;
-                         method_names = abstract_methods
+                       {
+                         class_name = AnnotatedClass.name definition;
+                         method_names = abstract_methods;
                        })
                   ~define:Context.define
               in
@@ -538,15 +543,17 @@ module State (Context : Context) = struct
                      ~location
                      ~kind:
                        (Error.UninitializedAttribute
-                          { name;
+                          {
+                            name;
                             parent;
                             mismatch =
-                              { Error.expected;
+                              {
+                                Error.expected;
                                 actual = Type.optional expected;
                                 actual_expressions = [];
-                                due_to_invariance = false
+                                due_to_invariance = false;
                               };
-                            kind = error_kind
+                            kind = error_kind;
                           })
                      ~define:Context.define)
           in
@@ -594,10 +601,11 @@ module State (Context : Context) = struct
       let annotation = Resolution.get_local resolution ~reference:name in
       let overload_to_callable overload =
         Type.Callable
-          { implementation = { overload with annotation = Type.Any };
+          {
+            implementation = { overload with annotation = Type.Any };
             kind = Anonymous;
             overloads = [];
-            implicit = None
+            implicit = None;
           }
       in
       let check_implementation_exists errors =
@@ -617,14 +625,16 @@ module State (Context : Context) = struct
       let check_compatible_return_types errors =
         match annotation with
         | Some
-            { annotation =
+            {
+              annotation =
                 Type.Callable
-                  { overloads;
+                  {
+                    overloads;
                     implementation =
                       { annotation = implementation_annotation; _ } as implementation;
-                    _
+                    _;
                   };
-              _
+              _;
             }
           when not (Statement.Define.is_overloaded_method define) ->
             overloads
@@ -649,9 +659,10 @@ module State (Context : Context) = struct
                            ~kind:
                              (Error.IncompatibleOverload
                                 (ReturnType
-                                   { implementation_annotation;
+                                   {
+                                     implementation_annotation;
                                      overload_annotation = annotation;
-                                     name
+                                     name;
                                    }))
                            ~define:Context.define
                        in
@@ -671,8 +682,9 @@ module State (Context : Context) = struct
                          ~kind:
                            (Error.IncompatibleOverload
                               (Parameters
-                                 { name;
-                                   location = define_location |> Option.value ~default:location
+                                 {
+                                   name;
+                                   location = define_location |> Option.value ~default:location;
                                  }))
                      in
                      error :: errors_sofar
@@ -826,10 +838,11 @@ module State (Context : Context) = struct
           left_error
           right_error
       in
-      { left with
+      {
+        left with
         errors = Map.merge_skewed left.errors right.errors ~combine:combine_errors;
         nested_defines = Map.merge left.nested_defines right.nested_defines ~f:join_nested_defines;
-        resolution = join_resolutions left.resolution right.resolution
+        resolution = join_resolutions left.resolution right.resolution;
       }
 
 
@@ -899,12 +912,13 @@ module State (Context : Context) = struct
         else
           Error.join ~resolution:global_resolution left_error right_error
       in
-      { previous with
+      {
+        previous with
         errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
         nested_defines =
           Map.merge ~f:join_nested_defines previous.nested_defines next.nested_defines;
         resolution = Resolution.with_annotations resolution ~annotations;
-        resolution_fixpoint
+        resolution_fixpoint;
       }
 
 
@@ -931,18 +945,18 @@ module State (Context : Context) = struct
     state: t;
     resolved: Type.t;
     resolved_annotation: Annotation.t option;
-    base: base option
+    base: base option;
   }
   [@@deriving show]
 
   let rec initial ~resolution =
     let global_resolution = Resolution.global_resolution resolution in
-    let { Node.location;
-          value =
-            { Define.signature = { name; parent; parameters; return_annotation; decorators; _ };
-              _
-            } as define
-        }
+    let {
+      Node.location;
+      value =
+        { Define.signature = { name; parent; parameters; return_annotation; decorators; _ }; _ } as
+        define;
+    }
       =
       Context.define
     in
@@ -1039,7 +1053,8 @@ module State (Context : Context) = struct
                 ~location
                 ~kind:
                   (Error.IncompatibleVariableType
-                     { name = Reference.create name;
+                     {
+                       name = Reference.create name;
                        mismatch =
                          Error.create_mismatch
                            ~resolution:global_resolution
@@ -1047,7 +1062,7 @@ module State (Context : Context) = struct
                            ~actual:default
                            ~actual_expression:value
                            ~covariant:true;
-                       declare_location = instantiate location
+                       declare_location = instantiate location;
                      })
           in
           let add_missing_parameter_annotation_error ~state ~given_annotation annotation =
@@ -1065,11 +1080,12 @@ module State (Context : Context) = struct
                 ~location
                 ~kind:
                   (Error.MissingParameterAnnotation
-                     { name = Reference.create name;
+                     {
+                       name = Reference.create name;
                        annotation;
                        given_annotation;
                        evidence_locations = [];
-                       thrown_at_source = true
+                       thrown_at_source = true;
                      })
           in
           let add_final_parameter_annotation_error ~state =
@@ -1149,8 +1165,9 @@ module State (Context : Context) = struct
                           else (* Assume the user forgot to specify the implicit parameter *)
                             Some
                               (Error.InvalidMethodSignature
-                                 { annotation = None;
-                                   name = (if is_class_method then "cls" else "self")
+                                 {
+                                   annotation = None;
+                                   name = (if is_class_method then "cls" else "self");
                                  })
                         in
                         match kind with
@@ -1298,12 +1315,14 @@ module State (Context : Context) = struct
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
             in
             state, Resolution.annotations resolution
-        | ( [ { Node.value = { name = first_name; value = None; annotation = Some first_annotation };
-                _
+        | ( [ {
+                Node.value = { name = first_name; value = None; annotation = Some first_annotation };
+                _;
               };
-              { Node.value =
+              {
+                Node.value =
                   { name = second_name; value = None; annotation = Some second_annotation };
-                _
+                _;
               } ],
             _ )
           when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
@@ -1315,8 +1334,9 @@ module State (Context : Context) = struct
           with
           | Some variable ->
               let add_annotations
-                  { Type.Variable.Variadic.Parameters.Components.positional_component;
-                    keyword_component
+                  {
+                    Type.Variable.Variadic.Parameters.Components.positional_component;
+                    keyword_component;
                   }
                 =
                 Resolution.annotations resolution
@@ -1502,7 +1522,8 @@ module State (Context : Context) = struct
                               ~location
                               ~kind:
                                 (Error.InconsistentOverride
-                                   { overridden_method = Statement.Define.unqualified_name define;
+                                   {
+                                     overridden_method = Statement.Define.unqualified_name define;
                                      parent =
                                        Attribute.parent overridden_attribute
                                        |> Type.show
@@ -1515,7 +1536,7 @@ module State (Context : Context) = struct
                                             ~actual
                                             ~actual_expression:None
                                             ~expected
-                                            ~covariant:false)
+                                            ~covariant:false);
                                    })
                               ~define:Context.define
                           in
@@ -1550,7 +1571,8 @@ module State (Context : Context) = struct
                                       ~location
                                       ~kind:
                                         (Error.InconsistentOverride
-                                           { overridden_method =
+                                           {
+                                             overridden_method =
                                                Statement.Define.unqualified_name define;
                                              parent =
                                                Attribute.parent overridden_attribute
@@ -1565,7 +1587,7 @@ module State (Context : Context) = struct
                                                        ~actual
                                                        ~actual_expression:None
                                                        ~expected
-                                                       ~covariant:false))
+                                                       ~covariant:false));
                                            })
                                       ~define:Context.define
                                   in
@@ -1593,7 +1615,8 @@ module State (Context : Context) = struct
                                     ~location
                                     ~kind:
                                       (Error.InconsistentOverride
-                                         { overridden_method =
+                                         {
+                                           overridden_method =
                                              Statement.Define.unqualified_name define;
                                            override_kind = Method;
                                            parent =
@@ -1602,7 +1625,7 @@ module State (Context : Context) = struct
                                              |> Reference.create;
                                            override =
                                              Error.StrengthenedPrecondition
-                                               (Error.NotFound overridden_parameter)
+                                               (Error.NotFound overridden_parameter);
                                          })
                                     ~define:Context.define
                                 in
@@ -1705,10 +1728,11 @@ module State (Context : Context) = struct
     in
     let forward_generator
         ~state
-        ~generator:{ Comprehension.target;
+        ~generator:{
+                     Comprehension.target;
                      iterator = { Node.location; _ } as iterator;
                      conditions;
-                     async
+                     async;
                    }
       =
       (* Propagate the target type information. *)
@@ -1716,61 +1740,73 @@ module State (Context : Context) = struct
         let value =
           if async then
             let aiter =
-              { Node.location;
+              {
+                Node.location;
                 value =
                   Call
-                    { callee =
-                        { Node.location;
+                    {
+                      callee =
+                        {
+                          Node.location;
                           value =
                             Name
                               (Name.Attribute
-                                 { base = iterator; attribute = "__aiter__"; special = true })
+                                 { base = iterator; attribute = "__aiter__"; special = true });
                         };
-                      arguments = []
-                    }
+                      arguments = [];
+                    };
               }
             in
-            { Node.location;
+            {
+              Node.location;
               value =
                 Call
-                  { callee =
-                      { Node.location;
+                  {
+                    callee =
+                      {
+                        Node.location;
                         value =
                           Name
                             (Name.Attribute
-                               { base = aiter; attribute = "__anext__"; special = true })
+                               { base = aiter; attribute = "__anext__"; special = true });
                       };
-                    arguments = []
-                  }
+                    arguments = [];
+                  };
             }
             |> fun target -> Node.create ~location (Await target)
           else
             let iter =
-              { Node.location;
+              {
+                Node.location;
                 value =
                   Call
-                    { callee =
-                        { Node.location;
+                    {
+                      callee =
+                        {
+                          Node.location;
                           value =
                             Name
                               (Name.Attribute
-                                 { base = iterator; attribute = "__iter__"; special = true })
+                                 { base = iterator; attribute = "__iter__"; special = true });
                         };
-                      arguments = []
-                    }
+                      arguments = [];
+                    };
               }
             in
-            { Node.location;
+            {
+              Node.location;
               value =
                 Call
-                  { callee =
-                      { Node.location;
+                  {
+                    callee =
+                      {
+                        Node.location;
                         value =
                           Name
-                            (Name.Attribute { base = iter; attribute = "__next__"; special = true })
+                            (Name.Attribute { base = iter; attribute = "__next__"; special = true });
                       };
-                    arguments = []
-                  }
+                    arguments = [];
+                  };
             }
         in
         Assign { Assign.target; annotation = None; value; parent = None } |> Node.create ~location
@@ -1808,10 +1844,11 @@ module State (Context : Context) = struct
         |> fun state -> forward_expression ~state ~expression:element
       in
       (* Discard generator-local variables. *)
-      { state = { state with resolution };
+      {
+        state = { state with resolution };
         resolved = Type.weaken_literals resolved;
         resolved_annotation = None;
-        base = None
+        base = None;
       }
     in
     let forward_elements ~state ~elements =
@@ -1826,17 +1863,19 @@ module State (Context : Context) = struct
               | Type.Parametric { parameters = Concrete [parameter]; _ } -> parameter
               | _ -> Type.Any
             in
-            { state;
+            {
+              state;
               resolved = GlobalResolution.join global_resolution resolved parameter;
               resolved_annotation = None;
-              base = None
+              base = None;
             }
         | _ ->
             let { state; resolved = new_resolved; _ } = forward_expression ~state ~expression in
-            { state;
+            {
+              state;
               resolved = GlobalResolution.join global_resolution resolved new_resolved;
               resolved_annotation = None;
-              base = None
+              base = None;
             }
       in
       let correct_bottom { state; resolved; _ } =
@@ -1853,10 +1892,11 @@ module State (Context : Context) = struct
         ~init:{ state; resolved = Type.Bottom; resolved_annotation = None; base = None }
         ~f:forward_element
       |> (fun { state; resolved; _ } ->
-           { state;
+           {
+             state;
              resolved = Type.weaken_literals resolved;
              resolved_annotation = None;
-             base = None
+             base = None;
            })
       |> correct_bottom
     in
@@ -1896,16 +1936,18 @@ module State (Context : Context) = struct
           let state =
             Error.UndefinedName reference |> fun kind -> emit_error ~state ~location ~kind
           in
-          { state;
+          {
+            state;
             resolved = Annotation.annotation annotation;
             resolved_annotation = Some annotation;
-            base = None
+            base = None;
           }
       | Some annotation ->
-          { state;
+          {
+            state;
             resolved = Annotation.annotation annotation;
             resolved_annotation = Some annotation;
-            base = None
+            base = None;
           }
       | None -> (
         match GlobalResolution.module_definition global_resolution reference with
@@ -2008,9 +2050,10 @@ module State (Context : Context) = struct
                 |> Reference.create_from_list
                 |> fun name ->
                 [ Dependencies.Callgraph.Method
-                    { direct_target;
+                    {
+                      direct_target;
                       static_target = name;
-                      dispatch = (if dynamic then Dynamic else Static)
+                      dispatch = (if dynamic then Dynamic else Static);
                     } ]
             | _ -> []
           in
@@ -2113,8 +2156,9 @@ module State (Context : Context) = struct
           { state; resolved = annotation; resolved_annotation = None; base = None }
       | Some
           (Annotated.Signature.NotFound
-            { callable = { implementation = { annotation; _ }; kind; implicit; _ } as callable;
-              reason = Some reason
+            {
+              callable = { implementation = { annotation; _ }; kind; implicit; _ } as callable;
+              reason = Some reason;
             }) ->
           let state =
             let open Annotated.Signature in
@@ -2227,10 +2271,11 @@ module State (Context : Context) = struct
           { state; resolved = Type.Top; resolved_annotation = None; base = None }
     in
     let join_resolved left right =
-      { state = join left.state right.state;
+      {
+        state = join left.state right.state;
         resolved = GlobalResolution.join global_resolution left.resolved right.resolved;
         resolved_annotation = None;
-        base = None
+        base = None;
       }
     in
     let is_terminating_error error =
@@ -2315,32 +2360,37 @@ module State (Context : Context) = struct
             let { resolved; _ } = forward_expression ~state ~expression:callee in
             forward_callable ~state ~target:None ~callee ~dynamic:false ~resolved ~arguments )
     | Call
-        { callee = { Node.value = Name (Name.Identifier "type"); _ };
-          arguments = [{ Call.Argument.value; _ }]
+        {
+          callee = { Node.value = Name (Name.Identifier "type"); _ };
+          arguments = [{ Call.Argument.value; _ }];
         } ->
         (* Resolve `type()` calls. *)
         let resolved = Resolution.resolve resolution value |> Type.meta in
         { state; resolved; resolved_annotation = None; base = None }
     | Call
-        { callee = { Node.value = Name (Name.Identifier (("abs" | "repr" | "str") as name)); _ };
-          arguments = [{ Call.Argument.value; _ }]
+        {
+          callee = { Node.value = Name (Name.Identifier (("abs" | "repr" | "str") as name)); _ };
+          arguments = [{ Call.Argument.value; _ }];
         } ->
         (* Resolve function redirects. *)
         Call
-          { callee =
-              { Node.location;
+          {
+            callee =
+              {
+                Node.location;
                 value =
                   Name
                     (Name.Attribute
-                       { base = value; attribute = "__" ^ name ^ "__"; special = true })
+                       { base = value; attribute = "__" ^ name ^ "__"; special = true });
               };
-            arguments = []
+            arguments = [];
           }
         |> Node.create ~location
         |> fun expression -> forward_expression ~state ~expression
     | Call
-        { callee = { Node.location; value = Name (Name.Identifier "reveal_type") };
-          arguments = [{ Call.Argument.value; _ }]
+        {
+          callee = { Node.location; value = Name (Name.Identifier "reveal_type") };
+          arguments = [{ Call.Argument.value; _ }];
         } ->
         (* Special case reveal_type(). *)
         let annotation =
@@ -2359,8 +2409,9 @@ module State (Context : Context) = struct
         in
         { state; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
-        { callee = { Node.location; value = Name name };
-          arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }]
+        {
+          callee = { Node.location; value = Name name };
+          arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
         }
       when Option.equal
              Reference.equal
@@ -2380,11 +2431,12 @@ module State (Context : Context) = struct
               ~location
               ~kind:
                 (Error.ProhibitedAny
-                   { Error.name = Expression.name_to_reference_exn name;
+                   {
+                     Error.name = Expression.name_to_reference_exn name;
                      annotation = None;
                      given_annotation = Some cast_annotation;
                      evidence_locations = [];
-                     thrown_at_source = true
+                     thrown_at_source = true;
                    })
           else if Type.equal cast_annotation resolved then
             emit_error ~state ~location ~kind:(Error.RedundantCast resolved)
@@ -2406,9 +2458,10 @@ module State (Context : Context) = struct
         in
         { state; resolved = cast_annotation; resolved_annotation = None; base = None }
     | Call
-        { callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
+        {
+          callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
           arguments =
-            [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }]
+            [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }];
         } ->
         (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
@@ -2446,15 +2499,17 @@ module State (Context : Context) = struct
                 ~location
                 ~kind:
                   (Error.IncompatibleParameterType
-                     { name = None;
+                     {
+                       name = None;
                        position = 2;
                        callee = Some (Reference.create "isinstance");
                        mismatch =
-                         { Error.actual = non_meta;
+                         {
+                           Error.actual = non_meta;
                            actual_expressions = [];
                            expected = Type.meta Type.Any;
-                           due_to_invariance = false
-                         }
+                           due_to_invariance = false;
+                         };
                      })
             in
             List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation))
@@ -2463,12 +2518,14 @@ module State (Context : Context) = struct
         in
         { state; resolved = Type.bool; resolved_annotation = None; base = None }
     | Call
-        { callee =
-            { Node.value =
+        {
+          callee =
+            {
+              Node.value =
                 Name (Name.Attribute { attribute = "assertIsNotNone" | "assertTrue"; _ });
-              _
+              _;
             } as callee;
-          arguments = [{ Call.Argument.value = expression; _ }] as arguments
+          arguments = [{ Call.Argument.value = expression; _ }] as arguments;
         } ->
         let { resolution; _ } =
           forward_statement ~state ~statement:(Statement.assume expression)
@@ -2484,9 +2541,10 @@ module State (Context : Context) = struct
           ~resolved:resolved_callee
           ~arguments
     | Call
-        { callee =
+        {
+          callee =
             { Node.value = Name (Name.Attribute { attribute = "assertFalse"; _ }); _ } as callee;
-          arguments = [{ Call.Argument.value = expression; _ }] as arguments
+          arguments = [{ Call.Argument.value = expression; _ }] as arguments;
         } ->
         let { resolution; _ } =
           forward_statement ~state ~statement:(Statement.assume (Expression.negate expression))
@@ -2529,10 +2587,11 @@ module State (Context : Context) = struct
               callee_errors
               updated_errors
           in
-          { state = { updated_state with errors };
+          {
+            state = { updated_state with errors };
             resolved;
             resolved_annotation = None;
-            base = None
+            base = None;
           }
         else (* Do not throw more errors if callee already contains terminating error. *)
           let errors =
@@ -2545,8 +2604,9 @@ module State (Context : Context) = struct
         let modified_call =
           let has_method name =
             let access =
-              { Node.location;
-                value = Name (Name.Attribute { base = right; attribute = name; special = true })
+              {
+                Node.location;
+                value = Name (Name.Attribute { base = right; attribute = name; special = true });
               }
             in
             forward_expression ~state ~expression:access
@@ -2556,93 +2616,112 @@ module State (Context : Context) = struct
           in
           let { Node.location; _ } = left in
           if has_method "__contains__" then
-            { Node.location;
+            {
+              Node.location;
               value =
                 Call
-                  { callee =
-                      { Node.location;
+                  {
+                    callee =
+                      {
+                        Node.location;
                         value =
                           Name
                             (Name.Attribute
-                               { base = right; attribute = "__contains__"; special = true })
+                               { base = right; attribute = "__contains__"; special = true });
                       };
-                    arguments = [{ Call.Argument.name = None; value = left }]
-                  }
+                    arguments = [{ Call.Argument.name = None; value = left }];
+                  };
             }
           else if has_method "__iter__" then
             let iter =
-              { Node.location;
+              {
+                Node.location;
                 value =
                   Call
-                    { callee =
-                        { Node.location;
+                    {
+                      callee =
+                        {
+                          Node.location;
                           value =
                             Name
                               (Name.Attribute
-                                 { base = right; attribute = "__iter__"; special = true })
+                                 { base = right; attribute = "__iter__"; special = true });
                         };
-                      arguments = []
-                    }
+                      arguments = [];
+                    };
               }
             in
             let next =
-              { Node.location;
+              {
+                Node.location;
                 value =
                   Call
-                    { callee =
-                        { Node.location;
+                    {
+                      callee =
+                        {
+                          Node.location;
                           value =
                             Name
                               (Name.Attribute
-                                 { base = iter; attribute = "__next__"; special = true })
+                                 { base = iter; attribute = "__next__"; special = true });
                         };
-                      arguments = []
-                    }
+                      arguments = [];
+                    };
               }
             in
-            { Node.location;
+            {
+              Node.location;
               value =
                 Call
-                  { callee =
-                      { Node.location;
+                  {
+                    callee =
+                      {
+                        Node.location;
                         value =
                           Name
-                            (Name.Attribute { base = next; attribute = "__eq__"; special = true })
+                            (Name.Attribute { base = next; attribute = "__eq__"; special = true });
                       };
-                    arguments = [{ Call.Argument.name = None; value = left }]
-                  }
+                    arguments = [{ Call.Argument.name = None; value = left }];
+                  };
             }
           else
             let getitem =
-              { Node.location;
+              {
+                Node.location;
                 value =
                   Call
-                    { callee =
-                        { Node.location;
+                    {
+                      callee =
+                        {
+                          Node.location;
                           value =
                             Name
                               (Name.Attribute
-                                 { base = right; attribute = "__getitem__"; special = true })
+                                 { base = right; attribute = "__getitem__"; special = true });
                         };
                       arguments =
-                        [ { Call.Argument.name = None;
-                            value = { Node.location; value = Expression.Integer 0 }
-                          } ]
-                    }
+                        [ {
+                            Call.Argument.name = None;
+                            value = { Node.location; value = Expression.Integer 0 };
+                          } ];
+                    };
               }
             in
-            { Node.location;
+            {
+              Node.location;
               value =
                 Call
-                  { callee =
-                      { Node.location;
+                  {
+                    callee =
+                      {
+                        Node.location;
                         value =
                           Name
                             (Name.Attribute
-                               { base = getitem; attribute = "__eq__"; special = true })
+                               { base = getitem; attribute = "__eq__"; special = true });
                       };
-                    arguments = [{ Call.Argument.name = None; value = left }]
-                  }
+                    arguments = [{ Call.Argument.name = None; value = left }];
+                  };
             }
         in
         forward_expression ~state ~expression:modified_call
@@ -2696,17 +2775,19 @@ module State (Context : Context) = struct
           |> fun state -> forward_entry ~state ~entry:element
         in
         (* Discard generator-local variables. *)
-        { state = { state with resolution };
+        {
+          state = { state with resolution };
           resolved = Type.dictionary ~key ~value;
           resolved_annotation = None;
-          base = None
+          base = None;
         }
     | Ellipsis -> { state; resolved = Type.Any; resolved_annotation = None; base = None }
     | False ->
-        { state;
+        {
+          state;
           resolved = Type.Literal (Type.Boolean false);
           resolved_annotation = None;
-          base = None
+          base = None;
         }
     | Float _ -> { state; resolved = Type.float; resolved_annotation = None; base = None }
     | Generator { Comprehension.element; generators } ->
@@ -2742,10 +2823,11 @@ module State (Context : Context) = struct
           |> Type.Callable.Parameter.create
           |> fun parameters -> Type.Callable.Defined parameters
         in
-        { state = { state with resolution };
+        {
+          state = { state with resolution };
           resolved = Type.Callable.create ~parameters ~annotation:resolved ();
           resolved_annotation = None;
-          base = None
+          base = None;
         }
     | List elements ->
         let { state; resolved; _ } = forward_elements ~state ~elements in
@@ -2764,9 +2846,10 @@ module State (Context : Context) = struct
           if Type.Variable.contains_escaped_free_variable resolved_base then
             let state =
               Error.IncompleteType
-                { target = base;
+                {
+                  target = base;
                   annotation = resolved_base;
-                  attempted_action = Error.AttributeAccess attribute
+                  attempted_action = Error.AttributeAccess attribute;
                 }
               |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
               |> emit_raw_error ~state
@@ -2775,11 +2858,12 @@ module State (Context : Context) = struct
           else
             state, resolved_base
         in
-        let { state = { errors = updated_errors; _ } as updated_state;
-              resolved;
-              resolved_annotation;
-              _
-            }
+        let {
+          state = { errors = updated_errors; _ } as updated_state;
+          resolved;
+          resolved_annotation;
+          _;
+        }
           =
           if Type.is_undeclared resolved_base then
             let state =
@@ -2800,10 +2884,11 @@ module State (Context : Context) = struct
             in
             match resolved with
             | Some annotation ->
-                { state;
+                {
+                  state;
                   resolved = Annotation.annotation annotation;
                   resolved_annotation = Some annotation;
-                  base = None
+                  base = None;
                 }
             | None -> { state; resolved = Type.Top; resolved_annotation = None; base = None }
           else (* Attribute access. *)
@@ -2811,8 +2896,9 @@ module State (Context : Context) = struct
             | None ->
                 let state =
                   Error.UndefinedAttribute
-                    { attribute;
-                      origin = Error.Class { annotation = resolved_base; class_attribute = false }
+                    {
+                      attribute;
+                      origin = Error.Class { annotation = resolved_base; class_attribute = false };
                     }
                   |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                   |> emit_raw_error ~state
@@ -2870,12 +2956,14 @@ module State (Context : Context) = struct
                       |> emit_raw_error ~state
                   | _, (attribute, Some target) ->
                       Error.UndefinedAttribute
-                        { attribute = name;
+                        {
+                          attribute = name;
                           origin =
                             Error.Class
-                              { annotation = target;
-                                class_attribute = Annotated.Attribute.class_attribute attribute
-                              }
+                              {
+                                annotation = target;
+                                class_attribute = Annotated.Attribute.class_attribute attribute;
+                              };
                         }
                       |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                       |> emit_raw_error ~state
@@ -2901,10 +2989,11 @@ module State (Context : Context) = struct
                   in
                   List.fold tail_resolveds ~init:head_resolved ~f:join |> apply_global_override
                 in
-                { state;
+                {
+                  state;
                   resolved = Annotation.annotation resolved;
                   resolved_annotation = Some resolved;
-                  base = None
+                  base = None;
                 }
         in
         let base =
@@ -2988,10 +3077,11 @@ module State (Context : Context) = struct
         (* The resolution is local to the ternary expression and should not be propagated out. *)
         { state = { state with resolution }; resolved; resolved_annotation = None; base = None }
     | True ->
-        { state;
+        {
+          state;
           resolved = Type.Literal (Type.Boolean true);
           resolved_annotation = None;
-          base = None
+          base = None;
         }
     | Tuple elements ->
         let state, resolved =
@@ -3001,10 +3091,11 @@ module State (Context : Context) = struct
           in
           List.fold elements ~f:forward_element ~init:(state, [])
         in
-        { state;
+        {
+          state;
           resolved = Type.tuple (List.rev resolved);
           resolved_annotation = None;
-          base = None
+          base = None;
         }
     | UnaryOperator ({ UnaryOperator.operand; _ } as operator) -> (
       match UnaryOperator.override operator with
@@ -3024,17 +3115,15 @@ module State (Context : Context) = struct
       ~statement:{ Node.location; value }
     =
     let global_resolution = Resolution.global_resolution resolution in
-    let { Node.location = define_location;
-          value =
-            { Define.signature =
-                { async;
-                  parent = define_parent;
-                  return_annotation = return_annotation_expression;
-                  _
-                };
-              body
-            } as define
-        }
+    let {
+      Node.location = define_location;
+      value =
+        {
+          Define.signature =
+            { async; parent = define_parent; return_annotation = return_annotation_expression; _ };
+          body;
+        } as define;
+    }
       =
       Context.define
     in
@@ -3088,7 +3177,8 @@ module State (Context : Context) = struct
             ~location
             ~kind:
               (Error.IncompatibleReturnType
-                 { mismatch =
+                 {
+                   mismatch =
                      Error.create_mismatch
                        ~resolution:global_resolution
                        ~actual
@@ -3097,7 +3187,7 @@ module State (Context : Context) = struct
                        ~covariant:true;
                    is_implicit;
                    is_unimplemented = check_unimplemented body;
-                   define_location
+                   define_location;
                  })
         else
           state
@@ -3121,11 +3211,12 @@ module State (Context : Context) = struct
             ~location:define_location
             ~kind:
               (Error.MissingReturnAnnotation
-                 { name = Reference.create "$return_annotation";
+                 {
+                   name = Reference.create "$return_annotation";
                    annotation = Some actual;
                    given_annotation;
                    evidence_locations = [instantiate location];
-                   thrown_at_source = true
+                   thrown_at_source = true;
                  })
         else
           state
@@ -3339,12 +3430,14 @@ module State (Context : Context) = struct
                       match resolved_base, attribute with
                       | ( Some parent,
                           Some
-                            ( { Node.value =
-                                  { Annotated.Attribute.class_attribute = true;
+                            ( {
+                                Node.value =
+                                  {
+                                    Annotated.Attribute.class_attribute = true;
                                     name = class_variable;
-                                    _
+                                    _;
                                   };
-                                _
+                                _;
                               },
                               _ ) )
                         when Option.is_none original_annotation && not (Type.is_meta parent) ->
@@ -3389,12 +3482,14 @@ module State (Context : Context) = struct
                             ~location
                             ~kind:
                               (Error.UndefinedAttribute
-                                 { attribute = name;
+                                 {
+                                   attribute = name;
                                    origin =
                                      Error.Class
-                                       { annotation = parent;
-                                         class_attribute = Type.is_meta resolved
-                                       }
+                                       {
+                                         annotation = parent;
+                                         class_attribute = Type.is_meta resolved;
+                                       };
                                  })
                       | _ -> state
                     in
@@ -3468,9 +3563,11 @@ module State (Context : Context) = struct
                 match attribute, reference with
                 | Some (attribute, name), _ when is_incompatible ->
                     Error.IncompatibleAttributeType
-                      { parent = Attribute.parent attribute;
+                      {
+                        parent = Attribute.parent attribute;
                         incompatible_type =
-                          { Error.name = Reference.create name;
+                          {
+                            Error.name = Reference.create name;
                             mismatch =
                               Error.create_mismatch
                                 ~resolution:global_resolution
@@ -3478,13 +3575,14 @@ module State (Context : Context) = struct
                                 ~actual_expression:expression
                                 ~expected
                                 ~covariant:true;
-                            declare_location = instantiate (Attribute.location attribute)
-                          }
+                            declare_location = instantiate (Attribute.location attribute);
+                          };
                       }
                     |> fun kind -> emit_error ~state ~location ~kind
                 | _, Some reference when is_incompatible ->
                     Error.IncompatibleVariableType
-                      { Error.name = reference;
+                      {
+                        Error.name = reference;
                         mismatch =
                           Error.create_mismatch
                             ~resolution:global_resolution
@@ -3492,7 +3590,7 @@ module State (Context : Context) = struct
                             ~actual_expression:expression
                             ~expected
                             ~covariant:true;
-                        declare_location = instantiate location
+                        declare_location = instantiate location;
                       }
                     |> fun kind -> emit_error ~state ~location ~kind
                 | _ -> state
@@ -3578,11 +3676,12 @@ module State (Context : Context) = struct
                         ~location:global_location
                         ~kind:
                           (Error.MissingGlobalAnnotation
-                             { Error.name = reference;
+                             {
+                               Error.name = reference;
                                annotation = actual_annotation;
                                given_annotation = Option.some_if is_immutable expected;
                                evidence_locations;
-                               thrown_at_source
+                               thrown_at_source;
                              })
                         ~define:Context.define
                       |> Option.some
@@ -3594,11 +3693,12 @@ module State (Context : Context) = struct
                         ~location
                         ~kind:
                           (Error.ProhibitedAny
-                             { Error.name = reference;
+                             {
+                               Error.name = reference;
                                annotation = actual_annotation;
                                given_annotation = Option.some_if is_immutable expected;
                                evidence_locations;
-                               thrown_at_source = true
+                               thrown_at_source = true;
                              })
                         ~define:Context.define
                       |> Option.some_if
@@ -3614,11 +3714,12 @@ module State (Context : Context) = struct
                         ~location
                         ~kind:
                           (Error.ProhibitedAny
-                             { Error.name = reference;
+                             {
+                               Error.name = reference;
                                annotation = None;
                                given_annotation = Some value_annotation;
                                evidence_locations;
-                               thrown_at_source = true
+                               thrown_at_source = true;
                              })
                         ~define:Context.define
                       |> Option.some_if
@@ -3640,11 +3741,12 @@ module State (Context : Context) = struct
                         ~location
                         ~kind:
                           (Error.ProhibitedAny
-                             { Error.name = Reference.create ~prefix:reference attribute;
+                             {
+                               Error.name = Reference.create ~prefix:reference attribute;
                                annotation = actual_annotation;
                                given_annotation = Option.some_if is_immutable expected;
                                evidence_locations;
-                               thrown_at_source = true
+                               thrown_at_source = true;
                              })
                         ~define:Context.define
                       |> Option.some
@@ -3679,14 +3781,16 @@ module State (Context : Context) = struct
                         ~location:attribute_location
                         ~kind:
                           (Error.MissingAttributeAnnotation
-                             { parent = Annotated.Attribute.parent attribute;
+                             {
+                               parent = Annotated.Attribute.parent attribute;
                                missing_annotation =
-                                 { Error.name = reference;
+                                 {
+                                   Error.name = reference;
                                    annotation = actual_annotation;
                                    given_annotation = Option.some_if is_immutable expected;
                                    evidence_locations;
-                                   thrown_at_source
-                                 }
+                                   thrown_at_source;
+                                 };
                              })
                         ~define:Context.define
                       |> Option.some
@@ -3695,11 +3799,12 @@ module State (Context : Context) = struct
                         ~location
                         ~kind:
                           (Error.ProhibitedAny
-                             { Error.name = reference;
+                             {
+                               Error.name = reference;
                                annotation = actual_annotation;
                                given_annotation = Option.some_if is_immutable expected;
                                evidence_locations;
-                               thrown_at_source = true
+                               thrown_at_source = true;
                              })
                         ~define:Context.define
                       |> Option.some
@@ -3750,9 +3855,10 @@ module State (Context : Context) = struct
                       then
                         let kind =
                           Error.IncompleteType
-                            { target = { Node.location; value = target_value };
+                            {
+                              target = { Node.location; value = target_value };
                               annotation = resolved;
-                              attempted_action = Naming
+                              attempted_action = Naming;
                             }
                         in
                         let converted =
@@ -3820,8 +3926,9 @@ module State (Context : Context) = struct
                           ~location
                           ~kind:
                             (Error.Unpack
-                               { expected_count = List.length assignees;
-                                 unpack_problem = UnacceptableType guide
+                               {
+                                 expected_count = List.length assignees;
+                                 unpack_problem = UnacceptableType guide;
                                })
                       in
                       state, List.map assignees ~f:(fun _ -> Type.Top)
@@ -3856,8 +3963,9 @@ module State (Context : Context) = struct
                             ~location
                             ~kind:
                               (Error.Unpack
-                                 { expected_count = List.length assignees;
-                                   unpack_problem = CountMismatch (List.length annotations)
+                                 {
+                                   expected_count = List.length assignees;
+                                   unpack_problem = CountMismatch (List.length annotations);
                                  })
                         in
                         state, List.map assignees ~f:(fun _ -> Type.Top)
@@ -3936,23 +4044,27 @@ module State (Context : Context) = struct
             (* Explicit bottom. *)
             { state with bottom = true }
         | ComparisonOperator
-            { left =
-                { Node.value =
+            {
+              left =
+                {
+                  Node.value =
                     Call
-                      { callee = { Node.value = Name (Name.Identifier "type"); _ };
+                      {
+                        callee = { Node.value = Name (Name.Identifier "type"); _ };
                         arguments =
-                          [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }]
+                          [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
                       };
-                  _
+                  _;
                 };
               operator = ComparisonOperator.Is;
-              right = annotation
+              right = annotation;
             }
         | Call
-            { callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
+            {
+              callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
               arguments =
                 [ { Call.Argument.name = None; value = { Node.value = Name name; _ } };
-                  { Call.Argument.name = None; value = annotation } ]
+                  { Call.Argument.name = None; value = annotation } ];
             }
           when Expression.is_simple_name name ->
             let reference = Expression.name_to_reference_exn name in
@@ -3989,38 +4101,46 @@ module State (Context : Context) = struct
             in
             { state with resolution }
         | ComparisonOperator
-            { left =
-                { Node.value =
+            {
+              left =
+                {
+                  Node.value =
                     Call
-                      { callee =
-                          { Node.value =
+                      {
+                        callee =
+                          {
+                            Node.value =
                               Name (Name.Identifier ("type" as type_refinement_function_name));
-                            _
+                            _;
                           };
-                        arguments = [{ Call.Argument.name = None; value }]
+                        arguments = [{ Call.Argument.name = None; value }];
                       };
-                  _
+                  _;
                 };
               operator = ComparisonOperator.IsNot;
-              right = annotation_expression
+              right = annotation_expression;
             }
         | UnaryOperator
-            { UnaryOperator.operator = UnaryOperator.Not;
+            {
+              UnaryOperator.operator = UnaryOperator.Not;
               operand =
-                { Node.value =
+                {
+                  Node.value =
                     Call
-                      { callee =
-                          { Node.value =
+                      {
+                        callee =
+                          {
+                            Node.value =
                               Name
                                 (Name.Identifier ("isinstance" as type_refinement_function_name));
-                            _
+                            _;
                           };
                         arguments =
                           [ { Call.Argument.name = None; value };
-                            { Call.Argument.name = None; value = annotation_expression } ]
+                            { Call.Argument.name = None; value = annotation_expression } ];
                       };
-                  _
-                }
+                  _;
+                };
             } -> (
             let annotation = parse_refinement_annotation annotation_expression in
             let contradiction_error =
@@ -4034,15 +4154,17 @@ module State (Context : Context) = struct
                        ~location:(Node.location test)
                        ~kind:
                          (Error.IncompatibleParameterType
-                            { name = None;
+                            {
+                              name = None;
                               position = 1;
                               callee = Some (Reference.create type_refinement_function_name);
                               mismatch =
-                                { Error.expected = Type.meta (Type.variable "T");
+                                {
+                                  Error.expected = Type.meta (Type.variable "T");
                                   actual = resolved;
                                   actual_expressions = [annotation_expression];
-                                  due_to_invariance = false
-                                }
+                                  due_to_invariance = false;
+                                };
                             })
                        ~define:Context.define)
               | expected ->
@@ -4063,14 +4185,15 @@ module State (Context : Context) = struct
                          ~location:(Node.location test)
                          ~kind:
                            (Error.ImpossibleIsinstance
-                              { mismatch =
+                              {
+                                mismatch =
                                   Error.create_mismatch
                                     ~resolution:global_resolution
                                     ~expected
                                     ~actual:resolved
                                     ~actual_expression:(Some value)
                                     ~covariant:true;
-                                expression = value
+                                expression = value;
                               })
                          ~define:Context.define)
             in
@@ -4089,23 +4212,26 @@ module State (Context : Context) = struct
             match contradiction_error, value with
             | Some error, _ -> emit_raw_error ~state:{ state with bottom = true } error
             | _, { Node.value = Name name; _ } when Expression.is_simple_name name ->
-                { state with
-                  resolution = resolve ~reference:(Expression.name_to_reference_exn name)
+                {
+                  state with
+                  resolution = resolve ~reference:(Expression.name_to_reference_exn name);
                 }
             | _ -> state )
         | Call
-            { callee = { Node.value = Name (Name.Identifier "all"); _ };
-              arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }]
+            {
+              callee = { Node.value = Name (Name.Identifier "all"); _ };
+              arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
             }
           when Expression.is_simple_name name ->
             let resolution =
               let reference = Expression.name_to_reference_exn name in
               match Resolution.get_local resolution ~reference with
               | Some
-                  { Annotation.annotation =
+                  {
+                    Annotation.annotation =
                       Type.Parametric { name; parameters = Concrete [Type.Optional parameter] } as
                       annotation;
-                    _
+                    _;
                   }
                 when GlobalResolution.less_or_equal
                        global_resolution
@@ -4134,14 +4260,16 @@ module State (Context : Context) = struct
                   let attribute_annotation = get_attribute_annotation ~parent ~name:attribute in
                   match attribute_annotation with
                   | Some
-                      ( { Annotation.annotation = Type.Optional parameter;
-                          mutability = Annotation.Mutable
+                      ( {
+                          Annotation.annotation = Type.Optional parameter;
+                          mutability = Annotation.Mutable;
                         } as annotation )
                   | Some
-                      ( { Annotation.annotation = _;
+                      ( {
+                          Annotation.annotation = _;
                           mutability =
                             Annotation.Immutable
-                              { Annotation.original = Type.Optional parameter; _ }
+                              { Annotation.original = Type.Optional parameter; _ };
                         } as annotation ) ->
                       let refined =
                         Refinement.refine ~resolution:global_resolution annotation parameter
@@ -4181,22 +4309,26 @@ module State (Context : Context) = struct
                 let left = update state left in
                 let right = update { state with resolution } right in
                 join
-                  { state with
-                    resolution = Resolution.with_annotations resolution ~annotations:left
+                  {
+                    state with
+                    resolution = Resolution.with_annotations resolution ~annotations:left;
                   }
-                  { state with
-                    resolution = Resolution.with_annotations resolution ~annotations:right
+                  {
+                    state with
+                    resolution = Resolution.with_annotations resolution ~annotations:right;
                   } )
         | ComparisonOperator
-            { ComparisonOperator.left;
+            {
+              ComparisonOperator.left;
               operator = ComparisonOperator.IsNot;
-              right = { Node.value = Name (Name.Identifier "None"); _ }
+              right = { Node.value = Name (Name.Identifier "None"); _ };
             } ->
             forward_statement ~state ~statement:(Statement.assume left)
         | ComparisonOperator
-            { ComparisonOperator.left = { Node.value = Name name; _ };
+            {
+              ComparisonOperator.left = { Node.value = Name name; _ };
               operator = ComparisonOperator.Is;
-              right = { Node.value = Name (Name.Identifier "None"); _ }
+              right = { Node.value = Name (Name.Identifier "None"); _ };
             }
           when Expression.is_simple_name name -> (
             let reference = Expression.name_to_reference_exn name in
@@ -4231,9 +4363,10 @@ module State (Context : Context) = struct
                 let resolution = Resolution.set_local resolution ~reference ~annotation:refined in
                 { state with resolution } )
         | ComparisonOperator
-            { ComparisonOperator.left = { Node.value = Name name; _ };
+            {
+              ComparisonOperator.left = { Node.value = Name name; _ };
               operator = ComparisonOperator.In;
-              right
+              right;
             }
           when Expression.is_simple_name name ->
             let reference = Expression.name_to_reference_exn name in
@@ -4366,16 +4499,18 @@ module State (Context : Context) = struct
           match return with
           | Some expression ->
               let { state; resolved; _ } = forward_expression ~state ~expression in
-              { state;
+              {
+                state;
                 resolved = Type.generator ~async resolved;
                 resolved_annotation = None;
-                base = None
+                base = None;
               }
           | None ->
-              { state;
+              {
+                state;
                 resolved = Type.generator ~async Type.none;
                 resolved_annotation = None;
-                base = None
+                base = None;
               }
         in
         validate_return ~expression:None ~state ~actual ~is_implicit:false
@@ -4441,8 +4576,9 @@ module State (Context : Context) = struct
                     join_resolutions nested_resolution state.resolution, false
                 in
                 Some
-                  { nested with
-                    initial = { nested_resolution = resolution; nested_bottom = bottom }
+                  {
+                    nested with
+                    initial = { nested_resolution = resolution; nested_bottom = bottom };
                   }
             | None ->
                 let { resolution = initial_resolution; _ } = initial ~resolution in
@@ -4514,7 +4650,7 @@ end
 
 type result = {
   errors: Error.t list;
-  coverage: Coverage.t
+  coverage: Coverage.t;
 }
 
 let resolution global_resolution ?(annotations = Reference.Map.empty) () =
@@ -4537,12 +4673,13 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
         ~resolve:(fun ~resolution:_ _ -> Annotation.create Type.Top)
         ()
     in
-    { State.errors = ErrorMap.Map.empty;
+    {
+      State.errors = ErrorMap.Map.empty;
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom = false;
       resolution_fixpoint = Int.Map.Tree.empty;
-      resolution = empty_resolution
+      resolution = empty_resolution;
     }
   in
   let resolve ~resolution expression =

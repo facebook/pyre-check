@@ -48,9 +48,10 @@ let rec coerce_special_methods { Node.location; value } =
   match value with
   | Name (Name.Attribute ({ base; attribute; _ } as name))
     when String.is_prefix ~prefix:"__" attribute && String.is_suffix ~suffix:"__" attribute ->
-      { Node.location;
+      {
+        Node.location;
         value =
-          Name (Name.Attribute { name with base = coerce_special_methods base; special = true })
+          Name (Name.Attribute { name with base = coerce_special_methods base; special = true });
       }
   | Call { callee; arguments } ->
       { Node.location; value = Call { callee = coerce_special_methods callee; arguments } }
@@ -261,9 +262,10 @@ let collect_nodes_as_strings source =
 
 let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
   let location =
-    { Location.path = Reference.empty;
+    {
+      Location.path = Reference.empty;
       start = { Location.line = start_line; Location.column = start_column };
-      stop = { Location.line = stop_line; Location.column = stop_column }
+      stop = { Location.line = stop_line; Location.column = stop_column };
     }
   in
   Node.create ~location
@@ -1162,13 +1164,14 @@ let environment ?(sources = typeshed_stubs ()) ?(configuration = mock_configurat
 
 
 let mock_signature =
-  { Define.name = Reference.create "$empty";
+  {
+    Define.name = Reference.create "$empty";
     parameters = [];
     decorators = [];
     docstring = None;
     return_annotation = None;
     async = false;
-    parent = None
+    parent = None;
   }
 
 
@@ -1183,7 +1186,7 @@ let resolution ?(sources = typeshed_stubs ()) ?(configuration = mock_configurati
 
 type test_update_environment_with_t = {
   handle: string;
-  source: string
+  source: string;
 }
 [@@deriving compare, eq, show]
 
@@ -1272,7 +1275,7 @@ let create_type_alias_table type_aliases =
 module ScratchProject = struct
   type t = {
     configuration: Configuration.Analysis.t;
-    module_tracker: Analysis.ModuleTracker.t
+    module_tracker: Analysis.ModuleTracker.t;
   }
 
   let clean_ast_shared_memory module_tracker =

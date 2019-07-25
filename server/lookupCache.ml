@@ -11,13 +11,13 @@ open Pyre
 
 type types_by_path = {
   path: PyrePath.t;
-  types_by_location: (Location.Instantiated.t * Type.t) list option
+  types_by_location: (Location.Instantiated.t * Type.t) list option;
 }
 
 type lookup = {
   path: PyrePath.t;
   source_path: SourcePath.t option;
-  lookup: Lookup.t option
+  lookup: Lookup.t option;
 }
 
 let get_lookups

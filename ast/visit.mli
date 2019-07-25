@@ -81,7 +81,7 @@ module Collector
   type collection = {
     expressions: ExpressionPredicate.t list;
     statements: StatementPredicate.t list;
-    nodes: NodePredicate.t list
+    nodes: NodePredicate.t list;
   }
 
   val collect : Source.t -> collection

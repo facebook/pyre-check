@@ -17,7 +17,7 @@ end
 
 type step = {
   epoch: Epoch.t;
-  iteration: int
+  iteration: int;
 }
 [@@deriving show]
 
@@ -26,7 +26,7 @@ type state = {
   (* Whether to reanalyze this and its callers. *)
   model: Result.model_t;
   (* Model to use at call sites. *)
-  result: Result.result_t (* The result of the analysis. *)
+  result: Result.result_t; (* The result of the analysis. *)
 }
 
 module SharedModels =
@@ -53,7 +53,7 @@ module SharedResults =
 
 type meta_data = {
   is_partial: bool;
-  step: step
+  step: step;
 }
 
 (* Caches the fixpoint state (is_partial) of a call model. *)

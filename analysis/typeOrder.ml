@@ -30,7 +30,7 @@ end = struct
 
   type assumption = {
     candidate: Type.t;
-    protocol: Identifier.t
+    protocol: Identifier.t;
   }
   [@@deriving eq]
 
@@ -58,7 +58,7 @@ type order = {
     Type.t -> protocol_assumptions:ProtocolAssumptions.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
   any_is_bottom: bool;
-  protocol_assumptions: ProtocolAssumptions.t
+  protocol_assumptions: ProtocolAssumptions.t;
 }
 
 module type FullOrderTypeWithoutT = sig
@@ -286,10 +286,11 @@ module OrderImplementation = struct
         let namespace = Type.Variable.Namespace.create_fresh () in
         let namespaced_variables =
           Type.Callable
-            { Type.Callable.kind = Anonymous;
+            {
+              Type.Callable.kind = Anonymous;
               implementation = overload;
               overloads = [];
-              implicit = None
+              implicit = None;
             }
           |> Type.Variable.all_free_variables
           |> List.map ~f:(Type.Variable.namespace ~namespace)
@@ -816,24 +817,27 @@ module OrderImplementation = struct
                         when left.default = right.default ->
                           Some
                             (Parameter.Anonymous
-                               { left with
-                                 annotation = parameter_join order left.annotation right.annotation
+                               {
+                                 left with
+                                 annotation = parameter_join order left.annotation right.annotation;
                                })
                       | Parameter.Anonymous anonymous, Parameter.Named named
                       | Parameter.Named named, Parameter.Anonymous anonymous
                         when named.default = anonymous.default ->
                           Some
                             (Parameter.Anonymous
-                               { anonymous with
+                               {
+                                 anonymous with
                                  annotation =
-                                   parameter_join order named.annotation anonymous.annotation
+                                   parameter_join order named.annotation anonymous.annotation;
                                })
                       | Parameter.Named left, Parameter.Named right
                         when left.default = right.default ->
                           Some
                             (Parameter.Named
-                               { left with
-                                 annotation = parameter_join order left.annotation right.annotation
+                               {
+                                 left with
+                                 annotation = parameter_join order left.annotation right.annotation;
                                })
                       | Parameter.Variable (Concrete left), Parameter.Variable (Concrete right) ->
                           Some (Parameter.Variable (Concrete (parameter_join order left right)))
@@ -857,18 +861,20 @@ module OrderImplementation = struct
       in
       parameters
       >>| fun parameters ->
-      { annotation = return_join order left.annotation right.annotation;
+      {
+        annotation = return_join order left.annotation right.annotation;
         parameters;
-        define_location = None
+        define_location = None;
       }
 
 
     and join
-        ( { handler = (module Handler : ClassHierarchy.Handler) as handler;
+        ( {
+            handler = (module Handler : ClassHierarchy.Handler) as handler;
             constructor;
             is_protocol;
             protocol_assumptions;
-            _
+            _;
           } as order )
         left
         right
@@ -1135,11 +1141,12 @@ module OrderImplementation = struct
 
 
     and meet
-        ( { handler = (module Handler : ClassHierarchy.Handler) as handler;
+        ( {
+            handler = (module Handler : ClassHierarchy.Handler) as handler;
             constructor;
             is_protocol;
             protocol_assumptions;
-            _
+            _;
           } as order )
         left
         right
@@ -1357,10 +1364,11 @@ module OrderImplementation = struct
 
 
     and instantiate_protocol_parameters
-        ( { attributes;
+        ( {
+            attributes;
             handler = (module Handler : ClassHierarchy.Handler) as handler;
             protocol_assumptions;
-            _
+            _;
           } as order )
         ~candidate
         ~protocol
@@ -1415,7 +1423,8 @@ module OrderImplementation = struct
                 | Type.Callable _ as callable ->
                     let attributes =
                       [ Ast.Node.create_with_default_location
-                          { AnnotatedAttribute.annotation = Annotation.create callable;
+                          {
+                            AnnotatedAttribute.annotation = Annotation.create callable;
                             async = false;
                             class_attribute = false;
                             defined = true;
@@ -1425,7 +1434,7 @@ module OrderImplementation = struct
                             property = None;
                             parent = callable;
                             static = false;
-                            value = Ast.Node.create_with_default_location Expression.Ellipsis
+                            value = Ast.Node.create_with_default_location Expression.Ellipsis;
                           } ]
                       |> Option.some
                     in
@@ -1448,12 +1457,13 @@ module OrderImplementation = struct
                                 Type.Variable.Unary.namespace variable ~namespace
                                 |> Type.Variable.Unary.mark_as_bound
                               in
-                              { Type.Transform.transformed_annotation =
+                              {
+                                Type.Transform.transformed_annotation =
                                   Type.Variable transformed_variable;
                                 new_state =
                                   Type.Variable.UnaryPair
                                     (transformed_variable, Type.Variable variable)
-                                  :: sofar
+                                  :: sofar;
                               }
                           | transformed_annotation ->
                               { Type.Transform.transformed_annotation; new_state = sofar }

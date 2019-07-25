@@ -8,12 +8,15 @@ module Path = PyrePath
 
 type t =
   | Root of Path.t
-  | Subdirectory of { root: Path.t; subdirectory: string }
+  | Subdirectory of {
+      root: Path.t;
+      subdirectory: string;
+    }
 [@@deriving sexp, compare, hash]
 
 type search_result = {
   relative_path: Path.RelativePath.t;
-  priority: int
+  priority: int;
 }
 
 let equal = [%compare.equal: t]

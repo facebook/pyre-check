@@ -94,7 +94,7 @@ module HoverResponse : sig
 
   type hover_result = {
     location: Ast.Location.Instantiated.t;
-    contents: string
+    contents: string;
   }
 
   val create : id:Types.RequestId.t -> result:hover_result option -> t

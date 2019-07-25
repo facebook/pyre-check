@@ -14,7 +14,7 @@ module Event = struct
     pid: int;
     event_type: event_type;
     timestamp: int;
-    tags: (string * string) list
+    tags: (string * string) list;
   }
   [@@deriving yojson]
 

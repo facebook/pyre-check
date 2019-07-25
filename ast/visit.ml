@@ -302,7 +302,7 @@ struct
   type collection = {
     expressions: ExpressionPredicate.t list;
     statements: StatementPredicate.t list;
-    nodes: NodePredicate.t list
+    nodes: NodePredicate.t list;
   }
 
   let collect source =

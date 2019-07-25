@@ -11,7 +11,7 @@ module ListVariadic = Type.Variable.Variadic.List
 
 type unary_interval = {
   upper_bound: Type.t;
-  lower_bound: Type.t
+  lower_bound: Type.t;
 }
 [@@deriving show]
 
@@ -27,13 +27,16 @@ type list_variadic_interval =
   | NoBounds
   | OnlyUpperBound of Type.OrderedTypes.t
   | OnlyLowerBound of Type.OrderedTypes.t
-  | BothBounds of { upper: Type.OrderedTypes.t; lower: Type.OrderedTypes.t }
+  | BothBounds of {
+      upper: Type.OrderedTypes.t;
+      lower: Type.OrderedTypes.t;
+    }
 [@@deriving show]
 
 type t = {
   unaries: unary_interval UnaryVariable.Map.t;
   callable_parameters: callable_parameter_interval ParameterVariable.Map.t;
-  list_variadics: list_variadic_interval ListVariadic.Map.t
+  list_variadics: list_variadic_interval ListVariadic.Map.t;
 }
 
 let show_map map ~show_key ~show_data ~short_name =
@@ -72,9 +75,10 @@ let pp format { unaries; callable_parameters; list_variadics } =
 let show annotation = Format.asprintf "%a" pp annotation
 
 let empty =
-  { unaries = UnaryVariable.Map.empty;
+  {
+    unaries = UnaryVariable.Map.empty;
     callable_parameters = ParameterVariable.Map.empty;
-    list_variadics = ListVariadic.Map.empty
+    list_variadics = ListVariadic.Map.empty;
   }
 
 
@@ -146,7 +150,7 @@ module Solution = struct
   type t = {
     unaries: Type.t UnaryVariable.Map.t;
     callable_parameters: Type.Callable.parameters ParameterVariable.Map.t;
-    list_variadics: Type.OrderedTypes.t ListVariadic.Map.t
+    list_variadics: Type.OrderedTypes.t ListVariadic.Map.t;
   }
 
   let equal left right =
@@ -180,9 +184,10 @@ module Solution = struct
 
 
   let empty =
-    { unaries = UnaryVariable.Map.empty;
+    {
+      unaries = UnaryVariable.Map.empty;
       callable_parameters = ParameterVariable.Map.empty;
-      list_variadics = ListVariadic.Map.empty
+      list_variadics = ListVariadic.Map.empty;
     }
 
 
@@ -220,8 +225,9 @@ module Solution = struct
     | Type.Variable.UnaryPair (key, data) ->
         { solution with unaries = UnaryVariable.Map.set unaries ~key ~data }
     | Type.Variable.ParameterVariadicPair (key, data) ->
-        { solution with
-          callable_parameters = ParameterVariable.Map.set callable_parameters ~key ~data
+        {
+          solution with
+          callable_parameters = ParameterVariable.Map.set callable_parameters ~key ~data;
         }
     | Type.Variable.ListVariadicPair (key, data) ->
         { solution with list_variadics = ListVariadic.Map.set list_variadics ~key ~data }
@@ -342,8 +348,9 @@ module OrderedConstraints (Order : OrderType) = struct
 
     let intersection left right ~order =
       Some
-        { upper_bound = Order.meet order left.upper_bound right.upper_bound;
-          lower_bound = Order.join order left.lower_bound right.lower_bound
+        {
+          upper_bound = Order.meet order left.upper_bound right.upper_bound;
+          lower_bound = Order.join order left.lower_bound right.lower_bound;
         }
 
 
@@ -689,10 +696,11 @@ module OrderedConstraints (Order : OrderType) = struct
   let add_upper_bound = add_bound ~is_lower_bound:false
 
   let merge_solution { unaries; callable_parameters; list_variadics } solution =
-    { unaries = UnaryIntervalContainer.merge_solution unaries ~solution;
+    {
+      unaries = UnaryIntervalContainer.merge_solution unaries ~solution;
       callable_parameters =
         CallableParametersIntervalContainer.merge_solution callable_parameters ~solution;
-      list_variadics = ListVariadicIntervalContainer.merge_solution list_variadics ~solution
+      list_variadics = ListVariadicIntervalContainer.merge_solution list_variadics ~solution;
     }
 
 
@@ -714,13 +722,15 @@ module OrderedConstraints (Order : OrderType) = struct
             remaining_constraints.list_variadics
             ~with_regards_to:remaining_constraints
         in
-        ( { unaries = independent_unaries;
+        ( {
+            unaries = independent_unaries;
             callable_parameters = independent_parameters;
-            list_variadics = independent_list_variadics
+            list_variadics = independent_list_variadics;
           },
-          { unaries = dependent_unaries;
+          {
+            unaries = dependent_unaries;
             callable_parameters = dependent_parameters;
-            list_variadics = dependent_list_variadics
+            list_variadics = dependent_list_variadics;
           } )
       in
       let handle_dependent_constraints partial_solution =
@@ -762,13 +772,15 @@ module OrderedConstraints (Order : OrderType) = struct
       let extracted_list_variadics, remaining_list_variadics =
         ListVariadic.Map.partitioni_tf list_variadics ~f:list_variadic_matches
       in
-      ( { unaries = extracted_unaries;
+      ( {
+          unaries = extracted_unaries;
           callable_parameters = extracted_variadics;
-          list_variadics = extracted_list_variadics
+          list_variadics = extracted_list_variadics;
         },
-        { unaries = remaining_unaries;
+        {
+          unaries = remaining_unaries;
           callable_parameters = remaining_variadics;
-          list_variadics = remaining_list_variadics
+          list_variadics = remaining_list_variadics;
         } )
     in
     solve extracted_constraints ~order

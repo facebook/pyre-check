@@ -7,7 +7,7 @@ module Kind = AnalysisKind
 
 type result = {
   callables_processed: int;
-  callables_to_dump: Callable.Set.t
+  callables_to_dump: Callable.Set.t;
 }
 
 val one_analysis_pass

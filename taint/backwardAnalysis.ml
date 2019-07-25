@@ -323,9 +323,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~taint ~state ~expression:right
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left
       | Call
-          { callee =
+          {
+            callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }]
+            arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }];
           } ->
           (* Handle base[index] = value. *)
           let taint =
@@ -335,9 +336,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           analyze_expression ~resolution ~taint ~state ~expression:value
       | Call
-          { callee =
+          {
+            callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = argument_value; _ }]
+            arguments = [{ Call.Argument.value = argument_value; _ }];
           } ->
           let index = AccessPath.get_index argument_value in
           let taint = BackwardState.Tree.prepend [index] taint in
@@ -431,9 +433,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           taint, false
       | Call
-          { callee =
+          {
+            callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = index; _ }]
+            arguments = [{ Call.Argument.value = index; _ }];
           } ->
           let taint =
             compute_assignment_taint ~resolution base state
@@ -593,9 +596,10 @@ let extract_tito_and_sink_models define ~resolution ~existing_backward entry_tai
         sink_taint
     in
     TaintResult.Backward.
-      { taint_in_taint_out =
+      {
+        taint_in_taint_out =
           BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out model.taint_in_taint_out;
-        sink_taint = BackwardState.assign ~root:parameter ~path:[] sink_taint model.sink_taint
+        sink_taint = BackwardState.assign ~root:parameter ~path:[] sink_taint model.sink_taint;
       }
   in
   List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty

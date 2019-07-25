@@ -44,7 +44,7 @@ module State (Context : Context) = struct
   type t = {
     resolution: Resolution.t;
     errors: Error.t TypeCheck.ErrorMap.Map.t;
-    bottom: bool
+    bottom: bool;
   }
 
   let pp format { resolution; errors; bottom; _ } =
@@ -162,9 +162,10 @@ module State (Context : Context) = struct
           left_error
           right_error
       in
-      { left with
+      {
+        left with
         errors = Map.merge_skewed left.errors right.errors ~combine:combine_errors;
-        resolution = join_resolutions left.resolution right.resolution
+        resolution = join_resolutions left.resolution right.resolution;
       }
 
 
@@ -218,9 +219,10 @@ module State (Context : Context) = struct
             left_error
             right_error
       in
-      { previous with
+      {
+        previous with
         errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
-        resolution = Resolution.with_annotations resolution ~annotations
+        resolution = Resolution.with_annotations resolution ~annotations;
       }
 
 
@@ -237,9 +239,10 @@ module State (Context : Context) = struct
       let final_type_check_state =
         TypeCheckState.forward_statement ~state:initial_type_check_state ~statement
       in
-      { state with
+      {
+        state with
         resolution = TypeCheckState.resolution final_type_check_state;
-        errors = TypeCheckState.error_map final_type_check_state
+        errors = TypeCheckState.error_map final_type_check_state;
       }
 
 
@@ -346,11 +349,12 @@ module State (Context : Context) = struct
                   ~location
                   ~kind:
                     (Error.MissingParameterAnnotation
-                       { name = reference;
+                       {
+                         name = reference;
                          annotation = Some annotation;
                          given_annotation;
                          evidence_locations = [];
-                         thrown_at_source = true
+                         thrown_at_source = true;
                        })
                   ~define:Context.define
               in
@@ -396,9 +400,10 @@ module State (Context : Context) = struct
         let resolved = forward_expression ~state ~expression:callee in
         match resolved with
         | Type.Callable
-            { Type.Callable.implementation =
+            {
+              Type.Callable.implementation =
                 { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
-              _
+              _;
             } ->
             let rec infer_annotations_list parameters arguments resolution =
               let rec infer_annotation resolution parameter_annotation argument =
@@ -510,7 +515,7 @@ end
 module SingleSourceResult = struct
   type t = {
     errors: Error.t list;
-    coverage: Coverage.t
+    coverage: Coverage.t;
   }
 
   let errors { errors; _ } = errors
@@ -600,7 +605,8 @@ let run ~configuration ~global_resolution ~source:({ Source.relative; is_stub; _
           ~integers:[]
           ~normals:["handle", relative; "define", Reference.show name; "type", Type.show annotation]
           ();
-        { SingleSourceResult.errors =
+        {
+          SingleSourceResult.errors =
             ( if configuration.debug then
                 [ Error.create
                     ~location
@@ -608,7 +614,7 @@ let run ~configuration ~global_resolution ~source:({ Source.relative; is_stub; _
                     ~define:define_node ]
             else
               [] );
-          coverage = Coverage.create ~crashes:1 ()
+          coverage = Coverage.create ~crashes:1 ();
         }
   in
   let format_errors errors =

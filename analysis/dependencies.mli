@@ -12,12 +12,12 @@ type index = {
   class_keys: Identifier.t Hash_set.t Reference.Table.t;
   alias_keys: Identifier.t Hash_set.t Reference.Table.t;
   global_keys: Reference.t Hash_set.t Reference.Table.t;
-  dependent_keys: Reference.t Hash_set.t Reference.Table.t
+  dependent_keys: Reference.t Hash_set.t Reference.Table.t;
 }
 
 type t = {
   index: index;
-  dependents: Reference.Set.t Reference.Table.t
+  dependents: Reference.Set.t Reference.Table.t;
 }
 
 module type Handler = sig
@@ -78,7 +78,11 @@ module Callgraph : sig
 
   and callee =
     | Function of Reference.t
-    | Method of { direct_target: Reference.t; static_target: Reference.t; dispatch: dispatch }
+    | Method of {
+        direct_target: Reference.t;
+        static_target: Reference.t;
+        dispatch: dispatch;
+      }
   [@@deriving compare, eq, show, to_yojson]
 
   module CalleeValue : Value.Type with type t = callee list

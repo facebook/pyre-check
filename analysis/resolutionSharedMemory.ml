@@ -9,7 +9,7 @@ module SharedMemory = Memory
 
 type annotation_map = {
   precondition: Annotation.t Reference.Map.Tree.t;
-  postcondition: Annotation.t Reference.Map.Tree.t
+  postcondition: Annotation.t Reference.Map.Tree.t;
 }
 [@@deriving eq]
 

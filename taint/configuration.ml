@@ -13,14 +13,14 @@ type rule = {
   sinks: Sinks.t list;
   code: int;
   name: string;
-  message_format: string (* format *)
+  message_format: string; (* format *)
 }
 
 type t = {
   sources: string list;
   sinks: string list;
   features: string list;
-  rules: rule list
+  rules: rule list;
 }
 
 (* There's only a single taint configuration *)
@@ -89,7 +89,8 @@ let parse source =
 let register configuration = SharedConfig.add key configuration
 
 let default =
-  { sources = [];
+  {
+    sources = [];
     sinks = [];
     features =
       [ "copy";
@@ -100,54 +101,62 @@ let default =
         "string_concat_lhs";
         "string_concat_rhs" ];
     rules =
-      [ { sources = [Sources.UserControlled];
+      [ {
+          sources = [Sources.UserControlled];
           sinks = [Sinks.RemoteCodeExecution];
           code = 5001;
           name = "Possible shell injection.";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
-        { sources = [Sources.Test; Sources.UserControlled];
+        {
+          sources = [Sources.Test; Sources.UserControlled];
           sinks = [Sinks.Test];
           code = 5002;
           name = "Test flow.";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
-        { sources = [Sources.UserControlled];
+        {
+          sources = [Sources.UserControlled];
           sinks = [Sinks.SQL];
           code = 5005;
           name = "User controlled data to SQL execution.";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
-        { sources = [Sources.Cookies; Sources.PII; Sources.Secrets];
+        {
+          sources = [Sources.Cookies; Sources.PII; Sources.Secrets];
           sinks = [Sinks.Logging];
           code = 5006;
           name = "Restricted data being logged.";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
-        { sources = [Sources.UserControlled];
+        {
+          sources = [Sources.UserControlled];
           sinks = [Sinks.XMLParser];
           code = 5007;
           name = "User data to XML Parser.";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
-        { sources = [Sources.UserControlled];
+        {
+          sources = [Sources.UserControlled];
           sinks = [Sinks.XSS];
           code = 5008;
           name = "XSS";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
-        { sources = [Sources.Demo];
+        {
+          sources = [Sources.Demo];
           sinks = [Sinks.Demo];
           code = 5009;
           name = "Demo flow.";
-          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+          message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
         };
-        { sources = [Sources.UserControlled];
+        {
+          sources = [Sources.UserControlled];
           sinks = [Sinks.GetAttr];
           code = 5010;
           name = "User data to getattr.";
-          message_format = "Attacker may control at least one argument to getattr(,)."
-        } ]
+          message_format = "Attacker may control at least one argument to getattr(,).";
+        } ];
   }
 
 
@@ -167,10 +176,11 @@ let create ~directories =
     configuration_path |> File.create |> File.content |> Option.value ~default:"" |> parse
   in
   let merge_rules left right =
-    { sources = left.sources @ right.sources;
+    {
+      sources = left.sources @ right.sources;
       sinks = left.sinks @ right.sinks;
       features = left.features @ right.features;
-      rules = left.rules @ right.rules
+      rules = left.rules @ right.rules;
     }
   in
   directories

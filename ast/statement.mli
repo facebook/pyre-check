@@ -12,13 +12,13 @@ module Record : sig
       docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
-      parent: Reference.t option
+      parent: Reference.t option;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
     type 'statement record = {
       signature: signature;
-      body: 'statement list
+      body: 'statement list;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -29,7 +29,7 @@ module Record : sig
       bases: Expression.t Expression.Call.Argument.t list;
       body: 'statement list;
       decorators: Expression.t list;
-      docstring: string option
+      docstring: string option;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -40,7 +40,7 @@ module Record : sig
       iterator: Expression.t;
       body: 'statement list;
       orelse: 'statement list;
-      async: bool
+      async: bool;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -49,7 +49,7 @@ module Record : sig
     type 'statement record = {
       items: (Expression.t * Expression.t option) list;
       body: 'statement list;
-      async: bool
+      async: bool;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -58,7 +58,7 @@ module Record : sig
     type 'statement handler = {
       kind: Expression.t option;
       name: Identifier.t option;
-      handler_body: 'statement list
+      handler_body: 'statement list;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
@@ -66,7 +66,7 @@ module Record : sig
       body: 'statement list;
       handlers: 'statement handler list;
       orelse: 'statement list;
-      finally: 'statement list
+      finally: 'statement list;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -76,7 +76,7 @@ module While : sig
   type 'statement t = {
     test: Expression.t;
     body: 'statement list;
-    orelse: 'statement list
+    orelse: 'statement list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -85,7 +85,7 @@ module If : sig
   type 'statement t = {
     test: Expression.t;
     body: 'statement list;
-    orelse: 'statement list
+    orelse: 'statement list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -93,13 +93,16 @@ end
 module Assert : sig
   type 'statement origin =
     | Assertion
-    | If of { statement: 'statement; true_branch: bool }
+    | If of {
+        statement: 'statement;
+        true_branch: bool;
+      }
     | While
 
   and 'statement t = {
     test: Expression.t;
     message: Expression.t option;
-    origin: 'statement origin
+    origin: 'statement origin;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -107,13 +110,13 @@ end
 module Import : sig
   type import = {
     name: Reference.t;
-    alias: Reference.t option
+    alias: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = {
     from: Reference.t option;
-    imports: import list
+    imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -123,7 +126,7 @@ module Assign : sig
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t;
-    parent: Reference.t option
+    parent: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -133,7 +136,7 @@ end
 module Raise : sig
   type t = {
     expression: Expression.t option;
-    from: Expression.t option
+    from: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
@@ -141,7 +144,7 @@ end
 module Return : sig
   type t = {
     is_implicit: bool;
-    expression: Expression.t option
+    expression: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -188,7 +191,7 @@ module Attribute : sig
     setter: bool;
     static: bool;
     toplevel: bool;
-    value: Expression.t option
+    value: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 

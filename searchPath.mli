@@ -7,12 +7,15 @@ module Path = PyrePath
 
 type t =
   | Root of Path.t
-  | Subdirectory of { root: Path.t; subdirectory: string }
+  | Subdirectory of {
+      root: Path.t;
+      subdirectory: string;
+    }
 [@@deriving sexp, compare, hash, show, eq]
 
 type search_result = {
   relative_path: Path.RelativePath.t;  (** The searched path relative to one of the search root *)
-  priority: int  (** Smaller int means higher priority *)
+  priority: int;  (** Smaller int means higher priority *)
 }
 
 val get_root : t -> Path.t

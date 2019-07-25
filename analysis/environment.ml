@@ -68,7 +68,7 @@ module UnresolvedAlias = struct
   type t = {
     qualifier: Reference.t;
     target: Reference.t;
-    value: Expression.expression_t
+    value: Expression.expression_t;
   }
   [@@deriving sexp, compare, hash]
 end
@@ -77,7 +77,7 @@ module ResolvedAlias = struct
   type t = {
     qualifier: Reference.t;
     name: Type.Primitive.t;
-    annotation: Type.alias
+    annotation: Type.alias;
   }
   [@@deriving sexp, compare, hash]
 
@@ -235,15 +235,17 @@ let add_special_classes (module Handler : Handler) =
         { Expression.Call.Argument.name = None; value = Type.expression annotation }
       in
       let create_metaclass annotation =
-        { Expression.Call.Argument.name = Some (Node.create_with_default_location "metaclass");
-          value = Type.expression annotation
+        {
+          Expression.Call.Argument.name = Some (Node.create_with_default_location "metaclass");
+          value = Type.expression annotation;
         }
       in
-      { Class.name = Reference.create name;
+      {
+        Class.name = Reference.create name;
         bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
         body;
         decorators = [];
-        docstring = None
+        docstring = None;
       }
     in
     let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
@@ -266,8 +268,10 @@ let add_special_classes (module Handler : Handler) =
         [],
         [],
         [ Define
-            { signature =
-                { name = Reference.create "typing.GenericMeta.__getitem__";
+            {
+              signature =
+                {
+                  name = Reference.create "typing.GenericMeta.__getitem__";
                   parameters =
                     [ { Parameter.name = "cls"; value = None; annotation = None }
                       |> Node.create_with_default_location;
@@ -277,9 +281,9 @@ let add_special_classes (module Handler : Handler) =
                   docstring = None;
                   return_annotation = None;
                   async = false;
-                  parent = Some (Reference.create "typing.GenericMeta")
+                  parent = Some (Reference.create "typing.GenericMeta");
                 };
-              body = []
+              body = [];
             }
           |> Node.create_with_default_location ] );
       "typing.Generic", [], [Type.Primitive "typing.GenericMeta"], [];
@@ -357,8 +361,9 @@ let in_process_handler ?(dependencies = Dependencies.create ()) () =
         let definition =
           match Hashtbl.find class_definitions name with
           | Some { Node.location; value = preexisting } ->
-              { Node.location;
-                value = Class.update preexisting ~definition:(Node.value definition)
+              {
+                Node.location;
+                value = Class.update preexisting ~definition:(Node.value definition);
               }
           | _ -> definition
         in
@@ -490,10 +495,11 @@ let in_process_handler ?(dependencies = Dependencies.create ()) () =
           class_metadata
           ~key:class_name
           ~data:
-            { GlobalResolution.is_test = in_test;
+            {
+              GlobalResolution.is_test = in_test;
               successors;
               is_final;
-              extends_placeholder_stub_class
+              extends_placeholder_stub_class;
             }
 
 
@@ -571,65 +577,79 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
         match Node.value value, annotation with
         | ( _,
             Some
-              { Node.value =
+              {
+                Node.value =
                   Call
-                    { callee =
-                        { Node.value =
+                    {
+                      callee =
+                        {
+                          Node.value =
                             Name
                               (Name.Attribute
-                                { base =
-                                    { Node.value =
+                                {
+                                  base =
+                                    {
+                                      Node.value =
                                         Name
                                           (Name.Attribute
-                                            { base =
+                                            {
+                                              base =
                                                 { Node.value = Name (Name.Identifier "typing"); _ };
                                               attribute = "Type";
-                                              _
+                                              _;
                                             });
-                                      _
+                                      _;
                                     };
                                   attribute = "__getitem__";
-                                  _
+                                  _;
                                 });
-                          _
+                          _;
                         };
                       arguments =
-                        [ { Call.Argument.value =
-                              { Node.value =
+                        [ {
+                            Call.Argument.value =
+                              {
+                                Node.value =
                                   Call
-                                    { callee =
-                                        { Node.value =
+                                    {
+                                      callee =
+                                        {
+                                          Node.value =
                                             Name
                                               (Name.Attribute
-                                                { base =
-                                                    { Node.value =
+                                                {
+                                                  base =
+                                                    {
+                                                      Node.value =
                                                         Name
                                                           (Name.Attribute
-                                                            { base =
-                                                                { Node.value =
+                                                            {
+                                                              base =
+                                                                {
+                                                                  Node.value =
                                                                     Name
                                                                       (Name.Identifier
                                                                         "mypy_extensions");
-                                                                  _
+                                                                  _;
                                                                 };
                                                               attribute = "TypedDict";
-                                                              _
+                                                              _;
                                                             });
-                                                      _
+                                                      _;
                                                     };
                                                   attribute = "__getitem__";
-                                                  _
+                                                  _;
                                                 });
-                                          _
+                                          _;
                                         };
-                                      _
+                                      _;
                                     };
-                                _
+                                _;
                               };
-                            _
-                          } ]
+                            _;
+                          } ];
                     };
-                _
+                _;
               } ) ->
             if not (Type.is_top target_annotation) then
               { UnresolvedAlias.qualifier; target; value } :: aliases
@@ -637,14 +657,16 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
               aliases
         | ( _,
             Some
-              ( { Node.value =
+              ( {
+                  Node.value =
                     Name
                       (Name.Attribute
-                        { base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        {
+                          base = { Node.value = Name (Name.Identifier "typing"); _ };
                           attribute = "Any";
-                          _
+                          _;
                         });
-                  _
+                  _;
                 } as value ) ) ->
             if not (Type.is_top target_annotation) then
               { UnresolvedAlias.qualifier; target; value } :: aliases
@@ -709,10 +731,11 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
-                [ { UnresolvedAlias.qualifier;
+                [ {
+                    UnresolvedAlias.qualifier;
                     target = qualified_name;
                     value =
-                      Expression.from_reference ~location:Location.Reference.any original_name
+                      Expression.from_reference ~location:Location.Reference.any original_name;
                   } ]
         in
         List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
@@ -774,9 +797,10 @@ let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target
   let _, annotation = TrackedTransform.visit () value_annotation in
   if Hash_set.is_empty dependencies then
     Result.Ok
-      { ResolvedAlias.qualifier;
+      {
+        ResolvedAlias.qualifier;
         name = target_primitive_name;
-        annotation = Type.TypeAlias annotation
+        annotation = Type.TypeAlias annotation;
       }
   else
     Result.Error (Hash_set.to_list dependencies)
@@ -897,9 +921,10 @@ let register_values
         Map.change callables name ~f:(change callable)
       in
       match statement with
-      | { Node.location;
-          value = Define ({ Statement.Define.signature = { name; parent; _ }; _ } as define)
-        } ->
+      | {
+       Node.location;
+       value = Define ({ Statement.Define.signature = { name; parent; _ }; _ } as define);
+      } ->
           let parent =
             if Define.is_class_method define then
               parent
@@ -1330,45 +1355,49 @@ end
 module SharedMemoryClassHierarchyHandler = struct
   type ('key, 'value) lookup = {
     get: 'key -> 'value option;
-    set: 'key -> 'value -> unit
+    set: 'key -> 'value -> unit;
   }
 
   open SharedMemory
 
   let edges () =
-    { get = OrderEdges.get;
+    {
+      get = OrderEdges.get;
       set =
         (fun key value ->
           OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
-          OrderEdges.add key value)
+          OrderEdges.add key value);
     }
 
 
   let backedges () =
-    { get = (fun key -> OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree);
+    {
+      get = (fun key -> OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree);
       set =
         (fun key value ->
           let value = ClassHierarchy.Target.Set.to_tree value in
           OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
-          OrderBackedges.add key value)
+          OrderBackedges.add key value);
     }
 
 
   let indices () =
-    { get = OrderIndices.get;
+    {
+      get = OrderIndices.get;
       set =
         (fun key value ->
           OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
-          OrderIndices.add key value)
+          OrderIndices.add key value);
     }
 
 
   let annotations () =
-    { get = OrderAnnotations.get;
+    {
+      get = OrderAnnotations.get;
       set =
         (fun key value ->
           OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
-          OrderAnnotations.add key value)
+          OrderAnnotations.add key value);
     }
 
 
@@ -1652,8 +1681,9 @@ module SharedMemoryPartialHandler = struct
     let definition =
       match ClassDefinitions.get name with
       | Some { Node.location; value = preexisting } ->
-          { Node.location;
-            value = Statement.Class.update preexisting ~definition:(Node.value definition)
+          {
+            Node.location;
+            value = Statement.Class.update preexisting ~definition:(Node.value definition);
           }
       | _ -> definition
     in

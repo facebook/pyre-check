@@ -35,7 +35,7 @@ module Analysis = struct
     extensions: string list;
     store_type_check_resolution: bool;
     incremental_transitive_dependencies: bool;
-    include_hints: bool
+    include_hints: bool;
   }
   [@@deriving show]
 
@@ -79,7 +79,8 @@ module Analysis = struct
       ?(include_hints = false)
       ()
     =
-    { start_time;
+    {
+      start_time;
       infer;
       additional_checks;
       configuration_file_hash;
@@ -112,7 +113,7 @@ module Analysis = struct
       extensions;
       store_type_check_resolution;
       incremental_transitive_dependencies;
-      include_hints
+      include_hints;
     }
 
 
@@ -137,12 +138,15 @@ end
 module Server = struct
   type load_parameters = {
     shared_memory_path: Path.t;
-    changed_files_path: Path.t option
+    changed_files_path: Path.t option;
   }
 
   type load =
     | LoadFromFiles of load_parameters
-    | LoadFromProject of { project_name: string; metadata: string option }
+    | LoadFromProject of {
+        project_name: string;
+        metadata: string option;
+      }
 
   type saved_state_action =
     | Save of string
@@ -150,7 +154,7 @@ module Server = struct
 
   type socket_path = {
     path: Path.t;
-    link: Path.t
+    link: Path.t;
   }
 
   type t = {
@@ -163,7 +167,7 @@ module Server = struct
     daemonize: bool;
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
-    configuration: Analysis.t
+    configuration: Analysis.t;
   }
 
   (* Required to appease the compiler. *)
@@ -179,6 +183,6 @@ module StaticAnalysis = struct
     result_json_path: Path.t option;
     dump_call_graph: bool;
     (* Analysis configuration *)
-    configuration: Analysis.t
+    configuration: Analysis.t;
   }
 end

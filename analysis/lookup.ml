@@ -15,7 +15,7 @@ type definition_lookup = Location.Reference.t Location.Reference.Table.t
 
 type t = {
   annotations_lookup: annotation_lookup;
-  definitions_lookup: definition_lookup
+  definitions_lookup: definition_lookup;
 }
 
 (** The result state of this visitor is ignored. We need two read-only pieces of information to
@@ -26,7 +26,7 @@ module NodeVisitor = struct
     pre_resolution: Resolution.t;
     post_resolution: Resolution.t;
     annotations_lookup: annotation_lookup;
-    definitions_lookup: definition_lookup
+    definitions_lookup: definition_lookup;
   }
 
   let node_base
@@ -213,9 +213,10 @@ let create_of_source global_resolution source =
 
 let get_best_location lookup_table ~position =
   let location_contains_position
-      { Location.start = { Location.column = start_column; line = start_line };
+      {
+        Location.start = { Location.column = start_column; line = start_line };
         stop = { Location.column = stop_column; line = stop_line };
-        _
+        _;
       }
       { Location.column; line }
     =
@@ -224,9 +225,10 @@ let get_best_location lookup_table ~position =
     start_ok && stop_ok
   in
   let weight
-      { Location.start = { Location.column = start_column; line = start_line };
+      {
+        Location.start = { Location.column = start_column; line = start_line };
         stop = { Location.column = stop_column; line = stop_line };
-        _
+        _;
       }
     =
     ((stop_line - start_line) * 1000) + stop_column - start_column

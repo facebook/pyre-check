@@ -91,13 +91,15 @@ let parse_query
     query
   =
   match PyreParser.Parser.parse [query] with
-  | [ { Node.value =
+  | [ {
+        Node.value =
           Statement.Expression
-            { Node.value =
+            {
+              Node.value =
                 Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
-              _
+              _;
             };
-        _
+        _;
       } ] -> (
       let expression { Call.Argument.value; _ } = value in
       let access = function
@@ -124,21 +126,25 @@ let parse_query
           Request.TypeQueryRequest (CoverageInFile path)
       | "decode_ocaml_values", values ->
           let parse_values_to_decode = function
-            | { Call.Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ };
-                _
+            | {
+                Call.Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ };
+                _;
               } ->
                 SerializedValue
-                  { serialized_key = string_of_expression serialized_key;
-                    serialized_value = string_of_expression serialized_value
+                  {
+                    serialized_key = string_of_expression serialized_key;
+                    serialized_value = string_of_expression serialized_value;
                   }
-            | { Call.Argument.value =
+            | {
+                Call.Argument.value =
                   { Node.value = Tuple [serialized_key; first_value; second_value]; _ };
-                _
+                _;
               } ->
                 SerializedPair
-                  { serialized_key = string_of_expression serialized_key;
+                  {
+                    serialized_key = string_of_expression serialized_key;
                     first_serialized_value = string_of_expression first_value;
-                    second_serialized_value = string_of_expression second_value
+                    second_serialized_value = string_of_expression second_value;
                   }
             | { Call.Argument.value; _ } ->
                 raise

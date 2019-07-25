@@ -39,7 +39,7 @@ module Record = struct
         constraints: 'annotation constraints;
         variance: variance;
         state: state;
-        namespace: RecordNamespace.t
+        namespace: RecordNamespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
@@ -87,7 +87,7 @@ module Record = struct
         type record = {
           name: Identifier.t;
           state: state;
-          namespace: RecordNamespace.t
+          namespace: RecordNamespace.t;
         }
         [@@deriving compare, eq, sexp, show, hash]
 
@@ -100,7 +100,7 @@ module Record = struct
           type t = {
             component: component;
             variable_name: Identifier.t;
-            variable_namespace: RecordNamespace.t
+            variable_namespace: RecordNamespace.t;
           }
           [@@deriving compare, eq, sexp, show, hash]
 
@@ -121,7 +121,7 @@ module Record = struct
         type record = {
           name: Identifier.t;
           state: state;
-          namespace: RecordNamespace.t
+          namespace: RecordNamespace.t;
         }
         [@@deriving compare, eq, sexp, show, hash]
 
@@ -144,7 +144,7 @@ module Record = struct
 
       and t = {
         mappee: mappee;
-        mapper: Identifier.t
+        mapper: Identifier.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
@@ -183,7 +183,7 @@ module Record = struct
       type 'annotation named = {
         name: Identifier.t;
         annotation: 'annotation;
-        default: bool
+        default: bool;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
@@ -194,7 +194,11 @@ module Record = struct
       [@@deriving compare, eq, sexp, show, hash]
 
       type 'annotation t =
-        | Anonymous of { index: int; annotation: 'annotation; default: bool }
+        | Anonymous of {
+            index: int;
+            annotation: 'annotation;
+            default: bool;
+          }
         | Named of 'annotation named
         | KeywordOnly of 'annotation named
         | Variable of 'annotation variable
@@ -248,7 +252,7 @@ module Record = struct
 
     and 'annotation implicit_record = {
       implicit_annotation: 'annotation;
-      name: Identifier.t
+      name: Identifier.t;
     }
 
     and 'annotation record_parameters =
@@ -259,14 +263,14 @@ module Record = struct
     and 'annotation overload = {
       annotation: 'annotation;
       parameters: 'annotation record_parameters;
-      define_location: Location.t option
+      define_location: Location.t option;
     }
 
     and 'annotation record = {
       kind: kind;
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
-      implicit: 'annotation implicit_record option
+      implicit: 'annotation implicit_record option;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
@@ -327,7 +331,7 @@ and tuple =
 
 and typed_dictionary_field = {
   name: string;
-  annotation: t
+  annotation: t;
 }
 
 and t =
@@ -337,13 +341,20 @@ and t =
   | Any
   | Literal of literal
   | Optional of t
-  | Parametric of { name: Identifier.t; parameters: t Record.OrderedTypes.record }
+  | Parametric of {
+      name: Identifier.t;
+      parameters: t Record.OrderedTypes.record;
+    }
   | ParameterVariadicComponent of
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of Primitive.t
   | Top
   | Tuple of tuple
-  | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
+  | TypedDictionary of {
+      name: Identifier.t;
+      fields: typed_dictionary_field list;
+      total: bool;
+    }
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show, hash]
@@ -931,17 +942,20 @@ let rec expression annotation =
         List.map ~f:create arguments
     in
     Call
-      { callee =
-          { Node.location;
+      {
+        callee =
+          {
+            Node.location;
             value =
               Name
                 (Name.Attribute
-                   { base = { Node.location; value = create_name base };
+                   {
+                     base = { Node.location; value = create_name base };
                      attribute = "__getitem__";
-                     special = true
-                   })
+                     special = true;
+                   });
           };
-        arguments
+        arguments;
       }
   in
   let convert_annotation annotation =
@@ -959,8 +973,9 @@ let rec expression annotation =
                       let annotation = [{ Call.Argument.name = None; value = annotation }] in
                       let default =
                         if default then
-                          [ { Call.Argument.name = None;
-                              value = Node.create ~location (create_name "default")
+                          [ {
+                              Call.Argument.name = None;
+                              value = Node.create ~location (create_name "default");
                             } ]
                         else
                           []
@@ -968,8 +983,9 @@ let rec expression annotation =
                       let name =
                         name
                         >>| (fun name ->
-                              [ { Call.Argument.name = None;
-                                  value = Node.create ~location (create_name name)
+                              [ {
+                                  Call.Argument.name = None;
+                                  value = Node.create ~location (create_name name);
                                 } ])
                         |> Option.value ~default:[]
                       in
@@ -997,23 +1013,27 @@ let rec expression annotation =
             | Undefined -> Node.create ~location Ellipsis
             | ParameterVariadicTypeVariable { name; _ } -> Node.create ~location (create_name name)
           in
-          { Call.Argument.name = None;
-            value = Node.create ~location (Expression.Tuple [parameters; expression annotation])
+          {
+            Call.Argument.name = None;
+            value = Node.create ~location (Expression.Tuple [parameters; expression annotation]);
           }
         in
         let base_callable =
           Call
-            { callee =
-                { Node.location;
+            {
+              callee =
+                {
+                  Node.location;
                   value =
                     Name
                       (Name.Attribute
-                         { base = { Node.location; value = create_name "typing.Callable" };
+                         {
+                           base = { Node.location; value = create_name "typing.Callable" };
                            attribute = "__getitem__";
-                           special = true
-                         })
+                           special = true;
+                         });
                 };
-              arguments = [convert_signature implementation]
+              arguments = [convert_signature implementation];
             }
         in
         let overloads =
@@ -1021,21 +1041,24 @@ let rec expression annotation =
             match sofar with
             | None ->
                 Call
-                  { callee = { Node.location; value = Name (Name.Identifier "__getitem__") };
-                    arguments = [convert_signature overload]
+                  {
+                    callee = { Node.location; value = Name (Name.Identifier "__getitem__") };
+                    arguments = [convert_signature overload];
                   }
                 |> Node.create ~location
                 |> Option.some
             | Some expression ->
                 Call
-                  { callee =
-                      { Node.location;
+                  {
+                    callee =
+                      {
+                        Node.location;
                         value =
                           Name
                             (Name.Attribute
-                               { base = expression; attribute = "__getitem__"; special = true })
+                               { base = expression; attribute = "__getitem__"; special = true });
                       };
-                    arguments = [convert_signature overload]
+                    arguments = [convert_signature overload];
                   }
                 |> Node.create ~location
                 |> Option.some
@@ -1045,17 +1068,20 @@ let rec expression annotation =
         match overloads with
         | Some overloads ->
             Call
-              { callee =
-                  { Node.location;
+              {
+                callee =
+                  {
+                    Node.location;
                     value =
                       Name
                         (Name.Attribute
-                           { base = { Node.location; value = base_callable };
+                           {
+                             base = { Node.location; value = base_callable };
                              attribute = "__getitem__";
-                             special = true
-                           })
+                             special = true;
+                           });
                   };
-                arguments = [{ Call.Argument.name = None; value = overloads }]
+                arguments = [{ Call.Argument.name = None; value = overloads }];
               }
         | None -> base_callable )
     | Any -> create_name "typing.Any"
@@ -1136,8 +1162,9 @@ and map_expression map =
   let rec map_annotation map =
     let single_wrap ~mapper ~inner =
       Parametric
-        { name = Record.OrderedTypes.RecordMap.public_name;
-          parameters = Concrete [Primitive mapper; inner]
+        {
+          name = Record.OrderedTypes.RecordMap.public_name;
+          parameters = Concrete [Primitive mapper; inner];
         }
     in
     match map with
@@ -1151,7 +1178,7 @@ and map_expression map =
 module Transform = struct
   type 'state visit_result = {
     transformed_annotation: t;
-    new_state: 'state
+    new_state: 'state;
   }
 
   module type Transformer = sig
@@ -1194,15 +1221,17 @@ module Transform = struct
                 | Defined defined -> Defined (List.map defined ~f:visit_defined)
                 | parameter -> parameter
               in
-              { annotation = visit_annotation annotation ~state;
+              {
+                annotation = visit_annotation annotation ~state;
                 parameters = visit_parameters parameters;
-                define_location = None
+                define_location = None;
               }
             in
             Callable
-              { callable with
+              {
+                callable with
                 implementation = visit_overload implementation;
-                overloads = List.map overloads ~f:visit_overload
+                overloads = List.map overloads ~f:visit_overload;
               }
         | Optional annotation -> optional (visit_annotation annotation ~state)
         | Parametric { parameters = Map _; _ }
@@ -1422,27 +1451,30 @@ module Callable = struct
     let for_implementation ({ parameters; _ } as implementation) =
       { implementation with parameters = f parameters }
     in
-    { callable with
+    {
+      callable with
       implementation = for_implementation implementation;
-      overloads = List.map overloads ~f:for_implementation
+      overloads = List.map overloads ~f:for_implementation;
     }
 
 
   let with_return_annotation ({ implementation; overloads; _ } as initial) ~annotation =
     let re_annotate implementation = { implementation with annotation } in
-    { initial with
+    {
+      initial with
       implementation = re_annotate implementation;
-      overloads = List.map ~f:re_annotate overloads
+      overloads = List.map ~f:re_annotate overloads;
     }
 
 
   let create ?name ?(overloads = []) ?(parameters = Undefined) ?implicit ~annotation () =
     let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
     Callable
-      { kind;
+      {
+        kind;
         implementation = { annotation; parameters; define_location = None };
         overloads;
-        implicit
+        implicit;
       }
 
 
@@ -1457,11 +1489,12 @@ let lambda ~parameters ~return_annotation =
     |> Callable.Parameter.create
   in
   Callable
-    { kind = Anonymous;
+    {
+      kind = Anonymous;
       implementation =
         { annotation = return_annotation; parameters = Defined parameters; define_location = None };
       overloads = [];
-      implicit = None
+      implicit = None;
     }
 
 
@@ -1566,9 +1599,10 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
           let rec is_typing_callable = function
             | Name
                 (Name.Attribute
-                  { base = { Node.value = Name (Name.Identifier "typing"); _ };
+                  {
+                    base = { Node.value = Name (Name.Identifier "typing"); _ };
                     attribute = "Callable";
-                    _
+                    _;
                   }) ->
                 true
             | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
@@ -1584,9 +1618,10 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                     Some arguments, implementation_argument, overloads_argument
                 | Name
                     (Name.Attribute
-                      { base = { Node.value = Name (Name.Identifier "typing"); _ };
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
                         attribute = "Callable";
-                        _
+                        _;
                       }) ->
                     None, implementation_argument, overloads_argument
                 | _ ->
@@ -1595,39 +1630,47 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               in
               match expression with
               | Call
-                  { callee =
-                      { Node.value =
+                  {
+                    callee =
+                      {
+                        Node.value =
                           Name
                             (Name.Attribute
-                              { base =
-                                  { Node.value =
+                              {
+                                base =
+                                  {
+                                    Node.value =
                                       Call
-                                        { callee =
-                                            { Node.value =
+                                        {
+                                          callee =
+                                            {
+                                              Node.value =
                                                 Name
                                                   (Name.Attribute
                                                     { base; attribute = "__getitem__"; _ });
-                                              _
+                                              _;
                                             };
-                                          arguments = [{ Call.Argument.value = argument; _ }]
+                                          arguments = [{ Call.Argument.value = argument; _ }];
                                         };
-                                    _
+                                    _;
                                   };
                                 attribute = "__getitem__";
-                                _
+                                _;
                               });
-                        _
+                        _;
                       };
-                    arguments = [{ Call.Argument.value = overloads_argument; _ }]
+                    arguments = [{ Call.Argument.value = overloads_argument; _ }];
                   } ->
                   (* Overloads are provided *)
                   get_from_base base (Some argument) (Some overloads_argument)
               | Call
-                  { callee =
-                      { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
-                        _
+                  {
+                    callee =
+                      {
+                        Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
+                        _;
                       };
-                    arguments = [{ Call.Argument.value = argument; _ }]
+                    arguments = [{ Call.Argument.value = argument; _ }];
                   } ->
                   (* No overloads provided *)
                   get_from_base base (Some argument) None
@@ -1636,9 +1679,10 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
             let kind =
               match modifiers with
               | Some
-                  ({ Call.Argument.value =
+                  ({
+                     Call.Argument.value =
                        { Node.value = Expression.String { StringLiteral.value; _ }; _ };
-                     _
+                     _;
                    }
                   :: _) ->
                   Named (Reference.create value)
@@ -1676,10 +1720,11 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                                 | _ -> false
                               in
                               Parameter.Anonymous
-                                { index;
+                                {
+                                  index;
                                   annotation =
                                     create_logic (Node.create_with_default_location annotation);
-                                  default
+                                  default;
                                 }
                           | "Named", Name (Name.Identifier name) :: annotation :: tail ->
                               let default =
@@ -1688,10 +1733,11 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                                 | _ -> false
                               in
                               Parameter.Named
-                                { name;
+                                {
+                                  name;
                                   annotation =
                                     create_logic (Node.create_with_default_location annotation);
-                                  default
+                                  default;
                                 }
                           | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
                               let default =
@@ -1700,10 +1746,11 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                                 | _ -> false
                               in
                               Parameter.KeywordOnly
-                                { name;
+                                {
+                                  name;
                                   annotation =
                                     create_logic (Node.create_with_default_location annotation);
-                                  default
+                                  default;
                                 }
                           | "Variable", tail ->
                               let annotation =
@@ -1753,11 +1800,13 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               let rec parse_overloads = function
                 | List arguments -> [get_signature (Tuple arguments)]
                 | Call
-                    { callee =
-                        { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
-                          _
+                    {
+                      callee =
+                        {
+                          Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
+                          _;
                         };
-                      arguments = [{ Call.Argument.value = argument; _ }]
+                      arguments = [{ Call.Argument.value = argument; _ }];
                     } ->
                     get_signature (Node.value argument) :: parse_overloads (Node.value base)
                 | _ -> [undefined]
@@ -1770,12 +1819,14 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
           in
           match expression with
           | Call
-              { callee;
+              {
+                callee;
                 arguments =
-                  { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                    _
+                  {
+                    Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                    _;
                   }
-                  :: arguments
+                  :: arguments;
               }
             when Expression.name_is ~name:"typing.TypeVar" callee ->
               let constraints =
@@ -1804,13 +1855,15 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               in
               let variance =
                 let variance_definition = function
-                  | { Call.Argument.name = Some { Node.value = name; _ };
-                      value = { Node.value = True; _ }
+                  | {
+                      Call.Argument.name = Some { Node.value = name; _ };
+                      value = { Node.value = True; _ };
                     }
                     when String.equal (Identifier.sanitized name) "covariant" ->
                       Some Record.Variable.RecordUnary.Covariant
-                  | { Call.Argument.name = Some { Node.value = name; _ };
-                      value = { Node.value = True; _ }
+                  | {
+                      Call.Argument.name = Some { Node.value = name; _ };
+                      value = { Node.value = True; _ };
                     }
                     when String.equal (Identifier.sanitized name) "contravariant" ->
                       Some Contravariant
@@ -1821,29 +1874,35 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               in
               variable value ~constraints ~variance
           | Call
-              { callee;
+              {
+                callee;
                 arguments =
-                  [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                      _
-                    } ]
+                  [ {
+                      Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                      _;
+                    } ];
               }
             when Expression.name_is ~name:"typing_extensions.IntVar" callee ->
               variable value ~constraints:LiteralIntegers
           | Call
-              { callee;
+              {
+                callee;
                 arguments =
-                  [ { Call.Argument.name = None;
+                  [ {
+                      Call.Argument.name = None;
                       value =
-                        { Node.value =
+                        {
+                          Node.value =
                             Expression.Tuple
-                              ({ Node.value =
+                              ({
+                                 Node.value =
                                    Expression.String { value = typed_dictionary_name; _ };
-                                 _
+                                 _;
                                }
                               :: { Node.value = true_or_false; _ } :: fields);
-                          _
-                        }
-                    } ]
+                          _;
+                        };
+                    } ];
               }
             when Expression.name_is ~name:"mypy_extensions.TypedDict.__getitem__" callee ->
               let total =
@@ -1855,11 +1914,12 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               let parse_typed_dictionary total =
                 let fields =
                   let tuple_to_field = function
-                    | { Node.value =
+                    | {
+                        Node.value =
                           Expression.Tuple
                             [ { Node.value = Expression.String { value = field_name; _ }; _ };
                               field_annotation ];
-                        _
+                        _;
                       } ->
                         Some { name = field_name; annotation = create_logic field_annotation }
                     | _ -> None
@@ -1876,8 +1936,9 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
             when Expression.name_is ~name:"typing_extensions.Literal.__getitem__" callee ->
               let arguments =
                 match arguments with
-                | [ { Call.Argument.name = None;
-                      value = { Node.value = Expression.Tuple arguments; _ }
+                | [ {
+                      Call.Argument.name = None;
+                      value = { Node.value = Expression.Tuple arguments; _ };
                     } ] ->
                     Some (List.map arguments ~f:Node.value)
                 | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] ->
@@ -1894,9 +1955,10 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
           | Call { callee = { Node.value = callee; _ }; _ } when is_typing_callable callee ->
               parse_callable expression
           | Call
-              { callee =
+              {
+                callee =
                   { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-                arguments = [{ Call.Argument.value = argument; _ }]
+                arguments = [{ Call.Argument.value = argument; _ }];
               } -> (
               let parametric name =
                 let parameters =
@@ -2314,8 +2376,9 @@ let split annotation =
 let class_name annotation =
   let strip_calls =
     let rec collect_identifiers identifiers = function
-      | { Node.value = Call { callee = { Node.value = Name (Name.Attribute { base; _ }); _ }; _ };
-          _
+      | {
+          Node.value = Call { callee = { Node.value = Name (Name.Attribute { base; _ }); _ }; _ };
+          _;
         } ->
           collect_identifiers identifiers base
       | { Node.value = Name (Name.Identifier identifier); _ } -> identifier :: identifiers
@@ -2477,7 +2540,7 @@ module Variable : sig
 
         type decomposition = {
           positional_component: type_t;
-          keyword_component: type_t
+          keyword_component: type_t;
         }
 
         val combine : decomposition -> parameter_variadic_t option
@@ -2755,24 +2818,29 @@ end = struct
 
 
       let parse_declaration = function
-        | { Node.value =
+        | {
+            Node.value =
               Call
-                { callee =
-                    { Node.value =
+                {
+                  callee =
+                    {
+                      Node.value =
                         Name
                           (Name.Attribute
-                            { base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                            {
+                              base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
                               attribute = "ParameterSpecification";
-                              special = false
+                              special = false;
                             });
-                      _
+                      _;
                     };
                   arguments =
-                    [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                        _
-                      } ]
+                    [ {
+                        Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                        _;
+                      } ];
                 };
-            _
+            _;
           } ->
             Some (create value)
         | _ -> None
@@ -2793,12 +2861,14 @@ end = struct
             create_type keywords_parameter_annotation ~aliases )
         with
         | ( Parametric
-              { name = "pyre_extensions.type_variable_operators.PositionalArgumentsOf";
-                parameters = Concrete [Primitive positional_name]
+              {
+                name = "pyre_extensions.type_variable_operators.PositionalArgumentsOf";
+                parameters = Concrete [Primitive positional_name];
               },
             Parametric
-              { name = "pyre_extensions.type_variable_operators.KeywordArgumentsOf";
-                parameters = Concrete [Primitive keywords_name]
+              {
+                name = "pyre_extensions.type_variable_operators.KeywordArgumentsOf";
+                parameters = Concrete [Primitive keywords_name];
               } )
           when Identifier.equal positional_name keywords_name ->
             get_variable positional_name
@@ -2810,7 +2880,7 @@ end = struct
 
         type decomposition = {
           positional_component: type_t;
-          keyword_component: type_t
+          keyword_component: type_t;
         }
 
         let combine { positional_component; keyword_component } =
@@ -2833,12 +2903,13 @@ end = struct
       end
 
       let decompose { name = variable_name; namespace = variable_namespace; _ } =
-        { Components.positional_component =
+        {
+          Components.positional_component =
             ParameterVariadicComponent
               { component = PositionalArguments; variable_name; variable_namespace };
           keyword_component =
             ParameterVariadicComponent
-              { component = KeywordArguments; variable_name; variable_namespace }
+              { component = KeywordArguments; variable_name; variable_namespace };
         }
     end
 
@@ -2955,24 +3026,29 @@ end = struct
 
 
       let parse_declaration = function
-        | { Node.value =
+        | {
+            Node.value =
               Call
-                { callee =
-                    { Node.value =
+                {
+                  callee =
+                    {
+                      Node.value =
                         Name
                           (Name.Attribute
-                            { base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                            {
+                              base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
                               attribute = "ListVariadic";
-                              special = false
+                              special = false;
                             });
-                      _
+                      _;
                     };
                   arguments =
-                    [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                        _
-                      } ]
+                    [ {
+                        Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                        _;
+                      } ];
                 };
-            _
+            _;
           } ->
             Some (create value)
         | _ -> None
@@ -3336,28 +3412,31 @@ module TypedDictionary = struct
 
   let constructor ~name ~fields ~total =
     let annotation = TypedDictionary { name; fields; total } in
-    { Callable.kind = Named (Reference.create "__init__");
+    {
+      Callable.kind = Named (Reference.create "__init__");
       implementation = { annotation = Top; parameters = Undefined; define_location = None };
       overloads =
-        [ { annotation;
+        [ {
+            annotation;
             parameters = field_named_parameters ~default:(not total) fields;
-            define_location = None
+            define_location = None;
           };
-          { annotation;
+          {
+            annotation;
             parameters =
               Defined
                 [ Record.Callable.RecordParameter.Anonymous
                     { index = 0; annotation; default = false } ];
-            define_location = None
+            define_location = None;
           } ];
-      implicit = None
+      implicit = None;
     }
 
 
   type special_method = {
     name: string;
     special_index: int option;
-    overloads: typed_dictionary_field list -> t Callable.overload list
+    overloads: typed_dictionary_field list -> t Callable.overload list;
   }
 
   let key_parameter name =
@@ -3373,48 +3452,54 @@ module TypedDictionary = struct
     in
     let setitem_overloads =
       let overload { name; annotation } =
-        { annotation = none;
+        {
+          annotation = none;
           parameters =
             Defined [key_parameter name; Named { name = "v"; annotation; default = false }];
-          define_location = None
+          define_location = None;
         }
       in
       List.map ~f:overload
     in
     let get_overloads =
       let overloads { name; annotation } =
-        [ { annotation = Optional annotation;
+        [ {
+            annotation = Optional annotation;
             parameters = Defined [key_parameter name];
-            define_location = None
+            define_location = None;
           };
-          { annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
+          {
+            annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
               Defined
                 [ key_parameter name;
                   Named
-                    { name = "default";
+                    {
+                      name = "default";
                       annotation = Variable (Variable.Unary.create "_T");
-                      default = false
+                      default = false;
                     } ];
-            define_location = None
+            define_location = None;
           } ]
       in
       List.concat_map ~f:overloads
     in
     let setdefault_overloads =
       let overload { name; annotation } =
-        { annotation;
+        {
+          annotation;
           parameters =
             Defined [key_parameter name; Named { name = "default"; annotation; default = false }];
-          define_location = None
+          define_location = None;
         }
       in
       List.map ~f:overload
     in
     let update_overloads fields =
-      [ { annotation = none;
+      [ {
+          annotation = none;
           parameters = field_named_parameters fields ~default:true;
-          define_location = None
+          define_location = None;
         } ]
     in
     [ { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
@@ -3428,16 +3513,18 @@ module TypedDictionary = struct
     let pop_overloads =
       let overloads { name; annotation } =
         [ { annotation; parameters = Defined [key_parameter name]; define_location = None };
-          { annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
+          {
+            annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
               Defined
                 [ key_parameter name;
                   Named
-                    { name = "default";
+                    {
+                      name = "default";
                       annotation = Variable (Variable.Unary.create "_T");
-                      default = false
+                      default = false;
                     } ];
-            define_location = None
+            define_location = None;
           } ]
       in
       List.concat_map ~f:overloads
@@ -3474,8 +3561,10 @@ module TypedDictionary = struct
     let class_name = if total then "TypedDictionary" else "NonTotalTypedDictionary" in
     let define ?self_parameter ?return_annotation name =
       Statement.Define
-        { signature =
-            { name = Reference.create_from_list [class_name; name];
+        {
+          signature =
+            {
+              name = Reference.create_from_list [class_name; name];
               parameters =
                 [ { Ast.Parameter.name = "self"; value = None; annotation = self_parameter }
                   |> Node.create_with_default_location ];
@@ -3483,9 +3572,9 @@ module TypedDictionary = struct
               docstring = None;
               return_annotation;
               async = false;
-              parent = Some (Reference.create class_name)
+              parent = Some (Reference.create class_name);
             };
-          body = []
+          body = [];
         }
       |> Node.create_with_default_location
     in

@@ -12,7 +12,7 @@ open Service
 
 type version_mismatch = {
   server_version: string;
-  expected_version: string
+  expected_version: string;
 }
 [@@deriving show]
 
@@ -42,18 +42,20 @@ let create_configuration ?(daemonize = true) ?log_path ?saved_state_action confi
   let server_root = Constants.Server.root configuration in
   (* Allow absolute log_path path (e.g., for /dev/null) *)
   let log_path = Option.value log_path ~default:(Constants.Server.log_path configuration) in
-  { Configuration.Server.socket =
+  {
+    Configuration.Server.socket =
       { path = socket_path ~create:true configuration; link = server_root ^| "server.sock" };
     json_socket =
-      { path = socket_path ~create:true ~name:"json_server" configuration;
-        link = server_root ^| "json_server.sock"
+      {
+        path = socket_path ~create:true ~name:"json_server" configuration;
+        link = server_root ^| "json_server.sock";
       };
     lock_path = server_root ^| "server.lock";
     pid_path = server_root ^| "server.pid";
     log_path;
     daemonize;
     saved_state_action;
-    configuration
+    configuration;
   }
 
 
@@ -100,7 +102,8 @@ let start_from_scratch ?old_state ~connections ~configuration () =
     List.iter errors ~f:add_error;
     table
   in
-  { module_tracker;
+  {
+    module_tracker;
     environment;
     errors;
     symlink_targets_to_sources;
@@ -109,20 +112,22 @@ let start_from_scratch ?old_state ~connections ~configuration () =
     last_integrity_check = Unix.time ();
     connections;
     lookups = String.Table.create ();
-    open_documents = Path.Map.empty
+    open_documents = Path.Map.empty;
   }
 
 
 let start
     ?old_state
     ~connections
-    ~configuration:( { Configuration.Server.configuration =
-                         { Configuration.Analysis.expected_version;
+    ~configuration:( {
+                       Configuration.Server.configuration =
+                         {
+                           Configuration.Analysis.expected_version;
                            store_type_check_resolution;
-                           _
+                           _;
                          } as configuration;
                        saved_state_action;
-                       _
+                       _;
                      } as server_configuration )
     ()
   =
@@ -158,10 +163,11 @@ let start
 
 let stop
     ~reason
-    ~configuration:{ Configuration.Server.socket = { path = socket_path; link = socket_link; _ };
+    ~configuration:{
+                     Configuration.Server.socket = { path = socket_path; link = socket_link; _ };
                      json_socket = { path = json_socket_path; link = json_socket_link; _ };
                      pid_path;
-                     _
+                     _;
                    }
   =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();

@@ -18,9 +18,10 @@ exception AlreadyRunning
 
 let handshake_message version =
   let open LanguageServer.Types in
-  { HandshakeServer.jsonrpc = "2.0";
+  {
+    HandshakeServer.jsonrpc = "2.0";
     method_ = "handshake/server";
-    parameters = Some { HandshakeServerParameters.version }
+    parameters = Some { HandshakeServerParameters.version };
   }
 
 
@@ -314,9 +315,10 @@ let serve
     Configuration.Server.set_global server_configuration;
     let request_queue = Squeue.create 25 in
     let connections =
-      { lock = Mutex.create ();
+      {
+        lock = Mutex.create ();
         connections =
-          ref { socket; json_socket; persistent_clients = Socket.Map.empty; file_notifiers = [] }
+          ref { socket; json_socket; persistent_clients = Socket.Map.empty; file_notifiers = [] };
       }
     in
     (* Register signal handlers. *)
@@ -365,13 +367,14 @@ let run_server_daemon_entry : run_server_daemon_entry =
 
 
 let run
-    ( { Configuration.Server.lock_path;
+    ( {
+        Configuration.Server.lock_path;
         socket = { path = socket_path; _ };
         json_socket = { path = json_socket_path; _ };
         log_path;
         daemonize;
         configuration;
-        _
+        _;
       } as server_configuration )
   =
   (fun () ->
@@ -500,9 +503,10 @@ let run_start_command
           Some
             (Load
                (Configuration.Server.LoadFromFiles
-                  { Configuration.Server.shared_memory_path =
+                  {
+                    Configuration.Server.shared_memory_path =
                       Path.create_absolute shared_memory_path;
-                    changed_files_path = changed_files_path >>| Path.create_absolute
+                    changed_files_path = changed_files_path >>| Path.create_absolute;
                   }))
       | None, Some _ ->
           Log.error "-load-state-from must be set when -changed-files-path is passed in.";

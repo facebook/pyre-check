@@ -72,8 +72,9 @@ let test_saved_state context =
       let changed_files_path = Test.write_file ("changed_files", "") |> File.path in
       Configuration.Server.Load
         (Configuration.Server.LoadFromFiles
-           { Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
-             changed_files_path
+           {
+             Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
+             changed_files_path;
            })
     in
     Operations.create_configuration ~saved_state_action configuration
@@ -97,8 +98,9 @@ let test_saved_state context =
       let changed_files_path = Test.write_file ("changed_files", "") |> File.path in
       Configuration.Server.Load
         (Configuration.Server.LoadFromFiles
-           { Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
-             changed_files_path
+           {
+             Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
+             changed_files_path;
            })
     in
     Commands.Start.run (Operations.create_configuration ~saved_state_action configuration)
@@ -125,8 +127,9 @@ let test_saved_state context =
       in
       Configuration.Server.Load
         (Configuration.Server.LoadFromFiles
-           { Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
-             changed_files_path
+           {
+             Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
+             changed_files_path;
            })
     in
     Commands.Start.run (Operations.create_configuration ~saved_state_action configuration)
@@ -179,8 +182,9 @@ let test_invalid_configuration context =
     let changed_files_path = Test.write_file ("changed_files", "") |> File.path in
     Configuration.Server.Load
       (Configuration.Server.LoadFromFiles
-         { Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
-           changed_files_path
+         {
+           Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
+           changed_files_path;
          })
   in
   assert_raises (Server.SavedState.IncompatibleState "configuration mismatch") (fun () ->

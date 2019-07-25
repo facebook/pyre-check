@@ -10,24 +10,27 @@ open Test
 let test_check_typed_dictionaries _ =
   let assert_test_typed_dictionary source =
     let typing_stub =
-      { handle = "typing.pyi";
+      {
+        handle = "typing.pyi";
         source =
           {|
             Any = object()
             class _SpecialForm:
                 def __getitem__(self, typeargs: Any) -> Any: ...
-          |}
+          |};
       }
     in
     let mypy_extensions_stub =
-      { handle = "mypy_extensions.pyi";
+      {
+        handle = "mypy_extensions.pyi";
         source =
           "def TypedDict(typename: str, fields: typing.Dict[str, typing.Type[_T]], total: bool = \
-           ...) -> typing.Type[dict]: ..."
+           ...) -> typing.Type[dict]: ...";
       }
     in
     let typed_dictionary_for_import =
-      { handle = "foo/bar/baz.py";
+      {
+        handle = "foo/bar/baz.py";
         source =
           {|
             from mypy_extensions import TypedDict
@@ -46,7 +49,7 @@ let test_check_typed_dictionaries _ =
               alpha: int
               beta: str
               gamma: bool
-          |}
+          |};
       }
     in
     assert_type_errors

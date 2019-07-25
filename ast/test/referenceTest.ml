@@ -37,16 +37,18 @@ let test_expression _ =
   assert_expression
     "a.b.c"
     (Expression.Name.Attribute
-       { base =
+       {
+         base =
            Expression.Name
              (Expression.Name.Attribute
-                { base = Expression.Name (Expression.Name.Identifier "a") |> node;
+                {
+                  base = Expression.Name (Expression.Name.Identifier "a") |> node;
                   attribute = "b";
-                  special = false
+                  special = false;
                 })
            |> node;
          attribute = "c";
-         special = false
+         special = false;
        })
 
 
@@ -62,23 +64,26 @@ let test_name _ =
   assert_create_name_expression
     "a.b"
     (Expression.Name.Attribute
-       { base = Expression.Name (Expression.Name.Identifier "a") |> node;
+       {
+         base = Expression.Name (Expression.Name.Identifier "a") |> node;
          attribute = "b";
-         special = false
+         special = false;
        });
   assert_create_name_expression
     "a.b.c"
     (Expression.Name.Attribute
-       { base =
+       {
+         base =
            Expression.Name
              (Expression.Name.Attribute
-                { base = Expression.Name (Expression.Name.Identifier "a") |> node;
+                {
+                  base = Expression.Name (Expression.Name.Identifier "a") |> node;
                   attribute = "b";
-                  special = false
+                  special = false;
                 })
            |> node;
          attribute = "c";
-         special = false
+         special = false;
        });
   let assert_create_from_name name expected =
     assert_equal
@@ -90,23 +95,26 @@ let test_name _ =
   assert_create_from_name (Expression.Name.Identifier "a") "a";
   assert_create_from_name
     (Expression.Name.Attribute
-       { base = Expression.Name (Expression.Name.Identifier "a") |> node;
+       {
+         base = Expression.Name (Expression.Name.Identifier "a") |> node;
          attribute = "b";
-         special = false
+         special = false;
        })
     "a.b";
   assert_create_from_name
     (Expression.Name.Attribute
-       { base =
+       {
+         base =
            Expression.Name
              (Expression.Name.Attribute
-                { base = Expression.Name (Expression.Name.Identifier "a") |> node;
+                {
+                  base = Expression.Name (Expression.Name.Identifier "a") |> node;
                   attribute = "b";
-                  special = false
+                  special = false;
                 })
            |> node;
          attribute = "c";
-         special = false
+         special = false;
        })
     "a.b.c"
 

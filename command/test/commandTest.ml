@@ -122,9 +122,10 @@ let poll_for_deletion path =
 
 
 let stop_server
-    { Configuration.Server.configuration = { Configuration.Analysis.local_root; _ };
+    {
+      Configuration.Server.configuration = { Configuration.Analysis.local_root; _ };
       socket = { path = socket_path; _ };
-      _
+      _;
     }
   =
   Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore;
@@ -136,7 +137,7 @@ module ScratchServer = struct
   type t = {
     configuration: Configuration.Analysis.t;
     server_configuration: Configuration.Server.t;
-    state: Server.State.t
+    state: Server.State.t;
   }
 
   let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
@@ -180,7 +181,8 @@ module ScratchServer = struct
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
     let state =
-      { Server.State.module_tracker;
+      {
+        Server.State.module_tracker;
         environment;
         errors;
         symlink_targets_to_sources = String.Table.create ();
@@ -188,17 +190,19 @@ module ScratchServer = struct
         last_integrity_check = Unix.time ();
         lookups = String.Table.create ();
         connections =
-          { lock = Mutex.create ();
+          {
+            lock = Mutex.create ();
             connections =
               ref
-                { Server.State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+                {
+                  Server.State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
                   json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
                   persistent_clients = Network.Socket.Map.empty;
-                  file_notifiers = []
-                }
+                  file_notifiers = [];
+                };
           };
         scheduler = Scheduler.mock ();
-        open_documents = Path.Map.empty
+        open_documents = Path.Map.empty;
       }
     in
     { configuration; server_configuration; state }

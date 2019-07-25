@@ -11,7 +11,7 @@ open Statement
 
 type method_name = {
   class_name: string;
-  method_name: string
+  method_name: string;
 }
 [@@deriving show, sexp, compare, hash, eq]
 

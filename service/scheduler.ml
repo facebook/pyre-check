@@ -10,7 +10,7 @@ type t = {
   is_parallel: bool;
   workers: Worker.t list;
   number_of_workers: int;
-  bucket_multiplier: int
+  bucket_multiplier: int;
 }
 
 let entry = Worker.register_entry_point ~restore:(fun _ -> ())

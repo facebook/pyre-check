@@ -13,7 +13,7 @@ type classdecorator_options = {
   init: bool;
   repr: bool;
   eq: bool;
-  order: bool
+  order: bool;
 }
 
 let transform_environment ~options environment resolution source =
@@ -31,8 +31,10 @@ let transform_environment ~options environment resolution source =
           | Some { init; repr; eq; order } ->
               let generated_methods =
                 let create_method ~name ~parameters ~return_annotation =
-                  { Define.signature =
-                      { name = Reference.create ~prefix:parent name;
+                  {
+                    Define.signature =
+                      {
+                        name = Reference.create ~prefix:parent name;
                         parameters = Parameter.create ~location ~name:"self" () :: parameters;
                         decorators = [];
                         docstring = None;
@@ -42,9 +44,9 @@ let transform_environment ~options environment resolution source =
                                ~location
                                (Name (Expression.create_name ~location return_annotation)));
                         async = false;
-                        parent = Some parent
+                        parent = Some parent;
                       };
-                    body = [Node.create ~location Pass]
+                    body = [Node.create ~location Pass];
                   }
                 in
                 let methods =
@@ -58,27 +60,32 @@ let transform_environment ~options environment resolution source =
                           { Node.value = { Annotated.Attribute.value; _ }; _ }
                         =
                         match value with
-                        | { Node.value =
-                              Expression.Call
-                                { callee =
-                                    { Node.value =
-                                        Expression.Name
-                                          (Name.Attribute
-                                            { base =
-                                                { Node.value =
-                                                    Expression.Name (Name.Identifier "dataclasses");
-                                                  _
-                                                };
-                                              attribute = "field";
-                                              _
-                                            });
-                                      _
-                                    };
-                                  arguments;
-                                  _
-                                };
-                            _
-                          } ->
+                        | {
+                         Node.value =
+                           Expression.Call
+                             {
+                               callee =
+                                 {
+                                   Node.value =
+                                     Expression.Name
+                                       (Name.Attribute
+                                         {
+                                           base =
+                                             {
+                                               Node.value =
+                                                 Expression.Name (Name.Identifier "dataclasses");
+                                               _;
+                                             };
+                                           attribute = "field";
+                                           _;
+                                         });
+                                   _;
+                                 };
+                               arguments;
+                               _;
+                             };
+                         _;
+                        } ->
                             Some arguments
                         | _ -> None
                       in
@@ -110,9 +117,10 @@ let transform_environment ~options environment resolution source =
                               then
                                 let { Node.location; _ } = value in
                                 Some
-                                  { Node.value =
+                                  {
+                                    Node.value =
                                       Expression.Call { Call.callee = value; arguments = [] };
-                                    location
+                                    location;
                                   }
                               else
                                 None
@@ -132,8 +140,9 @@ let transform_environment ~options environment resolution source =
                           |> Annotation.original
                           |> function
                           | Type.Parametric
-                              { name = "dataclasses.InitVar";
-                                parameters = Concrete [single_parameter]
+                              {
+                                name = "dataclasses.InitVar";
+                                parameters = Concrete [single_parameter];
                               } ->
                               single_parameter
                           | annotation -> annotation
@@ -145,8 +154,9 @@ let transform_environment ~options environment resolution source =
                             let rec override_existing_parameters unchecked_parameters =
                               match unchecked_parameters with
                               | [] -> [Parameter.create ~location ~name ~annotation ?value ()]
-                              | { Node.value = { Parameter.name = old_name; value = old_value; _ };
-                                  _
+                              | {
+                                  Node.value = { Parameter.name = old_name; value = old_value; _ };
+                                  _;
                                 }
                                 :: tail
                                 when Identifier.equal old_name name ->
@@ -260,9 +270,10 @@ let extract_options_from_decorator
         | _ -> default
       in
       match argument with
-      | { Expression.Call.Argument.name = Some { Node.value = argument_name; _ };
-          value = { Node.value; _ }
-        } ->
+      | {
+       Expression.Call.Argument.name = Some { Node.value = argument_name; _ };
+       value = { Node.value; _ };
+      } ->
           let argument_name = Identifier.sanitized argument_name in
           (* We need to check each keyword sequentially because different keywords may correspond
              to the same string. *)

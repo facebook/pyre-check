@@ -33,7 +33,7 @@ module Record : sig
         constraints: 'annotation constraints;
         variance: variance;
         state: state;
-        namespace: RecordNamespace.t
+        namespace: RecordNamespace.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
     end
@@ -85,7 +85,7 @@ module Record : sig
       type 'annotation named = {
         name: Identifier.t;
         annotation: 'annotation;
-        default: bool
+        default: bool;
       }
 
       and 'annotation variable =
@@ -94,7 +94,11 @@ module Record : sig
         | Map of OrderedTypes.RecordMap.t
 
       and 'annotation t =
-        | Anonymous of { index: int; annotation: 'annotation; default: bool }
+        | Anonymous of {
+            index: int;
+            annotation: 'annotation;
+            default: bool;
+          }
         | Named of 'annotation named
         | KeywordOnly of 'annotation named
         | Variable of 'annotation variable
@@ -110,7 +114,7 @@ module Record : sig
 
     and 'annotation implicit_record = {
       implicit_annotation: 'annotation;
-      name: Identifier.t
+      name: Identifier.t;
     }
 
     and 'annotation record_parameters =
@@ -121,14 +125,14 @@ module Record : sig
     and 'annotation overload = {
       annotation: 'annotation;
       parameters: 'annotation record_parameters;
-      define_location: Location.t option
+      define_location: Location.t option;
     }
 
     and 'annotation record = {
       kind: kind;
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
-      implicit: 'annotation implicit_record option
+      implicit: 'annotation implicit_record option;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -153,7 +157,7 @@ and tuple =
 
 and typed_dictionary_field = {
   name: string;
-  annotation: t
+  annotation: t;
 }
 
 and t =
@@ -163,13 +167,20 @@ and t =
   | Any
   | Literal of literal
   | Optional of t
-  | Parametric of { name: Identifier.t; parameters: t Record.OrderedTypes.record }
+  | Parametric of {
+      name: Identifier.t;
+      parameters: t Record.OrderedTypes.record;
+    }
   | ParameterVariadicComponent of
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of Primitive.t
   | Top
   | Tuple of tuple
-  | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
+  | TypedDictionary of {
+      name: Identifier.t;
+      fields: typed_dictionary_field list;
+      total: bool;
+    }
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show, hash]
@@ -269,7 +280,7 @@ val expression : t -> Expression.t
 module Transform : sig
   type 'state visit_result = {
     transformed_annotation: t;
-    new_state: 'state
+    new_state: 'state;
   }
 
   module type Transformer = sig
@@ -614,7 +625,7 @@ module Variable : sig
 
         type decomposition = {
           positional_component: type_t;
-          keyword_component: type_t
+          keyword_component: type_t;
         }
 
         val combine : decomposition -> parameter_variadic_t option

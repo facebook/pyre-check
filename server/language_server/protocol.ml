@@ -15,8 +15,9 @@ module Range = struct
       ~start:{ Ast.Location.line = start_line; column = start_column }
       ~stop:{ Ast.Location.line = stop_line; column = stop_column }
     =
-    { start = { Position.line = start_line - 1; character = start_column };
-      end_ = { Position.line = stop_line - 1; character = stop_column }
+    {
+      start = { Position.line = start_line - 1; character = start_column };
+      end_ = { Position.line = stop_line - 1; character = stop_column };
     }
 end
 
@@ -37,11 +38,12 @@ module PublishDiagnostics = struct
     let diagnostic_of_error error =
       let { Ast.Location.start; stop; _ } = TypeCheck.Error.location error in
       Diagnostic.
-        { range = Range.create ~start ~stop;
+        {
+          range = Range.create ~start ~stop;
           severity = diagnostic_severity error;
           code = None;
           source = Some "Pyre";
-          message = TypeCheck.Error.description error ~show_error_traces:true ~separator:"\n"
+          message = TypeCheck.Error.description error ~show_error_traces:true ~separator:"\n";
         }
     in
     let failed_response =
@@ -53,13 +55,15 @@ module PublishDiagnostics = struct
       match path with
       | Some path ->
           Ok
-            { jsonrpc = "2.0";
+            {
+              jsonrpc = "2.0";
               method_ = "textDocument/publishDiagnostics";
               parameters =
                 Some
-                  { PublishDiagnosticsParameters.uri = path |> Path.real_path |> Path.uri;
-                    diagnostics = List.map ~f:diagnostic_of_error errors
-                  }
+                  {
+                    PublishDiagnosticsParameters.uri = path |> Path.real_path |> Path.uri;
+                    diagnostics = List.map ~f:diagnostic_of_error errors;
+                  };
             }
       | None -> failed_response
     with
@@ -67,9 +71,10 @@ module PublishDiagnostics = struct
 
 
   let clear_diagnostics_for_uri ~uri =
-    { jsonrpc = "2.0";
+    {
+      jsonrpc = "2.0";
       method_ = "textDocument/publishDiagnostics";
-      parameters = Some { PublishDiagnosticsParameters.uri; diagnostics = [] }
+      parameters = Some { PublishDiagnosticsParameters.uri; diagnostics = [] };
     }
 
 
@@ -92,17 +97,20 @@ module DidSaveTextDocument = struct
   let create ?(root = Path.current_working_directory ()) path content =
     try
       Ok
-        { jsonrpc = "2.0";
+        {
+          jsonrpc = "2.0";
           method_ = "textDocument/didSave";
           parameters =
             Some
-              { DidSaveTextDocumentParameters.textDocument =
-                  { TextDocumentIdentifier.uri =
+              {
+                DidSaveTextDocumentParameters.textDocument =
+                  {
+                    TextDocumentIdentifier.uri =
                       Path.create_relative ~root ~relative:path |> Path.real_path |> Path.uri;
-                    version = None
+                    version = None;
                   };
-                text = content
-              }
+                text = content;
+              };
         }
     with
     | Unix.Unix_error _ ->
@@ -113,13 +121,15 @@ module ShowMessage = struct
   include Types.ShowMessage
 
   let create messageType content =
-    { jsonrpc = "2.0";
+    {
+      jsonrpc = "2.0";
       method_ = "window/showMessage";
       parameters =
         Some
-          { ShowMessageParameters.messageType = ShowMessageParameters.messageTypeNumber messageType;
-            message = content
-          }
+          {
+            ShowMessageParameters.messageType = ShowMessageParameters.messageTypeNumber messageType;
+            message = content;
+          };
     }
 end
 
@@ -127,17 +137,19 @@ module ShowStatus = struct
   include Types.ShowStatus
 
   let create ~message_type ~content ~short_message ~progress =
-    { jsonrpc = "2.0";
+    {
+      jsonrpc = "2.0";
       method_ = "window/showStatus";
       parameters =
         Some
-          { ShowStatusParameters.type_ = ShowMessageParameters.messageTypeNumber message_type;
+          {
+            ShowStatusParameters.type_ = ShowMessageParameters.messageTypeNumber message_type;
             progress;
             message = content;
             actions = None;
-            shortMessage = short_message
+            shortMessage = short_message;
           };
-      id = Int (Int.of_float (Unix.time ()))
+      id = Int (Int.of_float (Unix.time ()));
     }
 end
 
@@ -146,26 +158,31 @@ module InitializeResponse = struct
 
   let default id =
     let open TextDocumentSyncOptions in
-    { jsonrpc = "2.0";
+    {
+      jsonrpc = "2.0";
       id;
       result =
         Some
           InitializeResult.
-            { capabilities =
+            {
+              capabilities =
                 InitializeResult.ServerCapabilities.
-                  { text_document_sync =
+                  {
+                    text_document_sync =
                       Some
-                        { open_close = Some true;
+                        {
+                          open_close = Some true;
                           change = Some (Kind.get_change Kind.Full);
                           will_save = None;
                           will_save_wait_until = None;
-                          save = Some { SaveOptions.include_text = Some false }
+                          save = Some { SaveOptions.include_text = Some false };
                         };
                     hover_provider = Some true;
                     completion_provider =
                       Some
-                        { CompletionOptions.resolve_provider = Some false;
-                          trigger_characters = Some ["."]
+                        {
+                          CompletionOptions.resolve_provider = Some false;
+                          trigger_characters = Some ["."];
                         };
                     signature_help_provider = None;
                     definition_provider = Some true;
@@ -183,10 +200,10 @@ module InitializeResponse = struct
                     execute_command_provider =
                       Some ExecuteCommandOptions.{ commands = ["add_pyre_annotation"] };
                     experimental = None;
-                    rage_provider = Some true
-                  }
+                    rage_provider = Some true;
+                  };
             };
-      error = None
+      error = None;
     }
 end
 
@@ -212,7 +229,8 @@ module TextDocumentDefinitionResponse = struct
       >>| Path.real_path
       >>| Path.uri
     in
-    { jsonrpc = "2.0";
+    {
+      jsonrpc = "2.0";
       id;
       result =
         Some
@@ -220,7 +238,7 @@ module TextDocumentDefinitionResponse = struct
           >>= (fun { Ast.Location.start; stop; path } ->
                 uri ~path >>| fun uri -> { Location.uri; range = Range.create ~start ~stop })
           |> Option.to_list );
-      error = None
+      error = None;
     }
 end
 
@@ -229,19 +247,21 @@ module HoverResponse = struct
 
   type hover_result = {
     location: Ast.Location.Instantiated.t;
-    contents: string
+    contents: string;
   }
 
   let create ~id ~result =
-    { jsonrpc = "2.0";
+    {
+      jsonrpc = "2.0";
       id;
       result =
         ( result
         >>| fun { location = { Ast.Location.start; stop; _ }; contents } ->
-        { HoverResult.contents = { language = "python"; value = contents };
-          range = Some (Range.create ~start ~stop)
+        {
+          HoverResult.contents = { language = "python"; value = contents };
+          range = Some (Range.create ~start ~stop);
         } );
-      error = None
+      error = None;
     }
 end
 

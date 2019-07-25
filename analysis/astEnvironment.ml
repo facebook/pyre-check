@@ -10,14 +10,15 @@ type t = {
   add_source: Source.t -> unit;
   remove_sources: Reference.t list -> unit;
   get_source: Reference.t -> Source.t option;
-  get_source_path: Reference.t -> SourcePath.t option
+  get_source_path: Reference.t -> SourcePath.t option;
 }
 
 let create module_tracker =
-  { add_source = Ast.SharedMemory.Sources.add;
+  {
+    add_source = Ast.SharedMemory.Sources.add;
     remove_sources = Ast.SharedMemory.Sources.remove;
     get_source = Ast.SharedMemory.Sources.get;
-    get_source_path = ModuleTracker.lookup module_tracker
+    get_source_path = ModuleTracker.lookup module_tracker;
   }
 
 

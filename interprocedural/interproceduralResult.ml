@@ -66,7 +66,12 @@ type ('part, _) partial_kind =
 
 (* Abstracts part of an analysis' data value by storing it along with its kind. Used for both model
    and result parts from each analysis. *)
-type 'part pkg = Pkg : { kind: ('part, 'value) partial_kind; value: 'value } -> 'part pkg
+type 'part pkg =
+  | Pkg : {
+      kind: ('part, 'value) partial_kind;
+      value: 'value;
+    }
+      -> 'part pkg
 
 module type ANALYZER = sig
   type result
@@ -119,7 +124,7 @@ type 'a analysis_module = (module ANALYSIS with type result = 'result and type c
 
 type 'a analysis = {
   kind: 'a Kind.storable_kind;
-  analysis: 'a analysis_module
+  analysis: 'a analysis_module;
 }
 
 type abstract_analysis = Analysis : 'a analysis -> abstract_analysis
@@ -182,7 +187,7 @@ let get_abstract_analysis analysis_kind =
 type ('part, 'a, 'b) partial_kind_function = {
   f:
     'model 'result. < model : 'model ; result : 'result > storable_kind ->
-    ('part, 'a) partial_kind -> 'b
+    ('part, 'a) partial_kind -> 'b;
 }
 
 (* Equality for partial kinds. *)
@@ -248,7 +253,7 @@ type model_pkg = model pkg [@@deriving show]
 
 type model_t = {
   models: model_pkg Kind.Map.t;
-  is_obscure: bool
+  is_obscure: bool;
 }
 
 let pp_model_t formatter { models; is_obscure } =

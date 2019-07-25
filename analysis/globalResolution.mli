@@ -7,13 +7,19 @@ open Ast
 open Statement
 
 type generic_type_problems =
-  | IncorrectNumberOfParameters of { actual: int; expected: int }
-  | ViolateConstraints of { actual: Type.t; expected: Type.Variable.Unary.t }
+  | IncorrectNumberOfParameters of {
+      actual: int;
+      expected: int;
+    }
+  | ViolateConstraints of {
+      actual: Type.t;
+      expected: Type.Variable.Unary.t;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 type type_parameters_mismatch = {
   name: string;
-  kind: generic_type_problems
+  kind: generic_type_problems;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -21,7 +27,7 @@ type class_metadata = {
   successors: Type.Primitive.t list;
   is_test: bool;
   is_final: bool;
-  extends_placeholder_stub_class: bool
+  extends_placeholder_stub_class: bool;
 }
 [@@deriving eq]
 

@@ -117,13 +117,15 @@ let ignore ~configuration scheduler source_paths errors =
   in
   let create_unused_ignore_error errors unused_ignore =
     let error =
-      { Error.location =
+      {
+        Error.location =
           Location.instantiate (Ignore.location unused_ignore) ~lookup:Ast.SharedMemory.Handles.get;
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         signature =
-          { Node.location = Ignore.location unused_ignore;
-            value = Statement.Define.Signature.create_toplevel ~qualifier:None
-          }
+          {
+            Node.location = Ignore.location unused_ignore;
+            value = Statement.Define.Signature.create_toplevel ~qualifier:None;
+          };
       }
     in
     error :: errors

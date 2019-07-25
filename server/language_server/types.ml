@@ -65,7 +65,7 @@ end
 module Position = struct
   type t = {
     line: int; [@key "line"]
-    character: int [@key "character"]
+    character: int; [@key "character"]
   }
   [@@deriving yojson, eq, show]
 
@@ -75,7 +75,7 @@ end
 module Range = struct
   type t = {
     start: Position.t; [@key "start"]
-    end_: Position.t [@key "end"]
+    end_: Position.t; [@key "end"]
   }
   [@@deriving yojson, eq, show]
 end
@@ -83,7 +83,7 @@ end
 module Location = struct
   type t = {
     uri: DocumentUri.t; [@key "uri"]
-    range: Range.t [@key "range"]
+    range: Range.t; [@key "range"]
   }
   [@@deriving yojson]
 end
@@ -91,7 +91,7 @@ end
 module WorkspaceFolder = struct
   type t = {
     uri: string; [@key "uri"]
-    name: string [@key "name"]
+    name: string; [@key "name"]
   }
   [@@deriving yojson]
 end
@@ -125,7 +125,7 @@ module Diagnostic = struct
     severity: DiagnosticSeverity.t option; [@key "severity"] [@default None]
     code: int option; [@key "code"] [@default None]
     source: string option; [@key "source"] [@default None]
-    message: string [@key "message"]
+    message: string; [@key "message"]
   }
   [@@deriving yojson, eq, show]
 end
@@ -133,7 +133,7 @@ end
 module PublishDiagnosticsParameters = struct
   type t = {
     uri: DocumentUri.t; [@key "uri"]
-    diagnostics: Diagnostic.t list [@key "diagnostics"]
+    diagnostics: Diagnostic.t list; [@key "diagnostics"]
   }
   [@@deriving yojson]
 end
@@ -141,7 +141,7 @@ end
 module TextDocumentIdentifier = struct
   type t = {
     uri: DocumentUri.t;
-    version: int option [@default None]
+    version: int option; [@default None]
   }
   [@@deriving yojson]
 end
@@ -151,7 +151,7 @@ module TextDocumentItem = struct
     uri: DocumentUri.t;
     languageId: string;
     version: int;
-    text: string
+    text: string;
   }
   [@@deriving yojson]
 end
@@ -159,7 +159,7 @@ end
 module VersionedTextDocumentIdentifier = struct
   type t = {
     uri: DocumentUri.t;
-    version: int
+    version: int;
   }
   [@@deriving yojson]
 end
@@ -167,7 +167,7 @@ end
 module TextDocumentPositionParameters = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;
-    position: Position.t
+    position: Position.t;
   }
   [@@deriving yojson]
 end
@@ -187,14 +187,14 @@ module CompletionParameters = struct
 
   type context = {
     triggerKind: int;
-    triggerCharacter: string option [@default None]
+    triggerCharacter: string option; [@default None]
   }
   [@@deriving yojson]
 
   type t = {
     textDocument: TextDocumentIdentifier.t;
     position: Position.t;
-    context: context option [@default None]
+    context: context option; [@default None]
   }
   [@@deriving yojson]
 end
@@ -206,7 +206,7 @@ end
 module DidSaveTextDocumentParameters = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;
-    text: string option [@default None]
+    text: string option; [@default None]
   }
   [@@deriving yojson]
 end
@@ -220,14 +220,14 @@ module DidChangeTextDocumentParameters = struct
     type t = {
       range: Range.t option; [@default None]
       rangeLength: int option; [@default None]
-      text: string
+      text: string;
     }
     [@@deriving yojson]
   end
 
   type t = {
     textDocument: VersionedTextDocumentIdentifier.t;
-    contentChanges: TextDocumentContentChangeEvent.t list
+    contentChanges: TextDocumentContentChangeEvent.t list;
   }
   [@@deriving yojson]
 end
@@ -240,7 +240,7 @@ module CodeActionParameters = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;
     range: Range.t;
-    context: CodeActionContext.t
+    context: CodeActionContext.t;
   }
   [@@deriving yojson]
 end
@@ -253,7 +253,7 @@ module CommandArguments = struct
   type t = {
     uri: DocumentUri.t;
     range: Range.t;
-    newText: string
+    newText: string;
   }
   [@@deriving yojson, eq, show]
 end
@@ -261,7 +261,7 @@ end
 module ExecuteCommandParameters = struct
   type t = {
     command: string;
-    arguments: CommandArguments.t list
+    arguments: CommandArguments.t list;
   }
   [@@deriving yojson]
 end
@@ -283,7 +283,7 @@ module ShowMessageParameters = struct
 
   type t = {
     messageType: int; [@key "type"]
-    message: string
+    message: string;
   }
   [@@deriving yojson]
 end
@@ -291,7 +291,7 @@ end
 module ShowStatusParameters = struct
   type progress = {
     numerator: int;
-    denominator: int
+    denominator: int;
   }
   [@@deriving yojson, eq, show]
 
@@ -300,7 +300,7 @@ module ShowStatusParameters = struct
     actions: string list option;
     progress: progress option;
     message: string;
-    shortMessage: string option
+    shortMessage: string option;
   }
   [@@deriving yojson]
 end
@@ -316,7 +316,7 @@ end
 module UpdateFilesParameters = struct
   type t = {
     files: string list;
-    invalidated: (string list[@default []])
+    invalidated: (string list[@default []]);
   }
   [@@deriving yojson]
 end
@@ -347,7 +347,7 @@ module TextDocumentSyncOptions = struct
     change: int option; [@key "change"] [@default None]
     will_save: bool option; [@key "willSave"] [@default None]
     will_save_wait_until: bool option; [@key "willSaveWaitUntil"] [@default None]
-    save: SaveOptions.t option [@key "save"] [@default None]
+    save: SaveOptions.t option; [@key "save"] [@default None]
   }
   [@@deriving yojson]
 end
@@ -355,7 +355,7 @@ end
 module CompletionOptions = struct
   type t = {
     resolve_provider: bool option; [@key "resolveProvider"] [@default None]
-    trigger_characters: string list option [@key "triggerCharacters"] [@default None]
+    trigger_characters: string list option; [@key "triggerCharacters"] [@default None]
   }
   [@@deriving yojson]
 end
@@ -373,7 +373,7 @@ end
 module DocumentOnTypeFormattingOptions = struct
   type t = {
     first_trigger_character: string; [@key "firstTriggerCharacter"]
-    more_trigger_character: string list option [@key "moreTriggerCharacter"] [@default None]
+    more_trigger_character: string list option; [@key "moreTriggerCharacter"] [@default None]
   }
   [@@deriving yojson]
 end
@@ -394,7 +394,7 @@ end
 module TextEdit = struct
   type t = {
     range: Range.t; [@key "range"]
-    newText: string [@key "newText"]
+    newText: string; [@key "newText"]
   }
   [@@deriving yojson, eq, show]
 end
@@ -402,7 +402,7 @@ end
 module WorkspaceEditChanges = struct
   type t = {
     uri: DocumentUri.t;
-    textEdit: TextEdit.t list
+    textEdit: TextEdit.t list;
   }
   [@@deriving yojson, eq, show]
 
@@ -422,7 +422,7 @@ module Command_ = struct
   type t = {
     title: string;
     command: string;
-    arguments: CommandArguments.t list
+    arguments: CommandArguments.t list;
   }
   [@@deriving yojson]
 end
@@ -432,7 +432,7 @@ module CodeAction = struct
     title: string; [@key "title"]
     kind: string option; [@key "kind"] [@default None]
     diagnostics: Diagnostic.t list option; [@key "diagnostics"] [@default None]
-    command: Command_.t option [@key "command"] [@default None]
+    command: Command_.t option; [@key "command"] [@default None]
   }
   [@@deriving yojson]
 end
@@ -458,7 +458,7 @@ module ServerCapabilities = struct
       document_link_provider: DocumentLinkOptions.t option;
       execute_command_provider: ExecuteCommandOptions.t option;
       experimental: experimental option;
-      rage_provider: bool option
+      rage_provider: bool option;
     }
 
     and experimental [@@deriving yojson]
@@ -491,7 +491,7 @@ module ServerCapabilities = struct
       execute_command_provider: ExecuteCommandOptions.t option;
           [@key "executeCommandProvider"] [@default None]
       experimental: experimental option; [@key "experimental"] [@default None]
-      rage_provider: bool option [@key "rageProvider"] [@default None]
+      rage_provider: bool option; [@key "rageProvider"] [@default None]
     }
 
     and experimental = AnyExperimental.t [@@deriving yojson]
@@ -515,7 +515,7 @@ module ClientCapabilities = struct
       symbol: DynamicRegistration.t option; [@key "symbol"] [@default None]
       execute_command: DynamicRegistration.t option; [@key "executeCommand"] [@default None]
       workspace_folders: bool option; [@key "workspaceFolders"] [@default None]
-      configuration: bool option [@key "configuration"] [@default None]
+      configuration: bool option; [@key "configuration"] [@default None]
     }
     (* strict is false: Nuclide LSP sends nonstandard fields *)
     [@@deriving of_yojson { strict = false }]
@@ -531,13 +531,13 @@ module ClientCapabilities = struct
       dynamic_registration: bool option; [@key "dynamicRegistration"] [@default None]
       will_save: bool option; [@key "willSave"] [@default None]
       will_save_wait_until: bool option; [@key "willSaveWaitUntil"] [@default None]
-      did_save: bool option [@key "didSave"] [@default None]
+      did_save: bool option; [@key "didSave"] [@default None]
     }
     [@@deriving of_yojson { strict = false }]
 
     type completion_item = {
       snippet_support: bool option; [@key "snippetSupport"] [@default None]
-      commit_characters_support: bool option [@key "commitCharactersSupport"] [@default None]
+      commit_characters_support: bool option; [@key "commitCharactersSupport"] [@default None]
     }
     [@@deriving of_yojson { strict = false }]
 
@@ -546,12 +546,12 @@ module ClientCapabilities = struct
       completion_item: completion_item option; [@key "completionItem"] [@default None]
       completion_item_kind: CompletionItemKind.t option;
           [@key "completionItemKind"] [@default None]
-      context_support: bool option [@key "contextSupport"] [@default None]
+      context_support: bool option; [@key "contextSupport"] [@default None]
     }
     [@@deriving of_yojson { strict = false }]
 
     type publish_diagnostics = {
-      related_information: bool option [@key "relatedInformation"] [@default None]
+      related_information: bool option; [@key "relatedInformation"] [@default None]
     }
     [@@deriving of_yojson]
 
@@ -575,7 +575,7 @@ module ClientCapabilities = struct
       implementation: DynamicRegistration.t option; [@key "implementation"] [@default None]
       color_provider: DynamicRegistration.t option; [@key "colorProvider"] [@default None]
       folding_range: DynamicRegistration.t option; [@key "foldingRange"] [@default None]
-      publish_diagnostics: publish_diagnostics option [@key "publishDiagnostics"] [@default None]
+      publish_diagnostics: publish_diagnostics option; [@key "publishDiagnostics"] [@default None]
     }
     [@@deriving of_yojson { strict = false }]
   end
@@ -584,7 +584,7 @@ module ClientCapabilities = struct
     type t = {
       progress: DynamicRegistration.t option; [@key "progress"] [@default None]
       action_required: DynamicRegistration.t option; [@key "actionRequired"] [@default None]
-      status: DynamicRegistration.t option [@key "status"] [@default None]
+      status: DynamicRegistration.t option; [@key "status"] [@default None]
     }
     [@@deriving of_yojson { strict = false }]
   end
@@ -594,7 +594,7 @@ module ClientCapabilities = struct
       workspace: WorkspaceClientCapabilities.t option;
       text_document: TextDocumentClientCapabilities.t option;
       experimental: experimental option;
-      window: WindowClientCapabilities.t option
+      window: WindowClientCapabilities.t option;
     }
 
     and experimental [@@deriving of_yojson]
@@ -605,7 +605,7 @@ module ClientCapabilities = struct
       workspace: WorkspaceClientCapabilities.t option; [@key "workspace"] [@default None]
       text_document: TextDocumentClientCapabilities.t option; [@key "textDocument"] [@default None]
       experimental: experimental option; [@key "experimental"] [@default None]
-      window: WindowClientCapabilities.t option [@key "window"] [@default None]
+      window: WindowClientCapabilities.t option; [@key "window"] [@default None]
     }
 
     and experimental = AnyExperimental.t [@@deriving of_yojson { strict = false }]
@@ -623,7 +623,7 @@ module RequestMessage = struct
       jsonrpc: string;
       id: RequestId.t;
       method_: string;
-      parameters: parameters option
+      parameters: parameters option;
     }
 
     and parameters [@@deriving of_yojson]
@@ -634,7 +634,7 @@ module RequestMessage = struct
       jsonrpc: string; [@key "jsonrpc"]
       id: RequestId.t; [@key "id"]
       method_: string; [@key "method"]
-      parameters: parameters option [@key "params"] [@default None]
+      parameters: parameters option; [@key "params"] [@default None]
     }
 
     and parameters = AnyParameters.t [@@deriving of_yojson]
@@ -648,7 +648,7 @@ module ResponseError = struct
     type t = {
       code: int;
       message: string;
-      data: data option
+      data: data option;
     }
 
     and data [@@deriving yojson]
@@ -658,7 +658,7 @@ module ResponseError = struct
     type t = {
       code: int; [@key "code"]
       message: string; [@key "message"]
-      data: data option [@key "data"] [@default None]
+      data: data option; [@key "data"] [@default None]
     }
 
     and data = AnyData.t [@@deriving yojson]
@@ -671,7 +671,7 @@ module ResponseMessage = struct
       jsonrpc: string;
       id: RequestId.t;
       result: result option;
-      error: error option
+      error: error option;
     }
 
     and result
@@ -687,7 +687,7 @@ module ResponseMessage = struct
       jsonrpc: string; [@key "jsonrpc"]
       id: RequestId.t; [@key "id"]
       result: result option; [@key "result"]
-      error: error option [@key "error"] [@default None]
+      error: error option; [@key "error"] [@default None]
     }
 
     and result = AnyResult.t
@@ -703,7 +703,7 @@ module NotificationMessage = struct
     type t = {
       jsonrpc: string;
       method_: string;
-      parameters: parameters option
+      parameters: parameters option;
     }
 
     and parameters [@@deriving yojson]
@@ -713,7 +713,7 @@ module NotificationMessage = struct
     type t = {
       jsonrpc: string; [@key "jsonrpc"]
       method_: string; [@key "method"]
-      parameters: parameters option [@key "params"] [@default None]
+      parameters: parameters option; [@key "params"] [@default None]
     }
 
     and parameters = AnyParameters.t [@@deriving yojson]
@@ -726,7 +726,7 @@ module Message = struct
       jsonrpc: string;
       method_: string;
       parameters: parameters option;
-      id: RequestId.t
+      id: RequestId.t;
     }
 
     and parameters [@@deriving yojson]
@@ -737,7 +737,7 @@ module Message = struct
       jsonrpc: string; [@key "jsonrpc"]
       method_: string; [@key "method"]
       parameters: parameters option; [@key "params"] [@default None]
-      id: RequestId.t [@key "id"]
+      id: RequestId.t; [@key "id"]
     }
 
     and parameters = AnyParameters.t [@@deriving yojson]
@@ -777,7 +777,7 @@ module InitializeRequest = struct
       initialization_options: None.t option; [@default None] [@key "initializationOptions"]
       capabilities: ClientCapabilities.t; [@key "capabilities"]
       trace: TraceSetting.t option; [@default None] [@key "trace"]
-      workspaceFolders: WorkspaceFolder.t list option [@default None] [@key "workspaceFolders"]
+      workspaceFolders: WorkspaceFolder.t list option; [@default None] [@key "workspaceFolders"]
     }
     [@@deriving of_yojson]
   end
@@ -860,7 +860,7 @@ module CompletionItems = struct
     label: string;
     kind: Kind.t;
     detail: string;
-    textEdit: TextEdit.t
+    textEdit: TextEdit.t;
   }
   [@@deriving show, yojson]
 
@@ -884,7 +884,7 @@ end
 module MarkedString = struct
   type t = {
     language: string;
-    value: string
+    value: string;
   }
   [@@deriving yojson]
 end
@@ -893,7 +893,7 @@ module HoverResponse = struct
   module HoverResult = struct
     type t = {
       contents: MarkedString.t;
-      range: Range.t option
+      range: Range.t option;
     }
     [@@deriving yojson]
   end
@@ -924,7 +924,7 @@ module RageResponse = struct
   module RageResult = struct
     type rageItem = {
       title: string option;
-      data: string
+      data: string;
     }
     [@@deriving yojson]
 

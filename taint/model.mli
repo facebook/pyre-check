@@ -10,7 +10,7 @@ open Interprocedural
 type t = {
   is_obscure: bool;
   call_target: Callable.t;
-  model: TaintResult.call_model
+  model: TaintResult.call_model;
 }
 [@@deriving show, sexp]
 

@@ -20,7 +20,7 @@ type missing_annotation = {
   annotation: Type.t option;
   given_annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
-  thrown_at_source: bool
+  thrown_at_source: bool;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -31,29 +31,38 @@ type class_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 type origin =
-  | Class of { annotation: Type.t; class_attribute: bool }
+  | Class of {
+      annotation: Type.t;
+      class_attribute: bool;
+    }
   | Module of Reference.t
 
 and mismatch = {
   actual: Type.t;
   actual_expressions: Expression.t list;
   expected: Type.t;
-  due_to_invariance: bool
+  due_to_invariance: bool;
 }
 
 and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
-  declare_location: Location.Instantiated.t
+  declare_location: Location.Instantiated.t;
 }
 
 and invalid_argument =
-  | Keyword of { expression: Expression.t; annotation: Type.t }
-  | ConcreteVariable of { expression: Expression.t; annotation: Type.t }
-  | ListVariadicVariable of
-      { variable: Type.OrderedTypes.t;
-        mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable
-      }
+  | Keyword of {
+      expression: Expression.t;
+      annotation: Type.t;
+    }
+  | ConcreteVariable of {
+      expression: Expression.t;
+      annotation: Type.t;
+    }
+  | ListVariadicVariable of {
+      variable: Type.OrderedTypes.t;
+      mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable;
+    }
 
 and precondition_mismatch =
   | Found of mismatch
@@ -97,7 +106,10 @@ and invalid_override_kind =
 
 and invalid_assignment_kind =
   | FinalAttribute of Reference.t
-  | ClassVariable of { class_variable: Identifier.t; class_name: Identifier.t }
+  | ClassVariable of {
+      class_variable: Identifier.t;
+      class_name: Identifier.t;
+    }
   | ReadOnly of Reference.t
 
 and invalid_type_kind =
@@ -108,73 +120,103 @@ and invalid_type_kind =
 
 and unawaited_awaitable = {
   references: Reference.t list;
-  expression: Expression.t
+  expression: Expression.t;
 }
 
 and incompatible_overload_kind =
-  | ReturnType of
-      { implementation_annotation: Type.t;
-        name: Reference.t;
-        overload_annotation: Type.t
-      }
-  | Unmatchable of
-      { name: Reference.t;
-        matched_location: Location.t;
-        unmatched_location: Location.t
-      }
-  | Parameters of { name: Reference.t; location: Location.t }
+  | ReturnType of {
+      implementation_annotation: Type.t;
+      name: Reference.t;
+      overload_annotation: Type.t;
+    }
+  | Unmatchable of {
+      name: Reference.t;
+      matched_location: Location.t;
+      unmatched_location: Location.t;
+    }
+  | Parameters of {
+      name: Reference.t;
+      location: Location.t;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
-  | AbstractClass of { class_name: Reference.t; method_names: Identifier.t list }
+  | AbstractClass of {
+      class_name: Reference.t;
+      method_names: Identifier.t list;
+    }
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
-  | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
-  | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
+  | ImpossibleIsinstance of {
+      expression: Expression.t;
+      mismatch: mismatch;
+    }
+  | IncompatibleAttributeType of {
+      parent: Type.t;
+      incompatible_type: incompatible_type;
+    }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleParameterType of
-      { name: Identifier.t option;
-        position: int;
-        callee: Reference.t option;
-        mismatch: mismatch
-      }
-  | IncompatibleReturnType of
-      { mismatch: mismatch;
-        is_implicit: bool;
-        is_unimplemented: bool;
-        define_location: Location.t
-      }
+  | IncompatibleParameterType of {
+      name: Identifier.t option;
+      position: int;
+      callee: Reference.t option;
+      mismatch: mismatch;
+    }
+  | IncompatibleReturnType of {
+      mismatch: mismatch;
+      is_implicit: bool;
+      is_unimplemented: bool;
+      define_location: Location.t;
+    }
   | IncompatibleVariableType of incompatible_type
   | IncompatibleOverload of incompatible_overload_kind
-  | IncompleteType of
-      { target: Expression.t;
-        annotation: Type.t;
-        attempted_action: illegal_action_on_incomplete_type
-      }
-  | InconsistentOverride of
-      { overridden_method: Identifier.t;
-        parent: Reference.t;
-        override: override;
-        override_kind: override_kind
-      }
+  | IncompleteType of {
+      target: Expression.t;
+      annotation: Type.t;
+      attempted_action: illegal_action_on_incomplete_type;
+    }
+  | InconsistentOverride of {
+      overridden_method: Identifier.t;
+      parent: Reference.t;
+      override: override;
+      override_kind: override_kind;
+    }
   | InvalidArgument of invalid_argument
   | InvalidClass of Reference.t
   | InvalidClassInstantiation of class_kind
-  | InvalidException of { expression: Expression.t; annotation: Type.t }
-  | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
+  | InvalidException of {
+      expression: Expression.t;
+      annotation: Type.t;
+    }
+  | InvalidMethodSignature of {
+      annotation: Type.t option;
+      name: Identifier.t;
+    }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of GlobalResolution.type_parameters_mismatch
-  | InvalidTypeVariable of { annotation: Type.Variable.t; origin: type_variable_origin }
-  | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
+  | InvalidTypeVariable of {
+      annotation: Type.Variable.t;
+      origin: type_variable_origin;
+    }
+  | InvalidTypeVariance of {
+      annotation: Type.t;
+      origin: type_variance_origin;
+    }
   | InvalidInheritance of invalid_inheritance
-  | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
+  | InvalidOverride of {
+      parent: Identifier.t;
+      decorator: invalid_override_kind;
+    }
   | InvalidAssignment of invalid_assignment_kind
-  | MissingArgument of
-      { callee: Reference.t option;
-        parameter: AnnotatedSignature.missing_argument
-      }
-  | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
+  | MissingArgument of {
+      callee: Reference.t option;
+      parameter: AnnotatedSignature.missing_argument;
+    }
+  | MissingAttributeAnnotation of {
+      parent: Type.t;
+      missing_annotation: missing_annotation;
+    }
   | MissingGlobalAnnotation of missing_annotation
   | MissingOverloadImplementation of Reference.t
   | MissingParameterAnnotation of missing_annotation
@@ -183,24 +225,46 @@ type kind =
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
-  | RevealedType of { expression: Expression.t; annotation: Annotation.t }
-  | UnsafeCast of { expression: Expression.t; annotation: Type.t }
-  | TooManyArguments of { callee: Reference.t option; expected: int; provided: int }
+  | RevealedType of {
+      expression: Expression.t;
+      annotation: Annotation.t;
+    }
+  | UnsafeCast of {
+      expression: Expression.t;
+      annotation: Type.t;
+    }
+  | TooManyArguments of {
+      callee: Reference.t option;
+      expected: int;
+      provided: int;
+    }
   | Top
   | TypedDictionaryAccessWithNonLiteral of Identifier.t list
-  | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
-  | UndefinedAttribute of { attribute: Identifier.t; origin: origin }
+  | TypedDictionaryKeyNotFound of {
+      typed_dictionary_name: Identifier.t;
+      missing_key: string;
+    }
+  | UndefinedAttribute of {
+      attribute: Identifier.t;
+      origin: origin;
+    }
   | UndefinedImport of Reference.t
   | UndefinedName of Reference.t
   | UndefinedType of Type.t
-  | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
-  | UninitializedAttribute of
-      { name: Identifier.t;
-        parent: Type.t;
-        mismatch: mismatch;
-        kind: class_kind
-      }
-  | Unpack of { expected_count: int; unpack_problem: unpack_problem }
+  | UnexpectedKeyword of {
+      name: Identifier.t;
+      callee: Reference.t option;
+    }
+  | UninitializedAttribute of {
+      name: Identifier.t;
+      parent: Type.t;
+      mismatch: mismatch;
+      kind: class_kind;
+    }
+  | Unpack of {
+      expected_count: int;
+      unpack_problem: unpack_problem;
+    }
   | UnusedIgnore of int list
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
@@ -342,8 +406,9 @@ let weaken_literals kind =
   | IncompatibleAttributeType
       ({ incompatible_type = { mismatch; _ } as incompatible; _ } as attribute) ->
       IncompatibleAttributeType
-        { attribute with
-          incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch }
+        {
+          attribute with
+          incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch };
         }
   | IncompatibleVariableType ({ mismatch; _ } as incompatible) ->
       IncompatibleVariableType { incompatible with mismatch = weaken_mismatch mismatch }
@@ -353,8 +418,9 @@ let weaken_literals kind =
   | InconsistentOverride
       ({ override = StrengthenedPrecondition (Found mismatch); _ } as inconsistent) ->
       InconsistentOverride
-        { inconsistent with
-          override = StrengthenedPrecondition (Found (weaken_mismatch mismatch))
+        {
+          inconsistent with
+          override = StrengthenedPrecondition (Found (weaken_mismatch mismatch));
         }
   | IncompatibleParameterType ({ mismatch; _ } as incompatible) ->
       IncompatibleParameterType { incompatible with mismatch = weaken_mismatch mismatch }
@@ -383,10 +449,11 @@ let weaken_literals kind =
 
 
 let messages ~concise ~signature location kind =
-  let { Location.start = { Location.line = start_line; _ };
-        Location.stop = { Location.line = stop_line; _ };
-        _
-      }
+  let {
+    Location.start = { Location.line = start_line; _ };
+    Location.stop = { Location.line = stop_line; _ };
+    _;
+  }
     =
     location
   in
@@ -545,9 +612,10 @@ let messages ~concise ~signature location kind =
       in
       [message; trace]
   | IncompatibleAttributeType
-      { parent;
+      {
+        parent;
         incompatible_type =
-          { name; mismatch = { actual; expected; due_to_invariance; _ }; declare_location }
+          { name; mismatch = { actual; expected; due_to_invariance; _ }; declare_location };
       } ->
       let message =
         if concise then
@@ -1481,10 +1549,11 @@ let messages ~concise ~signature location kind =
 
 
 let inference_information
-    ~signature:{ Node.value =
+    ~signature:{
+                 Node.value =
                    { Define.name; parameters; return_annotation; decorators; parent; async; _ } as
                    signature;
-                 _
+                 _;
                }
     kind
   =
@@ -1722,8 +1791,9 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
       Type.is_any actual
   | ImpossibleIsinstance { mismatch = { actual; actual_expressions; expected; _ }; _ }
   | InconsistentOverride
-      { override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ });
-        _
+      {
+        override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ });
+        _;
       }
   | InconsistentOverride
       { override = WeakenedPostcondition { actual; actual_expressions; expected; _ }; _ }
@@ -2037,10 +2107,11 @@ let join ~resolution left right =
   let join_mismatch left right =
     if List.equal Expression.equal left.actual_expressions right.actual_expressions then
       Some
-        { expected = GlobalResolution.join resolution left.expected right.expected;
+        {
+          expected = GlobalResolution.join resolution left.expected right.expected;
           actual = GlobalResolution.join resolution left.actual right.actual;
           actual_expressions = left.actual_expressions;
-          due_to_invariance = left.due_to_invariance || right.due_to_invariance
+          due_to_invariance = left.due_to_invariance || right.due_to_invariance;
         }
     else
       None
@@ -2051,14 +2122,15 @@ let join ~resolution left right =
       : missing_annotation
     =
     let join_annotation_options = Option.merge ~f:(GlobalResolution.join resolution) in
-    { left with
+    {
+      left with
       annotation = join_annotation_options left.annotation right.annotation;
       given_annotation = join_annotation_options left.given_annotation right.given_annotation;
       evidence_locations =
         List.dedup_and_sort
           ~compare:Location.Instantiated.compare
           (left.evidence_locations @ right.evidence_locations);
-      thrown_at_source = left.thrown_at_source || right.thrown_at_source
+      thrown_at_source = left.thrown_at_source || right.thrown_at_source;
     }
   in
   let kind =
@@ -2079,9 +2151,10 @@ let join ~resolution left right =
            && equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action
       ->
         IncompleteType
-          { target = left_target;
+          {
+            target = left_target;
             annotation = GlobalResolution.join resolution left right;
-            attempted_action = left_attempted_action
+            attempted_action = left_attempted_action;
           }
     | InvalidTypeParameters left, InvalidTypeParameters right
       when GlobalResolution.equal_type_parameters_mismatch left right ->
@@ -2105,9 +2178,10 @@ let join ~resolution left right =
       when Reference.equal_sanitized left.missing_annotation.name right.missing_annotation.name
            && Type.equal left.parent right.parent ->
         MissingAttributeAnnotation
-          { parent = left.parent;
+          {
+            parent = left.parent;
             missing_annotation =
-              join_missing_annotation left.missing_annotation right.missing_annotation
+              join_missing_annotation left.missing_annotation right.missing_annotation;
           }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
       when Reference.equal_sanitized left.name right.name ->
@@ -2121,23 +2195,27 @@ let join ~resolution left right =
     | RedundantCast left, RedundantCast right ->
         RedundantCast (GlobalResolution.join resolution left right)
     | ( RevealedType
-          { annotation = { Annotation.annotation = left_annotation; mutability = left_mutability };
-            expression = left_expression
+          {
+            annotation = { Annotation.annotation = left_annotation; mutability = left_mutability };
+            expression = left_expression;
           },
         RevealedType
-          { annotation =
+          {
+            annotation =
               { Annotation.annotation = right_annotation; mutability = right_mutability };
-            expression = right_expression
+            expression = right_expression;
           } )
       when Expression.equal left_expression right_expression
            && Annotation.equal_mutability left_mutability right_mutability ->
         RevealedType
-          { expression = left_expression;
+          {
+            expression = left_expression;
             annotation =
-              { Annotation.annotation =
+              {
+                Annotation.annotation =
                   GlobalResolution.join resolution left_annotation right_annotation;
-                mutability = left_mutability
-              }
+                mutability = left_mutability;
+              };
           }
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Identifier.equal_sanitized left.name right.name
@@ -2152,10 +2230,11 @@ let join ~resolution left right =
       match join_mismatch left.mismatch right.mismatch with
       | Some mismatch ->
           IncompatibleReturnType
-            { mismatch;
+            {
+              mismatch;
               is_implicit = left.is_implicit && right.is_implicit;
               is_unimplemented = left.is_unimplemented && right.is_unimplemented;
-              define_location = right.define_location
+              define_location = right.define_location;
             }
       | None -> Top )
     | IncompatibleAttributeType left, IncompatibleAttributeType right
@@ -2192,15 +2271,17 @@ let join ~resolution left right =
       when Expression.equal left.expression right.expression ->
         InvalidArgument
           (Keyword
-             { left with
-               annotation = GlobalResolution.join resolution left.annotation right.annotation
+             {
+               left with
+               annotation = GlobalResolution.join resolution left.annotation right.annotation;
              })
     | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
       when Expression.equal left.expression right.expression ->
         InvalidArgument
           (ConcreteVariable
-             { left with
-               annotation = GlobalResolution.join resolution left.annotation right.annotation
+             {
+               left with
+               annotation = GlobalResolution.join resolution left.annotation right.annotation;
              })
     | InvalidAssignment left, InvalidAssignment right when equal_invalid_assignment_kind left right
       ->
@@ -2208,15 +2289,17 @@ let join ~resolution left right =
     | InvalidException left, InvalidException right
       when Expression.equal left.expression right.expression ->
         InvalidException
-          { expression = left.expression;
-            annotation = GlobalResolution.join resolution left.annotation right.annotation
+          {
+            expression = left.expression;
+            annotation = GlobalResolution.join resolution left.annotation right.annotation;
           }
     | InvalidMethodSignature left, InvalidMethodSignature right
       when Identifier.equal left.name right.name ->
         InvalidMethodSignature
-          { left with
+          {
+            left with
             annotation =
-              Option.merge ~f:(GlobalResolution.join resolution) left.annotation right.annotation
+              Option.merge ~f:(GlobalResolution.join resolution) left.annotation right.annotation;
           }
     | InvalidType (InvalidType left), InvalidType (InvalidType right) when Type.equal left right ->
         InvalidType (InvalidType left)
@@ -2272,8 +2355,9 @@ let join ~resolution left right =
         Unpack { expected_count = right_count; unpack_problem = UnacceptableType right } )
       when left_count = right_count ->
         Unpack
-          { expected_count = left_count;
-            unpack_problem = UnacceptableType (GlobalResolution.join resolution left right)
+          {
+            expected_count = left_count;
+            unpack_problem = UnacceptableType (GlobalResolution.join resolution left right);
           }
     | ( Unpack { expected_count = left_count; unpack_problem = CountMismatch left },
         Unpack { expected_count = right_count; unpack_problem = CountMismatch right } )
@@ -2615,9 +2699,10 @@ let suppress ~mode ~resolution error =
 let dequalify
     dequalify_map
     ~resolution
-    ( { kind;
+    ( {
+        kind;
         signature = { Node.location; value = { parameters; return_annotation; _ } as signature };
-        _
+        _;
       } as error )
   =
   let dequalify = Type.dequalify dequalify_map in
@@ -2638,9 +2723,10 @@ let dequalify
     | IncompatibleOverload (ReturnType { implementation_annotation; name; overload_annotation }) ->
         IncompatibleOverload
           (ReturnType
-             { implementation_annotation = dequalify implementation_annotation;
+             {
+               implementation_annotation = dequalify implementation_annotation;
                name;
-               overload_annotation = dequalify overload_annotation
+               overload_annotation = dequalify overload_annotation;
              })
     | IncompatibleOverload kind -> IncompatibleOverload kind
     | IncompleteType { target; annotation; attempted_action } ->
@@ -2691,8 +2777,9 @@ let dequalify
     | MissingAttributeAnnotation
         { parent; missing_annotation = { annotation; _ } as missing_annotation } ->
         MissingAttributeAnnotation
-          { parent;
-            missing_annotation = { missing_annotation with annotation = annotation >>| dequalify }
+          {
+            parent;
+            missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
           }
     | MissingGlobalAnnotation ({ annotation; _ } as immutable_type) ->
         MissingGlobalAnnotation { immutable_type with annotation = annotation >>| dequalify }
@@ -2711,16 +2798,18 @@ let dequalify
     | IncompatibleAttributeType
         { parent; incompatible_type = { mismatch; _ } as incompatible_type } ->
         IncompatibleAttributeType
-          { parent;
-            incompatible_type = { incompatible_type with mismatch = dequalify_mismatch mismatch }
+          {
+            parent;
+            incompatible_type = { incompatible_type with mismatch = dequalify_mismatch mismatch };
           }
     | IncompatibleVariableType ({ mismatch; _ } as incompatible_type) ->
         IncompatibleVariableType { incompatible_type with mismatch = dequalify_mismatch mismatch }
     | InconsistentOverride
         ({ override = StrengthenedPrecondition (Found mismatch); _ } as inconsistent_override) ->
         InconsistentOverride
-          { inconsistent_override with
-            override = StrengthenedPrecondition (Found (dequalify_mismatch mismatch))
+          {
+            inconsistent_override with
+            override = StrengthenedPrecondition (Found (dequalify_mismatch mismatch));
           }
     | InconsistentOverride
         ({ override = StrengthenedPrecondition (NotFound access); _ } as inconsistent_override) ->
@@ -2729,8 +2818,9 @@ let dequalify
     | InconsistentOverride
         ({ override = WeakenedPostcondition mismatch; _ } as inconsistent_override) ->
         InconsistentOverride
-          { inconsistent_override with
-            override = WeakenedPostcondition (dequalify_mismatch mismatch)
+          {
+            inconsistent_override with
+            override = WeakenedPostcondition (dequalify_mismatch mismatch);
           }
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
@@ -2790,10 +2880,11 @@ let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant 
     else
       expected, actual
   in
-  { expected;
+  {
+    expected;
     actual;
     due_to_invariance = GlobalResolution.is_invariance_mismatch resolution ~left ~right;
-    actual_expressions = Option.to_list actual_expression
+    actual_expressions = Option.to_list actual_expression;
   }
 
 

@@ -6,7 +6,7 @@
 type parse_sources_result = {
   parsed: Ast.SourcePath.t list;
   syntax_error: Ast.SourcePath.t list;
-  system_error: Ast.SourcePath.t list
+  system_error: Ast.SourcePath.t list;
 }
 
 val parse_sources

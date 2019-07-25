@@ -13,16 +13,18 @@ open Test
 let test_to_dot _ =
   let assert_dot ?(precondition = fun _ -> "") body expected =
     let define =
-      { Define.signature =
-          { name = !&"foo";
+      {
+        Define.signature =
+          {
+            name = !&"foo";
             parameters = [];
             decorators = [];
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = None
+            parent = None;
           };
-        body
+        body;
       }
     in
     let make_dot dot_list =
@@ -88,16 +90,18 @@ let test_to_dot _ =
 
 let assert_cfg body expected =
   let define =
-    { Define.signature =
-        { name = !&"foo";
+    {
+      Define.signature =
+        {
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = None
+          parent = None;
         };
-      body
+      body;
     }
   in
   assert_equal
@@ -133,11 +137,12 @@ let test_block _ =
 
 let test_for _ =
   let loop =
-    { For.target = +Name (Name.Identifier "a");
+    {
+      For.target = +Name (Name.Identifier "a");
       iterator = +List [];
       body = [!!"body"];
       orelse = [!!"orelse"];
-      async = false
+      async = false;
     }
   in
   assert_cfg
@@ -329,10 +334,11 @@ let test_try _ =
       (* normal *)
       node 10 (Node.Block [!!"body"]) [5] [9] ];
   let block =
-    { Try.body = [!!"body"];
+    {
+      Try.body = [!!"body"];
       handlers = [handler ~kind:(+Integer 1) "handler"];
       orelse = [!!"orelse"];
-      finally = [!!"finally"]
+      finally = [!!"finally"];
     }
   in
   assert_cfg
@@ -394,10 +400,11 @@ let test_try _ =
       node 10 (Node.Block [!!"body"]) [5] [9];
       node 11 (Node.Block [!!"handler"]) [6] [9] ];
   let block =
-    { Try.body = [!!"body"];
+    {
+      Try.body = [!!"body"];
       handlers = [handler "handler 1"; handler "handler 2"];
       orelse = [];
-      finally = []
+      finally = [];
     }
   in
   assert_cfg
@@ -420,10 +427,11 @@ let test_try _ =
       node 12 (Node.Block [!!"handler 2"]) [6] [9] ];
   let return = +Return { Return.expression = None; is_implicit = false } in
   let block =
-    { Try.body = [!!"body"; return; !!"unreached"];
+    {
+      Try.body = [!!"body"; return; !!"unreached"];
       handlers = [handler "handler"];
       orelse = [];
-      finally = []
+      finally = [];
     }
   in
   assert_cfg
@@ -445,10 +453,11 @@ let test_try _ =
       node 11 (Node.Block [!!"handler"]) [6] [9] ];
   let error = +Raise { Raise.expression = None; from = None } in
   let block =
-    { Try.body = [!!"body"; error; !!"unreached"];
+    {
+      Try.body = [!!"body"; error; !!"unreached"];
       handlers = [handler "handler"];
       orelse = [];
-      finally = []
+      finally = [];
     }
   in
   assert_cfg
@@ -469,10 +478,11 @@ let test_try _ =
       node 10 (Node.Block [!!"body"; error]) [5] [6];
       node 11 (Node.Block [!!"handler"]) [6] [9] ];
   let block =
-    { Try.body = [!!"body"];
+    {
+      Try.body = [!!"body"];
       handlers = [handler "handler"];
       orelse = [!!"orelse"; error; !!"unreached"];
-      finally = []
+      finally = [];
     }
   in
   assert_cfg
@@ -510,10 +520,11 @@ let test_try _ =
       (* normal *)
       node 10 (Node.Block [!!"body"]) [5] [9] ];
   let block =
-    { Try.body = [!!"body"];
+    {
+      Try.body = [!!"body"];
       handlers = [];
       orelse = [];
-      finally = [+Return { Return.expression = None; is_implicit = false }]
+      finally = [+Return { Return.expression = None; is_implicit = false }];
     }
   in
   assert_cfg
@@ -554,10 +565,11 @@ let test_try _ =
     +BooleanOperator { BooleanOperator.left = !"a"; operator = BooleanOperator.Or; right = !"b" }
   in
   let block =
-    { Try.body = [!!"body"];
+    {
+      Try.body = [!!"body"];
       handlers = [handler ~kind:bool_handler "handler"];
       orelse = [];
-      finally = []
+      finally = [];
     }
   in
   assert_cfg

@@ -58,11 +58,12 @@ let test_creation context =
       ~configuration
       ~search_root
       ~relative
-      ( { SourcePath.priority = actual_priority;
+      ( {
+          SourcePath.priority = actual_priority;
           is_stub = actual_is_stub;
           is_external = actual_is_external;
           is_init = actual_is_init;
-          _
+          _;
         } as source_path )
     =
     let expected_path = Path.create_relative ~root:search_root ~relative in
@@ -769,13 +770,16 @@ module FileSystemEvent = struct
   type t = {
     kind: kind;
     root: Root.t;
-    relative: string
+    relative: string;
   }
 end
 
 module ModuleTrackerEvent = struct
   type t =
-    | New of { root: Root.t; relative: string }
+    | New of {
+        root: Root.t;
+        relative: string;
+      }
     | Delete of string
 end
 

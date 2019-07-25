@@ -43,12 +43,13 @@ let populate_preprocess ?(environment = create_environment ()) ?handle source =
 
 let order_and_environment source =
   let environment = populate source in
-  ( { TypeOrder.handler = Environment.class_hierarchy environment;
+  ( {
+      TypeOrder.handler = Environment.class_hierarchy environment;
       constructor = (fun _ ~protocol_assumptions:_ -> None);
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
-      protocol_assumptions = TypeOrder.ProtocolAssumptions.empty
+      protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
     },
     environment )
 
@@ -632,8 +633,9 @@ let test_populate _ =
     let index annotation = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) annotation in
     let targets = TypeOrderHandler.find (TypeOrderHandler.edges ()) (index base) in
     let to_target annotation =
-      { ClassHierarchy.Target.target = index annotation;
-        parameters = superclass_parameters annotation
+      {
+        ClassHierarchy.Target.target = index annotation;
+        parameters = superclass_parameters annotation;
       }
     in
     let show_targets = function
@@ -841,12 +843,13 @@ let test_populate _ =
   assert_equal
     (GlobalResolution.undecorated_signature global_resolution (Reference.create "foo"))
     (Some
-       { Type.Callable.annotation = Type.string;
+       {
+         Type.Callable.annotation = Type.string;
          parameters =
            Type.Callable.Defined
              [ Type.Callable.Parameter.Named
                  { annotation = Type.integer; name = "x"; default = false } ];
-         define_location = None
+         define_location = None;
        })
 
 

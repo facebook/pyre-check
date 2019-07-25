@@ -15,7 +15,10 @@ module Breadcrumb = struct
 
   type t =
     (* Used to determine 'foo' from request.foo and request.GET['foo'] *)
-    | First of { kind: first_kind; name: string }
+    | First of {
+        kind: first_kind;
+        name: string;
+      }
     | HasFirst of first_kind
     | Obscure
     | SimpleVia of string (* Declared breadcrumbs *)

@@ -29,7 +29,7 @@ module Node = struct
     id: int;
     mutable kind: kind;
     mutable predecessors: Int.Set.t;
-    mutable successors: Int.Set.t
+    mutable successors: Int.Set.t;
   }
   [@@deriving compare, eq]
 
@@ -115,7 +115,7 @@ type jumps = {
   continue: Node.t;
   error: Node.t;
   normal: Node.t;
-  yield: Node.t
+  yield: Node.t;
 }
 
 let equal left right = Hashtbl.equal left right Node.equal

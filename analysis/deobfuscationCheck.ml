@@ -15,7 +15,7 @@ let name = "Deobfuscation"
 module NestedDefines = struct
   type 'state nested = {
     nested_define: Define.t;
-    state: 'state
+    state: 'state;
   }
 
   and 'state t = 'state nested Location.Reference.Map.t
@@ -43,7 +43,7 @@ module ConstantPropagationState (Context : Context) = struct
   and t = {
     constants: constant Reference.Map.t;
     define: Define.t;
-    nested_defines: t NestedDefines.t
+    nested_defines: t NestedDefines.t;
   }
 
   let show { constants; _ } =
@@ -164,12 +164,14 @@ module ConstantPropagationState (Context : Context) = struct
           let value = transform_expression value in
           { statement with Node.value = Assign { assign with value } }
       | Assert
-          { Assert.origin =
+          {
+            Assert.origin =
               Assert.If
-                { statement = { Node.location; value = If ({ If.test; _ } as conditional) };
-                  true_branch = true
+                {
+                  statement = { Node.location; value = If ({ If.test; _ } as conditional) };
+                  true_branch = true;
                 };
-            _
+            _;
           } ->
           let transformed_test = transform_expression test in
           if not (Expression.equal test transformed_test) then
@@ -227,7 +229,7 @@ module UnusedStoreState (Context : Context) = struct
   type t = {
     unused: Location.Reference.Set.t Identifier.Map.t;
     define: Define.t;
-    nested_defines: t NestedDefines.t
+    nested_defines: t NestedDefines.t;
   }
 
   let show { unused; _ } = Map.keys unused |> String.concat ~sep:", "
@@ -474,14 +476,16 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
                               | Name.Identifier identifier ->
                                   Name.Identifier (convert_identifier identifier)
                               | Name.Attribute
-                                  { base = { Node.location; value = Name name };
+                                  {
+                                    base = { Node.location; value = Name name };
                                     attribute;
-                                    special
+                                    special;
                                   } ->
                                   Name.Attribute
-                                    { base = { Node.location; value = Name (convert name) };
+                                    {
+                                      base = { Node.location; value = Name (convert name) };
                                       attribute = convert_identifier attribute;
-                                      special
+                                      special;
                                     }
                               | Name.Attribute { base; attribute; special } ->
                                   Name.Attribute

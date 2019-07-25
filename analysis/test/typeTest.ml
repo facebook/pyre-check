@@ -246,80 +246,90 @@ let test_create _ =
   assert_create
     "typing.Callable('name')[..., int]"
     (Type.Callable
-       { kind = Type.Callable.Named !&"name";
+       {
+         kind = Type.Callable.Named !&"name";
          implementation = { default_overload with annotation = Type.integer };
          overloads = [];
-         implicit = None
+         implicit = None;
        });
   assert_create
     "typing.Callable('foo')[..., $unknown]"
     (Type.Callable
-       { kind = Type.Callable.Named !&"foo";
+       {
+         kind = Type.Callable.Named !&"foo";
          implementation = default_overload;
          overloads = [];
-         implicit = None
+         implicit = None;
        });
   assert_create "typing.Other('name')[..., int]" Type.Top;
   assert_create
     "typing.Callable[[int, str], int]"
     (Type.Callable
-       { kind = Type.Callable.Anonymous;
+       {
+         kind = Type.Callable.Anonymous;
          implementation =
-           { annotation = Type.integer;
+           {
+             annotation = Type.integer;
              parameters =
                Defined
                  [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
                    Parameter.Anonymous { index = 1; annotation = Type.string; default = false } ];
-             define_location = None
+             define_location = None;
            };
          overloads = [];
-         implicit = None
+         implicit = None;
        });
   assert_create
     "typing.Callable[[int, Named(a, int), Variable(), Keywords()], int]"
     (Type.Callable
-       { kind = Anonymous;
+       {
+         kind = Anonymous;
          implementation =
-           { annotation = Type.integer;
+           {
+             annotation = Type.integer;
              parameters =
                Defined
                  [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
                    Parameter.Named { name = "a"; annotation = Type.integer; default = false };
                    Parameter.Variable (Concrete Type.Top);
                    Parameter.Keywords Type.Top ];
-             define_location = None
+             define_location = None;
            };
          overloads = [];
-         implicit = None
+         implicit = None;
        });
   assert_create
     "typing.Callable[[int, Variable(int), Keywords(str)], int]"
     (Type.Callable
-       { kind = Anonymous;
+       {
+         kind = Anonymous;
          implementation =
-           { annotation = Type.integer;
+           {
+             annotation = Type.integer;
              parameters =
                Defined
                  [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
                    Parameter.Variable (Concrete Type.integer);
                    Parameter.Keywords Type.string ];
-             define_location = None
+             define_location = None;
            };
          overloads = [];
-         implicit = None
+         implicit = None;
        });
   assert_create
     "typing.Callable[[Named(a, int, default)], int]"
     (Type.Callable
-       { kind = Anonymous;
+       {
+         kind = Anonymous;
          implementation =
-           { annotation = Type.integer;
+           {
+             annotation = Type.integer;
              parameters =
                Defined [Parameter.Named { name = "a"; annotation = Type.integer; default = true }];
-             define_location = None
+             define_location = None;
            };
          overloads = [];
-         implicit = None
+         implicit = None;
        });
   assert_create "typing.Callable[int]" (Type.Callable.create ~annotation:Type.Top ());
   assert_create "function" (Type.Callable.create ~annotation:Type.Any ());
@@ -329,20 +339,22 @@ let test_create _ =
   assert_create
     "mypy_extensions.TypedDict[('Movie', True, ('year', int), ('name', str))]"
     (Type.TypedDictionary
-       { name = "Movie";
+       {
+         name = "Movie";
          fields =
            [ { name = "year"; annotation = Type.integer };
              { name = "name"; annotation = Type.string } ];
-         total = true
+         total = true;
        });
   assert_create
     "mypy_extensions.TypedDict[('Movie', False, ('year', int), ('name', str))]"
     (Type.TypedDictionary
-       { name = "Movie";
+       {
+         name = "Movie";
          fields =
            [ { name = "year"; annotation = Type.integer };
              { name = "name"; annotation = Type.string } ];
-         total = false
+         total = false;
        });
   assert_create
     ~aliases:(function
@@ -437,12 +449,13 @@ let test_expression _ =
     "foo.Variadic.__getitem__(...)";
   assert_expression
     (Type.Parametric
-       { name = "foo.Variadic";
+       {
+         name = "foo.Variadic";
          parameters =
            Map
              (Type.OrderedTypes.Map.create
                 ~mappers:["Foo"]
-                ~variable:(Type.Variable.Variadic.List.create "Ts"))
+                ~variable:(Type.Variable.Variadic.List.create "Ts"));
        })
     "foo.Variadic.__getitem__(pyre_extensions.type_variable_operators.Map.__getitem__((Foo, Ts)))";
 
@@ -457,13 +470,15 @@ let test_expression _ =
   assert_expression
     (Type.Callable.create
        ~overloads:
-         [ { Type.Callable.annotation = Type.string;
+         [ {
+             Type.Callable.annotation = Type.string;
              parameters = Type.Callable.Undefined;
-             define_location = None
+             define_location = None;
            };
-           { Type.Callable.annotation = Type.integer;
+           {
+             Type.Callable.annotation = Type.integer;
              parameters = Type.Callable.Undefined;
-             define_location = None
+             define_location = None;
            } ]
        ~annotation:Type.integer
        ())
@@ -506,20 +521,22 @@ let test_expression _ =
     ("typing.Callable.__getitem__(([Named($0, int), Variable(int), " ^ "Keywords(str)], int))");
   assert_expression
     (Type.TypedDictionary
-       { name = "Movie";
+       {
+         name = "Movie";
          fields =
            [ { name = "title"; annotation = Type.string };
              { name = "year"; annotation = Type.integer } ];
-         total = true
+         total = true;
        })
     "mypy_extensions.TypedDict[(\"Movie\", True, (\"title\", str), (\"year\", int))]";
   assert_expression
     (Type.TypedDictionary
-       { name = "Movie";
+       {
+         name = "Movie";
          fields =
            [ { name = "title"; annotation = Type.string };
              { name = "year"; annotation = Type.integer } ];
-         total = false
+         total = false;
        })
     "mypy_extensions.TypedDict[(\"Movie\", False, (\"title\", str), (\"year\", int))]"
 
@@ -573,7 +590,8 @@ let test_concise _ =
        ~parameters:
          (Type.Callable.Defined
             [ Type.Callable.Parameter.Named
-                { name = "callable";
+                {
+                  name = "callable";
                   default = false;
                   annotation =
                     Type.Callable.create
@@ -583,7 +601,7 @@ let test_concise _ =
                         (Type.Callable.Defined
                            [ Type.Callable.Parameter.Named
                                { name = "x"; annotation = Type.integer; default = false } ])
-                      ()
+                      ();
                 } ])
        ())
     "(callable: (x: int) -> float) -> int";
@@ -599,20 +617,22 @@ let test_concise _ =
   assert_concise (Type.Tuple (Type.Unbounded Type.integer)) "Tuple[int, ...]";
   assert_concise
     (Type.TypedDictionary
-       { name = "Movie";
+       {
+         name = "Movie";
          fields =
            [ { name = "year"; annotation = Type.integer };
              { name = "name"; annotation = Type.string } ];
-         total = true
+         total = true;
        })
     "Movie";
   assert_concise
     (Type.TypedDictionary
-       { name = "$anonymous";
+       {
+         name = "$anonymous";
          fields =
            [ { name = "year"; annotation = Type.integer };
              { name = "name"; annotation = Type.string } ];
-         total = true
+         total = true;
        })
     "TypedDict(year: int, name: str)";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
@@ -684,11 +704,12 @@ let test_primitives _ =
   assert_equal
     [Type.integer; Type.string]
     ( Type.TypedDictionary
-        { name = "Movie";
+        {
+          name = "Movie";
           fields =
             [ { name = "year"; annotation = Type.integer };
               { name = "name"; annotation = Type.string } ];
-          total = true
+          total = true;
         }
     |> Type.primitives )
 
@@ -726,11 +747,12 @@ let test_elements _ =
   assert_equal
     ["int"; "str"; "TypedDictionary"]
     ( Type.TypedDictionary
-        { name = "Movie";
+        {
+          name = "Movie";
           fields =
             [ { name = "year"; annotation = Type.integer };
               { name = "name"; annotation = Type.string } ];
-          total = true
+          total = true;
         }
     |> Type.elements )
 
@@ -902,12 +924,14 @@ let test_async_generator_value _ =
     ~printer:(Format.asprintf "%a" Type.pp)
     (Type.async_generator_value
        (Type.Parametric
-          { name = "typing.AsyncGenerator";
-            parameters = ![Type.integer; Type.Optional Type.Bottom]
+          {
+            name = "typing.AsyncGenerator";
+            parameters = ![Type.integer; Type.Optional Type.Bottom];
           }))
     (Type.Parametric
-       { name = "typing.Generator";
-         parameters = ![Type.integer; Type.Optional Type.Bottom; Type.Optional Type.Bottom]
+       {
+         name = "typing.Generator";
+         parameters = ![Type.integer; Type.Optional Type.Bottom; Type.Optional Type.Bottom];
        })
 
 
@@ -1788,12 +1812,14 @@ let test_replace_all _ =
        (Bounded
           (Concrete
              [ Parametric
-                 { name = "Foo";
-                   parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.integer] }]
+                 {
+                   name = "Foo";
+                   parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.integer] }];
                  };
                Parametric
-                 { name = "Foo";
-                   parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.string] }]
+                 {
+                   name = "Foo";
+                   parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.string] }];
                  } ])));
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all
@@ -1889,8 +1915,9 @@ let test_map_operator_singleton_replace_variable _ =
     ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
     ~replacement:Type.integer
     (Type.Parametric
-       { name = "Foo";
-         parameters = Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }]
+       {
+         name = "Foo";
+         parameters = Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }];
        });
 
   (* This approach is used to solve concretes against maps *)
@@ -1899,10 +1926,11 @@ let test_map_operator_singleton_replace_variable _ =
     ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
     ~replacement:(Type.Variable unary_variable)
     (Type.Parametric
-       { name = "Foo";
+       {
+         name = "Foo";
          parameters =
            Concrete
-             [Parametric { name = "Bar"; parameters = Concrete [Type.Variable unary_variable] }]
+             [Parametric { name = "Bar"; parameters = Concrete [Type.Variable unary_variable] }];
        });
   ()
 
@@ -1937,9 +1965,10 @@ let test_map_operator_replace_variable _ =
     (Some
        (Concrete
           [ Parametric
-              { name = "Foo";
+              {
+                name = "Foo";
                 parameters =
-                  Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }]
+                  Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }];
               } ]));
   assert_replaces_into
     ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
@@ -1947,13 +1976,15 @@ let test_map_operator_replace_variable _ =
     (Some
        (Concrete
           [ Parametric
-              { name = "Foo";
+              {
+                name = "Foo";
                 parameters =
-                  Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }]
+                  Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }];
               };
             Parametric
-              { name = "Foo";
-                parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.string] }]
+              {
+                name = "Foo";
+                parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.string] }];
               } ]));
   assert_replaces_into
     ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"] ~variable)

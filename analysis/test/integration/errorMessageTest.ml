@@ -290,13 +290,14 @@ let test_concise _ =
   assert_type_errors
     ~concise:true
     ~update_environment_with:
-      [ { handle = "export.py";
+      [ {
+          handle = "export.py";
           source =
             {|
           class Foo:
             def foo(self, x: int) -> None:
               return
-        |}
+        |};
         } ]
     {|
       from export import Foo

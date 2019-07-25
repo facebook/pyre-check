@@ -29,12 +29,14 @@ let test_parse_stubs_modules_list context =
     let name =
       match Ast.SharedMemory.Sources.get qualifier with
       | Some
-          { Source.statements =
-              [ { Node.value =
+          {
+            Source.statements =
+              [ {
+                  Node.value =
                     Statement.Define ({ Statement.Define.signature = { name; _ }; _ } as define);
-                  _
+                  _;
                 } ];
-            _
+            _;
           }
         when Statement.Define.is_stub define = is_stub ->
           name

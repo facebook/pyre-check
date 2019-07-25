@@ -15,16 +15,18 @@ open Test
 
 let test_is_method _ =
   let define ~name ~parent =
-    { Define.signature =
-        { name = !&name;
+    {
+      Define.signature =
+        {
+          name = !&name;
           parameters = [];
           decorators = [];
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = parent >>| Reference.create
+          parent = parent >>| Reference.create;
         };
-      body = [+Pass]
+      body = [+Pass];
     }
   in
   assert_true (Define.is_method (define ~name:"path.source.foo" ~parent:(Some "path.source")));
@@ -33,16 +35,18 @@ let test_is_method _ =
 
 let test_is_classmethod _ =
   let define name decorators =
-    { Define.signature =
-        { name = !&name;
+    {
+      Define.signature =
+        {
+          name = !&name;
           parameters = [];
           decorators;
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = Some !&"bar"
+          parent = Some !&"bar";
         };
-      body = [+Pass]
+      body = [+Pass];
     }
   in
   assert_false (Define.is_class_method (define "foo" []));
@@ -55,16 +59,18 @@ let test_is_classmethod _ =
 
 let test_is_class_property _ =
   let define name decorators =
-    { Define.signature =
-        { name = !&name;
+    {
+      Define.signature =
+        {
+          name = !&name;
           parameters = [];
           decorators;
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = Some !&"bar"
+          parent = Some !&"bar";
         };
-      body = [+Pass]
+      body = [+Pass];
     }
   in
   assert_false (Define.is_class_property (define "foo" []));
@@ -75,16 +81,18 @@ let test_is_class_property _ =
 
 let test_decorator _ =
   let define decorators =
-    { Define.signature =
-        { name = !&"foo";
+    {
+      Define.signature =
+        {
+          name = !&"foo";
           parameters = [];
           decorators;
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = None
+          parent = None;
         };
-      body = [+Pass]
+      body = [+Pass];
     }
   in
   assert_false (Define.is_static_method (define []));
@@ -108,16 +116,18 @@ let test_decorator _ =
 let test_is_constructor _ =
   let assert_is_constructor ?(in_test = false) ~name ?(parent = None) expected =
     let define =
-      { Define.signature =
-          { name = !&name;
+      {
+        Define.signature =
+          {
+            name = !&name;
             parameters = [];
             decorators = [];
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = parent >>| Reference.create
+            parent = parent >>| Reference.create;
           };
-        body = [+Pass]
+        body = [+Pass];
       }
     in
     assert_equal expected (Define.is_constructor ~in_test define)
@@ -270,7 +280,8 @@ let test_attributes _ =
       ~value
       ()
     =
-    { Attribute.annotation;
+    {
+      Attribute.annotation;
       async = false;
       defines;
       final;
@@ -282,7 +293,7 @@ let test_attributes _ =
       setter;
       static;
       toplevel;
-      value
+      value;
     }
     |> Node.create ~location
   in
@@ -455,24 +466,27 @@ let test_attributes _ =
           | None -> None
           | Some ((start_line, start_column), (stop_line, stop_column)) ->
               Some
-                { Location.path = Reference.empty;
+                {
+                  Location.path = Reference.empty;
                   start = { Location.line = start_line; column = start_column };
-                  stop = { Location.line = stop_line; column = stop_column }
+                  stop = { Location.line = stop_line; column = stop_column };
                 }
         in
         let defines =
           if number_of_defines > 0 then
             let define =
-              { Statement.Define.signature =
-                  { name = !&"foo";
+              {
+                Statement.Define.signature =
+                  {
+                    name = !&"foo";
                     parameters = [];
                     decorators = [];
                     docstring = None;
                     return_annotation = Some !"int";
                     async = false;
-                    parent = None
+                    parent = None;
                   };
-                body = []
+                body = [];
               }
             in
             Some (List.init ~f:(fun _ -> define) number_of_defines)

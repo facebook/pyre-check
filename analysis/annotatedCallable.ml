@@ -166,10 +166,11 @@ let create ~resolution ~parent ~name overloads =
         in
         { Type.Callable.annotation; parameters; define_location }
       in
-      { Type.Callable.kind;
+      {
+        Type.Callable.kind;
         implementation = drop_self implementation;
         overloads = List.map overloads ~f:drop_self;
-        implicit
+        implicit;
       }
   | None -> callable
 
@@ -206,11 +207,12 @@ let apply_decorators
                 Type.Any
           in
           if Type.is_async_iterator joined then
-            { overload with
+            {
+              overload with
               Type.Callable.annotation =
                 Type.parametric
                   "typing.AsyncContextManager"
-                  (Concrete [Type.single_parameter joined])
+                  (Concrete [Type.single_parameter joined]);
             }
           else
             overload
@@ -219,11 +221,12 @@ let apply_decorators
       | name -> (
         match GlobalResolution.undecorated_signature resolution (Reference.create name) with
         | Some
-            { Type.Callable.annotation = return_annotation;
+            {
+              Type.Callable.annotation = return_annotation;
               parameters =
                 Type.Callable.Defined
                   [Type.Callable.Parameter.Named { annotation = parameter_annotation; _ }];
-              _
+              _;
             } -> (
             let decorated_annotation =
               GlobalResolution.solve_less_or_equal
@@ -244,12 +247,14 @@ let apply_decorators
                we should do. Defer the problem by now by only inferring a limited set of
                decorators. *)
             | Type.Callable
-                { Type.Callable.implementation =
-                    { Type.Callable.parameters = decorated_parameters;
+                {
+                  Type.Callable.implementation =
+                    {
+                      Type.Callable.parameters = decorated_parameters;
                       annotation = decorated_annotation;
-                      define_location
+                      define_location;
                     };
-                  _
+                  _;
                 } -> (
               (* Typeshed currently exhibits the common behavior of decorating with `Callable[...,
                  T] -> Modified[T]` when the parameters are meant to be left alone. Support this by
@@ -257,9 +262,10 @@ let apply_decorators
               match decorated_parameters with
               | Undefined -> { overload with Type.Callable.annotation = decorated_annotation }
               | _ ->
-                  { Type.Callable.annotation = decorated_annotation;
+                  {
+                    Type.Callable.annotation = decorated_annotation;
                     parameters = decorated_parameters;
-                    define_location
+                    define_location;
                   } )
             | _ -> overload )
         | _ -> overload )

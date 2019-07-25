@@ -9,13 +9,19 @@ open Ast
 open Statement
 
 type generic_type_problems =
-  | IncorrectNumberOfParameters of { actual: int; expected: int }
-  | ViolateConstraints of { actual: Type.t; expected: Type.Variable.Unary.t }
+  | IncorrectNumberOfParameters of {
+      actual: int;
+      expected: int;
+    }
+  | ViolateConstraints of {
+      actual: Type.t;
+      expected: Type.Variable.Unary.t;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 type type_parameters_mismatch = {
   name: string;
-  kind: generic_type_problems
+  kind: generic_type_problems;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -33,7 +39,7 @@ type class_metadata = {
   successors: Type.Primitive.t list;
   is_test: bool;
   is_final: bool;
-  extends_placeholder_stub_class: bool
+  extends_placeholder_stub_class: bool;
 }
 [@@deriving eq]
 
@@ -52,7 +58,7 @@ type t = {
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
   protocol_assumptions: TypeOrder.ProtocolAssumptions.t;
   global: Reference.t -> global option;
-  local_mode: string -> Source.mode option
+  local_mode: string -> Source.mode option;
 }
 
 let create
@@ -70,7 +76,8 @@ let create
     ~local_mode
     ()
   =
-  { class_hierarchy;
+  {
+    class_hierarchy;
     aliases;
     module_definition;
     class_definition;
@@ -82,7 +89,7 @@ let create
     is_protocol;
     protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
     global;
-    local_mode
+    local_mode;
   }
 
 
@@ -119,12 +126,13 @@ let full_order ({ class_hierarchy; attributes = a; protocol_assumptions; _ } as 
   let is_protocol annotation ~protocol_assumptions =
     is_protocol { resolution with protocol_assumptions } annotation
   in
-  { TypeOrder.handler = class_hierarchy;
+  {
+    TypeOrder.handler = class_hierarchy;
     constructor;
     attributes;
     is_protocol;
     protocol_assumptions;
-    any_is_bottom = false
+    any_is_bottom = false;
   }
 
 
@@ -186,8 +194,9 @@ let check_invalid_type_parameters resolution annotation =
                       if invalid then
                         ( Type.Any,
                           Some
-                            { name;
-                              kind = ViolateConstraints { actual = given; expected = generic }
+                            {
+                              name;
+                              kind = ViolateConstraints { actual = given; expected = generic };
                             } )
                       else
                         given, None
@@ -201,10 +210,11 @@ let check_invalid_type_parameters resolution annotation =
                 Type.parametric name (Concrete parameters), List.filter_map errors ~f:Fn.id @ sofar
             | Unequal_lengths ->
                 let mismatch =
-                  { name;
+                  {
+                    name;
                     kind =
                       IncorrectNumberOfParameters
-                        { actual = List.length given; expected = List.length generics }
+                        { actual = List.length given; expected = List.length generics };
                   }
                 in
                 ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),

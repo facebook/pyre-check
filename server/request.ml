@@ -53,13 +53,15 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/definition" -> (
       match TextDocumentDefinitionRequest.of_yojson request with
       | Ok
-          { TextDocumentDefinitionRequest.parameters =
+          {
+            TextDocumentDefinitionRequest.parameters =
               Some
-                { TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  position
+                {
+                  TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                  position;
                 };
             id;
-            _
+            _;
           } ->
           uri_to_path ~uri
           >>| fun path ->
@@ -71,12 +73,14 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/didClose" -> (
       match DidCloseTextDocument.of_yojson request with
       | Ok
-          { DidCloseTextDocument.parameters =
+          {
+            DidCloseTextDocument.parameters =
               Some
-                { DidCloseTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  _
+                {
+                  DidCloseTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                  _;
                 };
-            _
+            _;
           } ->
           uri_to_path ~uri
           >>| fun path ->
@@ -91,9 +95,10 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/didOpen" -> (
       match DidOpenTextDocument.of_yojson request with
       | Ok
-          { DidOpenTextDocument.parameters =
+          {
+            DidOpenTextDocument.parameters =
               Some { DidOpenTextDocumentParameters.textDocument = { TextDocumentItem.uri; _ }; _ };
-            _
+            _;
           } ->
           uri_to_path ~uri
           >>| fun path ->
@@ -108,13 +113,15 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/didChange" -> (
       match DidChangeTextDocument.of_yojson request with
       | Ok
-          { DidChangeTextDocument.parameters =
+          {
+            DidChangeTextDocument.parameters =
               Some
-                { DidChangeTextDocumentParameters.textDocument =
+                {
+                  DidChangeTextDocumentParameters.textDocument =
                     { VersionedTextDocumentIdentifier.uri; _ };
-                  contentChanges = content_changes
+                  contentChanges = content_changes;
                 };
-            _
+            _;
           } ->
           (* We only care about the last text update since we receive full text. *)
           Option.both
@@ -131,12 +138,14 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/didSave" -> (
       match DidSaveTextDocument.of_yojson request with
       | Ok
-          { DidSaveTextDocument.parameters =
+          {
+            DidSaveTextDocument.parameters =
               Some
-                { DidSaveTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  _
+                {
+                  DidSaveTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                  _;
                 };
-            _
+            _;
           } ->
           uri_to_path ~uri >>| fun path -> SaveDocument path
       | Ok _ ->
@@ -148,10 +157,11 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/completion" -> (
       match CompletionRequest.of_yojson request with
       | Ok
-          { CompletionRequest.parameters =
+          {
+            CompletionRequest.parameters =
               Some { textDocument = { TextDocumentIdentifier.uri; _ }; position; _ };
             id;
-            _
+            _;
           } ->
           uri_to_path ~uri
           >>| fun path ->
@@ -164,13 +174,15 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/hover" -> (
       match HoverRequest.of_yojson request with
       | Ok
-          { HoverRequest.parameters =
+          {
+            HoverRequest.parameters =
               Some
-                { TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  position
+                {
+                  TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                  position;
                 };
             id;
-            _
+            _;
           } ->
           uri_to_path ~uri
           >>| fun path ->
@@ -182,14 +194,16 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/codeAction" -> (
       match CodeActionRequest.of_yojson request with
       | Ok
-          { CodeActionRequest.parameters =
+          {
+            CodeActionRequest.parameters =
               Some
-                { CodeActionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                {
+                  CodeActionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
                   context = { diagnostics; _ };
-                  _
+                  _;
                 };
             id;
-            _
+            _;
           } ->
           uri_to_path ~uri >>| fun path -> CodeActionRequest { id; uri; diagnostics; path }
       | Ok _ -> None
@@ -199,10 +213,11 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "textDocument/typeCoverage" -> (
       match TypeCoverage.of_yojson request with
       | Ok
-          { TypeCoverage.parameters =
+          {
+            TypeCoverage.parameters =
               Some { TypeCoverageParameters.textDocument = { TextDocumentIdentifier.uri; _ }; _ };
             id;
-            _
+            _;
           } ->
           uri_to_path ~uri >>| fun path -> TypeCoverageRequest { path; id }
       | Ok _ -> None
@@ -212,9 +227,10 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
     | "workspace/executeCommand" -> (
       match ExecuteCommandRequest.of_yojson request with
       | Ok
-          { ExecuteCommandRequest.parameters = Some { ExecuteCommandParameters.arguments; _ };
+          {
+            ExecuteCommandRequest.parameters = Some { ExecuteCommandParameters.arguments; _ };
             id;
-            _
+            _;
           } ->
           Some (ExecuteCommandRequest { id; arguments })
       | Ok _ -> None
@@ -268,14 +284,14 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
 
 type response = {
   state: State.t;
-  response: Protocol.response option
+  response: Protocol.response option;
 }
 
 module AnnotationEdit = struct
   type t = {
     new_text: string;
     range: LanguageServer.Types.Range.t;
-    title: string
+    title: string;
   }
 
   let range { range; _ } = range
@@ -320,8 +336,9 @@ module AnnotationEdit = struct
       List.findi lines ~f:(fun _ line -> Option.is_some (String.substr_index line ~pattern:token))
       >>| (fun (index, line) ->
             let position =
-              { LanguageServer.Types.Position.line = index + start_line;
-                character = String.substr_index_exn line ~pattern:token + 1
+              {
+                LanguageServer.Types.Position.line = index + start_line;
+                character = String.substr_index_exn line ~pattern:token + 1;
               }
             in
             let end_ =
@@ -579,12 +596,13 @@ let process_type_query_request
                   | Some (kind, key, first_value), Some (_, _, second_value) ->
                       let value =
                         TypeQuery.DecodedPair
-                          { serialized_key;
+                          {
+                            serialized_key;
                             kind;
                             actual_key = key;
                             first_value;
                             second_value;
-                            equal
+                            equal;
                           }
                       in
                       { TypeQuery.decoded = value :: decoded; undecodable_keys }
@@ -744,8 +762,9 @@ let process_type_query_request
                       | Type.Callable.Parameter.Named { name; annotation; _ } ->
                           let name = Identifier.sanitized name in
                           Some
-                            { TypeQuery.parameter_name = name;
-                              annotation = keep_known_annotation annotation
+                            {
+                              TypeQuery.parameter_name = name;
+                              annotation = keep_known_annotation annotation;
                             }
                       | _ -> None
                     in
@@ -1017,19 +1036,22 @@ let rec process
                      AnnotationEdit.create ~file:(File.create path) ~error
                      >>| (fun edit ->
                            Some
-                             { LanguageServer.Types.CodeAction.diagnostics = Some [diagnostic];
+                             {
+                               LanguageServer.Types.CodeAction.diagnostics = Some [diagnostic];
                                command =
                                  Some
-                                   { title = "Fix it";
+                                   {
+                                     title = "Fix it";
                                      command = "add_pyre_annotation";
                                      arguments =
-                                       [ { range = AnnotationEdit.range edit;
+                                       [ {
+                                           range = AnnotationEdit.range edit;
                                            newText = AnnotationEdit.new_text edit;
-                                           uri
-                                         } ]
+                                           uri;
+                                         } ];
                                    };
                                title = AnnotationEdit.title edit;
-                               kind = Some "refactor.rewrite"
+                               kind = Some "refactor.rewrite";
                              })
                      |> Option.value ~default:None)
             in
@@ -1045,8 +1067,9 @@ let rec process
             List.hd arguments
             >>| (fun { uri; newText; range } ->
                   let edit =
-                    { LanguageServer.Types.WorkspaceEdit.changes =
-                        Some { uri; textEdit = [{ newText; range }] }
+                    {
+                      LanguageServer.Types.WorkspaceEdit.changes =
+                        Some { uri; textEdit = [{ newText; range }] };
                     }
                   in
                   LanguageServer.Protocol.ApplyWorkspaceEdit.create ~id edit

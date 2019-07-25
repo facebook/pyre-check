@@ -13,7 +13,10 @@ open Pyre
 module Root = struct
   type t =
     | LocalResult (* Special root representing the return value location. *)
-    | PositionalParameter of { position: int; name: Identifier.t }
+    | PositionalParameter of {
+        position: int;
+        name: Identifier.t;
+      }
     | NamedParameter of { name: Identifier.t }
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
@@ -75,7 +78,7 @@ end
 type argument_match = {
   root: Root.t;
   actual_path: AbstractTreeDomain.Label.path;
-  formal_path: AbstractTreeDomain.Label.path
+  formal_path: AbstractTreeDomain.Label.path;
 }
 [@@deriving show { with_path = false }]
 
@@ -103,9 +106,10 @@ let match_actuals_to_formals arguments roots =
       when not (List.exists ~f:(Identifier.equal actual_name) excluded) ->
         let field_name = Root.chop_parameter_prefix actual_name in
         Some
-          { root = formal;
+          {
+            root = formal;
             actual_path = [];
-            formal_path = [AbstractTreeDomain.Label.create_name_field field_name]
+            formal_path = [AbstractTreeDomain.Label.create_name_field field_name];
           }
     | `StarStar, NamedParameter { name } ->
         Some
@@ -127,18 +131,20 @@ let match_actuals_to_formals arguments roots =
     | `Star (`Precise actual_position), PositionalParameter { position; _ }
       when actual_position <= position ->
         Some
-          { root = formal;
+          {
+            root = formal;
             actual_path = [AbstractTreeDomain.Label.create_int_field (position - actual_position)];
-            formal_path = []
+            formal_path = [];
           }
     | `Star (`Approximate minimal_position), PositionalParameter { position; _ }
       when minimal_position <= position ->
         Some { root = formal; actual_path = [AbstractTreeDomain.Label.Any]; formal_path = [] }
     | `Precise actual_position, StarParameter { position } when actual_position >= position ->
         Some
-          { root = formal;
+          {
+            root = formal;
             actual_path = [];
-            formal_path = [AbstractTreeDomain.Label.create_int_field (actual_position - position)]
+            formal_path = [AbstractTreeDomain.Label.create_int_field (actual_position - position)];
           }
     | `Approximate minimal_position, StarParameter { position; _ }
       when minimal_position <= position ->
@@ -171,7 +177,7 @@ let match_actuals_to_formals arguments roots =
 
 type t = {
   root: Root.t;
-  path: AbstractTreeDomain.Label.path
+  path: AbstractTreeDomain.Label.path;
 }
 [@@deriving show { with_path = false }, eq]
 

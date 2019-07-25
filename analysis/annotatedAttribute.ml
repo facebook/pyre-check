@@ -22,7 +22,7 @@ type attribute = {
   parent: Type.t;
   property: property option;
   static: bool;
-  value: Expression.t
+  value: Expression.t;
 }
 [@@deriving eq, show]
 
@@ -57,8 +57,9 @@ let static { Node.value = { static; _ }; _ } = static
 
 let instantiate ({ Node.value = { annotation; _ } as attribute; _ } as attribute_node) ~constraints
   =
-  { attribute_node with
-    Node.value = { attribute with annotation = Annotation.instantiate annotation ~constraints }
+  {
+    attribute_node with
+    Node.value = { attribute with annotation = Annotation.instantiate annotation ~constraints };
   }
 
 
@@ -67,7 +68,7 @@ module Table = struct
 
   type t = {
     attributes: element String.Table.t;
-    names: string list ref
+    names: string list ref;
   }
 
   let create () = { attributes = String.Table.create (); names = ref [] }

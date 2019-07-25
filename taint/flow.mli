@@ -9,7 +9,7 @@ open Domains
 
 type flow = {
   source_taint: ForwardTaint.t;
-  sink_taint: BackwardTaint.t
+  sink_taint: BackwardTaint.t;
 }
 [@@deriving sexp]
 
@@ -17,13 +17,13 @@ type flows = flow list [@@deriving sexp]
 
 type candidate = {
   flows: flows;
-  location: Location.t
+  location: Location.t;
 }
 [@@deriving sexp]
 
 type flow_state = {
   matched: flows;
-  rest: flows
+  rest: flows;
 }
 [@@deriving sexp]
 
@@ -32,7 +32,7 @@ type issue = {
   flow: flow;
   issue_location: Location.t;
   (* Only used to create the Pyre errors. *)
-  define: Ast.Statement.Define.t Ast.Node.t
+  define: Ast.Statement.Define.t Ast.Node.t;
 }
 [@@deriving sexp]
 

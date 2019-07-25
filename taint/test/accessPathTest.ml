@@ -28,14 +28,16 @@ let test_of_expression _ =
   assert_of_expression
     !+"a.b"
     (Some
-       { AccessPath.root = AccessPath.Root.Variable "a";
-         path = [AbstractTreeDomain.Label.Field "b"]
+       {
+         AccessPath.root = AccessPath.Root.Variable "a";
+         path = [AbstractTreeDomain.Label.Field "b"];
        });
   assert_of_expression
     !+"a.b.c"
     (Some
-       { AccessPath.root = AccessPath.Root.Variable "a";
-         path = [AbstractTreeDomain.Label.Field "b"; AbstractTreeDomain.Label.Field "c"]
+       {
+         AccessPath.root = AccessPath.Root.Variable "a";
+         path = [AbstractTreeDomain.Label.Field "b"; AbstractTreeDomain.Label.Field "c"];
        });
   assert_of_expression !+"a.b.call()" None;
 
@@ -50,8 +52,9 @@ let test_of_expression _ =
     ~resolution
     !"$local_qualifier$unannotated"
     (Some
-       { AccessPath.root = AccessPath.Root.Variable "qualifier";
-         path = [AbstractTreeDomain.Label.Field "unannotated"]
+       {
+         AccessPath.root = AccessPath.Root.Variable "qualifier";
+         path = [AbstractTreeDomain.Label.Field "unannotated"];
        });
   assert_of_expression
     ~resolution

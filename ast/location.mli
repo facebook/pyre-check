@@ -8,7 +8,7 @@ module AstReference = Reference
 
 type position = {
   line: int;
-  column: int
+  column: int;
 }
 [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -18,7 +18,7 @@ val any_position : position
 type 'path location = {
   path: 'path;
   start: position;
-  stop: position
+  stop: position;
 }
 [@@deriving compare, eq, sexp, show, hash, to_yojson]
 

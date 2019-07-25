@@ -143,7 +143,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     element: Element.t;
     (* Edges to child nodes. NOTE: Indices are special. If the AnyIndex [*] is present then it
        covers all indices [i], that are not explicitly present. *)
-    children: t LabelMap.t
+    children: t LabelMap.t;
   }
   [@@deriving sexp]
   (** Access Path tree nodes have an abstract domain element and a set of children indexed by
@@ -166,8 +166,9 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
       match path with
       | [] -> tree
       | label_element :: rest ->
-          { element = Element.bottom;
-            children = LabelMap.singleton label_element (create_tree_internal rest tree)
+          {
+            element = Element.bottom;
+            children = LabelMap.singleton label_element (create_tree_internal rest tree);
           }
     in
     if is_empty_tree tree then
@@ -318,7 +319,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
 
   type filtered_element_t = {
     new_element: Element.t;
-    ancestors: Element.t
+    ancestors: Element.t;
   }
 
   let filter_by_ancestors ~ancestors ~element =
@@ -851,7 +852,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
   type raw_path_info = {
     path: Label.path;
     ancestors: Element.t;
-    tip: Element.t
+    tip: Element.t;
   }
 
   type _ AbstractDomain.part +=

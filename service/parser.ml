@@ -49,7 +49,7 @@ let parse_source
 module FixpointResult = struct
   type t = {
     parsed: SourcePath.t parse_result list;
-    not_parsed: SourcePath.t list
+    not_parsed: SourcePath.t list;
   }
 
   let merge
@@ -103,7 +103,7 @@ let parse_sources_job ~configuration ~preprocessing_state ~show_parser_errors ~f
 type parse_sources_result = {
   parsed: SourcePath.t list;
   syntax_error: SourcePath.t list;
-  system_error: SourcePath.t list
+  system_error: SourcePath.t list;
 }
 
 let parse_sources ~configuration ~scheduler ~preprocessing_state source_paths =

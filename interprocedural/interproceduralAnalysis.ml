@@ -181,8 +181,9 @@ let widen
     ~next:{ Result.models = next_model; is_obscure = next_obscure }
   =
   Result.
-    { is_obscure = previous_obscure || next_obscure;
-      models = widen ~iteration ~previous:previous_model ~next:next_model
+    {
+      is_obscure = previous_obscure || next_obscure;
+      models = widen ~iteration ~previous:previous_model ~next:next_model;
     }
 
 
@@ -324,8 +325,9 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
             override;
           result
       | Some model ->
-          { is_obscure = is_obscure || model.is_obscure;
-            models = join_models ~iteration models model.models
+          {
+            is_obscure = is_obscure || model.is_obscure;
+            models = join_models ~iteration models model.models;
           }
     in
     let direct_model =
@@ -449,7 +451,7 @@ let emit_externalization kind emitter callable = externalize kind callable |> Li
 
 type result = {
   callables_processed: int;
-  callables_to_dump: Callable.Set.t
+  callables_to_dump: Callable.Set.t;
 }
 
 (* Called on a worker with a set of functions to analyze. *)
@@ -596,8 +598,9 @@ let compute_fixpoint
             callables_processed
             number_of_callables
         in
-        { callables_processed;
-          callables_to_dump = Callable.Set.union left.callables_to_dump right.callables_to_dump
+        {
+          callables_processed;
+          callables_to_dump = Callable.Set.union left.callables_to_dump right.callables_to_dump;
         }
       in
       let () =

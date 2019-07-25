@@ -55,7 +55,7 @@ end
 module Backward = struct
   type model = {
     taint_in_taint_out: BackwardState.t;
-    sink_taint: BackwardState.t
+    sink_taint: BackwardState.t;
   }
   [@@deriving sexp]
 
@@ -81,8 +81,9 @@ module Backward = struct
       { sink_taint = sink_taint_left; taint_in_taint_out = tito_left }
       { sink_taint = sink_taint_right; taint_in_taint_out = tito_right }
     =
-    { sink_taint = BackwardState.join sink_taint_left sink_taint_right;
-      taint_in_taint_out = BackwardState.join tito_left tito_right
+    {
+      sink_taint = BackwardState.join sink_taint_left sink_taint_right;
+      taint_in_taint_out = BackwardState.join tito_left tito_right;
     }
 
 
@@ -123,7 +124,7 @@ type mode =
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  mode: mode
+  mode: mode;
 }
 [@@deriving sexp]
 
@@ -172,16 +173,18 @@ module ResultArgument = struct
 
 
   let join ~iteration:_ left right =
-    { forward = Forward.join left.forward right.forward;
+    {
+      forward = Forward.join left.forward right.forward;
       backward = Backward.join left.backward right.backward;
-      mode = join_modes left.mode right.mode
+      mode = join_modes left.mode right.mode;
     }
 
 
   let widen ~iteration ~previous ~next =
-    { forward = Forward.widen ~iteration ~previous:previous.forward ~next:next.forward;
+    {
+      forward = Forward.widen ~iteration ~previous:previous.forward ~next:next.forward;
       backward = Backward.widen ~iteration ~previous:previous.backward ~next:next.backward;
-      mode = join_modes previous.mode next.mode
+      mode = join_modes previous.mode next.mode;
     }
 
 

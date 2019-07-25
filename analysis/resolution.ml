@@ -12,7 +12,7 @@ type t = {
   annotations: Annotation.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
   resolve: resolution:t -> Expression.t -> Annotation.t;
-  parent: Reference.t option
+  parent: Reference.t option;
 }
 
 let create ~global_resolution ~annotations ~resolve ?parent () =

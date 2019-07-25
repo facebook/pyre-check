@@ -25,7 +25,7 @@ module State (Context : Context) = struct
 
   type t = {
     unawaited: state Location.Reference.Map.t;
-    locals: Location.Reference.Set.t Reference.Map.t
+    locals: Location.Reference.Set.t Reference.Map.t;
   }
 
   let show { unawaited; locals } =
@@ -102,8 +102,9 @@ module State (Context : Context) = struct
       | unawaited, _ -> unawaited
     in
     let merge_locals ~key:_ left right = Set.union left right in
-    { unawaited = Map.merge_skewed left.unawaited right.unawaited ~combine:merge_unawaited;
-      locals = Map.merge_skewed left.locals right.locals ~combine:merge_locals
+    {
+      unawaited = Map.merge_skewed left.unawaited right.unawaited ~combine:merge_unawaited;
+      locals = Map.merge_skewed left.locals right.locals ~combine:merge_locals;
     }
 
 
@@ -240,13 +241,14 @@ module State (Context : Context) = struct
               ~left:annotation
               ~right:(Type.awaitable Type.Top)
           then
-            { unawaited =
+            {
+              unawaited =
                 Map.set unawaited ~key:(Node.location expression) ~data:(Unawaited expression);
               locals =
                 Map.set
                   locals
                   ~key:(Expression.name_to_reference_exn target)
-                  ~data:(Location.Reference.Set.singleton (Node.location expression))
+                  ~data:(Location.Reference.Set.singleton (Node.location expression));
             }
           else
             state )
@@ -334,9 +336,10 @@ module State (Context : Context) = struct
     | Expression expression ->
         let state =
           if is_awaitable expression then
-            { unawaited =
+            {
+              unawaited =
                 Map.set unawaited ~key:(Node.location expression) ~data:(Unawaited expression);
-              locals
+              locals;
             }
           else
             state

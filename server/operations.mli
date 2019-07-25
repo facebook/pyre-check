@@ -8,7 +8,7 @@ open Network
 
 type version_mismatch = {
   server_version: string;
-  expected_version: string
+  expected_version: string;
 }
 [@@deriving show]
 

@@ -34,7 +34,7 @@ module Analysis : sig
     extensions: string list;
     store_type_check_resolution: bool;
     incremental_transitive_dependencies: bool;
-    include_hints: bool
+    include_hints: bool;
   }
   [@@deriving show, eq]
 
@@ -84,12 +84,15 @@ end
 module Server : sig
   type load_parameters = {
     shared_memory_path: Path.t;
-    changed_files_path: Path.t option
+    changed_files_path: Path.t option;
   }
 
   type load =
     | LoadFromFiles of load_parameters
-    | LoadFromProject of { project_name: string; metadata: string option }
+    | LoadFromProject of {
+        project_name: string;
+        metadata: string option;
+      }
 
   type saved_state_action =
     | Save of string
@@ -98,7 +101,7 @@ module Server : sig
   type socket_path = {
     path: Path.t;
     (* actual path to socket (OCaml has limits on socket path length) *)
-    link: Path.t (* symbolic link to path in pyre directory *)
+    link: Path.t; (* symbolic link to path in pyre directory *)
   }
 
   type t = {
@@ -111,7 +114,7 @@ module Server : sig
     daemonize: bool;
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
-    configuration: Analysis.t
+    configuration: Analysis.t;
   }
 
   val set_global : t -> unit
@@ -125,6 +128,6 @@ module StaticAnalysis : sig
     result_json_path: Path.t option;
     dump_call_graph: bool;
     (* Analysis configuration *)
-    configuration: Analysis.t
+    configuration: Analysis.t;
   }
 end

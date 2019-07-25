@@ -72,13 +72,13 @@ module TraceInfo = struct
   type t =
     | Declaration
     | Origin of Location.t
-    | CallSite of
-        { port: AccessPath.Root.t;
-          path: AbstractTreeDomain.Label.path;
-          location: Location.t;
-          callees: Interprocedural.Callable.t list;
-          trace_length: int
-        }
+    | CallSite of {
+        port: AccessPath.Root.t;
+        path: AbstractTreeDomain.Label.path;
+        location: Location.t;
+        callees: Interprocedural.Callable.t list;
+        trace_length: int;
+      }
   [@@deriving compare, sexp, show]
 
   let _ = show (* shadowed below *)
@@ -143,18 +143,20 @@ module TraceInfo = struct
   let less_or_equal ~left ~right =
     match left, right with
     | ( CallSite
-          { path = path_left;
+          {
+            path = path_left;
             location = location_left;
             port = port_left;
             callees = callees_left;
-            trace_length = trace_length_left
+            trace_length = trace_length_left;
           },
         CallSite
-          { path = path_right;
+          {
+            path = path_right;
             location = location_right;
             port = port_right;
             callees = callees_right;
-            trace_length = trace_length_right
+            trace_length = trace_length_right;
           } ) ->
         port_left = port_right
         && Location.compare location_left location_right = 0

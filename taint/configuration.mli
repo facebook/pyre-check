@@ -10,14 +10,14 @@ type rule = {
   sinks: Sinks.t list;
   code: int;
   name: string;
-  message_format: string (* format *)
+  message_format: string; (* format *)
 }
 
 type t = {
   sources: string list;
   sinks: string list;
   features: string list;
-  rules: rule list
+  rules: rule list;
 }
 
 val get : unit -> t

@@ -33,9 +33,10 @@ let test_normalize _ =
   assert_expression_equal
     (normalize
        (+BooleanOperator
-           { BooleanOperator.operator = BooleanOperator.And;
+           {
+             BooleanOperator.operator = BooleanOperator.And;
              left = +False;
-             right = +UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = +True }
+             right = +UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = +True };
            }))
     (+BooleanOperator
         { BooleanOperator.operator = BooleanOperator.And; left = +False; right = +False });
@@ -60,46 +61,53 @@ let test_normalize _ =
   assert_expression_equal
     (normalize
        (+UnaryOperator
-           { UnaryOperator.operator = UnaryOperator.Not;
+           {
+             UnaryOperator.operator = UnaryOperator.Not;
              operand =
-               +UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = +True }
+               +UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = +True };
            }))
     (+True);
   assert_expression_equal
     (normalize
        (+UnaryOperator
-           { UnaryOperator.operator = UnaryOperator.Not;
+           {
+             UnaryOperator.operator = UnaryOperator.Not;
              operand =
                +ComparisonOperator
-                  { ComparisonOperator.left = !"a";
+                  {
+                    ComparisonOperator.left = !"a";
                     operator = ComparisonOperator.LessThan;
-                    right = !"b"
-                  }
+                    right = !"b";
+                  };
            }))
     (+ComparisonOperator
-        { ComparisonOperator.left = !"a";
+        {
+          ComparisonOperator.left = !"a";
           operator = ComparisonOperator.GreaterThanOrEquals;
-          right = !"b"
+          right = !"b";
         });
   assert_expression_equal
     (normalize
        (+UnaryOperator
-           { UnaryOperator.operator = UnaryOperator.Not;
+           {
+             UnaryOperator.operator = UnaryOperator.Not;
              operand =
                +ComparisonOperator
-                  { ComparisonOperator.left = !"x";
+                  {
+                    ComparisonOperator.left = !"x";
                     operator = ComparisonOperator.IsNot;
-                    right = !"y"
-                  }
+                    right = !"y";
+                  };
            }))
     (+ComparisonOperator
         { ComparisonOperator.left = !"x"; operator = ComparisonOperator.Is; right = !"y" });
   assert_expression_equal
     (normalize
        (+UnaryOperator
-           { UnaryOperator.operator = UnaryOperator.Not;
+           {
+             UnaryOperator.operator = UnaryOperator.Not;
              operand =
-               +UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" }
+               +UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
            }))
     !"x";
   assert_expression_equal
@@ -113,9 +121,10 @@ let test_pp _ =
   in
   let simple_expression =
     +BooleanOperator
-       { BooleanOperator.operator = BooleanOperator.And;
+       {
+         BooleanOperator.operator = BooleanOperator.And;
          left = +False;
-         right = +UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = +True }
+         right = +UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = +True };
        }
   in
   assert_pp_equal simple_expression "False and not True";
@@ -124,89 +133,104 @@ let test_pp _ =
     "[False and not True, False and not True]";
   assert_pp_equal
     (+ListComprehension
-        { Comprehension.element = !"element";
+        {
+          Comprehension.element = !"element";
           Comprehension.generators =
-            [ { Comprehension.target = !"x";
+            [ {
+                Comprehension.target = !"x";
                 Comprehension.iterator = !"x";
                 Comprehension.conditions = [simple_expression; simple_expression];
-                async = false
-              } ]
+                async = false;
+              } ];
         })
     "comprehension(element for generators(generator(x in x if False and not True, False and not \
      True)))";
   assert_pp_equal
     (+Lambda
-        { Lambda.parameters =
+        {
+          Lambda.parameters =
             [ +{ Parameter.name = "x"; Parameter.value = Some (+Integer 1); annotation = None };
               +{ Parameter.name = "y"; Parameter.value = Some (+Integer 2); annotation = None } ];
-          Lambda.body = +Tuple [!"x"; +String (StringLiteral.create "y")]
+          Lambda.body = +Tuple [!"x"; +String (StringLiteral.create "y")];
         })
     {|lambda (x=1, y=2) ((x, "y"))|};
   assert_pp_equal
     (+Call
-        { callee =
+        {
+          callee =
             +Name
                (Name.Attribute
-                  { base = +Name (Name.Identifier "a");
+                  {
+                    base = +Name (Name.Identifier "a");
                     attribute = "__getitem__";
-                    special = false
+                    special = false;
                   });
-          arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
+          arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
         })
     "a.__getitem__(1)";
   assert_pp_equal
     (+Call
-        { callee =
+        {
+          callee =
             +Name
                (Name.Attribute
-                  { base =
+                  {
+                    base =
                       +Name
                          (Name.Attribute
-                            { base = +Name (Name.Identifier "a");
+                            {
+                              base = +Name (Name.Identifier "a");
                               attribute = "b";
-                              special = false
+                              special = false;
                             });
                     attribute = "__getitem__";
-                    special = true
+                    special = true;
                   });
           arguments =
-            [ { Call.Argument.name = None;
+            [ {
+                Call.Argument.name = None;
                 value =
                   +Call
-                     { callee =
+                     {
+                       callee =
                          +Name
                             (Name.Attribute
-                               { base = +Name (Name.Identifier "c");
+                               {
+                                 base = +Name (Name.Identifier "c");
                                  attribute = "__getitem__";
-                                 special = true
+                                 special = true;
                                });
-                       arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
-                     }
-              } ]
+                       arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
+                     };
+              } ];
         })
     "a.b[c[1]]";
   assert_pp_equal
     (+Name
         (Name.Attribute
-           { base =
+           {
+             base =
                +Call
-                  { callee =
+                  {
+                    callee =
                       +Name
                          (Name.Attribute
-                            { base =
+                            {
+                              base =
                                 +Name
                                    (Name.Attribute
-                                      { base = +Name (Name.Identifier "a");
+                                      {
+                                        base = +Name (Name.Identifier "a");
                                         attribute = "b";
-                                        special = false
+                                        special = false;
                                       });
                               attribute = "__getitem__";
-                              special = true
+                              special = true;
                             });
-                    arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
+                    arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
                   };
              attribute = "c";
-             special = false
+             special = false;
            }))
     "a.b[1].c";
   assert_pp_equal (parse_single_expression "'string {}'.format(1)") "\"string {}\".format(1)"
@@ -227,15 +251,17 @@ let test_equality _ =
       (Expression.hash expression_right)
   in
   let location_1 =
-    { Location.path = !&"some_path";
+    {
+      Location.path = !&"some_path";
       Location.start = { Location.line = 1; column = 1 };
-      Location.stop = { Location.line = 2; column = 5 }
+      Location.stop = { Location.line = 2; column = 5 };
     }
   in
   let location_2 =
-    { Location.path = !&"some_other_path";
+    {
+      Location.path = !&"some_other_path";
       Location.start = { Location.line = 12; column = 3 };
-      Location.stop = { Location.line = 12; column = 7 }
+      Location.stop = { Location.line = 12; column = 7 };
     }
   in
   compare_two_locations Location.Reference.any location_1;
@@ -351,12 +377,13 @@ let test_create_name _ =
   assert_create_from_identifiers
     ["a"; "b"; "c"]
     (Name.Attribute
-       { base =
+       {
+         base =
            ~+(Name
                 (Name.Attribute
                    { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }));
          attribute = "c";
-         special = false
+         special = false;
        });
   let assert_create raw_string expected =
     assert_equal expected (create_name ~location:Location.Reference.any raw_string)
@@ -365,12 +392,13 @@ let test_create_name _ =
   assert_create
     "a.b.c"
     (Name.Attribute
-       { base =
+       {
+         base =
            ~+(Name
                 (Name.Attribute
                    { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }));
          attribute = "c";
-         special = false
+         special = false;
        })
 
 
@@ -384,20 +412,22 @@ let test_name_to_identifiers _ =
   assert_name_to_identifiers (Name.Identifier "a") (Some ["a"]);
   assert_name_to_identifiers
     (Name.Attribute
-       { base =
+       {
+         base =
            ~+(Name
                 (Name.Attribute
                    { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }));
          attribute = "c";
-         special = false
+         special = false;
        })
     (Some ["a"; "b"; "c"]);
   assert_name_to_identifiers
     (Name.Attribute
-       { base =
+       {
+         base =
            ~+(Name (Name.Attribute { base = ~+(Integer 1); attribute = "b"; special = false }));
          attribute = "c";
-         special = false
+         special = false;
        })
     None
 
@@ -424,9 +454,10 @@ let test_arguments_location _ =
   let assert_arguments_location expression expected_start expected_stop =
     let expression = parse_single_expression expression in
     let expected_location =
-      { expression.Node.location with
+      {
+        expression.Node.location with
         start = { Location.line = 1; column = expected_start };
-        stop = { Location.line = 1; column = expected_stop }
+        stop = { Location.line = 1; column = expected_stop };
       }
     in
     let actual_location =

@@ -134,15 +134,17 @@ let compute_locally_changed_paths ~scheduler ~configuration ~module_tracker:old_
 
 
 let load
-    ~server_configuration:{ Configuration.Server.configuration =
-                              { Configuration.Analysis.expected_version;
+    ~server_configuration:{
+                            Configuration.Server.configuration =
+                              {
+                                Configuration.Analysis.expected_version;
                                 project_root;
                                 local_root;
                                 configuration_file_hash;
-                                _
+                                _;
                               } as configuration;
                             saved_state_action;
-                            _
+                            _;
                           }
     ~connections
   =
@@ -203,7 +205,8 @@ let load
   in
   let errors = ServerErrors.load () in
   let state =
-    { State.module_tracker;
+    {
+      State.module_tracker;
       environment;
       errors;
       symlink_targets_to_sources;
@@ -212,7 +215,7 @@ let load
       last_integrity_check = Unix.time ();
       connections;
       lookups = String.Table.create ();
-      open_documents = Path.Map.empty
+      open_documents = Path.Map.empty;
     }
   in
   Log.info "Reanalyzing %d files and their dependencies." (List.length changed_paths);

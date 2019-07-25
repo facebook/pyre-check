@@ -68,7 +68,7 @@ type locally_changed_file = {
   relative: string;
   old_content: string option;
   (* Won't be written if content is None. *)
-  new_content: string option
+  new_content: string option;
 }
 
 let test_compute_locally_changed_files context =

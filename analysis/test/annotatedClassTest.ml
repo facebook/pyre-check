@@ -98,11 +98,12 @@ let test_superclasses _ =
     |}
   in
   let ( ! ) name =
-    { Statement.Class.name = !&name;
+    {
+      Statement.Class.name = !&name;
       bases = [];
       body = [+Pass];
       decorators = [];
-      docstring = None
+      docstring = None;
     }
     |> Node.create_with_default_location
     |> Class.create
@@ -136,7 +137,7 @@ let test_superclasses _ =
 
 type constructor = {
   parameters: Expression.t Parameter.t list;
-  annotation: Type.t option
+  annotation: Type.t option;
 }
 
 let test_get_decorator _ =
@@ -202,11 +203,12 @@ let test_get_decorator _ =
         pass
     |}
     "decorator"
-    [ { name = "decorator";
+    [ {
+        name = "decorator";
         arguments =
           Some
             [ { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
-              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") } ]
+              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") } ];
       } ];
   assert_get_decorator
     {|
@@ -216,14 +218,16 @@ let test_get_decorator _ =
         pass
     |}
     "decorator"
-    [ { name = "decorator";
-        arguments = Some [{ Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") }]
+    [ {
+        name = "decorator";
+        arguments = Some [{ Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") }];
       };
-      { name = "decorator";
+      {
+        name = "decorator";
         arguments =
           Some
             [ { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
-              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") } ]
+              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") } ];
       } ];
   assert_get_decorator
     (* `enum` imports `ABCMeta` from `abc`. *)
@@ -480,7 +484,8 @@ let test_class_attributes _ =
       ?value
       name
     =
-    +{ Statement.Attribute.annotation;
+    +{
+       Statement.Attribute.annotation;
        async;
        defines;
        final;
@@ -492,7 +497,7 @@ let test_class_attributes _ =
        setter;
        static;
        toplevel;
-       value
+       value;
      }
   in
   (* Test `Class.attributes`. *)
@@ -683,7 +688,8 @@ let test_class_attributes _ =
       name
       callable
     =
-    { Class.Attribute.annotation =
+    {
+      Class.Attribute.annotation =
         Annotation.create_immutable ~global:true (parse_callable callable);
       async = false;
       class_attribute = false;
@@ -694,7 +700,7 @@ let test_class_attributes _ =
       parent;
       property;
       static = false;
-      value = Node.create_with_default_location Ellipsis
+      value = Node.create_with_default_location Ellipsis;
     }
   in
   assert_attribute
@@ -1132,8 +1138,9 @@ let test_inferred_generic_base _ =
        class C(List[_T]):
          pass
      |}
-    [ { Argument.name = None;
-        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "_T"])
+    [ {
+        Argument.name = None;
+        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "_T"]);
       } ];
   assert_inferred_generic
     ~target:"List"
@@ -1152,10 +1159,11 @@ let test_inferred_generic_base _ =
       _T2 = typing.TypeVar('_T2')
       class Foo(typing.Dict[_T1, _T2]): pass
     |}
-    [ { Argument.name = None;
+    [ {
+        Argument.name = None;
         value =
           Type.expression
-            (Type.parametric "typing.Generic" !![Type.variable "_T1"; Type.variable "_T2"])
+            (Type.parametric "typing.Generic" !![Type.variable "_T1"; Type.variable "_T2"]);
       } ];
   assert_inferred_generic
     ~target:"Foo"
@@ -1163,8 +1171,9 @@ let test_inferred_generic_base _ =
       _T1 = typing.TypeVar('_T1')
       class Foo(typing.Dict[_T1, _T1]): pass
     |}
-    [ { Argument.name = None;
-        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "_T1"])
+    [ {
+        Argument.name = None;
+        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "_T1"]);
       } ];
   ()
 

@@ -11,7 +11,7 @@ open Statement
 type t = {
   aliased_exports: Reference.t Reference.Map.Tree.t;
   empty_stub: bool;
-  wildcard_exports: Reference.t list
+  wildcard_exports: Reference.t list;
 }
 [@@deriving eq, sexp]
 
@@ -64,9 +64,10 @@ let from_empty_stub ~reference ~module_definition =
 let wildcard_exports { wildcard_exports; _ } = wildcard_exports
 
 let create_for_testing ~local_mode ~stub =
-  { aliased_exports = Reference.Map.empty |> Map.to_tree;
+  {
+    aliased_exports = Reference.Map.empty |> Map.to_tree;
     empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
-    wildcard_exports = []
+    wildcard_exports = [];
   }
 
 
@@ -78,9 +79,10 @@ let create
     let aliased_exports aliases { Node.value; _ } =
       match value with
       | Assign
-          { Assign.target = { Node.value = Name (Name.Identifier target); _ };
+          {
+            Assign.target = { Node.value = Name (Name.Identifier target); _ };
             value = { Node.value = Name value; _ };
-            _
+            _;
           } -> (
         match Expression.name_to_reference value with
         | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
@@ -128,9 +130,10 @@ let create
       in
       match value with
       | Assign
-          { Assign.target = { Node.value = Name (Name.Identifier target); _ };
+          {
+            Assign.target = { Node.value = Name (Name.Identifier target); _ };
             value = { Node.value = Expression.List names; _ };
-            _
+            _;
           }
         when String.equal (Identifier.sanitized target) "__all__" ->
           let to_reference = function
@@ -155,9 +158,10 @@ let create
     in
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
-  { aliased_exports;
+  {
+    aliased_exports;
     empty_stub = is_stub && Source.equal_mode local_mode Source.PlaceholderStub;
-    wildcard_exports = Option.value dunder_all ~default:toplevel_public
+    wildcard_exports = Option.value dunder_all ~default:toplevel_public;
   }
 
 

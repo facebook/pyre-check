@@ -23,9 +23,10 @@ let test_type_query_json _ =
   assert_serializes
     (Response
        (FoundMethods
-          [ { name = "method";
+          [ {
+              name = "method";
               parameters = [Analysis.Type.integer];
-              return_annotation = Analysis.Type.string
+              return_annotation = Analysis.Type.string;
             } ]))
     {|
       {

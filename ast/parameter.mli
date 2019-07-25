@@ -6,7 +6,7 @@
 type 'expression parameter = {
   name: Identifier.t;
   value: 'expression option;
-  annotation: 'expression option
+  annotation: 'expression option;
 }
 [@@deriving compare, eq, sexp, show, hash, to_yojson]
 

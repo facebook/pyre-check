@@ -146,7 +146,8 @@ let test_check_asynccontextmanager _ =
 let test_check_click_command _ =
   let assert_type_errors =
     let update_environment_with =
-      [ { handle = "click.pyi";
+      [ {
+          handle = "click.pyi";
           (* This is just a mock stub of click and is not meant to be accurate or complete *)
           source =
             {|
@@ -159,7 +160,7 @@ let test_check_click_command _ =
             def option( *param_decls, **attrs) -> Any: ...
             def argument( *param_decls, **attrs) -> Any: ...
             class Context: ...
-        |}
+        |};
         } ]
     in
     assert_type_errors ~update_environment_with

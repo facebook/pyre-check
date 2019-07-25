@@ -13,12 +13,12 @@ type index = {
   class_keys: Identifier.t Hash_set.t Reference.Table.t;
   alias_keys: Identifier.t Hash_set.t Reference.Table.t;
   global_keys: Reference.t Hash_set.t Reference.Table.t;
-  dependent_keys: Reference.t Hash_set.t Reference.Table.t
+  dependent_keys: Reference.t Hash_set.t Reference.Table.t;
 }
 
 type t = {
   index: index;
-  dependents: Reference.Set.t Reference.Table.t
+  dependents: Reference.Set.t Reference.Table.t;
 }
 
 module type Handler = sig
@@ -147,11 +147,12 @@ let handler
 
 let create () =
   let index =
-    { function_keys = Reference.Table.create ();
+    {
+      function_keys = Reference.Table.create ();
       class_keys = Reference.Table.create ();
       alias_keys = Reference.Table.create ();
       global_keys = Reference.Table.create ();
-      dependent_keys = Reference.Table.create ()
+      dependent_keys = Reference.Table.create ();
     }
   in
   { index; dependents = Reference.Table.create () }
@@ -160,14 +161,16 @@ let create () =
 let copy
     { index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys }; dependents }
   =
-  { index =
-      { function_keys = Hashtbl.copy function_keys;
+  {
+    index =
+      {
+        function_keys = Hashtbl.copy function_keys;
         class_keys = Hashtbl.copy class_keys;
         alias_keys = Hashtbl.copy alias_keys;
         global_keys = Hashtbl.copy global_keys;
-        dependent_keys = Hashtbl.copy dependent_keys
+        dependent_keys = Hashtbl.copy dependent_keys;
       };
-    dependents = Hashtbl.copy dependents
+    dependents = Hashtbl.copy dependents;
   }
 
 
@@ -269,7 +272,11 @@ module Callgraph = struct
 
   and callee =
     | Function of Reference.t
-    | Method of { direct_target: Reference.t; static_target: Reference.t; dispatch: dispatch }
+    | Method of {
+        direct_target: Reference.t;
+        static_target: Reference.t;
+        dispatch: dispatch;
+      }
   [@@deriving compare, eq, show, to_yojson]
 
   let callee_to_yojson = function

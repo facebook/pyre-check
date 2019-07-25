@@ -23,9 +23,10 @@ let test_assert_locations _ =
         ~start:(1, 0)
         ~stop:(1, 8)
         (Assert
-           { Assert.test = node ~start:(1, 7) ~stop:(1, 8) (Name (Name.Identifier "a"));
+           {
+             Assert.test = node ~start:(1, 7) ~stop:(1, 8) (Name (Name.Identifier "a"));
              message = None;
-             origin = Assert.Assertion
+             origin = Assert.Assertion;
            }) ];
   assert_source_locations
     "assert a is b"
@@ -33,14 +34,16 @@ let test_assert_locations _ =
         ~start:(1, 0)
         ~stop:(1, 13)
         (Assert
-           { Assert.test =
+           {
+             Assert.test =
                +ComparisonOperator
-                  { ComparisonOperator.left = !"a";
+                  {
+                    ComparisonOperator.left = !"a";
                     operator = ComparisonOperator.Is;
-                    right = !"b"
+                    right = !"b";
                   };
              message = None;
-             origin = Assert.Assertion
+             origin = Assert.Assertion;
            }) ];
   assert_source_locations
     "assert a, b"
@@ -48,9 +51,10 @@ let test_assert_locations _ =
         ~start:(1, 0)
         ~stop:(1, 8)
         (Assert
-           { Assert.test = !"a";
+           {
+             Assert.test = !"a";
              message = Some (node ~start:(1, 10) ~stop:(1, 11) (Name (Name.Identifier "b")));
-             origin = Assert.Assertion
+             origin = Assert.Assertion;
            }) ];
   assert_source_locations
     "assert a is not None, 'b or c'"
@@ -58,18 +62,20 @@ let test_assert_locations _ =
         ~start:(1, 0)
         ~stop:(1, 20)
         (Assert
-           { Assert.test =
+           {
+             Assert.test =
                node
                  ~start:(1, 7)
                  ~stop:(1, 20)
                  (ComparisonOperator
-                    { ComparisonOperator.left = !"a";
+                    {
+                      ComparisonOperator.left = !"a";
                       operator = ComparisonOperator.IsNot;
-                      right = !"None"
+                      right = !"None";
                     });
              message =
                Some (node ~start:(1, 22) ~stop:(1, 30) (String (StringLiteral.create "b or c")));
-             origin = Assert.Assertion
+             origin = Assert.Assertion;
            }) ]
 
 
@@ -80,10 +86,11 @@ let test_assign_locations _ =
         ~start:(1, 0)
         ~stop:(1, 5)
         (Assign
-           { Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+           {
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
              annotation = None;
              value = node ~start:(1, 4) ~stop:(1, 5) (Integer 1);
-             parent = None
+             parent = None;
            }) ];
   assert_source_locations
     "a: int = 1"
@@ -91,10 +98,11 @@ let test_assign_locations _ =
         ~start:(1, 0)
         ~stop:(1, 10)
         (Assign
-           { Assign.target = !"a";
+           {
+             Assign.target = !"a";
              annotation = Some (node ~start:(1, 3) ~stop:(1, 6) (Name (Name.Identifier "int")));
              value = +Integer 1;
-             parent = None
+             parent = None;
            }) ];
   assert_source_locations
     "a = 1     # type:  int"
@@ -102,11 +110,12 @@ let test_assign_locations _ =
         ~start:(1, 0)
         ~stop:(1, 5)
         (Assign
-           { Assign.target = !"a";
+           {
+             Assign.target = !"a";
              annotation =
                Some (node ~start:(1, 19) ~stop:(1, 22) (String (StringLiteral.create "int")));
              value = +Integer 1;
-             parent = None
+             parent = None;
            }) ];
   assert_source_locations
     "a = 1  # type: 'int'"
@@ -114,11 +123,12 @@ let test_assign_locations _ =
         ~start:(1, 0)
         ~stop:(1, 5)
         (Assign
-           { Assign.target = !"a";
+           {
+             Assign.target = !"a";
              annotation =
                Some (node ~start:(1, 15) ~stop:(1, 20) (String (StringLiteral.create "int")));
              value = +Integer 1;
-             parent = None
+             parent = None;
            }) ];
   assert_source_locations
     "a: int"
@@ -126,10 +136,11 @@ let test_assign_locations _ =
         ~start:(1, 0)
         ~stop:(1, 6)
         (Assign
-           { Assign.target = !"a";
+           {
+             Assign.target = !"a";
              annotation = Some !"int";
              value = node ~start:(1, 6) ~stop:(1, 6) Ellipsis;
-             parent = None
+             parent = None;
            }) ];
   assert_source_locations
     "a = b = 1"
@@ -147,10 +158,11 @@ let test_assign_locations _ =
         ~start:(1, 0)
         ~stop:(1, 16)
         (Assign
-           { Assign.target = !"a";
+           {
+             Assign.target = !"a";
              annotation = None;
              value = +Expression.Yield (Some !"b");
-             parent = None
+             parent = None;
            }) ];
   assert_source_locations
     "a += 1"
@@ -158,19 +170,21 @@ let test_assign_locations _ =
         ~start:(1, 0)
         ~stop:(1, 6)
         (Assign
-           { Assign.target = !"a";
+           {
+             Assign.target = !"a";
              annotation = None;
              value =
                node
                  ~start:(1, 0)
                  ~stop:(1, 6)
                  (Call
-                    { callee =
+                    {
+                      callee =
                         +Name
                            (Name.Attribute { base = !"a"; attribute = "__iadd__"; special = true });
-                      arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
+                      arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
                     });
-             parent = None
+             parent = None;
            }) ]
 
 
@@ -191,133 +205,158 @@ let test_call_locations _ =
             ~start:(1, 0)
             ~stop:(1, 8)
             (Call
-               { callee =
+               {
+                 callee =
                    node
                      ~start:(1, 0)
                      ~stop:(1, 1)
                      (Name
                         (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true }));
                  arguments =
-                   [ { Call.Argument.name = None;
+                   [ {
+                       Call.Argument.name = None;
                        value =
                          node
                            ~start:(1, 2)
                            ~stop:(1, 7)
                            (ComparisonOperator
-                              { ComparisonOperator.left = +Integer 1;
+                              {
+                                ComparisonOperator.left = +Integer 1;
                                 operator = ComparisonOperator.LessThan;
-                                right = +Integer 2
-                              })
-                     } ]
+                                right = +Integer 2;
+                              });
+                     } ];
                })) ];
   assert_source_locations
     "a.__getitem__(argument)"
     [ +Expression
          (+Call
-             { callee =
+             {
+               callee =
                  node
                    ~start:(1, 0)
                    ~stop:(1, 13)
                    (Name
                       (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = false }));
                arguments =
-                 [ { Call.Argument.name = None;
-                     value = node ~start:(1, 14) ~stop:(1, 22) (Name (Name.Identifier "argument"))
-                   } ]
+                 [ {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 14) ~stop:(1, 22) (Name (Name.Identifier "argument"));
+                   } ];
              }) ];
   assert_source_locations
     "a((1, 2))"
     [ +Expression
          (+Call
-             { callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+             {
+               callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
                arguments =
-                 [ { Call.Argument.name = None;
-                     value = node ~start:(1, 3) ~stop:(1, 7) (Tuple [+Integer 1; +Integer 2])
-                   } ]
+                 [ {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 3) ~stop:(1, 7) (Tuple [+Integer 1; +Integer 2]);
+                   } ];
              }) ];
   assert_source_locations
     "a(arg1,  arg2,)"
     [ +Expression
          (+Call
-             { callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+             {
+               callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
                arguments =
-                 [ { Call.Argument.name = None;
-                     value = node ~start:(1, 2) ~stop:(1, 6) (Name (Name.Identifier "arg1"))
+                 [ {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 2) ~stop:(1, 6) (Name (Name.Identifier "arg1"));
                    };
-                   { Call.Argument.name = None;
-                     value = node ~start:(1, 9) ~stop:(1, 13) (Name (Name.Identifier "arg2"))
-                   } ]
+                   {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 9) ~stop:(1, 13) (Name (Name.Identifier "arg2"));
+                   } ];
              }) ];
   assert_source_locations
     "a(arg1)(arg2)"
     [ +Expression
          (+Call
-             { callee =
+             {
+               callee =
                  +Call
-                    { callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+                    {
+                      callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
                       arguments =
-                        [ { Call.Argument.name = None;
-                            value = node ~start:(1, 2) ~stop:(1, 6) (Name (Name.Identifier "arg1"))
-                          } ]
+                        [ {
+                            Call.Argument.name = None;
+                            value = node ~start:(1, 2) ~stop:(1, 6) (Name (Name.Identifier "arg1"));
+                          } ];
                     };
                arguments =
-                 [ { Call.Argument.name = None;
-                     value = node ~start:(1, 8) ~stop:(1, 12) (Name (Name.Identifier "arg2"))
-                   } ]
+                 [ {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 8) ~stop:(1, 12) (Name (Name.Identifier "arg2"));
+                   } ];
              }) ];
   assert_source_locations
     "a(  arg1)((arg2)  )"
     [ +Expression
          (+Call
-             { callee =
+             {
+               callee =
                  +Call
-                    { callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+                    {
+                      callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
                       arguments =
-                        [ { Call.Argument.name = None;
-                            value = node ~start:(1, 4) ~stop:(1, 8) (Name (Name.Identifier "arg1"))
-                          } ]
+                        [ {
+                            Call.Argument.name = None;
+                            value = node ~start:(1, 4) ~stop:(1, 8) (Name (Name.Identifier "arg1"));
+                          } ];
                     };
                arguments =
-                 [ { Call.Argument.name = None;
-                     value = node ~start:(1, 11) ~stop:(1, 15) (Name (Name.Identifier "arg2"))
-                   } ]
+                 [ {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 11) ~stop:(1, 15) (Name (Name.Identifier "arg2"));
+                   } ];
              }) ];
   assert_source_locations
     "foo(1, a = 2, *args, **kwargs)"
     [ +Expression
          (+Call
-             { callee = !"foo";
+             {
+               callee = !"foo";
                arguments =
                  [ { Call.Argument.name = None; value = +Integer 1 };
                    { Call.Argument.name = Some ~+"a"; value = +Integer 2 };
-                   { Call.Argument.name = None;
-                     value = node ~start:(1, 14) ~stop:(1, 19) (Starred (Starred.Once !"args"))
+                   {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 14) ~stop:(1, 19) (Starred (Starred.Once !"args"));
                    };
-                   { Call.Argument.name = None;
-                     value = node ~start:(1, 21) ~stop:(1, 29) (Starred (Starred.Twice !"kwargs"))
-                   } ]
+                   {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 21) ~stop:(1, 29) (Starred (Starred.Twice !"kwargs"));
+                   } ];
              }) ];
   assert_source_locations
     "foo(1, second = 2)"
     [ +Expression
          (+Call
-             { callee = +Name (Name.Identifier "foo");
+             {
+               callee = +Name (Name.Identifier "foo");
                arguments =
                  [ { Call.Argument.name = None; value = +Integer 1 };
-                   { Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 13) "second");
-                     value = node ~start:(1, 16) ~stop:(1, 17) (Integer 2)
-                   } ]
+                   {
+                     Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 13) "second");
+                     value = node ~start:(1, 16) ~stop:(1, 17) (Integer 2);
+                   } ];
              }) ];
   assert_source_locations
     "foo(1, second = \n2)"
     [ +Expression
          (+Call
-             { callee = +Name (Name.Identifier "foo");
+             {
+               callee = +Name (Name.Identifier "foo");
                arguments =
                  [ { Call.Argument.name = None; value = +Integer 1 };
-                   { Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 13) "second");
-                     value = node ~start:(2, 0) ~stop:(2, 1) (Integer 2)
-                   } ]
+                   {
+                     Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 13) "second");
+                     value = node ~start:(2, 0) ~stop:(2, 1) (Integer 2);
+                   } ];
              }) ];
   assert_source_locations
     "x = i[j] = y"
@@ -330,93 +369,108 @@ let test_call_locations _ =
             ~start:(1, 4)
             ~stop:(1, 12)
             (Call
-               { callee =
+               {
+                 callee =
                    node
                      ~start:(1, 4)
                      ~stop:(1, 8)
                      (Name
                         (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true }));
                  arguments =
-                   [ { Call.Argument.name = None;
-                       value = node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "j"))
+                   [ {
+                       Call.Argument.name = None;
+                       value = node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "j"));
                      };
-                     { Call.Argument.name = None;
-                       value = node ~start:(1, 11) ~stop:(1, 12) (Name (Name.Identifier "y"))
-                     } ]
+                     {
+                       Call.Argument.name = None;
+                       value = node ~start:(1, 11) ~stop:(1, 12) (Name (Name.Identifier "y"));
+                     } ];
                })) ];
   assert_source_locations
     "a[:1]"
     [ +Expression
          (+Call
-             { callee =
+             {
+               callee =
                  node
                    ~start:(1, 0)
                    ~stop:(1, 1)
                    (Name
                       (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true }));
                arguments =
-                 [ { Call.Argument.name = None;
+                 [ {
+                     Call.Argument.name = None;
                      value =
                        node
                          ~start:(1, 2)
                          ~stop:(1, 4)
                          (Call
-                            { callee = !"slice";
+                            {
+                              callee = !"slice";
                               arguments =
-                                [ { Call.Argument.name = None;
+                                [ {
+                                    Call.Argument.name = None;
                                     value =
                                       node
                                         ~start:(1, 2)
                                         ~stop:(1, 2)
-                                        (Name (Name.Identifier "None"))
+                                        (Name (Name.Identifier "None"));
                                   };
-                                  { Call.Argument.name = None;
-                                    value = node ~start:(1, 3) ~stop:(1, 4) (Integer 1)
+                                  {
+                                    Call.Argument.name = None;
+                                    value = node ~start:(1, 3) ~stop:(1, 4) (Integer 1);
                                   };
-                                  { Call.Argument.name = None;
+                                  {
+                                    Call.Argument.name = None;
                                     value =
                                       node
                                         ~start:(1, 4)
                                         ~stop:(1, 4)
-                                        (Name (Name.Identifier "None"))
-                                  } ]
-                            })
-                   } ]
+                                        (Name (Name.Identifier "None"));
+                                  } ];
+                            });
+                   } ];
              }) ];
   assert_source_locations
     "a[::2]"
     [ +Expression
          (+Call
-             { callee =
+             {
+               callee =
                  +Name (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
-                 [ { Call.Argument.name = None;
+                 [ {
+                     Call.Argument.name = None;
                      value =
                        node
                          ~start:(1, 2)
                          ~stop:(1, 5)
                          (Call
-                            { callee = !"slice";
+                            {
+                              callee = !"slice";
                               arguments =
-                                [ { Call.Argument.name = None;
+                                [ {
+                                    Call.Argument.name = None;
                                     value =
                                       node
                                         ~start:(1, 2)
                                         ~stop:(1, 2)
-                                        (Name (Name.Identifier "None"))
+                                        (Name (Name.Identifier "None"));
                                   };
-                                  { Call.Argument.name = None;
+                                  {
+                                    Call.Argument.name = None;
                                     value =
                                       node
                                         ~start:(1, 3)
                                         ~stop:(1, 3)
-                                        (Name (Name.Identifier "None"))
+                                        (Name (Name.Identifier "None"));
                                   };
-                                  { Call.Argument.name = None;
-                                    value = node ~start:(1, 4) ~stop:(1, 5) (Integer 2)
-                                  } ]
-                            })
-                   } ]
+                                  {
+                                    Call.Argument.name = None;
+                                    value = node ~start:(1, 4) ~stop:(1, 5) (Integer 2);
+                                  } ];
+                            });
+                   } ];
              }) ]
 
 
@@ -427,11 +481,12 @@ let test_class_locations _ =
         ~start:(2, 0)
         ~stop:(3, 5)
         (Class
-           { Class.name = !&"foo";
+           {
+             Class.name = !&"foo";
              bases = [];
              body = [+Pass];
              decorators = [node ~start:(1, 1) ~stop:(1, 4) (Name (Name.Identifier "bar"))];
-             docstring = None
+             docstring = None;
            }) ];
   assert_source_locations
     "class foo():\n\tdef bar(): pass"
@@ -439,41 +494,47 @@ let test_class_locations _ =
         ~start:(1, 0)
         ~stop:(2, 16)
         (Class
-           { Class.name = !&"foo";
+           {
+             Class.name = !&"foo";
              bases = [];
              body =
                [ node
                    ~start:(2, 1)
                    ~stop:(2, 16)
                    (Define
-                      { signature =
-                          { name = !&"bar";
+                      {
+                        signature =
+                          {
+                            name = !&"bar";
                             parameters = [];
                             decorators = [];
                             docstring = None;
                             return_annotation = None;
                             async = false;
-                            parent = Some !&"foo"
+                            parent = Some !&"foo";
                           };
-                        body = [+Pass]
+                        body = [+Pass];
                       }) ];
              decorators = [];
-             docstring = None
+             docstring = None;
            }) ];
   assert_source_locations
     "class foo(1, 2):\n\t1"
     [ +Class
-         { Class.name = !&"foo";
+         {
+           Class.name = !&"foo";
            bases =
-             [ { Expression.Call.Argument.name = None;
-                 value = node ~start:(1, 10) ~stop:(1, 11) (Integer 1)
+             [ {
+                 Expression.Call.Argument.name = None;
+                 value = node ~start:(1, 10) ~stop:(1, 11) (Integer 1);
                };
-               { Expression.Call.Argument.name = None;
-                 value = node ~start:(1, 13) ~stop:(1, 14) (Integer 2)
+               {
+                 Expression.Call.Argument.name = None;
+                 value = node ~start:(1, 13) ~stop:(1, 14) (Integer 2);
                } ];
            body = [+Expression (+Integer 1)];
            decorators = [];
-           docstring = None
+           docstring = None;
          } ];
   assert_source_locations
     (trim_extra_indentation
@@ -484,34 +545,38 @@ let test_class_locations _ =
                pass
        |})
     [ +Class
-         { Class.name = !&"foo";
+         {
+           Class.name = !&"foo";
            bases = [];
            body =
              [ node
                  ~start:(3, 2)
                  ~stop:(5, 10)
                  (If
-                    { If.test = +Expression.True;
+                    {
+                      If.test = +Expression.True;
                       body =
                         [ node
                             ~start:(4, 4)
                             ~stop:(5, 10)
                             (Define
-                               { signature =
-                                   { name = !&"bar";
+                               {
+                                 signature =
+                                   {
+                                     name = !&"bar";
                                      parameters = [];
                                      decorators = [];
                                      docstring = None;
                                      return_annotation = None;
                                      async = false;
-                                     parent = Some !&"foo"
+                                     parent = Some !&"foo";
                                    };
-                                 body = [+Pass]
+                                 body = [+Pass];
                                }) ];
-                      orelse = []
+                      orelse = [];
                     }) ];
            decorators = [];
-           docstring = None
+           docstring = None;
          } ]
 
 
@@ -522,16 +587,18 @@ let test_define_locations _ =
         ~start:(1, 0)
         ~stop:(2, 3)
         (Define
-           { signature =
-               { name = !&"foo";
+           {
+             signature =
+               {
+                 name = !&"foo";
                  parameters = [];
                  decorators = [];
                  docstring = None;
                  return_annotation = None;
                  async = true;
-                 parent = None
+                 parent = None;
                };
-             body = [node ~start:(2, 2) ~stop:(2, 3) (Expression (+Integer 1))]
+             body = [node ~start:(2, 2) ~stop:(2, 3) (Expression (+Integer 1))];
            }) ];
   assert_source_locations
     {|
@@ -545,31 +612,35 @@ let test_define_locations _ =
         ~start:(2, 0)
         ~stop:(5, 5)
         (Define
-           { signature =
-               { name = !&"foo";
+           {
+             signature =
+               {
+                 name = !&"foo";
                  parameters = [];
                  decorators = [];
                  docstring = None;
                  return_annotation = None;
                  async = false;
-                 parent = None
+                 parent = None;
                };
              body =
                [ node
                    ~start:(3, 2)
                    ~stop:(5, 5)
                    (Define
-                      { signature =
-                          { name = !&"bar";
+                      {
+                        signature =
+                          {
+                            name = !&"bar";
                             parameters = [];
                             decorators = [];
                             docstring = None;
                             return_annotation = None;
                             async = false;
-                            parent = None
+                            parent = None;
                           };
-                        body = [+Expression (+Integer 1); +Expression (+Integer 2)]
-                      }) ]
+                        body = [+Expression (+Integer 1); +Expression (+Integer 2)];
+                      }) ];
            });
       node ~start:(6, 0) ~stop:(6, 1) (Expression (+Integer 3)) ];
   assert_source_locations
@@ -584,21 +655,24 @@ let test_define_locations _ =
         ~start:(2, 0)
         ~stop:(6, 6)
         (Define
-           { signature =
-               { name = !&"foo";
+           {
+             signature =
+               {
+                 name = !&"foo";
                  parameters =
-                   [ +{ Parameter.name = "a";
+                   [ +{
+                        Parameter.name = "a";
                         value = None;
-                        annotation = Some (+String (StringLiteral.create "bool"))
+                        annotation = Some (+String (StringLiteral.create "bool"));
                       };
                      +{ Parameter.name = "**kwargs"; value = None; annotation = None } ];
                  decorators = [];
                  docstring = None;
                  return_annotation = None;
                  async = false;
-                 parent = None
+                 parent = None;
                };
-             body = [+Pass]
+             body = [+Pass];
            }) ];
   assert_source_locations
     {|
@@ -606,8 +680,10 @@ let test_define_locations _ =
        return 4
     |}
     [ +Define
-         { signature =
-             { name = !&"foo";
+         {
+           signature =
+             {
+               name = !&"foo";
                parameters =
                  [ +{ Parameter.name = "self"; value = None; annotation = None };
                    +{ Parameter.name = "a"; value = None; annotation = None };
@@ -617,9 +693,9 @@ let test_define_locations _ =
                return_annotation =
                  Some (node ~start:(2, 20) ~stop:(2, 41) (String (StringLiteral.create "str")));
                async = false;
-               parent = None
+               parent = None;
              };
-           body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }]
+           body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }];
          } ]
 
 
@@ -645,8 +721,9 @@ let test_dictionary_locations _ =
             ~start:(1, 0)
             ~stop:(1, 7)
             (Dictionary
-               { Dictionary.entries = [{ Dictionary.key = +Integer 1; value = +Integer 2 }];
-                 keywords = []
+               {
+                 Dictionary.entries = [{ Dictionary.key = +Integer 1; value = +Integer 2 }];
+                 keywords = [];
                })) ];
   assert_source_locations
     "{1: 2, **durp, **hurp}"
@@ -655,10 +732,11 @@ let test_dictionary_locations _ =
             ~start:(1, 0)
             ~stop:(1, 22)
             (Dictionary
-               { Dictionary.entries = [{ Dictionary.key = +Integer 1; value = +Integer 2 }];
+               {
+                 Dictionary.entries = [{ Dictionary.key = +Integer 1; value = +Integer 2 }];
                  keywords =
                    [ node ~start:(1, 9) ~stop:(1, 13) (Name (Name.Identifier "durp"));
-                     node ~start:(1, 17) ~stop:(1, 21) (Name (Name.Identifier "hurp")) ]
+                     node ~start:(1, 17) ~stop:(1, 21) (Name (Name.Identifier "hurp")) ];
                })) ];
   assert_source_locations
     "{\n\t1: 2,\n\t2: 3}"
@@ -667,10 +745,11 @@ let test_dictionary_locations _ =
             ~start:(1, 0)
             ~stop:(3, 6)
             (Dictionary
-               { Dictionary.entries =
+               {
+                 Dictionary.entries =
                    [ { Dictionary.key = +Integer 1; value = +Integer 2 };
                      { Dictionary.key = +Integer 2; value = +Integer 3 } ];
-                 keywords = []
+                 keywords = [];
                })) ];
   assert_source_locations
     "{a if a else a: b for a in []}"
@@ -679,20 +758,23 @@ let test_dictionary_locations _ =
             ~start:(1, 0)
             ~stop:(1, 30)
             (DictionaryComprehension
-               { Comprehension.element =
-                   { Dictionary.key =
+               {
+                 Comprehension.element =
+                   {
+                     Dictionary.key =
                        node
                          ~start:(1, 1)
                          ~stop:(1, 14)
                          (Ternary { Ternary.target = !"a"; test = !"a"; alternative = !"a" });
-                     value = !"b"
+                     value = !"b";
                    };
                  generators =
-                   [ { Comprehension.target = !"a";
+                   [ {
+                       Comprehension.target = !"a";
                        iterator = +List [];
                        conditions = [];
-                       async = false
-                     } ]
+                       async = false;
+                     } ];
                })) ]
 
 
@@ -703,11 +785,12 @@ let test_for_locations _ =
         ~start:(1, 0)
         ~stop:(1, 16)
         (For
-           { For.target = node ~start:(1, 4) ~stop:(1, 8) (Tuple [!"a"; !"b"]);
+           {
+             For.target = node ~start:(1, 4) ~stop:(1, 8) (Tuple [!"a"; !"b"]);
              iterator = node ~start:(1, 12) ~stop:(1, 13) (Name (Name.Identifier "c"));
              body = [node ~start:(1, 15) ~stop:(1, 16) (Expression !"d")];
              orelse = [];
-             async = false
+             async = false;
            }) ];
   assert_source_locations
     "for a in b: break\n"
@@ -715,11 +798,12 @@ let test_for_locations _ =
         ~start:(1, 0)
         ~stop:(1, 17)
         (For
-           { For.target = !"a";
+           {
+             For.target = !"a";
              iterator = !"b";
              body = [node ~start:(1, 12) ~stop:(1, 17) Break];
              orelse = [];
-             async = false
+             async = false;
            }) ];
   assert_source_locations
     "for a in b: continue\n"
@@ -727,11 +811,12 @@ let test_for_locations _ =
         ~start:(1, 0)
         ~stop:(1, 20)
         (For
-           { For.target = !"a";
+           {
+             For.target = !"a";
              iterator = !"b";
              body = [node ~start:(1, 12) ~stop:(1, 20) Continue];
              orelse = [];
-             async = false
+             async = false;
            }) ];
   assert_source_locations
     "async for a in b: c\n"
@@ -739,11 +824,12 @@ let test_for_locations _ =
         ~start:(1, 0)
         ~stop:(1, 19)
         (For
-           { For.target = !"a";
+           {
+             For.target = !"a";
              iterator = !"b";
              body = [+Expression !"c"];
              orelse = [];
-             async = true
+             async = true;
            }) ];
   assert_source_locations
     "for a in  b :\n\tc\nelse:\n\td\n"
@@ -751,11 +837,12 @@ let test_for_locations _ =
         ~start:(1, 0)
         ~stop:(4, 2)
         (For
-           { For.target = !"a";
+           {
+             For.target = !"a";
              iterator = node ~start:(1, 10) ~stop:(1, 11) (Name (Name.Identifier "b"));
              body = [+Expression !"c"];
              orelse = [node ~start:(4, 1) ~stop:(4, 2) (Expression !"d")];
-             async = false
+             async = false;
            }) ]
 
 
@@ -767,21 +854,24 @@ let test_generator_locations _ =
             ~start:(1, 1)
             ~stop:(1, 24)
             (Generator
-               { Comprehension.element =
+               {
+                 Comprehension.element =
                    node
                      ~start:(1, 1)
                      ~stop:(1, 7)
                      (ComparisonOperator
-                        { ComparisonOperator.left = !"a";
+                        {
+                          ComparisonOperator.left = !"a";
                           operator = ComparisonOperator.In;
-                          right = !"b"
+                          right = !"b";
                         });
                  generators =
-                   [ { Comprehension.target = !"a";
+                   [ {
+                       Comprehension.target = !"a";
                        iterator = +List [];
                        conditions = [!"b"];
-                       async = false
-                     } ]
+                       async = false;
+                     } ];
                })) ]
 
 
@@ -797,14 +887,16 @@ let test_if_locations _ =
         ~start:(1, 0)
         ~stop:(2, 9)
         (If
-           { If.test = node ~start:(1, 3) ~stop:(1, 4) (Name (Name.Identifier "a"));
+           {
+             If.test = node ~start:(1, 3) ~stop:(1, 4) (Name (Name.Identifier "a"));
              body = [node ~start:(1, 7) ~stop:(1, 8) (Expression !"b")];
              orelse =
                [ +If
-                    { If.test = node ~start:(2, 5) ~stop:(2, 6) (Name (Name.Identifier "c"));
+                    {
+                      If.test = node ~start:(2, 5) ~stop:(2, 6) (Name (Name.Identifier "c"));
                       body = [node ~start:(2, 8) ~stop:(2, 9) (Expression !"d")];
-                      orelse = []
-                    } ]
+                      orelse = [];
+                    } ];
            }) ];
   assert_source_locations
     "if a:\n\n\tb\n"
@@ -812,9 +904,10 @@ let test_if_locations _ =
         ~start:(1, 0)
         ~stop:(3, 2)
         (If
-           { If.test = !"a";
+           {
+             If.test = !"a";
              body = [node ~start:(3, 1) ~stop:(3, 2) (Expression !"b")];
-             orelse = []
+             orelse = [];
            }) ];
   assert_source_locations
     "if a:\n\tb\nelse:\n\tc\n"
@@ -822,9 +915,10 @@ let test_if_locations _ =
         ~start:(1, 0)
         ~stop:(4, 2)
         (If
-           { If.test = !"a";
+           {
+             If.test = !"a";
              body = [+Expression !"b"];
-             orelse = [node ~start:(4, 1) ~stop:(4, 2) (Expression !"c")]
+             orelse = [node ~start:(4, 1) ~stop:(4, 2) (Expression !"c")];
            }) ];
   assert_source_locations
     "if a is 1 or b == 1:\n\tc"
@@ -832,19 +926,22 @@ let test_if_locations _ =
         ~start:(1, 0)
         ~stop:(2, 2)
         (If
-           { If.test =
+           {
+             If.test =
                node
                  ~start:(1, 3)
                  ~stop:(1, 19)
                  (BooleanOperator
-                    { BooleanOperator.left =
+                    {
+                      BooleanOperator.left =
                         node
                           ~start:(1, 3)
                           ~stop:(1, 9)
                           (ComparisonOperator
-                             { ComparisonOperator.left = !"a";
+                             {
+                               ComparisonOperator.left = !"a";
                                operator = ComparisonOperator.Is;
-                               right = +Integer 1
+                               right = +Integer 1;
                              });
                       operator = BooleanOperator.Or;
                       right =
@@ -852,13 +949,14 @@ let test_if_locations _ =
                           ~start:(1, 13)
                           ~stop:(1, 19)
                           (ComparisonOperator
-                             { ComparisonOperator.left = !"b";
+                             {
+                               ComparisonOperator.left = !"b";
                                operator = ComparisonOperator.Equals;
-                               right = +Integer 1
-                             })
+                               right = +Integer 1;
+                             });
                     });
              body = [+Expression !"c"];
-             orelse = []
+             orelse = [];
            }) ]
 
 
@@ -883,9 +981,10 @@ let test_import_locations _ =
         ~start:(1, 0)
         ~stop:(1, 20)
         (Import
-           { Import.from = Some !&"a";
+           {
+             Import.from = Some !&"a";
              imports =
-               [{ Import.name = !&"b"; alias = None }; { Import.name = !&"c"; alias = None }]
+               [{ Import.name = !&"b"; alias = None }; { Import.name = !&"c"; alias = None }];
            }) ];
   assert_source_locations
     "from f import a as b, c, d as e"
@@ -893,11 +992,12 @@ let test_import_locations _ =
         ~start:(1, 0)
         ~stop:(1, 31)
         (Import
-           { Import.from = Some !&"f";
+           {
+             Import.from = Some !&"f";
              imports =
                [ { Import.name = !&"a"; alias = Some !&"b" };
                  { Import.name = !&"c"; alias = None };
-                 { Import.name = !&"d"; alias = Some !&"e" } ]
+                 { Import.name = !&"d"; alias = Some !&"e" } ];
            }) ];
   assert_source_locations
     "import a as b, c, d as e"
@@ -905,11 +1005,12 @@ let test_import_locations _ =
         ~start:(1, 0)
         ~stop:(1, 24)
         (Import
-           { Import.from = None;
+           {
+             Import.from = None;
              imports =
                [ { Import.name = !&"a"; alias = Some !&"b" };
                  { Import.name = !&"c"; alias = None };
-                 { Import.name = !&"d"; alias = Some !&"e" } ]
+                 { Import.name = !&"d"; alias = Some !&"e" } ];
            }) ]
 
 
@@ -921,7 +1022,8 @@ let test_lambda_locations _ =
             ~start:(1, 0)
             ~stop:(1, 22)
             (Lambda
-               { Lambda.parameters =
+               {
+                 Lambda.parameters =
                    [ node
                        ~start:(1, 7)
                        ~stop:(1, 12)
@@ -932,15 +1034,17 @@ let test_lambda_locations _ =
                        { Parameter.name = "y"; value = None; annotation = None } ];
                  body =
                    +Call
-                      { callee =
+                      {
+                        callee =
                           +Name
                              (Name.Attribute
-                                { base = +Name (Name.Identifier "x");
+                                {
+                                  base = +Name (Name.Identifier "x");
                                   attribute = "__add__";
-                                  special = true
+                                  special = true;
                                 });
-                        arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
-                      }
+                        arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
+                      };
                })) ]
 
 
@@ -961,21 +1065,24 @@ let test_list_locations _ =
             ~start:(1, 0)
             ~stop:(2, 12)
             (ListComprehension
-               { Comprehension.element =
+               {
+                 Comprehension.element =
                    node ~start:(1, 1) ~stop:(1, 2) (Name (Name.Identifier "a"));
                  generators =
-                   [ { Comprehension.target =
+                   [ {
+                       Comprehension.target =
                          node ~start:(1, 7) ~stop:(1, 8) (Name (Name.Identifier "a"));
                        iterator = !"a";
                        conditions = [];
-                       async = false
+                       async = false;
                      };
-                     { Comprehension.target =
+                     {
+                       Comprehension.target =
                          node ~start:(2, 4) ~stop:(2, 5) (Name (Name.Identifier "b"));
                        iterator = node ~start:(2, 9) ~stop:(2, 11) (List []);
                        conditions = [];
-                       async = false
-                     } ]
+                       async = false;
+                     } ];
                })) ]
 
 
@@ -988,18 +1095,20 @@ let test_name_locations _ =
             ~stop:(1, 5)
             (Name
                (Name.Attribute
-                  { base =
+                  {
+                    base =
                       node
                         ~start:(1, 0)
                         ~stop:(1, 3)
                         (Name
                            (Name.Attribute
-                              { base = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+                              {
+                                base = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
                                 attribute = "b";
-                                special = false
+                                special = false;
                               }));
                     attribute = "c";
-                    special = false
+                    special = false;
                   }))) ];
   assert_source_locations
     "((a)).b"
@@ -1009,9 +1118,10 @@ let test_name_locations _ =
             ~stop:(1, 7)
             (Name
                (Name.Attribute
-                  { base = node ~start:(1, 2) ~stop:(1, 3) (Name (Name.Identifier "a"));
+                  {
+                    base = node ~start:(1, 2) ~stop:(1, 3) (Name (Name.Identifier "a"));
                     attribute = "b";
-                    special = false
+                    special = false;
                   }))) ];
   assert_source_locations
     "(a  \n).b"
@@ -1021,9 +1131,10 @@ let test_name_locations _ =
             ~stop:(2, 3)
             (Name
                (Name.Attribute
-                  { base = node ~start:(1, 1) ~stop:(1, 2) (Name (Name.Identifier "a"));
+                  {
+                    base = node ~start:(1, 1) ~stop:(1, 2) (Name (Name.Identifier "a"));
                     attribute = "b";
-                    special = false
+                    special = false;
                   }))) ];
   assert_source_locations
     {|
@@ -1036,9 +1147,10 @@ let test_name_locations _ =
             ~stop:(3, 1)
             (Name
                (Name.Attribute
-                  { base = node ~start:(2, 0) ~stop:(2, 1) (Name (Name.Identifier "a"));
+                  {
+                    base = node ~start:(2, 0) ~stop:(2, 1) (Name (Name.Identifier "a"));
                     attribute = "b";
-                    special = false
+                    special = false;
                   }))) ];
   assert_source_locations
     "a.b;"
@@ -1048,9 +1160,10 @@ let test_name_locations _ =
             ~stop:(1, 3)
             (Name
                (Name.Attribute
-                  { base = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+                  {
+                    base = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
                     attribute = "b";
-                    special = false
+                    special = false;
                   }))) ];
   assert_source_locations
     "a(arg).b"
@@ -1060,16 +1173,18 @@ let test_name_locations _ =
             ~stop:(1, 8)
             (Name
                (Name.Attribute
-                  { base =
+                  {
+                    base =
                       node
                         ~start:(1, 0)
                         ~stop:(1, 6)
                         (Call
-                           { callee = !"a";
-                             arguments = [{ Call.Argument.name = None; value = !"arg" }]
+                           {
+                             callee = !"a";
+                             arguments = [{ Call.Argument.name = None; value = !"arg" }];
                            });
                     attribute = "b";
-                    special = false
+                    special = false;
                   }))) ]
 
 
@@ -1110,17 +1225,19 @@ let test_operator_locations _ =
               ~start:(1, 0)
               ~stop:(1, 12)
               (BooleanOperator
-                 { BooleanOperator.left =
+                 {
+                   BooleanOperator.left =
                      node
                        ~start:(1, 0)
                        ~stop:(1, 7)
                        (BooleanOperator
-                          { BooleanOperator.left = +Integer 1;
+                          {
+                            BooleanOperator.left = +Integer 1;
                             operator = BooleanOperator.And;
-                            right = +Integer 2
+                            right = +Integer 2;
                           });
                    operator = BooleanOperator.Or;
-                   right = node ~start:(1, 11) ~stop:(1, 12) (Integer 3)
+                   right = node ~start:(1, 11) ~stop:(1, 12) (Integer 3);
                  }))) ];
   assert_source_locations
     "1 is not 1"
@@ -1129,22 +1246,24 @@ let test_operator_locations _ =
             ~start:(1, 0)
             ~stop:(1, 10)
             (ComparisonOperator
-               { ComparisonOperator.left = node ~start:(1, 0) ~stop:(1, 1) (Integer 1);
+               {
+                 ComparisonOperator.left = node ~start:(1, 0) ~stop:(1, 1) (Integer 1);
                  operator = ComparisonOperator.IsNot;
-                 right = node ~start:(1, 9) ~stop:(1, 10) (Integer 1)
+                 right = node ~start:(1, 9) ~stop:(1, 10) (Integer 1);
                })) ];
   assert_source_locations
     "1 // 2"
     [ +Expression
          (+Call
-             { callee =
+             {
+               callee =
                  node
                    ~start:(1, 0)
                    ~stop:(1, 1)
                    (Name
                       (Name.Attribute
                          { base = +Integer 1; attribute = "__floordiv__"; special = true }));
-               arguments = [{ Call.Argument.name = None; value = +Integer 2 }]
+               arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
              }) ];
   assert_source_locations
     "not 1"
@@ -1166,8 +1285,9 @@ let test_raise_locations _ =
         ~start:(1, 0)
         ~stop:(1, 7)
         (Raise
-           { Raise.expression = Some (node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a")));
-             from = None
+           {
+             Raise.expression = Some (node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a")));
+             from = None;
            }) ];
   assert_source_locations
     "raise a from b"
@@ -1175,8 +1295,9 @@ let test_raise_locations _ =
         ~start:(1, 0)
         ~stop:(1, 14)
         (Raise
-           { Raise.expression = Some (node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a")));
-             from = Some (node ~start:(1, 13) ~stop:(1, 14) (Name (Name.Identifier "b")))
+           {
+             Raise.expression = Some (node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a")));
+             from = Some (node ~start:(1, 13) ~stop:(1, 14) (Name (Name.Identifier "b")));
            }) ]
 
 
@@ -1190,8 +1311,9 @@ let test_return_locations _ =
         ~start:(1, 0)
         ~stop:(1, 8)
         (Return
-           { Return.expression = Some (node ~start:(1, 7) ~stop:(1, 8) (Integer 1));
-             is_implicit = false
+           {
+             Return.expression = Some (node ~start:(1, 7) ~stop:(1, 8) (Integer 1));
+             is_implicit = false;
            }) ]
 
 
@@ -1229,13 +1351,15 @@ let test_set_locations _ =
             ~start:(1, 0)
             ~stop:(1, 25)
             (SetComprehension
-               { Comprehension.element = !"a";
+               {
+                 Comprehension.element = !"a";
                  generators =
-                   [ { Comprehension.target = !"a";
+                   [ {
+                       Comprehension.target = !"a";
                        iterator = +List [];
                        conditions = [!"b"; !"c"];
-                       async = false
-                     } ]
+                       async = false;
+                     } ];
                })) ]
 
 
@@ -1304,21 +1428,24 @@ let test_string_locations _ =
     "'''a''' + '''b'''"
     [ +Expression
          (+Call
-             { callee =
+             {
+               callee =
                  node
                    ~start:(1, 0)
                    ~stop:(1, 7)
                    (Name
                       (Name.Attribute
-                         { base =
+                         {
+                           base =
                              node ~start:(1, 0) ~stop:(1, 7) (String (StringLiteral.create "a"));
                            attribute = "__add__";
-                           special = true
+                           special = true;
                          }));
                arguments =
-                 [ { Call.Argument.name = None;
-                     value = node ~start:(1, 10) ~stop:(1, 17) (String (StringLiteral.create "b"))
-                   } ]
+                 [ {
+                     Call.Argument.name = None;
+                     value = node ~start:(1, 10) ~stop:(1, 17) (String (StringLiteral.create "b"));
+                   } ];
              }) ];
 
   (* Multiline strings. *)
@@ -1355,10 +1482,11 @@ let test_stub_locations _ =
         ~start:(1, 0)
         ~stop:(1, 7)
         (Assign
-           { Assign.target = !"a";
+           {
+             Assign.target = !"a";
              annotation = None;
              value = node ~start:(1, 4) ~stop:(1, 7) Ellipsis;
-             parent = None
+             parent = None;
            }) ];
   assert_source_locations
     "a = ... # type: Tuple[str]"
@@ -1366,12 +1494,13 @@ let test_stub_locations _ =
         ~start:(1, 0)
         ~stop:(1, 7)
         (Assign
-           { Assign.target = !"a";
+           {
+             Assign.target = !"a";
              annotation =
                Some
                  (node ~start:(1, 16) ~stop:(1, 26) (String (StringLiteral.create "Tuple[str]")));
              value = node ~start:(1, 4) ~stop:(1, 7) Ellipsis;
-             parent = None
+             parent = None;
            }) ];
   assert_source_locations
     "def foo(a): ... # type: ignore"
@@ -1379,8 +1508,10 @@ let test_stub_locations _ =
         ~start:(1, 0)
         ~stop:(1, 15)
         (Define
-           { signature =
-               { name = !&"foo";
+           {
+             signature =
+               {
+                 name = !&"foo";
                  parameters =
                    [ node
                        ~start:(1, 8)
@@ -1390,9 +1521,9 @@ let test_stub_locations _ =
                  docstring = None;
                  return_annotation = None;
                  async = false;
-                 parent = None
+                 parent = None;
                };
-             body = [node ~start:(1, 12) ~stop:(1, 15) (Expression (+Ellipsis))]
+             body = [node ~start:(1, 12) ~stop:(1, 15) (Expression (+Ellipsis))];
            }) ];
   assert_source_locations
     "@overload\ndef foo(a: int = ...):\n\t..."
@@ -1400,17 +1531,19 @@ let test_stub_locations _ =
         ~start:(2, 0)
         ~stop:(3, 4)
         (Define
-           { signature =
-               { name = !&"foo";
+           {
+             signature =
+               {
+                 name = !&"foo";
                  parameters =
                    [+{ Parameter.name = "a"; value = Some (+Ellipsis); annotation = Some !"int" }];
                  decorators = [node ~start:(1, 1) ~stop:(1, 9) (Name (Name.Identifier "overload"))];
                  docstring = None;
                  return_annotation = None;
                  async = false;
-                 parent = None
+                 parent = None;
                };
-             body = [node ~start:(3, 1) ~stop:(3, 4) (Expression (+Ellipsis))]
+             body = [node ~start:(3, 1) ~stop:(3, 4) (Expression (+Ellipsis))];
            }) ];
   assert_source_locations
     "class A:\n\ta = ... # type: int"
@@ -1418,19 +1551,21 @@ let test_stub_locations _ =
         ~start:(1, 0)
         ~stop:(2, 8)
         (Class
-           { Class.name = !&"A";
+           {
+             Class.name = !&"A";
              bases = [];
              body =
                [ +Assign
-                    { Assign.target = !"a";
+                    {
+                      Assign.target = !"a";
                       annotation =
                         Some
                           (node ~start:(2, 17) ~stop:(2, 20) (String (StringLiteral.create "int")));
                       value = node ~start:(2, 5) ~stop:(2, 8) Ellipsis;
-                      parent = Some !&"A"
+                      parent = Some !&"A";
                     } ];
              decorators = [];
-             docstring = None
+             docstring = None;
            }) ];
   assert_source_locations
     "class foo(): ... # type: ignore"
@@ -1438,11 +1573,12 @@ let test_stub_locations _ =
         ~start:(1, 0)
         ~stop:(1, 16)
         (Class
-           { Class.name = !&"foo";
+           {
+             Class.name = !&"foo";
              bases = [];
              body = [+Expression (+Ellipsis)];
              decorators = [];
-             docstring = None
+             docstring = None;
            }) ]
 
 
@@ -1462,17 +1598,19 @@ let test_ternary_locations _ =
             ~start:(1, 0)
             ~stop:(1, 25)
             (Ternary
-               { Ternary.target = +Integer 1;
+               {
+                 Ternary.target = +Integer 1;
                  test = +Integer 2;
                  alternative =
                    node
                      ~start:(1, 12)
                      ~stop:(1, 25)
                      (Ternary
-                        { Ternary.target = +Integer 3;
+                        {
+                          Ternary.target = +Integer 3;
                           test = +Integer 4;
-                          alternative = +Integer 5
-                        })
+                          alternative = +Integer 5;
+                        });
                })) ]
 
 
@@ -1483,10 +1621,11 @@ let test_try_locations _ =
         ~start:(1, 0)
         ~stop:(1, 6)
         (Try
-           { Try.body = [node ~start:(1, 5) ~stop:(1, 6) (Expression !"a")];
+           {
+             Try.body = [node ~start:(1, 5) ~stop:(1, 6) (Expression !"a")];
              handlers = [];
              orelse = [];
-             finally = []
+             finally = [];
            }) ];
   assert_source_locations
     "try:\n\ta\nelse:\n\tb"
@@ -1494,10 +1633,11 @@ let test_try_locations _ =
         ~start:(1, 0)
         ~stop:(4, 2)
         (Try
-           { Try.body = [node ~start:(2, 1) ~stop:(2, 2) (Expression !"a")];
+           {
+             Try.body = [node ~start:(2, 1) ~stop:(2, 2) (Expression !"a")];
              handlers = [];
              orelse = [node ~start:(4, 1) ~stop:(4, 2) (Expression !"b")];
-             finally = []
+             finally = [];
            }) ];
   assert_source_locations
     "try:\n\ta\nexcept a as b:\n\tb\nexcept d:\n\te"
@@ -1505,18 +1645,21 @@ let test_try_locations _ =
         ~start:(1, 0)
         ~stop:(6, 2)
         (Try
-           { Try.body = [node ~start:(2, 1) ~stop:(2, 2) (Expression !"a")];
+           {
+             Try.body = [node ~start:(2, 1) ~stop:(2, 2) (Expression !"a")];
              handlers =
-               [ { Try.kind = Some (node ~start:(3, 7) ~stop:(3, 8) (Name (Name.Identifier "a")));
+               [ {
+                   Try.kind = Some (node ~start:(3, 7) ~stop:(3, 8) (Name (Name.Identifier "a")));
                    name = Some "b";
-                   handler_body = [node ~start:(4, 1) ~stop:(4, 2) (Expression !"b")]
+                   handler_body = [node ~start:(4, 1) ~stop:(4, 2) (Expression !"b")];
                  };
-                 { Try.kind = Some (node ~start:(5, 7) ~stop:(5, 8) (Name (Name.Identifier "d")));
+                 {
+                   Try.kind = Some (node ~start:(5, 7) ~stop:(5, 8) (Name (Name.Identifier "d")));
                    name = None;
-                   handler_body = [node ~start:(6, 1) ~stop:(6, 2) (Expression !"e")]
+                   handler_body = [node ~start:(6, 1) ~stop:(6, 2) (Expression !"e")];
                  } ];
              orelse = [];
-             finally = []
+             finally = [];
            }) ];
   assert_source_locations
     "try:\n\ta\nexcept:\n\tb\nelse:\n\tc\nfinally:\n\td"
@@ -1524,10 +1667,11 @@ let test_try_locations _ =
         ~start:(1, 0)
         ~stop:(8, 2)
         (Try
-           { Try.body = [+Expression !"a"];
+           {
+             Try.body = [+Expression !"a"];
              handlers = [{ Try.kind = None; name = None; handler_body = [+Expression !"b"] }];
              orelse = [+Expression !"c"];
-             finally = [node ~start:(8, 1) ~stop:(8, 2) (Expression !"d")]
+             finally = [node ~start:(8, 1) ~stop:(8, 2) (Expression !"d")];
            }) ]
 
 
@@ -1537,10 +1681,11 @@ let test_tuple_locations _ =
       (1, 2) = a
     |}
     [ +Assign
-         { Assign.target = node ~start:(2, 1) ~stop:(2, 5) (Tuple [+Integer 1; +Integer 2]);
+         {
+           Assign.target = node ~start:(2, 1) ~stop:(2, 5) (Tuple [+Integer 1; +Integer 2]);
            annotation = None;
            value = !"a";
-           parent = None
+           parent = None;
          } ];
   assert_source_locations "()" [node ~start:(1, 0) ~stop:(1, 2) (Expression (+Tuple []))];
   assert_source_locations
@@ -1561,11 +1706,12 @@ let test_tuple_locations _ =
                    ~start:(1, 3)
                    ~stop:(1, 8)
                    (Call
-                      { callee =
+                      {
+                        callee =
                           +Name
                              (Name.Attribute
                                 { base = +Integer 1; attribute = "__add__"; special = true });
-                        arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
+                        arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
                       }) ])) ]
 
 
@@ -1576,9 +1722,10 @@ let test_while_locations _ =
         ~start:(1, 0)
         ~stop:(4, 2)
         (While
-           { While.test = node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a"));
+           {
+             While.test = node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a"));
              body = [node ~start:(2, 1) ~stop:(2, 2) (Expression !"b")];
-             orelse = [node ~start:(4, 1) ~stop:(4, 2) (Expression !"c")]
+             orelse = [node ~start:(4, 1) ~stop:(4, 2) (Expression !"c")];
            }) ]
 
 
@@ -1589,9 +1736,10 @@ let test_with_locations _ =
         ~start:(1, 0)
         ~stop:(1, 22)
         (With
-           { With.items = [node ~start:(1, 6) ~stop:(1, 18) (Expression.Yield (Some !"a")), None];
+           {
+             With.items = [node ~start:(1, 6) ~stop:(1, 18) (Expression.Yield (Some !"a")), None];
              body = [node ~start:(1, 21) ~stop:(1, 22) (Expression !"b")];
-             async = false
+             async = false;
            }) ];
   assert_source_locations
     "async with a: b\n"
@@ -1605,12 +1753,13 @@ let test_with_locations _ =
         ~start:(1, 0)
         ~stop:(1, 17)
         (With
-           { With.items =
+           {
+             With.items =
                [ node ~start:(1, 5) ~stop:(1, 6) (Name (Name.Identifier "a")), None;
                  ( node ~start:(1, 8) ~stop:(1, 9) (Name (Name.Identifier "c")),
                    Some (node ~start:(1, 13) ~stop:(1, 14) (Name (Name.Identifier "d"))) ) ];
              body = [+Expression !"b"];
-             async = false
+             async = false;
            }) ]
 
 
@@ -1640,21 +1789,23 @@ let test_yield_locations _ =
                      ~start:(1, 0)
                      ~stop:(1, 12)
                      (Call
-                        { callee =
+                        {
+                          callee =
                             node
                               ~start:(1, 0)
                               ~stop:(1, 12)
                               (Name
                                  (Name.Attribute
-                                    { base =
+                                    {
+                                      base =
                                         node
                                           ~start:(1, 11)
                                           ~stop:(1, 12)
                                           (Name (Name.Identifier "a"));
                                       attribute = "__iter__";
-                                      special = true
+                                      special = true;
                                     }));
-                          arguments = []
+                          arguments = [];
                         }))))) ]
 
 

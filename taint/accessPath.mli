@@ -11,7 +11,10 @@ open Expression
 module Root : sig
   type t =
     | LocalResult (* Special root representing the return value location. *)
-    | PositionalParameter of { position: int; name: Identifier.t }
+    | PositionalParameter of {
+        position: int;
+        name: Identifier.t;
+      }
     | NamedParameter of { name: Identifier.t }
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
@@ -25,7 +28,7 @@ end
 
 type t = {
   root: Root.t;
-  path: AbstractTreeDomain.Label.path
+  path: AbstractTreeDomain.Label.path;
 }
 [@@deriving show, eq]
 
@@ -48,7 +51,7 @@ val is_property : resolution:Resolution.t -> Expression.expression -> bool
 type argument_match = {
   root: Root.t;
   actual_path: AbstractTreeDomain.Label.path;
-  formal_path: AbstractTreeDomain.Label.path
+  formal_path: AbstractTreeDomain.Label.path;
 }
 [@@deriving show]
 

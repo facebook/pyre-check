@@ -19,7 +19,7 @@ module Metadata : sig
     local_mode: mode;
     ignore_lines: Ignore.t list;
     number_of_lines: int;
-    version: int
+    version: int;
   }
   [@@deriving compare, eq, show, hash, sexp]
 
@@ -45,7 +45,7 @@ type t = {
   is_stub: bool;
   is_init: bool;
   qualifier: Reference.t;
-  statements: Statement.t list
+  statements: Statement.t list;
 }
 [@@deriving compare, eq, hash, show, sexp]
 

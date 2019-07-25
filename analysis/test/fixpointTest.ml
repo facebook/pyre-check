@@ -48,16 +48,18 @@ module CountingFixpoint = Fixpoint.Make (CountingState)
 
 let assert_fixpoint body expected =
   let define =
-    { Define.signature =
-        { name = !&"foo";
+    {
+      Define.signature =
+        {
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = None
+          parent = None;
         };
-      body
+      body;
     }
   in
   assert_equal

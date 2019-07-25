@@ -15,17 +15,17 @@ open Interprocedural
 
 type parameter_taint = {
   name: string;
-  sinks: Taint.Sinks.t list
+  sinks: Taint.Sinks.t list;
 }
 
 type parameter_source_taint = {
   name: string;
-  sources: Taint.Sources.t list
+  sources: Taint.Sources.t list;
 }
 
 type error_expectation = {
   code: int;
-  pattern: string
+  pattern: string;
 }
 
 type expectation = {
@@ -36,7 +36,7 @@ type expectation = {
   tito_parameters: string list;
   returns: Taint.Sources.t list;
   errors: error_expectation list;
-  obscure: bool option
+  obscure: bool option;
 }
 
 let outcome
@@ -49,14 +49,15 @@ let outcome
     ?obscure
     define_name
   =
-  { kind;
+  {
+    kind;
     define_name;
     source_parameters;
     sink_parameters;
     tito_parameters;
     returns;
     errors;
-    obscure
+    obscure;
   }
 
 
@@ -81,14 +82,15 @@ let create_callable kind define_name =
 
 let check_expectation
     ?(get_model = get_model)
-    { define_name;
+    {
+      define_name;
       source_parameters;
       sink_parameters;
       tito_parameters;
       returns;
       errors;
       kind;
-      obscure
+      obscure;
     }
   =
   let callable = create_callable kind define_name in
@@ -352,7 +354,7 @@ type test_environment = {
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
   all_callables: Callable.t list;
-  environment: Environment.t
+  environment: Environment.t;
 }
 
 let initialize ?(handle = "test.py") ?models ~context source_content =

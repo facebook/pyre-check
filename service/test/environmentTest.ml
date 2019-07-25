@@ -189,12 +189,13 @@ let test_populate context =
   assert_equal
     (GlobalResolution.undecorated_signature global_resolution (Reference.create "a.foo"))
     (Some
-       { Type.Callable.annotation = Type.variable "a.T";
+       {
+         Type.Callable.annotation = Type.variable "a.T";
          parameters =
            Type.Callable.Defined
              [ Type.Callable.Parameter.Named
                  { name = "$parameter$x"; annotation = Type.variable "a.T"; default = false } ];
-         define_location = None
+         define_location = None;
        });
   let assert_successors name expected_successors =
     let metadata = Analysis.GlobalResolution.class_metadata global_resolution (Primitive name) in

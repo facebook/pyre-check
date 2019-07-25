@@ -8,7 +8,7 @@ open Core
 type kind = {
   code: int;
   name: string;
-  messages: string list
+  messages: string list;
 }
 [@@deriving compare, eq, show, sexp, hash]
 

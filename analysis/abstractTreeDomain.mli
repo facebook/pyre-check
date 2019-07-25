@@ -32,7 +32,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () : sig
   type raw_path_info = {
     path: Label.path;
     ancestors: Element.t;
-    tip: Element.t
+    tip: Element.t;
   }
 
   type _ AbstractDomain.part +=

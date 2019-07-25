@@ -902,40 +902,45 @@ let test_check_missing_attribute _ =
 let test_check_getattr _ =
   let assert_test_getattr source =
     let getattr_stub =
-      { handle = "has_getattr.pyi";
+      {
+        handle = "has_getattr.pyi";
         source =
           {|
             from typing import Any
             def __getattr__(name: str) -> Any: ...
-          |}
+          |};
       }
     in
     let getattr_stub_str =
-      { handle = "has_getattr_str.pyi";
+      {
+        handle = "has_getattr_str.pyi";
         source = {|
             def __getattr__(name: str) -> str: ...
-          |}
+          |};
       }
     in
     let getattr_stub_untyped =
-      { handle = "has_getattr_untyped.pyi";
+      {
+        handle = "has_getattr_untyped.pyi";
         source = {|
             def __getattr__(name): ...
-          |}
+          |};
       }
     in
     let getattr_stub_invalid_arity =
-      { handle = "has_getattr_invalid_arity.pyi";
+      {
+        handle = "has_getattr_invalid_arity.pyi";
         source = {|
             def __getattr__(x: int, y: str) -> str: ...
-          |}
+          |};
       }
     in
     let getattr_stub_not_callable =
-      { handle = "has_getattr_not_callable.pyi";
+      {
+        handle = "has_getattr_not_callable.pyi";
         source = {|
             __getattr__ = 3
-          |}
+          |};
       }
     in
     assert_type_errors

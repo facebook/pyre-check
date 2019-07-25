@@ -17,7 +17,7 @@ open TaintResult
 type t = {
   is_obscure: bool;
   call_target: Callable.t;
-  model: TaintResult.call_model
+  model: TaintResult.call_model;
 }
 [@@deriving show, sexp]
 
@@ -26,9 +26,18 @@ type breadcrumbs = Features.Simple.t list [@@deriving show, sexp]
 let _ = show_breadcrumbs (* unused but derived *)
 
 type taint_annotation =
-  | Sink of { sink: Sinks.t; breadcrumbs: breadcrumbs }
-  | Source of { source: Sources.t; breadcrumbs: breadcrumbs }
-  | Tito of { tito: Sinks.t; breadcrumbs: breadcrumbs }
+  | Sink of {
+      sink: Sinks.t;
+      breadcrumbs: breadcrumbs;
+    }
+  | Source of {
+      source: Sources.t;
+      breadcrumbs: breadcrumbs;
+    }
+  | Tito of {
+      tito: Sinks.t;
+      breadcrumbs: breadcrumbs;
+    }
   | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
   | Sanitize (* Don't propagate inferred model of methods with Sanitize *)
 [@@deriving sexp]
@@ -156,9 +165,10 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | _ -> []
   in
   let base_matches expected = function
-    | { Node.value =
+    | {
+        Node.value =
           Name (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ });
-        _
+        _;
       } ->
         Identifier.equal expected identifier
     | _ -> false
@@ -229,8 +239,9 @@ let rec parse_annotations ~configuration ~parameters annotation =
   | Some ({ Node.value; _ } as expression) ->
       let rec parse_annotation = function
         | Call
-            { callee;
-              arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _
+            {
+              callee;
+              arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _;
             }
           when base_matches "Union" callee ->
             List.concat_map expressions ~f:(fun expression ->
@@ -247,20 +258,23 @@ let rec parse_annotations ~configuration ~parameters annotation =
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
           when base_matches "AttachToSink" callee ->
             [ Sink
-                { sink = Sinks.Attach;
-                  breadcrumbs = extract_attach_features ~name:"AttachToSink" expression
+                {
+                  sink = Sinks.Attach;
+                  breadcrumbs = extract_attach_features ~name:"AttachToSink" expression;
                 } ]
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
           when base_matches "AttachToTito" callee ->
             [ Tito
-                { tito = Sinks.Attach;
-                  breadcrumbs = extract_attach_features ~name:"AttachToTito" expression
+                {
+                  tito = Sinks.Attach;
+                  breadcrumbs = extract_attach_features ~name:"AttachToTito" expression;
                 } ]
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
           when base_matches "AttachToSource" callee ->
             [ Source
-                { source = Sources.Attach;
-                  breadcrumbs = extract_attach_features ~name:"AttachToSource" expression
+                {
+                  source = Sources.Attach;
+                  breadcrumbs = extract_attach_features ~name:"AttachToSource" expression;
                 } ]
         | Name (Name.Identifier "TaintInTaintOut") ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
@@ -292,9 +306,10 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadc
   match root, callable_annotation with
   | ( AccessPath.Root.PositionalParameter { position; _ },
       Some
-        { Type.Callable.implementation =
+        {
+          Type.Callable.implementation =
             { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-          _
+          _;
         } ) ->
       let parameter_annotation =
         find_positional_parameter_annotation position implementation_parameters
@@ -302,9 +317,10 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadc
       Features.add_type_breadcrumb ~resolution parameter_annotation breadcrumbs
   | ( AccessPath.Root.NamedParameter { name; _ },
       Some
-        { Type.Callable.implementation =
+        {
+          Type.Callable.implementation =
             { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-          _
+          _;
         } ) ->
       let parameter_annotation = find_named_parameter_annotation name implementation_parameters in
       Features.add_type_breadcrumb ~resolution parameter_annotation breadcrumbs
@@ -368,7 +384,7 @@ type parameter_requirements = {
   required_parameter_set: String.Set.t;
   optional_parameter_set: String.Set.t;
   has_star_parameter: bool;
-  has_star_star_parameter: bool
+  has_star_star_parameter: bool;
 }
 
 let create_parameters_requirements ~type_parameters =
@@ -377,36 +393,41 @@ let create_parameters_requirements ~type_parameters =
     match type_parameter with
     | Anonymous { default; _ } ->
         if default then
-          { requirements with
+          {
+            requirements with
             optional_anonymous_parameters_count =
-              requirements.optional_anonymous_parameters_count + 1
+              requirements.optional_anonymous_parameters_count + 1;
           }
         else
-          { requirements with
+          {
+            requirements with
             required_anonymous_parameters_count =
-              requirements.required_anonymous_parameters_count + 1
+              requirements.required_anonymous_parameters_count + 1;
           }
     | Named { name; default; _ }
     | KeywordOnly { name; default; _ } ->
         let name = Identifier.sanitized name in
         if default then
-          { requirements with
-            optional_parameter_set = String.Set.add requirements.optional_parameter_set name
+          {
+            requirements with
+            optional_parameter_set = String.Set.add requirements.optional_parameter_set name;
           }
         else
-          { requirements with
-            required_parameter_set = String.Set.add requirements.required_parameter_set name
+          {
+            requirements with
+            required_parameter_set = String.Set.add requirements.required_parameter_set name;
           }
     | Variable _ -> { requirements with has_star_parameter = true }
     | Keywords _ -> { requirements with has_star_star_parameter = true }
   in
   let init =
-    { required_anonymous_parameters_count = 0;
+    {
+      required_anonymous_parameters_count = 0;
       optional_anonymous_parameters_count = 0;
       required_parameter_set = String.Set.empty;
       optional_parameter_set = String.Set.empty;
       has_star_parameter = false;
-      has_star_star_parameter = false
+      has_star_star_parameter = false;
     }
   in
   List.fold_left type_parameters ~f:get_parameters_requirements ~init
@@ -428,23 +449,26 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
     | NamedParameter { name } ->
         let name = Identifier.sanitized name in
         if String.is_prefix name ~prefix:"__" then (* It is an anonymous parameter. *)
-          let { required_anonymous_parameters_count;
-                optional_anonymous_parameters_count;
-                has_star_parameter;
-                _
-              }
+          let {
+            required_anonymous_parameters_count;
+            optional_anonymous_parameters_count;
+            has_star_parameter;
+            _;
+          }
             =
             requirements
           in
           if required_anonymous_parameters_count >= 1 then
             ( errors,
-              { requirements with
-                required_anonymous_parameters_count = required_anonymous_parameters_count - 1
+              {
+                requirements with
+                required_anonymous_parameters_count = required_anonymous_parameters_count - 1;
               } )
           else if optional_anonymous_parameters_count >= 1 then
             ( errors,
-              { requirements with
-                optional_anonymous_parameters_count = optional_anonymous_parameters_count - 1
+              {
+                requirements with
+                optional_anonymous_parameters_count = optional_anonymous_parameters_count - 1;
               } )
           else if has_star_parameter then
             (* If all anonymous parameter quota is used, it might be covered by a `*args` *)
@@ -452,12 +476,13 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
           else
             Format.sprintf "unexpected anonymous parameter: `%s`" name :: errors, requirements
         else
-          let { required_parameter_set;
-                optional_parameter_set;
-                has_star_parameter;
-                has_star_star_parameter;
-                _
-              }
+          let {
+            required_parameter_set;
+            optional_parameter_set;
+            has_star_parameter;
+            has_star_star_parameter;
+            _;
+          }
             =
             requirements
           in
@@ -571,9 +596,10 @@ let create ~resolution ?path ~configuration source =
                             in
                             List.map parameters ~f:sink_parameter
                           in
-                          { signature with
+                          {
+                            signature with
                             Define.parameters;
-                            return_annotation = source_annotation
+                            return_annotation = source_annotation;
                           }
                         in
                         Some (signature, Callable.create_method name)
@@ -583,42 +609,46 @@ let create ~resolution ?path ~configuration source =
             |> Option.value ~default:[]
           else
             []
-      | { Node.value =
+      | {
+          Node.value =
             Assign
               { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
-          _
+          _;
         }
         when Expression.is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
           let name = Expression.name_to_reference_exn name in
           let signature =
-            { Define.name;
+            {
+              Define.name;
               parameters = [];
               decorators = [];
               docstring = None;
               return_annotation = Some annotation;
               async = false;
-              parent = None
+              parent = None;
             }
           in
           [signature, Callable.create_object name]
-      | { Node.value =
+      | {
+          Node.value =
             Assign
               { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
-          _
+          _;
         }
         when Expression.is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
           let name = Expression.name_to_reference_exn name in
           let signature =
-            { Define.name;
+            {
+              Define.name;
               parameters =
                 [Parameter.create ~location:Location.Reference.any ~annotation ~name:"$global" ()];
               decorators = [];
               docstring = None;
               return_annotation = None;
               async = false;
-              parent = None
+              parent = None;
             }
           in
           [signature, Callable.create_object name]
@@ -633,10 +663,11 @@ let create ~resolution ?path ~configuration source =
   let verify_signature ~normalized_model_parameters callable_annotation =
     match callable_annotation with
     | Some
-        ( { Type.Callable.implementation =
+        ( {
+            Type.Callable.implementation =
               { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
             implicit;
-            _
+            _;
           } as callable ) ->
         let model_compatibility_errors =
           (* Make self as an explicit parameter in type's parameter list *)

@@ -30,7 +30,7 @@ module type Error = sig
   type t = {
     location: Location.Instantiated.t;
     kind: kind;
-    signature: Define.signature Node.t
+    signature: Define.signature Node.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
 
@@ -57,7 +57,7 @@ module Make (Kind : Kind) = struct
   type t = {
     location: Location.Instantiated.t;
     kind: Kind.t;
-    signature: Define.signature Node.t
+    signature: Define.signature Node.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
 
@@ -79,9 +79,10 @@ module Make (Kind : Kind) = struct
 
   let create ~location ~kind ~define =
     let { Node.value = { Define.signature; _ }; location = define_location } = define in
-    { location = Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location;
+    {
+      location = Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location;
       kind;
-      signature = { Node.value = signature; location = define_location }
+      signature = { Node.value = signature; location = define_location };
     }
 
 
@@ -117,11 +118,12 @@ module Make (Kind : Kind) = struct
 
   let to_json
       ~show_error_traces
-      ( { location =
+      ( {
+          location =
             { Location.path; start = { Location.line = start_line; column = start_column }; _ };
           kind;
           signature = { Node.value = signature; _ } as signature_node;
-          _
+          _;
         } as error )
     =
     `Assoc

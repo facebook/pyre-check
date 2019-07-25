@@ -11,13 +11,13 @@ type mismatch = {
   actual_expression: Expression.t;
   expected: Type.t;
   name: Identifier.t option;
-  position: int
+  position: int;
 }
 [@@deriving eq, show, compare]
 
 type invalid_argument = {
   expression: Expression.t;
-  annotation: Type.t
+  annotation: Type.t;
 }
 [@@deriving eq, show, compare]
 
@@ -43,13 +43,16 @@ type reason =
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | ProtocolInstantiation of Reference.t
-  | TooManyArguments of { expected: int; provided: int }
+  | TooManyArguments of {
+      expected: int;
+      provided: int;
+    }
   | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]
 
 type closest = {
   callable: Type.Callable.t;
-  reason: reason option
+  reason: reason option;
 }
 [@@deriving eq, show]
 

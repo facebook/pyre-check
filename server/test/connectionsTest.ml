@@ -13,14 +13,16 @@ let connections persistent_clients =
     List.map persistent_clients ~f:(fun (descriptor, failures) -> !+descriptor, failures)
     |> Network.Socket.Map.of_alist_exn
   in
-  { Server.State.lock = Mutex.create ();
+  {
+    Server.State.lock = Mutex.create ();
     connections =
       ref
-        { Server.State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+        {
+          Server.State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           persistent_clients;
-          file_notifiers = []
-        }
+          file_notifiers = [];
+        };
   }
 
 

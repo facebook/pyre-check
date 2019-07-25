@@ -60,45 +60,52 @@ let test_collect _ =
     ([+Float 2.0; +Float 1.0], [+Expression (+Float 2.0); +Expression (+Float 1.0)]);
   assert_collect
     [ +If
-         { If.test = +Float 2.0;
+         {
+           If.test = +Float 2.0;
            body = [+Expression (+Float 3.0)];
-           orelse = [+Expression (+Float 4.0)]
+           orelse = [+Expression (+Float 4.0)];
          } ]
     ( [+Float 4.0; +Float 3.0; +Float 2.0],
       [ +If
-           { If.test = +Float 2.0;
+           {
+             If.test = +Float 2.0;
              body = [+Expression (+Float 3.0)];
-             orelse = [+Expression (+Float 4.0)]
+             orelse = [+Expression (+Float 4.0)];
            };
         +Expression (+Float 4.0);
         +Expression (+Float 3.0) ] );
   assert_collect
     [ +If
-         { If.test = +Float 1.0;
+         {
+           If.test = +Float 1.0;
            body =
              [ +If
-                  { If.test = +Float 2.0;
+                  {
+                    If.test = +Float 2.0;
                     body = [+Expression (+Float 3.0)];
-                    orelse = [+Expression (+Float 4.0)]
+                    orelse = [+Expression (+Float 4.0)];
                   } ];
-           orelse = [+Expression (+Float 5.0)]
+           orelse = [+Expression (+Float 5.0)];
          } ]
     ( [+Float 5.0; +Float 4.0; +Float 3.0; +Float 2.0; +Float 1.0],
       [ +If
-           { If.test = +Float 1.0;
+           {
+             If.test = +Float 1.0;
              body =
                [ +If
-                    { If.test = +Float 2.0;
+                    {
+                      If.test = +Float 2.0;
                       body = [+Expression (+Float 3.0)];
-                      orelse = [+Expression (+Float 4.0)]
+                      orelse = [+Expression (+Float 4.0)];
                     } ];
-             orelse = [+Expression (+Float 5.0)]
+             orelse = [+Expression (+Float 5.0)];
            };
         +Expression (+Float 5.0);
         +If
-           { If.test = +Float 2.0;
+           {
+             If.test = +Float 2.0;
              body = [+Expression (+Float 3.0)];
-             orelse = [+Expression (+Float 4.0)]
+             orelse = [+Expression (+Float 4.0)];
            };
         +Expression (+Float 4.0);
         +Expression (+Float 3.0) ] )
@@ -110,9 +117,10 @@ let test_collect_location _ =
     let actual_locations = Visit.collect_locations source in
     let expected_locations =
       let create_location (start_line, start_column, end_line, end_column) =
-        { Location.path = !&"test";
+        {
+          Location.path = !&"test";
           start = { Ast.Location.line = start_line; column = start_column };
-          stop = { Ast.Location.line = end_line; column = end_column }
+          stop = { Ast.Location.line = end_line; column = end_column };
         }
       in
       List.map ~f:create_location expected_locations

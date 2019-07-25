@@ -11,7 +11,7 @@ open TestHelper
 
 type expect_fixpoint = {
   expect: expectation list;
-  iterations: int
+  iterations: int;
 }
 
 let assert_fixpoint ?models ~context source ~expect:{ iterations = expect_iterations; expect } =
@@ -132,44 +132,50 @@ let test_fixpoint context =
         getattr('obj', obj.g.f)
     |}
     ~expect:
-      { iterations = 4;
+      {
+        iterations = 4;
         expect =
           [ outcome
               ~kind:`Function
               ~errors:
-                [ { code = 5001;
+                [ {
+                    code = 5001;
                     pattern =
                       ".*Possible shell injection.*Data from \
-                       \\[UserControlled\\].*\\[RemoteCodeExecution\\].*"
+                       \\[UserControlled\\].*\\[RemoteCodeExecution\\].*";
                   } ]
               "qualifier.rce_problem";
             outcome
               ~kind:`Function
               ~errors:
-                [ { code = 5002;
-                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                [ {
+                    code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
                   } ]
               "qualifier.match_flows";
             outcome
               ~kind:`Function
               ~errors:
-                [ { code = 5002;
-                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                [ {
+                    code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
                   } ]
               "qualifier.match_flows_multiple";
             outcome
               ~kind:`Function
               ~errors:
-                [ { code = 5002;
-                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                [ {
+                    code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
                   } ]
               "qualifier.match_via_methods";
             outcome ~kind:`Function ~errors:[] "qualifier.no_match_via_methods";
             outcome
               ~kind:`Function
               ~errors:
-                [ { code = 5002;
-                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                [ {
+                    code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
                   } ]
               "qualifier.match_via_receiver";
             outcome
@@ -191,8 +197,9 @@ let test_fixpoint context =
             outcome
               ~kind:`Function
               ~errors:
-                [ { code = 5002;
-                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                [ {
+                    code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
                   } ]
               "qualifier.list_match";
             outcome ~kind:`Function ~errors:[] "qualifier.test_getattr_obj_no_match";
@@ -200,8 +207,9 @@ let test_fixpoint context =
               ~kind:`Function
               ~tito_parameters:["some_obj"]
               ~errors:
-                [ { code = 5010;
-                    pattern = ".*Attacker may control at least one argument to getattr(,)"
+                [ {
+                    code = 5010;
+                    pattern = ".*Attacker may control at least one argument to getattr(,)";
                   } ]
               "qualifier.test_getattr_field_match";
             outcome ~kind:`Function ~tito_parameters:["tito"] ~errors:[] "qualifier.deep_tito";
@@ -209,10 +217,11 @@ let test_fixpoint context =
             outcome
               ~kind:`Function
               ~errors:
-                [ { code = 5010;
-                    pattern = ".*Attacker may control at least one argument to getattr(,)"
+                [ {
+                    code = 5010;
+                    pattern = ".*Attacker may control at least one argument to getattr(,)";
                   } ]
-              "qualifier.test_deep_tito_match" ]
+              "qualifier.test_deep_tito_match" ];
       }
 
 
@@ -229,7 +238,8 @@ let test_combined_analysis context =
         return x or __user_controlled()
     |}
     ~expect:
-      { expect =
+      {
+        expect =
           [ outcome
               ~kind:`Function
               ~returns:[Sources.UserControlled]
@@ -237,7 +247,7 @@ let test_combined_analysis context =
                 [{ name = "x"; sinks = [Sinks.Test] }; { name = "y"; sinks = [Sinks.Demo] }]
               ~tito_parameters:["x"; "z"]
               "qualifier.combined_model" ];
-        iterations = 2
+        iterations = 2;
       }
 
 
@@ -254,13 +264,14 @@ let test_skipped_analysis context =
         return x or __user_controlled()
     |}
     ~expect:
-      { expect =
+      {
+        expect =
           [ outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.Demo] }]
               ~tito_parameters:["z"]
               "qualifier.skipped_model" ];
-        iterations = 1
+        iterations = 1;
       }
 
 
@@ -278,14 +289,15 @@ let test_sanitized_analysis context =
         return x or __user_controlled()
     |}
     ~expect:
-      { expect =
+      {
+        expect =
           [ outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.Demo] }]
               ~tito_parameters:["z"]
               ~errors:[{ code = 5001; pattern = ".*" }]
               "qualifier.sanitized_model" ];
-        iterations = 1
+        iterations = 1;
       }
 
 
@@ -300,14 +312,15 @@ let test_primed_source_analysis context =
         eval(y)
     |}
     ~expect:
-      { expect =
+      {
+        expect =
           [ outcome
               ~kind:`Function
               ~source_parameters:[{ name = "y"; sources = [Sources.UserControlled] }]
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.RemoteCodeExecution] }]
               ~errors:[{ code = 5001; pattern = ".*Possible shell injection.*" }]
               "qualifier.primed_model" ];
-        iterations = 2
+        iterations = 2;
       }
 
 
@@ -326,7 +339,8 @@ let test_primed_sink_analysis context =
         return x
     |}
     ~expect:
-      { expect =
+      {
+        expect =
           [ outcome
               ~kind:`Function
               ~returns:[Sources.Test]
@@ -335,7 +349,7 @@ let test_primed_sink_analysis context =
               ~tito_parameters:["y"]
               ~errors:[{ code = 5002; pattern = ".*Test.*" }]
               "qualifier.primed_model" ];
-        iterations = 2
+        iterations = 2;
       }
 
 
@@ -377,7 +391,8 @@ let test_overrides context =
 
     |}
     ~expect:
-      { iterations = 4;
+      {
+        iterations = 4;
         expect =
           [ outcome ~kind:`Override ~obscure:true "qualifier.Base.split";
             outcome
@@ -408,7 +423,7 @@ let test_overrides context =
               ~sink_parameters:[{ name = "arg"; sinks = [Sinks.RemoteCodeExecution] }]
               "qualifier.D.some_sink";
             outcome ~kind:`Method ~returns:[Sources.Test] "qualifier.D.some_source";
-            outcome ~kind:`Method ~returns:[Sources.UserControlled] "qualifier.E.some_source" ]
+            outcome ~kind:`Method ~returns:[Sources.UserControlled] "qualifier.E.some_source" ];
       }
 
 

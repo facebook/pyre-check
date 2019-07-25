@@ -11,7 +11,7 @@ type t = private {
   priority: int;
   is_stub: bool;
   is_external: bool;
-  is_init: bool
+  is_init: bool;
 }
 [@@deriving sexp, compare, eq]
 

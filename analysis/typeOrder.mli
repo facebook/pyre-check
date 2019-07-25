@@ -19,7 +19,7 @@ type order = {
     Type.t -> protocol_assumptions:ProtocolAssumptions.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
   any_is_bottom: bool;
-  protocol_assumptions: ProtocolAssumptions.t
+  protocol_assumptions: ProtocolAssumptions.t;
 }
 
 val solve_less_or_equal

@@ -21,7 +21,7 @@ type attribute = {
   parent: Type.t;
   property: property option;
   static: bool;
-  value: Expression.t
+  value: Expression.t;
 }
 [@@deriving eq, show]
 

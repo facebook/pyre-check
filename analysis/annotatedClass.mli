@@ -11,14 +11,14 @@ type t [@@deriving compare, eq, sexp, show, hash]
 
 type decorator = {
   name: string;
-  arguments: Expression.t Expression.Call.Argument.t list option
+  arguments: Expression.t Expression.Call.Argument.t list option;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
 type class_data = {
   instantiated: Type.t;
   class_attributes: bool;
-  class_definition: t
+  class_definition: t;
 }
 
 val name_equal : t -> t -> bool

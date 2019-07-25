@@ -13,13 +13,13 @@ type mismatch = {
   actual_expression: Expression.t;
   expected: Type.t;
   name: Identifier.t option;
-  position: int
+  position: int;
 }
 [@@deriving eq, show, compare]
 
 type invalid_argument = {
   expression: Expression.t;
-  annotation: Type.t
+  annotation: Type.t;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -45,13 +45,16 @@ type reason =
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | ProtocolInstantiation of Reference.t
-  | TooManyArguments of { expected: int; provided: int }
+  | TooManyArguments of {
+      expected: int;
+      provided: int;
+    }
   | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]
 
 type closest = {
   callable: Type.Callable.t;
-  reason: reason option
+  reason: reason option;
 }
 [@@deriving show]
 
@@ -78,7 +81,7 @@ module Argument = struct
     full_expression: Expression.t;
     position: int;
     kind: kind;
-    resolved: Type.t
+    resolved: Type.t;
   }
 end
 
@@ -89,12 +92,12 @@ type argument =
 type ranks = {
   arity: int;
   annotation: int;
-  position: int
+  position: int;
 }
 
 type reasons = {
   arity: reason list;
-  annotation: reason list
+  annotation: reason list;
 }
 
 type signature_match = {
@@ -102,7 +105,7 @@ type signature_match = {
   argument_mapping: argument list Type.Callable.Parameter.Map.t;
   constraints_set: TypeConstraints.t list;
   ranks: ranks;
-  reasons: reasons
+  reasons: reasons;
 }
 
 let select
@@ -114,11 +117,12 @@ let select
   let match_arity ({ parameters = all_parameters; _ } as implementation) =
     let all_arguments = arguments in
     let base_signature_match =
-      { callable = { callable with Type.Callable.implementation; overloads = [] };
+      {
+        callable = { callable with Type.Callable.implementation; overloads = [] };
         argument_mapping = Parameter.Map.empty;
         constraints_set = [TypeConstraints.empty];
         ranks = { arity = 0; annotation = 0; position = 0 };
-        reasons = { arity = []; annotation = [] }
+        reasons = { arity = []; annotation = [] };
       }
     in
     let rec consume
@@ -146,8 +150,9 @@ let select
             in
             let error =
               TooManyArguments
-                { expected = positional_parameter_count;
-                  provided = positional_parameter_count + List.length arguments
+                {
+                  expected = positional_parameter_count;
+                  provided = positional_parameter_count + List.length arguments;
                 }
             in
             { reasons with arity = error :: arity }
@@ -302,8 +307,9 @@ let select
           when combines_into_variable ~positional_component ~keyword_component ->
             base_signature_match
         | _ ->
-            { base_signature_match with
-              reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] }
+            {
+              base_signature_match with
+              reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
             } )
   in
   let check_annotations ({ argument_mapping; _ } as signature_match) =
@@ -426,11 +432,12 @@ let select
                 let location =
                   name >>| Node.location |> Option.value ~default:argument.Node.location
                 in
-                { actual = argument_annotation;
+                {
+                  actual = argument_annotation;
                   actual_expression = argument;
                   expected = parameter_annotation;
                   name = Option.map name ~f:Node.value;
-                  position
+                  position;
                 }
                 |> Node.create ~location
                 |> fun mismatch -> Mismatch mismatch
@@ -474,8 +481,9 @@ let select
                     ({ reasons = { annotation; _ }; _ } as signature_match)
                     error
                   =
-                  { signature_match with
-                    reasons = { reasons with annotation = error :: annotation }
+                  {
+                    signature_match with
+                    reasons = { reasons with annotation = error :: annotation };
                   }
                 in
                 let solution_based_extraction ~create_error ~synthetic_variable ~solve_against =
@@ -564,8 +572,9 @@ let select
       else
         (* All other cases should have been able to been blamed on a specefic argument, this is the
            only global failure. *)
-        { signature_match with
-          reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation }
+        {
+          signature_match with
+          reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation };
         }
     in
     let special_case_dictionary_constructor
@@ -582,14 +591,16 @@ let select
         |> Option.value ~default:false
       in
       match callable with
-      | { kind = Named name;
-          implementation =
-            { parameters = Defined parameters;
-              annotation = Type.Parametric { parameters = Concrete [key_type; _]; _ };
-              _
-            };
-          _
-        }
+      | {
+       kind = Named name;
+       implementation =
+         {
+           parameters = Defined parameters;
+           annotation = Type.Parametric { parameters = Concrete [key_type; _]; _ };
+           _;
+         };
+       _;
+      }
         when String.equal (Reference.show name) "dict.__init__"
              && has_matched_keyword_parameter parameters ->
           let updated_constraints =
@@ -624,8 +635,9 @@ let select
     let position_rank =
       Int.Set.min_elt positions >>| Int.neg |> Option.value ~default:Int.min_value
     in
-    { signature_match with
-      ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank }
+    {
+      signature_match with
+      ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank };
     }
   in
   let find_closest signature_matches =

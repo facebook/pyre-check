@@ -21,7 +21,7 @@ exception Untracked of Type.t
 module Target = struct
   type t = {
     target: int;
-    parameters: Type.OrderedTypes.t
+    parameters: Type.OrderedTypes.t;
   }
   [@@deriving compare, eq, sexp, show]
 
@@ -98,7 +98,7 @@ type t = {
   edges: Target.t list Int.Table.t;
   backedges: Target.Set.t Int.Table.t;
   indices: int Type.Primitive.Table.t;
-  annotations: Type.Primitive.t Int.Table.t
+  annotations: Type.Primitive.t Int.Table.t;
 }
 
 module type Handler = sig
@@ -616,9 +616,10 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                   in
                   let replacement = TypeConstraints.Solution.create replacement in
                   let instantiate_parameters { Target.target; parameters } =
-                    { Target.target;
+                    {
+                      Target.target;
                       parameters =
-                        TypeConstraints.Solution.instantiate_ordered_types replacement parameters
+                        TypeConstraints.Solution.instantiate_ordered_types replacement parameters;
                     }
                   in
                   List.map successors ~f:instantiate_parameters
@@ -677,11 +678,12 @@ let instantiate_predecessors_parameters
                    and an instantiated: Base[str, int, float] This mapping would include: { T1 =>
                    str; T2 => float } *)
                 let handle_substitutions substitutions =
-                  { Target.target;
+                  {
+                    Target.target;
                     parameters =
                       TypeConstraints.Solution.instantiate_ordered_types
                         substitutions
-                        generic_parameters
+                        generic_parameters;
                   }
                 in
                 step ~predecessor_variables ~parameters >>| handle_substitutions
@@ -825,18 +827,20 @@ let to_dot (module Handler : Handler) =
 
 module Builder = struct
   let create () =
-    { edges = Int.Table.create ();
+    {
+      edges = Int.Table.create ();
       backedges = Int.Table.create ();
       indices = Type.Primitive.Table.create ();
-      annotations = Int.Table.create ()
+      annotations = Int.Table.create ();
     }
 
 
   let copy { edges; backedges; indices; annotations } =
-    { edges = Hashtbl.copy edges;
+    {
+      edges = Hashtbl.copy edges;
       backedges = Hashtbl.copy backedges;
       indices = Hashtbl.copy indices;
-      annotations = Hashtbl.copy annotations
+      annotations = Hashtbl.copy annotations;
     }
 
 

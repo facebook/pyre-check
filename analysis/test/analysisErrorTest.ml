@@ -12,13 +12,14 @@ open Statement
 open Test
 
 let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
-  { Define.name = Reference.create name;
+  {
+    Define.name = Reference.create name;
     parameters = [];
     decorators = [];
     docstring = None;
     return_annotation;
     async = false;
-    parent = None
+    parent = None;
   }
 
 
@@ -48,11 +49,12 @@ let revealed_type expression annotation =
 
 let missing_return annotation =
   Error.MissingReturnAnnotation
-    { name = !&"$return_annotation";
+    {
+      name = !&"$return_annotation";
       annotation = Some annotation;
       given_annotation = None;
       evidence_locations = [];
-      thrown_at_source = true
+      thrown_at_source = true;
     }
 
 
@@ -64,10 +66,11 @@ let incompatible_return_type
     expected
   =
   Error.IncompatibleReturnType
-    { mismatch = { Error.actual; actual_expressions; expected; due_to_invariance };
+    {
+      mismatch = { Error.actual; actual_expressions; expected; due_to_invariance };
       is_implicit = false;
       is_unimplemented;
-      define_location = Node.location mock_define
+      define_location = Node.location mock_define;
     }
 
 
@@ -92,257 +95,298 @@ let test_due_to_analysis_limitations _ =
   (* IncompatibleAttributeType. *)
   assert_due_to_analysis_limitations
     (Error.IncompatibleAttributeType
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          incompatible_type =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              mismatch =
-               { Error.actual = Type.Top;
+               {
+                 Error.actual = Type.Top;
                  actual_expressions = [];
                  expected = Type.Top;
-                 due_to_invariance = false
+                 due_to_invariance = false;
                };
-             declare_location = Location.Instantiated.any
-           }
+             declare_location = Location.Instantiated.any;
+           };
        });
   assert_due_to_analysis_limitations
     (Error.IncompatibleAttributeType
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          incompatible_type =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              mismatch =
-               { Error.actual = Type.Top;
+               {
+                 Error.actual = Type.Top;
                  actual_expressions = [];
                  expected = Type.string;
-                 due_to_invariance = false
+                 due_to_invariance = false;
                };
-             declare_location = Location.Instantiated.any
-           }
+             declare_location = Location.Instantiated.any;
+           };
        });
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleAttributeType
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          incompatible_type =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              mismatch =
-               { Error.actual = Type.string;
+               {
+                 Error.actual = Type.string;
                  actual_expressions = [];
                  expected = Type.Top;
-                 due_to_invariance = false
+                 due_to_invariance = false;
                };
-             declare_location = Location.Instantiated.any
-           }
+             declare_location = Location.Instantiated.any;
+           };
        });
 
   (* Initialization *)
   assert_due_to_analysis_limitations
     (Error.UninitializedAttribute
-       { name = "";
+       {
+         name = "";
          parent = mock_parent;
          mismatch =
-           { Error.actual = Type.Top;
+           {
+             Error.actual = Type.Top;
              actual_expressions = [];
              expected = Type.Optional Type.Top;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
-         kind = Class
+         kind = Class;
        });
   assert_not_due_to_analysis_limitations
     (Error.UninitializedAttribute
-       { name = "";
+       {
+         name = "";
          parent = mock_parent;
          mismatch =
-           { Error.actual = Type.string;
+           {
+             Error.actual = Type.string;
              actual_expressions = [];
              expected = Type.Optional Type.string;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
-         kind = Class
+         kind = Class;
        });
 
   (* MissingParameterAnnotation. *)
   assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation
-       { name = !&"";
+       {
+         name = !&"";
          annotation = Some Type.Top;
          given_annotation = None;
          evidence_locations = [];
-         thrown_at_source = true
+         thrown_at_source = true;
        });
   assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation
-       { name = !&"";
+       {
+         name = !&"";
          annotation = None;
          given_annotation = Some Type.Top;
          evidence_locations = [];
-         thrown_at_source = true
+         thrown_at_source = true;
        });
   assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation
-       { name = !&"";
+       {
+         name = !&"";
          annotation = Some Type.string;
          given_annotation = None;
          evidence_locations = [];
-         thrown_at_source = true
+         thrown_at_source = true;
        });
 
   (* MissingReturnAnnotation. *)
   assert_not_due_to_analysis_limitations
     (Error.MissingReturnAnnotation
-       { name = !&"$return_annotation";
+       {
+         name = !&"$return_annotation";
          annotation = Some Type.Top;
          given_annotation = None;
          evidence_locations = [];
-         thrown_at_source = true
+         thrown_at_source = true;
        });
   assert_not_due_to_analysis_limitations
     (Error.MissingReturnAnnotation
-       { name = !&"$return_annotation";
+       {
+         name = !&"$return_annotation";
          annotation = None;
          given_annotation = Some Type.Top;
          evidence_locations = [];
-         thrown_at_source = true
+         thrown_at_source = true;
        });
   assert_not_due_to_analysis_limitations
     (Error.MissingReturnAnnotation
-       { name = !&"$return_annotation";
+       {
+         name = !&"$return_annotation";
          annotation = Some Type.string;
          given_annotation = None;
          evidence_locations = [];
-         thrown_at_source = true
+         thrown_at_source = true;
        });
 
   (* MissingAttributeAnnotation *)
   assert_not_due_to_analysis_limitations
     (Error.MissingAttributeAnnotation
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          missing_annotation =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              annotation = Some Type.Top;
              given_annotation = None;
              evidence_locations = [];
-             thrown_at_source = true
-           }
+             thrown_at_source = true;
+           };
        });
   assert_not_due_to_analysis_limitations
     (Error.MissingAttributeAnnotation
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          missing_annotation =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              annotation = None;
              given_annotation = Some Type.Top;
              evidence_locations = [];
-             thrown_at_source = true
-           }
+             thrown_at_source = true;
+           };
        });
   assert_not_due_to_analysis_limitations
     (Error.MissingAttributeAnnotation
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          missing_annotation =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              annotation = Some Type.string;
              given_annotation = None;
              evidence_locations = [];
-             thrown_at_source = true
-           }
+             thrown_at_source = true;
+           };
        });
   assert_not_due_to_analysis_limitations
     (Error.MissingAttributeAnnotation
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          missing_annotation =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              annotation = None;
              given_annotation = None;
              evidence_locations = [];
-             thrown_at_source = true
-           }
+             thrown_at_source = true;
+           };
        });
 
   (* Parameter. *)
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       { name = Some "";
+       {
+         name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch =
-           { Error.actual = Type.Top;
+           {
+             Error.actual = Type.Top;
              actual_expressions = [];
              expected = Type.Top;
-             due_to_invariance = false
-           }
+             due_to_invariance = false;
+           };
        });
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       { name = Some "";
+       {
+         name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch =
-           { Error.actual = Type.Top;
+           {
+             Error.actual = Type.Top;
              actual_expressions = [];
              expected = Type.string;
-             due_to_invariance = false
-           }
+             due_to_invariance = false;
+           };
        });
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       { name = Some "";
+       {
+         name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch =
-           { Error.actual = Type.string;
+           {
+             Error.actual = Type.string;
              actual_expressions = [];
              expected = Type.Top;
-             due_to_invariance = false
-           }
+             due_to_invariance = false;
+           };
        });
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
-       { name = Some "";
+       {
+         name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch =
-           { Error.actual = Type.Primitive "typing.TypeAlias";
+           {
+             Error.actual = Type.Primitive "typing.TypeAlias";
              actual_expressions = [];
              expected = Type.Top;
-             due_to_invariance = false
-           }
+             due_to_invariance = false;
+           };
        });
 
   (* Return. *)
   assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType
-       { mismatch =
-           { Error.actual = Type.Top;
+       {
+         mismatch =
+           {
+             Error.actual = Type.Top;
              actual_expressions = [];
              expected = Type.Top;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
          is_implicit = false;
          is_unimplemented = false;
-         define_location = Node.location mock_define
+         define_location = Node.location mock_define;
        });
   assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType
-       { mismatch =
-           { Error.actual = Type.Top;
+       {
+         mismatch =
+           {
+             Error.actual = Type.Top;
              actual_expressions = [];
              expected = Type.string;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
          is_implicit = false;
          is_unimplemented = false;
-         define_location = Node.location mock_define
+         define_location = Node.location mock_define;
        });
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleReturnType
-       { mismatch =
-           { Error.actual = Type.string;
+       {
+         mismatch =
+           {
+             Error.actual = Type.string;
              actual_expressions = [];
              expected = Type.Top;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
          is_implicit = false;
          is_unimplemented = false;
-         define_location = Node.location mock_define
+         define_location = Node.location mock_define;
        });
 
   (* UndefinedType. *)
@@ -369,29 +413,34 @@ let test_due_to_mismatch_with_any _ =
   (* ImpossibleIsinstance *)
   assert_due_to_mismatch_with_any
     (Error.ImpossibleIsinstance
-       { expression = !"expression";
+       {
+         expression = !"expression";
          mismatch =
-           { Error.actual = Type.Any;
+           {
+             Error.actual = Type.Any;
              actual_expressions = [];
              expected = Type.Any;
-             due_to_invariance = false
-           }
+             due_to_invariance = false;
+           };
        });
 
   (* IncompatibleAttributeType. *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleAttributeType
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          incompatible_type =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              mismatch =
-               { Error.actual = Type.Any;
+               {
+                 Error.actual = Type.Any;
                  actual_expressions = [];
                  expected = Type.Any;
-                 due_to_invariance = false
+                 due_to_invariance = false;
                };
-             declare_location = Location.Instantiated.any
-           }
+             declare_location = Location.Instantiated.any;
+           };
        });
 
   (* IncompatibleAwaitableType *)
@@ -400,141 +449,162 @@ let test_due_to_mismatch_with_any _ =
   (* IncompatibleParameterType *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleParameterType
-       { name = Some "";
+       {
+         name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch =
-           { Error.actual = Type.Any;
+           {
+             Error.actual = Type.Any;
              actual_expressions = [];
              expected = Type.Any;
-             due_to_invariance = false
-           }
+             due_to_invariance = false;
+           };
        });
   assert_due_to_mismatch_with_any
     (Error.IncompatibleParameterType
-       { name = Some "";
+       {
+         name = Some "";
          position = 1;
          callee = Some !&"callee";
          mismatch =
-           { Error.actual = Type.string;
+           {
+             Error.actual = Type.string;
              actual_expressions = [];
              expected = Type.Any;
-             due_to_invariance = false
-           }
+             due_to_invariance = false;
+           };
        });
 
   (* IncompatibleReturnType *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleReturnType
-       { mismatch =
-           { Error.actual = Type.Any;
+       {
+         mismatch =
+           {
+             Error.actual = Type.Any;
              actual_expressions = [];
              expected = Type.Any;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
          is_implicit = false;
          is_unimplemented = false;
-         define_location = Node.location mock_define
+         define_location = Node.location mock_define;
        });
   assert_due_to_mismatch_with_any
     (Error.IncompatibleReturnType
-       { mismatch =
-           { Error.actual = Type.Any;
+       {
+         mismatch =
+           {
+             Error.actual = Type.Any;
              actual_expressions = [];
              expected = Type.string;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
          is_implicit = false;
          is_unimplemented = false;
-         define_location = Node.location mock_define
+         define_location = Node.location mock_define;
        });
   assert_not_due_to_mismatch_with_any
     (Error.IncompatibleReturnType
-       { mismatch =
-           { Error.actual = Type.string;
+       {
+         mismatch =
+           {
+             Error.actual = Type.string;
              actual_expressions = [];
              expected = Type.integer;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
          is_implicit = false;
          is_unimplemented = false;
-         define_location = Node.location mock_define
+         define_location = Node.location mock_define;
        });
 
   (* IncompatibleVariableType *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleVariableType
-       { name = !&"name";
+       {
+         name = !&"name";
          mismatch =
-           { Error.actual = Type.string;
+           {
+             Error.actual = Type.string;
              actual_expressions = [];
              expected = Type.Any;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
-         declare_location = Location.Instantiated.any
+         declare_location = Location.Instantiated.any;
        });
 
   (* InconsistentOverride *)
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride
-       { overridden_method = "foo";
+       {
+         overridden_method = "foo";
          parent = !&(Type.show mock_parent);
          override = StrengthenedPrecondition (NotFound (Keywords Type.integer));
-         override_kind = Method
+         override_kind = Method;
        });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride
-       { overridden_method = "foo";
+       {
+         overridden_method = "foo";
          parent = !&(Type.show mock_parent);
          override =
            WeakenedPostcondition
-             { actual = Type.Top;
+             {
+               actual = Type.Top;
                actual_expressions = [];
                expected = Type.integer;
-               due_to_invariance = false
+               due_to_invariance = false;
              };
-         override_kind = Method
+         override_kind = Method;
        });
   assert_due_to_mismatch_with_any
     (InconsistentOverride
-       { overridden_method = "foo";
+       {
+         overridden_method = "foo";
          parent = !&(Type.show mock_parent);
          override =
            WeakenedPostcondition
-             { actual = Type.Any;
+             {
+               actual = Type.Any;
                actual_expressions = [];
                expected = Type.integer;
-               due_to_invariance = false
+               due_to_invariance = false;
              };
-         override_kind = Method
+         override_kind = Method;
        });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride
-       { overridden_method = "foo";
+       {
+         overridden_method = "foo";
          parent = !&(Type.show mock_parent);
          override =
            StrengthenedPrecondition
              (Found
-                { actual = Type.none;
+                {
+                  actual = Type.none;
                   actual_expressions = [];
                   expected = Type.integer;
-                  due_to_invariance = false
+                  due_to_invariance = false;
                 });
-         override_kind = Method
+         override_kind = Method;
        });
   assert_due_to_mismatch_with_any
     (InconsistentOverride
-       { overridden_method = "foo";
+       {
+         overridden_method = "foo";
          parent = !&(Type.show mock_parent);
          override =
            StrengthenedPrecondition
              (Found
-                { actual = Type.none;
+                {
+                  actual = Type.none;
                   actual_expressions = [];
                   expected = Type.Any;
-                  due_to_invariance = false
+                  due_to_invariance = false;
                 });
-         override_kind = Method
+         override_kind = Method;
        });
 
   (* InvalidArgument *)
@@ -558,8 +628,9 @@ let test_due_to_mismatch_with_any _ =
   (* UndefinedAttribute *)
   assert_due_to_mismatch_with_any
     (Error.UndefinedAttribute
-       { attribute = "foo";
-         origin = Error.Class { annotation = Type.Any; class_attribute = false }
+       {
+         attribute = "foo";
+         origin = Error.Class { annotation = Type.Any; class_attribute = false };
        });
   assert_not_due_to_mismatch_with_any
     (Error.UndefinedAttribute { attribute = "foo"; origin = Error.Module !&"module" });
@@ -567,27 +638,31 @@ let test_due_to_mismatch_with_any _ =
   (* Uninitialized Attribute *)
   assert_due_to_mismatch_with_any
     (Error.UninitializedAttribute
-       { name = "";
+       {
+         name = "";
          parent = mock_parent;
          mismatch =
-           { Error.actual = Type.Any;
+           {
+             Error.actual = Type.Any;
              actual_expressions = [];
              expected = Type.Optional Type.integer;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
-         kind = Class
+         kind = Class;
        });
   assert_not_due_to_mismatch_with_any
     (Error.UninitializedAttribute
-       { name = "";
+       {
+         name = "";
          parent = mock_parent;
          mismatch =
-           { Error.actual = Type.string;
+           {
+             Error.actual = Type.string;
              actual_expressions = [];
              expected = Type.Optional Type.string;
-             due_to_invariance = false
+             due_to_invariance = false;
            };
-         kind = Class
+         kind = Class;
        });
 
   (* Unpack *)
@@ -601,30 +676,34 @@ let test_due_to_mismatch_with_any _ =
   (* Missing X errors *)
   assert_not_due_to_mismatch_with_any
     (Error.MissingParameterAnnotation
-       { name = !&"";
+       {
+         name = !&"";
          annotation = Some Type.Any;
          given_annotation = None;
          evidence_locations = [];
-         thrown_at_source = true
+         thrown_at_source = true;
        });
   assert_not_due_to_mismatch_with_any
     (Error.MissingReturnAnnotation
-       { name = !&"$return_annotation";
+       {
+         name = !&"$return_annotation";
          annotation = Some Type.Top;
          given_annotation = None;
          evidence_locations = [];
-         thrown_at_source = true
+         thrown_at_source = true;
        });
   assert_not_due_to_mismatch_with_any
     (Error.MissingAttributeAnnotation
-       { parent = mock_parent;
+       {
+         parent = mock_parent;
          missing_annotation =
-           { Error.name = !&"";
+           {
+             Error.name = !&"";
              annotation = Some Type.Any;
              given_annotation = None;
              evidence_locations = [];
-             thrown_at_source = true
-           }
+             thrown_at_source = true;
+           };
        })
 
 
@@ -638,172 +717,196 @@ let test_join _ =
   assert_join
     (error
        (Error.IncompatibleAttributeType
-          { parent = mock_parent;
+          {
+            parent = mock_parent;
             incompatible_type =
-              { Error.name = !&"";
+              {
+                Error.name = !&"";
                 mismatch =
-                  { Error.actual = Type.Top;
+                  {
+                    Error.actual = Type.Top;
                     actual_expressions = [];
                     expected = Type.Top;
-                    due_to_invariance = false
+                    due_to_invariance = false;
                   };
-                declare_location = Location.Instantiated.any
-              }
+                declare_location = Location.Instantiated.any;
+              };
           }))
     (error
        (Error.IncompatibleVariableType
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             mismatch =
-              { Error.actual = Type.Top;
+              {
+                Error.actual = Type.Top;
                 actual_expressions = [];
                 expected = Type.Top;
-                due_to_invariance = false
+                due_to_invariance = false;
               };
-            declare_location = Location.Instantiated.any
+            declare_location = Location.Instantiated.any;
           }))
     (error Error.Top);
   assert_join
     (error
        (Error.IncompatibleParameterType
-          { name = Some "";
+          {
+            name = Some "";
             position = 1;
             callee = Some !&"callee";
             mismatch =
-              { Error.actual = Type.integer;
+              {
+                Error.actual = Type.integer;
                 actual_expressions = [];
                 expected = Type.string;
-                due_to_invariance = false
-              }
+                due_to_invariance = false;
+              };
           }))
     (error
        (Error.IncompatibleParameterType
-          { name = Some "";
+          {
+            name = Some "";
             position = 1;
             callee = Some !&"callee";
             mismatch =
-              { Error.actual = Type.float;
+              {
+                Error.actual = Type.float;
                 actual_expressions = [];
                 expected = Type.string;
-                due_to_invariance = false
-              }
+                due_to_invariance = false;
+              };
           }))
     (error
        (Error.IncompatibleParameterType
-          { name = Some "";
+          {
+            name = Some "";
             position = 1;
             callee = Some !&"callee";
             mismatch =
-              { Error.actual = Type.float;
+              {
+                Error.actual = Type.float;
                 actual_expressions = [];
                 expected = Type.string;
-                due_to_invariance = false
-              }
+                due_to_invariance = false;
+              };
           }));
   let create_mock_location path =
-    { Location.path;
+    {
+      Location.path;
       start = { Location.line = 1; column = 1 };
-      stop = { Location.line = 1; column = 1 }
+      stop = { Location.line = 1; column = 1 };
     }
   in
   assert_join
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.integer;
             given_annotation = None;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }))
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = None;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }))
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = None;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }));
   assert_join
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.integer;
             given_annotation = None;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }))
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = None;
             given_annotation = None;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }))
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.integer;
             given_annotation = None;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }));
   assert_join
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = None;
             given_annotation = None;
             evidence_locations = [];
-            thrown_at_source = false
+            thrown_at_source = false;
           }))
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = None;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }))
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = None;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }));
   assert_join
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = Some Type.Any;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = true
+            thrown_at_source = true;
           }))
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.integer;
             given_annotation = Some Type.Any;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false
+            thrown_at_source = false;
           }))
     (error
        (Error.MissingGlobalAnnotation
-          { Error.name = !&"";
+          {
+            Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = Some Type.Any;
             evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = true
+            thrown_at_source = true;
           }));
   assert_join
     (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 }))
@@ -877,20 +980,23 @@ let test_join _ =
   assert_join
     (error
        ~location:
-         { Location.Instantiated.synthetic with
-           Location.start = { Location.line = 1; column = 0 }
+         {
+           Location.Instantiated.synthetic with
+           Location.start = { Location.line = 1; column = 0 };
          }
        (revealed_type "a" (Annotation.create Type.integer)))
     (error
        ~location:
-         { Location.Instantiated.synthetic with
-           Location.start = { Location.line = 2; column = 1 }
+         {
+           Location.Instantiated.synthetic with
+           Location.start = { Location.line = 2; column = 1 };
          }
        (revealed_type "a" (Annotation.create Type.float)))
     (error
        ~location:
-         { Location.Instantiated.synthetic with
-           Location.start = { Location.line = 1; column = 0 }
+         {
+           Location.Instantiated.synthetic with
+           Location.start = { Location.line = 1; column = 0 };
          }
        (revealed_type "a" (Annotation.create Type.float)))
 
@@ -1015,10 +1121,11 @@ let test_filter _ =
   assert_unfiltered (undefined_import "sys");
   let inconsistent_override name override =
     InconsistentOverride
-      { overridden_method = name;
+      {
+        overridden_method = name;
         parent = !&(Type.show mock_parent);
         override;
-        override_kind = Method
+        override_kind = Method;
       }
   in
   (* Suppress parameter errors on override of dunder methods *)
@@ -1028,20 +1135,22 @@ let test_filter _ =
     (inconsistent_override
        "__foo__"
        (WeakenedPostcondition
-          { actual = Type.Top;
+          {
+            actual = Type.Top;
             actual_expressions = [];
             expected = Type.integer;
-            due_to_invariance = false
+            due_to_invariance = false;
           }));
   assert_unfiltered
     (inconsistent_override
        "__foo__"
        (StrengthenedPrecondition
           (Found
-             { actual = Type.none;
+             {
+               actual = Type.none;
                actual_expressions = [];
                expected = Type.integer;
-               due_to_invariance = false
+               due_to_invariance = false;
              })));
   assert_filtered
     (inconsistent_override "__foo__" (StrengthenedPrecondition (NotFound (Keywords Type.integer))))

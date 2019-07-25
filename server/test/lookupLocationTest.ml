@@ -23,9 +23,10 @@ let test_locations _ =
         in
         let deconstruct_location
             ( expression,
-              { Location.start = { Location.line = start_line; column = start_column };
+              {
+                Location.start = { Location.line = start_line; column = start_column };
                 stop = { Location.line = end_line; column = end_column };
-                _
+                _;
               } )
           =
           expression, [start_line; start_column; end_line; end_column]

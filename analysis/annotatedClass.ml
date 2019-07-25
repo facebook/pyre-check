@@ -15,7 +15,7 @@ type t = Class.t Node.t [@@deriving compare, eq, sexp, show, hash]
 
 type decorator = {
   name: string;
-  arguments: Expression.t Expression.Call.Argument.t list option
+  arguments: Expression.t Expression.Call.Argument.t list option;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -26,7 +26,7 @@ module AttributeCache = struct
     include_generated_attributes: bool;
     special_method: bool;
     name: Reference.t;
-    instantiated: Type.t
+    instantiated: Type.t;
   }
   [@@deriving compare, sexp, hash]
 
@@ -52,7 +52,7 @@ end
 type class_data = {
   instantiated: Type.t;
   class_attributes: bool;
-  class_definition: t
+  class_definition: t;
 }
 
 let name_equal
@@ -133,9 +133,10 @@ let resolve_class ~resolution annotation =
       match GlobalResolution.class_definition resolution annotation with
       | Some class_definition ->
           Some
-            [ { instantiated = original_annotation;
+            [ {
+                instantiated = original_annotation;
                 class_attributes = is_meta;
-                class_definition = create class_definition
+                class_definition = create class_definition;
               } ]
       | None -> None )
   in
@@ -145,7 +146,7 @@ let resolve_class ~resolution annotation =
 module Method = struct
   type t = {
     define: Define.t;
-    parent: Type.t
+    parent: Type.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -244,8 +245,9 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
     if Type.OrderedTypes.equal variables (Concrete []) then
       []
     else
-      [ { Expression.Call.Argument.name = None;
-          value = Type.parametric "typing.Generic" variables |> Type.expression
+      [ {
+          Expression.Call.Argument.name = None;
+          value = Type.parametric "typing.Generic" variables |> Type.expression;
         } ]
 
 
@@ -408,9 +410,11 @@ let create_attribute
     ?(defined = true)
     ?(inherited = false)
     ?(default_class_attribute = false)
-    { Node.location;
+    {
+      Node.location;
       value =
-        { Statement.Attribute.name = attribute_name;
+        {
+          Statement.Attribute.name = attribute_name;
           annotation = attribute_annotation;
           defines;
           value;
@@ -422,8 +426,8 @@ let create_attribute
           final;
           static;
           frozen;
-          implicit
-        }
+          implicit;
+        };
     }
   =
   let class_annotation = annotation parent in
@@ -517,21 +521,23 @@ let create_attribute
         >>| (fun overloads ->
               Some
                 (Type.Callable
-                   { callable with
+                   {
+                     callable with
                      implementation =
                        { annotation = Type.Top; parameters = Undefined; define_location = None };
-                     overloads
+                     overloads;
                    }))
         |> Option.value ~default:annotation
     | ( Some (Type.Tuple (Bounded (Concrete members))),
         "__getitem__",
         Some (Type.Callable ({ overloads; _ } as callable)) ) ->
         let overload index member =
-          { Type.Callable.annotation = member;
+          {
+            Type.Callable.annotation = member;
             parameters =
               Defined
                 [Named { name = "x"; annotation = Type.literal_integer index; default = false }];
-            define_location = None
+            define_location = None;
           }
         in
         let overloads = List.mapi ~f:overload members @ overloads in
@@ -558,18 +564,20 @@ let create_attribute
                 | [generic] -> [create_parameter (Type.meta generic)]
                 | generics -> [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
               in
-              { Type.Callable.annotation =
+              {
+                Type.Callable.annotation =
                   Type.meta (Type.Parametric { name; parameters = Concrete generics });
                 parameters = Defined parameters;
-                define_location = None
+                define_location = None;
               }
           | _ ->
               (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and ignore the
                  others *)
-              { Type.Callable.annotation =
+              {
+                Type.Callable.annotation =
                   Type.meta (Type.Parametric { name; parameters = generics });
                 parameters = Undefined;
-                define_location = None
+                define_location = None;
               }
         in
         Some (Type.Callable { callable with implementation; overloads = [] })
@@ -665,9 +673,11 @@ let create_attribute
     | _, _ when frozen -> Some Attribute.ReadOnly
     | _, _ -> None
   in
-  { Node.location;
+  {
+    Node.location;
     value =
-      { Attribute.annotation;
+      {
+        Attribute.annotation;
         async;
         class_attribute;
         defined;
@@ -677,8 +687,8 @@ let create_attribute
         parent = class_annotation;
         property;
         static;
-        value
-      }
+        value;
+      };
   }
 
 
@@ -712,12 +722,13 @@ let attribute_table
   let original_instantiated = instantiated in
   let instantiated = Option.value instantiated ~default:(annotation definition) in
   let key =
-    { AttributeCache.transitive;
+    {
+      AttributeCache.transitive;
       class_attributes;
       special_method;
       include_generated_attributes;
       name;
-      instantiated
+      instantiated;
     }
   in
   match Hashtbl.find AttributeCache.cache key with
@@ -750,7 +761,8 @@ let attribute_table
             Attribute.Table.add
               table
               (Node.create_with_default_location
-                 { Attribute.annotation =
+                 {
+                   Attribute.annotation =
                      Annotation.create (Type.Callable.create ~annotation:Type.none ());
                    async = false;
                    class_attribute = false;
@@ -761,13 +773,14 @@ let attribute_table
                    parent = Primitive (Reference.show name);
                    property = None;
                    static = true;
-                   value = Node.create_with_default_location Ellipsis
+                   value = Node.create_with_default_location Ellipsis;
                  });
           if Option.is_none (Attribute.Table.lookup_name table "__getattr__") then
             Attribute.Table.add
               table
               (Node.create_with_default_location
-                 { Attribute.annotation =
+                 {
+                   Attribute.annotation =
                      Annotation.create (Type.Callable.create ~annotation:Type.Any ());
                    async = false;
                    class_attribute = false;
@@ -778,7 +791,7 @@ let attribute_table
                    parent = Primitive (Reference.show name);
                    property = None;
                    static = true;
-                   value = Node.create_with_default_location Ellipsis
+                   value = Node.create_with_default_location Ellipsis;
                  })
         in
         add_actual ();
@@ -901,9 +914,11 @@ let attribute
         ~parent:definition
         ~defined:false
         ~default_class_attribute:class_attributes
-        { Node.location;
+        {
+          Node.location;
           value =
-            { Statement.Attribute.name;
+            {
+              Statement.Attribute.name;
               annotation = None;
               defines = None;
               value = None;
@@ -915,8 +930,8 @@ let attribute
               final = false;
               static = false;
               frozen = false;
-              implicit = false
-            }
+              implicit = false;
+            };
         }
 
 
@@ -976,8 +991,9 @@ let rec fallback_attribute
               { Call.Argument.name = None; value = Expression.from_reference ~location class_name }
             in
             let name_argument =
-              { Call.Argument.name = None;
-                value = { Node.location; value = Expression.String (StringLiteral.create name) }
+              {
+                Call.Argument.name = None;
+                value = { Node.location; value = Expression.String (StringLiteral.create name) };
               }
             in
             [self_argument; name_argument]
@@ -992,9 +1008,11 @@ let rec fallback_attribute
             (create_attribute
                ~resolution:(Resolution.global_resolution resolution)
                ~parent:definition
-               { Node.location;
+               {
+                 Node.location;
                  value =
-                   { Statement.Attribute.name;
+                   {
+                     Statement.Attribute.name;
                      annotation = Some (Type.expression return_annotation);
                      defines = None;
                      value = None;
@@ -1006,8 +1024,8 @@ let rec fallback_attribute
                      final = false;
                      static = false;
                      frozen = false;
-                     implicit = false
-                   }
+                     implicit = false;
+                   };
                })
       | _ -> None
     else

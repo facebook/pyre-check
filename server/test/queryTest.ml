@@ -66,8 +66,9 @@ let test_parse_query context =
   assert_parses
     "type_at_position('a.py', 1, 2)"
     (TypeAtPosition
-       { path = Path.create_relative ~root:local_root ~relative:"a.py";
-         position = { Ast.Location.line = 1; column = 2 }
+       {
+         path = Path.create_relative ~root:local_root ~relative:"a.py";
+         position = { Ast.Location.line = 1; column = 2 };
        });
   assert_fails_to_parse "type_at_position(a.py:1:2)";
   assert_fails_to_parse "type_at_position('a.py', 1, 2, 3)";
@@ -145,9 +146,10 @@ let test_parse_query context =
        [ TypeQuery.SerializedValue
            { serialized_key = "first_key"; serialized_value = "first_value" };
          TypeQuery.SerializedPair
-           { serialized_key = "second_key";
+           {
+             serialized_key = "second_key";
              first_serialized_value = "second_value";
-             second_serialized_value = "third_value"
+             second_serialized_value = "third_value";
            } ]);
   assert_fails_to_parse "decode_ocaml_values('a', 'b')";
   let path =
@@ -160,9 +162,10 @@ let test_parse_query context =
     (DecodeOcamlValues
        [ TypeQuery.SerializedValue { serialized_key = "key"; serialized_value = "value" };
          TypeQuery.SerializedPair
-           { serialized_key = "second_key";
+           {
+             serialized_key = "second_key";
              first_serialized_value = "second_value";
-             second_serialized_value = "third_value"
+             second_serialized_value = "third_value";
            } ]);
   assert_parses "validate_taint_models()" (ValidateTaintModels None);
   assert_parses
@@ -181,44 +184,50 @@ let test_to_yojson _ =
   assert_yojson
     (TypeQuery.Response
        (TypeQuery.Decoded
-          { decoded =
+          {
+            decoded =
               [ TypeQuery.DecodedValue
-                  { serialized_key = "first_encoded";
+                  {
+                    serialized_key = "first_encoded";
                     kind = "Type";
                     actual_key = "first";
-                    actual_value = Some "int"
+                    actual_value = Some "int";
                   };
                 TypeQuery.DecodedValue
-                  { serialized_key = "first_encoded";
+                  {
+                    serialized_key = "first_encoded";
                     kind = "Type";
                     actual_key = "first";
-                    actual_value = Some "str"
+                    actual_value = Some "str";
                   };
                 TypeQuery.DecodedPair
-                  { serialized_key = "first_encoded";
+                  {
+                    serialized_key = "first_encoded";
                     kind = "Type";
                     actual_key = "first";
                     first_value = Some "str";
                     second_value = Some "int";
-                    equal = false
+                    equal = false;
                   };
                 TypeQuery.DecodedPair
-                  { serialized_key = "first_encoded";
+                  {
+                    serialized_key = "first_encoded";
                     kind = "Type";
                     actual_key = "first";
                     first_value = None;
                     second_value = Some "int";
-                    equal = false
+                    equal = false;
                   };
                 TypeQuery.DecodedPair
-                  { serialized_key = "first_encoded";
+                  {
+                    serialized_key = "first_encoded";
                     kind = "Type";
                     actual_key = "first";
                     first_value = Some "str";
                     second_value = None;
-                    equal = false
+                    equal = false;
                   } ];
-            undecodable_keys = ["no"]
+            undecodable_keys = ["no"];
           }))
     {|
       {

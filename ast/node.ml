@@ -5,7 +5,7 @@
 
 type 'node_type t = {
   location: Location.t; [@hash.ignore]
-  value: 'node_type
+  value: 'node_type;
 }
 [@@deriving sexp, show, hash, to_yojson]
 

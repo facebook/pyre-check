@@ -10,12 +10,12 @@ open Pyre
 type result = {
   module_tracker: Analysis.ModuleTracker.t;
   environment: Analysis.Environment.t;
-  errors: Analysis.Error.t list
+  errors: Analysis.Error.t list;
 }
 
 type analyze_source_results = {
   errors: Analysis.Error.t list;
-  number_files: int
+  number_files: int;
 }
 (** Internal result type; not exposed. *)
 

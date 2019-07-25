@@ -14,37 +14,45 @@ let transform_ast ({ Source.statements; _ } as source) =
   let rec expand_named_tuples ({ Node.location; value } as statement) =
     let extract_attributes expression =
       match expression with
-      | { Node.location;
+      | {
+          Node.location;
           value =
             Call
-              { callee =
-                  { Node.value =
+              {
+                callee =
+                  {
+                    Node.value =
                       Name
                         (Name.Attribute
-                          { base = { Node.value = Name (Name.Identifier "typing"); _ };
+                          {
+                            base = { Node.value = Name (Name.Identifier "typing"); _ };
                             attribute = "NamedTuple";
-                            _
+                            _;
                           });
-                    _
+                    _;
                   };
-                arguments
-              }
+                arguments;
+              };
         }
-      | { Node.location;
+      | {
+          Node.location;
           value =
             Call
-              { callee =
-                  { Node.value =
+              {
+                callee =
+                  {
+                    Node.value =
                       Name
                         (Name.Attribute
-                          { base = { Node.value = Name (Name.Identifier "collections"); _ };
+                          {
+                            base = { Node.value = Name (Name.Identifier "collections"); _ };
                             attribute = "namedtuple";
-                            _
+                            _;
                           });
-                    _
+                    _;
                   };
-                arguments
-              }
+                arguments;
+              };
         } ->
           let any_annotation =
             Name (Expression.create_name ~location "typing.Any") |> Node.create ~location
@@ -52,9 +60,10 @@ let transform_ast ({ Source.statements; _ } as source) =
           let attributes =
             match arguments with
             | [ _;
-                { Call.Argument.value =
+                {
+                  Call.Argument.value =
                     { value = String { StringLiteral.value = serialized; _ }; _ };
-                  _
+                  _;
                 } ] ->
                 String.split serialized ~on:' '
                 |> List.map ~f:(fun name -> name, any_annotation, None)
@@ -88,11 +97,12 @@ let transform_ast ({ Source.statements; _ } as source) =
         |> Type.expression
       in
       Assign
-        { Assign.target =
+        {
+          Assign.target =
             Reference.create ~prefix:parent "_fields" |> Expression.from_reference ~location;
           annotation = Some annotation;
           value;
-          parent = Some parent
+          parent = Some parent;
         }
       |> Node.create ~location
     in
@@ -103,10 +113,11 @@ let transform_ast ({ Source.statements; _ } as source) =
             Reference.create ~prefix:parent name |> Expression.from_reference ~location
           in
           Assign
-            { Assign.target;
+            {
+              Assign.target;
               annotation = Some annotation;
               value = Option.value value ~default:(Node.create Ellipsis ~location);
-              parent = Some parent
+              parent = Some parent;
             }
           |> Node.create ~location
         in
@@ -129,26 +140,29 @@ let transform_ast ({ Source.statements; _ } as source) =
         self_parameter :: List.map attributes ~f:to_parameter
       in
       Statement.Define
-        { signature =
-            { name = Reference.create ~prefix:parent "__new__";
+        {
+          signature =
+            {
+              name = Reference.create ~prefix:parent "__new__";
               parameters;
               decorators = [];
               docstring = None;
               return_annotation = None;
               async = false;
-              parent = Some parent
+              parent = Some parent;
             };
           body =
             [ Node.create
                 ~location
-                (Statement.Expression (Node.create ~location Expression.Ellipsis)) ]
+                (Statement.Expression (Node.create ~location Expression.Ellipsis)) ];
         }
       |> Node.create ~location
     in
     let tuple_base ~location =
-      { Expression.Call.Argument.name = None;
+      {
+        Expression.Call.Argument.name = None;
         value =
-          { Node.location; value = Name (Expression.create_name ~location "typing.NamedTuple") }
+          { Node.location; value = Name (Expression.create_name ~location "typing.NamedTuple") };
       }
     in
     let value =
@@ -162,36 +176,41 @@ let transform_ast ({ Source.statements; _ } as source) =
               let constructor = tuple_constructor ~parent:name ~location attributes in
               let attributes = tuple_attributes ~parent:name ~location attributes in
               Class
-                { Class.name;
+                {
+                  Class.name;
                   bases = [tuple_base ~location];
                   body = constructor :: attributes;
                   decorators = [];
-                  docstring = None
+                  docstring = None;
                 }
           | _ -> value )
       | Class ({ Class.name; bases; body; _ } as original) ->
           let is_named_tuple_primitive = function
-            | { Expression.Call.Argument.value =
-                  { Node.value =
+            | {
+                Expression.Call.Argument.value =
+                  {
+                    Node.value =
                       Name
                         (Name.Attribute
-                          { base = { Node.value = Name (Name.Identifier "typing"); _ };
+                          {
+                            base = { Node.value = Name (Name.Identifier "typing"); _ };
                             attribute = "NamedTuple";
-                            _
+                            _;
                           });
-                    _
+                    _;
                   };
-                _
+                _;
               } ->
                 true
             | _ -> false
           in
           if List.exists ~f:is_named_tuple_primitive bases then
             let extract_assign = function
-              | { Node.value =
+              | {
+                  Node.value =
                     Assign
                       { Assign.target = { Node.value = Name target; _ }; value; annotation; _ };
-                  _
+                  _;
                 } ->
                   let last =
                     match target with
@@ -237,9 +256,10 @@ let transform_ast ({ Source.statements; _ } as source) =
               List.fold bases ~init:([], []) ~f:extract_named_tuples
             in
             Class
-              { original with
+              {
+                original with
                 Class.bases = List.rev reversed_bases;
-                body = attributes @ List.map ~f:expand_named_tuples body
+                body = attributes @ List.map ~f:expand_named_tuples body;
               }
       | Define ({ Define.body; _ } as define) ->
           Define { define with Define.body = List.map ~f:expand_named_tuples body }

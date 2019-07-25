@@ -127,15 +127,17 @@ let test_select _ =
             { callable = parse_callable closest; reason = Some (MissingArgument (Named name)) }
       | `NotFoundMissingAnonymousArgumentWithClosest (closest, index) ->
           NotFound
-            { callable = parse_callable closest;
-              reason = Some (MissingArgument (Anonymous index))
+            {
+              callable = parse_callable closest;
+              reason = Some (MissingArgument (Anonymous index));
             }
       | `NotFoundTooManyArguments (expected, provided) ->
           NotFound { callable; reason = Some (TooManyArguments { expected; provided }) }
       | `NotFoundTooManyArgumentsWithClosest (closest, expected, provided) ->
           NotFound
-            { callable = parse_callable closest;
-              reason = Some (TooManyArguments { expected; provided })
+            {
+              callable = parse_callable closest;
+              reason = Some (TooManyArguments { expected; provided });
             }
       | `NotFoundUnexpectedKeyword name ->
           NotFound { callable; reason = Some (UnexpectedKeyword name) }
@@ -635,8 +637,9 @@ let test_select _ =
           (MismatchWithListVariadicTypeVariable
              ( Variable (Type.Variable.Variadic.List.create "Ts"),
                NotDefiniteTuple
-                 { expression = +Name (Name.Identifier "unbounded_tuple");
-                   annotation = Type.Tuple (Unbounded Type.integer)
+                 {
+                   expression = +Name (Name.Identifier "unbounded_tuple");
+                   annotation = Type.Tuple (Unbounded Type.integer);
                  } )) ));
   assert_select
     "[[typing.Tuple[Ts], Variable(Ts)], int]"

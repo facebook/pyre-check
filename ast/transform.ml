@@ -47,7 +47,7 @@ end
 module Make (Transformer : Transformer) = struct
   type result = {
     state: Transformer.t;
-    source: Source.t
+    source: Source.t;
   }
 
   let source { source; _ } = source
@@ -65,22 +65,25 @@ module Make (Transformer : Transformer) = struct
         ({ Node.value = { Parameter.name; value; annotation }; _ } as node)
         ~transform_expression
       =
-      { node with
+      {
+        node with
         Node.value =
-          { Parameter.name;
+          {
+            Parameter.name;
             value = value >>| transform_expression;
-            annotation = annotation >>| transform_expression
-          }
+            annotation = annotation >>| transform_expression;
+          };
       }
     in
     let transform_generator
         { Comprehension.target; iterator; conditions; async }
         ~transform_expression
       =
-      { Comprehension.target = transform_expression target;
+      {
+        Comprehension.target = transform_expression target;
         iterator = transform_expression iterator;
         conditions = transform_list conditions ~f:transform_expression;
-        async
+        async;
       }
     in
     let transform_entry { Dictionary.key; value } ~transform_expression =
@@ -92,9 +95,10 @@ module Make (Transformer : Transformer) = struct
         | Await expression -> Await (transform_expression expression)
         | BooleanOperator { BooleanOperator.left; operator; right } ->
             BooleanOperator
-              { BooleanOperator.left = transform_expression left;
+              {
+                BooleanOperator.left = transform_expression left;
                 operator;
-                right = transform_expression right
+                right = transform_expression right;
               }
         | Call { callee; arguments } ->
             let transform_arguments arguments =
@@ -107,45 +111,51 @@ module Make (Transformer : Transformer) = struct
               { callee = transform_expression callee; arguments = transform_arguments arguments }
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator
-              { ComparisonOperator.left = transform_expression left;
+              {
+                ComparisonOperator.left = transform_expression left;
                 operator;
-                right = transform_expression right
+                right = transform_expression right;
               }
         | Complex _ -> value
         | Dictionary { Dictionary.entries; keywords } ->
             Dictionary
-              { Dictionary.entries =
+              {
+                Dictionary.entries =
                   transform_list entries ~f:(transform_entry ~transform_expression);
-                keywords = transform_list keywords ~f:transform_expression
+                keywords = transform_list keywords ~f:transform_expression;
               }
         | DictionaryComprehension { Comprehension.element; generators } ->
             DictionaryComprehension
-              { Comprehension.element = transform_entry element ~transform_expression;
+              {
+                Comprehension.element = transform_entry element ~transform_expression;
                 generators =
-                  transform_list generators ~f:(transform_generator ~transform_expression)
+                  transform_list generators ~f:(transform_generator ~transform_expression);
               }
         | Ellipsis -> value
         | False -> value
         | Float _ -> value
         | Generator { Comprehension.element; generators } ->
             Generator
-              { Comprehension.element = transform_expression element;
+              {
+                Comprehension.element = transform_expression element;
                 generators =
-                  transform_list generators ~f:(transform_generator ~transform_expression)
+                  transform_list generators ~f:(transform_generator ~transform_expression);
               }
         | Integer _ -> value
         | Lambda { Lambda.parameters; body } ->
             Lambda
-              { Lambda.parameters =
+              {
+                Lambda.parameters =
                   transform_list parameters ~f:(transform_parameter ~transform_expression);
-                body = transform_expression body
+                body = transform_expression body;
               }
         | List elements -> List (transform_list elements ~f:transform_expression)
         | ListComprehension { Comprehension.element; generators } ->
             ListComprehension
-              { Comprehension.element = transform_expression element;
+              {
+                Comprehension.element = transform_expression element;
                 generators =
-                  transform_list generators ~f:(transform_generator ~transform_expression)
+                  transform_list generators ~f:(transform_generator ~transform_expression);
               }
         | Name (Name.Identifier _) -> value
         | Name (Name.Attribute ({ base; _ } as name)) ->
@@ -153,9 +163,10 @@ module Make (Transformer : Transformer) = struct
         | Set elements -> Set (transform_list elements ~f:transform_expression)
         | SetComprehension { Comprehension.element; generators } ->
             SetComprehension
-              { Comprehension.element = transform_expression element;
+              {
+                Comprehension.element = transform_expression element;
                 generators =
-                  transform_list generators ~f:(transform_generator ~transform_expression)
+                  transform_list generators ~f:(transform_generator ~transform_expression);
               }
         | Starred starred ->
             let starred =
@@ -167,9 +178,10 @@ module Make (Transformer : Transformer) = struct
         | String _ -> value
         | Ternary { Ternary.target; test; alternative } ->
             Ternary
-              { Ternary.target = transform_expression target;
+              {
+                Ternary.target = transform_expression target;
                 test = transform_expression test;
-                alternative = transform_expression alternative
+                alternative = transform_expression alternative;
               }
         | True -> value
         | Tuple elements -> Tuple (transform_list elements ~f:transform_expression)
@@ -193,77 +205,87 @@ module Make (Transformer : Transformer) = struct
         match value with
         | Assign { Assign.target; annotation; value; parent } ->
             Assign
-              { Assign.target = transform_expression target;
+              {
+                Assign.target = transform_expression target;
                 annotation = annotation >>| transform_expression;
                 value = transform_expression value;
-                parent
+                parent;
               }
         | Assert { Assert.test; message; origin } ->
             Assert
-              { Assert.test = transform_expression test;
+              {
+                Assert.test = transform_expression test;
                 message = message >>| transform_expression;
-                origin
+                origin;
               }
         | Break -> value
         | Class { Class.name; bases; body; decorators; docstring } ->
             Class
-              { Class.name;
+              {
+                Class.name;
                 bases = transform_list bases ~f:(transform_argument ~transform_expression);
                 body = transform_list body ~f:transform_statement |> List.concat;
                 decorators = transform_list decorators ~f:transform_expression;
-                docstring
+                docstring;
               }
         | Continue -> value
         | Define
-            { signature =
+            {
+              signature =
                 { name; parameters; decorators; return_annotation; async; parent; docstring };
-              body
+              body;
             } ->
             Define
-              { signature =
-                  { name;
+              {
+                signature =
+                  {
+                    name;
                     parameters =
                       transform_list parameters ~f:(transform_parameter ~transform_expression);
                     decorators = transform_list decorators ~f:transform_expression;
                     return_annotation = return_annotation >>| transform_expression;
                     async;
                     parent;
-                    docstring
+                    docstring;
                   };
-                body = transform_list body ~f:transform_statement |> List.concat
+                body = transform_list body ~f:transform_statement |> List.concat;
               }
         | Delete expression -> Delete (transform_expression expression)
         | Expression expression -> Expression (transform_expression expression)
         | For { For.target; iterator; body; orelse; async } ->
             For
-              { For.target = transform_expression target;
+              {
+                For.target = transform_expression target;
                 iterator = transform_expression iterator;
                 body = transform_list body ~f:transform_statement |> List.concat;
                 orelse = transform_list orelse ~f:transform_statement |> List.concat;
-                async
+                async;
               }
         | Global _ -> value
         | If { If.test; body; orelse } ->
             If
-              { If.test = transform_expression test;
+              {
+                If.test = transform_expression test;
                 body = transform_list body ~f:transform_statement |> List.concat;
-                orelse = transform_list orelse ~f:transform_statement |> List.concat
+                orelse = transform_list orelse ~f:transform_statement |> List.concat;
               }
         | Import _ -> value
         | Nonlocal _ -> value
         | Pass -> value
         | Raise { Raise.expression; from } ->
             Raise
-              { Raise.expression = expression >>| transform_expression;
-                from = from >>| transform_expression
+              {
+                Raise.expression = expression >>| transform_expression;
+                from = from >>| transform_expression;
               }
         | Return ({ Return.expression; _ } as return) ->
             Return { return with Return.expression = expression >>| transform_expression }
         | Try { Try.body; handlers; orelse; finally } ->
             let transform_handler { Try.kind; name; handler_body } =
-              { Try.kind = kind >>| transform_expression;
+              {
+                Try.kind = kind >>| transform_expression;
                 name;
-                handler_body = transform_list handler_body ~f:transform_statement |> List.concat
+                handler_body = transform_list handler_body ~f:transform_statement |> List.concat;
               }
             in
             (* Body needs to be evaluated first to update local scope *)
@@ -277,15 +299,17 @@ module Make (Transformer : Transformer) = struct
               transform_expression item, alias >>| transform_expression
             in
             With
-              { With.items = transform_list items ~f:transform_item;
+              {
+                With.items = transform_list items ~f:transform_item;
                 body = transform_list body ~f:transform_statement |> List.concat;
-                async
+                async;
               }
         | While { While.test; body; orelse } ->
             While
-              { While.test = transform_expression test;
+              {
+                While.test = transform_expression test;
                 body = transform_list body ~f:transform_statement |> List.concat;
-                orelse = transform_list orelse ~f:transform_statement |> List.concat
+                orelse = transform_list orelse ~f:transform_statement |> List.concat;
               }
         | Statement.Yield expression -> Statement.Yield (transform_expression expression)
         | Statement.YieldFrom expression -> Statement.YieldFrom (transform_expression expression)
@@ -309,7 +333,7 @@ end
 module MakeStatementTransformer (Transformer : StatementTransformer) = struct
   type result = {
     state: Transformer.t;
-    source: Source.t
+    source: Source.t;
   }
 
   let source { source; _ } = source

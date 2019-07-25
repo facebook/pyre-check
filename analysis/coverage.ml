@@ -11,7 +11,7 @@ type t = {
   partial: int;
   untyped: int;
   ignore: int;
-  crashes: int
+  crashes: int;
 }
 [@@deriving eq, show]
 
@@ -30,11 +30,12 @@ let ignore { ignore; _ } = ignore
 let crashes { crashes; _ } = crashes
 
 let sum left right =
-  { full = full left + full right;
+  {
+    full = full left + full right;
     partial = partial left + partial right;
     untyped = untyped left + untyped right;
     ignore = ignore left + ignore right;
-    crashes = crashes left + crashes right
+    crashes = crashes left + crashes right;
   }
 
 
@@ -85,7 +86,7 @@ type aggregate = {
   strict_coverage: int;
   declare_coverage: int;
   default_coverage: int;
-  source_files: int
+  source_files: int;
 }
 
 let coverage ~number_of_files ~sources =
@@ -100,8 +101,9 @@ let coverage ~number_of_files ~sources =
         | None -> prev_strict, prev_declare)
       sources
   in
-  { strict_coverage;
+  {
+    strict_coverage;
     declare_coverage;
     default_coverage = number_of_files - strict_coverage - declare_coverage;
-    source_files = number_of_files
+    source_files = number_of_files;
   }

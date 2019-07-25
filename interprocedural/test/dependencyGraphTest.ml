@@ -115,10 +115,11 @@ let test_construction _ =
     ~expected:[`Method "A.__init__", []; `Method "B.__init__", [`Method "A.__init__"]];
   assert_call_graph
     ~update_environment_with:
-      [ { handle = "foobar.pyi";
+      [ {
+          handle = "foobar.pyi";
           source = {|
             def bar(x: string) -> str: ...
-          |}
+          |};
         } ]
     {|
      def foo():

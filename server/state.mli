@@ -11,12 +11,12 @@ type raw_connections = {
   socket: Socket.t;
   json_socket: Socket.t;
   persistent_clients: int Socket.Map.t;
-  file_notifiers: Socket.t list
+  file_notifiers: Socket.t list;
 }
 
 type connections = {
   lock: Mutex.t;
-  connections: raw_connections ref
+  connections: raw_connections ref;
 }
 
 type t = {
@@ -29,5 +29,5 @@ type t = {
   last_integrity_check: float;
   last_request_time: float;
   connections: connections;
-  open_documents: string PyrePath.Map.t
+  open_documents: string PyrePath.Map.t;
 }

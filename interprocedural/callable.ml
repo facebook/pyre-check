@@ -11,7 +11,7 @@ open Pyre
 
 type method_name = {
   class_name: string;
-  method_name: string
+  method_name: string;
 }
 [@@deriving show, sexp, compare, hash, eq]
 
@@ -56,15 +56,17 @@ let create_function reference = `Function (Reference.show reference)
 
 let create_method reference =
   `Method
-    { class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
-      method_name = Reference.last reference
+    {
+      class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
+      method_name = Reference.last reference;
     }
 
 
 let create_override reference =
   `OverrideTarget
-    { class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
-      method_name = Reference.last reference
+    {
+      class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
+      method_name = Reference.last reference;
     }
 
 

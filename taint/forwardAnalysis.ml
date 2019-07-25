@@ -469,9 +469,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
           ForwardState.Tree.join left_taint right_taint, state
       | Call
-          { callee =
+          {
+            callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = argument_value; _ }]
+            arguments = [{ Call.Argument.value = argument_value; _ }];
           } ->
           let index = AccessPath.get_index argument_value in
           analyze_expression ~resolution ~state ~expression:base
@@ -481,9 +482,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~f:(add_first_index index)
       (* x[0] = value is converted to x.__setitem__(0, value). in parsing. *)
       | Call
-          { callee =
+          {
+            callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }]
+            arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }];
           } ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in
           let state =
@@ -588,9 +590,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           List.foldi targets ~f:analyze_target_element ~init:state
       (* Assignments of the form a[1][2] = 3 translate to a.__getitem__(1).__setitem__(2, 3).*)
       | Call
-          { callee =
+          {
+            callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = argument_value; _ }]
+            arguments = [{ Call.Argument.value = argument_value; _ }];
           } ->
           let index = AccessPath.get_index argument_value in
           analyze_assignment

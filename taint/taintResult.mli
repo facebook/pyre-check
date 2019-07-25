@@ -8,7 +8,7 @@ open Domains
 module Backward : sig
   type model = {
     taint_in_taint_out: BackwardState.t;
-    sink_taint: BackwardState.t
+    sink_taint: BackwardState.t;
   }
   [@@deriving show, sexp]
 
@@ -30,7 +30,7 @@ type mode =
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  mode: mode
+  mode: mode;
 }
 [@@deriving sexp]
 

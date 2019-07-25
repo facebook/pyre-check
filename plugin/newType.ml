@@ -13,38 +13,47 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
     let value =
       match value with
       | Assign
-          { Assign.value =
-              { Node.value =
+          {
+            Assign.value =
+              {
+                Node.value =
                   Call
-                    { callee =
-                        { Node.value =
+                    {
+                      callee =
+                        {
+                          Node.value =
                             Name
                               (Name.Attribute
-                                { base = { Node.value = Name (Name.Identifier "typing"); _ };
+                                {
+                                  base = { Node.value = Name (Name.Identifier "typing"); _ };
                                   attribute = "NewType";
-                                  _
+                                  _;
                                 });
-                          _
+                          _;
                         };
                       arguments =
-                        [ { Call.Argument.value =
+                        [ {
+                            Call.Argument.value =
                               { Node.value = String { StringLiteral.value = name; _ }; _ };
-                            _
+                            _;
                           };
-                          ( { (* TODO (T44209017): Error on invalid annotation expression *)
+                          ( {
+                              (* TODO (T44209017): Error on invalid annotation expression *)
                               Call.Argument.value = base;
-                              _
-                            } as base_argument ) ]
+                              _;
+                            } as base_argument ) ];
                     };
-                _
+                _;
               };
-            _
+            _;
           } ->
           let name = Reference.create ~prefix:qualifier name in
           let constructor =
             Define
-              { signature =
-                  { name = Reference.create ~prefix:name "__init__";
+              {
+                signature =
+                  {
+                    name = Reference.create ~prefix:name "__init__";
                     parameters =
                       [ Parameter.create ~location ~name:"self" ();
                         Parameter.create ~location ~annotation:base ~name:"input" () ];
@@ -52,18 +61,19 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
                     docstring = None;
                     return_annotation = None;
                     async = false;
-                    parent = Some name
+                    parent = Some name;
                   };
-                body = [Node.create Pass ~location]
+                body = [Node.create Pass ~location];
               }
             |> Node.create ~location
           in
           Class
-            { Class.name;
+            {
+              Class.name;
               bases = [base_argument];
               body = [constructor];
               decorators = [];
-              docstring = None
+              docstring = None;
             }
       | _ -> value
     in
