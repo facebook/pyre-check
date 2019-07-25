@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os  # noqa
+import shutil  # noqa
 import unittest
 from unittest.mock import MagicMock, call, patch
 
@@ -17,6 +18,8 @@ class KillTest(unittest.TestCase):
     @patch(
         "os.readlink",
         side_effect=[
+            "/tmp/actual_socket",
+            "/tmp/json_socket",
             "/tmp/actual_socket",
             "/tmp/json_socket",
             "/tmp/actual_socket",
@@ -49,3 +52,13 @@ class KillTest(unittest.TestCase):
             analysis_directory = MagicMock()
             commands.Kill(arguments, configuration, analysis_directory).run()
             run.assert_called_with(["pkill", "main.exe"])
+
+        with patch("os.getcwd", return_value="/root"), patch(
+            "shutil.rmtree"
+        ) as remove_tree:
+            arguments = mock_arguments()
+            configuration = mock_configuration()
+            analysis_directory = MagicMock()
+            arguments.with_fire = True
+            commands.Kill(arguments, configuration, analysis_directory).run()
+            remove_tree.assert_called_once_with("/root/.pyre/resource_cache")

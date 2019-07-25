@@ -5,6 +5,7 @@
 
 import logging
 import os
+import shutil
 import subprocess
 
 from .. import BINARY_NAME
@@ -46,3 +47,10 @@ class Kill(Command):
 
         _delete_linked_path(os.path.join(server_root, "server.sock"))
         _delete_linked_path(os.path.join(server_root, "json_server.sock"))
+
+        if self._arguments.with_fire is True:
+            # If a resource cache exists, delete it to remove corrupted artifacts.
+            try:
+                shutil.rmtree(os.path.join(os.getcwd(), ".pyre/resource_cache"))
+            except OSError:
+                pass
