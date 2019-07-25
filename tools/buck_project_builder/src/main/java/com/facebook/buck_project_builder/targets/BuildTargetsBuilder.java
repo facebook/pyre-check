@@ -60,7 +60,6 @@ public final class BuildTargetsBuilder {
     long start = System.currentTimeMillis();
     this.sources
         .entrySet()
-        .parallelStream()
         .forEach(mapping -> FileSystem.addSymbolicLink(mapping.getKey(), mapping.getValue()));
     long time = System.currentTimeMillis() - start;
     SimpleLogger.info("Built python sources in " + time + "ms.");
@@ -167,7 +166,6 @@ public final class BuildTargetsBuilder {
     // Second pass: establishing symbolic links
     Path thriftCacheRootPath = Paths.get(BuilderCache.THRIFT_CACHE_PATH);
     this.thriftLibraryTargets
-        .parallelStream()
         .forEach(
             command -> {
               String baseModulePath = command.getBaseModulePath();
