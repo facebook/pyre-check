@@ -472,7 +472,7 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
   errors
 
 
-let create ~resolution ?(verify = true) ?path ~configuration source =
+let create ~resolution ?path ~configuration source =
   let global_resolution = Resolution.global_resolution resolution in
   let signatures =
     let filter_define_signature = function
@@ -651,7 +651,7 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
         | Type.Callable t -> Some t
         | _ -> None
       in
-      let () = if verify then verify_signature ~normalized_model_parameters callable_annotation in
+      let () = verify_signature ~normalized_model_parameters callable_annotation in
       normalized_model_parameters
       |> List.fold
            ~init:TaintResult.empty_model
