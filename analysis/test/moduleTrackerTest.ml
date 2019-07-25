@@ -7,7 +7,7 @@ open Core
 open Ast
 open Pyre
 open OUnit2
-module ModuleTracker = Service.ModuleTracker
+module ModuleTracker = Analysis.ModuleTracker
 
 let touch path = File.create path ~content:"" |> File.write
 

@@ -131,7 +131,7 @@ let get_module_members_list
 
 let get_completion_items ~state ~configuration ~path ~cursor_position =
   let { State.open_documents; module_tracker; environment; _ } = state in
-  match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
+  match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
   | None -> []
   | Some _ -> (
     match Path.Map.find open_documents path with

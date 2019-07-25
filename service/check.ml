@@ -8,7 +8,7 @@ open Ast
 open Pyre
 
 type result = {
-  module_tracker: ModuleTracker.t;
+  module_tracker: Analysis.ModuleTracker.t;
   environment: Analysis.Environment.t;
   errors: Analysis.Error.t list
 }
@@ -120,7 +120,7 @@ let check
     | Some scheduler -> scheduler
   in
   (* Find sources to parse *)
-  let module_tracker = ModuleTracker.create configuration in
+  let module_tracker = Analysis.ModuleTracker.create configuration in
   (* Parse sources. *)
   let source_paths = Parser.parse_all ~scheduler ~configuration module_tracker in
   let environment = Environment.shared_handler in

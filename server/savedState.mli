@@ -17,7 +17,7 @@ val restore_symbolic_links
 val compute_locally_changed_paths
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  module_tracker:Service.ModuleTracker.t ->
+  module_tracker:Analysis.ModuleTracker.t ->
   Path.t list
 
 val load : server_configuration:Configuration.Server.t -> connections:State.connections -> State.t

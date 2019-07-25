@@ -93,7 +93,7 @@ let run_analysis
       Service.Check.check ~scheduler:(Some scheduler) ~configuration
       |> fun { module_tracker; environment; _ } ->
       let qualifiers =
-        Service.ModuleTracker.source_paths module_tracker
+        Analysis.ModuleTracker.source_paths module_tracker
         |> List.map ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier)
       in
       Service.StaticAnalysis.analyze

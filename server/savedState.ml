@@ -7,6 +7,7 @@ open Core
 open Pyre
 open Ast
 open Service
+module ModuleTracker = Analysis.ModuleTracker
 
 module SymlinkTargetsToSources = Memory.Serializer (struct
   type t = Path.t String.Table.t

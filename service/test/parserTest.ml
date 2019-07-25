@@ -107,7 +107,7 @@ let test_parse_sources context =
         ~filter_directories:[local_root]
         ()
     in
-    let module_tracker = Service.ModuleTracker.create configuration in
+    let module_tracker = Analysis.ModuleTracker.create configuration in
     Service.Parser.parse_all ~scheduler ~configuration module_tracker
     |> List.map ~f:(fun { SourcePath.relative; _ } -> relative)
     |> List.sort ~compare:String.compare
@@ -134,7 +134,7 @@ let test_parse_sources context =
     write_file local_root "a.py";
     write_file stub_root "stub.pyi";
     Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "stub"];
-    let module_tracker = Service.ModuleTracker.create configuration in
+    let module_tracker = Analysis.ModuleTracker.create configuration in
     Service.Parser.parse_all ~scheduler ~configuration module_tracker
     |> List.map ~f:(fun { SourcePath.relative; _ } -> relative)
   in

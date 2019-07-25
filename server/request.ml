@@ -5,6 +5,7 @@
 
 open Core
 module ServerDependencies = Dependencies
+module ModuleTracker = Analysis.ModuleTracker
 open Ast
 open Analysis
 open State
@@ -21,7 +22,7 @@ let to_pyre_position { LanguageServer.Types.Position.line; character } =
 
 
 let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } path =
-  Service.ModuleTracker.lookup_path ~configuration module_tracker path
+  ModuleTracker.lookup_path ~configuration module_tracker path
   >>= (fun { SourcePath.qualifier; _ } -> Hashtbl.find errors qualifier)
   |> Option.value ~default:[]
 
@@ -444,7 +445,7 @@ let process_type_query_request
         let extend_map map ~new_map =
           Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
         in
-        let qualifiers = Service.ModuleTracker.qualifiers module_tracker in
+        let qualifiers = ModuleTracker.qualifiers module_tracker in
         let map = Analysis.Environment.shared_memory_hash_to_key_map ~qualifiers () in
         (* AST shared memory. *)
         let map =
@@ -601,9 +602,7 @@ let process_type_query_request
         TypeQuery.Response (TypeQuery.Decoded decoded)
     | TypeQuery.DependentDefines paths ->
         let modules =
-          List.filter_map
-            paths
-            ~f:(Service.ModuleTracker.lookup_path ~configuration module_tracker)
+          List.filter_map paths ~f:(ModuleTracker.lookup_path ~configuration module_tracker)
           |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
         in
         let get_dependencies = Environment.dependencies environment in
@@ -620,7 +619,7 @@ let process_type_query_request
         TypeQuery.Response (TypeQuery.References dependencies)
     | TypeQuery.DumpDependencies path ->
         let () =
-          match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
+          match ModuleTracker.lookup_path ~configuration module_tracker path with
           | None -> ()
           | Some { SourcePath.qualifier; _ } ->
               Path.create_relative
@@ -642,7 +641,7 @@ let process_type_query_request
         in
         let timer = Timer.start () in
         (* Normalize the environment for comparison. *)
-        let qualifiers = Service.ModuleTracker.qualifiers module_tracker in
+        let qualifiers = ModuleTracker.qualifiers module_tracker in
         Analysis.Environment.normalize_shared_memory qualifiers;
         Memory.SharedMemory.save_table_sqlite path |> ignore;
         let { Memory.SharedMemory.used_slots; _ } = Memory.SharedMemory.hash_stats () in
@@ -714,7 +713,7 @@ let process_type_query_request
         parse_and_validate expression
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.PathOfModule module_name ->
-        Service.ModuleTracker.lookup module_tracker module_name
+        ModuleTracker.lookup module_tracker module_name
         >>= (fun source_path ->
               let path = SourcePath.full_path ~configuration source_path |> Path.absolute in
               Some (TypeQuery.Response (TypeQuery.FoundPath path)))
@@ -1110,7 +1109,7 @@ let rec process
             { state; response = None } )
       | TypeCoverageRequest { path; id } ->
           let response =
-            Service.ModuleTracker.lookup_path ~configuration module_tracker path
+            ModuleTracker.lookup_path ~configuration module_tracker path
             >>= fun { SourcePath.qualifier; _ } ->
             match Coverage.get ~qualifier with
             | Some { Coverage.full; partial; untyped; _ } ->

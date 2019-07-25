@@ -5,7 +5,7 @@
 
 open Core
 open Ast
-open Service
+open Analysis
 open Test
 open OUnit2
 open Pyre

@@ -19,6 +19,8 @@
 
 (tests
  (names
+  moduleTrackerTest
+  astEnvironmentTest
   awaitableCheckTest
   coverageTest
   abstractDomainTest

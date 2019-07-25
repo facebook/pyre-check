@@ -20,7 +20,7 @@ type connections = {
 }
 
 type t = {
-  module_tracker: Service.ModuleTracker.t;
+  module_tracker: Analysis.ModuleTracker.t;
   environment: Analysis.Environment.t;
   errors: Error.t list Ast.Reference.Table.t;
   lookups: Analysis.Lookup.t String.Table.t;

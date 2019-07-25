@@ -5,7 +5,7 @@
 
 open Core
 module ServerDependencies = Dependencies
-module ModuleTracker = Service.ModuleTracker
+module ModuleTracker = Analysis.ModuleTracker
 open Ast
 open Analysis
 open State

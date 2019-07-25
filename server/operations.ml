@@ -81,7 +81,7 @@ let start_from_scratch ?old_state ~connections ~configuration () =
       | None -> ()
       | Some symlink_target -> Hashtbl.set table ~key:symlink_target ~data:symlink_source
     in
-    ModuleTracker.source_paths module_tracker |> List.iter ~f:add_source_path;
+    Analysis.ModuleTracker.source_paths module_tracker |> List.iter ~f:add_source_path;
     table
   in
   Statistics.performance

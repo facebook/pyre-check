@@ -27,7 +27,7 @@ let get_lookups
   =
   let paths, nonexistent_paths =
     let get_source_path path =
-      match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
+      match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
       | Some source_path -> `Fst (path, source_path)
       | None -> `Snd path
     in
@@ -77,7 +77,7 @@ let get_lookups
 let evict ~state:{ lookups; _ } reference = String.Table.remove lookups (Reference.show reference)
 
 let evict_path ~state:({ State.module_tracker; _ } as state) ~configuration path =
-  match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
+  match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
   | None -> ()
   | Some { SourcePath.qualifier; _ } -> evict ~state qualifier
 

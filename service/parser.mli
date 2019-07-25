@@ -19,5 +19,5 @@ val parse_sources
 val parse_all
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  ModuleTracker.t ->
+  Analysis.ModuleTracker.t ->
   Ast.SourcePath.t list

@@ -1272,12 +1272,12 @@ let create_type_alias_table type_aliases =
 module ScratchProject = struct
   type t = {
     configuration: Configuration.Analysis.t;
-    module_tracker: Service.ModuleTracker.t
+    module_tracker: Analysis.ModuleTracker.t
   }
 
   let clean_ast_shared_memory module_tracker =
     let qualifiers =
-      Service.ModuleTracker.source_paths module_tracker
+      Analysis.ModuleTracker.source_paths module_tracker
       |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
     in
     Ast.SharedMemory.Sources.remove qualifiers;
@@ -1302,7 +1302,7 @@ module ScratchProject = struct
     in
     List.iter sources ~f:(add_source ~root:local_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
-    let module_tracker = Service.ModuleTracker.create configuration in
+    let module_tracker = Analysis.ModuleTracker.create configuration in
     let () =
       (* Clean shared memory up before the test *)
       clean_ast_shared_memory module_tracker;
@@ -1316,18 +1316,18 @@ module ScratchProject = struct
 
   let configuration_of { configuration; _ } = configuration
 
-  let source_paths_of { module_tracker; _ } = Service.ModuleTracker.source_paths module_tracker
+  let source_paths_of { module_tracker; _ } = Analysis.ModuleTracker.source_paths module_tracker
 
   let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
 
   let qualifiers_of { module_tracker; _ } =
-    Service.ModuleTracker.source_paths module_tracker
+    Analysis.ModuleTracker.source_paths module_tracker
     |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
   let parse_sources ({ configuration; module_tracker } as project) =
     let { Service.Parser.syntax_error; system_error; _ } =
-      Service.ModuleTracker.source_paths module_tracker
+      Analysis.ModuleTracker.source_paths module_tracker
       |> Service.Parser.parse_sources
            ~configuration
            ~scheduler:(Scheduler.mock ())

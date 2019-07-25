@@ -190,12 +190,12 @@ let log_parse_errors ~syntax_error ~system_error =
 
 let parse_all ~scheduler ~configuration module_tracker =
   let timer = Timer.start () in
-  Log.info "Parsing %d stubs and sources..." (ModuleTracker.length module_tracker);
+  Log.info "Parsing %d stubs and sources..." (Analysis.ModuleTracker.length module_tracker);
   let { parsed; syntax_error; system_error } =
     let preprocessing_state =
-      ProjectSpecificPreprocessing.initial (ModuleTracker.mem module_tracker)
+      ProjectSpecificPreprocessing.initial (Analysis.ModuleTracker.mem module_tracker)
     in
-    ModuleTracker.source_paths module_tracker
+    Analysis.ModuleTracker.source_paths module_tracker
     |> parse_sources ~configuration ~scheduler ~preprocessing_state:(Some preprocessing_state)
   in
   log_parse_errors ~syntax_error ~system_error;

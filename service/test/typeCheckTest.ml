@@ -20,7 +20,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   in
   let scheduler = Scheduler.mock () in
   List.iter ~f:File.write files;
-  let module_tracker = Service.ModuleTracker.create configuration in
+  let module_tracker = Analysis.ModuleTracker.create configuration in
   let source_paths = Service.Parser.parse_all ~configuration ~scheduler module_tracker in
   let environment = Service.Environment.shared_handler in
   let qualifiers = List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) in
@@ -31,7 +31,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
       ~scheduler
       ~configuration
       ~environment
-      (Service.ModuleTracker.source_paths module_tracker)
+      (Analysis.ModuleTracker.source_paths module_tracker)
     |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
   in
   List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier)
