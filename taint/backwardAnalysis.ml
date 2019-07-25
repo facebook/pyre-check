@@ -173,6 +173,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 let taint_to_propagate =
                   match kind with
                   | Sinks.LocalReturn -> call_taint
+                  (* Attach nodes shouldn't affect analysis. *)
+                  | Sinks.Attach -> BackwardState.Tree.empty
                   | Sinks.ParameterUpdate n -> (
                     match List.nth arguments n with
                     | None -> BackwardState.Tree.empty
@@ -514,7 +516,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 end
 
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and sink_taint. *)
-let extract_tito_and_sink_models define ~resolution entry_taint =
+let extract_tito_and_sink_models define ~resolution ~existing_backward entry_taint =
   let { Define.signature = { parameters; _ }; _ } = define in
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
@@ -532,11 +534,31 @@ let extract_tito_and_sink_models define ~resolution entry_taint =
       BackwardState.read ~root:(Root.Variable name) ~path:[] entry_taint
       |> BackwardState.Tree.partition BackwardTaint.leaf ~f:Fn.id
     in
+    let compute_features_to_attach taint =
+      BackwardState.read ~root:parameter ~path:[] taint
+      |> BackwardState.Tree.collapse
+      |> BackwardTaint.partition BackwardTaint.leaf ~f:(Sinks.equal Sinks.Attach)
+      |> (fun map -> Map.Poly.find map true)
+      >>| BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
+      |> Option.value ~default:[]
+    in
     let taint_in_taint_out =
+      let features_to_attach =
+        compute_features_to_attach existing_backward.TaintResult.Backward.taint_in_taint_out
+      in
       let candidate_tree =
         Map.Poly.find partition Sinks.LocalReturn
         |> Option.value ~default:BackwardState.Tree.empty
         |> simplify annotation
+      in
+      let candidate_tree =
+        if List.is_empty features_to_attach then
+          candidate_tree
+        else
+          BackwardState.Tree.transform
+            BackwardTaint.simple_feature_set
+            ~f:(List.rev_append features_to_attach)
+            candidate_tree
       in
       let number_of_paths =
         BackwardState.Tree.fold
@@ -558,6 +580,18 @@ let extract_tito_and_sink_models define ~resolution entry_taint =
       in
       Map.Poly.fold ~init:BackwardState.Tree.empty ~f:simplify_sink_taint partition
     in
+    let sink_taint =
+      let features_to_attach =
+        compute_features_to_attach existing_backward.TaintResult.Backward.sink_taint
+      in
+      if not (List.is_empty features_to_attach) then
+        BackwardState.Tree.transform
+          BackwardTaint.simple_feature_set
+          ~f:(List.rev_append features_to_attach)
+          sink_taint
+      else
+        sink_taint
+    in
     TaintResult.Backward.
       { taint_in_taint_out =
           BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out model.taint_in_taint_out;
@@ -567,7 +601,7 @@ let extract_tito_and_sink_models define ~resolution entry_taint =
   List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty
 
 
-let run ~environment ~define ~existing_model:_ =
+let run ~environment ~define ~existing_model =
   let ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define) =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = Environment.resolution environment () in
@@ -595,7 +629,13 @@ let run ~environment ~define ~existing_model:_ =
   in
   let resolution = Environment.resolution environment () in
   let extract_model FixpointState.{ taint; _ } =
-    let model = extract_tito_and_sink_models define.value ~resolution taint in
+    let model =
+      extract_tito_and_sink_models
+        define.value
+        ~resolution
+        ~existing_backward:existing_model.TaintResult.backward
+        taint
+    in
     let () =
       Log.log
         ~section:`Taint

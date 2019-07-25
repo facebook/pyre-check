@@ -86,7 +86,8 @@ let introduce_taint_in_taint_out
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
         { taint.backward with taint_in_taint_out }
-    | Sinks.ParameterUpdate _ ->
+    | Sinks.ParameterUpdate _
+    | Sinks.Attach ->
         let update_taint =
           BackwardTaint.singleton taint_sink_kind
           |> BackwardTaint.transform

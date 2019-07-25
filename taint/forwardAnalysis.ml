@@ -304,6 +304,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 match List.nth arguments n with
                 | None -> state
                 | Some argument -> apply_argument_effect ~argument ~source_tree:taint state )
+              | Attach -> state (* These synthetic nodes should be ignored for analysis.*)
               | _ -> failwith "unexpected sink in tito"
             in
             Map.Poly.fold tito_effects ~f:for_each_target ~init:state

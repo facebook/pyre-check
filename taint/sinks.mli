@@ -7,6 +7,7 @@ type t =
   | Demo
   | FileSystem
   | GetAttr
+  | Attach
   | LocalReturn (* Special marker to describe function in-out behavior *)
   | Logging
   | NamedSink of string

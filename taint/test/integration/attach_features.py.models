@@ -2,6 +2,26 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attach_features.attach_without_tito",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attach_features.inferred_is_propagated",
     "sources": [
       {
@@ -11,7 +31,7 @@
             "call": {
               "position": {
                 "filename": "attach_features.py",
-                "line": 11,
+                "line": 14,
                 "start": 31,
                 "end": 33
               },
@@ -28,6 +48,110 @@
       }
     ],
     "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.inferred_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(taint_without_feature)",
+        "taint": [
+          {
+            "root": {
+              "filename": "attach_features.py",
+              "line": 20,
+              "start": 16,
+              "end": 37
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "via": "special_sink" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(taint_right)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "via": "string_concat_rhs" } ]
+          },
+          {
+            "root": {
+              "filename": "attach_features.py",
+              "line": 19,
+              "start": 16,
+              "end": 27
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [
+              { "via": "string_concat_rhs" },
+              { "via": "special_sink" }
+            ]
+          }
+        ]
+      },
+      {
+        "port": "formal(taint_left)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          },
+          {
+            "root": {
+              "filename": "attach_features.py",
+              "line": 18,
+              "start": 16,
+              "end": 26
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [
+              { "via": "string_concat_lhs" },
+              { "via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.sink_is_propagated",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(argument)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "attach_features.py",
+                "line": 24,
+                "start": 18,
+                "end": 26
+              },
+              "resolves_to": [ "attach_features.inferred_sink" ],
+              "port": "formal(taint_left)",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [
+              { "via": "string_concat_lhs" },
+              { "via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
     "tito": []
   }
 }
@@ -61,7 +185,7 @@
           {
             "root": {
               "filename": "attach_features.py",
-              "line": 6,
+              "line": 9,
               "start": 14,
               "end": 16
             },
@@ -75,5 +199,100 @@
     ],
     "sinks": [],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.taint_in_taint_out",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          },
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.tito_and_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "via": "string_concat_rhs" } ]
+          },
+          {
+            "root": {
+              "filename": "attach_features.py",
+              "line": 32,
+              "start": 16,
+              "end": 19
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [
+              { "via": "string_concat_rhs" },
+              { "via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          },
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.tito_is_propagated",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 37, "start": 30, "end": 33 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" }, { "via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
   }
 }

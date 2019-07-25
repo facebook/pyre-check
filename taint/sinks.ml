@@ -9,6 +9,7 @@ type t =
   | Demo
   | FileSystem
   | GetAttr
+  | Attach
   | LocalReturn (* Special marker to describe function in-out behavior *)
   | Logging
   | NamedSink of string
@@ -26,6 +27,7 @@ let show = function
   | Demo -> "Demo"
   | FileSystem -> "FileSystem"
   | GetAttr -> "GetAttr"
+  | Attach -> "Attach"
   | LocalReturn -> "LocalReturn"
   | Logging -> "Logging"
   | NamedSink name -> name
@@ -41,6 +43,7 @@ let create = function
   | "Demo" -> Demo
   | "FileSystem" -> FileSystem
   | "GetAttr" -> GetAttr
+  | "Attach" -> Attach
   | "LocalReturn" -> LocalReturn
   | "Logging" -> Logging
   | "RemoteCodeExecution" -> RemoteCodeExecution
@@ -61,4 +64,6 @@ let parse ~allowed name =
     create name
 
 
-let ignore_leaf_at_call _ = false
+let ignore_leaf_at_call = function
+  | Attach -> true
+  | _ -> false
