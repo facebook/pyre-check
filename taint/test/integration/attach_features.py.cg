@@ -1,0 +1,5 @@
+@generated
+Call dependencies
+attach_features.inferred_is_propagated (fun) -> [attach_features.source_with_inferred (fun)]
+attach_features.source (fun) -> []
+attach_features.source_with_inferred (fun) -> [attach_features.source (fun)]

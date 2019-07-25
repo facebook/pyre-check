@@ -19,3 +19,5 @@ type t =
 [@@deriving compare, eq, sexp, show, hash]
 
 val parse : allowed:string list -> string -> t
+
+val ignore_leaf_at_call : t -> bool

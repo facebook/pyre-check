@@ -6,6 +6,7 @@
 type t =
   | Cookies
   | Demo
+  | Attach
   | NamedSource of string
   | PII
   | Secrets (* Such as passwords, tokens *)
@@ -15,3 +16,5 @@ type t =
 [@@deriving compare, eq, sexp, show, hash]
 
 val parse : allowed:string list -> string -> t
+
+val ignore_leaf_at_call : t -> bool

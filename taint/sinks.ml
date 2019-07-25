@@ -59,3 +59,6 @@ let parse ~allowed name =
     NamedSink name
   else
     create name
+
+
+let ignore_leaf_at_call _ = false

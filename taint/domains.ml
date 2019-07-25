@@ -27,6 +27,8 @@ module type SET_ARG = sig
   include Set.Elt
 
   val show : t -> string
+
+  val ignore_leaf_at_call : t -> bool
 end
 
 module Set (Element : SET_ARG) : TAINT_SET with type element = Element.t = struct
@@ -217,6 +219,8 @@ module type TAINT_DOMAIN = sig
 
   val leaf : leaf AbstractDomain.part
 
+  val ignore_leaf_at_call : leaf -> bool
+
   val trace_info : TraceInfo.t AbstractDomain.part
 
   val simple_feature : Features.Simple.t AbstractDomain.part
@@ -266,6 +270,8 @@ end = struct
   let of_list leaves = List.fold leaves ~init:Map.bottom ~f:add
 
   let leaf = Map.Key
+
+  let ignore_leaf_at_call = Leaf.ignore_leaf_at_call
 
   let trace_info = FlowDetails.trace_info
 
@@ -385,10 +391,14 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let apply_call location ~callees ~port taint_tree =
     let transform_path { path; ancestors = _; tip } =
-      { path;
-        ancestors = Taint.bottom;
-        tip = Taint.apply_call location ~callees ~port ~path ~element:tip
-      }
+      let tip =
+        Taint.partition Taint.leaf ~f:Taint.ignore_leaf_at_call tip
+        |> (fun map -> Map.Poly.find map false)
+        |> function
+        | None -> Taint.bottom
+        | Some taint -> Taint.apply_call location ~callees ~port ~path ~element:taint
+      in
+      { path; ancestors = Taint.bottom; tip }
     in
     transform RawPath ~f:transform_path taint_tree
 

@@ -8,6 +8,7 @@ open Core
 type t =
   | Cookies
   | Demo
+  | Attach
   | NamedSource of string
   | PII
   | Secrets (* Such as passwords, tokens *)
@@ -21,6 +22,7 @@ let _ = show (* unused *)
 let show = function
   | Cookies -> "Cookies"
   | Demo -> "Demo"
+  | Attach -> "Attach"
   | NamedSource name -> name
   | PII -> "PII"
   | Secrets -> "Secrets"
@@ -33,11 +35,17 @@ let create = function
   | "Cookies" -> Cookies
   | "PII" -> PII
   | "Secrets" -> Secrets
+  | "Attach" -> Attach
   | "Demo" -> Demo
   | "Test" -> Test
   | "Thrift" -> Thrift
   | "UserControlled" -> UserControlled
   | name -> failwith (Format.sprintf "Unsupported taint source `%s`" name)
+
+
+let ignore_leaf_at_call = function
+  | Attach -> true
+  | _ -> false
 
 
 let parse ~allowed name =

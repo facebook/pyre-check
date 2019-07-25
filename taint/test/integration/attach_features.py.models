@@ -1,0 +1,79 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.inferred_is_propagated",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "attach_features.py",
+                "line": 11,
+                "start": 31,
+                "end": 33
+              },
+              "resolves_to": [ "attach_features.source_with_inferred" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "attach_features.source" }
+            ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.source_with_inferred",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "Attach" } ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          },
+          {
+            "root": {
+              "filename": "attach_features.py",
+              "line": 6,
+              "start": 14,
+              "end": 16
+            },
+            "leaves": [
+              { "kind": "Test", "name": "attach_features.source" }
+            ],
+            "features": [ { "via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

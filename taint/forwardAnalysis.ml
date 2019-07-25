@@ -681,7 +681,22 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     Fixpoint.Make (FixpointState)
 end
 
-let extract_source_model ~define ~resolution exit_taint =
+let extract_features_to_attach existing_taint =
+  ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] existing_taint
+  |> ForwardState.Tree.collapse
+  |> ForwardTaint.partition ForwardTaint.leaf ~f:(Sources.equal Sources.Attach)
+  |> (fun map -> Map.Poly.find map true)
+  |> function
+  | Some taint ->
+      let gather_features features = function
+        | Features.Simple.Breadcrumb _ as feature -> feature :: features
+        | _ -> features
+      in
+      ForwardTaint.fold ForwardTaint.simple_feature ~f:gather_features ~init:[] taint
+  | None -> []
+
+
+let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
   let { Define.signature = { return_annotation; _ }; _ } = define in
   let return_annotation =
     Option.map ~f:(GlobalResolution.parse_annotation resolution) return_annotation
@@ -693,10 +708,20 @@ let extract_source_model ~define ~resolution exit_taint =
          ForwardTaint.simple_feature_set
          ~f:(Features.add_type_breadcrumb ~resolution return_annotation)
   in
+  let attach_features taint =
+    if not (List.is_empty features_to_attach) then
+      ForwardState.transform
+        ForwardTaint.simple_feature_set
+        ~f:(List.rev_append features_to_attach)
+        taint
+    else
+      taint
+  in
   let return_taint =
     ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] exit_taint |> simplify
   in
   ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
+  |> attach_features
 
 
 let run ~environment ~define ~existing_model =
@@ -760,7 +785,12 @@ let run ~environment ~define ~existing_model =
   let exit_state = Analyzer.forward ~cfg ~initial |> Analyzer.exit in
   let resolution = Environment.resolution environment () in
   let extract_model ({ FixpointState.taint; _ } as result) =
-    let source_taint = extract_source_model ~define:define.value ~resolution taint in
+    (* Explicitly declared taint is not propagated to the result and needs to be picked up from the
+       existing model. *)
+    let features_to_attach = extract_features_to_attach existing_model.forward.source_taint in
+    let source_taint =
+      extract_source_model ~define:define.value ~resolution ~features_to_attach taint
+    in
     let () = log "Model: %a" FixpointState.pp result in
     TaintResult.Forward.{ source_taint }
   in
