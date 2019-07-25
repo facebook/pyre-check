@@ -35,7 +35,6 @@ let create = function
   | "Cookies" -> Cookies
   | "PII" -> PII
   | "Secrets" -> Secrets
-  | "Attach" -> Attach
   | "Demo" -> Demo
   | "Test" -> Test
   | "Thrift" -> Thrift

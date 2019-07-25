@@ -86,6 +86,8 @@ let introduce_taint_in_taint_out
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
         { taint.backward with taint_in_taint_out }
+    | Sinks.Attach when List.is_empty breadcrumbs ->
+        raise_invalid_model "`Attach` must be accompanied by a list of features to attach."
     | Sinks.ParameterUpdate _
     | Sinks.Attach ->
         let update_taint =
@@ -110,6 +112,8 @@ let introduce_source_taint
     taint_source_kind
     breadcrumbs
   =
+  if Sources.equal taint_source_kind Sources.Attach && List.is_empty breadcrumbs then
+    raise_invalid_model "`Attach` must be accompanied by a list of features to attach.";
   let source_taint =
     let leaf_taint =
       ForwardTaint.singleton taint_source_kind
@@ -205,6 +209,22 @@ let rec parse_annotations ~configuration ~parameters annotation =
         List.map kinds ~f:(fun kind ->
             Tito { tito = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs })
   in
+  let extract_attach_features ~name expression =
+    let keep_features = function
+      | Breadcrumbs breadcrumbs -> Some breadcrumbs
+      | _ -> None
+    in
+    (* Ensure AttachToX annotations don't have any non-Via annotations for now. *)
+    extract_kinds expression
+    |> List.map ~f:keep_features
+    |> Option.all
+    >>| List.concat
+    |> function
+    | Some features -> features
+    | None ->
+        raise_invalid_model
+          (Format.sprintf "All parameters to `%s` must be of the form `Via[feature]`." name)
+  in
   match annotation with
   | Some ({ Node.value; _ } as expression) ->
       let rec parse_annotation = function
@@ -224,6 +244,24 @@ let rec parse_annotations ~configuration ~parameters annotation =
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
           when base_matches "TaintInTaintOut" callee ->
             get_taint_in_taint_out expression
+        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+          when base_matches "AttachToSink" callee ->
+            [ Sink
+                { sink = Sinks.Attach;
+                  breadcrumbs = extract_attach_features ~name:"AttachToSink" expression
+                } ]
+        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+          when base_matches "AttachToTito" callee ->
+            [ Tito
+                { tito = Sinks.Attach;
+                  breadcrumbs = extract_attach_features ~name:"AttachToTito" expression
+                } ]
+        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+          when base_matches "AttachToSource" callee ->
+            [ Source
+                { source = Sources.Attach;
+                  breadcrumbs = extract_attach_features ~name:"AttachToSource" expression
+                } ]
         | Name (Name.Identifier "TaintInTaintOut") ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
         | Name (Name.Identifier "SkipAnalysis") -> [SkipAnalysis]

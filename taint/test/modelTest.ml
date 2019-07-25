@@ -258,6 +258,22 @@ let test_tito_breadcrumbs _ =
     ()
 
 
+let test_attach_features _ =
+  assert_model
+    ~model_source:"def source() -> AttachToSource[Via[special]]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.Attach] "source"]
+    ();
+  assert_model
+    ~model_source:"def sink(arg: AttachToSink[Via[special]]): ..."
+    ~expect:
+      [outcome ~kind:`Function ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }] "sink"]
+    ();
+  assert_model
+    ~model_source:"def tito(arg: AttachToTito[Via[special]]): ..."
+    ~expect:[outcome ~kind:`Function ~tito_parameters:["arg"] "tito"]
+    ()
+
+
 let test_invalid_models _ =
   let assert_invalid_model ?path ~model_source ~expect () =
     let resolution =
@@ -280,7 +296,12 @@ let test_invalid_models _ =
         ()
     in
     let configuration =
-      TaintConfiguration.{ sources = ["A"; "B"]; sinks = ["X"; "Y"]; features = []; rules = [] }
+      TaintConfiguration.
+        { sources = ["A"; "B"];
+          sinks = ["X"; "Y"];
+          features = ["featureA"; "featureB"];
+          rules = []
+        }
     in
     let error_message =
       let path = path >>| Path.create_absolute ~follow_symbolic_links:false in
@@ -442,12 +463,41 @@ let test_invalid_models _ =
           def method(self): ...
       |}
     ~expect:"Class models must have a body of `...`."
-    ()
+    ();
+
+  (* Attach syntax. *)
+  assert_invalid_model
+    ~model_source:"def sink(parameter: AttachToSink): ..."
+    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `AttachToSink`"
+    ();
+  assert_invalid_model
+    ~model_source:"def sink(parameter: AttachToSink[feature]): ..."
+    ~expect:
+      "Invalid model for `sink`: All parameters to `AttachToSink` must be of the form \
+       `Via[feature]`."
+    ();
+  assert_invalid_model
+    ~model_source:"def sink(parameter: AttachToTito[feature]): ..."
+    ~expect:
+      "Invalid model for `sink`: All parameters to `AttachToTito` must be of the form \
+       `Via[feature]`."
+    ();
+  assert_invalid_model
+    ~model_source:"def source() -> AttachToSource[feature]: ..."
+    ~expect:
+      "Invalid model for `source`: All parameters to `AttachToSource` must be of the form \
+       `Via[feature]`."
+    ();
+
+  (* Multiple features. *)
+  assert_valid_model
+    ~model_source:"def sink(parameter: AttachToSink[Via[featureA, featureB]]): ..."
 
 
 let () =
   "taint_model"
-  >::: [ "source_models" >:: test_source_models;
+  >::: [ "attach_features" >:: test_attach_features;
+         "source_models" >:: test_source_models;
          "sink_models" >:: test_sink_models;
          "class_models" >:: test_class_models;
          "taint_in_taint_out_models" >:: test_taint_in_taint_out_models;

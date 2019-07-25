@@ -150,6 +150,7 @@ let check_expectation
         ~init:[]
     in
     let get_tito_name parameter_name = function
+      | Sinks.Attach -> parameter_name
       | Sinks.LocalReturn -> parameter_name
       | Sinks.ParameterUpdate n -> Format.sprintf "%s updates parameter %d" parameter_name n
       | _ -> failwith "not a tito sink"

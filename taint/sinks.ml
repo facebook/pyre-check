@@ -43,7 +43,6 @@ let create = function
   | "Demo" -> Demo
   | "FileSystem" -> FileSystem
   | "GetAttr" -> GetAttr
-  | "Attach" -> Attach
   | "LocalReturn" -> LocalReturn
   | "Logging" -> Logging
   | "RemoteCodeExecution" -> RemoteCodeExecution
