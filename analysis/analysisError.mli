@@ -152,6 +152,7 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidClass of Reference.t
   | InvalidClassInstantiation of class_kind
+  | InvalidException of { expression: Expression.t; annotation: Type.t }
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of GlobalResolution.type_parameters_mismatch

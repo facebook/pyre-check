@@ -4337,7 +4337,21 @@ module State (Context : Context) = struct
                not (GlobalResolution.is_suppressed_module global_resolution import))
         |> List.fold ~init:state ~f:add_import_error
     | Raise { Raise.expression = Some expression; _ } ->
-        forward_expression ~state ~expression |> fun { state; _ } -> state
+        let { state; resolved; _ } = forward_expression ~state ~expression in
+        let expected = Type.Primitive "BaseException" in
+        let actual =
+          if Type.is_meta resolved then
+            Type.single_parameter resolved
+          else
+            resolved
+        in
+        if GlobalResolution.less_or_equal global_resolution ~left:actual ~right:expected then
+          state
+        else
+          emit_error
+            ~state
+            ~location
+            ~kind:(Error.InvalidException { expression; annotation = resolved })
     | Raise _ -> state
     | Return { Return.expression; is_implicit } ->
         let { state; resolved = actual; _ } =

@@ -556,6 +556,11 @@ let is_unbound = function
   | _ -> false
 
 
+let is_union = function
+  | Union _ -> true
+  | _ -> false
+
+
 let reverse_substitute name =
   match name with
   | "collections.defaultdict" -> "typing.DefaultDict"

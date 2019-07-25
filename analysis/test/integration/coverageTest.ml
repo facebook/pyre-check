@@ -64,7 +64,11 @@ let test_check_coverage _ =
   assert_covered "if ERROR: pass";
 
   (* Raise. *)
-  assert_covered "raise ERROR";
+  assert_covered
+    ~additional_errors:
+      [ "Invalid Exception [48]: Expression `a.undefined` has type `unknown` but must extend \
+         BaseException." ]
+    "raise ERROR";
   assert_covered {|
       try:
         pass

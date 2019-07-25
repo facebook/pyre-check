@@ -161,6 +161,7 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidClass of Reference.t
   | InvalidClassInstantiation of class_kind
+  | InvalidException of { expression: Expression.t; annotation: Type.t }
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of GlobalResolution.type_parameters_mismatch
@@ -258,6 +259,7 @@ let code = function
   | InvalidClassInstantiation _ -> 45
   | InvalidTypeVariance _ -> 46
   | InvalidMethodSignature _ -> 47
+  | InvalidException _ -> 48
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
   | Deobfuscation _ -> 102
@@ -265,6 +267,7 @@ let code = function
 
 
 let name = function
+  | AbstractClass _ -> "Abstract class"
   | AnalysisFailure _ -> "Analysis failure"
   | Deobfuscation _ -> "Deobfuscation"
   | IllegalAnnotationTarget _ -> "Illegal annotation target"
@@ -282,7 +285,7 @@ let name = function
   | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidClass _ -> "Invalid class"
   | InvalidClassInstantiation _ -> "Invalid class instantiation"
-  | UnsafeCast _ -> "Unsafe cast"
+  | InvalidException _ -> "Invalid Exception"
   | InvalidType _ -> "Invalid type"
   | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
@@ -311,8 +314,8 @@ let name = function
   | UndefinedName _ -> "Undefined name"
   | UndefinedType _ -> "Undefined type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
+  | UnsafeCast _ -> "Unsafe cast"
   | UninitializedAttribute _ -> "Uninitialized attribute"
-  | AbstractClass _ -> "Abstract class"
   | Unpack _ -> "Unable to unpack"
   | UnusedIgnore _ -> "Unused ignore"
 
@@ -730,6 +733,12 @@ let messages ~concise ~signature location kind =
             (Type.Record.OrderedTypes.pp_concise ~pp_type)
             variable
             unconcatenatable ] )
+  | InvalidException { expression; annotation } ->
+      [ Format.asprintf
+          "Expression `%s` has type `%a` but must extend BaseException."
+          (Expression.show_sanitized expression)
+          pp_type
+          annotation ]
   | InvalidMethodSignature { annotation = Some annotation; name } ->
       [Format.asprintf "`%a` cannot be the type of `%a`." pp_type annotation pp_identifier name]
   | InvalidMethodSignature { name; _ } ->
@@ -1636,6 +1645,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidArgument (ConcreteVariable { annotation = actual; _ })
   | InvalidArgument
       (ListVariadicVariable { mismatch = NotDefiniteTuple { annotation = actual; _ }; _ })
+  | InvalidException { annotation = actual; _ }
   | InvalidType (InvalidType actual)
   | InvalidType (FinalNested actual)
   | NotCallable actual
@@ -1742,6 +1752,8 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
       is_consistent_with
         ~actual
         ~expected:(Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Top]))
+  | InvalidException { annotation = actual; _ } ->
+      Type.is_any actual || (Type.is_union actual && Type.contains_any actual)
   | AnalysisFailure _
   | Deobfuscation _
   | IllegalAnnotationTarget _
@@ -1897,6 +1909,8 @@ let less_or_equal ~resolution left right =
   | ( MissingArgument { callee = left_callee; parameter = Anonymous left_index },
       MissingArgument { callee = right_callee; parameter = Anonymous right_index } ) ->
       Option.equal Reference.equal_sanitized left_callee right_callee && left_index = right_index
+  | InvalidException left, InvalidException right ->
+      GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidClass left, InvalidClass right -> Reference.equal left right
   | InvalidClassInstantiation left, InvalidClassInstantiation right -> (
     match left, right with
@@ -1979,6 +1993,7 @@ let less_or_equal ~resolution left right =
   | IncompatibleVariableType _, _
   | InconsistentOverride _, _
   | InvalidArgument _, _
+  | InvalidException _, _
   | InvalidMethodSignature _, _
   | InvalidType _, _
   | InvalidTypeParameters _, _
@@ -2190,6 +2205,12 @@ let join ~resolution left right =
     | InvalidAssignment left, InvalidAssignment right when equal_invalid_assignment_kind left right
       ->
         InvalidAssignment left
+    | InvalidException left, InvalidException right
+      when Expression.equal left.expression right.expression ->
+        InvalidException
+          { expression = left.expression;
+            annotation = GlobalResolution.join resolution left.annotation right.annotation
+          }
     | InvalidMethodSignature left, InvalidMethodSignature right
       when Identifier.equal left.name right.name ->
         InvalidMethodSignature
@@ -2282,6 +2303,7 @@ let join ~resolution left right =
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
+    | InvalidException _, _
     | InvalidMethodSignature _, _
     | InvalidType _, _
     | InvalidTypeParameters _, _
@@ -2637,6 +2659,8 @@ let dequalify
               mismatch
         in
         InvalidArgument (ListVariadicVariable { variable; mismatch })
+    | InvalidException { expression; annotation } ->
+        InvalidException { expression; annotation = dequalify annotation }
     | InvalidMethodSignature ({ annotation; _ } as kind) ->
         InvalidMethodSignature { kind with annotation = annotation >>| dequalify }
     | InvalidType (InvalidType annotation) -> InvalidType (InvalidType (dequalify annotation))

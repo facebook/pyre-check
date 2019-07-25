@@ -1380,8 +1380,26 @@ let test_forward_statement _ =
   assert_forward ~bottom:false [] "assert (not True)" [];
 
   (* Raise. *)
-  assert_forward [] "raise 1" [];
-  assert_forward ~errors:(`Undefined 1) [] "raise undefined" [];
+  assert_forward
+    ~errors:
+      (`Specific
+        [ "Invalid Exception [48]: Expression `1` has type `typing_extensions.Literal[1]` but \
+           must extend BaseException." ])
+    []
+    "raise 1"
+    [];
+  assert_forward [] "raise Exception" [];
+  assert_forward [] "raise Exception()" [];
+  assert_forward
+    ~errors:
+      (`Specific
+        [ "Undefined name [18]: Global name `undefined` is not defined, or there is at least one \
+           control flow path that doesn't define `undefined`.";
+          "Invalid Exception [48]: Expression `undefined` has type `unknown` but must extend \
+           BaseException." ])
+    []
+    "raise undefined"
+    [];
   assert_forward [] "raise" [];
 
   (* Return. *)
