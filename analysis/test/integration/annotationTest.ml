@@ -6,7 +6,10 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_undefined_type _ =
+let test_check_undefined_type context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_default_type_errors
     {|
       def foo(x: Derp) -> Herp:
@@ -249,7 +252,9 @@ let test_check_undefined_type _ =
       "Incompatible return type [7]: Expected `None` but got `int`." ]
 
 
-let test_check_invalid_type _ =
+let test_check_invalid_type context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors {|
       MyType = int
       x: MyType = 1
@@ -342,7 +347,8 @@ let test_check_invalid_type _ =
     []
 
 
-let test_check_illegal_annotation_target _ =
+let test_check_illegal_annotation_target context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class Bar:
@@ -386,7 +392,8 @@ let test_check_illegal_annotation_target _ =
       "Revealed type [-1]: Revealed type for `Foo.a` is `int`." ]
 
 
-let test_check_missing_type_parameters _ =
+let test_check_missing_type_parameters context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       T = typing.TypeVar("_T")
@@ -422,8 +429,9 @@ let test_check_missing_type_parameters _ =
     ["Invalid type parameters [24]: Generic type `C` expects 2 type parameters."]
 
 
-let test_check_analysis_failure _ =
+let test_check_analysis_failure context =
   assert_type_errors
+    ~context
     {|
       def foo() -> Derp:
         pass
@@ -435,6 +443,7 @@ let test_check_analysis_failure _ =
       "Incompatible variable type [9]: x is declared to have type `int` "
       ^ "but is used as type `unknown`." ];
   assert_type_errors
+    ~context
     {|
       def foo(x: int) -> None:
         pass
@@ -447,7 +456,10 @@ let test_check_analysis_failure _ =
       ^ "but must be a mapping with string keys." ]
 
 
-let test_check_immutable_annotations _ =
+let test_check_immutable_annotations context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
       a: int = None
@@ -841,7 +853,9 @@ let test_check_immutable_annotations _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
-let test_check_incomplete_annotations _ =
+let test_check_incomplete_annotations context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> None:
@@ -891,7 +905,8 @@ let test_check_incomplete_annotations _ =
     |} []
 
 
-let test_check_refinement _ =
+let test_check_refinement context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def takes_int(a: int) -> None: pass
@@ -991,7 +1006,8 @@ let test_check_refinement _ =
       "Incompatible return type [7]: Expected `int` but got `unknown`." ]
 
 
-let test_check_invalid_type_variables _ =
+let test_check_invalid_type_variables context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       T = typing.TypeVar("T")
@@ -1100,16 +1116,20 @@ let test_check_invalid_type_variables _ =
       ^ "and cannot be a parameter type." ]
 
 
-let test_check_aliases _ =
-  assert_type_errors {|
+let test_check_aliases context =
+  assert_type_errors ~context {|
       class C(typing_extensions.Protocol):
         ...
     |} [];
-  assert_type_errors {|
+  assert_type_errors
+    ~context
+    {|
       class C(typing_extensions.Protocol[int]):
         ...
-    |} [];
+    |}
+    [];
   assert_type_errors
+    ~context
     {|
       class FOO:
         x: int = 0
@@ -1124,12 +1144,13 @@ let test_check_aliases _ =
       "Undefined attribute [16]: `BAR` has no attribute `x`." ]
 
 
-let test_final_type _ =
-  assert_type_errors {|
+let test_final_type context =
+  assert_type_errors ~context {|
       from typing import Final
       x: Final[int] = 3
     |} [];
   assert_type_errors
+    ~context
     {|
       from typing import Final
       x: Final[str] = 3
@@ -1137,8 +1158,9 @@ let test_final_type _ =
     ["Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`."]
 
 
-let test_check_invalid_inheritance _ =
+let test_check_invalid_inheritance context =
   assert_type_errors
+    ~context
     {|
       from typing import Callable
       class MyCallable(Callable):
@@ -1146,6 +1168,7 @@ let test_check_invalid_inheritance _ =
     |}
     ["Invalid inheritance [39]: `typing.Callable[..., typing.Any]` is not a valid parent class."];
   assert_type_errors
+    ~context
     {|
       from typing import Any
       class MySpecialClass(Any, int):

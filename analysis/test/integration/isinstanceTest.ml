@@ -6,7 +6,9 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_isinstance _ =
+let test_check_isinstance context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_default_type_errors
     {|
       def f(x) -> int:

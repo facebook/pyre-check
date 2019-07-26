@@ -6,7 +6,9 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_callables _ =
+let test_check_callables context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   (* Callable parameter checks. *)
   assert_type_errors
     {|
@@ -172,21 +174,23 @@ let test_check_callables _ =
     []
 
 
-let test_check_function_redirects _ =
-  assert_type_errors {|
+let test_check_function_redirects context =
+  assert_type_errors ~context {|
       def foo(a: float) -> float:
         return abs(a)
     |} []
 
 
-let test_check_function_parameters_with_backups _ =
-  assert_type_errors "(1).__add__(1)" [];
-  assert_type_errors "(1).__add__(1j)" [];
-  assert_type_errors "(1).__add__(1.0)" [];
-  assert_type_errors "(1).__iadd__(1.0)" []
+let test_check_function_parameters_with_backups context =
+  assert_type_errors ~context "(1).__add__(1)" [];
+  assert_type_errors ~context "(1).__add__(1j)" [];
+  assert_type_errors ~context "(1).__add__(1.0)" [];
+  assert_type_errors ~context "(1).__iadd__(1.0)" []
 
 
-let test_check_function_parameters _ =
+let test_check_function_parameters context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors {|
       def foo() -> None:
         int_to_int(1)
@@ -517,7 +521,8 @@ let test_check_function_parameters _ =
     ["Missing argument [20]: Call `foo` expects argument `x`."]
 
 
-let test_check_function_parameter_errors _ =
+let test_check_function_parameter_errors context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class Foo:
@@ -580,7 +585,8 @@ let test_check_function_parameter_errors _ =
       ^ "`typing.TypeAlias`." ]
 
 
-let test_check_function_overloads _ =
+let test_check_function_overloads context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import overload
@@ -730,8 +736,9 @@ let test_check_function_overloads _ =
       ^ "`typing.Callable(derp)[[Named(x, object)], unknown][[[Named(x, int)], int]]`." ]
 
 
-let test_check_constructor_overloads _ =
+let test_check_constructor_overloads context =
   assert_type_errors
+    ~context
     {|
       from typing import overload
 
@@ -750,7 +757,9 @@ let test_check_constructor_overloads _ =
        implementation." ]
 
 
-let test_check_variable_arguments _ =
+let test_check_variable_arguments context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
       class C(typing.Iterable[int]):
@@ -886,7 +895,8 @@ let test_check_variable_arguments _ =
       ^ "Expected `typing.Set[int]` but got `typing.Set[typing.Union[int, str]]`." ]
 
 
-let test_check_variable_restrictions _ =
+let test_check_variable_restrictions context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
        def f(x: str) -> int:
@@ -929,7 +939,9 @@ let test_check_variable_restrictions _ =
     ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."]
 
 
-let test_check_keyword_arguments _ =
+let test_check_keyword_arguments context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       def foo(x: int, y: str) -> None:
@@ -1001,7 +1013,8 @@ let test_check_keyword_arguments _ =
   ()
 
 
-let test_check_named_arguments _ =
+let test_check_named_arguments context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def bar()->int:
@@ -1045,7 +1058,8 @@ let test_check_named_arguments _ =
       ^ "Expected `float` for 1st parameter `f` to call `str_float_to_int` but got `str`." ]
 
 
-let test_check_literals _ =
+let test_check_literals context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import overload

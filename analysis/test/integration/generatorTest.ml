@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_comprehensions _ =
+let test_check_comprehensions context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo(input: typing.List[str]) -> typing.List[str]:
@@ -161,7 +162,8 @@ let test_check_comprehensions _ =
     []
 
 
-let test_check_generators _ =
+let test_check_generators context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       x: typing.Generator[typing.Any, typing.Any, typing.Any]

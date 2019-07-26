@@ -7,8 +7,8 @@ open Test
 open OUnit2
 open IntegrationTest
 
-let test_show_error_traces _ =
-  let assert_type_errors = assert_type_errors ~show_error_traces:true ~handle:"test.py" in
+let test_show_error_traces context =
+  let assert_type_errors = assert_type_errors ~context ~show_error_traces:true ~handle:"test.py" in
   assert_type_errors
     "def foo() -> int: return 1.0"
     [ "Incompatible return type [7]: Expected `int` but got `float`. Type `int` expected on line "
@@ -174,10 +174,10 @@ let test_show_error_traces _ =
        for mutable container errors." ]
 
 
-let test_concise _ =
+let test_concise context =
+  let assert_type_errors = assert_type_errors ~context ~concise:true in
   (* Illegal Annotation *)
   assert_type_errors
-    ~concise:true
     {|
       class Foo: ...
       Foo().a: int = 1
@@ -187,7 +187,6 @@ let test_concise _ =
 
   (* Impossible Isinstance *)
   assert_type_errors
-    ~concise:true
     {|
       def foo(x: int) -> None:
         assert not isinstance(x, int)
@@ -196,13 +195,11 @@ let test_concise _ =
 
   (* Incompatible Awaitable *)
   assert_type_errors
-    ~concise:true
     {|
       await 1
     |}
     ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
   assert_type_errors
-    ~concise:true
     {|
     def foo(x: int) -> None: ...
     await foo
@@ -211,7 +208,6 @@ let test_concise _ =
 
   (* Prohibited Any *)
   assert_type_errors
-    ~concise:true
     {|
       def foo() -> None:
         x: typing.Any = 1
@@ -220,20 +216,17 @@ let test_concise _ =
 
   (* Missing Annotation *)
   assert_type_errors
-    ~concise:true
     {|
       x: typing.Any = 1
     |}
     ["Missing global annotation [5]: Global annotation cannot be `Any`."];
   assert_type_errors
-    ~concise:true
     {|
       def foo():
         return 1
     |}
     ["Missing return annotation [3]: Return type must be annotated."];
   assert_type_errors
-    ~concise:true
     {|
       def foo(x = 1) -> None:
         return
@@ -242,21 +235,18 @@ let test_concise _ =
 
   (* Incompatible Annotation *)
   assert_type_errors
-    ~concise:true
     {|
       def foo(x: typing.Union[int, str] = 1.0) -> None:
         return
     |}
     ["Incompatible variable type [9]: x has type `Union[int, str]`; used as `float`."];
   assert_type_errors
-    ~concise:true
     {|
       def foo() -> int:
         return
     |}
     ["Incompatible return type [7]: Expected `int` but got `None`."];
   assert_type_errors
-    ~concise:true
     {|
       class Foo:
         a: int = 1
@@ -264,13 +254,11 @@ let test_concise _ =
     |}
     ["Incompatible attribute type [8]: Attribute has type `int`; used as `str`."];
   assert_type_errors
-    ~concise:true
     {|
       x: int = "string"
     |}
     ["Incompatible variable type [9]: x has type `int`; used as `str`."];
   assert_type_errors
-    ~concise:true
     ~update_environment_with:[{ handle = "export.py"; source = "class Foo:\n  a: int = 1" }]
     {|
       from export import Foo
@@ -278,7 +266,6 @@ let test_concise _ =
     |}
     ["Incompatible attribute type [8]: Attribute has type `int`; used as `str`."];
   assert_type_errors
-    ~concise:true
     ~update_environment_with:[{ handle = "export.py"; source = "a: int = 1" }]
     {|
       import export
@@ -288,7 +275,6 @@ let test_concise _ =
 
   (* Inconsistent Override *)
   assert_type_errors
-    ~concise:true
     ~update_environment_with:
       [ {
           handle = "export.py";
@@ -307,7 +293,6 @@ let test_concise _ =
     |}
     ["Inconsistent override [14]: `foo` overrides method defined in `Foo` inconsistently."];
   assert_type_errors
-    ~concise:true
     {|
       class Foo:
         def foo(self, x: int) -> int:
@@ -320,7 +305,6 @@ let test_concise _ =
 
   (* Invalid Type *)
   assert_type_errors
-    ~concise:true
     {|
       MyType = 1
       def foo() -> MyType:
@@ -330,7 +314,6 @@ let test_concise _ =
 
   (* Argument Errors *)
   assert_type_errors
-    ~concise:true
     {|
       def foo(x: int) -> None:
        return
@@ -338,7 +321,6 @@ let test_concise _ =
     |}
     ["Unexpected keyword [28]: Unexpected keyword argument `y`."];
   assert_type_errors
-    ~concise:true
     {|
       def foo(x: int, y: int) -> None:
        return
@@ -346,7 +328,6 @@ let test_concise _ =
     |}
     ["Too many arguments [19]: Expected 2 positional arguments."];
   assert_type_errors
-    ~concise:true
     {|
       def foo(x: int, y: int) -> None:
        return
@@ -355,17 +336,13 @@ let test_concise _ =
     ["Missing argument [20]: Argument `y` expected."];
 
   (* Not Callable *)
-  assert_type_errors
-    ~concise:true
-    {|
+  assert_type_errors {|
       x = 1
       x()
-    |}
-    ["Call error [29]: `int` is not a function."];
+    |} ["Call error [29]: `int` is not a function."];
 
   (* TypedDict *)
   assert_type_errors
-    ~concise:true
     {|
       Cat = mypy_extensions.TypedDict('Cat', {'name': str, 'breed': str})
       def foo(x: Cat) -> None:
@@ -375,7 +352,6 @@ let test_concise _ =
 
   (* Redundant Cast *)
   assert_type_errors
-    ~concise:true
     {|
       x: int
       y: int = typing.cast(int, x)
@@ -384,20 +360,17 @@ let test_concise _ =
 
   (* Undefined Import, Name, Type *)
   assert_type_errors
-    ~concise:true
     {|
       from a.b import c
     |}
     ["Undefined import [21]: Could not find `a`."];
   assert_type_errors
-    ~concise:true
     {|
       def foo() -> None:
         y = x
     |}
     ["Undefined name [18]: Global name `x` is undefined."];
   assert_type_errors
-    ~concise:true
     {|
       def foo(x: X) -> None:
         return
@@ -406,7 +379,6 @@ let test_concise _ =
 
   (* Uninitialized Attribute *)
   assert_type_errors
-    ~concise:true
     {|
       class Foo:
         x: int
@@ -415,7 +387,6 @@ let test_concise _ =
 
   (* ClassVar *)
   assert_type_errors
-    ~concise:true
     {|
       from typing import ClassVar
       class Base:
@@ -425,7 +396,6 @@ let test_concise _ =
     |}
     ["Invalid assignment [41]: Assigning to class variable through instance."];
   assert_type_errors
-    ~concise:true
     {|
         from abc import abstractmethod, ABCMeta
         class Foo(metaclass=ABCMeta):

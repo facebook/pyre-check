@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_final_methods _ =
+let test_final_methods context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
         from typing import final
@@ -52,8 +53,9 @@ let test_final_methods _ =
     []
 
 
-let test_final_class _ =
+let test_final_class context =
   assert_type_errors
+    ~context
     {|
     from typing import final
     @final
@@ -65,7 +67,8 @@ let test_final_class _ =
     ["Invalid inheritance [39]: Cannot inherit from final class `A`."]
 
 
-let test_final_attributes _ =
+let test_final_attributes context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import Final

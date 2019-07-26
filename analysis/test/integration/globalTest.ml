@@ -7,7 +7,8 @@ open OUnit2
 open IntegrationTest
 open Test
 
-let test_check_with_qualification _ =
+let test_check_with_qualification context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors {|
       x: int = 1
       def foo(x: str) -> str:
@@ -142,7 +143,8 @@ let test_check_with_qualification _ =
     []
 
 
-let test_check_globals _ =
+let test_check_globals context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       constant: int = 1

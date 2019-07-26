@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_variance _ =
+let test_check_variance context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def narnia(): pass
@@ -45,7 +46,8 @@ let test_check_variance _ =
       ^ "that does not contain `Any`." ]
 
 
-let test_check_literal_variance _ =
+let test_check_literal_variance context =
+  let assert_type_errors = assert_type_errors ~context in
   (* We special case literal lists and dicts for convenience, as they can never escape scope. *)
   assert_type_errors {|
       x: typing.List[float] = []

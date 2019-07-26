@@ -7,7 +7,10 @@ open Test
 open OUnit2
 open IntegrationTest
 
-let test_check_attributes _ =
+let test_check_attributes context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
       class Foo:
@@ -755,7 +758,9 @@ let test_check_attributes _ =
       ^ "must be specified as type other than `Any`." ]
 
 
-let test_check_missing_attribute _ =
+let test_check_missing_attribute context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       class Foo:
@@ -899,7 +904,7 @@ let test_check_missing_attribute _ =
     |} []
 
 
-let test_check_getattr _ =
+let test_check_getattr context =
   let assert_test_getattr source =
     let getattr_stub =
       {
@@ -944,6 +949,7 @@ let test_check_getattr _ =
       }
     in
     assert_type_errors
+      ~context
       ~update_environment_with:
         [ getattr_stub;
           getattr_stub_str;
@@ -1005,8 +1011,9 @@ let test_check_getattr _ =
       ^ "has no attribute `any_attribute`." ]
 
 
-let test_check_metaclass_attributes _ =
+let test_check_metaclass_attributes context =
   assert_type_errors
+    ~context
     {|
       class Meta(type):
         def f(cls) -> int:

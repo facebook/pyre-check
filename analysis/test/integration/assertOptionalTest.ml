@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_assert_is_none _ =
+let test_assert_is_none context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import Optional

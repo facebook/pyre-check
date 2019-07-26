@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_data_class _ =
+let test_check_data_class context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       @dataclass
@@ -60,8 +61,9 @@ let test_check_data_class _ =
     []
 
 
-let test_check_attr _ =
+let test_check_attr context =
   assert_type_errors
+    ~context
     ~update_environment_with:
       [ {
           handle = "attr/__init__.pyi";

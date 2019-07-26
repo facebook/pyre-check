@@ -8,15 +8,16 @@ open OUnit2
 open Analysis
 open Test
 
-let assert_awaitable_errors =
+let assert_awaitable_errors ~context =
   let check ~configuration ~global_resolution ~source =
     TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
     AwaitableCheck.run ~configuration ~global_resolution ~source
   in
-  assert_errors ~check
+  assert_errors ~context ~check
 
 
-let test_forward _ =
+let test_forward context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
   assert_awaitable_errors
     {|
       def awaitable() -> typing.Awaitable[int]: ...
@@ -455,8 +456,9 @@ let test_forward _ =
     ["Unawaited awaitable [101]: Awaitable assigned to `C.a` is never awaited."]
 
 
-let test_state _ =
+let test_state context =
   assert_awaitable_errors
+    ~context
     {|
       def awaitable() -> typing.Awaitable[int]: ...
 
@@ -465,6 +467,7 @@ let test_state _ =
     |}
     ["Unawaited awaitable [101]: Awaitable assigned to `unawaited` is never awaited."];
   assert_awaitable_errors
+    ~context
     {|
       def awaitable() -> typing.Awaitable[int]: ...
 

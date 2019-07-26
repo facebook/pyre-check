@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_unbounded_variables _ =
+let test_check_unbounded_variables context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -163,7 +164,8 @@ let test_check_unbounded_variables _ =
   ()
 
 
-let test_check_variable_bindings _ =
+let test_check_variable_bindings context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       T = typing.TypeVar('T', bound=int)
@@ -350,7 +352,8 @@ let test_check_variable_bindings _ =
   ()
 
 
-let test_unbound_variables _ =
+let test_unbound_variables context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> None:
@@ -584,7 +587,8 @@ let test_unbound_variables _ =
   ()
 
 
-let test_distinguish _ =
+let test_distinguish context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       _T1 = typing.TypeVar("_T1")
@@ -703,8 +707,9 @@ let test_distinguish _ =
   ()
 
 
-let test_integer_variables _ =
+let test_integer_variables context =
   assert_type_errors
+    ~context
     {|
       T = typing_extensions.IntVar("T")
       X = typing_extensions.IntVar("X")
@@ -723,6 +728,7 @@ let test_integer_variables _ =
     |}
     ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."];
   assert_type_errors
+    ~context
     {|
       X = typing_extensions.IntVar("X")
       def baz(x: X) -> X:
@@ -735,8 +741,9 @@ let test_integer_variables _ =
   ()
 
 
-let test_nested_variable_error _ =
+let test_nested_variable_error context =
   assert_type_errors
+    ~context
     {|
       T1 = typing.TypeVar("T1")
       T2 = typing.TypeVar("T2", typing.List[T1], typing.Dict[str, T1])
@@ -747,7 +754,8 @@ let test_nested_variable_error _ =
   ()
 
 
-let test_callable_parameter_variadics _ =
+let test_callable_parameter_variadics context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import Callable
@@ -799,7 +807,8 @@ let test_callable_parameter_variadics _ =
   ()
 
 
-let test_list_variadics _ =
+let test_list_variadics context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
     from typing import Tuple
@@ -1057,7 +1066,8 @@ let test_list_variadics _ =
   ()
 
 
-let test_map _ =
+let test_map context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
     from typing import Tuple, List, Generic, TypeVar
@@ -1147,7 +1157,8 @@ let test_map _ =
   ()
 
 
-let test_user_defined_variadics _ =
+let test_user_defined_variadics context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
     from typing import Generic, Tuple, List

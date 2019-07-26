@@ -7,20 +7,23 @@ open Test
 open OUnit2
 open IntegrationTest
 
-let test_check_method_returns _ =
+let test_check_method_returns context =
   assert_type_errors
+    ~context
     {|
       def foo(input: str) -> int:
           return input.lower()
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
   assert_type_errors
+    ~context
     {|
       def foo(input: str) -> int:
           return input.lower().upper()
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
   assert_type_errors
+    ~context
     {|
       def foo() -> int:
           return ''.upper()
@@ -28,7 +31,9 @@ let test_check_method_returns _ =
     ["Incompatible return type [7]: Expected `int` but got `str`."]
 
 
-let test_check_method_parameters _ =
+let test_check_method_parameters context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   (* Calls to methods *)
   assert_type_errors {|
       def foo(input: str) -> None:
@@ -264,7 +269,7 @@ let test_check_method_parameters _ =
     ["Undefined attribute [16]: `Foo` has no attribute `x`."]
 
 
-let test_check_abstract_methods _ =
+let test_check_abstract_methods context =
   let update_environment_with =
     [ {
         handle = "abc.pyi";
@@ -278,6 +283,7 @@ let test_check_abstract_methods _ =
       } ]
   in
   assert_type_errors
+    ~context
     ~update_environment_with
     {|
       @abc.abstractmethod
@@ -286,6 +292,7 @@ let test_check_abstract_methods _ =
     |}
     [];
   assert_type_errors
+    ~context
     ~update_environment_with
     {|
       @abc.abstractproperty
@@ -295,7 +302,9 @@ let test_check_abstract_methods _ =
     []
 
 
-let test_check_behavioral_subtyping _ =
+let test_check_behavioral_subtyping context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   (* Strengthened postcondition. *)
   assert_type_errors
     {|
@@ -722,7 +731,8 @@ let test_check_behavioral_subtyping _ =
     []
 
 
-let test_check_nested_class_inheritance _ =
+let test_check_nested_class_inheritance context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class X():
@@ -795,19 +805,21 @@ let test_check_nested_class_inheritance _ =
     []
 
 
-let test_check_method_resolution _ =
+let test_check_method_resolution context =
   assert_type_errors
+    ~context
     {|
       def foo() -> None:
         bar().baz()
     |}
     [ "Undefined name [18]: Global name `bar` is not defined, or there is at least one control \
        flow path that doesn't define `bar`." ];
-  assert_type_errors {|
+  assert_type_errors ~context {|
       def foo(input: str) -> None:
         input.lower()
     |} [];
   assert_type_errors
+    ~context
     {|
       class Foo:
         def __getattr__(self, name: str) -> typing.Any: ...
@@ -818,7 +830,8 @@ let test_check_method_resolution _ =
     ["Revealed type [-1]: Revealed type for `x.attribute` is `typing.Any`."]
 
 
-let test_check_callables _ =
+let test_check_callables context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       x: int = 1
@@ -878,7 +891,9 @@ let test_check_callables _ =
     []
 
 
-let test_check_callable_protocols _ =
+let test_check_callable_protocols context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   (* Objects with a `__call__` method are callables. *)
   assert_type_errors
     {|
@@ -981,8 +996,9 @@ let test_check_callable_protocols _ =
        `Call.__call__` but got `str`." ]
 
 
-let test_check_explicit_method_call _ =
+let test_check_explicit_method_call context =
   assert_type_errors
+    ~context
     {|
       class Class:
         def method(self, i: int) -> None:
@@ -992,7 +1008,8 @@ let test_check_explicit_method_call _ =
     []
 
 
-let test_check_self _ =
+let test_check_self context =
+  let assert_type_errors = assert_type_errors ~context in
   (* Self parameter is typed. *)
   assert_type_errors
     {|
@@ -1097,7 +1114,9 @@ let test_check_self _ =
   ()
 
 
-let test_check_meta_self _ =
+let test_check_meta_self context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_default_type_errors
     {|
       T = typing.TypeVar('T')
@@ -1216,7 +1235,8 @@ let test_check_meta_self _ =
     []
 
 
-let test_check_static _ =
+let test_check_static context =
+  let assert_type_errors = assert_type_errors ~context in
   (* No self parameter in static method. *)
   assert_type_errors
     {|
@@ -1330,7 +1350,8 @@ let test_check_static _ =
     []
 
 
-let test_check_setitem _ =
+let test_check_setitem context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo(x: typing.Dict[str, int]) -> None:
@@ -1364,7 +1385,8 @@ let test_check_setitem _ =
       ^ "Expected `str` for 1st anonymous parameter to call `dict.__setitem__` but got `int`." ]
 
 
-let test_check_in _ =
+let test_check_in context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class WeirdContains:
@@ -1437,7 +1459,8 @@ let test_check_in _ =
     []
 
 
-let test_check_enter _ =
+let test_check_enter context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class WithClass():
@@ -1470,8 +1493,9 @@ let test_check_enter _ =
       ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`." ]
 
 
-let test_enforce_dunder_params _ =
+let test_enforce_dunder_params context =
   assert_type_errors
+    ~context
     {|
       def foo(__f: str) -> int:
         return 1
@@ -1481,6 +1505,7 @@ let test_enforce_dunder_params _ =
     |}
     [];
   assert_type_errors
+    ~context
     {|
       def foo(__f: str) -> int:
         return 1
@@ -1490,6 +1515,7 @@ let test_enforce_dunder_params _ =
     |}
     ["Unexpected keyword [28]: Unexpected keyword argument `__f` to call `foo`."];
   assert_type_errors
+    ~context
     {|
       def foo(__f__: str) -> int:
         return 1

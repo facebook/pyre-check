@@ -6,8 +6,9 @@
 open OUnit2
 open IntegrationTest
 
-let test_delete _ =
+let test_delete context =
   assert_type_errors
+    ~context
     {|
     def foo() -> None:
         x = 10
@@ -18,6 +19,7 @@ let test_delete _ =
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`." ];
   assert_type_errors
+    ~context
     {|
       def foo(x: int) -> int:
         if x > 100:

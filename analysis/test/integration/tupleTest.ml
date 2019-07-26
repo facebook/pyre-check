@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_tuple _ =
+let test_check_tuple context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def derp()->int:
@@ -235,7 +236,8 @@ let test_check_tuple _ =
   ()
 
 
-let test_tuple_literal_access _ =
+let test_tuple_literal_access context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> int:

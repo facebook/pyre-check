@@ -6,7 +6,9 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_assign _ =
+let test_check_assign context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> None:

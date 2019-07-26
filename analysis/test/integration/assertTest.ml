@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_assert _ =
+let test_check_assert context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo(optional: typing.Optional[str]) -> None:
@@ -144,8 +145,9 @@ let test_check_assert _ =
     []
 
 
-let test_check_assert_functions _ =
+let test_check_assert_functions context =
   assert_default_type_errors
+    ~context
     {|
       class One:
           a: int
@@ -164,6 +166,7 @@ let test_check_assert_functions _ =
     |}
     [];
   assert_default_type_errors
+    ~context
     ~handle:"foo.py"
     {|
       class One:
@@ -183,6 +186,7 @@ let test_check_assert_functions _ =
     |}
     [];
   assert_type_errors
+    ~context
     {|
       class One:
           a: int = 1
@@ -198,7 +202,8 @@ let test_check_assert_functions _ =
     []
 
 
-let test_check_all _ =
+let test_check_all context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo(x: typing.List[typing.Optional[str]]) -> typing.Optional[str]:

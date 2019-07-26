@@ -6,7 +6,9 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_protocol _ =
+let test_check_protocol context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       class P(typing.Protocol):
@@ -399,7 +401,8 @@ let test_check_protocol _ =
   ()
 
 
-let test_check_generic_protocols _ =
+let test_check_generic_protocols context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       T = typing.TypeVar("T", int, str)
@@ -481,7 +484,8 @@ let test_check_generic_protocols _ =
   ()
 
 
-let test_check_generic_implementors _ =
+let test_check_generic_implementors context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors {|
       def foo(l: typing.List[int]) -> int:
          return len(l)
@@ -599,7 +603,8 @@ let test_check_generic_implementors _ =
   ()
 
 
-let test_callback_protocols _ =
+let test_callback_protocols context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class P(typing.Protocol):

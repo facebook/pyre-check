@@ -6,7 +6,9 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_return _ =
+let test_check_return context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors "def foo() -> None: pass" [];
   assert_type_errors "def foo() -> None: return" [];
   assert_type_errors "def foo() -> float: return 1.0" [];
@@ -173,7 +175,9 @@ let test_check_return _ =
   ()
 
 
-let test_check_return_control_flow _ =
+let test_check_return_control_flow context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       def x() -> int:
@@ -386,7 +390,8 @@ let test_check_return_control_flow _ =
       "Incompatible return type [7]: Expected `None` but got `typing.Dict[str, typing.Any]`." ]
 
 
-let test_check_collections _ =
+let test_check_collections context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def f(x: typing.List[int]) -> typing.Set[str]:
@@ -413,8 +418,9 @@ let test_check_collections _ =
     []
 
 
-let test_check_meta_annotations _ =
+let test_check_meta_annotations context =
   assert_type_errors
+    ~context
     {|
       class Class:
         pass
@@ -424,7 +430,8 @@ let test_check_meta_annotations _ =
     []
 
 
-let test_check_noreturn _ =
+let test_check_noreturn context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def no_return() -> typing.NoReturn:

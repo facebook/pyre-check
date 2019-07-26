@@ -7,7 +7,8 @@ open Test
 open OUnit2
 open IntegrationTest
 
-let test_check_contextmanager _ =
+let test_check_contextmanager context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       @contextlib.contextmanager
@@ -81,7 +82,8 @@ let test_check_contextmanager _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
-let test_check_asynccontextmanager _ =
+let test_check_asynccontextmanager context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       @contextlib.asynccontextmanager
@@ -143,7 +145,8 @@ let test_check_asynccontextmanager _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
-let test_check_click_command _ =
+let test_check_click_command context =
+  let assert_type_errors = assert_type_errors ~context in
   let assert_type_errors =
     let update_environment_with =
       [ {
@@ -240,7 +243,8 @@ let test_check_click_command _ =
     ["Missing argument [20]: Call `main` expects argument `flag`."]
 
 
-let test_decorators _ =
+let test_decorators context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import Optional
@@ -316,7 +320,8 @@ let test_decorators _ =
       ^ "parameter to call `int.__add__` but got `str`." ]
 
 
-let test_check_user_decorators _ =
+let test_check_user_decorators context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def decorate(f: typing.Callable[[int], str]) -> typing.Callable[[str], int]:
@@ -387,7 +392,8 @@ let test_check_user_decorators _ =
        `typing.Callable(am_i_async)[[Named(x, int)], str]`." ]
 
 
-let test_check_callable_class_decorators _ =
+let test_check_callable_class_decorators context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       T = typing.TypeVar("T")

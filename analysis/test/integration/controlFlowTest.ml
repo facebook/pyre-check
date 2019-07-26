@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_scheduling _ =
+let test_scheduling context =
+  let assert_type_errors = assert_type_errors ~context in
   (* Top-level is scheduled. *)
   assert_type_errors
     "'string' + 1"
@@ -108,7 +109,8 @@ let test_scheduling _ =
       ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`." ]
 
 
-let test_check_excepts _ =
+let test_check_excepts context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class Exception: pass
@@ -145,7 +147,8 @@ let test_check_excepts _ =
       ^ "but got `str`." ]
 
 
-let test_check_ternary _ =
+let test_check_ternary context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> int:
@@ -235,7 +238,8 @@ let test_check_ternary _ =
     []
 
 
-let test_check_unbound_variables _ =
+let test_check_unbound_variables context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -298,7 +302,8 @@ let test_check_unbound_variables _ =
     ["Incompatible return type [7]: Expected `int` but got `bool`."]
 
 
-let test_check_nested _ =
+let test_check_nested context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> None:

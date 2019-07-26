@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_union _ =
+let test_check_union context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> typing.Union[str, int]:

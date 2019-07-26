@@ -6,7 +6,9 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_implementation _ =
+let test_check_implementation context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       from typing import overload

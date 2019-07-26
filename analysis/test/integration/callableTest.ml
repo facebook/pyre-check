@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_higher_order_callables _ =
+let test_higher_order_callables context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       def foo(f: typing.Callable[[int], str]) -> str:
@@ -59,8 +60,9 @@ let test_higher_order_callables _ =
     ["Revealed type [-1]: Revealed type for `foo(callme)` is `typing.Callable[..., str]`."]
 
 
-let test_union_of_callables _ =
+let test_union_of_callables context =
   assert_type_errors
+    ~context
     {|
       def baz(x: typing.Union[typing.Callable[[int], typing.Any], typing.Callable[..., typing.Any]]) -> None:
           reveal_type(x)

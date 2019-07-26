@@ -8,7 +8,7 @@ open OUnit2
 open IntegrationTest
 open Test
 
-let test_check_coverage _ =
+let test_check_coverage context =
   let preprocess source =
     trim_extra_indentation source
     |> String.lstrip
@@ -20,11 +20,12 @@ let test_check_coverage _ =
   in
   let assert_covered ?(additional_errors = []) source =
     assert_type_errors
+      ~context
       (preprocess source)
       (additional_errors @ ["Undefined attribute [16]: `A` has no attribute `undefined`."])
   in
   let assert_not_covered ?(additional_errors = []) source =
-    assert_type_errors (preprocess source) additional_errors
+    assert_type_errors ~context (preprocess source) additional_errors
   in
   (* Return statement. *)
   assert_covered

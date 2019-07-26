@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_format_string _ =
+let test_format_string context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors {|
       def foo() -> None:
         f'foo{1}'

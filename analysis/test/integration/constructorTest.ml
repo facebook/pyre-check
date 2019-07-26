@@ -6,8 +6,9 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_invalid_constructor _ =
+let test_check_invalid_constructor context =
   assert_type_errors
+    ~context
     {|
       class C:
         def __init__(self) -> None:
@@ -15,6 +16,7 @@ let test_check_invalid_constructor _ =
     |}
     [];
   assert_type_errors
+    ~context
     {|
       class C:
         def __init__(self) -> int:
@@ -24,14 +26,18 @@ let test_check_invalid_constructor _ =
       ^ "returning `int`, but it should return `None`." ];
 
   (* TODO(T45018328): We should error here. *)
-  assert_type_errors {|
+  assert_type_errors
+    ~context
+    {|
       class C:
         def __new__(cls) -> None:
           ...
-    |} []
+    |}
+    []
 
 
-let test_check_init _ =
+let test_check_init context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class Foo:
@@ -410,7 +416,10 @@ let test_check_init _ =
     []
 
 
-let test_check_constructors _ =
+let test_check_constructors context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
       class Foo:
@@ -743,9 +752,10 @@ let test_check_constructors _ =
        anonymous parameter to call `foo` but got `typing.Type[Class]`." ]
 
 
-let test_infer_constructor_attributes _ =
+let test_infer_constructor_attributes context =
   (* We infer basic constructors. *)
   assert_type_errors
+    ~context
     {|
       class C:
         pass
@@ -757,6 +767,7 @@ let test_infer_constructor_attributes _ =
     |}
     ["Incompatible return type [7]: Expected `int` but got `C`."];
   assert_type_errors
+    ~context
     {|
       class C:
         pass
@@ -772,8 +783,9 @@ let test_infer_constructor_attributes _ =
       "Incompatible return type [7]: Expected `int` but got `C`." ]
 
 
-let test_newtype _ =
+let test_newtype context =
   assert_type_errors
+    ~context
     {|
       class C():
         def __init__(self, a: int, b: str) -> None: pass
@@ -783,6 +795,7 @@ let test_newtype _ =
     |}
     [];
   assert_type_errors
+    ~context
     {|
       class C():
         def __init__(self, a: int, b: str) -> None: pass

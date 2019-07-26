@@ -6,7 +6,8 @@
 open OUnit2
 open IntegrationTest
 
-let test_check_imports _ =
+let test_check_imports context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       import durp

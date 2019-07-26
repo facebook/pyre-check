@@ -127,8 +127,10 @@ let fixpoint_parse source =
   parse source |> Preprocessing.preprocess |> Preprocessing.defines |> List.hd_exn
 
 
-let test_check_missing_parameter _ =
-  let assert_inference_errors = assert_errors ~debug:false ~infer:true ~check:Inference.run in
+let test_check_missing_parameter context =
+  let assert_inference_errors =
+    assert_errors ~context ~debug:false ~infer:true ~check:Inference.run
+  in
   assert_inference_errors
     {|
       def foo(x = 5) -> int:

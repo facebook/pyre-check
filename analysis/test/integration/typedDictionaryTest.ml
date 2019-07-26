@@ -7,7 +7,7 @@ open OUnit2
 open IntegrationTest
 open Test
 
-let test_check_typed_dictionaries _ =
+let test_check_typed_dictionaries context =
   let assert_test_typed_dictionary source =
     let typing_stub =
       {
@@ -53,6 +53,7 @@ let test_check_typed_dictionaries _ =
       }
     in
     assert_type_errors
+      ~context
       ~update_environment_with:[typing_stub; mypy_extensions_stub; typed_dictionary_for_import]
       source
   in

@@ -7,7 +7,10 @@ open Test
 open OUnit2
 open IntegrationTest
 
-let test_check_missing_parameter _ =
+let test_check_missing_parameter context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   (* No annotation given *)
   assert_default_type_errors {|
       def foo(x):
@@ -88,7 +91,10 @@ let test_check_missing_parameter _ =
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
 
 
-let test_check_missing_return _ =
+let test_check_missing_return context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
       def foo():
