@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from collections import Counter
 from typing import Any, Iterable, List, Optional, Set, Tuple
 
 from .models import SharedTextKind, TraceFrame, TraceKind
@@ -78,6 +79,71 @@ class TrimmedTraceGraph(TraceGraph):
                     self._populate_issue_trace(
                         graph, instance_id, TraceKind.PRECONDITION
                     )
+
+        self._recompute_instance_properties()
+
+    def _recompute_instance_properties(self):
+        """Some properties of issue instances will be affected after trimming
+        such as min trace length to leaves. This should be called after the
+        trimming to re-compute these values.
+        """
+        callables_histo = Counter(
+            inst.callable_id.local_id for inst in self._issue_instances.values()
+        )
+
+        for inst in self._issue_instances.values():
+            inst.min_trace_length_to_sources = self._get_min_depth_to_sources(
+                inst.id.local_id
+            )
+            inst.min_trace_length_to_sinks = self._get_min_depth_to_sinks(
+                inst.id.local_id
+            )
+            inst.callable_count = callables_histo[inst.callable_id.local_id]
+
+    def _get_min_depth_to_sources(self, instance_id: int) -> int:
+        """Returns shortest depth to source from the issue instance. Instances
+        have a pre-computed min_trace_length_to_source, but this can change
+        after traces get trimmed from the graph. This re-computes it and
+        returns the min.
+        """
+        source_ids = {
+            source.id.local_id
+            for source in (
+                self.get_issue_instance_shared_texts(instance_id, SharedTextKind.SOURCE)
+            )
+        }
+        first_hop_tf_ids = {
+            tf_id
+            for tf_id in self._issue_instance_trace_frame_assoc[instance_id]
+            if self.get_trace_frame_from_id(tf_id).kind == TraceKind.POSTCONDITION
+        }
+        return self._get_min_depth(first_hop_tf_ids, source_ids)
+
+    def _get_min_depth_to_sinks(self, instance_id: int) -> int:
+        """See get_min_depths_to_sources."""
+        sink_ids = {
+            sink.id.local_id
+            for sink in (
+                self.get_issue_instance_shared_texts(instance_id, SharedTextKind.SINK)
+            )
+        }
+        first_hop_tf_ids = {
+            tf_id
+            for tf_id in self._issue_instance_trace_frame_assoc[instance_id]
+            if self.get_trace_frame_from_id(tf_id).kind == TraceKind.PRECONDITION
+        }
+        return self._get_min_depth(first_hop_tf_ids, sink_ids)
+
+    def _get_min_depth(self, first_hop_tf_ids: Set[int], leaf_ids: Set[int]) -> int:
+        min_depth = None
+        for tf_id in first_hop_tf_ids:
+            leaf_depths = self._trace_frame_leaf_assoc[tf_id]
+            for (leaf_id, depth) in leaf_depths:
+                if leaf_id in leaf_ids and (min_depth is None or depth < min_depth):
+                    min_depth = depth
+        if min_depth is not None:
+            return min_depth
+        return 0
 
     def _populate_affected_issues(self, graph: TraceGraph) -> None:
         """Populates the trimmed graph with issues whose locations are in
