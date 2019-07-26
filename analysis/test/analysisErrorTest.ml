@@ -1072,18 +1072,17 @@ let test_less_or_equal _ =
 let test_filter _ =
   let open Error in
   let environment = Environment.in_process_handler () in
-  add_defaults_to_environment ~configuration environment;
   Test.populate
     ~configuration
     environment
-    [ parse
+    ( parse
         {|
           class Foo: ...
           class MockChild(unittest.mock.Mock): ...
           class NonCallableChild(unittest.mock.NonCallableMock): ...
           class NonMockChild(Foo): ...
         |}
-    ];
+    :: Test.typeshed_stubs () );
   let resolution = Environment.resolution environment () in
   let assert_filtered ?(location = Location.Instantiated.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in

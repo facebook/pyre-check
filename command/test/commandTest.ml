@@ -165,7 +165,6 @@ module ScratchServer = struct
       environment
     in
     let global_resolution = Environment.resolution environment () in
-    add_defaults_to_environment ~configuration environment;
     let errors =
       let table = Ast.Reference.Table.create () in
       List.iter sources ~f:(fun ({ Ast.Source.qualifier; _ } as source) ->

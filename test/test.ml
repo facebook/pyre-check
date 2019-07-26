@@ -397,22 +397,6 @@ let assert_source_equal_with_locations expected actual =
 
 let assert_type_equal = assert_equal ~printer:Type.show ~cmp:Type.equal
 
-let add_defaults_to_environment ~configuration environment_handler =
-  let source =
-    parse
-      {|
-        class unittest.mock.Base: ...
-        class unittest.mock.Mock(unittest.mock.Base): ...
-        class unittest.mock.NonCallableMock: ...
-      |}
-  in
-  Service.Environment.populate
-    ~configuration
-    ~scheduler:(Scheduler.mock ())
-    environment_handler
-    [source]
-
-
 (* Expression helpers. *)
 let ( ~+ ) value = Node.create_with_default_location value
 
@@ -934,7 +918,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class ABC(metaclass=ABCMeta): ...
       |}
     |> Preprocessing.preprocess;
-    parse ~handle:"unittest/mock.pyi" "";
+    parse
+      ~handle:"unittest/mock.pyi"
+      {|
+        class Base: ...
+        class Mock(Base): ...
+        class NonCallableMock: ...
+      |}
+    |> Preprocessing.preprocess;
     parse ~handle:"builtins.pyi" builtins |> Preprocessing.preprocess;
     parse
       ~handle:"django/http.pyi"
@@ -1178,8 +1169,7 @@ let mock_signature =
 let mock_define = { Define.signature = mock_signature; body = [] }
 
 let resolution ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
-  let environment = environment ~sources () in
-  add_defaults_to_environment ~configuration environment;
+  let environment = environment ~configuration ~sources () in
   let global_resolution = Environment.resolution environment () in
   TypeCheck.resolution global_resolution ()
 

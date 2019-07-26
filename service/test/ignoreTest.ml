@@ -22,7 +22,6 @@ let ignore_lines_test context =
     Test.populate_shared_memory ~configuration qualifiers;
     let environment = Service.Environment.shared_handler in
     Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
-    add_defaults_to_environment ~configuration environment;
     let scheduler = Scheduler.mock () in
     Service.Postprocess.register_ignores ~configuration scheduler source_paths;
     let descriptions =
