@@ -49,10 +49,6 @@ public final class BuilderCache {
     return Paths.get(getCachePath(targets), "cache.json").toFile();
   }
 
-  public static String getThriftCachePath(ImmutableList<String> targets) {
-    return Paths.get(getCachePath(targets), "thrift-gen").toString();
-  }
-
   public static BuilderCache readFromCache(ImmutableList<String> targets) {
     File cacheJson = getCacheJsonFile(targets);
     try (FileReader reader = new FileReader(cacheJson)) {
