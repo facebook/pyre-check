@@ -214,28 +214,6 @@ let to_json { root; path } =
   `String (root_name root ^ AbstractTreeDomain.Label.show_path path)
 
 
-let is_property ~resolution = function
-  | Name (Name.Attribute { base; attribute; _ }) -> (
-      let global_resolution = Resolution.global_resolution resolution in
-      let annotation = Resolution.resolve resolution base in
-      let attribute =
-        GlobalResolution.class_definition global_resolution annotation
-        >>| Annotated.Class.create
-        >>| (fun definition ->
-              Annotated.Class.attribute
-                ~transitive:true
-                definition
-                ~resolution:global_resolution
-                ~name:attribute
-                ~instantiated:annotation)
-        >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
-      in
-      match attribute with
-      | Some attribute when Option.is_some (Annotated.Attribute.property attribute) -> true
-      | _ -> false )
-  | _ -> false
-
-
 let get_global ~resolution name =
   let global_resolution = Resolution.global_resolution resolution in
   let global =

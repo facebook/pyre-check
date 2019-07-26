@@ -26,6 +26,53 @@ let normalize_global ~resolution reference =
     reference, []
 
 
+let get_property_callable ~resolution ~base ~attribute =
+  let global_resolution = Resolution.global_resolution resolution in
+  let annotation = Resolution.resolve resolution base in
+  let annotation =
+    if Type.is_meta annotation then Type.single_parameter annotation else annotation
+  in
+  let property =
+    GlobalResolution.class_definition global_resolution annotation
+    >>| Annotated.Class.create
+    >>| (fun definition ->
+          Annotated.Class.attribute
+            ~transitive:true
+            definition
+            ~resolution:global_resolution
+            ~name:attribute
+            ~instantiated:annotation)
+    >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
+  in
+  match property with
+  | Some property when Option.is_some (Annotated.Attribute.property property) -> (
+      let parent_name = Annotated.Attribute.parent property |> Type.primitive_name in
+      parent_name
+      >>| Reference.create
+      >>= fun parent ->
+      Some (Reference.combine parent (Reference.create attribute))
+      >>= fun name ->
+      GlobalResolution.function_definitions global_resolution name
+      >>= function
+      | [{ Node.location; value = define }] ->
+          Annotated.Callable.create_overload ~resolution:global_resolution ~location define
+          |> (fun implementation ->
+               {
+                 Type.Callable.kind = Named name;
+                 overloads = [];
+                 implementation;
+                 implicit =
+                   Some
+                     {
+                       Type.Callable.implicit_annotation = annotation;
+                       name = Reference.show parent;
+                     };
+               })
+          |> Option.some
+      | _ -> None )
+  | _ -> None
+
+
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
 
 (* Figure out what target to pick for an indirect call that resolves to target_name.
