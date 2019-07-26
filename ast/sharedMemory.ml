@@ -26,6 +26,8 @@ module Sources = struct
     let prefix = Prefix.make ()
 
     let description = "AST"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module Sources = SharedMemory.NoCache (Reference.Key) (SourceValue)
@@ -54,6 +56,9 @@ module Handles = struct
     let prefix = Prefix.make ()
 
     let description = "Path"
+
+    (* Strings are not marshalled in shared memory *)
+    let unmarshall value = value
   end
 
   module Paths = SharedMemory.WithCache (Reference.Key) (PathValue)
@@ -76,6 +81,8 @@ module Modules = struct
     let prefix = Prefix.make ()
 
     let description = "Module"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module Modules = SharedMemory.WithCache (Reference.Key) (ModuleValue)

@@ -40,6 +40,8 @@ module CoverageValue : sig
   val prefix : Prefix.t
 
   val description : string
+
+  val unmarshall : string -> t
 end
 
 module SharedMemory : module type of Memory.WithCache (Reference.Key) (CoverageValue)

@@ -66,7 +66,13 @@ module type KeyType = sig
   val from_string : string -> out
 end
 
-module Register (Key : KeyType) (Value : Value.Type) () : sig
+module type ValueType = sig
+  include Value.Type
+
+  val unmarshall : string -> t
+end
+
+module Register (Key : KeyType) (Value : ValueType) () : sig
   type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key : Key.t -> string
@@ -81,7 +87,7 @@ end = struct
   let () =
     let decode key value =
       let value =
-        try Some (Marshal.from_string value 0) with
+        try Some (Value.unmarshall value) with
         | _ -> None
       in
       Decoded (Key.from_string key, value)
@@ -105,7 +111,7 @@ end = struct
     Core.List.fold keys ~init:Core.String.Map.empty ~f:add
 end
 
-module NoCache (Key : KeyType) (Value : Value.Type) : sig
+module NoCache (Key : KeyType) (Value : ValueType) : sig
   type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key : Key.t -> string
@@ -126,7 +132,7 @@ end = struct
   include SharedMemory.NoCache (Key) (Value)
 end
 
-module WithCache (Key : KeyType) (Value : Value.Type) : sig
+module WithCache (Key : KeyType) (Value : ValueType) : sig
   type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key : Key.t -> string
@@ -230,7 +236,7 @@ end
 module type SerializableValueType = sig
   type t
 
-  module Serialized : Value.Type
+  module Serialized : ValueType
 
   val serialize : t -> Serialized.t
 

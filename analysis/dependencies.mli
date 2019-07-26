@@ -85,7 +85,7 @@ module Callgraph : sig
       }
   [@@deriving compare, eq, show, to_yojson]
 
-  module CalleeValue : Value.Type with type t = callee list
+  module CalleeValue : SharedMemory.ValueType with type t = callee list
 
   module SharedMemory : module type of SharedMemory.WithCache (Reference.Key) (CalleeValue)
 

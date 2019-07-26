@@ -224,6 +224,8 @@ module SharedMemory = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "Module tracker"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   let serialize = Hashtbl.to_alist

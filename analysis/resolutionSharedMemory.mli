@@ -22,6 +22,8 @@ module TypeAnnotationsValue : sig
   val prefix : Prefix.t
 
   val description : string
+
+  val unmarshall : string -> t
 end
 
 include module type of Memory.WithCache (Reference.Key) (TypeAnnotationsValue)
@@ -32,6 +34,8 @@ module AnnotationsKeyValue : sig
   val prefix : Prefix.t
 
   val description : string
+
+  val unmarshall : string -> t
 end
 
 module Keys : module type of Memory.NoCache (Reference.Key) (AnnotationsKeyValue)

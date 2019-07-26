@@ -1186,6 +1186,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Function keys"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module GlobalKeyValue = struct
@@ -1194,6 +1196,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Global keys"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module AliasKeyValue = struct
@@ -1202,6 +1206,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Alias keys"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module ClassKeyValue = struct
@@ -1210,6 +1216,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Class keys"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module DependentKeyValue = struct
@@ -1218,6 +1226,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Dependent keys"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module ClassValue = struct
@@ -1226,6 +1236,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Class"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module ClassMetadataValue = struct
@@ -1234,6 +1246,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Class metadata"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module AliasValue = struct
@@ -1242,6 +1256,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Alias"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module GlobalValue = struct
@@ -1250,6 +1266,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Global"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module DependentValue = struct
@@ -1258,6 +1276,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Dependent"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module OrderIndexValue = struct
@@ -1266,6 +1286,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Order indices"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module OrderAnnotationValue = struct
@@ -1274,6 +1296,9 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Order annotations"
+
+    (* Strings are not marshalled by shared memory *)
+    let unmarshall value = value
   end
 
   module EdgeValue = struct
@@ -1282,6 +1307,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Edges"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module BackedgeValue = struct
@@ -1290,6 +1317,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Backedges"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module OrderKeyValue = struct
@@ -1298,6 +1327,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Order keys"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module IntValue = struct
@@ -1306,6 +1337,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Refcount of implicit submodules"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module ModuleValue = struct
@@ -1314,6 +1347,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Module"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module UndecoratedFunctionValue = struct
@@ -1322,6 +1357,8 @@ module SharedMemory = struct
     let prefix = Prefix.make ()
 
     let description = "Undecorated functions"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)

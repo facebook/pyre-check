@@ -18,6 +18,8 @@ module SymlinkTargetsToSources = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "SymlinkTargetsToSources"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   let serialize = Hashtbl.to_alist
@@ -34,6 +36,8 @@ module StoredConfiguration = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "Configuration"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   let serialize = Fn.id
@@ -50,6 +54,8 @@ module ServerErrors = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "All errors"
+
+    let unmarshall value = Marshal.from_string value 0
   end
 
   let serialize = Hashtbl.to_alist

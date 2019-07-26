@@ -12,6 +12,8 @@ module OverrideTypes = struct
   let prefix = Prefix.make ()
 
   let description = "overriding types"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
 (* Maps the method access to the next subtypes that override that method *)

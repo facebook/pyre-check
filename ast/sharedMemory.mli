@@ -8,7 +8,7 @@ open Core
 module IntKey : Memory.KeyType with type t = int and type out = int
 
 module Sources : sig
-  module SourceValue : Value.Type with type t = Source.t
+  module SourceValue : Memory.ValueType with type t = Source.t
 
   module Sources : module type of Memory.NoCache (Reference.Key) (SourceValue)
 
@@ -27,7 +27,7 @@ module Sources : sig
 end
 
 module Modules : sig
-  module ModuleValue : Value.Type with type t = Module.t
+  module ModuleValue : Memory.ValueType with type t = Module.t
 
   module Modules : module type of Memory.NoCache (Reference.Key) (ModuleValue)
 
@@ -50,7 +50,7 @@ module Modules : sig
 end
 
 module Handles : sig
-  module PathValue : Value.Type with type t = string
+  module PathValue : Memory.ValueType with type t = string
 
   module Paths : module type of Memory.WithCache (Reference.Key) (PathValue)
 

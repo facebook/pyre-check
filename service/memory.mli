@@ -28,7 +28,13 @@ module type KeyType = sig
   val from_string : string -> out
 end
 
-module NoCache (Key : KeyType) (Value : Value.Type) : sig
+module type ValueType = sig
+  include Value.Type
+
+  val unmarshall : string -> t
+end
+
+module NoCache (Key : KeyType) (Value : ValueType) : sig
   type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key : Key.t -> string
@@ -45,7 +51,7 @@ module NoCache (Key : KeyType) (Value : Value.Type) : sig
        and module KeyMap = MyMap.Make(Key)
 end
 
-module WithCache (Key : KeyType) (Value : Value.Type) : sig
+module WithCache (Key : KeyType) (Value : ValueType) : sig
   type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key : Key.t -> string
@@ -91,7 +97,7 @@ end
 module type SerializableValueType = sig
   type t
 
-  module Serialized : Value.Type
+  module Serialized : ValueType
 
   val serialize : t -> Serialized.t
 

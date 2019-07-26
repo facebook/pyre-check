@@ -46,6 +46,8 @@ module TypeAnnotationsValue = struct
   let prefix = Prefix.make ()
 
   let description = "Node type resolution"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
 module AnnotationsKeyValue = struct
@@ -54,6 +56,8 @@ module AnnotationsKeyValue = struct
   let prefix = Prefix.make ()
 
   let description = "Node type resolution keys"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
 include SharedMemory.WithCache (Reference.Key) (TypeAnnotationsValue)

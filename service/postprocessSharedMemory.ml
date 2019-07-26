@@ -37,6 +37,8 @@ module IgnoreValue = struct
   let prefix = Prefix.make ()
 
   let description = "Ignore"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
 module LocationListValue = struct
@@ -45,6 +47,8 @@ module LocationListValue = struct
   let prefix = Prefix.make ()
 
   let description = "Location list"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
 module ModeValue = struct
@@ -53,6 +57,8 @@ module ModeValue = struct
   let prefix = Prefix.make ()
 
   let description = "Mode"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
 module IgnoreLines = SharedMemory.NoCache (LocationKey) (IgnoreValue)

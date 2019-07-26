@@ -29,6 +29,8 @@ module MockEdgeValue = struct
   let prefix = Prefix.make ()
 
   let description = "Edges"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
 module MockEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (MockEdgeValue)
@@ -39,9 +41,24 @@ module MockBackedgeValue = struct
   let prefix = Prefix.make ()
 
   let description = "Backedges"
+
+  let unmarshall value = Marshal.from_string value 0
 end
 
 module MockBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (MockBackedgeValue)
+
+module MockAnnotationValue = struct
+  type t = string
+
+  let prefix = Prefix.make ()
+
+  let description = "Annotations"
+
+  (* Shared memory does not marshall strings *)
+  let unmarshall value = value
+end
+
+module MockAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (MockAnnotationValue)
 
 let test_decodable _ =
   let assert_decode prefix key value expected =
@@ -63,6 +80,11 @@ let test_decodable _ =
     (Ast.SharedMemory.IntKey.to_string 1234)
     "can't decode this"
     (MockEdges.Decoded (1234, None));
+  assert_decode
+    MockAnnotationValue.prefix
+    (Ast.SharedMemory.IntKey.to_string 1234)
+    "can decode this"
+    (MockAnnotations.Decoded (1234, Some "can decode this"));
   assert_equal
     (Error `Malformed_key)
     (Memory.decode ~key:"" ~value:(Marshal.to_string [] [Marshal.Closures]));

@@ -41,6 +41,8 @@ module SharedConfig =
       let prefix = Prefix.make ()
 
       let description = "Taint configuration"
+
+      let unmarshall value = Marshal.from_string value 0
     end)
 
 let parse source =
