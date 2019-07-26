@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -82,7 +82,11 @@ public final class ThriftLibraryTarget implements BuildTarget {
                 "$(location //thrift/compiler/generate/templates:templates)",
                 "thrift/compiler/generate/templates")
             .replaceFirst("-I \\$\\(location .*\\)", "-I .")
-            .replace("-o \"$OUT\"", "-out " + BuilderCache.THRIFT_CACHE_PATH)
+            .replace(
+                "-o \"$OUT\"",
+                String.format(
+                    "-out \"%s\"",
+                    Paths.get(BuilderCache.THRIFT_CACHE_PATH, DigestUtils.md5Hex(baseModulePath))))
             .replace("\"$SRCS\"", String.join(" ", sources))
             .replaceFirst(" &&.*", "");
     return new ThriftLibraryTarget(command, baseModulePath, sources);
