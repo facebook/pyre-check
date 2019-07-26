@@ -177,6 +177,9 @@ public final class BuildTargetsBuilder {
                       if (absolutePath.toFile().isDirectory()) {
                         return;
                       }
+                      if (absolutePath.endsWith("__init__.py") || absolutePath.endsWith("__init__.pyi")) {
+                        return;
+                      }
                       String relativePath = generatedCodeRoot.relativize(absolutePath).toString();
                       FileSystem.addSymbolicLink(
                           Paths.get(this.outputDirectory, relativePath), absolutePath);
