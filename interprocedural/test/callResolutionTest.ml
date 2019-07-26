@@ -11,7 +11,9 @@ open Pyre
 
 let test_get_property_callable context =
   let assert_callable ~source ~property:(base, attribute) ~expected =
-    let sources = ScratchProject.setup ~context ["x.py", source] |> ScratchProject.parse_sources in
+    let sources, _ =
+      ScratchProject.setup ~context ["x.py", source] |> ScratchProject.parse_sources
+    in
     let resolution = Test.resolution ~sources () in
     CallResolution.get_property_callable
       ~resolution
