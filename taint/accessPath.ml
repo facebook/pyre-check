@@ -216,18 +216,22 @@ let to_json { root; path } =
 
 let is_property ~resolution = function
   | Name (Name.Attribute { base; attribute; _ }) -> (
+      let global_resolution = Resolution.global_resolution resolution in
       let annotation = Resolution.resolve resolution base in
-      let is_property define =
-        String.Set.exists ~f:(Statement.Define.has_decorator define) Recognized.property_decorators
+      let attribute =
+        GlobalResolution.class_definition global_resolution annotation
+        >>| Annotated.Class.create
+        >>| (fun definition ->
+              Annotated.Class.attribute
+                ~transitive:true
+                definition
+                ~resolution:global_resolution
+                ~name:attribute
+                ~instantiated:annotation)
+        >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
       in
-      match Type.expression annotation with
-      | { Node.value = Name name; _ } when Expression.is_simple_name name ->
-          Reference.create ~prefix:(Expression.name_to_reference_exn name) attribute
-          |> GlobalResolution.function_definitions (Resolution.global_resolution resolution)
-          >>| (function
-                | [{ Node.value = define; _ }] -> is_property define
-                | _ -> false)
-          |> Option.value ~default:false
+      match attribute with
+      | Some attribute when Option.is_some (Annotated.Attribute.property attribute) -> true
       | _ -> false )
   | _ -> false
 

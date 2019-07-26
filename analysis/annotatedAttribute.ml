@@ -55,6 +55,8 @@ let final { Node.value = { final; _ }; _ } = final
 
 let static { Node.value = { static; _ }; _ } = static
 
+let property { Node.value = { property; _ }; _ } = property
+
 let instantiate ({ Node.value = { annotation; _ } as attribute; _ } as attribute_node) ~constraints
   =
   {

@@ -49,6 +49,8 @@ val final : t -> bool
 
 val static : t -> bool
 
+val property : t -> property option
+
 val instantiate : t -> constraints:(Type.t -> Type.t option) -> t
 
 module Table : sig
