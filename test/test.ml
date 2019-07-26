@@ -1275,12 +1275,12 @@ let create_type_alias_table type_aliases =
 module ScratchProject = struct
   type t = {
     configuration: Configuration.Analysis.t;
-    module_tracker: Analysis.ModuleTracker.t;
+    module_tracker: ModuleTracker.t;
   }
 
   let clean_ast_shared_memory module_tracker =
     let qualifiers =
-      Analysis.ModuleTracker.source_paths module_tracker
+      ModuleTracker.source_paths module_tracker
       |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
     in
     Ast.SharedMemory.Sources.remove qualifiers;
@@ -1305,7 +1305,7 @@ module ScratchProject = struct
     in
     List.iter sources ~f:(add_source ~root:local_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
-    let module_tracker = Analysis.ModuleTracker.create configuration in
+    let module_tracker = ModuleTracker.create configuration in
     let () =
       (* Clean shared memory up before the test *)
       clean_ast_shared_memory module_tracker;
@@ -1319,22 +1319,24 @@ module ScratchProject = struct
 
   let configuration_of { configuration; _ } = configuration
 
-  let source_paths_of { module_tracker; _ } = Analysis.ModuleTracker.source_paths module_tracker
+  let source_paths_of { module_tracker; _ } = ModuleTracker.source_paths module_tracker
 
   let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
 
   let qualifiers_of { module_tracker; _ } =
-    Analysis.ModuleTracker.source_paths module_tracker
+    ModuleTracker.source_paths module_tracker
     |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
   let parse_sources ({ configuration; module_tracker } as project) =
+    let ast_environment = AstEnvironment.create module_tracker in
     let { Service.Parser.syntax_error; system_error; _ } =
       Analysis.ModuleTracker.source_paths module_tracker
       |> Service.Parser.parse_sources
            ~configuration
            ~scheduler:(Scheduler.mock ())
            ~preprocessing_state:None
+           ~ast_environment
     in
     (* Normally we shouldn't have any parse errors in tests *)
     let errors = system_error @ syntax_error in
@@ -1344,6 +1346,9 @@ module ScratchProject = struct
           |> String.concat ~sep:", "
         in
         raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
-    qualifiers_of project
-    |> List.map ~f:(fun qualifier -> Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
+    let sources =
+      qualifiers_of project
+      |> List.map ~f:(fun qualifier -> Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
+    in
+    sources, ast_environment
 end

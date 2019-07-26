@@ -15,7 +15,15 @@ open Pyre
 type errors = State.Error.t list [@@deriving show]
 
 let recheck
-    ~state:({ State.module_tracker; environment; errors; scheduler; open_documents; _ } as state)
+    ~state:( {
+               State.module_tracker;
+               ast_environment;
+               environment;
+               errors;
+               scheduler;
+               open_documents;
+               _;
+             } as state )
     ~configuration:({ debug; ignore_dependencies; _ } as configuration)
     paths
   =
@@ -79,6 +87,7 @@ let recheck
         ~configuration
         ~scheduler
         ~preprocessing_state:None
+        ~ast_environment
         recheck_source_paths
     in
     let unparsed = List.concat [syntax_error; system_error] in

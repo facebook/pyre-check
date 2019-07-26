@@ -7,6 +7,7 @@ open Analysis
 
 type result = {
   module_tracker: ModuleTracker.t;
+  ast_environment: Analysis.AstEnvironment.t;
   environment: Environment.t;
   errors: Error.t list;
 }

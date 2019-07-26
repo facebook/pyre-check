@@ -148,12 +148,15 @@ module ScratchServer = struct
       ?(external_sources = [])
       sources
     =
-    let configuration, module_tracker, sources =
+    let configuration, module_tracker, ast_environment, sources =
       let ({ ScratchProject.module_tracker; configuration } as project) =
         ScratchProject.setup ~context ~external_sources sources
       in
-      let sources = ScratchProject.parse_sources project in
-      { configuration with incremental_transitive_dependencies }, module_tracker, sources
+      let sources, ast_environment = ScratchProject.parse_sources project in
+      ( { configuration with incremental_transitive_dependencies },
+        module_tracker,
+        ast_environment,
+        sources )
     in
     let external_sources = typeshed_stubs ~include_helper_builtins:false () in
     let environment =
@@ -183,6 +186,7 @@ module ScratchServer = struct
     let state =
       {
         Server.State.module_tracker;
+        ast_environment;
         environment;
         errors;
         symlink_targets_to_sources = String.Table.create ();

@@ -21,6 +21,7 @@ type connections = {
 
 type t = {
   module_tracker: Analysis.ModuleTracker.t;
+  ast_environment: Analysis.AstEnvironment.t;
   environment: Analysis.Environment.t;
   errors: Error.t list Ast.Reference.Table.t;
   lookups: Analysis.Lookup.t String.Table.t;

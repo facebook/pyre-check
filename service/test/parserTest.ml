@@ -55,7 +55,7 @@ let test_parse_stubs_modules_list context =
 
 
 let test_parse_source context =
-  let sources =
+  let sources, _ =
     ScratchProject.setup ~context ["x.py", "def foo()->int:\n    return 1\n"]
     |> ScratchProject.parse_sources
   in
@@ -110,8 +110,8 @@ let test_parse_sources context =
         ()
     in
     let module_tracker = Analysis.ModuleTracker.create configuration in
-    Service.Parser.parse_all ~scheduler ~configuration module_tracker
-    |> List.map ~f:(fun { SourcePath.relative; _ } -> relative)
+    let source_paths, _ = Service.Parser.parse_all ~scheduler ~configuration module_tracker in
+    List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative)
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -137,8 +137,8 @@ let test_parse_sources context =
     write_file stub_root "stub.pyi";
     Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Analysis.ModuleTracker.create configuration in
-    Service.Parser.parse_all ~scheduler ~configuration module_tracker
-    |> List.map ~f:(fun { SourcePath.relative; _ } -> relative)
+    let source_paths, _ = Service.Parser.parse_all ~scheduler ~configuration module_tracker in
+    List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative)
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)
@@ -236,7 +236,8 @@ let test_parse_repository context =
     let actual =
       ScratchProject.setup ~context repository
       |> ScratchProject.parse_sources
-      |> List.map ~f:(fun ({ Source.relative; _ } as source) -> relative, source)
+      |> fun (sources, _) ->
+      List.map sources ~f:(fun ({ Source.relative; _ } as source) -> relative, source)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)
     in

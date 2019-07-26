@@ -13,6 +13,7 @@ val parse_sources
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
   preprocessing_state:ProjectSpecificPreprocessing.state option ->
+  ast_environment:Analysis.AstEnvironment.t ->
   Ast.SourcePath.t list ->
   parse_sources_result
 
@@ -20,4 +21,4 @@ val parse_all
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   Analysis.ModuleTracker.t ->
-  Ast.SourcePath.t list
+  Ast.SourcePath.t list * Analysis.AstEnvironment.t

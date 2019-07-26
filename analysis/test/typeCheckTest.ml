@@ -394,7 +394,7 @@ let test_module_exports context =
         from exporting_wildcard_default import *
       |} ]
     |> ScratchProject.parse_sources
-    |> fun sources -> assert_resolved sources expression expected
+    |> fun (sources, _) -> assert_resolved sources expression expected
   in
   assert_exports_resolved "implementing.constant" Type.integer;
   assert_exports_resolved "implementing.function()" Type.integer;

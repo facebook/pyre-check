@@ -15,7 +15,8 @@ let assert_taint ~context source expected =
   let handle = "qualifier.py" in
   let configuration, source =
     let project = Test.ScratchProject.setup ~context [handle, source] in
-    let source = Test.ScratchProject.parse_sources project |> List.hd_exn in
+    let sources, _ = Test.ScratchProject.parse_sources project in
+    let source = List.hd_exn sources in
     Test.ScratchProject.configuration_of project, source
   in
   let environment = Test.environment ~configuration () in

@@ -8,6 +8,7 @@ open Pyre
 open Ast
 open Service
 module ModuleTracker = Analysis.ModuleTracker
+module AstEnvironment = Analysis.AstEnvironment
 
 module SymlinkTargetsToSources = Memory.Serializer (struct
   type t = Path.t String.Table.t
@@ -201,6 +202,7 @@ let load
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
   let module_tracker = ModuleTracker.SharedMemory.load () in
+  let ast_environment = AstEnvironment.load module_tracker in
   let symlink_targets_to_sources = SymlinkTargetsToSources.load () in
   let changed_paths =
     match changed_paths with
@@ -213,6 +215,7 @@ let load
   let state =
     {
       State.module_tracker;
+      ast_environment;
       environment;
       errors;
       symlink_targets_to_sources;
@@ -232,12 +235,13 @@ let load
 let save
     ~configuration
     ~saved_state_path
-    { State.errors; module_tracker; symlink_targets_to_sources; _ }
+    { State.errors; module_tracker; ast_environment; symlink_targets_to_sources; _ }
   =
   Log.info "Saving server state to %s" saved_state_path;
   Memory.SharedMemory.collect `aggressive;
   ModuleTracker.SharedMemory.store module_tracker;
   SymlinkTargetsToSources.store symlink_targets_to_sources;
+  AstEnvironment.store ast_environment;
   StoredConfiguration.store configuration;
   ServerErrors.store errors;
   Memory.save_shared_memory ~path:saved_state_path

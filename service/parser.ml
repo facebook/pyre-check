@@ -5,6 +5,7 @@
 
 open Core
 open Ast
+open Analysis
 open Pyre
 open PyreParser
 
@@ -59,7 +60,14 @@ module FixpointResult = struct
     { parsed = left_parsed @ right_parsed; not_parsed = left_not_parsed @ right_not_parsed }
 end
 
-let parse_sources_job ~configuration ~preprocessing_state ~show_parser_errors ~force source_paths =
+let parse_sources_job
+    ~configuration
+    ~preprocessing_state
+    ~ast_environment
+    ~show_parser_errors
+    ~force
+    source_paths
+  =
   let parse
       ({ FixpointResult.parsed; not_parsed } as result)
       ({ SourcePath.relative; qualifier; _ } as source_path)
@@ -73,18 +81,22 @@ let parse_sources_job ~configuration ~preprocessing_state ~show_parser_errors ~f
       let store_result preprocessed =
         let add_module_from_source ({ Source.qualifier; _ } as source) =
           Module.create source
-          |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module
+          |> fun ast_module ->
+          (* TODO (T47860871): Deprecate Ast.SharedMemory.Modules *)
+          Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
         add_module_from_source preprocessed;
+
+        (* TODO (T47860888): Deprecate Ast.SharedMemory.Handles *)
         Ast.SharedMemory.Handles.add qualifier ~handle:relative;
-        Ast.SharedMemory.Sources.add (Plugin.apply_to_ast preprocessed)
+        AstEnvironment.add_source ast_environment (Plugin.apply_to_ast preprocessed)
       in
       match force with
       | true ->
-          store_result (Analysis.Preprocessing.preprocess source);
+          store_result (Preprocessing.preprocess source);
           { result with parsed = Success source_path :: parsed }
       | false -> (
-        match Analysis.Preprocessing.try_preprocess source with
+        match Preprocessing.try_preprocess source with
         | Some preprocessed ->
             store_result preprocessed;
             { result with parsed = Success source_path :: parsed }
@@ -106,7 +118,7 @@ type parse_sources_result = {
   system_error: SourcePath.t list;
 }
 
-let parse_sources ~configuration ~scheduler ~preprocessing_state source_paths =
+let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment source_paths =
   let rec fixpoint ?(force = false) ({ FixpointResult.parsed; not_parsed } as input_state) =
     let { FixpointResult.parsed = new_parsed; not_parsed = new_not_parsed } =
       Scheduler.map_reduce
@@ -118,6 +130,7 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state source_paths =
             ~configuration
             ~show_parser_errors:(List.length parsed = 0)
             ~preprocessing_state
+            ~ast_environment
             ~force
             source_paths)
         ~reduce:FixpointResult.merge
@@ -190,14 +203,19 @@ let log_parse_errors ~syntax_error ~system_error =
 
 let parse_all ~scheduler ~configuration module_tracker =
   let timer = Timer.start () in
-  Log.info "Parsing %d stubs and sources..." (Analysis.ModuleTracker.length module_tracker);
+  Log.info "Parsing %d stubs and sources..." (ModuleTracker.length module_tracker);
+  let ast_environment = AstEnvironment.create module_tracker in
   let { parsed; syntax_error; system_error } =
     let preprocessing_state =
-      ProjectSpecificPreprocessing.initial (Analysis.ModuleTracker.mem module_tracker)
+      ProjectSpecificPreprocessing.initial (ModuleTracker.mem module_tracker)
     in
-    Analysis.ModuleTracker.source_paths module_tracker
-    |> parse_sources ~configuration ~scheduler ~preprocessing_state:(Some preprocessing_state)
+    ModuleTracker.source_paths module_tracker
+    |> parse_sources
+         ~configuration
+         ~scheduler
+         ~preprocessing_state:(Some preprocessing_state)
+         ~ast_environment
   in
   log_parse_errors ~syntax_error ~system_error;
   Statistics.performance ~name:"sources parsed" ~timer ();
-  parsed
+  parsed, ast_environment

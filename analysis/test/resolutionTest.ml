@@ -282,7 +282,7 @@ let test_resolve_mutable_literals _ =
 let test_function_definitions context =
   let assert_functions sources function_name expected =
     let project = ScratchProject.setup ~context sources in
-    let sources = ScratchProject.parse_sources project in
+    let sources, _ = ScratchProject.parse_sources project in
     let resolution =
       let configuration = ScratchProject.configuration_of project in
       resolution ~sources ~configuration () |> Resolution.global_resolution

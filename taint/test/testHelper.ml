@@ -360,7 +360,8 @@ type test_environment = {
 let initialize ?(handle = "test.py") ?models ~context source_content =
   let configuration, source =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    let source = Test.ScratchProject.parse_sources project |> List.hd_exn in
+    let sources, _ = Test.ScratchProject.parse_sources project in
+    let source = List.hd_exn sources in
     Test.ScratchProject.configuration_of project, source
   in
   let environment =

@@ -21,7 +21,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   let scheduler = Scheduler.mock () in
   List.iter ~f:File.write files;
   let module_tracker = Analysis.ModuleTracker.create configuration in
-  let source_paths = Service.Parser.parse_all ~configuration ~scheduler module_tracker in
+  let source_paths, _ = Service.Parser.parse_all ~configuration ~scheduler module_tracker in
   let environment = Service.Environment.shared_handler in
   let qualifiers = List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) in
   Test.populate_shared_memory ~configuration qualifiers;

@@ -9,6 +9,7 @@ open Pyre
 
 type result = {
   module_tracker: Analysis.ModuleTracker.t;
+  ast_environment: Analysis.AstEnvironment.t;
   environment: Analysis.Environment.t;
   errors: Analysis.Error.t list;
 }
@@ -122,10 +123,9 @@ let check
   (* Find sources to parse *)
   let module_tracker = Analysis.ModuleTracker.create configuration in
   (* Parse sources. *)
-  let source_paths = Parser.parse_all ~scheduler ~configuration module_tracker in
+  let source_paths, ast_environment = Parser.parse_all ~scheduler ~configuration module_tracker in
   let environment = Environment.shared_handler in
   let () =
-    (* TODO (T46153421): Refactor `populate_shared_memory` to take `SourcePath` *)
     let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
     Environment.populate_shared_memory ~configuration ~scheduler qualifiers
   in
@@ -174,4 +174,4 @@ let check
   ( match original_scheduler with
   | None -> Scheduler.destroy scheduler
   | Some _ -> () );
-  { module_tracker; environment; errors }
+  { module_tracker; ast_environment; environment; errors }

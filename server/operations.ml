@@ -72,7 +72,7 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
-  let { Check.module_tracker; environment; errors; _ } =
+  let { Check.module_tracker; ast_environment; environment; errors } =
     Check.check ~scheduler:(Some scheduler) ~configuration
   in
   let symlink_targets_to_sources =
@@ -104,6 +104,7 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   in
   {
     module_tracker;
+    ast_environment;
     environment;
     errors;
     symlink_targets_to_sources;

@@ -16,7 +16,7 @@ let test_coverage context =
           "b.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
           "c.py", "#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n" ]
       |> Test.ScratchProject.parse_sources
-      |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
+      |> fun (sources, _) -> List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
     in
     Coverage.coverage ~number_of_files:3 ~sources:qualifiers
   in
