@@ -1,5 +1,5 @@
 # @nolint
-
+from typing import Any, Dict
 
 def dictionary_source():
     result = {"a": __test_source()}
@@ -51,7 +51,7 @@ def dictionary_nested_non_source_assignment():
     return d["a"]["a"]
 
 
-tainted_dictionary = {}
+tainted_dictionary: Dict[Any, Any] = {}
 
 
 def update_tainted_dictionary():

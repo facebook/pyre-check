@@ -154,6 +154,13 @@ let test_check_globals context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
+      constant: typing.Union[int, str] = 1
+      def foo() -> int:
+        return constant
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+  assert_type_errors
+    {|
       constant: int = 1
       constant: str = ""
       def foo() -> str:
@@ -179,7 +186,7 @@ let test_check_globals context =
     |}
     [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` "
       ^ "but no type is specified.";
-      "Incompatible return type [7]: Expected `str` but got `int`." ];
+      "Incompatible return type [7]: Expected `str` but got `unknown`." ];
   assert_type_errors
     {|
       nasty_global = foo()
@@ -308,8 +315,7 @@ let test_check_globals context =
       "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, "
       ^ "add an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
-      "Incompatible return type [7]: Expected `typing.List[int]` but got "
-      ^ "`typing.List[typing.Any]`." ];
+      "Incompatible return type [7]: Expected `typing.List[int]` but got `unknown`." ];
   assert_type_errors {|
       A = typing.Mapping[int, str]
     |} [];

@@ -1415,7 +1415,7 @@ module State (Context : Context) = struct
               state
           | Top
           (* There's some other problem we already errored on *)
-
+          
           | Primitive _
           | Parametric _ ->
               state_with_errors
@@ -4563,7 +4563,14 @@ module State (Context : Context) = struct
                 let { resolution = initial_resolution; _ } = initial ~resolution in
                 let nested_resolution =
                   let update ~key ~data initial_resolution =
-                    Resolution.set_local initial_resolution ~reference:key ~annotation:data
+                    let annotation =
+                      (* Discard local mutable annotation information. *)
+                      if Annotation.is_immutable data then
+                        { data with Annotation.annotation = Annotation.original data }
+                      else
+                        data
+                    in
+                    Resolution.set_local initial_resolution ~reference:key ~annotation
                   in
                   let add_variable resolution variable =
                     Resolution.add_type_variable resolution ~variable
