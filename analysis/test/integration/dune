@@ -22,7 +22,6 @@
   annotatedTest
   annotationTest
   assertTest
-  assertOptionalTest
   assignTest
   asyncTest
   attributeTest
@@ -47,6 +46,7 @@
   overloadTest
   protocolTest
   redundantCastTest
+  refinementTest
   revealTypeTest
   returnTest
   varianceTest
