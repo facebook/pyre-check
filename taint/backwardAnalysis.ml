@@ -398,6 +398,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Starred (Starred.Twice expression) ->
           let taint = BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] taint in
           analyze_expression ~resolution ~taint ~state ~expression
+      | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
+          let taint =
+            BackwardState.Tree.transform
+              BackwardTaint.simple_feature_set
+              ~f:Domains.add_format_string_feature
+              taint
+          in
+          List.fold
+            expressions
+            ~f:(fun state expression -> analyze_expression ~resolution ~taint ~state ~expression)
+            ~init:state
       | String _ -> state
       | Ternary { target; test; alternative } ->
           let state_then = analyze_expression ~resolution ~taint ~state ~expression:target in

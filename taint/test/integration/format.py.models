@@ -2,6 +2,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "format.sink_via_format",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "format.py",
+              "line": 14,
+              "start": 16,
+              "end": 24
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [
+              { "via": "special_sink" },
+              { "via": "format-string" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "format.source_via_format",
     "sources": [
       {
@@ -25,5 +53,35 @@
     ],
     "sinks": [],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "format.tito_via_format",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg2)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "format-string" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(arg1)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "format-string" } ]
+          }
+        ]
+      }
+    ]
   }
 }
