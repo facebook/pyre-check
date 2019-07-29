@@ -1,0 +1,29 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "format.source_via_format",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "format.py",
+              "line": 5,
+              "start": 25,
+              "end": 27
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "via": "format-string" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

@@ -19,6 +19,7 @@ module Breadcrumb = struct
         kind: first_kind;
         name: string;
       }
+    | FormatString (* Via f"{something}" *)
     | HasFirst of first_kind
     | Obscure
     | SimpleVia of string (* Declared breadcrumbs *)
@@ -29,6 +30,7 @@ module Breadcrumb = struct
   let to_json = function
     | First { name; kind = FirstField } -> `Assoc ["first-field", `String name]
     | First { name; kind = FirstIndex } -> `Assoc ["first-index", `String name]
+    | FormatString -> `Assoc ["via", `String "format-string"]
     | HasFirst FirstField -> `Assoc ["has", `String "first-field"]
     | HasFirst FirstIndex -> `Assoc ["has", `String "first-index"]
     | Obscure -> `Assoc ["via", `String "obscure"]

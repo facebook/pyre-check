@@ -549,6 +549,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~f:(fun (taint, state) expression ->
               analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
             ~init:(ForwardState.Tree.empty, state)
+          |>> ForwardState.Tree.transform
+                ForwardTaint.simple_feature_set
+                ~f:Domains.add_format_string_feature
       | String _ -> ForwardState.Tree.empty, state
       | Ternary { target; test; alternative } ->
           let _, state = analyze_expression ~resolution ~state ~expression:test in

@@ -494,3 +494,7 @@ let local_return_taint =
     [ Part (BackwardTaint.leaf, Sinks.LocalReturn);
       Part (BackwardTaint.trace_info, TraceInfo.Declaration);
       Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath []) ]
+
+
+let add_format_string_feature set =
+  Features.Simple.Breadcrumb Features.Breadcrumb.FormatString :: set
