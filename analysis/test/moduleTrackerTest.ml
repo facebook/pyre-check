@@ -531,6 +531,43 @@ let test_creation context =
       ~relative:"b.py"
       ~is_external:true
   in
+  let test_directory_filter3 () =
+    (* We want test that filter_directories follows symlinks *)
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let search_root = bracket_tmpdir context |> Path.create_absolute in
+    let link_local_root = bracket_tmpdir context |> Path.create_absolute in
+    let link_search_root = bracket_tmpdir context |> Path.create_absolute in
+    touch local_root "a.py";
+    touch search_root "b.py";
+    Unix.symlink
+      ~link_name:(Path.create_relative ~root:link_local_root ~relative:"a.py" |> Path.absolute)
+      ~target:(Path.create_relative ~root:local_root ~relative:"a.py" |> Path.absolute);
+    Unix.symlink
+      ~link_name:(Path.create_relative ~root:link_search_root ~relative:"b.py" |> Path.absolute)
+      ~target:(Path.create_relative ~root:search_root ~relative:"b.py" |> Path.absolute);
+
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root link_search_root; SearchPath.Root link_local_root]
+        ~filter_directories:[local_root]
+        ~ignore_all_errors:[search_root]
+        ()
+    in
+    let create_exn = create_source_path_exn ~configuration in
+    assert_source_path
+      (create_exn link_local_root "a.py")
+      ~configuration
+      ~search_root:link_local_root
+      ~relative:"a.py"
+      ~is_external:false;
+    assert_source_path
+      (create_exn link_search_root "b.py")
+      ~configuration
+      ~search_root:link_search_root
+      ~relative:"b.py"
+      ~is_external:true
+  in
   let test_overlapping () =
     (* SETUP:
      * - external_root0 lives under local_root
@@ -750,6 +787,7 @@ let test_creation context =
   test_exclude ();
   test_directory_filter ();
   test_directory_filter2 ();
+  test_directory_filter3 ();
   test_priority ();
   test_overlapping ();
   test_overlapping2 ();

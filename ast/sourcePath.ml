@@ -77,6 +77,7 @@ let should_type_check
     ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
     path
   =
+  let path = Path.follow_symbolic_link path |> Option.value ~default:path in
   let directory_contains ~path directory = Path.directory_contains ~directory path in
   let filter_directories = Option.value filter_directories ~default:[] in
   let ignore_all_errors = Option.value ignore_all_errors ~default:[] in
