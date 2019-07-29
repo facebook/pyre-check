@@ -216,18 +216,17 @@ public final class BuildTargetsBuilder {
     }
     long start = System.currentTimeMillis();
     // Swig command contains buck run, so it's better not to make it run in parallel.
-    runBuildCommands(
-        this.swigLibraryBuildCommands,
-        "swig_library",
-        command -> {
-          try {
-            return GeneratedBuildRuleRunner.runBuilderCommand(
-                builderExecutable + command, this.buckRoot);
-          } catch (IOException exception) {
-            logCodeGenerationIOException(exception);
-            return false;
-          }
-        });
+    this.swigLibraryBuildCommands
+        .parallelStream()
+        .forEach(
+            command -> {
+              try {
+                GeneratedBuildRuleRunner.runBuilderCommand(
+                    builderExecutable + command, this.buckRoot);
+              } catch (IOException exception) {
+                logCodeGenerationIOException(exception);
+              }
+            });
     long time = System.currentTimeMillis() - start;
     SimpleLogger.info("Built swig libraries in " + time + "ms.");
   }
