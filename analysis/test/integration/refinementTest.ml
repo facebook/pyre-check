@@ -121,8 +121,7 @@ let test_check_local_refinement context =
         if x:
           reveal_type(x)
     |}
-    (* TODO(T47870649): After refinement, 'x' should have two types. *)
-    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."];
 
   assert_type_errors
     {|
@@ -131,8 +130,7 @@ let test_check_local_refinement context =
           self.assertIsNotNone(x)
           reveal_type(x)
     |}
-    (* TODO(T47870649): After refinement, 'x' should have two types. *)
-    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."];
 
   assert_type_errors
     {|
@@ -155,8 +153,7 @@ let test_check_local_refinement context =
         if x is not None:
           reveal_type(x)
     |}
-    (* TODO(T47870649): After refinement, 'x' should have two types. *)
-    ["Revealed type [-1]: Revealed type for `x` is `int`."]
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."]
 
 
 let test_check_isinstance context =

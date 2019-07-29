@@ -1415,7 +1415,7 @@ module State (Context : Context) = struct
               state
           | Top
           (* There's some other problem we already errored on *)
-          
+
           | Primitive _
           | Parametric _ ->
               state_with_errors
@@ -4250,11 +4250,11 @@ module State (Context : Context) = struct
             let reference = Expression.name_to_reference_exn name in
             let resolution =
               match Resolution.get_local resolution ~reference with
-              | Some { Annotation.annotation = Type.Optional parameter; _ } ->
+              | Some ({ Annotation.annotation = Type.Optional parameter; _ } as annotation) ->
                   Resolution.set_local
                     resolution
                     ~reference
-                    ~annotation:(Annotation.create parameter)
+                    ~annotation:{ annotation with Annotation.annotation = parameter }
               | _ -> resolution
             in
             { state with resolution }
