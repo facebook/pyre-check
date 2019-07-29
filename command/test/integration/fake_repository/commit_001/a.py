@@ -4,6 +4,6 @@
 
 def foo() -> str:
     def bar() -> str:
-        return ""
+        return 0
 
     return bar()

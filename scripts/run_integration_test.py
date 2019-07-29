@@ -225,7 +225,7 @@ class Repository:
         incremental_errors = self.run_pyre("incremental")
         return (incremental_errors, check_errors)
 
-    def run_pyre(self, command: str) -> str:
+    def run_pyre(self, command: str, *arguments: str) -> str:
         pyre_client = os.getenv("PYRE_TEST_CLIENT_LOCATION", "pyre")
         try:
             output = subprocess.check_output(
@@ -235,6 +235,7 @@ class Repository:
                     "--show-parse-errors",
                     "--output=json",
                     command,
+                    *arguments,
                 ]
             )
         except subprocess.CalledProcessError as error:
@@ -278,6 +279,36 @@ def run_integration_test(repository_path) -> int:
     return 0
 
 
+# In general, saved state load/saves are a distributed system problem - the file systems
+# are completely different. Make sure that Pyre doesn't rely on absolute paths when
+# loading via this test.
+def run_saved_state_test(repository_path: str) -> int:
+    # Copy files over to a temporary directory.
+    original_directory = os.getcwd()
+    saved_state_path = tempfile.NamedTemporaryFile().name
+    with tempfile.TemporaryDirectory() as saved_state_create_directory:
+        repository = Repository(saved_state_create_directory, repository_path)
+        repository.run_pyre("--save-initial-state-to", saved_state_path, "incremental")
+        repository.__next__()
+        expected_errors = repository.run_pyre("check")
+        repository.run_pyre("stop")
+
+    os.chdir(original_directory)
+    with tempfile.TemporaryDirectory() as saved_state_load_directory:
+        repository = Repository(saved_state_load_directory, repository_path)
+        repository.__next__()
+        repository.run_pyre("--load-initial-state-from", saved_state_path, "start")
+        actual_errors = repository.run_pyre("incremental")
+        repository.run_pyre("stop")
+
+    if actual_errors != expected_errors:
+        LOG.error("Actual errors are not equal to expected errors.")
+        print("Actual errors (pyre incremental): {}".format(actual_errors))
+        print("Expected errors (pyre check): {}".format(expected_errors))
+        return 1
+    return 0
+
+
 @contextmanager
 def _watch_directory(source_directory):
     subprocess.check_call(
@@ -305,7 +336,10 @@ if __name__ == "__main__":
     retries = 3
     while retries > 0:
         try:
-            sys.exit(run_integration_test(arguments.repository_location))
+            exit_code = run_integration_test(arguments.repository_location)
+            if exit_code != 0:
+                sys.exit(exit_code)
+            sys.exit(run_saved_state_test(arguments.repository_location))
         except Exception:
             # Retry the integration test for uncaught exceptions. Caught issues will
             # result in an exit code of 1.
