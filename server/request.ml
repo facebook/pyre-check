@@ -342,11 +342,14 @@ module AnnotationEdit = struct
               }
             in
             let end_ =
-              if is_replacement_edit error_kind then
-                let { LanguageServer.Types.Position.character; _ } = position in
-                { position with character = character + String.length token }
-              else
-                position
+              match error_kind with
+              | Error.IncompatibleVariableType _
+              | Error.IncompatibleReturnType _
+              | Error.MissingGlobalAnnotation _
+              | Error.MissingAttributeAnnotation _ ->
+                  let { LanguageServer.Types.Position.character; _ } = position in
+                  { position with character = character + String.length token }
+              | _ -> position
             in
             Some { LanguageServer.Types.Range.start = position; end_ })
       |> Option.value ~default:None

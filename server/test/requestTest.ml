@@ -526,7 +526,7 @@ let test_create_annotation_edit context =
     ~expected_range:
       {
         LanguageServer.Types.Range.start = { line = 0; character = 1 };
-        end_ = { line = 0; character = 1 };
+        end_ = { line = 0; character = 2 };
       }
     ~error:
       (Some
@@ -562,7 +562,7 @@ let test_create_annotation_edit context =
     ~expected_range:
       {
         LanguageServer.Types.Range.start = { line = 1; character = 5 };
-        end_ = { line = 1; character = 5 };
+        end_ = { line = 1; character = 6 };
       }
     ~error:
       (Some
