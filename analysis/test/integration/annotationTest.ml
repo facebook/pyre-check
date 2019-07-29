@@ -978,7 +978,7 @@ let test_check_refinement context =
               else:
                   return 1
     |}
-    [];
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
       def bar(x: typing.Optional[int]) -> None:

@@ -22,7 +22,7 @@ let test_assert_is_none context =
           self.assertIsNotNone(a.x)
           reveal_type(a.x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `Optional[int]` (inferred: `int`)."];
+    ["Revealed type [-1]: Revealed type for `a.x` is `Optional[int]`."];
   assert_type_errors
     {|
       from typing import Optional
@@ -43,10 +43,11 @@ let test_assert_is_none context =
       class FakeTest(unittest.TestCase):
         def foo(self) -> None:
           a = A(3)
-          self.assertTrue(a.x is not None)
-          reveal_type(a.x)
+          x = a.x
+          self.assertTrue(x is not None)
+          reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `Optional[int]` (inferred: `int`)."];
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
   assert_type_errors
     {|
       from typing import Optional
@@ -58,10 +59,11 @@ let test_assert_is_none context =
       class FakeTest(unittest.TestCase):
         def foo(self) -> None:
           a = A(3)
-          self.assertFalse(a.x is None)
-          reveal_type(a.x)
+          x = a.x
+          self.assertFalse(x is None)
+          reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `Optional[int]` (inferred: `int`)."]
+    ["Revealed type [-1]: Revealed type for `x` is `int`."]
 
 
 let () = "assert_is_not_none" >::: ["check_assert_is_none" >:: test_assert_is_none] |> Test.run

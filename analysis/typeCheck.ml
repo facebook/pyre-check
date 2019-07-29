@@ -4249,33 +4249,12 @@ module State (Context : Context) = struct
         | Name name when Expression.is_simple_name name ->
             let reference = Expression.name_to_reference_exn name in
             let resolution =
-              match Resolution.get_local resolution ~reference, name with
-              | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
+              match Resolution.get_local resolution ~reference with
+              | Some { Annotation.annotation = Type.Optional parameter; _ } ->
                   Resolution.set_local
                     resolution
                     ~reference
                     ~annotation:(Annotation.create parameter)
-              | _, Name.Attribute { base; attribute; _ } -> (
-                  let parent = Resolution.resolve resolution base in
-                  let attribute_annotation = get_attribute_annotation ~parent ~name:attribute in
-                  match attribute_annotation with
-                  | Some
-                      ( {
-                          Annotation.annotation = Type.Optional parameter;
-                          mutability = Annotation.Mutable;
-                        } as annotation )
-                  | Some
-                      ( {
-                          Annotation.annotation = _;
-                          mutability =
-                            Annotation.Immutable
-                              { Annotation.original = Type.Optional parameter; _ };
-                        } as annotation ) ->
-                      let refined =
-                        Refinement.refine ~resolution:global_resolution annotation parameter
-                      in
-                      Resolution.set_local resolution ~reference ~annotation:refined
-                  | _ -> resolution )
               | _ -> resolution
             in
             { state with resolution }

@@ -310,7 +310,8 @@ let test_check_attributes context =
         return 0
     |}
     [ "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
-      ^ "to have type `typing.Optional[int]` but is never initialized." ];
+      ^ "to have type `typing.Optional[int]` but is never initialized.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`." ];
   assert_type_errors
     {|
       class Foo:
