@@ -4069,7 +4069,7 @@ module State (Context : Context) = struct
           when Expression.is_simple_name name ->
             let reference = Expression.name_to_reference_exn name in
             let annotation = parse_refinement_annotation annotation in
-            let updated_annotation =
+            let resolution =
               let refinement_unnecessary existing_annotation =
                 Refinement.less_or_equal
                   ~resolution:global_resolution
@@ -4077,27 +4077,25 @@ module State (Context : Context) = struct
                   (Annotation.create annotation)
                 && not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom)
               in
-              match Resolution.get_local resolution ~reference with
+              let set_local annotation = Resolution.set_local resolution ~reference ~annotation in
+              match Resolution.get_local resolution ~global_fallback:false ~reference with
               (* Allow Anys [especially from placeholder stubs] to clobber *)
-              | _ when Type.equal annotation Type.Any -> Annotation.create annotation
+              | _ when Type.is_any annotation -> Annotation.create annotation |> set_local
               | Some existing_annotation when refinement_unnecessary existing_annotation ->
-                  existing_annotation
+                  existing_annotation |> set_local
               (* Clarify Anys if possible *)
               | Some existing_annotation
                 when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
-                  Annotation.create annotation
-              | None -> Annotation.create annotation
+                  Annotation.create annotation |> set_local
+              | None -> resolution
               | Some existing_annotation ->
                   let { consistent_with_boundary; _ } =
                     partition (Annotation.annotation existing_annotation) ~boundary:annotation
                   in
                   if Type.equal consistent_with_boundary Type.Bottom then
-                    Annotation.create annotation
+                    Annotation.create annotation |> set_local
                   else
-                    Annotation.create consistent_with_boundary
-            in
-            let resolution =
-              Resolution.set_local resolution ~reference ~annotation:updated_annotation
+                    Annotation.create consistent_with_boundary |> set_local
             in
             { state with resolution }
         | ComparisonOperator

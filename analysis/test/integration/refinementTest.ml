@@ -187,8 +187,7 @@ let test_check_isinstance context =
         if isinstance(f.x, str):
           reveal_type(f.x)
     |}
-    (* TODO(T47870649): Refinement should not work. *)
-    ["Revealed type [-1]: Revealed type for `f.x` is `str`."]
+    ["Revealed type [-1]: Revealed type for `f.x` is `typing.Union[int, str]`."]
 
 
 let () =
