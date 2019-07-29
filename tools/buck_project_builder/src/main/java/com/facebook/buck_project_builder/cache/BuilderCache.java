@@ -2,6 +2,7 @@ package com.facebook.buck_project_builder.cache;
 
 import com.facebook.buck_project_builder.SimpleLogger;
 import com.facebook.buck_project_builder.targets.ThriftLibraryTarget;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
@@ -13,6 +14,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Set;
@@ -49,16 +52,31 @@ public final class BuilderCache {
     return Paths.get(getCachePath(targets), "cache.json").toFile();
   }
 
-  public static BuilderCache readFromCache(ImmutableList<String> targets) {
-    File cacheJson = getCacheJsonFile(targets);
-    try (FileReader reader = new FileReader(cacheJson)) {
+  @VisibleForTesting
+  static BuilderCache readFromCache(Reader reader) {
+    try {
       return new Gson().fromJson(reader, BuilderCache.class);
-    } catch (IOException | JsonSyntaxException exception) {
-      SimpleLogger.warning(
-          "Buck builder cache is not found or corrupted. Rebuilding everything...");
+    } catch (JsonSyntaxException exception) {
+      SimpleLogger.warning("Buck builder cache is corrupted. Rebuilding everything...");
       // Return a cache that will invalidate everything.
       return new BuilderCache();
     }
+  }
+
+  public static BuilderCache readFromCache(ImmutableList<String> targets) {
+    File cacheJson = getCacheJsonFile(targets);
+    try (FileReader reader = new FileReader(cacheJson)) {
+      return readFromCache(reader);
+    } catch (IOException exception) {
+      SimpleLogger.warning("Buck builder cache is not found. Rebuilding everything...");
+      // Return a cache that will invalidate everything.
+      return new BuilderCache();
+    }
+  }
+
+  @VisibleForTesting
+  void writeToCache(Writer writer) {
+    new Gson().toJson(this, writer);
   }
 
   public void writeToCache(ImmutableList<String> targets) {
@@ -68,7 +86,7 @@ public final class BuilderCache {
     }
     cacheJsonFile.getParentFile().mkdirs();
     try (FileWriter writer = new FileWriter(cacheJsonFile)) {
-      new Gson().toJson(this, writer);
+      writeToCache(writer);
     } catch (IOException exception) {
       SimpleLogger.warning("Failed to update builder cache.");
     }
