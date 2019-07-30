@@ -1802,6 +1802,94 @@ let test_calls _ =
               direct_target = "qualifier.Foo.method";
               static_target = "qualifier.Foo.method";
               dispatch = Dynamic;
+            } ] ) ];
+
+  (* Properties. *)
+  assert_calls
+    {|
+      class Foo:
+        @property
+        def method(self) -> int: ...
+      def call_property(foo: Foo):
+        x = foo.method
+    |}
+    [ ( "qualifier.call_property",
+        [ `Method
+            {
+              direct_target = "qualifier.Foo.method";
+              static_target = "qualifier.Foo.method";
+              dispatch = Dynamic;
+            } ] ) ];
+  assert_calls
+    {|
+      class Foo:
+        @property
+        def method(self) -> int: ...
+      class Bar(Foo):
+        pass
+      def call_property(bar: Bar):
+        x = bar.method
+    |}
+    [ ( "qualifier.call_property",
+        [ `Method
+            {
+              direct_target = "qualifier.Foo.method";
+              static_target = "qualifier.Bar.method";
+              dispatch = Dynamic;
+            } ] ) ];
+
+  (* Don't attempt to register calls for non-property attribute accesses. *)
+  assert_calls
+    {|
+      class Foo:
+        def method(self) -> int: ...
+      class Bar:
+        pass
+      def call_property(bar: Bar):
+        x = bar.method
+    |}
+    ["qualifier.call_property", []];
+  assert_calls
+    {|
+      class Foo:
+        @property
+        def method(self) -> int: ...
+      class Bar:
+        @property
+        def method(self) -> int: ...
+      def call_property(parameter: typing.Union[Foo, Bar]):
+        x = parameter.method
+    |}
+    [ ( "qualifier.call_property",
+        [ `Method
+            {
+              direct_target = "qualifier.Foo.method";
+              static_target = "qualifier.Foo.method";
+              dispatch = Dynamic;
+            };
+          `Method
+            {
+              direct_target = "qualifier.Bar.method";
+              static_target = "qualifier.Bar.method";
+              dispatch = Dynamic;
+            } ] ) ];
+
+  (* Statically invoking properties is illegal in the runtime - we default to dynamic dispatch, but
+     this should be a type error, really. *)
+  assert_calls
+    {|
+      class Foo:
+        @property
+        def method(self) -> int: ...
+      def call_property():
+        x = Foo.method
+    |}
+    [ ( "qualifier.call_property",
+        [ `Method
+            {
+              direct_target = "qualifier.Foo.method";
+              static_target = "qualifier.Foo.method";
+              dispatch = Dynamic;
             } ] ) ]
 
 

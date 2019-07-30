@@ -2907,6 +2907,7 @@ module State (Context : Context) = struct
             | Some [] -> { state; resolved = Type.Top; resolved_annotation = None; base = None }
             | Some (head :: tail) ->
                 let name = attribute in
+                let property_callables = ref [] in
                 let find_attribute
                     { Annotated.Class.instantiated; class_attributes; class_definition }
                   =
@@ -2933,12 +2934,35 @@ module State (Context : Context) = struct
                     else
                       Some instantiated
                   in
+                  (* Collect @property's in the call graph. *)
+                  ( if Option.is_some (Annotated.Attribute.property attribute) then
+                      let direct_target_name =
+                        Annotated.Attribute.parent attribute
+                        |> Type.primitive_name
+                        >>| fun parent -> Reference.create ~prefix:(Reference.create parent) name
+                      in
+                      match direct_target_name with
+                      | Some direct_target ->
+                          property_callables :=
+                            Dependencies.Callgraph.Method
+                              {
+                                direct_target;
+                                static_target =
+                                  Reference.create
+                                    ~prefix:(Annotated.Class.name class_definition)
+                                    name;
+                                dispatch = Dynamic;
+                              }
+                            :: !property_callables
+                      | None -> () );
                   (attribute, undefined_target), Annotated.Attribute.annotation attribute
                 in
                 let head_definition, head_resolved = find_attribute head in
                 let tail_definitions, tail_resolveds =
                   List.map ~f:find_attribute tail |> List.unzip
                 in
+                if not (List.is_empty !property_callables) then
+                  Hashtbl.set Context.calls ~key:location ~data:!property_callables;
                 let state =
                   let definition =
                     List.find
