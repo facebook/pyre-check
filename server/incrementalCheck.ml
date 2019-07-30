@@ -30,7 +30,6 @@ let recheck
   let timer = Timer.start () in
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
-  GlobalResolution.Cache.clear ();
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
   let recheck_source_paths, removed =
     let categorize = function

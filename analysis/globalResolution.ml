@@ -25,16 +25,6 @@ type type_parameters_mismatch = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-module Cache = struct
-  module Generics = struct
-    let cache = Identifier.Table.create ()
-
-    let clear () = Hashtbl.clear cache
-  end
-
-  let clear () = Generics.clear ()
-end
-
 type class_metadata = {
   successors: Type.Primitive.t list;
   is_test: bool;
@@ -52,7 +42,6 @@ type t = {
   class_definition: Type.Primitive.t -> Class.t Node.t option;
   class_metadata: Type.Primitive.t -> class_metadata option;
   constructor: resolution:t -> Type.Primitive.t -> Type.t option;
-  generics: resolution:t -> Class.t Node.t -> Type.OrderedTypes.t;
   attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> bool;
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
@@ -68,7 +57,6 @@ let create
     ~class_definition
     ~class_metadata
     ~constructor
-    ~generics
     ~undecorated_signature
     ~attributes
     ~is_protocol
@@ -83,7 +71,6 @@ let create
     class_definition;
     class_metadata;
     constructor;
-    generics;
     undecorated_signature;
     attributes;
     is_protocol;

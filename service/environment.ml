@@ -69,8 +69,7 @@ let populate
     ();
 
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
-  Annotated.Class.AttributeCache.clear ();
-  GlobalResolution.Cache.clear ()
+  Annotated.Class.AttributeCache.clear ()
 
 
 let build environment ~configuration ~scheduler qualifiers =

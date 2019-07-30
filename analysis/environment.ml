@@ -94,9 +94,6 @@ let resolution (module Handler : Handler) () =
     >>| AnnotatedClass.create
     >>| AnnotatedClass.constructor ~instantiated ~resolution
   in
-  let generics ~resolution class_definition =
-    AnnotatedClass.create class_definition |> AnnotatedClass.generics ~resolution
-  in
   let is_protocol annotation =
     Type.split annotation
     |> fst
@@ -151,7 +148,6 @@ let resolution (module Handler : Handler) () =
     ~class_metadata:Handler.class_metadata
     ~constructor
     ~undecorated_signature:Handler.undecorated_signature
-    ~generics
     ~attributes
     ~is_protocol
     ~global

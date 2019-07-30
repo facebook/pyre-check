@@ -42,7 +42,6 @@ val create
   class_definition:(Type.Primitive.t -> Class.t Node.t option) ->
   class_metadata:(Type.Primitive.t -> class_metadata option) ->
   constructor:(resolution:t -> Type.Primitive.t -> Type.t option) ->
-  generics:(resolution:t -> Class.t Node.t -> Type.OrderedTypes.t) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   attributes:(resolution:t -> Type.t -> AnnotatedAttribute.t list option) ->
   is_protocol:(Type.t -> bool) ->
@@ -165,10 +164,6 @@ val parse_as_parameter_specification_instance_annotation
   variable_parameter_annotation:Expression.t ->
   keywords_parameter_annotation:Expression.t ->
   Type.Variable.Variadic.Parameters.t option
-
-module Cache : sig
-  val clear : unit -> unit
-end
 
 val consistent_solution_exists : t -> Type.t -> Type.t -> bool
 

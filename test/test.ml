@@ -1281,7 +1281,6 @@ let assert_errors
     errors
   =
   Annotated.Class.AttributeCache.clear ();
-  GlobalResolution.Cache.clear ();
 
   let descriptions =
     let errors =
