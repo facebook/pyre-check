@@ -236,21 +236,6 @@ let test_class_model context =
     |}
     [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.as_instance_attribute";
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.as_class_attribute" ];
-  assert_taint
-    ~context
-    {|
-      class Class:
-        self.tainted = ...
-        @property
-        def property(self):
-          return self.tainted
-
-      def uses_property(c: Class):
-        c.tainted = __test_source()
-        return c.property
-    |}
-    [ outcome ~kind:`Method ~returns:[] "qualifier.Class.property";
-      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.uses_property" ];
 
   (* Optionals. *)
   assert_taint

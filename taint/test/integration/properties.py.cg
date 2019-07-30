@@ -1,0 +1,10 @@
+@generated
+Call dependencies
+properties.Class::__init__ (method) -> []
+properties.Class::my_property (method) -> []
+properties.Class::uses_property (method) -> [__test_source (fun) properties.Class::my_property (override)]
+properties.Class::uses_property_but_no_tito_taint (method) -> [__test_source (fun) properties.Class::my_property (override)]
+properties.Derived::uses_property (method) -> [__test_source (fun) properties.Class::my_property (method)]
+properties.Derived::uses_property_but_no_tito_taint (method) -> [__test_source (fun) properties.Class::my_property (method)]
+properties.OtherDerived::my_property (method) -> [__test_source (fun)]
+properties.OtherDerived::uses_property_but_no_tito_taint (method) -> [__test_source (fun) properties.OtherDerived::my_property (method)]

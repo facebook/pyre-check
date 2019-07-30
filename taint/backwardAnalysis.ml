@@ -372,19 +372,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           store_weak_taint ~root:(Root.Variable identifier) ~path:[] taint state
       | Name (Name.Attribute { base; attribute; _ }) -> (
         match
-          Interprocedural.CallResolution.get_property_callable ~resolution ~base ~attribute
+          Interprocedural.CallResolution.resolve_property_targets ~resolution ~base ~attribute
         with
-        | Some _ ->
-            let property_call =
-              Expression.Call { callee = base; arguments = [] } |> Node.create ~location
-            in
-            analyze_expression ~resolution ~taint ~state ~expression:property_call
         | None ->
             let field = AbstractTreeDomain.Label.Field attribute in
             let taint =
               BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
             in
-            analyze_expression ~resolution ~taint ~state ~expression:base )
+            analyze_expression ~resolution ~taint ~state ~expression:base
+        | Some targets ->
+            let arguments = [{ Call.Argument.name = None; value = base }] in
+            apply_call_targets ~resolution arguments state taint targets )
       | Set set ->
           let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
           List.fold

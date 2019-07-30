@@ -39,7 +39,7 @@ let create_callgraph ~environment ~source =
             ~name:caller
             ~key:(Some ([%hash: int * int] (node_id, index)))
         in
-        let process_call callees call =
+        let process_call callees expression =
           let add_call_edge callees (callee, _implicit) =
             Log.log
               ~section:`DependencyGraph
@@ -50,10 +50,17 @@ let create_callgraph ~environment ~source =
               callee;
             callee :: callees
           in
-          let new_callees = CallResolution.resolve_call_targets ~resolution call in
-          List.fold new_callees ~f:add_call_edge ~init:callees
+          match expression with
+          | Expression.Call call ->
+              let new_callees = CallResolution.resolve_call_targets ~resolution call in
+              List.fold new_callees ~f:add_call_edge ~init:callees
+          | Expression.Name (Attribute { base; attribute; _ }) ->
+              CallResolution.resolve_property_targets ~resolution ~base ~attribute
+              >>| (fun new_callees -> List.fold new_callees ~f:add_call_edge ~init:callees)
+              |> Option.value ~default:callees
+          | _ -> callees
         in
-        Visit.collect_calls statement
+        Visit.collect_calls_and_names statement
         |> List.map ~f:Node.value
         |> List.fold ~init:callees ~f:process_call
       in

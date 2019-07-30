@@ -130,6 +130,26 @@ let test_fixpoint context =
       def test_deep_tito_match():
         obj = deep_tito(__user_controlled(), __test_source())
         getattr('obj', obj.g.f)
+
+      class Class:
+        self.tainted = ...
+        self.untainted = ...
+        @property
+        def property(self):
+          return self.tainted
+
+      def property_into_sink(input):
+        c: Class = ...
+        c.tainted = input
+        __test_sink(c.property)
+
+      def uses_property(c: Class):
+        c.tainted = __test_source()
+        return c.property
+
+      def uses_property_but_no_taint(c: Class):
+        c.untainted = __test_source()
+        return c.property
     |}
     ~expect:
       {
@@ -221,7 +241,22 @@ let test_fixpoint context =
                     code = 5010;
                     pattern = ".*Attacker may control at least one argument to getattr(,)";
                   } ]
-              "qualifier.test_deep_tito_match" ];
+              "qualifier.test_deep_tito_match";
+            outcome
+              ~kind:`Function
+              ~sink_parameters:[{ name = "input"; sinks = [Sinks.Test] }]
+              "qualifier.property_into_sink";
+            outcome ~kind:`Method ~tito_parameters:["self"] "qualifier.Class.property";
+            outcome
+              ~kind:`Function
+              ~tito_parameters:["c"]
+              ~returns:[Sources.Test]
+              "qualifier.uses_property";
+            outcome
+              ~kind:`Function
+              ~tito_parameters:["c"]
+              ~returns:[]
+              "qualifier.uses_property_but_no_taint" ];
       }
 
 

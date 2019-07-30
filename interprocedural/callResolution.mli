@@ -21,11 +21,11 @@ val get_indirect_targets
   (Callable.t * Type.Callable.implicit option) list
 
 (* Given an attribute self.x, returns the underlying callable if x is a @property. *)
-val get_property_callable
+val resolve_property_targets
   :  resolution:Resolution.t ->
   base:Expression.t ->
   attribute:string ->
-  Type.Callable.t option
+  (Callable.t * Type.Callable.implicit option) list option
 
 (* Returns a normalized path and optional addition parameter prefix, e.g. for constructor calls *)
 val normalize_global

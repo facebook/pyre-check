@@ -26,7 +26,7 @@ let normalize_global ~resolution reference =
     reference, []
 
 
-let get_property_callable ~resolution ~base ~attribute =
+let get_property_defining_parent ~resolution ~base ~attribute =
   let global_resolution = Resolution.global_resolution resolution in
   let annotation = Resolution.resolve resolution base in
   let annotation =
@@ -45,31 +45,8 @@ let get_property_callable ~resolution ~base ~attribute =
     >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
   in
   match property with
-  | Some property when Option.is_some (Annotated.Attribute.property property) -> (
-      let parent_name = Annotated.Attribute.parent property |> Type.primitive_name in
-      parent_name
-      >>| Reference.create
-      >>= fun parent ->
-      Some (Reference.combine parent (Reference.create attribute))
-      >>= fun name ->
-      GlobalResolution.function_definitions global_resolution name
-      >>= function
-      | [{ Node.location; value = define }] ->
-          Annotated.Callable.create_overload ~resolution:global_resolution ~location define
-          |> (fun implementation ->
-               {
-                 Type.Callable.kind = Named name;
-                 overloads = [];
-                 implementation;
-                 implicit =
-                   Some
-                     {
-                       Type.Callable.implicit_annotation = annotation;
-                       name = Reference.show parent;
-                     };
-               })
-          |> Option.some
-      | _ -> None )
+  | Some property when Option.is_some (Annotated.Attribute.property property) ->
+      Annotated.Attribute.parent property |> Type.primitive_name >>| Reference.create
   | _ -> None
 
 
@@ -145,6 +122,13 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
             actual_target :: List.map subtypes ~f:create_override_target )
 
 
+let rec is_all_names = function
+  | Name (Name.Identifier identifier) when not (is_local identifier) -> true
+  | Name (Name.Attribute { base; attribute; _ }) when not (is_local attribute) ->
+      is_all_names (Node.value base)
+  | _ -> false
+
+
 let resolve_target ~resolution ?receiver_type callee =
   let callable_type = Resolution.resolve resolution callee in
   let global =
@@ -180,15 +164,7 @@ let resolve_target ~resolution ?receiver_type callee =
     in
     is_super callee
   in
-  let is_all_names =
-    let rec is_all_names = function
-      | Name (Name.Identifier identifier) when not (is_local identifier) -> true
-      | Name (Name.Attribute { base; attribute; _ }) when not (is_local attribute) ->
-          is_all_names (Node.value base)
-      | _ -> false
-    in
-    is_all_names (Node.value callee)
-  in
+  let is_all_names = is_all_names (Node.value callee) in
   let rec resolve_type callable_type =
     match callable_type, receiver_type, global with
     | Type.Callable { implicit; kind = Named name; _ }, _, Some _ ->
@@ -220,6 +196,19 @@ let get_indirect_targets ~resolution ~receiver ~method_name =
     |> Node.create_with_default_location
   in
   resolve_target ~resolution ~receiver_type callee
+
+
+let resolve_property_targets ~resolution ~base ~attribute =
+  let receiver_type = Resolution.resolve resolution base in
+  match get_property_defining_parent ~resolution ~base ~attribute with
+  | None -> None
+  | Some defining_parent when Type.is_meta receiver_type ->
+      Some [Callable.create_method (Reference.create ~prefix:defining_parent attribute), None]
+  | Some defining_parent ->
+      let callee = Reference.create ~prefix:defining_parent attribute in
+      compute_indirect_targets ~resolution ~receiver_type callee
+      |> List.map ~f:(fun target -> target, None)
+      |> Option.some
 
 
 let get_global_targets ~resolution ~global =

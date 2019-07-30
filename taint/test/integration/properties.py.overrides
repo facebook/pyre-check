@@ -1,0 +1,6 @@
+@generated
+Overrides
+object::__init__ (override) -> [properties.Class::__init__ (override)]
+properties.Class::my_property (override) -> [properties.OtherDerived::my_property (override)]
+properties.Class::uses_property (override) -> [properties.Derived::uses_property (override)]
+properties.Class::uses_property_but_no_tito_taint (override) -> [properties.Derived::uses_property_but_no_tito_taint (override) properties.OtherDerived::uses_property_but_no_tito_taint (override)]

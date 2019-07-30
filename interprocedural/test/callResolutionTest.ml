@@ -15,11 +15,13 @@ let test_get_property_callable context =
       ScratchProject.setup ~context ["x.py", source] |> ScratchProject.parse_sources
     in
     let resolution = Test.resolution ~sources () in
-    CallResolution.get_property_callable
+    CallResolution.resolve_property_targets
       ~resolution
       ~base:(Test.parse_single_expression base)
       ~attribute
-    >>| (fun callable -> Type.show (Type.Callable callable))
+    >>| (function
+          | [(target, _)] -> Callable.show target
+          | _ -> "bad")
     |> assert_equal
          ~cmp:(Option.equal String.equal)
          ~printer:(Option.value ~default:"None")
@@ -33,7 +35,7 @@ let test_get_property_callable context =
           ...
     |}
     ~property:("x.C", "foo")
-    ~expected:(Some "typing.Callable(x.C.foo)[[], int]");
+    ~expected:(Some "x.C::foo (method)");
   assert_callable
     ~source:
       {|
@@ -44,7 +46,7 @@ let test_get_property_callable context =
       c: C = C()
     |}
     ~property:("x.c", "foo")
-    ~expected:(Some "typing.Callable(x.C.foo)[[], int]");
+    ~expected:(Some "x.C::foo (method)");
 
   (* Subclasses evaluate to the right callable. *)
   assert_callable
@@ -58,7 +60,7 @@ let test_get_property_callable context =
         pass
     |}
     ~property:("x.D", "foo")
-    ~expected:(Some "typing.Callable(x.C.foo)[[], int]");
+    ~expected:(Some "x.C::foo (method)");
   assert_callable
     ~source:
       {|
@@ -71,7 +73,7 @@ let test_get_property_callable context =
       d: D = D()
     |}
     ~property:("x.d", "foo")
-    ~expected:(Some "typing.Callable(x.C.foo)[[], int]");
+    ~expected:(Some "x.C::foo (method)");
 
   (* Don't attempt to find callables for regular functions. *)
   assert_callable

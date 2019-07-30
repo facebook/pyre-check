@@ -528,14 +528,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
       | Name (Name.Attribute { base; attribute; _ }) -> (
         match
-          Interprocedural.CallResolution.get_property_callable ~resolution ~base ~attribute
+          Interprocedural.CallResolution.resolve_property_targets ~resolution ~base ~attribute
         with
-        | Some _ ->
-            let property_call =
-              Expression.Call { callee = base; arguments = [] } |> Node.create ~location
-            in
-            analyze_expression ~resolution ~state ~expression:property_call
-        | None -> analyze_attribute_access ~resolution ~state ~location base attribute )
+        | None -> analyze_attribute_access ~resolution ~state ~location base attribute
+        | Some targets ->
+            let arguments = [{ Call.Argument.name = None; value = base }] in
+            apply_call_targets ~resolution location arguments state targets )
       | Set set ->
           List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
       | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state

@@ -286,28 +286,7 @@ let test_apply_method_model_at_call_site context =
       outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
-        "qualifier.taint_across_union_receiver_types" ];
-
-  (* Propagation through properties. *)
-  assert_taint
-    ~context
-    {|
-      class Class:
-        self.tainted = ...
-        @property
-        def property(self):
-          return self.tainted
-
-
-      def property_into_sink(input):
-        c: Class = ...
-        c.tainted = input
-        __test_sink(c.property)
-    |}
-    [ outcome
-        ~kind:`Function
-        ~sink_parameters:[{ name = "input"; sinks = [Sinks.Test] }]
-        "qualifier.property_into_sink" ]
+        "qualifier.taint_across_union_receiver_types" ]
 
 
 let test_tito_via_receiver context =
