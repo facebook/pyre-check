@@ -430,7 +430,7 @@ class Configuration:
                 binary = configuration.consume("binary", current=self._binary)
                 assert binary is None or isinstance(binary, str)
                 if binary is not None:
-                    binary = os.path.expanduser(binary)
+                    binary = expand_relative_path(configuration_path, binary)
                 self._binary = binary
 
                 additional_search_path = configuration.consume(
@@ -457,7 +457,7 @@ class Configuration:
                 typeshed = configuration.consume("typeshed", current=self._typeshed)
                 assert typeshed is None or isinstance(typeshed, str)
                 if typeshed is not None:
-                    typeshed = os.path.expanduser(typeshed)
+                    typeshed = expand_relative_path(configuration_path, typeshed)
                 self._typeshed = typeshed
 
                 taint_models_path = configuration.consume("taint_models_path")

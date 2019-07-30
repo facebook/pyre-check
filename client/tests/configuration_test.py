@@ -205,6 +205,46 @@ class ConfigurationTest(unittest.TestCase):
 
         with patch("os.path.dirname", side_effect=directory_side_effect):
             json_load.side_effect = [
+                {"binary": "some/dir/pyre.bin", "typeshed": "some/typeshed"},
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(configuration.binary, "/root/some/dir/pyre.bin")
+            self.assertEqual(configuration.typeshed, "/root/some/typeshed")
+
+            json_load.side_effect = [
+                {"binary": "~/some/dir/pyre.bin", "typeshed": "~/some/typeshed"},
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(configuration.binary, "/home/user/some/dir/pyre.bin")
+            self.assertEqual(configuration.typeshed, "/home/user/some/typeshed")
+
+            json_load.side_effect = [
+                {
+                    "binary": "some/%V/pyre.bin",
+                    "typeshed": "some/%V/typeshed",
+                    "version": "VERSION",
+                },
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(configuration.binary, "/root/some/VERSION/pyre.bin")
+            self.assertEqual(configuration.typeshed, "/root/some/VERSION/typeshed")
+
+            json_load.side_effect = [
+                {
+                    "binary": "~/some/%V/pyre.bin",
+                    "typeshed": "~/some/%V/typeshed",
+                    "version": "VERSION",
+                },
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(configuration.binary, "/home/user/some/VERSION/pyre.bin")
+            self.assertEqual(configuration.typeshed, "/home/user/some/VERSION/typeshed")
+
+            json_load.side_effect = [
                 {"ignore_all_errors": ["abc/def", "/abc/def", "~/abc/def"]},
                 {},
             ]
@@ -219,12 +259,12 @@ class ConfigurationTest(unittest.TestCase):
                     "taint_models_path": ".pyre/taint_models",
                     "search_path": "simple_string/",
                     "version": "VERSION",
-                    "typeshed": "TYPE/%V/SHED/",
+                    "typeshed": "/TYPE/%V/SHED/",
                 },
                 {},
             ]
             configuration = Configuration()
-            self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+            self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path, ["/root/.pyre/taint_models"]
@@ -234,13 +274,13 @@ class ConfigurationTest(unittest.TestCase):
                 {
                     "search_path": "simple_string/",
                     "version": "VERSION",
-                    "typeshed": "TYPE/%V/SHED/",
+                    "typeshed": "/TYPE/%V/SHED/",
                 },
             ]
             configuration = Configuration(
                 local_configuration="/root/local/.pyre_configuration.local"
             )
-            self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+            self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path, ["/root/local/.pyre/taint_models"]
@@ -251,13 +291,13 @@ class ConfigurationTest(unittest.TestCase):
                     "search_path": "simple_string/",
                     "version": "VERSION",
                     "taint_models_path": "global/taint_models",
-                    "typeshed": "TYPE/%V/SHED/",
+                    "typeshed": "/TYPE/%V/SHED/",
                 },
             ]
             configuration = Configuration(
                 local_configuration="/root/local/.pyre_configuration.local"
             )
-            self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+            self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
                 configuration.taint_models_path,
@@ -268,13 +308,13 @@ class ConfigurationTest(unittest.TestCase):
             {
                 "search_path": "simple_string/",
                 "version": "VERSION",
-                "typeshed": "TYPE/%V/SHED/",
+                "typeshed": "/TYPE/%V/SHED/",
                 "saved_state": "some_name",
             },
             {},
         ]
         configuration = Configuration()
-        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.typeshed, "/TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.file_hash, "HASH")
 
@@ -301,7 +341,7 @@ class ConfigurationTest(unittest.TestCase):
         # Test loading of additional directories in the search path
         # via environment $PYTHONPATH.
         json_load.side_effect = [
-            {"search_path": ["json/", "file/"], "typeshed": "TYPESHED/"},
+            {"search_path": ["json/", "file/"], "typeshed": "/TYPESHED/"},
             {},
         ]
         with patch.object(os, "getenv", return_value="additional/:directories/"):
@@ -309,7 +349,7 @@ class ConfigurationTest(unittest.TestCase):
                 configuration = Configuration(
                     search_path=["command/", "line/"], preserve_pythonpath=True
                 )
-                self.assertEqual(configuration.typeshed, "TYPESHED/")
+                self.assertEqual(configuration.typeshed, "/TYPESHED/")
                 self.assertEqual(
                     configuration.search_path,
                     [
@@ -325,7 +365,7 @@ class ConfigurationTest(unittest.TestCase):
 
         # Test case where we ignore the PYTHONPATH environment variable.
         json_load.side_effect = [
-            {"search_path": ["json/", "file/"], "typeshed": "TYPESHED/"},
+            {"search_path": ["json/", "file/"], "typeshed": "/TYPESHED/"},
             {},
         ]
         with patch.object(os, "getenv", return_value="additional/:directories/"):
@@ -333,7 +373,7 @@ class ConfigurationTest(unittest.TestCase):
                 configuration = Configuration(
                     search_path=["command/", "line/"], preserve_pythonpath=False
                 )
-                self.assertEqual(configuration.typeshed, "TYPESHED/")
+                self.assertEqual(configuration.typeshed, "/TYPESHED/")
                 self.assertEqual(
                     configuration.search_path, ["command/", "line/", "json/", "file/"]
                 )
@@ -364,11 +404,11 @@ class ConfigurationTest(unittest.TestCase):
 
         with patch.object(os, "getenv", return_value="VERSION_HASH"):
             json_load.side_effect = [
-                {"version": "NOT_THIS_VERSION", "typeshed": "TYPE/%V/SHED/"},
+                {"version": "NOT_THIS_VERSION", "typeshed": "/TYPE/%V/SHED/"},
                 {},
             ]
             configuration = Configuration()
-            self.assertEqual(configuration.typeshed, "TYPE/VERSION_HASH/SHED/")
+            self.assertEqual(configuration.typeshed, "/TYPE/VERSION_HASH/SHED/")
 
         # Test buck builder fields
         json_load.side_effect = [{"use_buck_builder": True}, {}]
@@ -390,9 +430,9 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
 
         # Normalize number of workers if zero.
-        json_load.side_effect = [{"typeshed": "TYPESHED/", "workers": 0}, {}]
+        json_load.side_effect = [{"typeshed": "/TYPESHED/", "workers": 0}, {}]
         configuration = Configuration()
-        self.assertEqual(configuration.typeshed, "TYPESHED/")
+        self.assertEqual(configuration.typeshed, "/TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
 
         # Test excludes
