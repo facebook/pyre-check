@@ -162,7 +162,6 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "tito": [ { "line": 39, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
               { "via": "tito" },
@@ -220,7 +219,6 @@
               "port": "formal(obj)",
               "length": 2
             },
-            "tito": [ { "line": 39, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
             "features": [
               { "via": "tito" },

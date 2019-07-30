@@ -88,7 +88,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [ { "line": 64, "start": 13, "end": 16 } ],
             "leaves": [ { "kind": "Test", "name": "global_flows.l" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -232,7 +231,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [ { "line": 32, "start": 19, "end": 22 } ],
             "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -284,7 +282,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [ { "line": 44, "start": 16, "end": 19 } ],
             "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
             "features": [ { "via": "tito" } ]
           }

@@ -365,6 +365,14 @@ end = struct
       | Declaration -> Origin location
     in
     let taint = Map.transform FlowDetails.trace_info ~f:translate taint in
+    let strip_tito_positions features =
+      List.filter
+        ~f:(function
+          | Features.Simple.TitoPosition _ -> false
+          | _ -> true)
+        features
+    in
+    let taint = Map.transform FlowDetails.simple_feature_set ~f:strip_tito_positions taint in
     if needs_leaf_name then
       let add_leaf_names info_set =
         let add_leaf_name info_set callee =

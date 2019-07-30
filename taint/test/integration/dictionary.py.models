@@ -42,7 +42,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [ { "line": 62, "start": 30, "end": 33 } ],
             "leaves": [
               { "kind": "Test", "name": "dictionary.tainted_dictionary" }
             ],
