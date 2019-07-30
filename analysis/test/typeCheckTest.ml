@@ -22,7 +22,7 @@ module DefaultContext = struct
 end
 
 module Create (Context : TypeCheck.Context) = struct
-  let create ?(bottom = false) ?(resolution = Test.resolution ()) ?(immutables = []) annotations =
+  let create ?(bottom = false) ?(resolution = resolution) ?(immutables = []) annotations =
     let module State = State (Context) in
     let resolution =
       let annotations =
