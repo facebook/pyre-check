@@ -5,7 +5,6 @@
 
 open Core
 open OUnit2
-open Analysis
 open Ast
 open Interprocedural
 
@@ -14,9 +13,7 @@ let configuration = Configuration.Analysis.create ()
 let environment ?(sources = []) ?(configuration = configuration) () =
   let _ = Test.parse "" in
   (* Make sure Test module is loaded. *)
-  let handler = Environment.in_process_handler () in
-  Test.populate ~configuration handler sources;
-  handler
+  Test.environment ~configuration ~sources ()
 
 
 let setup_environment ?(sources = []) () =

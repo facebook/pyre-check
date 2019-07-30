@@ -15,30 +15,21 @@ let value option = Option.value_exn option
 
 let configuration = Configuration.Analysis.create ~infer:true ()
 
-let create_environment ?(include_helpers = false) () =
-  let environment = Environment.in_process_handler () in
-  Test.populate
-    ~configuration
-    environment
-    (typeshed_stubs ~include_helper_builtins:include_helpers ());
-  environment
+let create_environment ?(include_helpers = false) ?(additional_sources = []) () =
+  let sources = typeshed_stubs ~include_helper_builtins:include_helpers () @ additional_sources in
+  Test.environment ~configuration ~sources ()
 
 
-let plain_populate ~environment sources =
-  Test.populate ~configuration environment sources;
-  environment
+let populate_with_sources ?include_helpers sources =
+  create_environment ?include_helpers ~additional_sources:sources ()
 
 
-let populate_with_sources ?(environment = create_environment ()) sources =
-  plain_populate ~environment sources
+let populate ?handle ?include_helpers source =
+  populate_with_sources ?include_helpers [parse ?handle source]
 
 
-let populate ?(environment = create_environment ()) ?handle source =
-  populate_with_sources ~environment [parse ?handle source]
-
-
-let populate_preprocess ?(environment = create_environment ()) ?handle source =
-  populate_with_sources ~environment [source |> parse ?handle |> Preprocessing.preprocess]
+let populate_preprocess ?handle source =
+  populate_with_sources [source |> parse ?handle |> Preprocessing.preprocess]
 
 
 let order_and_environment source =
@@ -179,7 +170,7 @@ let test_register_class_metadata _ =
 let test_register_aliases _ =
   let register_all sources =
     let sources = List.map sources ~f:Preprocessing.preprocess in
-    populate_with_sources ~environment:(create_environment ()) sources
+    populate_with_sources sources
   in
   let assert_resolved sources aliases =
     let environment = register_all sources in
@@ -432,7 +423,10 @@ let test_connect_definition _ =
   let (module TypeOrderHandler : ClassHierarchy.Handler) =
     Environment.class_hierarchy environment
   in
+  let (module DependencyHandler) = Environment.dependency_handler environment in
+  DependencyHandler.add_class_key ~qualifier:(Reference.create "") "C";
   ClassHierarchy.insert (module TypeOrderHandler) "C";
+  DependencyHandler.add_class_key ~qualifier:(Reference.create "") "D";
   ClassHierarchy.insert (module TypeOrderHandler) "D";
   let assert_edge ~predecessor ~successor =
     let predecessor_index =
@@ -650,7 +644,7 @@ let test_populate _ =
   (* Metaclasses aren't superclasses. *)
   let environment =
     populate
-      ~environment:(create_environment ~include_helpers:false ())
+      ~include_helpers:false
       {|
         class abc.ABCMeta: ...
         class C(metaclass=abc.ABCMeta): ...
@@ -661,7 +655,7 @@ let test_populate _ =
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
     populate
-      ~environment:(create_environment ~include_helpers:false ())
+      ~include_helpers:false
       {|
         def foo() -> int:
           return 1
@@ -1140,6 +1134,7 @@ let test_register_dependencies _ =
          from . import ignored # no dependency created here
       |}
   in
+  Environment.purge environment [Reference.create "test"; Reference.create "b"];
   Environment.register_dependencies environment (parse ~handle:"test.py" source);
   let dependencies qualifier =
     Environment.dependencies environment !&qualifier
@@ -1151,7 +1146,6 @@ let test_register_dependencies _ =
 
 
 let test_purge _ =
-  let handler = Environment.shared_memory_handler ~local_mode:(fun _ -> None) () in
   let source =
     {|
       import a
@@ -1162,11 +1156,12 @@ let test_purge _ =
       def foo(): pass
     |}
   in
-  Environment.fill_shared_memory_with_default_typeorder ();
-  Environment.add_special_classes handler;
-  Environment.add_dummy_modules handler;
-  Environment.add_special_globals handler;
-  Test.populate ~configuration handler [parse ~handle:"test.py" source |> Preprocessing.preprocess];
+  let handler =
+    Test.environment
+      ~configuration
+      ~sources:[parse ~handle:"test.py" source |> Preprocessing.preprocess]
+      ()
+  in
   let global_resolution = Environment.resolution handler () in
   assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
   assert_is_some (GlobalResolution.aliases global_resolution "test._T");
@@ -1197,9 +1192,7 @@ let test_propagate_nested_classes _ =
     Type.Cache.disable ();
     Type.Cache.enable ();
     let sources = List.map sources ~f:(fun source -> source |> Preprocessing.preprocess) in
-    let handler =
-      populate_with_sources ~environment:(create_environment ~include_helpers:false ()) sources
-    in
+    let handler = populate_with_sources ~include_helpers:false sources in
     let assert_alias (alias, target) =
       parse_single_expression alias
       |> parse_annotation handler

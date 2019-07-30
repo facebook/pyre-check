@@ -365,17 +365,9 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
     Test.ScratchProject.configuration_of project, source
   in
   let environment =
-    let models =
-      models >>| (fun model -> [Test.parse ~handle model]) |> Option.value ~default:[]
-    in
-    Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
+    Test.environment ~sources:(Test.typeshed_stubs () @ [source]) ~configuration ()
   in
   let global_resolution = Environment.resolution environment () in
-  Service.Environment.populate
-    ~configuration:Test.mock_configuration
-    ~scheduler:(Scheduler.mock ())
-    environment
-    [source];
   let errors =
     let keep error =
       match AnalysisError.kind error with

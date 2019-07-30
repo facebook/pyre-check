@@ -2421,9 +2421,7 @@ let test_solve_less_or_equal _ =
   let environment =
     let configuration = Configuration.Analysis.create () in
     let populate source =
-      let environment = Environment.in_process_handler () in
-      Test.populate ~configuration environment (parse source :: typeshed_stubs ());
-      environment
+      Test.environment ~configuration ~sources:(parse source :: typeshed_stubs ()) ()
     in
     populate
       {|
@@ -3200,10 +3198,8 @@ let test_instantiate_protocol_parameters _ =
     =
     let environment =
       let configuration = Configuration.Analysis.create () in
-      let environment = Environment.in_process_handler () in
       let source = context >>| parse |> Option.to_list in
-      Test.populate ~configuration environment (source @ typeshed_stubs ());
-      environment
+      Test.environment ~configuration ~sources:(source @ typeshed_stubs ()) ()
     in
     let resolution = Environment.resolution environment () in
     let parse_annotation annotation =
@@ -3397,9 +3393,7 @@ let test_mark_escaped_as_escaped _ =
   let environment =
     let configuration = Configuration.Analysis.create () in
     let populate source =
-      let environment = Environment.in_process_handler () in
-      Test.populate ~configuration environment (parse source :: typeshed_stubs ());
-      environment
+      Test.environment ~configuration ~sources:(parse source :: typeshed_stubs ()) ()
     in
     populate
       {|

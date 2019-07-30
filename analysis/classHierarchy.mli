@@ -183,7 +183,9 @@ module Builder : sig
 
   val copy : t -> t
 
-  val default : unit -> t
-
   val builtin_types : Type.Primitive.Set.t
+
+  val add_default_order : (module Handler) -> unit
+
+  val default : unit -> t
 end

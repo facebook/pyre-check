@@ -11,7 +11,6 @@ open Test
 let configuration = Configuration.Analysis.create ()
 
 let test_index _ =
-  let handler = Environment.in_process_handler () in
   let source =
     {|
       class baz.baz(): pass
@@ -19,7 +18,7 @@ let test_index _ =
       def foo(): pass
     |}
   in
-  Test.populate ~configuration handler [parse ~handle:"test.py" source];
+  let handler = Test.environment ~configuration ~sources:[parse ~handle:"test.py" source] () in
   let qualifier = Reference.create "test" in
   let (module DependencyHandler) = Environment.dependency_handler handler in
   assert_equal (DependencyHandler.get_class_keys ~qualifier) ["baz.baz"];
@@ -27,15 +26,9 @@ let test_index _ =
   assert_equal (DependencyHandler.get_alias_keys ~qualifier) ["test._T"]
 
 
-let add_dependent table handle dependent =
-  let source = SourcePath.qualifier_of_relative handle in
-  let dependent = SourcePath.qualifier_of_relative dependent in
-  let update entry =
-    match entry with
-    | None -> Reference.Set.singleton dependent
-    | Some set -> Set.add set dependent
-  in
-  Hashtbl.update table source ~f:update
+let add_dependent environment handle dependent =
+  let (module Dependencies) = Environment.dependency_handler environment in
+  Dependencies.add_dependent ~qualifier:(Reference.create dependent) (Reference.create handle)
 
 
 let get_dependencies environment qualifier = Environment.dependencies environment qualifier
@@ -53,13 +46,12 @@ let assert_dependencies ~environment ~modules ~expected function_to_test =
 
 
 let test_dependent_of_list _ =
-  let table = Reference.Table.create () in
-  let dependencies = { (Dependencies.create ()) with Dependencies.dependents = table } in
-  let environment = Environment.in_process_handler ~dependencies () in
-  add_dependent table "b" "a";
-  add_dependent table "c" "a";
-  add_dependent table "c" "b";
-  add_dependent table "a" "test";
+  let environment = Test.environment () in
+  Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
+  add_dependent environment "b" "a";
+  add_dependent environment "c" "a";
+  add_dependent environment "c" "b";
+  add_dependent environment "a" "test";
   let assert_dependencies ~modules ~expected =
     assert_dependencies ~environment ~modules ~expected Dependencies.of_list
   in
@@ -70,13 +62,12 @@ let test_dependent_of_list _ =
 
 
 let test_dependent_of_list_duplicates _ =
-  let table = Reference.Table.create () in
-  let dependencies = { (Dependencies.create ()) with Dependencies.dependents = table } in
-  let environment = Environment.in_process_handler ~dependencies () in
-  add_dependent table "a" "b";
-  add_dependent table "a" "c";
-  add_dependent table "a" "b";
-  add_dependent table "a" "c";
+  let environment = Test.environment () in
+  Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
+  add_dependent environment "a" "b";
+  add_dependent environment "a" "c";
+  add_dependent environment "a" "b";
+  add_dependent environment "a" "c";
   let assert_dependencies ~modules ~expected =
     assert_dependencies ~environment ~modules ~expected Dependencies.of_list
   in
@@ -84,13 +75,12 @@ let test_dependent_of_list_duplicates _ =
 
 
 let test_transitive_dependent_of_list _ =
-  let table = Reference.Table.create () in
-  let dependencies = { (Dependencies.create ()) with Dependencies.dependents = table } in
-  let environment = Environment.in_process_handler ~dependencies () in
-  add_dependent table "b" "a";
-  add_dependent table "c" "a";
-  add_dependent table "c" "b";
-  add_dependent table "a" "test";
+  let environment = Test.environment () in
+  Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
+  add_dependent environment "b" "a";
+  add_dependent environment "c" "a";
+  add_dependent environment "c" "b";
+  add_dependent environment "a" "test";
   let assert_dependencies ~modules ~expected =
     assert_dependencies ~environment ~modules ~expected Dependencies.transitive_of_list
   in
@@ -100,13 +90,12 @@ let test_transitive_dependent_of_list _ =
 
 
 let test_transitive_dependents _ =
-  let table = Reference.Table.create () in
-  let dependencies = { (Dependencies.create ()) with Dependencies.dependents = table } in
-  let environment = Environment.in_process_handler ~dependencies () in
-  add_dependent table "b" "a";
-  add_dependent table "c" "a";
-  add_dependent table "c" "b";
-  add_dependent table "a" "test";
+  let environment = Test.environment () in
+  Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
+  add_dependent environment "b" "a";
+  add_dependent environment "c" "a";
+  add_dependent environment "c" "b";
+  add_dependent environment "a" "test";
   let assert_dependents ~handle ~expected =
     let get_dependencies = get_dependencies environment in
     let dependencies =
@@ -118,14 +107,16 @@ let test_transitive_dependents _ =
       |> List.sort ~compare:String.compare
     in
     let expected = List.sort ~compare:String.compare expected in
-    assert_equal expected dependencies
+    let printer = List.to_string ~f:Fn.id in
+    assert_equal ~printer expected dependencies
   in
-  assert_dependents ~handle:"c.py" ~expected:["a"; "b"; "test"]
+  assert_dependents ~handle:"c.py" ~expected:["a"; "b"; "test"];
+  ()
 
 
 let test_normalize _ =
   let assert_normalized ~edges expected =
-    let handler = Environment.in_process_handler () in
+    let handler = Test.environment () in
     let (module DependencyHandler) = Environment.dependency_handler handler in
     let add_dependent (left, right) =
       DependencyHandler.add_dependent ~qualifier:(Reference.create left) !&right

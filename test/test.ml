@@ -1141,6 +1141,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
 
 let populate ~configuration environment sources =
+  let qualifiers = sources |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+  Environment.purge environment qualifiers;
   Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment sources
 
 
@@ -1149,7 +1151,7 @@ let populate_shared_memory =
 
 
 let environment ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
-  let environment = Environment.in_process_handler () in
+  let environment = Environment.shared_memory_handler ~local_mode:(fun _ -> None) () in
   populate ~configuration environment sources;
   environment
 
@@ -1295,9 +1297,7 @@ let assert_errors
         let configuration = ScratchProject.configuration_of project in
         configuration, sources
       in
-      let environment = Environment.in_process_handler () in
-      populate ~configuration environment (typeshed_stubs ());
-      populate ~configuration environment sources;
+      let environment = environment ~configuration ~sources:(typeshed_stubs () @ sources) () in
       let global_resolution = Environment.resolution environment () in
       let configuration = { configuration with debug; strict; declare; infer } in
       let source =

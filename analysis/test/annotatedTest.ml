@@ -4,21 +4,14 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Analysis
 open Test
 
 let configuration = Configuration.Analysis.create ()
 
-let populate_with_sources sources =
-  let environment = Environment.in_process_handler () in
-  Test.populate ~configuration environment sources;
-  environment
-
+let populate_with_sources sources = Test.environment ~configuration ~sources ()
 
 let populate source =
-  let environment = Environment.in_process_handler () in
-  Test.populate ~configuration environment (parse source :: typeshed_stubs ());
-  environment
+  Test.environment ~configuration ~sources:(parse source :: typeshed_stubs ()) ()
 
 
 let value option = Option.value_exn option

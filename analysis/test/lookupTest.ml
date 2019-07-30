@@ -32,7 +32,10 @@ let generate_lookup source =
   let global_resolution = Environment.resolution environment () in
   Test.populate ~configuration environment [parsed];
   TypeCheck.run ~configuration ~global_resolution ~source:parsed |> ignore;
-  Lookup.create_of_source global_resolution parsed
+  let lookup = Lookup.create_of_source global_resolution parsed in
+  Environment.purge Service.Environment.shared_handler [Reference.create "test"];
+
+  lookup
 
 
 let test_lookup _ =

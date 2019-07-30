@@ -10,9 +10,7 @@ open Annotation
 open Refinement
 open Test
 
-let resolution =
-  Environment.in_process_handler () |> fun handler -> Environment.resolution handler ()
-
+let resolution = environment () |> fun handler -> Environment.resolution handler ()
 
 let test_refine _ =
   assert_equal

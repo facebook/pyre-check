@@ -15,9 +15,6 @@ val add_dummy_modules : t -> unit
 
 val add_special_globals : t -> unit
 
-val in_process_handler : ?dependencies:Dependencies.t -> unit -> t
-(** Provides a default in-process environment handler, only for tests *)
-
 val resolution : t -> unit -> GlobalResolution.t
 
 val dependencies : t -> Reference.t -> Reference.Set.Tree.t option

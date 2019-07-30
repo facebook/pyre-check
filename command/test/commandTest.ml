@@ -38,13 +38,11 @@ let start_server ~local_root ?expected_version () =
 
 let environment () =
   let configuration = Configuration.Analysis.create () in
-  let environment = Environment.in_process_handler () in
-  Service.Environment.populate
-    environment
+  Test.environment
     ~configuration
-    ~scheduler:(Scheduler.mock ())
-    [ parse
-        {|
+    ~sources:
+      [ parse
+          {|
         class int(float): pass
         class object():
           def __init__(self) -> None: pass
@@ -52,8 +50,8 @@ let environment () =
           def __sizeof__(self) -> int: pass
         class str(object): pass
       |}
-      |> Preprocessing.qualify ];
-  environment
+        |> Preprocessing.qualify ]
+    ()
 
 
 let make_errors ?handle source =
@@ -159,11 +157,7 @@ module ScratchServer = struct
         sources )
     in
     let external_sources = typeshed_stubs ~include_helper_builtins:false () in
-    let environment =
-      let environment = Analysis.Environment.in_process_handler () in
-      Test.populate ~configuration environment (sources @ external_sources);
-      environment
-    in
+    let environment = Test.environment ~configuration ~sources:(sources @ external_sources) () in
     let global_resolution = Environment.resolution environment () in
     let errors =
       let table = Ast.Reference.Table.create () in

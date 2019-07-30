@@ -179,9 +179,10 @@ let assert_infer
   in
   let source = parse source |> Preprocessing.preprocess in
   let configuration = Configuration.Analysis.create ~debug ~infer () in
-  let environment = Test.environment () in
+  let environment =
+    Test.environment ~configuration ~sources:(source :: Test.typeshed_stubs ()) ()
+  in
   let global_resolution = Environment.resolution environment () in
-  Test.populate ~configuration environment [source];
   let to_string json = Yojson.Safe.sort json |> Yojson.Safe.to_string in
   assert_equal
     ~cmp:(List.equal String.equal)

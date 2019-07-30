@@ -884,9 +884,7 @@ module Builder = struct
 
   let builtin_types = List.concat default_annotations |> Type.Primitive.Set.of_list
 
-  let default () =
-    let order = create () in
-    let handler = handler order in
+  let add_default_order handler =
     Set.iter builtin_types ~f:(insert handler);
     let rec connect_primitive_chain annotations =
       match annotations with
@@ -917,6 +915,12 @@ module Builder = struct
       handler
       ~predecessor:typed_dictionary
       ~parameters:(Concrete [Type.string; Type.Any])
-      ~successor:typing_mapping;
+      ~successor:typing_mapping
+
+
+  let default () =
+    let order = create () in
+    let handler = handler order in
+    add_default_order handler;
     order
 end
