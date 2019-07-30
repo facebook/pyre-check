@@ -913,13 +913,5 @@ module Builder = struct
       ~predecessor:typed_dictionary
       ~parameters:(Concrete [Type.string; Type.Any])
       ~successor:typing_mapping;
-    connect
-      handler
-      ~parameters:
-        (Concrete
-           [ Type.Variable (Type.Variable.Unary.create "_T");
-             Type.Variable (Type.Variable.Unary.create "_T2") ])
-      ~predecessor:typing_mapping
-      ~successor:generic_primitive;
     order
 end
