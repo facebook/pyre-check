@@ -4606,22 +4606,17 @@ module State (Context : Context) = struct
           Map.change ~f:update nested_defines location
         in
         match Node.value statement with
-        | Class ({ Class.name; body; _ } as definition) ->
+        | Class { Class.name; body; _ } ->
             let variables =
               let extract = function
-                | Type.OrderedTypes.Concrete concretes ->
-                    List.filter_map concretes ~f:(function
-                        | Type.Variable variable -> Some (Type.Variable.Unary variable)
-                        | _ -> None)
-                | Variable variable -> [Type.Variable.ListVariadic variable]
-                | Map _
-                | Any ->
-                    (* impossible *) []
+                | ClassHierarchy.Unaries unaries ->
+                    List.map unaries ~f:(fun unary -> Type.Variable.Unary unary)
+                | ClassHierarchy.ListVariadic variable -> [Type.Variable.ListVariadic variable]
               in
-              Node.create ~location definition
-              |> Annotated.Class.create
-              |> Annotated.Class.generics ~resolution:global_resolution
-              |> extract
+              Reference.show name
+              |> GlobalResolution.variables global_resolution
+              >>| extract
+              |> Option.value ~default:[]
             in
             schedule
               ~variables
