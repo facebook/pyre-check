@@ -189,7 +189,7 @@ let insert (module Handler : Handler) annotation =
       let initial = Type.Primitive.hash annotation in
       let rec pick_index index =
         if Handler.contains annotations index then
-          pick_index (initial + 1)
+          pick_index (index + 1)
         else
           index
       in
