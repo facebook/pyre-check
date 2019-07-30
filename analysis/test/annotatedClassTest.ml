@@ -643,6 +643,25 @@ let test_class_attributes _ =
       "__str__" ];
 
   (* Test 'attribute' *)
+  let resolution, parent =
+    setup
+      {|
+        class Metaclass:
+          def Metaclass.implicit(cls) -> int:
+            return 0
+
+        class Attributes(metaclass=Metaclass):
+          def Attributes.bar(self) -> int:
+            pass
+          def Attributes.baz(self, x:int) -> int:
+            pass
+          def Attributes.baz(self, x:str) -> str:
+            pass
+          @property
+          def Attributes.property(self) -> str:
+            pass
+      |}
+  in
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
     let instantiated, class_attributes =
       if Type.is_meta parent_instantiated_type then
@@ -651,14 +670,13 @@ let test_class_attributes _ =
         parent_instantiated_type, false
     in
     let actual_attribute =
-      Node.create_with_default_location parent
-      |> Class.create
-      |> Class.attribute
-           ~transitive:true
-           ~class_attributes
-           ~resolution
-           ~name:attribute_name
-           ~instantiated
+      Class.attribute
+        parent
+        ~transitive:true
+        ~class_attributes
+        ~resolution
+        ~name:attribute_name
+        ~instantiated
       |> Node.value
     in
     assert_equal
@@ -666,21 +684,6 @@ let test_class_attributes _ =
       ~printer:Attribute.show_attribute
       expected_attribute
       actual_attribute
-  in
-  let parent =
-    {|
-    class Attributes(metaclass=Metaclass):
-      def Attributes.bar(self) -> int:
-        pass
-      def Attributes.baz(self, x:int) -> int:
-        pass
-      def Attributes.baz(self, x:str) -> str:
-        pass
-      @property
-      def Attributes.property(self) -> str:
-        pass
-    |}
-    |> parse_single_class
   in
   let create_expected_attribute
       ?(property = None)
