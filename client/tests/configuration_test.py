@@ -205,6 +205,16 @@ class ConfigurationTest(unittest.TestCase):
 
         with patch("os.path.dirname", side_effect=directory_side_effect):
             json_load.side_effect = [
+                {"ignore_all_errors": ["abc/def", "/abc/def", "~/abc/def"]},
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(
+                configuration.ignore_all_errors,
+                ["/root/abc/def", "/abc/def", "/home/user/abc/def"],
+            )
+
+            json_load.side_effect = [
                 {
                     "taint_models_path": ".pyre/taint_models",
                     "search_path": "simple_string/",

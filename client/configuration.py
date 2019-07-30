@@ -121,6 +121,14 @@ class _ConfigurationFile:
         }
 
 
+def expand_relative_path(root: str, path: str) -> str:
+    path = os.path.expanduser(path)
+    if os.path.isabs(path):
+        return path
+    else:
+        return os.path.join(root, path)
+
+
 class Configuration:
     disabled = False  # type: bool
 
@@ -407,15 +415,10 @@ class Configuration:
                 ignore_all_errors += configuration.consume("do_not_check", default=[])
                 configuration_path = os.path.dirname(os.path.realpath(path))
                 self.ignore_all_errors.extend(
-                    map(
-                        lambda do_not_check_relative_to_configuration: os.path.realpath(
-                            os.path.join(
-                                configuration_path,
-                                do_not_check_relative_to_configuration,
-                            )
-                        ),
-                        ignore_all_errors,
-                    )
+                    [
+                        expand_relative_path(root=configuration_path, path=path)
+                        for path in ignore_all_errors
+                    ]
                 )
 
                 self.number_of_workers = int(
