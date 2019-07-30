@@ -1151,20 +1151,24 @@ let test_register_dependencies _ =
 
 
 let test_purge _ =
-  let handler = Environment.in_process_handler () in
+  let handler = Environment.shared_memory_handler ~local_mode:(fun _ -> None) () in
   let source =
     {|
       import a
       class P(typing.Protocol): pass
-      class baz.baz(): pass
+      class baz(): pass
       _T = typing.TypeVar("_T")
       x = 5
       def foo(): pass
     |}
   in
-  Test.populate ~configuration handler [parse ~handle:"test.py" source];
+  Environment.fill_shared_memory_with_default_typeorder ();
+  Environment.add_special_classes handler;
+  Environment.add_dummy_modules handler;
+  Environment.add_special_globals handler;
+  Test.populate ~configuration handler [parse ~handle:"test.py" source |> Preprocessing.preprocess];
   let global_resolution = Environment.resolution handler () in
-  assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "baz.baz"));
+  assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
   assert_is_some (GlobalResolution.aliases global_resolution "test._T");
   let dependencies relative =
     Environment.dependencies handler (SourcePath.qualifier_of_relative relative)
@@ -1172,14 +1176,20 @@ let test_purge _ =
     >>| String.Set.Tree.to_list
   in
   assert_equal (dependencies "a.py") (Some ["test"]);
-  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "P"));
-  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "baz.baz"));
+  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
+  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
+  assert_true (GlobalResolution.is_tracked global_resolution "test.P");
+  let class_hierarchy = Environment.class_hierarchy handler in
+  ClassHierarchy.check_integrity class_hierarchy;
   Environment.purge handler [Reference.create "test"];
-  assert_is_none (GlobalResolution.class_definition global_resolution (Primitive "baz.baz"));
-  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "P"));
-  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "baz.baz"));
+  assert_is_none (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
+  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
+  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_is_none (GlobalResolution.aliases global_resolution "test._T");
-  assert_equal (dependencies "a.py") (Some [])
+  assert_false (GlobalResolution.is_tracked global_resolution "test.P");
+  assert_equal (dependencies "a.py") (Some []);
+  ClassHierarchy.check_integrity class_hierarchy;
+  ()
 
 
 let test_propagate_nested_classes _ =

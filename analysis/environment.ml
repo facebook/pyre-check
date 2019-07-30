@@ -1776,8 +1776,27 @@ module SharedMemoryPartialHandler = struct
     Globals.remove_batch (Globals.KeySet.of_list keys);
 
     (* Remove the connection to the parent (if any) for all classes defined in the updated handles. *)
-    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
-    |> ClassHierarchy.disconnect_successors (module SharedMemoryClassHierarchyHandler);
+    let dead_classes =
+      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
+    in
+    let dead_indices =
+      List.filter_map
+        dead_classes
+        ~f:(SharedMemoryClassHierarchyHandler.find (SharedMemoryClassHierarchyHandler.indices ()))
+    in
+    dead_classes |> ClassHierarchy.disconnect_successors (module SharedMemoryClassHierarchyHandler);
+    OrderIndices.remove_batch (OrderIndices.KeySet.of_list dead_classes);
+    OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list dead_indices);
+    let remove_keys removed =
+      match OrderKeys.get Memory.SingletonKey.key with
+      | None -> ()
+      | Some keys ->
+          OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
+          let remaining = Set.diff (Int.Set.of_list keys) removed in
+          OrderKeys.add Memory.SingletonKey.key (Int.Set.to_list remaining)
+    in
+    remove_keys (Int.Set.of_list dead_indices);
+
     let class_keys =
       List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
       |> ClassDefinitions.KeySet.of_list
