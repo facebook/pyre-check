@@ -143,6 +143,8 @@ let generics ({ generics; class_definition; _ } as resolution) annotation =
       class_definition key >>| generics ~resolution)
 
 
+let variables { class_hierarchy; _ } = ClassHierarchy.variables class_hierarchy
+
 let check_invalid_type_parameters resolution annotation =
   let module InvalidTypeParametersTransform = Type.Transform.Make (struct
     type state = type_parameters_mismatch list
@@ -163,46 +165,35 @@ let check_invalid_type_parameters resolution annotation =
           | "typing.Final"
           | "typing_extensions.Final"
           | "typing.Optional" ->
-              Type.OrderedTypes.Concrete [Type.Variable (Type.Variable.Unary.create "T")]
-          | _ ->
-              generics resolution (Type.Primitive name)
-              |> Option.value ~default:(Type.OrderedTypes.Concrete [])
+              ClassHierarchy.Unaries [Type.Variable.Unary.create "T"]
+          | _ -> variables resolution name |> Option.value ~default:(ClassHierarchy.Unaries [])
         in
         let invalid_type_parameters ~name ~given =
           let generics = generics_for_name name in
+          let open ClassHierarchy in
           match generics, given with
-          | Concrete generics, Type.OrderedTypes.Concrete given -> (
+          | Unaries generics, Type.OrderedTypes.Concrete given -> (
             match List.zip generics given with
             | Ok [] -> Type.Primitive name, sofar
             | Ok paired ->
                 let check_parameter (generic, given) =
-                  match generic with
-                  | Type.Variable generic ->
-                      let invalid =
-                        let order =
-                          let order = full_order resolution in
-                          { order with any_is_bottom = true }
-                        in
-                        let pair = Type.Variable.UnaryPair (generic, given) in
-                        TypeOrder.OrderedConstraints.add_lower_bound
-                          TypeConstraints.empty
-                          ~order
-                          ~pair
-                        >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
-                        |> Option.is_none
-                      in
-                      if invalid then
-                        ( Type.Any,
-                          Some
-                            {
-                              name;
-                              kind = ViolateConstraints { actual = given; expected = generic };
-                            } )
-                      else
-                        given, None
-                  | _ ->
-                      (* TODO(T43939735): Enforce that Generic can only have variable parameters *)
-                      given, None
+                  let invalid =
+                    let order =
+                      let order = full_order resolution in
+                      { order with any_is_bottom = true }
+                    in
+                    let pair = Type.Variable.UnaryPair (generic, given) in
+                    TypeOrder.OrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
+                    >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                    |> Option.is_none
+                  in
+                  if invalid then
+                    ( Type.Any,
+                      Some
+                        { name; kind = ViolateConstraints { actual = given; expected = generic } }
+                    )
+                  else
+                    given, None
                 in
                 List.map paired ~f:check_parameter
                 |> List.unzip
@@ -219,20 +210,16 @@ let check_invalid_type_parameters resolution annotation =
                 in
                 ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),
                   mismatch :: sofar ) )
-          | Variable _, Any -> Type.parametric name given, sofar
-          | Concrete _, Variable _
-          | Concrete _, Any
-          | Concrete _, Map _ ->
+          | ListVariadic _, Any -> Type.parametric name given, sofar
+          | Unaries _, Variable _
+          | Unaries _, Any
+          | Unaries _, Map _ ->
               (* TODO(T47348228): reject with a new kind of error *)
               Type.parametric name given, sofar
-          | Variable _, Map _
-          | Variable _, Variable _
-          | Variable _, Concrete _ ->
+          | ListVariadic _, Map _
+          | ListVariadic _, Variable _
+          | ListVariadic _, Concrete _ ->
               (* TODO(T47348228): accept w/ new kind of validation *)
-              Type.parametric name given, sofar
-          | Map _, _
-          | Any, _ ->
-              (* TODO(T47348287): impossible, todo fix generics to not give this *)
               Type.parametric name given, sofar
         in
         match annotation with
@@ -383,8 +370,6 @@ let rec resolve_literal resolution expression =
 
 
 let undecorated_signature { undecorated_signature; _ } = undecorated_signature
-
-let variables { class_hierarchy; _ } = ClassHierarchy.variables class_hierarchy
 
 let aliases { aliases; _ } = aliases
 

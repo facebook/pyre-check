@@ -257,6 +257,7 @@ let test_register_aliases _ =
         |}
     ]
     ["collections.int", "int"; "collections.CDict", "typing.Dict[typing.Any, typing.Any]"];
+  (* TODO(T47348287): Returned aliases should be generic on 'int' *)
   assert_resolved
     [ parse
         ~handle:"asyncio/tasks.py"
@@ -268,9 +269,9 @@ let test_register_aliases _ =
            _FutureT = Union[Future[_T], Awaitable[_T]]
         |}
     ]
-    [ "asyncio.tasks.Future[int]", "asyncio.tasks.Future[int]";
+    [ "asyncio.tasks.Future[int]", "asyncio.tasks.Future[]";
       ( "asyncio.tasks._FutureT[int]",
-        "typing.Union[asyncio.tasks.Awaitable[int], asyncio.tasks.Future[int]]" ) ];
+        "typing.Union[asyncio.tasks.Awaitable[], asyncio.tasks.Future[]]" ) ];
   assert_resolved
     [ parse
         ~handle:"a.py"

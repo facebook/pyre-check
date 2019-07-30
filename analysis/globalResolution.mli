@@ -98,6 +98,8 @@ val solve_less_or_equal
 
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
+val variables : t -> Type.Primitive.t -> ClassHierarchy.variables option
+
 val check_invalid_type_parameters : t -> Type.t -> type_parameters_mismatch list * Type.t
 
 val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
@@ -117,8 +119,6 @@ val widen
   next:Type.t ->
   iteration:int ->
   Type.t
-
-val variables : t -> Type.Primitive.t -> ClassHierarchy.variables option
 
 val resolve_exports : t -> reference:Reference.t -> Reference.t
 
