@@ -42,6 +42,7 @@ class Analyze(Check):
         return flags
 
     def _run(self, retries: int = 1) -> None:
+        self._analysis_directory.prepare()
         result = self._call_client(command=self.NAME)
         result.check()
         log.stdout.write(result.output)

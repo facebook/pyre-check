@@ -171,6 +171,7 @@ def resolve_analysis_directory(
         )
     else:
         build = arguments.build or arguments.command in [
+            commands.Analyze,
             commands.Check,
             commands.Restart,
         ]
