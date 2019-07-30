@@ -85,7 +85,7 @@ let analyze
             Map.merge_skewed overrides new_overrides ~combine
       with
       | ClassHierarchy.Untracked untracked_type ->
-          Log.info
+          Log.warning
             "Error building overrides in path %a for untracked type %a"
             Reference.pp
             qualifier
