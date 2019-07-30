@@ -136,14 +136,9 @@ let full_order ({ class_hierarchy; attributes = a; protocol_assumptions; _ } as 
   }
 
 
-let generics ({ generics; class_definition; _ } as resolution) annotation =
-  primitive_name annotation
-  >>= fun key ->
-  Hashtbl.find_or_add Cache.Generics.cache key ~default:(fun _ ->
-      class_definition key >>| generics ~resolution)
+let variables ?(default = None) { class_hierarchy; _ } =
+  ClassHierarchy.variables ~default class_hierarchy
 
-
-let variables { class_hierarchy; _ } = ClassHierarchy.variables class_hierarchy
 
 let check_invalid_type_parameters resolution annotation =
   let module InvalidTypeParametersTransform = Type.Transform.Make (struct
@@ -291,11 +286,14 @@ let widen resolution = full_order resolution |> TypeOrder.widen
 
 (* In general, python expressions can be self-referential. This resolution only checks literals and
    annotations found in the resolution map, without resolving expressions. *)
-let rec resolve_literal resolution expression =
+let rec resolve_literal ({ class_definition; _ } as resolution) expression =
   let open Ast.Expression in
   let is_concrete_constructable class_type =
-    generics resolution class_type
-    >>| Type.OrderedTypes.equal (Concrete [])
+    primitive_name class_type
+    >>= class_definition
+    >>| (fun { Node.value = { Class.name; _ }; _ } -> Reference.show name)
+    >>= variables ~default:(Some (ClassHierarchy.Unaries [])) resolution
+    >>| ClassHierarchy.equal_variables (ClassHierarchy.Unaries [])
     |> Option.value ~default:false
   in
   match Node.value expression with

@@ -126,8 +126,13 @@ val successors : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 type variables =
   | Unaries of Type.Variable.Unary.t list
   | ListVariadic of Type.Variable.Variadic.List.t
+[@@deriving compare, eq, sexp, show]
 
-val variables : (module Handler) -> Type.Primitive.t -> variables option
+val variables
+  :  ?default:variables option ->
+  (module Handler) ->
+  Type.Primitive.t ->
+  variables option
 
 val least_upper_bound
   :  (module Handler) ->

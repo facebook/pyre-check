@@ -361,6 +361,7 @@ let successors ((module Handler : Handler) as order) annotation =
 type variables =
   | Unaries of Type.Variable.Unary.t list
   | ListVariadic of Type.Variable.Variadic.List.t
+[@@deriving compare, eq, sexp, show]
 
 let clean = function
   | Type.OrderedTypes.Concrete parameters ->
@@ -375,7 +376,7 @@ let clean = function
       None
 
 
-let variables (module Handler : Handler) = function
+let variables ?(default = None) (module Handler : Handler) = function
   | "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
@@ -384,15 +385,19 @@ let variables (module Handler : Handler) = function
       (* This is not the "real" typing.Callable. We are just proxying to the Callable instance in
          the type order here. *)
       Some (Unaries [Type.Variable.Unary.create ~variance:Covariant "_T_meta"])
-  | node ->
-      Handler.find (Handler.indices ()) generic_primitive
-      >>= fun generic_index ->
-      Handler.find (Handler.indices ()) node
-      >>= fun primitive_index ->
-      Handler.find (Handler.edges ()) primitive_index
-      >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
-      >>| (fun { Target.parameters; _ } -> parameters)
-      >>= clean
+  | node -> (
+      let edges =
+        Handler.find (Handler.indices ()) generic_primitive
+        >>= fun generic_index ->
+        Handler.find (Handler.indices ()) node
+        >>= fun primitive_index ->
+        Handler.find (Handler.edges ()) primitive_index
+        >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
+        >>| fun { Target.parameters; _ } -> parameters
+      in
+      match edges with
+      | None -> default
+      | Some edges -> clean edges )
 
 
 let get_generic_parameters ~generic_index edges =
