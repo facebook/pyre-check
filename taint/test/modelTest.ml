@@ -492,7 +492,21 @@ let test_invalid_models _ =
 
   (* Multiple features. *)
   assert_valid_model
-    ~model_source:"def sink(parameter: AttachToSink[Via[featureA, featureB]]): ..."
+    ~model_source:"def sink(parameter: AttachToSink[Via[featureA, featureB]]): ...";
+
+  (* Default values must be `...`. *)
+  assert_invalid_model
+    ~model_source:"def sink(parameter = TaintSink[Test]): ..."
+    ~expect:
+      "Invalid model for `sink`: Default values of parameters must be `...`. Did you mean to \
+       write `parameter: TaintSink[Test]`?"
+    ();
+  assert_invalid_model
+    ~model_source:"def sink(parameter = 1): ..."
+    ~expect:
+      "Invalid model for `sink`: Default values of parameters must be `...`. Did you mean to \
+       write `parameter: 1`?"
+    ()
 
 
 let () =

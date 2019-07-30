@@ -437,7 +437,22 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
   let parameter_requirements = create_parameters_requirements ~type_parameters in
   (* Once a requirement has been satisfied, it is removed from requirement object. At the end, we
      check whether there remains unsatisfied requirements. *)
-  let validate_model_parameter (errors, requirements) (model_parameter, _, _) =
+  let validate_model_parameter (errors, requirements) (model_parameter, _, original) =
+    (* Ensure that the parameter's default value is either not present or `...` to catch common
+       errors when declaring models. *)
+    let () =
+      match Node.value original with
+      | { Parameter.value = Some expression; name; _ } ->
+          if not (Expression.equal_expression (Node.value expression) Expression.Ellipsis) then
+            let message =
+              Format.sprintf
+                "Default values of parameters must be `...`. Did you mean to write `%s: %s`?"
+                name
+                (Expression.show expression)
+            in
+            raise_invalid_model message
+      | _ -> ()
+    in
     let open AccessPath.Root in
     match model_parameter with
     | LocalResult
