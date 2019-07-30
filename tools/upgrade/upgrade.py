@@ -412,12 +412,6 @@ def run_global_version_update(arguments: argparse.Namespace) -> None:
         LOG.error("No global configuration file found.")
         return
 
-    local_configurations = [
-        configuration
-        for configuration in Configuration.gather_local_configurations(arguments)
-        if configuration.is_local
-    ]
-
     with open(global_configuration, "r") as global_configuration_file:
         configuration = json.load(global_configuration_file)
         if "version" not in configuration:
@@ -437,19 +431,31 @@ def run_global_version_update(arguments: argparse.Namespace) -> None:
         json.dump(configuration, global_configuration_file, sort_keys=True, indent=2)
         global_configuration_file.write("\n")
 
-    for configuration in local_configurations:
-        path = configuration.get_path()
-        if "mock_repository" in path:
+    paths = arguments.paths
+    configuration_paths = (
+        [os.path.join(path, ".pyre_configuration.local") for path in paths]
+        if paths
+        else [
+            configuration.get_path()
+            for configuration in Configuration.gather_local_configurations(arguments)
+            if configuration.is_local
+        ]
+    )
+    for configuration_path in configuration_paths:
+        if "mock_repository" in configuration_path:
             # Skip local configurations we have for testing.
             continue
-        with open(path) as configuration_file:
+        with open(configuration_path) as configuration_file:
             contents = json.load(configuration_file)
             if "version" in contents:
-                LOG.info("Skipping %s as it already has a custom version field.", path)
+                LOG.info(
+                    "Skipping %s as it already has a custom version field.",
+                    configuration_path,
+                )
                 continue
             contents["version"] = old_version
 
-        with open(path, "w") as configuration_file:
+        with open(configuration_path, "w") as configuration_file:
             json.dump(contents, configuration_file, sort_keys=True, indent=2)
             configuration_file.write("\n")
 
@@ -629,6 +635,9 @@ def main():
     update_global_version.add_argument("hash", help="Hash of new Pyre version")
     update_global_version.add_argument(
         "-p", "--push-blocking-only", action="store_true"
+    )
+    update_global_version.add_argument(
+        "--paths", nargs="*", help="A list of paths to local Pyre projects.", default=[]
     )
     update_global_version.add_argument(
         "--submit", action="store_true", help=argparse.SUPPRESS

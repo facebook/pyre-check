@@ -977,6 +977,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.hash = "abcd"
+        arguments.paths = []
         arguments.push_blocking_only = False
         with patch("json.dump") as dump:
             mocks = [
@@ -1067,6 +1068,29 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                 call(["jf", "submit", "--update-fields"]),
             ]
             subprocess.assert_has_calls(calls)
+
+        # paths passed from arguments will override the local configuration list
+        # Therefore, we only read the first json configuration.
+        subprocess.reset_mock()
+        arguments.paths = ["foo/bar"]
+        arguments.push_blocking_only = False
+        arguments.submit = False
+        with patch("json.dump") as dump:
+            mocks = [
+                mock_open(read_data='{"version": "old"}').return_value,
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data='{"push_blocking": false}').return_value,
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data='{"push_blocking": true}').return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+
+            upgrade.run_global_version_update(arguments)
+            dump.assert_has_calls(
+                [call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True)]
+            )
+            subprocess.assert_has_calls([])
 
 
 class FilterErrorTest(unittest.TestCase):
