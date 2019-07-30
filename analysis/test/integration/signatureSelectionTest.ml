@@ -64,11 +64,11 @@ let test_check_callables context =
       class CallMeToo(CallMe):
         pass
 
-      def map(f: typing.Callable[[int], str], l: typing.List[int]) -> typing.List[str]:
+      def particular_map(f: typing.Callable[[int], str], l: typing.List[int]) -> typing.List[str]:
         ...
       def apply(x: CallMe, y: CallMeToo) -> None:
-        map(x, [])
-        map(y, [])
+        particular_map(x, [])
+        particular_map(y, [])
     |}
     [];
   assert_type_errors
@@ -79,17 +79,19 @@ let test_check_callables context =
       class CallMeToo(CallMe):
         pass
 
-      def map(f: typing.Callable[[int], str], l: typing.List[int]) -> typing.List[str]:
+      def particular_map(f: typing.Callable[[int], str], l: typing.List[int]) -> typing.List[str]:
         ...
       def apply(x: CallMe, y: CallMeToo) -> None:
-        map(x, [])
-        map(y, [])
+        particular_map(x, [])
+        particular_map(y, [])
     |}
     [ "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call `map` but got "
+      ^ "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call \
+         `particular_map` but got "
       ^ "`CallMe`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call `map` but got "
+      ^ "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call \
+         `particular_map` but got "
       ^ "`CallMeToo`." ];
 
   (* Sanity check: Callables do not subclass classes. *)
@@ -98,13 +100,13 @@ let test_check_callables context =
       class CallMe:
         def __call__(self, x: int) -> str:
           ...
-      def map(callable_object: CallMe, x: int) -> None:
+      def particular_map(callable_object: CallMe, x: int) -> None:
          callable_object(x)
       def apply(f: typing.Callable[[int], str]) -> None:
-        map(f, 1)
+        particular_map(f, 1)
     |}
     [ "Incompatible parameter type [6]: "
-      ^ "Expected `CallMe` for 1st anonymous parameter to call `map` but got "
+      ^ "Expected `CallMe` for 1st anonymous parameter to call `particular_map` but got "
       ^ "`typing.Callable[[int], str]`." ];
 
   (* The annotation for callable gets expanded automatically. *)
