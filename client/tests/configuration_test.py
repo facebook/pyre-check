@@ -6,6 +6,7 @@
 import hashlib  # noqa
 import os
 import shutil  # noqa
+import site
 import sys
 import unittest
 from typing import Any, Optional, cast
@@ -88,6 +89,12 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
         self.assertEqual(configuration.file_hash, None)
+
+        python_paths = site.getsitepackages()
+        json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
+        configuration = Configuration()
+        for python_path in python_paths:
+            self.assertIn("{}$abc".format(python_path), configuration.search_path)
 
         json_load.side_effect = [
             {

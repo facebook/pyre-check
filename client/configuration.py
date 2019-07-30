@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import shutil
+import site
 import sys
 from typing import Dict, List, Optional, Union
 
@@ -29,17 +30,9 @@ class InvalidConfiguration(Exception):
 
 
 class SearchPathElement:
-    def __init__(self, element: Union[Dict[str, str], str]) -> None:
-        if isinstance(element, str):
-            self.root = os.path.abspath(os.path.expanduser(element))
-            self.subdirectory = None
-        else:
-            if "root" not in element or "subdirectory" not in element:
-                raise InvalidConfiguration(
-                    "Search path elements must have `root` and `subdirectory` specified."
-                )
-            self.root = os.path.abspath(os.path.expanduser(element["root"]))
-            self.subdirectory = element["subdirectory"]
+    def __init__(self, root: str, subdirectory: Optional[str] = None) -> None:
+        self.root = os.path.expanduser(root)
+        self.subdirectory = subdirectory
 
     def path(self) -> str:
         subdirectory = self.subdirectory
@@ -61,6 +54,24 @@ class SearchPathElement:
             return self.path() == other
         else:
             return self.root == other.root and self.subdirectory == other.subdirectory
+
+
+def expand_search_path(path: Union[Dict[str, str], str]) -> List[SearchPathElement]:
+    if isinstance(path, str):
+        return [SearchPathElement(path)]
+    else:
+        if "root" in path and "subdirectory" in path:
+            root = path["root"]
+            subdirectory = path["subdirectory"]
+            return [SearchPathElement(root, subdirectory)]
+        elif "site-package" in path:
+            site_root = site.getsitepackages()
+            subdirectory = path["site-package"]
+            return [SearchPathElement(root, subdirectory) for root in site_root]
+        else:
+            raise InvalidConfiguration(
+                "Search path elements must have `root` and `subdirectory` specified."
+            )
 
 
 class _ConfigurationFile:
@@ -158,7 +169,11 @@ class Configuration:
             ]
             self._search_path.extend(sys_path)
         if search_path:
-            search_path_elements = [SearchPathElement(path) for path in search_path]
+            search_path_elements = [
+                expanded_search_path
+                for path in search_path
+                for expanded_search_path in expand_search_path(path)
+            ]
             self._search_path.extend(search_path_elements)
         # We will extend the search path further, with the config file
         # items, inside _read().
@@ -422,8 +437,9 @@ class Configuration:
                 if isinstance(additional_search_path, list):
                     self._search_path.extend(
                         [
-                            SearchPathElement(element)
-                            for element in additional_search_path
+                            expanded_path
+                            for path in additional_search_path
+                            for expanded_path in expand_search_path(path)
                         ]
                     )
                 else:
