@@ -50,6 +50,7 @@ class BasicTestCase(unittest.TestCase):
             from .. import none_throws
 
             none_throws(0)
+            none_throws(0, "custom message")
         except Exception:
             self.fail("none_throws missing or broken")
 
