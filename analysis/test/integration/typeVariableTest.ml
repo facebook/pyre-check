@@ -844,6 +844,25 @@ let test_list_variadics context =
       return x
     |}
     ["Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, str, bool]`."];
+  assert_type_errors
+    {|
+    from typing import List
+    Ts = pyre_extensions.ListVariadic("Ts")
+    def bad(x: List[Ts]) -> None:
+      pass
+    |}
+    [ "Invalid type parameters [24]: Concrete type parameter `Variable[_T]` expected, but a \
+       variadic type parameter `ListVariadic[Ts]` was given for generic type list." ];
+  assert_type_errors
+    {|
+     from typing import Dict
+     Ts = pyre_extensions.ListVariadic("Ts")
+     def bad(x: Dict[Ts]) -> None:
+       pass
+     |}
+    [ "Invalid type parameters [24]: Concrete type parameters `Variable[_T], Variable[_S]` \
+       expected, but a variadic type parameter `ListVariadic[Ts]` was given for generic type dict."
+    ];
 
   (* Concatenation isn't implemented yet, and I'm not even sure this is going to be the final
    * syntax for it *)
@@ -1153,6 +1172,17 @@ let test_map context =
        `typing.Tuple[int, str]`.";
       "Revealed type [-1]: Revealed type for `await better_gather(*$local_foo$many)` is \
        `typing.Tuple[int, str, int, str, int, str, int, str, int]`." ];
+  assert_type_errors
+    {|
+     from typing import List
+     from pyre_extensions import ListVariadic
+     from pyre_extensions.type_variable_operators import Map
+     Ts = ListVariadic("Ts")
+     def bad(x: List[Map[List, Ts]]) -> None:
+      pass
+     |}
+    [ "Invalid type parameters [24]: Concrete type parameter `Variable[_T]` expected, but a \
+       variadic type parameter `Map[list, Ts]` was given for generic type list." ];
 
   ()
 

@@ -15,6 +15,10 @@ type generic_type_problems =
       actual: Type.t;
       expected: Type.Variable.Unary.t;
     }
+  | UnexpectedVariadic of {
+      actual: Type.OrderedTypes.t;
+      expected: Type.Variable.Unary.t list;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 type type_parameters_mismatch = {

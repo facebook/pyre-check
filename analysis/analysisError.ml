@@ -867,6 +867,25 @@ let messages ~concise ~signature location kind =
           pp_type
           (Type.Variable expected)
           name ]
+  | InvalidTypeParameters { name; kind = GlobalResolution.UnexpectedVariadic { expected; actual } }
+    ->
+      let parameter_pluralization =
+        match expected with
+        | [_] -> "parameter"
+        | _ -> "parameters"
+      in
+      let expected_types =
+        List.map ~f:(fun unary -> Format.asprintf "%a" pp_type (Type.Variable unary)) expected
+        |> String.concat ~sep:", "
+      in
+      [ Format.asprintf
+          "Concrete type %s `%s` expected, but a variadic type parameter `%a` was given for \
+           generic type %s."
+          parameter_pluralization
+          expected_types
+          Type.OrderedTypes.pp_concise
+          actual
+          name ]
   | InvalidTypeVariable { annotation; origin } when concise -> (
       let format : ('b, Format.formatter, unit, string) format4 =
         match origin with

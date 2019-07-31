@@ -17,6 +17,10 @@ type generic_type_problems =
       actual: Type.t;
       expected: Type.Variable.Unary.t;
     }
+  | UnexpectedVariadic of {
+      actual: Type.OrderedTypes.t;
+      expected: Type.Variable.Unary.t list;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 type type_parameters_mismatch = {
@@ -190,11 +194,13 @@ let check_invalid_type_parameters resolution annotation =
                 ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),
                   mismatch :: sofar ) )
           | ListVariadic _, Any -> Type.parametric name given, sofar
-          | Unaries _, Variable _
-          | Unaries _, Any
-          | Unaries _, Map _ ->
-              (* TODO(T47348228): reject with a new kind of error *)
-              Type.parametric name given, sofar
+          | Unaries generics, Variable _
+          | Unaries generics, Any
+          | Unaries generics, Map _ ->
+              let mismatch =
+                { name; kind = UnexpectedVariadic { expected = generics; actual = given } }
+              in
+              Type.parametric name given, mismatch :: sofar
           | ListVariadic _, Map _
           | ListVariadic _, Variable _
           | ListVariadic _, Concrete _ ->
