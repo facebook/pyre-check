@@ -366,7 +366,11 @@ def _upgrade_project(
     if not configuration.is_local or not configuration.version:
         return
     configuration.remove_version()
-    errors = configuration.get_errors()
+    errors = (
+        errors_from_stdin(arguments)
+        if arguments.from_stdin
+        else configuration.get_errors()
+    )
     if len(errors) > 0:
         fix(arguments, sort_errors(errors))
 
@@ -655,6 +659,9 @@ def main():
     fixme_single.set_defaults(function=run_fixme_single)
     fixme_single.add_argument(
         "path", help="Path to project root with local configuration"
+    )
+    fixme_single.add_argument(
+        "--from-stdin", action="store_true", help=argparse.SUPPRESS
     )
     fixme_single.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
     fixme_single.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)

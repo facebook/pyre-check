@@ -161,12 +161,14 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
+    @patch("%s.errors_from_stdin" % upgrade.__name__)
     @patch("%s.run_global_version_update" % upgrade.__name__)
     @patch("%s.fix" % upgrade.__name__)
     def test_upgrade_project(
         self,
         fix,
         run_global_version_update,
+        errors_from_stdin,
         gather,
         get_errors,
         remove_version,
@@ -174,6 +176,7 @@ class FixmeAllTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.lint = False
+        arguments.from_stdin = False
         gather.return_value = []
         upgrade.run_fixme_all(arguments)
         fix.assert_not_called()
@@ -207,8 +210,42 @@ class FixmeAllTest(unittest.TestCase):
         # Test with lint
         subprocess.reset_mock()
         fix.reset_mock()
+        arguments.from_stdin = False
         arguments.lint = True
         upgrade._upgrade_project(arguments, configuration, "/root")
+        errors_from_stdin.assert_not_called()
+        run_global_version_update.assert_not_called()
+        fix.called_once_with(arguments, upgrade.sort_errors(errors))
+        calls = [
+            call(
+                [
+                    "arc",
+                    "lint",
+                    "--never-apply-patches",
+                    "--enforce-lint-clean",
+                    "--output",
+                    "none",
+                ]
+            ),
+            call().__bool__(),
+            call(["arc", "lint", "--apply-patches", "--output", "none"]),
+            call(["hg", "commit", "--message", upgrade._commit_message("local")]),
+        ]
+        subprocess.assert_has_calls(calls)
+
+        # Test with from_stdin and lint
+        subprocess.reset_mock()
+        fix.reset_mock()
+        get_errors.reset_mock()
+        arguments.from_stdin = True
+        arguments.lint = True
+        errors_from_stdin.return_value = errors
+        get_errors.return_value = errors
+        upgrade._upgrade_project(arguments, configuration, "/root")
+        # Called in the first round to get initial errors
+        errors_from_stdin.assert_called()
+        # Called in the second round to get new errors after applying lint.
+        get_errors.assert_called_once()
         run_global_version_update.assert_not_called()
         fix.called_once_with(arguments, upgrade.sort_errors(errors))
         calls = [
