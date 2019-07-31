@@ -1,6 +1,7 @@
 # @nolint
 from typing import Any, Dict
 
+
 def dictionary_source():
     result = {"a": __test_source()}
     return result

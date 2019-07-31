@@ -3,8 +3,8 @@
 
 class Class:
     def __init__():
-        self.tainted = ''
-        self.untainted = ''
+        self.tainted = ""
+        self.untainted = ""
 
     @property
     def my_property(self) -> str:
