@@ -47,7 +47,6 @@ type t = {
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
   protocol_assumptions: TypeOrder.ProtocolAssumptions.t;
   global: Reference.t -> global option;
-  local_mode: string -> Source.mode option;
 }
 
 let create
@@ -61,7 +60,6 @@ let create
     ~attributes
     ~is_protocol
     ~global
-    ~local_mode
     ()
   =
   {
@@ -76,7 +74,6 @@ let create
     is_protocol;
     protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
     global;
-    local_mode;
   }
 
 
@@ -590,5 +587,3 @@ let class_extends_placeholder_stub_class
 
 
 let global { global; _ } = global
-
-let local_mode { local_mode; _ } = local_mode

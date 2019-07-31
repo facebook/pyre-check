@@ -7,7 +7,6 @@ open Core
 module ServiceTypeOrder = TypeOrder
 open Analysis
 open Pyre
-open PostprocessSharedMemory
 
 let populate
     environment
@@ -92,7 +91,7 @@ let build environment ~configuration ~scheduler qualifiers =
     File.create ~content:(ClassHierarchy.to_dot hierarchy) type_order_file |> File.write )
 
 
-let shared_handler = Environment.shared_memory_handler ~local_mode:ErrorModes.get ()
+let shared_handler = Environment.shared_memory_handler ()
 
 (** First dumps environment to shared memory, then exposes through Environment_handler *)
 let populate_shared_memory

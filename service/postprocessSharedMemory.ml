@@ -51,16 +51,5 @@ module LocationListValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module ModeValue = struct
-  type t = Source.mode
-
-  let prefix = Prefix.make ()
-
-  let description = "Mode"
-
-  let unmarshall value = Marshal.from_string value 0
-end
-
 module IgnoreLines = SharedMemory.NoCache (LocationKey) (IgnoreValue)
 module IgnoreKeys = SharedMemory.NoCache (StringKey) (LocationListValue)
-module ErrorModes = SharedMemory.NoCache (StringKey) (ModeValue)

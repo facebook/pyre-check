@@ -53,8 +53,6 @@ module type Handler = sig
 
   val dependencies : Reference.t -> Reference.Set.Tree.t option
 
-  val local_mode : string -> Source.mode option
-
   val transaction : ?only_global_keys:bool -> f:(unit -> 'a) -> unit -> 'a
 
   module DependencyHandler : Dependencies.Handler
@@ -151,7 +149,6 @@ let resolution (module Handler : Handler) () =
     ~attributes
     ~is_protocol
     ~global
-    ~local_mode:Handler.local_mode
     ()
 
 
@@ -1627,13 +1624,7 @@ module SharedMemoryPartialHandler = struct
       ClassHierarchy.check_integrity (module SharedMemoryClassHierarchyHandler)
 end
 
-let shared_memory_handler ~local_mode () =
-  ( module struct
-    include SharedMemoryPartialHandler
-
-    let local_mode = local_mode
-  end : Handler )
-
+let shared_memory_handler () = (module SharedMemoryPartialHandler : Handler)
 
 let normalize_shared_memory qualifiers =
   (* Since we don't provide an API to the raw order keys in the type order handler, handle it

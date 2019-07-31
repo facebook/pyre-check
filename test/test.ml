@@ -1151,7 +1151,7 @@ let populate_shared_memory =
 
 
 let environment ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
-  let environment = Environment.shared_memory_handler ~local_mode:(fun _ -> None) () in
+  let environment = Environment.shared_memory_handler () in
   populate ~configuration environment sources;
   environment
 

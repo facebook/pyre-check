@@ -55,7 +55,7 @@ val register_class_metadata : t -> Identifier.t -> unit
 
 val transaction : t -> ?only_global_keys:bool -> f:(unit -> 'a) -> unit -> 'a
 
-val shared_memory_handler : local_mode:(string -> Source.mode option) -> unit -> t
+val shared_memory_handler : unit -> t
 
 val normalize_shared_memory : Reference.t list -> unit
 

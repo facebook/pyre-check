@@ -174,9 +174,7 @@ let test_register_modules context =
       let module_definition =
         let module_get =
           let global_resolution =
-            Analysis.Environment.resolution
-              (Analysis.Environment.shared_memory_handler ~local_mode:(fun _ -> None) ())
-              ()
+            Analysis.Environment.resolution (Analysis.Environment.shared_memory_handler ()) ()
           in
           Analysis.GlobalResolution.module_definition global_resolution
         in

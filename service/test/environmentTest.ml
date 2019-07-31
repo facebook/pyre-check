@@ -178,7 +178,7 @@ let test_populate context =
     let _ = ScratchProject.parse_sources project in
     ScratchProject.configuration_of project
   in
-  let environment = Analysis.Environment.shared_memory_handler ~local_mode:(fun _ -> None) () in
+  let environment = Analysis.Environment.shared_memory_handler () in
   Service.Environment.populate_shared_memory ~configuration ~scheduler:(Scheduler.mock ()) [!&"a"];
   let global_resolution = Analysis.Environment.resolution environment () in
   let (module DependenciesHandler) = Environment.dependency_handler environment in

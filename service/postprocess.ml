@@ -19,10 +19,8 @@ let register_ignores ~configuration scheduler source_paths =
     |> IgnoreLines.remove_batch;
     handles |> IgnoreKeys.KeySet.of_list |> IgnoreKeys.remove_batch
   in
-  let remove_modes handles = ErrorModes.KeySet.of_list handles |> ErrorModes.remove_batch in
   let timer = Timer.start () in
   remove_ignores handles;
-  remove_modes handles;
 
   (* Register new values *)
   let register_ignore { SourcePath.relative; qualifier; _ } =
@@ -43,16 +41,7 @@ let register_ignores ~configuration scheduler source_paths =
         IgnoreKeys.add relative (List.map ~f:Ignore.key ignore_lines)
     | _ -> ()
   in
-  let register_local_mode { SourcePath.relative; qualifier; _ } =
-    match Ast.SharedMemory.Sources.get qualifier with
-    | Some { metadata = { Ast.Source.Metadata.local_mode; _ }; _ } ->
-        ErrorModes.add relative local_mode
-    | _ -> ()
-  in
-  let register source_paths =
-    List.iter source_paths ~f:register_ignore;
-    List.iter source_paths ~f:register_local_mode
-  in
+  let register source_paths = List.iter source_paths ~f:register_ignore in
   Scheduler.iter scheduler ~configuration ~f:register ~inputs:source_paths;
   Statistics.performance ~name:"registered ignores" ~timer ()
 
