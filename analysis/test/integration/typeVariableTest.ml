@@ -341,7 +341,7 @@ let test_check_variable_bindings context =
       class BadChild(ConstrainedBase[str]): pass
     |}
     [ "Invalid type parameters [24]: Type parameter `str` violates constraints on "
-      ^ "`Variable[T (bound to int)]` in generic type `ConstrainedBase`" ];
+      ^ "`Variable[T (bound to int)]` in generic type `ConstrainedBase`." ];
   assert_type_errors
     {|
       T = typing.TypeVar('T', bound=int)
@@ -484,11 +484,11 @@ let test_unbound_variables context =
         return g
     |}
     [ "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
+      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
       "Incompatible variable type [9]: g is declared to have type `G[typing.Any]` but is used "
       ^ "as type `G[Variable[T_Explicit <: [int, str]]]`.";
       "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
+      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
       "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`." ];
   assert_type_errors
     ~debug:false
@@ -503,9 +503,9 @@ let test_unbound_variables context =
         return g
     |}
     [ "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
+      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
       "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
+      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
       "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`." ];
   assert_type_errors
     {|
@@ -518,7 +518,7 @@ let test_unbound_variables context =
         reveal_type(g)
     |}
     [ "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
-      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
+      ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
       "Revealed type [-1]: Revealed type for `g` is `G[typing.Any, bool]`." ];
   assert_type_errors
     {|
@@ -680,7 +680,7 @@ let test_distinguish context =
          bar(foo)
     |}
     [ "Mutually recursive type variables [36]: Solving type variables for call `bar` "
-      ^ "led to infinite recursion" ];
+      ^ "led to infinite recursion." ];
   assert_type_errors
     {|
       T = typing.TypeVar("T")
@@ -780,7 +780,7 @@ let test_callable_parameter_variadics context =
          def foo(self) -> int: ...
     |}
     [ "Invalid type variable [34]: Cannot propagate callable parameter variadic `V`.  "
-      ^ "Classes parameterized by callable parameter variadics are not supported at this time" ];
+      ^ "Classes parameterized by callable parameter variadics are not supported at this time." ];
   assert_type_errors
     ~handle:"qualifier.py"
     {|

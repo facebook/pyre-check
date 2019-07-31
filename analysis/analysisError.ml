@@ -504,7 +504,7 @@ let messages ~concise ~signature location kind =
         | Naming -> "add an explicit annotation."
         | Calling ->
             "cannot be called. "
-            ^ "Separate the expression into an assignment and give it an explicit annotation"
+            ^ "Separate the expression into an assignment and give it an explicit annotation."
         | AttributeAccess attribute ->
             Format.asprintf
               "so attribute `%s` cannot be accessed. Separate the expression into an assignment \
@@ -861,7 +861,7 @@ let messages ~concise ~signature location kind =
   | InvalidTypeParameters { name; kind = GlobalResolution.ViolateConstraints { expected; actual } }
     ->
       [ Format.asprintf
-          "Type parameter `%a` violates constraints on `%a` in generic type `%s`"
+          "Type parameter `%a` violates constraints on `%a` in generic type `%s`."
           pp_type
           actual
           pp_type
@@ -881,13 +881,13 @@ let messages ~concise ~signature location kind =
           let name = Type.Variable.Variadic.Parameters.name variable in
           if origin = ClassToplevel then
             [ "Classes parameterized by callable parameter variadics are not supported at "
-              ^ "this time" ]
+              ^ "this time." ]
           else
             [Format.asprintf format name]
       | Type.Variable.ListVariadic variable ->
           let name = Type.Variable.Variadic.List.name variable in
           if origin = ClassToplevel then
-            ["Classes parameterized by list variadics are not supported at this time"]
+            ["Classes parameterized by list variadics are not supported at this time."]
           else
             [Format.asprintf format name] )
   | InvalidTypeVariable { annotation; origin } -> (
@@ -908,7 +908,7 @@ let messages ~concise ~signature location kind =
           if origin = ClassToplevel then
             [ Format.asprintf
                 "Cannot propagate callable parameter variadic `%s`.  Classes parameterized by \
-                 callable parameter variadics are not supported at this time"
+                 callable parameter variadics are not supported at this time."
                 name ]
           else
             [Format.asprintf format name]
@@ -917,7 +917,7 @@ let messages ~concise ~signature location kind =
           if origin = ClassToplevel then
             [ Format.asprintf
                 "Cannot propagate list variadic `%s`.  Classes parameterized by list variadics \
-                 are not supported at this time"
+                 are not supported at this time."
                 name ]
           else
             [Format.asprintf format name] )
@@ -979,7 +979,7 @@ let messages ~concise ~signature location kind =
         [Format.asprintf "`%a` cannot be reassigned. It is a read-only property." pp_reference name]
     )
   | InvalidClass name when concise ->
-      [Format.asprintf "`%a` non-abstract class with abstract methods" pp_reference name]
+      [Format.asprintf "`%a` non-abstract class with abstract methods." pp_reference name]
   | InvalidClass name ->
       [ Format.asprintf
           "`%a` is a non-abstract class with abstract methods. Did you mean to make this class \
@@ -1199,7 +1199,7 @@ let messages ~concise ~signature location kind =
             annotation ]
     | Some given_annotation when Type.contains_any given_annotation ->
         [ Format.asprintf
-            "Parameter `%a` is used as type `%a` and must have a type that does not contain `Any`"
+            "Parameter `%a` is used as type `%a` and must have a type that does not contain `Any`."
             pp_reference
             name
             pp_type
@@ -1271,7 +1271,7 @@ let messages ~concise ~signature location kind =
         | Some callee -> Format.asprintf "call `%a`" pp_reference callee
         | _ -> "anoynmous call"
       in
-      [Format.asprintf "Solving type variables for %s led to infinite recursion" callee]
+      [Format.asprintf "Solving type variables for %s led to infinite recursion." callee]
   | NotCallable
       ( Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ }
       as annotation ) ->
