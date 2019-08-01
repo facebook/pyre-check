@@ -204,7 +204,7 @@ let check_invalid_type_parameters resolution annotation =
           | ListVariadic _, Map _
           | ListVariadic _, Variable _
           | ListVariadic _, Concrete _ ->
-              (* TODO(T47348228): accept w/ new kind of validation *)
+              (* TODO(T47346673): accept w/ new kind of validation *)
               Type.parametric name given, sofar
         in
         match annotation with
@@ -514,7 +514,7 @@ let is_invariance_mismatch ({ class_hierarchy; _ } as resolution) ~left ~right =
       in
       let due_to_invariant_variable (variance, left, right) =
         match variance with
-        | Type.Variable.Unary.Invariant -> less_or_equal resolution ~left ~right
+        | Type.Variable.Invariant -> less_or_equal resolution ~left ~right
         | _ -> false
       in
       zipped >>| List.exists ~f:due_to_invariant_variable |> Option.value ~default:false

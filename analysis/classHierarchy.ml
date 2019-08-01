@@ -282,7 +282,7 @@ let contains (module Handler : Handler) annotation =
 
 let is_instantiated (module Handler : Handler) annotation =
   let is_invalid = function
-    | Type.Variable { constraints = Type.Variable.Unary.Unconstrained; _ } -> true
+    | Type.Variable { constraints = Type.Variable.Unconstrained; _ } -> true
     | Type.Primitive name
     | Type.Parametric { name; _ } ->
         not (Handler.contains (Handler.indices ()) name)

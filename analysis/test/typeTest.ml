@@ -115,26 +115,26 @@ let test_create _ =
   assert_create "typing.TypeVar('_T', $parameter$contravariant=False)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', int)"
-    (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "_T");
+    (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
   assert_create "typing.TypeVar('_T', name=int)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', $parameter$bound=int)"
-    (Type.variable ~constraints:(Type.Variable.Unary.Bound Type.integer) "_T");
+    (Type.variable ~constraints:(Type.Variable.Bound Type.integer) "_T");
   assert_create
     "typing.TypeVar('_T', $parameter$bound='C')"
-    (Type.variable ~constraints:(Type.Variable.Unary.Bound (Type.Primitive "C")) "_T");
+    (Type.variable ~constraints:(Type.Variable.Bound (Type.Primitive "C")) "_T");
   assert_create
     "typing.TypeVar('_T', 'C', X)"
     (Type.variable
-       ~constraints:(Type.Variable.Unary.Explicit [Type.Primitive "C"; Type.Primitive "X"])
+       ~constraints:(Type.Variable.Explicit [Type.Primitive "C"; Type.Primitive "X"])
        "_T");
   assert_create
     "typing.TypeVar('_T', int, name=float)"
-    (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "_T");
+    (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
   assert_create
     "typing.TypeVar('_CallableT', bound='typing.Callable')"
     (Type.variable
-       ~constraints:(Type.Variable.Unary.Bound (Type.Callable.create ~annotation:Type.Any ()))
+       ~constraints:(Type.Variable.Bound (Type.Callable.create ~annotation:Type.Any ()))
        "_CallableT");
 
   (* Check that type aliases are resolved. *)
@@ -636,7 +636,7 @@ let test_concise _ =
        })
     "TypedDict(year: int, name: str)";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
-  assert_concise (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T") "T"
+  assert_concise (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T") "T"
 
 
 let test_union _ =
@@ -680,10 +680,10 @@ let test_primitives _ =
   assert_equal [Type.integer] (Type.primitives (Type.Tuple (Type.Unbounded Type.integer)));
   assert_equal
     []
-    (Type.primitives (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T"));
+    (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
   assert_equal
     [Type.integer]
-    (Type.primitives (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
+    (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
   assert_equal
     [Type.integer]
     (Type.primitives (Type.parametric "parametric" ![Type.integer; Type.Top]));
@@ -725,10 +725,10 @@ let test_elements _ =
   assert_equal ["int"; "tuple"] (Type.elements (Type.Tuple (Type.Unbounded Type.integer)));
   assert_equal
     []
-    (Type.elements (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T"));
+    (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
   assert_equal
     ["int"]
-    (Type.elements (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
+    (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
   assert_equal
     ["int"; "parametric"]
     (Type.elements (Type.parametric "parametric" ![Type.integer; Type.Top]));
@@ -769,10 +769,9 @@ let test_exists _ =
   assert_false (top_exists (Type.optional Type.integer));
   assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
   assert_false (top_exists (Type.Tuple (Type.Unbounded Type.integer)));
-  assert_true
-    (top_exists (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T"));
+  assert_true (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
   assert_false
-    (top_exists (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
+    (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
   assert_true (top_exists (Type.parametric "parametric" ![Type.integer; Type.Top]));
   assert_false (top_exists (Type.parametric "parametric" ![Type.integer; Type.string]));
   assert_true (top_exists (Type.tuple [Type.Top; Type.string]));

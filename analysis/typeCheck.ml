@@ -2006,17 +2006,16 @@ module State (Context : Context) = struct
                 match Type.single_parameter meta with
                 | TypedDictionary { name; fields; total } ->
                     Type.TypedDictionary.constructor ~name ~fields ~total |> Option.some
-                | Variable { constraints = Type.Variable.Unary.Unconstrained; _ } -> backup
-                | Variable { constraints = Type.Variable.Unary.Explicit constraints; _ }
+                | Variable { constraints = Type.Variable.Unconstrained; _ } -> backup
+                | Variable { constraints = Type.Variable.Explicit constraints; _ }
                   when List.length constraints > 1 ->
                     backup
                 | Any -> backup
                 | meta_parameter -> (
                     let parent =
                       match meta_parameter with
-                      | Variable { constraints = Type.Variable.Unary.Explicit [parent]; _ } ->
-                          parent
-                      | Variable { constraints = Type.Variable.Unary.Bound parent; _ } -> parent
+                      | Variable { constraints = Type.Variable.Explicit [parent]; _ } -> parent
+                      | Variable { constraints = Type.Variable.Bound parent; _ } -> parent
                       | _ -> meta_parameter
                     in
                     GlobalResolution.class_definition global_resolution parent

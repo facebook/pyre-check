@@ -16,24 +16,24 @@ module Record = struct
       | InFunction
     [@@deriving compare, eq, sexp, show, hash]
 
+    type 'annotation constraints =
+      | Bound of 'annotation
+      | Explicit of 'annotation list
+      | Unconstrained
+      | LiteralIntegers
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type variance =
+      | Covariant
+      | Contravariant
+      | Invariant
+    [@@deriving compare, eq, sexp, show, hash]
+
     module RecordNamespace = struct
       type t = int [@@deriving compare, eq, sexp, show, hash]
     end
 
     module RecordUnary = struct
-      type 'annotation constraints =
-        | Bound of 'annotation
-        | Explicit of 'annotation list
-        | Unconstrained
-        | LiteralIntegers
-      [@@deriving compare, eq, sexp, show, hash]
-
-      type variance =
-        | Covariant
-        | Contravariant
-        | Invariant
-      [@@deriving compare, eq, sexp, show, hash]
-
       type 'annotation record = {
         variable: Identifier.t;
         constraints: 'annotation constraints;
@@ -83,9 +83,11 @@ module Record = struct
     end
 
     module RecordVariadic = struct
+      (* TODO(T47346673): Handle variance on variadics. *)
       module RecordParameters = struct
-        type record = {
+        type 'annotation record = {
           name: Identifier.t;
+          variance: variance;
           state: state;
           namespace: RecordNamespace.t;
         }
@@ -99,6 +101,7 @@ module Record = struct
 
           type t = {
             component: component;
+            variance: variance;
             variable_name: Identifier.t;
             variable_namespace: RecordNamespace.t;
           }
@@ -114,36 +117,40 @@ module Record = struct
             Format.fprintf format "%s[%s]" (component_name component) variable_name
         end
 
-        let create name = { name; state = Free { escaped = false }; namespace = 1 }
+        let create ?(variance = Invariant) name =
+          { name; variance; state = Free { escaped = false }; namespace = 1 }
       end
 
       module RecordList = struct
-        type record = {
+        type 'annotation record = {
           name: Identifier.t;
+          constraints: 'annotation constraints;
+          variance: variance;
           state: state;
           namespace: RecordNamespace.t;
         }
         [@@deriving compare, eq, sexp, show, hash]
 
-        let create name = { name; state = Free { escaped = false }; namespace = 1 }
+        let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
+          { name; constraints; variance; state = Free { escaped = false }; namespace = 1 }
       end
     end
 
     type 'a record =
       | Unary of 'a RecordUnary.record
-      | ParameterVariadic of RecordVariadic.RecordParameters.record
-      | ListVariadic of RecordVariadic.RecordList.record
+      | ParameterVariadic of 'a RecordVariadic.RecordParameters.record
+      | ListVariadic of 'a RecordVariadic.RecordList.record
     [@@deriving compare, eq, sexp, show, hash]
   end
 
   module OrderedTypes = struct
     module RecordMap = struct
-      type mappee =
-        | Variable of Variable.RecordVariadic.RecordList.record
-        | SubMap of t
+      type 'annotation mappee =
+        | Variable of 'annotation Variable.RecordVariadic.RecordList.record
+        | SubMap of 'annotation record
 
-      and t = {
-        mappee: mappee;
+      and 'annotation record = {
+        mappee: 'annotation mappee;
         mapper: Identifier.t;
       }
       [@@deriving compare, eq, sexp, show, hash]
@@ -160,9 +167,9 @@ module Record = struct
 
     type 'annotation record =
       | Concrete of 'annotation list
-      | Variable of Variable.RecordVariadic.RecordList.record
+      | Variable of 'annotation Variable.RecordVariadic.RecordList.record
       | Any
-      | Map of RecordMap.t
+      | Map of 'annotation RecordMap.record
     [@@deriving compare, eq, sexp, show, hash]
 
     let pp_concise format variable ~pp_type =
@@ -189,8 +196,8 @@ module Record = struct
 
       type 'annotation variable =
         | Concrete of 'annotation
-        | Variadic of Variable.RecordVariadic.RecordList.record
-        | Map of OrderedTypes.RecordMap.t
+        | Variadic of 'annotation Variable.RecordVariadic.RecordList.record
+        | Map of 'annotation OrderedTypes.RecordMap.record
       [@@deriving compare, eq, sexp, show, hash]
 
       type 'annotation t =
@@ -258,7 +265,8 @@ module Record = struct
     and 'annotation record_parameters =
       | Defined of 'annotation RecordParameter.t list
       | Undefined
-      | ParameterVariadicTypeVariable of Variable.RecordVariadic.RecordParameters.record
+      | ParameterVariadicTypeVariable of
+          'annotation Variable.RecordVariadic.RecordParameters.record
 
     and 'annotation overload = {
       annotation: 'annotation;
@@ -1257,8 +1265,8 @@ module Transform = struct
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
               match constraints with
-              | Record.Variable.RecordUnary.Bound bound ->
-                  Record.Variable.RecordUnary.Bound (visit_annotation bound ~state)
+              | Record.Variable.Bound bound ->
+                  Record.Variable.Bound (visit_annotation bound ~state)
               | Explicit constraints ->
                   Explicit (List.map constraints ~f:(visit_annotation ~state))
               | Unconstrained -> Unconstrained
@@ -1847,7 +1855,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                   List.find_map ~f:bound arguments
                 in
                 if not (List.is_empty explicits) then
-                  Record.Variable.RecordUnary.Explicit explicits
+                  Record.Variable.Explicit explicits
                 else if Option.is_some bound then
                   Bound (Option.value_exn bound)
                 else
@@ -1860,7 +1868,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                       value = { Node.value = True; _ };
                     }
                     when String.equal (Identifier.sanitized name) "covariant" ->
-                      Some Record.Variable.RecordUnary.Covariant
+                      Some Record.Variable.Covariant
                   | {
                       Call.Argument.name = Some { Node.value = name; _ };
                       value = { Node.value = True; _ };
@@ -1870,7 +1878,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                   | _ -> None
                 in
                 List.find_map arguments ~f:variance_definition
-                |> Option.value ~default:Record.Variable.RecordUnary.Invariant
+                |> Option.value ~default:Record.Variable.Invariant
               in
               variable value ~constraints ~variance
           | Call
@@ -2282,6 +2290,8 @@ module OrderedTypes = struct
   module Map = struct
     include Record.OrderedTypes.RecordMap
 
+    type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+
     let parse expression ~aliases =
       let variable_aliases name =
         match aliases name with
@@ -2452,12 +2462,12 @@ module Variable : sig
 
   type unary_domain = type_t
 
-  type parameter_variadic_t = Record.Variable.RecordVariadic.RecordParameters.record
+  type parameter_variadic_t = type_t Record.Variable.RecordVariadic.RecordParameters.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_domain = Callable.parameters
 
-  type list_variadic_t = Record.Variable.RecordVariadic.RecordList.record
+  type list_variadic_t = type_t Record.Variable.RecordVariadic.RecordList.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type list_variadic_domain = OrderedTypes.t
@@ -2506,7 +2516,11 @@ module Variable : sig
 
     include VariableKind with type t = unary_t and type domain = type_t
 
-    val create : ?constraints:type_t constraints -> ?variance:variance -> string -> t
+    val create
+      :  ?constraints:type_t Record.Variable.constraints ->
+      ?variance:Record.Variable.variance ->
+      string ->
+      t
 
     val is_contravariant : t -> bool
 
@@ -2525,7 +2539,7 @@ module Variable : sig
 
       val name : t -> Identifier.t
 
-      val create : string -> t
+      val create : ?variance:Record.Variable.variance -> string -> t
 
       val parse_instance_annotation
         :  variable_parameter_annotation:Expression.t ->
@@ -2554,7 +2568,11 @@ module Variable : sig
 
       val name : t -> Identifier.t
 
-      val create : string -> t
+      val create
+        :  ?constraints:type_t Record.Variable.constraints ->
+        ?variance:Record.Variable.variance ->
+        string ->
+        t
     end
   end
 
@@ -2627,12 +2645,12 @@ end = struct
 
   type unary_domain = type_t
 
-  type parameter_variadic_t = Record.Variable.RecordVariadic.RecordParameters.record
+  type parameter_variadic_t = type_t Record.Variable.RecordVariadic.RecordParameters.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type parameter_variadic_domain = Callable.parameters
 
-  type list_variadic_t = Record.Variable.RecordVariadic.RecordList.record
+  type list_variadic_t = type_t Record.Variable.RecordVariadic.RecordList.record
   [@@deriving compare, eq, sexp, show, hash]
 
   type list_variadic_domain = OrderedTypes.t
@@ -2751,7 +2769,7 @@ end = struct
     module Parameters = struct
       include Record.Variable.RecordVariadic.RecordParameters
 
-      type t = record [@@deriving compare, eq, sexp, show, hash]
+      type t = type_t record [@@deriving compare, eq, sexp, show, hash]
 
       type domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
@@ -2884,7 +2902,7 @@ end = struct
         }
 
         let combine { positional_component; keyword_component } =
-          let name_and_namespace_equal left right =
+          let component_agnostic_equal left right =
             equal
               { left with component = KeywordArguments }
               { right with component = KeywordArguments }
@@ -2894,29 +2912,29 @@ end = struct
                 ({ component = PositionalArguments; _ } as positional_component),
               ParameterVariadicComponent ({ component = KeywordArguments; _ } as keyword_component)
             )
-            when name_and_namespace_equal positional_component keyword_component ->
-              let { variable_name = name; variable_namespace = namespace; _ } =
+            when component_agnostic_equal positional_component keyword_component ->
+              let { variance; variable_name = name; variable_namespace = namespace; _ } =
                 positional_component
               in
-              Some { name; namespace; state = InFunction }
+              Some { name; namespace; variance; state = InFunction }
           | _ -> None
       end
 
-      let decompose { name = variable_name; namespace = variable_namespace; _ } =
+      let decompose { name = variable_name; variance; namespace = variable_namespace; _ } =
         {
           Components.positional_component =
             ParameterVariadicComponent
-              { component = PositionalArguments; variable_name; variable_namespace };
+              { component = PositionalArguments; variable_name; variance; variable_namespace };
           keyword_component =
             ParameterVariadicComponent
-              { component = KeywordArguments; variable_name; variable_namespace };
+              { component = KeywordArguments; variable_name; variance; variable_namespace };
         }
     end
 
     module List = struct
       include Record.Variable.RecordVariadic.RecordList
 
-      type t = record [@@deriving compare, eq, sexp, show, hash]
+      type t = type_t record [@@deriving compare, eq, sexp, show, hash]
 
       type domain = OrderedTypes.t [@@deriving compare, eq, sexp, show, hash]
 

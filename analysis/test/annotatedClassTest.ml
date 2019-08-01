@@ -1073,7 +1073,7 @@ let test_constraints context =
     [Type.Variable.Unary.create "_T", Type.integer];
   let t_bound =
     Type.Variable.Unary.create
-      ~constraints:(Type.Variable.Unary.Bound (Type.Primitive "Bound"))
+      ~constraints:(Type.Variable.Bound (Type.Primitive "Bound"))
       "T_Bound"
   in
   assert_constraints
@@ -1115,7 +1115,7 @@ let test_constraints context =
     [];
   let t_explicit =
     Type.Variable.Unary.create
-      ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.string])
+      ~constraints:(Type.Variable.Explicit [Type.integer; Type.string])
       "T_Explicit"
   in
   assert_constraints

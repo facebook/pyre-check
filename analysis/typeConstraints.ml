@@ -369,7 +369,7 @@ module OrderedConstraints (Order : OrderType) = struct
         | other -> other
       in
       match exogenous_constraint with
-      | UnaryVariable.Explicit explicits ->
+      | Explicit explicits ->
           let explicits =
             match lower_bound interval with
             | Type.Variable { constraints = Explicit left_constraints; _ } ->

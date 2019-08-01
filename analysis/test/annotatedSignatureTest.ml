@@ -434,7 +434,7 @@ let test_select context =
       ( "[[_R], _R]",
         Type.literal_string "string",
         "\"string\"",
-        Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.float]) "_R",
+        Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "_R",
         None,
         1 ));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
@@ -446,9 +446,7 @@ let test_select context =
         Type.list Type.string,
         "['string']",
         Type.list
-          (Type.variable
-             ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.float])
-             "_R"),
+          (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "_R"),
         None,
         1 ));
   assert_select "[[], _R]" "()" (`Found "[[], _R]");
@@ -472,7 +470,7 @@ let test_select context =
         "union",
         Type.variable
           "_T_float_or_str"
-          ~constraints:(Type.Variable.Unary.Explicit [Type.float; Type.string]),
+          ~constraints:(Type.Variable.Explicit [Type.float; Type.string]),
         None,
         1 ));
   assert_select

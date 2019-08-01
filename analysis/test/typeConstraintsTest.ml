@@ -71,20 +71,16 @@ let test_add_bound _ =
   in
   let assert_add_bound_succeeds = assert_add_bound_has_result ~expected_is_some:true in
   let assert_add_bound_fails = assert_add_bound_has_result ~expected_is_some:false in
-  let unconstrained = variable Type.Variable.Unary.Unconstrained in
+  let unconstrained = variable Type.Variable.Unconstrained in
   assert_add_bound_succeeds (`Lower (UnaryPair (unconstrained, child)));
   assert_add_bound_fails
     ~preconstraints:(add_bound (Some empty) (`Lower (UnaryPair (unconstrained, left_parent))))
     (`Upper (UnaryPair (unconstrained, right_parent)));
-  assert_add_bound_fails
-    (`Lower (UnaryPair (variable (Type.Variable.Unary.Bound child), left_parent)));
+  assert_add_bound_fails (`Lower (UnaryPair (variable (Type.Variable.Bound child), left_parent)));
+  assert_add_bound_succeeds (`Lower (UnaryPair (variable (Type.Variable.Bound child), child)));
   assert_add_bound_succeeds
-    (`Lower (UnaryPair (variable (Type.Variable.Unary.Bound child), child)));
-  assert_add_bound_succeeds
-    (`Upper (UnaryPair (variable (Type.Variable.Unary.Bound child), left_parent)));
-  let explicit_parent_a_parent_b =
-    variable (Type.Variable.Unary.Explicit [left_parent; right_parent])
-  in
+    (`Upper (UnaryPair (variable (Type.Variable.Bound child), left_parent)));
+  let explicit_parent_a_parent_b = variable (Type.Variable.Explicit [left_parent; right_parent]) in
   assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent)));
   assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, right_parent)));
   assert_add_bound_fails
@@ -157,7 +153,7 @@ let assert_solution ~sequentially_applied_bounds expected =
 
 let test_single_variable_solution _ =
   assert_solution ~sequentially_applied_bounds:[] (Some []);
-  let unconstrained = variable Type.Variable.Unary.Unconstrained in
+  let unconstrained = variable Type.Variable.Unconstrained in
   assert_solution
     ~sequentially_applied_bounds:[`Lower (UnaryPair (unconstrained, child))]
     (Some [UnaryPair (unconstrained, child)]);
@@ -188,7 +184,7 @@ let test_single_variable_solution _ =
     ~sequentially_applied_bounds:
       [`Upper (UnaryPair (unconstrained, Type.list (Type.Variable unconstrained)))]
     None;
-  let bounded_by_parent_A = variable (Type.Variable.Unary.Bound left_parent) in
+  let bounded_by_parent_A = variable (Type.Variable.Bound left_parent) in
   assert_solution
     ~sequentially_applied_bounds:[`Lower (UnaryPair (bounded_by_parent_A, child))]
     (Some [UnaryPair (bounded_by_parent_A, child)]);
@@ -196,7 +192,7 @@ let test_single_variable_solution _ =
     ~sequentially_applied_bounds:[`Lower (UnaryPair (bounded_by_parent_A, right_parent))]
     None;
   let explicit_int_string_parent_A =
-    variable (Type.Variable.Unary.Explicit [Type.integer; Type.string; left_parent])
+    variable (Type.Variable.Explicit [Type.integer; Type.string; left_parent])
   in
   assert_solution
     ~sequentially_applied_bounds:[`Lower (UnaryPair (explicit_int_string_parent_A, child))]
@@ -257,8 +253,8 @@ let test_single_variable_solution _ =
 
 
 let test_multiple_variable_solution _ =
-  let unconstrained_a = variable ~name:"A" Type.Variable.Unary.Unconstrained in
-  let unconstrained_b = variable ~name:"B" Type.Variable.Unary.Unconstrained in
+  let unconstrained_a = variable ~name:"A" Type.Variable.Unconstrained in
+  let unconstrained_b = variable ~name:"B" Type.Variable.Unconstrained in
   assert_solution
     ~sequentially_applied_bounds:
       [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
@@ -271,7 +267,7 @@ let test_multiple_variable_solution _ =
       [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
         `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a)) ]
     None;
-  let unconstrained_c = variable ~name:"C" Type.Variable.Unary.Unconstrained in
+  let unconstrained_c = variable ~name:"C" Type.Variable.Unconstrained in
   assert_solution
     ~sequentially_applied_bounds:
       [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
@@ -281,7 +277,7 @@ let test_multiple_variable_solution _ =
        [ UnaryPair (unconstrained_a, child);
          UnaryPair (unconstrained_b, child);
          UnaryPair (unconstrained_c, child) ]);
-  let unrelated = variable ~name:"unrelated" Type.Variable.Unary.Unconstrained in
+  let unrelated = variable ~name:"unrelated" Type.Variable.Unconstrained in
   assert_solution
     ~sequentially_applied_bounds:[`Lower (UnaryPair (unconstrained_a, Type.Variable unrelated))]
     (Some [UnaryPair (unconstrained_a, Type.Variable unrelated)]);
@@ -423,9 +419,9 @@ let test_partial_solution _ =
       (parse expected_partial_solution, parse expected_remainder_solution)
       (partial_result, remainder_solution)
   in
-  let unconstrained_a = variable ~name:"A" Type.Variable.Unary.Unconstrained in
-  let unconstrained_b = variable ~name:"B" Type.Variable.Unary.Unconstrained in
-  let unconstrained_c = variable ~name:"C" Type.Variable.Unary.Unconstrained in
+  let unconstrained_a = variable ~name:"A" Type.Variable.Unconstrained in
+  let unconstrained_b = variable ~name:"B" Type.Variable.Unconstrained in
+  let unconstrained_c = variable ~name:"C" Type.Variable.Unconstrained in
   expect_split_solution
     ~variables:[Type.Variable.Unary unconstrained_a]
     ~bounds:
@@ -477,8 +473,8 @@ let test_partial_solution _ =
 
 let test_exists _ =
   let order = () in
-  let unconstrained_a = variable ~name:"A" Type.Variable.Unary.Unconstrained in
-  let unconstrained_b = variable ~name:"B" Type.Variable.Unary.Unconstrained in
+  let unconstrained_a = variable ~name:"A" Type.Variable.Unconstrained in
+  let unconstrained_b = variable ~name:"B" Type.Variable.Unconstrained in
   let constraints_with_unconstrained_b =
     let pair = Type.Variable.UnaryPair (unconstrained_a, Type.Variable unconstrained_b) in
     DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
