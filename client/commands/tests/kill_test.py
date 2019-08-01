@@ -5,6 +5,8 @@
 
 import os  # noqa
 import shutil  # noqa
+import signal
+import subprocess
 import unittest
 from unittest.mock import MagicMock, call, patch
 
@@ -13,6 +15,7 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class KillTest(unittest.TestCase):
+    @patch("os.kill")
     @patch("os.remove")
     @patch("os.unlink")
     @patch(
@@ -28,14 +31,28 @@ class KillTest(unittest.TestCase):
     )
     @patch("os.path.realpath")
     @patch("subprocess.run")
-    def test_kill(self, run, realpath, readlink, unlink, remove) -> None:
-        with patch("os.getenv", return_value=None):
+    def test_kill(self, run, realpath, readlink, unlink, remove, kill) -> None:
+        with patch("os.getenv", return_value=None), patch(
+            "os.getpid", return_value=1234
+        ):
             realpath.return_value = "/test-binary"
             arguments = mock_arguments()
             configuration = mock_configuration()
             analysis_directory = MagicMock()
+            run.return_value = MagicMock()
+            run.return_value.stdout = "\n".join(["1234", "5678", "9101112"]).encode(
+                "utf-8"
+            )
             commands.Kill(arguments, configuration, analysis_directory).run()
-            run.assert_called_with(["pkill", "pyre.bin"])
+            run.assert_has_calls(
+                [
+                    call(["pkill", "pyre.bin"]),
+                    call(["pgrep", "pyre-client"], stdout=subprocess.PIPE),
+                ]
+            )
+            kill.assert_has_calls(
+                [call("5678", signal.SIGKILL), call("9101112", signal.SIGKILL)]
+            )
             remove.assert_has_calls(
                 [call("/tmp/actual_socket"), call("/tmp/json_socket")]
             )
@@ -45,13 +62,21 @@ class KillTest(unittest.TestCase):
                     call("/test-binary/.pyre/server/json_server.sock"),
                 ]
             )
-        with patch("os.getenv", return_value="/tmp/pyre_directory/main.exe"):
+        with patch(
+            "os.getenv",
+            side_effect=["/tmp/pyre_directory/main.exe", "/tmp/pyre/my_client"],
+        ):
             realpath.return_value = "/test-binary"
             arguments = mock_arguments()
             configuration = mock_configuration()
             analysis_directory = MagicMock()
             commands.Kill(arguments, configuration, analysis_directory).run()
-            run.assert_called_with(["pkill", "main.exe"])
+            run.assert_has_calls(
+                [
+                    call(["pkill", "main.exe"]),
+                    call(["pgrep", "my_client"], stdout=subprocess.PIPE),
+                ]
+            )
 
         with patch("os.getcwd", return_value="/root"), patch(
             "shutil.rmtree"

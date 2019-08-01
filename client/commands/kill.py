@@ -6,9 +6,10 @@
 import logging
 import os
 import shutil
+import signal
 import subprocess
 
-from .. import BINARY_NAME
+from .. import BINARY_NAME, CLIENT_NAME
 from .command import Command
 
 
@@ -24,12 +25,8 @@ class Kill(Command):
     def _run(self) -> None:
         # Kills all processes that have the same binary as the one specified
         # in the configuration.
-        overridden_binary = os.getenv("PYRE_BINARY")
-        if overridden_binary is not None:
-            binary_to_kill = os.path.basename(overridden_binary)
-        else:
-            binary_to_kill = BINARY_NAME
-        subprocess.run(["pkill", "{}".format(binary_to_kill)])
+        binary_name = _get_process_name("PYRE_BINARY", BINARY_NAME)
+        subprocess.run(["pkill", binary_name])
         server_root = os.path.join(
             os.path.realpath(self._analysis_directory.get_root()), ".pyre", "server"
         )
@@ -54,3 +51,26 @@ class Kill(Command):
                 shutil.rmtree(os.path.join(os.getcwd(), ".pyre/resource_cache"))
             except OSError:
                 pass
+
+        # We need to be careful about how we kill the client here, as otherwise we might
+        # cause a race where we attempt to kill the `pyre kill` command.
+        process_ids = (
+            subprocess.run(
+                ["pgrep", _get_process_name("PYRE_CLIENT", CLIENT_NAME)],
+                stdout=subprocess.PIPE,
+            )
+            .stdout.decode("utf-8")
+            .split()
+        )
+        for process_id in process_ids:
+            if int(process_id) == os.getpid():
+                continue
+            os.kill(process_id, signal.SIGKILL)
+
+
+def _get_process_name(environment_variable_name: str, default: str):
+    overridden = os.getenv(environment_variable_name)
+    if overridden is not None:
+        return os.path.basename(overridden)
+    else:
+        return default
