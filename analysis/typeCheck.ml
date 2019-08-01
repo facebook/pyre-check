@@ -1415,7 +1415,7 @@ module State (Context : Context) = struct
               state
           | Top
           (* There's some other problem we already errored on *)
-          
+
           | Primitive _
           | Parametric _ ->
               state_with_errors
@@ -4049,19 +4049,6 @@ module State (Context : Context) = struct
           let consistent_with_boundary = Type.union consistent_with_boundary in
           { consistent_with_boundary; not_consistent_with_boundary }
         in
-        let get_attribute_annotation ~parent ~name =
-          parent
-          |> GlobalResolution.class_definition global_resolution
-          >>| Annotated.Class.create
-          >>| Annotated.Class.attribute
-                ~resolution:global_resolution
-                ~name
-                ~instantiated:parent
-                ~transitive:true
-          >>= fun attribute ->
-          Option.some_if (Annotated.Attribute.defined attribute) attribute
-          >>| Annotated.Attribute.annotation
-        in
         match Node.value test with
         | False ->
             (* Explicit bottom. *)
@@ -4334,20 +4321,7 @@ module State (Context : Context) = struct
             }
           when Expression.is_simple_name name -> (
             let reference = Expression.name_to_reference_exn name in
-            let refined =
-              match name with
-              | Name.Attribute { base; attribute; _ } ->
-                  let parent = Resolution.resolve resolution base in
-                  let attribute_annotation = get_attribute_annotation ~parent ~name:attribute in
-                  attribute_annotation
-                  >>| (fun annotation ->
-                        Refinement.refine
-                          ~resolution:global_resolution
-                          annotation
-                          (Type.Optional Type.Bottom))
-                  |> Option.value ~default:(Annotation.create (Type.Optional Type.Bottom))
-              | _ -> Annotation.create (Type.Optional Type.Bottom)
-            in
+            let refined = Annotation.create (Type.Optional Type.Bottom) in
             match Resolution.get_local ~global_fallback:false resolution ~reference with
             | Some previous ->
                 if Refinement.less_or_equal ~resolution:global_resolution refined previous then
@@ -4361,9 +4335,7 @@ module State (Context : Context) = struct
                      not <= refined and refined is not <= previous, as this is an obvious
                      contradiction. *)
                   state
-            | None ->
-                let resolution = Resolution.set_local resolution ~reference ~annotation:refined in
-                { state with resolution } )
+            | None -> state )
         | ComparisonOperator
             {
               ComparisonOperator.left = { Node.value = Name name; _ };
