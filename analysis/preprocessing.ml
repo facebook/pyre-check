@@ -1751,12 +1751,12 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
 let preprocess_steps ~force source =
   source
   |> expand_relative_imports
-  |> expand_string_annotations
-  |> expand_format_string
   |> replace_platform_specific_code
   |> replace_version_specific_code
   |> expand_type_checking_imports
   |> expand_wildcard_imports ~force
+  |> expand_string_annotations
+  |> expand_format_string
   |> qualify
   |> expand_implicit_returns
   |> replace_mypy_extensions_stub
