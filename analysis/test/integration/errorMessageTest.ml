@@ -191,7 +191,7 @@ let test_concise context =
       def foo(x: int) -> None:
         assert not isinstance(x, int)
     |}
-    ["Impossible isinstance check [25]: isinstance check will always fail."];
+    ["Impossible assertion [25]: Assertion will always fail."];
 
   (* Incompatible Awaitable *)
   assert_type_errors

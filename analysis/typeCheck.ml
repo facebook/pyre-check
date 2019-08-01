@@ -1415,7 +1415,7 @@ module State (Context : Context) = struct
               state
           | Top
           (* There's some other problem we already errored on *)
-
+          
           | Primitive _
           | Parametric _ ->
               state_with_errors
@@ -3135,7 +3135,7 @@ module State (Context : Context) = struct
 
   and forward_statement
       ~state:({ resolution; check_return; _ } as state)
-      ~statement:{ Node.location; value }
+      ~statement:({ Node.location; value } as statement)
     =
     let global_resolution = Resolution.global_resolution resolution in
     let {
@@ -4192,17 +4192,8 @@ module State (Context : Context) = struct
                       (Error.create
                          ~location:(Node.location test)
                          ~kind:
-                           (Error.ImpossibleIsinstance
-                              {
-                                mismatch =
-                                  Error.create_mismatch
-                                    ~resolution:global_resolution
-                                    ~expected
-                                    ~actual:resolved
-                                    ~actual_expression:(Some value)
-                                    ~covariant:true;
-                                expression = value;
-                              })
+                           (Error.ImpossibleAssertion
+                              { statement; expression = value; annotation = resolved })
                          ~define:Context.define)
             in
             let resolve ~reference =

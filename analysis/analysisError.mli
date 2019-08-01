@@ -138,9 +138,10 @@ type kind =
     }
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
-  | ImpossibleIsinstance of {
+  | ImpossibleAssertion of {
       expression: Expression.t;
-      mismatch: mismatch;
+      annotation: Type.t;
+      statement: Statement.t;
     }
   | IncompatibleAttributeType of {
       parent: Type.t;

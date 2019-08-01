@@ -147,9 +147,10 @@ type kind =
     }
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
-  | ImpossibleIsinstance of {
+  | ImpossibleAssertion of {
       expression: Expression.t;
-      mismatch: mismatch;
+      annotation: Type.t;
+      statement: Statement.t;
     }
   | IncompatibleAttributeType of {
       parent: Type.t;
@@ -300,7 +301,7 @@ let code = function
   | RedundantCast _ -> 22
   | Unpack _ -> 23
   | InvalidTypeParameters _ -> 24
-  | ImpossibleIsinstance _ -> 25
+  | ImpossibleAssertion _ -> 25
   | TypedDictionaryAccessWithNonLiteral _ -> 26
   | TypedDictionaryKeyNotFound _ -> 27
   | UnexpectedKeyword _ -> 28
@@ -335,7 +336,7 @@ let name = function
   | AnalysisFailure _ -> "Analysis failure"
   | Deobfuscation _ -> "Deobfuscation"
   | IllegalAnnotationTarget _ -> "Illegal annotation target"
-  | ImpossibleIsinstance _ -> "Impossible isinstance check"
+  | ImpossibleAssertion _ -> "Impossible assertion"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
   | IncompatibleConstructorAnnotation _ -> "Incompatible constructor annotation"
@@ -401,8 +402,6 @@ let weaken_literals kind =
     | missing -> missing
   in
   match kind with
-  | ImpossibleIsinstance ({ mismatch : mismatch; _ } as isinstance) ->
-      ImpossibleIsinstance { isinstance with mismatch = weaken_mismatch mismatch }
   | IncompatibleAttributeType
       ({ incompatible_type = { mismatch; _ } as incompatible; _ } as attribute) ->
       IncompatibleAttributeType
@@ -516,17 +515,23 @@ let messages ~concise ~signature location kind =
           inferred
           (Expression.show_sanitized target)
           consequence ]
-  | ImpossibleIsinstance _ when concise -> ["isinstance check will always fail."]
-  | ImpossibleIsinstance { expression; mismatch = { actual; expected; _ } } ->
-      let expression_string = Expression.show expression in
+  | ImpossibleAssertion _ when concise -> ["Assertion will always fail."]
+  | ImpossibleAssertion { expression; annotation; statement } ->
+      let statement_string =
+        Statement.show statement
+        |> String.chop_prefix_exn ~prefix:"assert"
+        |> String.strip ~drop:(function
+               | ' '
+               | ',' ->
+                   true
+               | _ -> false)
+      in
       [ Format.asprintf
-          "`%s` has type `%a`, checking if `%s` not isinstance `%a` will always fail."
-          expression_string
+          "`%s` has type `%a`, assertion `%s` will always fail."
+          (Expression.show expression)
           pp_type
-          actual
-          expression_string
-          pp_type
-          expected ]
+          annotation
+          statement_string ]
   | IncompatibleAwaitableType actual ->
       [Format.asprintf "Expected an awaitable but got `%a`." pp_type actual]
   | IncompatibleOverload kind -> (
@@ -1721,7 +1726,7 @@ end)
 
 let due_to_analysis_limitations { kind; _ } =
   match kind with
-  | ImpossibleIsinstance { mismatch = { actual; _ }; _ }
+  | ImpossibleAssertion { annotation = actual; _ }
   | IncompatibleAwaitableType actual
   | IncompatibleParameterType { mismatch = { actual; _ }; _ }
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
@@ -1800,6 +1805,7 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
     && GlobalResolution.consistent_solution_exists resolution actual expected
   in
   match kind with
+  | ImpossibleAssertion { annotation = actual; _ }
   | IncompatibleAwaitableType actual
   | InvalidArgument (ConcreteVariable { annotation = actual; _ })
   | InvalidArgument
@@ -1808,7 +1814,6 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
       Type.is_any actual
-  | ImpossibleIsinstance { mismatch = { actual; actual_expressions; expected; _ }; _ }
   | InconsistentOverride
       {
         override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ });
@@ -1899,9 +1904,9 @@ let less_or_equal ~resolution left right =
   | AnalysisFailure left, AnalysisFailure right -> Type.equal left right
   | Deobfuscation left, Deobfuscation right -> Source.equal left right
   | IllegalAnnotationTarget left, IllegalAnnotationTarget right -> Expression.equal left right
-  | ImpossibleIsinstance left, ImpossibleIsinstance right
-    when Expression.equal left.expression right.expression ->
-      less_or_equal_mismatch left.mismatch right.mismatch
+  | ImpossibleAssertion left, ImpossibleAssertion right
+    when Statement.equal left.statement right.statement ->
+      GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
       GlobalResolution.less_or_equal resolution ~left ~right
   | IncompatibleParameterType left, IncompatibleParameterType right
@@ -2071,7 +2076,7 @@ let less_or_equal ~resolution left right =
   | AnalysisFailure _, _
   | Deobfuscation _, _
   | IllegalAnnotationTarget _, _
-  | ImpossibleIsinstance _, _
+  | ImpossibleAssertion _, _
   | IncompatibleAttributeType _, _
   | IncompatibleAwaitableType _, _
   | IncompatibleConstructorAnnotation _, _
@@ -2395,7 +2400,7 @@ let join ~resolution left right =
     | AnalysisFailure _, _
     | Deobfuscation _, _
     | IllegalAnnotationTarget _, _
-    | ImpossibleIsinstance _, _
+    | ImpossibleAssertion _, _
     | IncompatibleAttributeType _, _
     | IncompatibleAwaitableType _, _
     | IncompatibleConstructorAnnotation _, _
@@ -2598,7 +2603,6 @@ let filter ~configuration ~resolution errors =
     let is_unknown_callable_error { kind; _ } =
       (* TODO(T41494196): Remove when we have AnyCallable escape hatch. *)
       match kind with
-      | ImpossibleIsinstance { mismatch = { expected; actual; _ }; _ }
       | InconsistentOverride
           { override = StrengthenedPrecondition (Found { expected; actual; _ }); _ }
       | InconsistentOverride { override = WeakenedPostcondition { expected; actual; _ }; _ }
@@ -2734,8 +2738,8 @@ let dequalify
     | AnalysisFailure annotation -> AnalysisFailure (dequalify annotation)
     | Deobfuscation left -> Deobfuscation left
     | IllegalAnnotationTarget left -> IllegalAnnotationTarget left
-    | ImpossibleIsinstance ({ mismatch; _ } as isinstance) ->
-        ImpossibleIsinstance { isinstance with mismatch = dequalify_mismatch mismatch }
+    | ImpossibleAssertion ({ annotation; _ } as assertion) ->
+        ImpossibleAssertion { assertion with annotation = dequalify annotation }
     | IncompatibleAwaitableType actual -> IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)

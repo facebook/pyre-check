@@ -410,18 +410,13 @@ let test_due_to_mismatch_with_any context =
   let assert_not_due_to_mismatch_with_any kind =
     assert_false (Error.due_to_mismatch_with_any resolution (error kind))
   in
-  (* ImpossibleIsinstance *)
+  (* ImpossibleAssertion *)
   assert_due_to_mismatch_with_any
-    (Error.ImpossibleIsinstance
+    (Error.ImpossibleAssertion
        {
          expression = !"expression";
-         mismatch =
-           {
-             Error.actual = Type.Any;
-             actual_expressions = [];
-             expected = Type.Any;
-             due_to_invariance = false;
-           };
+         annotation = Type.Any;
+         statement = parse_single_statement "assert expression";
        });
 
   (* IncompatibleAttributeType. *)
