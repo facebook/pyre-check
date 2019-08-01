@@ -4249,7 +4249,13 @@ module State (Context : Context) = struct
             let reference = Expression.name_to_reference_exn name in
             match Resolution.get_local resolution ~reference with
             | Some { Annotation.annotation = Type.Optional Type.Bottom; _ } ->
-                { state with bottom = true }
+                Error.create
+                  ~location:(Node.location test)
+                  ~kind:
+                    (Error.ImpossibleAssertion
+                       { statement; expression = test; annotation = Type.Optional Type.Bottom })
+                  ~define:Context.define
+                |> emit_raw_error ~state:{ state with bottom = true }
             | Some ({ Annotation.annotation = Type.Optional parameter; _ } as annotation) ->
                 let resolution =
                   Resolution.set_local
