@@ -74,8 +74,6 @@ module Analysis : sig
 
   val get_global : unit -> t option
 
-  val localize : t -> local_debug:bool -> local_strict:bool -> declare:bool -> t
-
   val pyre_root : t -> Path.t
 
   val search_path : t -> SearchPath.t list

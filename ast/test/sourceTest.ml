@@ -20,6 +20,7 @@ let test_parse _ =
   assert_mode "  # pyre-ignore-all-errors " Source.Declare;
   assert_mode "\t# pyre-ignore-all-errors" Source.Declare;
   assert_mode " # pyre-strict" Source.Strict;
+  assert_mode " # pyre-unsafe" Source.Unsafe;
   assert_mode " # pyre-durp" Source.Default;
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " (Source.DefaultButDontCheck [42; 7; 15]);
 
@@ -326,10 +327,39 @@ let test_signature_hash _ =
     |}
 
 
+let test_localize_configuration _ =
+  let unsafe_source =
+    Source.create ~metadata:(Source.Metadata.create ~number_of_lines:0 ~unsafe:true ()) []
+  in
+  let strict_source =
+    Source.create ~metadata:(Source.Metadata.create ~number_of_lines:0 ~strict:true ()) []
+  in
+  let default_configuration = Configuration.Analysis.create ~debug:true () in
+  let strict_configuration = Configuration.Analysis.create ~debug:true ~strict:true () in
+  assert_true
+    (Configuration.Analysis.equal
+       (Source.localize_configuration ~source:unsafe_source default_configuration)
+       default_configuration);
+  assert_true
+    (Configuration.Analysis.equal
+       (Source.localize_configuration ~source:strict_source default_configuration)
+       strict_configuration);
+  assert_true
+    (Configuration.Analysis.equal
+       (Source.localize_configuration ~source:unsafe_source strict_configuration)
+       default_configuration);
+  assert_true
+    (Configuration.Analysis.equal
+       (Source.localize_configuration ~source:strict_source strict_configuration)
+       strict_configuration);
+  ()
+
+
 let () =
   "metadata" >::: ["parse" >:: test_parse] |> Test.run;
   "source"
   >::: [ "qualifier" >:: test_qualifier;
          "expand_relative_import" >:: test_expand_relative_import;
-         "signature_hash" >:: test_signature_hash ]
+         "signature_hash" >:: test_signature_hash;
+         "localize_configuration" >:: test_localize_configuration ]
   |> Test.run

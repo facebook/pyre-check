@@ -4838,23 +4838,9 @@ let check_define
       { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }, []
 
 
-let check_defines
-    ~configuration
-    ~global_resolution
-    ~source:({ Source.metadata = { Source.Metadata.local_mode; debug; _ }; _ } as source)
-    defines
-  =
+let check_defines ~configuration ~global_resolution ~source defines =
   let resolution = resolution global_resolution () in
-  let configuration =
-    (* Override file-specific local debug configuraiton *)
-    let local_strict, declare =
-      match local_mode with
-      | Source.Strict -> true, false
-      | Source.Declare -> false, true
-      | _ -> false, false
-    in
-    Configuration.Analysis.localize configuration ~local_debug:debug ~local_strict ~declare
-  in
+  let configuration = Source.localize_configuration ~source configuration in
   ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
   let results =
     let queue =

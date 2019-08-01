@@ -11,6 +11,7 @@ type mode =
   | DefaultButDontCheck of int list
   | Declare
   | Strict
+  | Unsafe
   | Infer
   | PlaceholderStub
 [@@deriving compare, eq, show, sexp, hash]
@@ -32,6 +33,7 @@ module Metadata = struct
       ?(declare = false)
       ?(ignore_lines = [])
       ?(strict = false)
+      ?(unsafe = false)
       ?(version = 3)
       ~number_of_lines
       ()
@@ -41,6 +43,8 @@ module Metadata = struct
         Declare
       else if strict then
         Strict
+      else if unsafe then
+        Unsafe
       else
         Default
     in
@@ -70,6 +74,7 @@ module Metadata = struct
     in
     let is_debug = is_pyre_comment "pyre-debug" in
     let is_strict = is_pyre_comment "pyre-strict" in
+    let is_unsafe = is_pyre_comment "pyre-unsafe" in
     (* We do not fall back to declarative mode on a typo when attempting to only suppress certain
        errors. *)
     let is_declare line = Str.string_match declare_regex line 0 in
@@ -161,6 +166,8 @@ module Metadata = struct
               Some Declare
             else if is_strict line then
               Some Strict
+            else if is_unsafe line then
+              Some Unsafe
             else if is_placeholder_stub line then
               Some PlaceholderStub
             else
@@ -362,3 +369,18 @@ let expand_relative_import ~from { is_init; qualifier; _ } =
           Reference.empty
       in
       Reference.combine prefix postfix
+
+
+let localize_configuration
+    ~source:{ metadata = { Metadata.local_mode; debug = local_debug; _ }; _ }
+    ({ Configuration.Analysis.debug; strict; _ } as configuration)
+  =
+  let debug = debug || local_debug in
+  let strict, declare =
+    match local_mode with
+    | Strict -> true, false
+    | Unsafe -> false, false
+    | Declare -> false, true
+    | _ -> strict, false
+  in
+  { configuration with debug; strict; declare }

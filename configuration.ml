@@ -123,10 +123,6 @@ module Analysis = struct
 
   let get_global () = !global
 
-  let localize ({ debug; strict; _ } as configuration) ~local_debug ~local_strict ~declare =
-    { configuration with debug = debug || local_debug; strict = strict || local_strict; declare }
-
-
   let pyre_root { local_root; _ } = Path.append local_root ~element:".pyre"
 
   let search_path { local_root; search_path; _ } =
