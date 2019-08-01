@@ -9,16 +9,12 @@ open Analysis
 open Pyre
 open PyreParser
 
-type 'success parse_result =
-  | Success of 'success
-  | SyntaxError of SourcePath.t
-  | SystemError of SourcePath.t
+type parse_result =
+  | Success of Source.t
+  | SyntaxError of string
+  | SystemError of string
 
-let parse_source
-    ?(show_parser_errors = true)
-    ~configuration
-    ({ SourcePath.relative; qualifier; _ } as source_path)
-  =
+let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source_path) =
   let parse_lines lines =
     let metadata = Source.Metadata.parse ~qualifier lines in
     try
@@ -32,24 +28,25 @@ let parse_source
            ~source_path
            statements)
     with
-    | Parser.Error error ->
-        if show_parser_errors then
-          Log.log ~section:`Parser "%s" error;
-        SyntaxError source_path
-    | Failure error ->
-        Log.error "%s" error;
-        SystemError source_path
+    | Parser.Error error -> SyntaxError error
+    | Failure error -> SystemError error
   in
-  SourcePath.full_path ~configuration source_path
-  |> File.create
-  |> File.lines
-  >>| parse_lines
-  |> Option.value ~default:(SystemError source_path)
+  let path = SourcePath.full_path ~configuration source_path in
+  match File.lines (File.create path) with
+  | Some lines -> parse_lines lines
+  | None ->
+      let message = Format.asprintf "Cannot open file %a" Path.pp path in
+      SystemError message
 
 
 module FixpointResult = struct
+  type parsed_t = {
+    source_path: SourcePath.t;
+    parse_result: parse_result;
+  }
+
   type t = {
-    parsed: SourcePath.t parse_result list;
+    parsed: parsed_t list;
     not_parsed: SourcePath.t list;
   }
 
@@ -60,14 +57,7 @@ module FixpointResult = struct
     { parsed = left_parsed @ right_parsed; not_parsed = left_not_parsed @ right_not_parsed }
 end
 
-let parse_sources_job
-    ~configuration
-    ~preprocessing_state
-    ~ast_environment
-    ~show_parser_errors
-    ~force
-    source_paths
-  =
+let parse_sources_job ~configuration ~preprocessing_state ~ast_environment ~force source_paths =
   let parse
       ({ FixpointResult.parsed; not_parsed } as result)
       ({ SourcePath.relative; qualifier; _ } as source_path)
@@ -94,20 +84,19 @@ let parse_sources_job
       match force with
       | true ->
           store_result (Preprocessing.preprocess source);
-          { result with parsed = Success source_path :: parsed }
+          { result with parsed = { source_path; parse_result = Success source } :: parsed }
       | false -> (
         match Preprocessing.try_preprocess source with
         | Some preprocessed ->
             store_result preprocessed;
-            { result with parsed = Success source_path :: parsed }
+            { result with parsed = { source_path; parse_result = Success source } :: parsed }
         | None -> { result with not_parsed = source_path :: not_parsed } )
     in
-    parse_source ~configuration ~show_parser_errors source_path
-    |> fun parsed_source ->
-    match parsed_source with
+    parse_source ~configuration source_path
+    |> fun parse_result ->
+    match parse_result with
     | Success parsed -> use_parsed_source parsed
-    | SyntaxError error -> { result with parsed = SyntaxError error :: parsed }
-    | SystemError error -> { result with parsed = SystemError error :: parsed }
+    | _ -> { result with parsed = { source_path; parse_result } :: parsed }
   in
   List.fold ~init:{ FixpointResult.parsed = []; not_parsed = [] } ~f:parse source_paths
 
@@ -128,7 +117,6 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environmen
         ~map:(fun _ source_paths ->
           parse_sources_job
             ~configuration
-            ~show_parser_errors:(List.length parsed = 0)
             ~preprocessing_state
             ~ast_environment
             ~force
@@ -150,11 +138,18 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environmen
     List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers
   in
-  let categorize ({ parsed; syntax_error; system_error } as result) parse_result =
+  let categorize
+      ({ parsed; syntax_error; system_error } as result)
+      { FixpointResult.source_path; parse_result }
+    =
     match parse_result with
-    | Success source_path -> { result with parsed = source_path :: parsed }
-    | SyntaxError source_path -> { result with syntax_error = source_path :: syntax_error }
-    | SystemError source_path -> { result with system_error = source_path :: system_error }
+    | Success _ -> { result with parsed = source_path :: parsed }
+    | SyntaxError message ->
+        Log.log ~section:`Parser "%s" message;
+        { result with syntax_error = source_path :: syntax_error }
+    | SystemError message ->
+        Log.error "%s" message;
+        { result with system_error = source_path :: system_error }
   in
   List.fold result ~init:{ parsed = []; syntax_error = []; system_error = [] } ~f:categorize
 

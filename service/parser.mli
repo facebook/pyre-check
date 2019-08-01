@@ -3,6 +3,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+type parse_result =
+  | Success of Ast.Source.t
+  | SyntaxError of string
+  | SystemError of string
+
+val parse_source : configuration:Configuration.Analysis.t -> Ast.SourcePath.t -> parse_result
+
 type parse_sources_result = {
   parsed: Ast.SourcePath.t list;
   syntax_error: Ast.SourcePath.t list;
