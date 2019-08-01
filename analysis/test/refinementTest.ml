@@ -10,9 +10,13 @@ open Annotation
 open Refinement
 open Test
 
-let resolution = environment () |> fun handler -> Environment.resolution handler ()
+let resolution context =
+  let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
+  Environment.resolution environment ()
 
-let test_refine _ =
+
+let test_refine context =
+  let resolution = resolution context in
   assert_equal
     (refine ~resolution (create_immutable ~global:false Type.float) Type.integer)
     (create_immutable ~global:false ~original:(Some Type.float) Type.integer);
@@ -27,7 +31,8 @@ let test_refine _ =
     (create_immutable ~global:false ~original:(Some Type.integer) Type.Top)
 
 
-let test_less_or_equal _ =
+let test_less_or_equal context =
+  let resolution = resolution context in
   (* Type order is preserved. *)
   assert_true (less_or_equal ~resolution (create Type.integer) (create Type.integer));
   assert_true (less_or_equal ~resolution (create Type.integer) (create Type.float));
@@ -55,7 +60,8 @@ let test_less_or_equal _ =
        (create_immutable ~global:false Type.integer))
 
 
-let test_join _ =
+let test_join context =
+  let resolution = resolution context in
   (* Type order is preserved. *)
   assert_equal (join ~resolution (create Type.integer) (create Type.integer)) (create Type.integer);
   assert_equal (join ~resolution (create Type.integer) (create Type.float)) (create Type.float);
@@ -87,7 +93,8 @@ let test_join _ =
     (create_immutable ~global:true Type.float)
 
 
-let test_meet _ =
+let test_meet context =
+  let resolution = resolution context in
   (* Type order is preserved. *)
   assert_equal (meet ~resolution (create Type.integer) (create Type.integer)) (create Type.integer);
   assert_equal (meet ~resolution (create Type.integer) (create Type.float)) (create Type.integer);

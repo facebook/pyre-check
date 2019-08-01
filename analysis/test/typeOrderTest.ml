@@ -14,6 +14,19 @@ open Annotated
 
 let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
 
+let environment ?source context =
+  let _, _, environment =
+    let sources = Option.value_map source ~f:(fun source -> ["__init__.py", source]) ~default:[] in
+    ScratchProject.setup ~context sources |> ScratchProject.build_environment
+  in
+  environment
+
+
+let resolution ?source context =
+  let environment = environment ?source context in
+  Environment.resolution environment ()
+
+
 let concrete_connect ?parameters =
   let parameters = parameters >>| fun parameters -> Type.OrderedTypes.Concrete parameters in
   ClassHierarchy.connect ?parameters
@@ -523,7 +536,7 @@ let test_default _ =
 
 let ( !! ) name = Type.Primitive name
 
-let test_less_or_equal _ =
+let test_less_or_equal context =
   (* Primitive types. *)
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
   assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
@@ -1242,11 +1255,7 @@ let test_less_or_equal _ =
        ~left:"typing.Callable[[int], str]"
        ~right:"B[str]");
   let assert_less_or_equal ?(source = "") ~left ~right expected_result =
-    let resolution =
-      let source = parse source |> Preprocessing.preprocess in
-      AnnotatedTest.populate_with_sources (source :: Test.typeshed_stubs ())
-      |> fun environment -> Environment.resolution environment ()
-    in
+    let resolution = resolution ~source context in
     let parse_annotation annotation =
       annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
     in
@@ -1647,7 +1656,7 @@ let test_less_or_equal_variance _ =
   ()
 
 
-let test_join _ =
+let test_join context =
   let assert_join ?(order = default) ?(aliases = fun _ -> None) left right expected =
     let parse_annotation source =
       let integer =
@@ -2179,11 +2188,7 @@ let test_join _ =
     (join order (Type.literal_string "A") Type.integer)
     (Type.union [Type.string; Type.integer]);
   let assert_join ?(source = "") ~left ~right expected_result =
-    let resolution =
-      let source = parse source |> Preprocessing.preprocess in
-      AnnotatedTest.populate_with_sources (source :: Test.typeshed_stubs ())
-      |> fun environment -> Environment.resolution environment ()
-    in
+    let resolution = resolution ~source context in
     let parse_annotation annotation =
       annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
     in
@@ -2417,14 +2422,11 @@ let test_meet _ =
   ()
 
 
-let test_solve_less_or_equal _ =
+let test_solve_less_or_equal context =
   let environment =
-    let configuration = Configuration.Analysis.create () in
-    let populate source =
-      Test.environment ~configuration ~sources:(parse source :: typeshed_stubs ()) ()
-    in
-    populate
-      {|
+    environment
+      ~source:
+        {|
       class C: ...
       class D(C): ...
       class Q: ...
@@ -2465,6 +2467,7 @@ let test_solve_less_or_equal _ =
       class UserDefinedVariadicMapChild(UserDefinedVariadic[pyre_extensions.type_variable_operators.Map[typing.List, Ts]]):
         pass
     |}
+      context
   in
   let resolution = Environment.resolution environment () in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
@@ -3187,20 +3190,16 @@ let test_is_consistent_with _ =
        (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
 
 
-let test_instantiate_protocol_parameters _ =
+let test_instantiate_protocol_parameters context =
   let assert_instantiate_protocol_parameters
-      ?context
+      ?source
       ~classes
       ~protocols
       ~candidate
       ~protocol
       expected
     =
-    let environment =
-      let configuration = Configuration.Analysis.create () in
-      let source = context >>| parse |> Option.to_list in
-      Test.environment ~configuration ~sources:(source @ typeshed_stubs ()) ()
-    in
+    let environment = environment ?source context in
     let resolution = Environment.resolution environment () in
     let parse_annotation annotation =
       annotation
@@ -3251,28 +3250,28 @@ let test_instantiate_protocol_parameters _ =
   in
   (* Simple attribute protocols *)
   assert_instantiate_protocol_parameters
-    ~context:"class P(): pass"
+    ~source:"class P(): pass"
     ~classes:["A", []]
     ~protocols:["P", []]
     ~candidate:"A"
     ~protocol:"P"
     (Some (Concrete []));
   assert_instantiate_protocol_parameters
-    ~context:"class P(): pass"
+    ~source:"class P(): pass"
     ~classes:["A", ["prop", "int"]]
     ~protocols:["P", ["prop", "int"]]
     ~candidate:"A"
     ~protocol:"P"
     (Some (Concrete []));
   assert_instantiate_protocol_parameters
-    ~context:"class P(): pass"
+    ~source:"class P(): pass"
     ~classes:["A", ["prop", "str"]]
     ~protocols:["P", ["prop", "int"]]
     ~candidate:"A"
     ~protocol:"P"
     None;
   assert_instantiate_protocol_parameters
-    ~context:{|
+    ~source:{|
       T1 = typing.TypeVar("T1")
       class P(typing.Generic[T1]): pass
     |}
@@ -3284,21 +3283,21 @@ let test_instantiate_protocol_parameters _ =
 
   (* Simple method protocols *)
   assert_instantiate_protocol_parameters
-    ~context:"class P(): pass"
+    ~source:"class P(): pass"
     ~classes:["A", ["method", "typing.Callable[[int], str]"]]
     ~protocols:["P", ["method", "typing.Callable[[int], str]"]]
     ~candidate:"A"
     ~protocol:"P"
     (Some (Concrete []));
   assert_instantiate_protocol_parameters
-    ~context:"class P(): pass"
+    ~source:"class P(): pass"
     ~classes:["A", ["othermethod", "typing.Callable[[int], str]"]]
     ~protocols:["P", ["method", "typing.Callable[[int], str]"]]
     ~candidate:"A"
     ~protocol:"P"
     None;
   assert_instantiate_protocol_parameters
-    ~context:"class P(): pass"
+    ~source:"class P(): pass"
     ~classes:["A", ["method", "typing.Callable[[int], str]"]]
     ~protocols:
       ["P", ["method", "typing.Callable[[int], str]"; "othermethod", "typing.Callable[[int], str]"]]
@@ -3306,7 +3305,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocol:"P"
     None;
   assert_instantiate_protocol_parameters
-    ~context:{|
+    ~source:{|
       T1 = typing.TypeVar("T1")
       class P(typing.Generic[T1]): pass
     |}
@@ -3318,21 +3317,21 @@ let test_instantiate_protocol_parameters _ =
 
   (* Primitive recursive protocol, primitive recursive candidate *)
   assert_instantiate_protocol_parameters
-    ~context:"class P(): pass"
+    ~source:"class P(): pass"
     ~classes:["A", ["prop", "A"]]
     ~protocols:["P", ["prop", "P"]]
     ~candidate:"A"
     ~protocol:"P"
     (Some (Concrete []));
   assert_instantiate_protocol_parameters
-    ~context:"class P(): pass"
+    ~source:"class P(): pass"
     ~classes:["A", ["prop", "int"]]
     ~protocols:["P", ["prop", "P"]]
     ~candidate:"A"
     ~protocol:"P"
     None;
   assert_instantiate_protocol_parameters
-    ~context:{|
+    ~source:{|
       T1 = typing.TypeVar("T1")
       class P(typing.Generic[T1]): pass
     |}
@@ -3343,7 +3342,7 @@ let test_instantiate_protocol_parameters _ =
     (Some (Concrete [Type.integer]));
 
   assert_instantiate_protocol_parameters
-    ~context:{|
+    ~source:{|
       T1 = typing.TypeVar("T1")
       class P(typing.Generic[T1]): pass
     |}
@@ -3355,7 +3354,7 @@ let test_instantiate_protocol_parameters _ =
 
   (* Protocol depends on other protocol *)
   assert_instantiate_protocol_parameters
-    ~context:{|
+    ~source:{|
       class P1(): pass
       class P2(): pass
     |}
@@ -3365,7 +3364,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocol:"P1"
     (Some (Concrete []));
   assert_instantiate_protocol_parameters
-    ~context:
+    ~source:
       {|
       Ts = pyre_extensions.ListVariadic("Ts")
       class VariadicProtocol(typing.Generic[Ts]): pass
@@ -3376,7 +3375,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocol:"VariadicProtocol"
     (Some (Concrete [Type.integer; Type.string]));
   assert_instantiate_protocol_parameters
-    ~context:
+    ~source:
       {|
       Ts = pyre_extensions.ListVariadic("Ts")
       class VariadicProtocol(typing.Generic[Ts]): pass
@@ -3389,18 +3388,16 @@ let test_instantiate_protocol_parameters _ =
   ()
 
 
-let test_mark_escaped_as_escaped _ =
+let test_mark_escaped_as_escaped context =
   let environment =
-    let configuration = Configuration.Analysis.create () in
-    let populate source =
-      Test.environment ~configuration ~sources:(parse source :: typeshed_stubs ()) ()
-    in
-    populate
-      {|
+    environment
+      ~source:
+        {|
         T = typing.TypeVar('T')
         class G_invariant(typing.Generic[T]):
           pass
       |}
+      context
   in
   let left =
     let variable = Type.variable "T" in

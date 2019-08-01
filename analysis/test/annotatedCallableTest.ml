@@ -11,17 +11,19 @@ open Expression
 open Pyre
 open Statement
 open Test
-open AnnotatedTest
 module Callable = Annotated.Callable
 
-let test_return_annotation _ =
+let test_return_annotation context =
   let assert_return_annotation return_annotation async expected =
     let return_annotation =
-      let environment =
-        populate {|
+      let _, _, environment =
+        ScratchProject.setup
+          ~context
+          ["test.py", {|
           class foo():
             def bar(): pass
-        |}
+        |}]
+        |> ScratchProject.build_environment
       in
       {
         Statement.Define.signature =
@@ -48,7 +50,9 @@ let test_return_annotation _ =
     (Type.coroutine (Concrete [Type.Any; Type.Any; Type.integer]))
 
 
-let test_apply_decorators _ =
+let test_apply_decorators context =
+  let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
+  let resolution = Environment.resolution environment () in
   let create_define ~decorators ~parameters ~return_annotation =
     let decorators = List.map ~f:parse_single_expression decorators in
     {
@@ -67,7 +71,6 @@ let test_apply_decorators _ =
   in
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =
-    let resolution = populate "" |> fun environment -> Environment.resolution environment () in
     let applied_return_annotation =
       Callable.apply_decorators ~resolution define
       |> fun { Type.Callable.annotation; _ } -> annotation
@@ -109,7 +112,12 @@ let test_apply_decorators _ =
   (* Click related tests *)
   let assert_apply_click_decorators ~expected_count define =
     let actual_count =
-      let resolution = populate "" |> fun environment -> Environment.resolution environment () in
+      let resolution =
+        let _, _, environment =
+          ScratchProject.setup ~context [] |> ScratchProject.build_environment
+        in
+        Environment.resolution environment ()
+      in
       Callable.apply_decorators ~resolution define
       |> fun { Type.Callable.parameters; _ } ->
       match parameters with
@@ -139,7 +147,6 @@ let test_apply_decorators _ =
   |> assert_apply_click_decorators ~expected_count:2;
 
   (* Custom decorators. *)
-  let resolution = resolution () |> Resolution.global_resolution in
   create_define
     ~decorators:["$strip_first_parameter"]
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
@@ -154,9 +161,12 @@ let test_apply_decorators _ =
     parameters
 
 
-let test_create_overload _ =
+let test_create_overload context =
   let assert_overload source expected =
-    let resolution = resolution () |> Resolution.global_resolution in
+    let resolution =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
+    in
+    let resolution = Resolution.global_resolution resolution in
     assert_equal
       ~cmp:(Type.Callable.equal_overload Type.equal)
       expected
@@ -178,9 +188,12 @@ let test_create_overload _ =
     }
 
 
-let test_create _ =
+let test_create context =
   let assert_callable ?expected_implicit ?parent ~expected source =
-    let resolution = populate source |> fun environment -> Environment.resolution environment () in
+    let resolution =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+    in
+    let resolution = Resolution.global_resolution resolution in
     let expected =
       GlobalResolution.parse_annotation resolution (parse_single_expression expected)
     in

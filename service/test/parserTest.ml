@@ -158,26 +158,18 @@ let test_parse_sources context =
 
 let test_register_modules context =
   let assert_module_exports raw_source expected_exports =
-    let configuration, qualifiers =
-      let project =
+    let global_resolution =
+      let _, _, environment =
         ScratchProject.setup
           ~context
           ["testing.py", raw_source; "canary.py", "from .testing import *"]
+        |> ScratchProject.build_environment
       in
-      let _ = ScratchProject.parse_sources project in
-      ScratchProject.configuration_of project, ScratchProject.qualifiers_of project
+      Analysis.Environment.resolution environment ()
     in
-    (* The modules get removed after preprocessing. *)
-    assert_is_none (Ast.SharedMemory.Modules.get ~qualifier:!&"testing");
-    Test.populate_shared_memory ~configuration qualifiers;
     let assert_exports ~qualifier =
       let module_definition =
-        let module_get =
-          let global_resolution =
-            Analysis.Environment.resolution (Analysis.Environment.shared_memory_handler ()) ()
-          in
-          Analysis.GlobalResolution.module_definition global_resolution
-        in
+        let module_get = Analysis.GlobalResolution.module_definition global_resolution in
         Option.value_exn (module_get qualifier)
       in
       assert_equal

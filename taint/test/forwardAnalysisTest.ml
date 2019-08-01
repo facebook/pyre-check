@@ -22,9 +22,9 @@ let assert_taint ?models ~context source expect =
   let environment =
     let models = models >>| (fun model -> [Test.parse model]) |> Option.value ~default:[] in
     let environment =
-      Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
+      TestHelper.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
     in
-    Test.populate ~configuration environment [source];
+    TestHelper.populate ~configuration environment [source];
     environment
   in
   let global_resolution = Environment.resolution environment () in

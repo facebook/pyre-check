@@ -36,30 +36,30 @@ let start_server ~local_root ?expected_version () =
   Commands.Start.run (mock_server_configuration ~local_root ?expected_version ())
 
 
-let environment () =
-  let configuration = Configuration.Analysis.create () in
-  Test.environment
-    ~configuration
-    ~sources:
-      [ parse
-          {|
-        class int(float): pass
-        class object():
-          def __init__(self) -> None: pass
-          def __new__(self) -> typing.Any: pass
-          def __sizeof__(self) -> int: pass
-        class str(object): pass
-      |}
-        |> Preprocessing.qualify ]
-    ()
-
-
-let make_errors ?handle source =
-  let configuration = Configuration.Analysis.create () in
-  let source = parse ?handle source |> Preprocessing.preprocess in
-  let environment = environment () in
-  Service.Environment.populate environment ~configuration ~scheduler:(Scheduler.mock ()) [source];
-  let configuration = mock_analysis_configuration () in
+let make_errors ~context ?(handle = "test.py") source =
+  let project =
+    let builtins_source =
+      {|
+          class int(float): pass
+          class object():
+            def __init__(self) -> None: pass
+            def __new__(self) -> typing.Any: pass
+            def __sizeof__(self) -> int: pass
+          class str(object): pass
+        |}
+    in
+    ScratchProject.setup
+      ~context
+      ~external_sources:["builtins.pyi", builtins_source]
+      [handle, source]
+  in
+  let sources, _, environment =
+    ScratchProject.build_environment ~include_typeshed_stubs:false project
+  in
+  let source =
+    List.find_exn sources ~f:(fun { Ast.Source.relative; _ } -> String.equal relative handle)
+  in
+  let configuration = ScratchProject.configuration_of project in
   let global_resolution = Environment.resolution environment () in
   TypeCheck.run ~configuration ~global_resolution ~source
 
@@ -146,18 +146,19 @@ module ScratchServer = struct
       ?(external_sources = [])
       sources
     =
-    let configuration, module_tracker, ast_environment, sources =
+    let configuration, module_tracker, ast_environment, environment, sources =
       let ({ ScratchProject.module_tracker; configuration } as project) =
         ScratchProject.setup ~context ~external_sources sources
       in
-      let sources, ast_environment = ScratchProject.parse_sources project in
+      let sources, ast_environment, environment =
+        ScratchProject.build_environment ~include_helper_builtins:false project
+      in
       ( { configuration with incremental_transitive_dependencies },
         module_tracker,
         ast_environment,
+        environment,
         sources )
     in
-    let external_sources = typeshed_stubs ~include_helper_builtins:false () in
-    let environment = Test.environment ~configuration ~sources:(sources @ external_sources) () in
     let global_resolution = Environment.resolution environment () in
     let errors =
       let table = Ast.Reference.Table.create () in

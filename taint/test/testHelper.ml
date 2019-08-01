@@ -39,6 +39,22 @@ type expectation = {
   obscure: bool option;
 }
 
+let populate ~configuration environment sources =
+  let qualifiers = sources |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+  Environment.purge environment qualifiers;
+  Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment sources
+
+
+let environment
+    ?(sources = Test.typeshed_stubs ())
+    ?(configuration = Configuration.Analysis.create ())
+    ()
+  =
+  let environment = Environment.shared_memory_handler () in
+  populate ~configuration environment sources;
+  environment
+
+
 let outcome
     ~kind
     ?(source_parameters = [])
@@ -334,9 +350,7 @@ let run_with_taint_models tests =
     |}
     |> Test.trim_extra_indentation
   in
-  let environment =
-    Test.environment ~sources:(Test.typeshed_stubs () @ [Test.parse model_source]) ()
-  in
+  let environment = environment ~sources:(Test.typeshed_stubs () @ [Test.parse model_source]) () in
   let global_resolution = Environment.resolution environment () in
   let () =
     Model.parse
@@ -364,9 +378,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
     let source = List.hd_exn sources in
     Test.ScratchProject.configuration_of project, source
   in
-  let environment =
-    Test.environment ~sources:(Test.typeshed_stubs () @ [source]) ~configuration ()
-  in
+  let environment = environment ~sources:(Test.typeshed_stubs () @ [source]) ~configuration () in
   let global_resolution = Environment.resolution environment () in
   let errors =
     let keep error =

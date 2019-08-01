@@ -11,7 +11,6 @@ open Expression
 open Statement
 open Pyre
 open Test
-open AnnotatedTest
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Method = Annotated.Method
@@ -19,13 +18,21 @@ module Argument = Call.Argument
 
 let ( !! ) concretes = Type.OrderedTypes.Concrete concretes
 
-let test_generics _ =
+let value option = Option.value_exn option
+
+let last_statement_exn = function
+  | { Source.statements; _ } when List.length statements > 0 -> List.last_exn statements
+  | _ -> failwith "Could not parse last statement"
+
+
+let test_generics context =
   let assert_generics source generics =
-    match parse_last_statement source with
+    let sources, _, environment =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    in
+    match List.hd_exn sources |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
-        let resolution =
-          populate source |> fun environment -> Environment.resolution environment ()
-        in
+        let resolution = Environment.resolution environment () in
         let printer generics = Format.asprintf "%a" Type.OrderedTypes.pp_concise generics in
         assert_equal
           ~printer
@@ -84,11 +91,12 @@ let test_generics _ =
   ()
 
 
-let test_superclasses _ =
-  let environment =
-    populate
-      {|
-      class object: pass
+let test_superclasses context =
+  let _, _, environment =
+    ScratchProject.setup
+      ~context
+      [ ( "test.py",
+          {|
       class Foo: pass
       class Bar: pass
       class SubFoo(Foo): pass
@@ -96,6 +104,8 @@ let test_superclasses _ =
       class SubRecurse(SubFooBar): pass
       class SubRedundant(Foo, SubFooBar): pass
     |}
+        ) ]
+    |> ScratchProject.build_environment
   in
   let ( ! ) name =
     {
@@ -126,13 +136,13 @@ let test_superclasses _ =
       expected
       actual
   in
-  assert_successors !"Foo" ["object"];
-  assert_successors !"SubRedundant" ["SubFooBar"; "Foo"; "Bar"; "object"];
-  assert_superclasses !"Foo" [!"object"];
-  assert_superclasses !"SubFoo" [!"Foo"; !"object"];
-  assert_superclasses !"SubFooBar" [!"Foo"; !"Bar"; !"object"];
-  assert_superclasses !"SubRecurse" [!"SubFooBar"; !"Foo"; !"Bar"; !"object"];
-  assert_superclasses !"SubRedundant" [!"SubFooBar"; !"Foo"; !"Bar"; !"object"]
+  assert_successors !"test.Foo" ["object"];
+  assert_successors !"test.SubRedundant" ["test.SubFooBar"; "test.Foo"; "test.Bar"; "object"];
+  assert_superclasses !"test.Foo" [!"object"];
+  assert_superclasses !"test.SubFoo" [!"test.Foo"; !"object"];
+  assert_superclasses !"test.SubFooBar" [!"test.Foo"; !"test.Bar"; !"object"];
+  assert_superclasses !"test.SubRecurse" [!"test.SubFooBar"; !"test.Foo"; !"test.Bar"; !"object"];
+  assert_superclasses !"test.SubRedundant" [!"test.SubFooBar"; !"test.Foo"; !"test.Bar"; !"object"]
 
 
 type constructor = {
@@ -140,9 +150,14 @@ type constructor = {
   annotation: Type.t option;
 }
 
-let test_get_decorator _ =
+let test_get_decorator context =
   let assert_get_decorator source decorator expected =
-    let resolution = populate source |> fun environment -> Environment.resolution environment () in
+    let resolution =
+      let _, _, environment =
+        ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+      in
+      Environment.resolution environment ()
+    in
     let assert_logic expected =
       match parse_last_statement source with
       | { Node.value = Statement.Class definition; _ } ->
@@ -240,10 +255,15 @@ let test_get_decorator _ =
     [{ name = "abc.ABCMeta"; arguments = None }]
 
 
-let test_constructors _ =
+let test_constructors context =
   let assert_constructor source instantiated constructors =
     Class.AttributeCache.clear ();
-    let resolution = populate source |> fun environment -> Environment.resolution environment () in
+    let resolution =
+      let _, _, environment =
+        ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+      in
+      Environment.resolution environment ()
+    in
     let instantiated =
       parse_single_expression instantiated
       |> GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
@@ -348,9 +368,12 @@ let test_constructors _ =
   ()
 
 
-let test_methods _ =
+let test_methods context =
   let assert_methods source methods =
-    match parse_last_statement source with
+    let sources, _ =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.parse_sources
+    in
+    match List.hd_exn sources |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
         let actuals =
           let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
@@ -374,9 +397,14 @@ let test_methods _ =
     ["foo"; "bar"; "baz"]
 
 
-let test_has_method _ =
+let test_has_method context =
   let get_actual source target_method =
-    let resolution = populate source |> fun environment -> Environment.resolution environment () in
+    let resolution =
+      let _, _, environment =
+        ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+      in
+      Environment.resolution environment ()
+    in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let actual =
@@ -432,41 +460,41 @@ let test_is_protocol _ =
   ()
 
 
-let test_class_attributes _ =
+let test_class_attributes context =
   let setup source =
+    let sources, _, environment =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    in
     let parent =
-      match parse_last_statement source with
+      match List.hd_exn sources |> last_statement_exn with
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
-    populate source
-    |> fun environment ->
     Environment.resolution environment (), Class.create (Node.create_with_default_location parent)
   in
   let resolution, parent =
     setup
       {|
         class type:
-          type.__name__: str = 'asdf'
-        foo: foo
+          __name__: str = 'asdf'
         class Metaclass:
-          def Metaclass.implicit(cls) -> int:
+          def implicit(cls) -> int:
             return 0
 
         class Attributes(metaclass=Metaclass):
-          def Attributes.bar(self) -> int:
+          def bar(self) -> int:
             pass
-          def Attributes.baz(self, x:int) -> int:
+          def baz(self, x:int) -> int:
             pass
-          def Attributes.baz(self, x:str) -> str:
+          def baz(self, x:str) -> str:
             pass
         class foo():
-          def foo.__init__(self):
+          def __init__(self):
             self.implicit: int = 1
-          foo.first: int
-          foo.second: int
-          foo.third: int = 1
-          foo.class_attribute: typing.ClassVar[int]
+          first: int
+          second: int
+          third: int = 1
+          class_attribute: typing.ClassVar[int]
       |}
   in
   let create_attribute
@@ -562,30 +590,28 @@ let test_class_attributes _ =
   assert_fold
     {|
       class type:
-        type.__name__: str = 'asdf'
-      foo: foo
+        __name__: str = 'asdf'
       class foo():
-        def foo.__init__(self):
+        def __init__(self):
           self.implicit: int = 1
-        foo.first: int
-        foo.second: int
-        foo.third: int = 1
-        foo.class_attribute: typing.ClassVar[int]
+        first: int
+        second: int
+        third: int = 1
+        class_attribute: typing.ClassVar[int]
     |}
     ["__init__"; "class_attribute"; "first"; "implicit"; "second"; "third"];
   assert_fold
     ~class_attributes:true
     {|
       class type:
-        type.__name__: str = 'asdf'
-      foo: foo
+        __name__: str = 'asdf'
       class foo():
-        def foo.__init__(self):
+        def __init__(self):
           self.implicit: int = 1
-        foo.first: int
-        foo.second: int
-        foo.third: int = 1
-        foo.class_attribute: typing.ClassVar[int]
+        first: int
+        second: int
+        third: int = 1
+        class_attribute: typing.ClassVar[int]
     |}
     [ "class_attribute";
       "first";
@@ -613,12 +639,12 @@ let test_class_attributes _ =
     ~class_attributes:true
     {|
       class type:
-        type.__type__: str
+        __type__: str
       class Meta(type):
-        Meta.__meta__: str
+        __meta__: str
       class Foo(metaclass=Meta):
-        Foo.__static__: typing.ClassVar[int]
-        Foo.__instance__: int
+        __static__: typing.ClassVar[int]
+        __instance__: int
     |}
     [ "__instance__";
       "__static__";
@@ -647,18 +673,18 @@ let test_class_attributes _ =
     setup
       {|
         class Metaclass:
-          def Metaclass.implicit(cls) -> int:
+          def implicit(cls) -> int:
             return 0
 
         class Attributes(metaclass=Metaclass):
-          def Attributes.bar(self) -> int:
+          def bar(self) -> int:
             pass
-          def Attributes.baz(self, x:int) -> int:
+          def baz(self, x:int) -> int:
             pass
-          def Attributes.baz(self, x:str) -> str:
+          def baz(self, x:str) -> str:
             pass
           @property
-          def Attributes.property(self) -> str:
+          def property(self) -> str:
             pass
       |}
   in
@@ -734,11 +760,12 @@ let test_class_attributes _ =
     ~expected_attribute:(create_expected_attribute ~property:(Some ReadOnly) "property" "str")
 
 
-let test_fallback_attribute _ =
+let test_fallback_attribute context =
   let assert_fallback_attribute ~name source annotation =
     Class.AttributeCache.clear ();
-    let global_resolution = Environment.resolution (populate source) () in
-    let resolution = TypeCheck.resolution global_resolution () in
+    let resolution =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+    in
     let attribute =
       parse_last_statement source
       |> (function
@@ -849,9 +876,14 @@ let test_fallback_attribute _ =
     (Some Type.none)
 
 
-let test_constraints _ =
+let test_constraints context =
   let assert_constraints ~target ~instantiated ?parameters source expected =
-    let resolution = populate source |> fun environment -> Environment.resolution environment () in
+    let resolution =
+      let _, _, environment =
+        ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+      in
+      Environment.resolution environment ()
+    in
     let target =
       let { Source.statements; _ } = parse source in
       let target = function
@@ -1106,9 +1138,12 @@ let test_constraints _ =
     []
 
 
-let test_inferred_generic_base _ =
+let test_inferred_generic_base context =
   let assert_inferred_generic ~target source expected =
-    let ({ Source.statements; _ } as source) = parse source in
+    let sources, _, environment =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    in
+    let { Source.statements; _ } = List.hd_exn sources in
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
@@ -1118,7 +1153,7 @@ let test_inferred_generic_base _ =
       in
       List.find_map ~f:target statements |> value
     in
-    let resolution = Test.resolution ~sources:[source] () |> Resolution.global_resolution in
+    let resolution = Environment.resolution environment () in
     assert_equal
       ~cmp:(List.equal (Argument.equal Expression.equal))
       expected
@@ -1181,9 +1216,12 @@ let test_inferred_generic_base _ =
   ()
 
 
-let test_metaclasses _ =
+let test_metaclasses context =
   let assert_metaclass ~source ~target metaclass =
-    let ({ Source.statements; _ } as source) = parse source in
+    let sources, _, environment =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    in
+    let { Source.statements; _ } = List.hd_exn sources in
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
@@ -1193,7 +1231,7 @@ let test_metaclasses _ =
       in
       List.find_map ~f:target statements
     in
-    let resolution = Test.resolution ~sources:[source] () |> Resolution.global_resolution in
+    let resolution = Environment.resolution environment () in
     match target with
     | Some target ->
         assert_equal (Type.Primitive metaclass) (Annotated.Class.metaclass ~resolution target)
@@ -1296,10 +1334,13 @@ let test_metaclasses _ =
     "MoreMeta"
 
 
-let test_overrides _ =
+let test_overrides context =
   let resolution =
-    populate
-      {|
+    let _, _, environment =
+      ScratchProject.setup
+        ~context
+        [ ( "__init__.py",
+            {|
       class Foo:
         def Foo.foo(): pass
       class Bar(Foo):
@@ -1308,7 +1349,10 @@ let test_overrides _ =
         def Baz.foo(): pass
         def Baz.baz(): pass
     |}
-    |> fun environment -> Environment.resolution environment ()
+          ) ]
+      |> ScratchProject.build_environment
+    in
+    Environment.resolution environment ()
   in
   let definition =
     let definition =
@@ -1323,10 +1367,12 @@ let test_overrides _ =
   assert_equal (Option.value_exn overrides |> Attribute.parent |> Type.show) "Foo"
 
 
-let test_unimplemented_abstract_methods _ =
+let test_unimplemented_abstract_methods context =
   let assert_unimplemented_methods_equal ~source ~class_name ~expected =
-    let source = parse source in
-    let resolution = Test.resolution ~sources:[source] () |> Resolution.global_resolution in
+    let _, _, environment =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    in
+    let resolution = Environment.resolution environment () in
     let definition =
       let definition =
         GlobalResolution.class_definition resolution (Type.Primitive class_name) >>| Class.create

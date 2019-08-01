@@ -9,13 +9,9 @@ open Analysis
 open Taint
 open Test
 
-let test_of_expression _ =
+let test_of_expression context =
   let ( !+ ) expression = Test.parse_single_expression expression in
-  let assert_of_expression
-      ?(resolution = Test.resolution ~configuration:Test.mock_configuration ())
-      expression
-      expected
-    =
+  let assert_of_expression ~resolution expression expected =
     assert_equal
       ~cmp:(Option.equal AccessPath.equal)
       ~printer:(function
@@ -24,8 +20,13 @@ let test_of_expression _ =
       expected
       (AccessPath.of_expression ~resolution expression)
   in
-  assert_of_expression !+"a" (Some { AccessPath.root = AccessPath.Root.Variable "a"; path = [] });
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
   assert_of_expression
+    ~resolution
+    !+"a"
+    (Some { AccessPath.root = AccessPath.Root.Variable "a"; path = [] });
+  assert_of_expression
+    ~resolution
     !+"a.b"
     (Some
        {
@@ -33,20 +34,18 @@ let test_of_expression _ =
          path = [AbstractTreeDomain.Label.Field "b"];
        });
   assert_of_expression
+    ~resolution
     !+"a.b.c"
     (Some
        {
          AccessPath.root = AccessPath.Root.Variable "a";
          path = [AbstractTreeDomain.Label.Field "b"; AbstractTreeDomain.Label.Field "c"];
        });
-  assert_of_expression !+"a.b.call()" None;
+  assert_of_expression ~resolution !+"a.b.call()" None;
 
   let resolution =
-    Test.resolution
-      ~sources:
-        [ Test.parse ~handle:"qualifier.py" "unannotated = unknown_value()"
-          |> Preprocessing.preprocess ]
-      ()
+    ScratchProject.setup ~context ["qualifier.py", "unannotated = unknown_value()"]
+    |> ScratchProject.build_resolution
   in
   assert_of_expression
     ~resolution

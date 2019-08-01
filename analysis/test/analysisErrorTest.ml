@@ -402,8 +402,8 @@ let test_due_to_analysis_limitations _ =
     (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Top })
 
 
-let test_due_to_mismatch_with_any _ =
-  let resolution = Test.resolution () in
+let test_due_to_mismatch_with_any context =
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
   let assert_due_to_mismatch_with_any kind =
     assert_true (Error.due_to_mismatch_with_any resolution (error kind))
   in
@@ -707,10 +707,12 @@ let test_due_to_mismatch_with_any _ =
        })
 
 
-let test_join _ =
+let test_join context =
+  let resolution =
+    let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
+    Environment.resolution environment ()
+  in
   let assert_join left right expected =
-    let environment = Test.environment () in
-    let resolution = Environment.resolution environment () in
     let result = Error.join ~resolution left right in
     assert_equal ~printer:Error.show ~cmp:Error.equal expected result
   in
@@ -1001,9 +1003,9 @@ let test_join _ =
        (revealed_type "a" (Annotation.create Type.float)))
 
 
-let test_less_or_equal _ =
+let test_less_or_equal context =
   let resolution =
-    let environment = Test.environment () in
+    let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
     Environment.resolution environment ()
   in
   assert_true
@@ -1069,23 +1071,24 @@ let test_less_or_equal _ =
        (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.float))))
 
 
-let test_filter _ =
+let test_filter context =
   let open Error in
-  let environment =
-    Test.environment
-      ~configuration
-      ~sources:
-        ( parse
+  let resolution =
+    let _, _, environment =
+      ScratchProject.setup
+        ~context
+        [ ( "test.py",
             {|
-          class Foo: ...
-          class MockChild(unittest.mock.Mock): ...
-          class NonCallableChild(unittest.mock.NonCallableMock): ...
-          class NonMockChild(Foo): ...
-        |}
-        :: Test.typeshed_stubs () )
-      ()
+            class Foo: ...
+            class MockChild(unittest.mock.Mock): ...
+            class NonCallableChild(unittest.mock.NonCallableMock): ...
+            class NonMockChild(Foo): ...
+          |}
+          ) ]
+      |> ScratchProject.build_environment
+    in
+    Environment.resolution environment ()
   in
-  let resolution = Environment.resolution environment () in
   let assert_filtered ?(location = Location.Instantiated.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
     assert_equal [] (filter ~configuration ~resolution errors)
@@ -1104,10 +1107,10 @@ let test_filter _ =
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.Primitive "unittest.mock.Mock") Type.integer);
   assert_unfiltered (incompatible_return_type Type.integer (Type.Primitive "unittest.mock.Mock"));
-  assert_filtered (undefined_attribute (Type.Primitive "MockChild"));
-  assert_filtered (undefined_attribute (Type.Primitive "NonCallableChild"));
-  assert_unfiltered (undefined_attribute (Type.Primitive "NonMockChild"));
-  assert_filtered (undefined_attribute (Type.Optional (Type.Primitive "NonCallableChild")));
+  assert_filtered (undefined_attribute (Type.Primitive "test.MockChild"));
+  assert_filtered (undefined_attribute (Type.Primitive "test.NonCallableChild"));
+  assert_unfiltered (undefined_attribute (Type.Primitive "test.NonMockChild"));
+  assert_filtered (undefined_attribute (Type.Optional (Type.Primitive "test.NonCallableChild")));
   assert_unfiltered (incompatible_return_type (Type.Optional Type.Bottom) Type.integer);
   assert_filtered (unexpected_keyword "foo" (Some "unittest.mock.call"));
   assert_unfiltered (unexpected_keyword "foo" None);
@@ -1157,8 +1160,8 @@ let test_filter _ =
     (inconsistent_override "__foo__" (StrengthenedPrecondition (NotFound (Keywords Type.integer))))
 
 
-let test_suppress _ =
-  let resolution = Test.resolution () in
+let test_suppress context =
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
   let assert_suppressed mode ?(signature = mock_signature) ?location kind =
     assert_equal true (Error.suppress ~mode ~resolution (error ~signature ?location kind))
   in

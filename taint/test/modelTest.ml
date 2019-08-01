@@ -7,16 +7,19 @@ open Pyre
 open Core
 open OUnit2
 open Taint
+open Test
 open TestHelper
 module Callable = Interprocedural.Callable
 
-let assert_model ?source ~model_source ~expect () =
+let assert_model ?source ~context ~model_source ~expect () =
   let source =
     match source with
     | None -> model_source
     | Some source -> source
   in
-  let resolution = Test.resolution ~sources:(Test.typeshed_stubs () @ [Test.parse source]) () in
+  let resolution =
+    ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+  in
   let configuration =
     TaintConfiguration.
       { sources = ["TestTest"]; sinks = ["TestSink"]; features = ["special"]; rules = [] }
@@ -33,7 +36,8 @@ let assert_model ?source ~model_source ~expect () =
   List.iter ~f:(check_expectation ~get_model) expect
 
 
-let test_source_models _ =
+let test_source_models context =
+  let assert_model = assert_model ~context in
   assert_model
     ~model_source:"def taint() -> TaintSource[TestTest]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "taint"]
@@ -61,7 +65,8 @@ let test_source_models _ =
     ()
 
 
-let test_sink_models _ =
+let test_sink_models context =
+  let assert_model = assert_model ~context in
   assert_model
     ~model_source:{|
         def sink(parameter: TaintSink[TestSink]):
@@ -125,7 +130,8 @@ let test_sink_models _ =
     ()
 
 
-let test_class_models _ =
+let test_class_models context =
+  let assert_model = assert_model ~context in
   assert_model
     ~source:
       {|
@@ -188,21 +194,24 @@ let test_class_models _ =
     ()
 
 
-let test_taint_in_taint_out_models _ =
+let test_taint_in_taint_out_models context =
   assert_model
+    ~context
     ~model_source:"def tito(parameter: TaintInTaintOut): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "tito"]
     ()
 
 
-let test_taint_in_taint_out_models_alternate _ =
+let test_taint_in_taint_out_models_alternate context =
   assert_model
+    ~context
     ~model_source:"def tito(parameter: TaintInTaintOut[LocalReturn]): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "tito"]
     ()
 
 
-let test_taint_in_taint_out_update_models _ =
+let test_taint_in_taint_out_update_models context =
+  let assert_model = assert_model ~context in
   assert_model
     ~model_source:"def update(self, arg1: TaintInTaintOut[Updates[self]]): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["arg1 updates parameter 0"] "update"]
@@ -221,8 +230,9 @@ let test_taint_in_taint_out_update_models _ =
     ()
 
 
-let test_union_models _ =
+let test_union_models context =
   assert_model
+    ~context
     ~model_source:"def both(parameter: Union[TaintInTaintOut, TaintSink[XSS]]): ..."
     ~expect:
       [ outcome
@@ -233,15 +243,17 @@ let test_union_models _ =
     ()
 
 
-let test_source_breadcrumbs _ =
+let test_source_breadcrumbs context =
   assert_model
+    ~context
     ~model_source:"def source() -> TaintSource[Test, Via[special]]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "source"]
     ()
 
 
-let test_sink_breadcrumbs _ =
+let test_sink_breadcrumbs context =
   assert_model
+    ~context
     ~model_source:"def sink(parameter: TaintSink[Test, Via[special]]): ..."
     ~expect:
       [ outcome
@@ -251,14 +263,16 @@ let test_sink_breadcrumbs _ =
     ()
 
 
-let test_tito_breadcrumbs _ =
+let test_tito_breadcrumbs context =
   assert_model
+    ~context
     ~model_source:"def tito(parameter: TaintInTaintOut[Via[special]]): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "tito"]
     ()
 
 
-let test_attach_features _ =
+let test_attach_features context =
+  let assert_model = assert_model ~context in
   assert_model
     ~model_source:"def source() -> AttachToSource[Via[special]]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.Attach] "source"]
@@ -274,13 +288,13 @@ let test_attach_features _ =
     ()
 
 
-let test_invalid_models _ =
+let test_invalid_models context =
   let assert_invalid_model ?path ~model_source ~expect () =
     let resolution =
-      Test.resolution
-        ~sources:
-          [ Test.parse
-              {|
+      ScratchProject.setup
+        ~context
+        [ ( "__init__.py",
+            {|
               unannotated_global = source()
               def sink(parameter) -> None: pass
               def sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
@@ -292,8 +306,8 @@ let test_invalid_models _ =
               class C:
                 unannotated_class_variable = source()
             |}
-            |> Preprocessing.preprocess ]
-        ()
+          ) ]
+      |> ScratchProject.build_resolution
     in
     let configuration =
       TaintConfiguration.

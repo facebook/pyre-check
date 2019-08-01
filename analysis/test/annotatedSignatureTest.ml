@@ -10,14 +10,16 @@ open Analysis
 open Expression
 open Pyre
 open Test
-open AnnotatedTest
 module Resolution = Analysis.Resolution
 module Signature = Annotated.Signature
 open Signature
 
-let resolution =
-  populate
-    {|
+let test_select context =
+  let resolution =
+    ScratchProject.setup
+      ~context
+      [ ( "__init__.py",
+          {|
       _T = typing.TypeVar('_T')
       _S = typing.TypeVar('_S')
       _R = typing.TypeVar('_R', int, float)
@@ -47,21 +49,19 @@ let resolution =
       class ExtendsDictStrInt(typing.Dict[str, int]): pass
       optional: typing.Optional[int]
     |}
-  |> fun environment -> TypeCheck.resolution (Environment.resolution environment ()) ()
-
-
-let parse_annotation annotation =
-  (* Allow untracked to create callables with unknowns, which would otherwise be generated from
-     Callable.create on defines. *)
-  annotation
-  |> parse_single_expression
-  |> GlobalResolution.parse_annotation
-       ~allow_untracked:true
-       ~allow_invalid_type_parameters:true
-       (Resolution.global_resolution resolution)
-
-
-let test_select _ =
+        ) ]
+    |> ScratchProject.build_resolution
+  in
+  let parse_annotation annotation =
+    (* Allow untracked to create callables with unknowns, which would otherwise be generated from
+       Callable.create on defines. *)
+    annotation
+    |> parse_single_expression
+    |> GlobalResolution.parse_annotation
+         ~allow_untracked:true
+         ~allow_invalid_type_parameters:true
+         (Resolution.global_resolution resolution)
+  in
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
     let parse_callable callable =
       callable

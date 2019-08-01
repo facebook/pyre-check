@@ -8,9 +8,12 @@ open Analysis
 open Ast
 open Test
 
-let configuration = Configuration.Analysis.create ()
+let default_environment context =
+  let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
+  environment
 
-let test_index _ =
+
+let test_index context =
   let source =
     {|
       class baz.baz(): pass
@@ -18,12 +21,26 @@ let test_index _ =
       def foo(): pass
     |}
   in
-  let handler = Test.environment ~configuration ~sources:[parse ~handle:"test.py" source] () in
+  let _, _, handler =
+    ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+  in
   let qualifier = Reference.create "test" in
   let (module DependencyHandler) = Environment.dependency_handler handler in
-  assert_equal (DependencyHandler.get_class_keys ~qualifier) ["baz.baz"];
-  assert_equal (DependencyHandler.get_function_keys ~qualifier) [!&"foo"];
-  assert_equal (DependencyHandler.get_alias_keys ~qualifier) ["test._T"]
+  assert_equal
+    ~cmp:(List.equal String.equal)
+    ~printer:(String.concat ~sep:", ")
+    (DependencyHandler.get_class_keys ~qualifier)
+    ["test.baz.baz"];
+  assert_equal
+    ~cmp:(List.equal Reference.equal)
+    ~printer:(List.to_string ~f:Reference.show)
+    (DependencyHandler.get_function_keys ~qualifier)
+    [!&"test.foo"];
+  assert_equal
+    ~cmp:(List.equal String.equal)
+    ~printer:(String.concat ~sep:", ")
+    (DependencyHandler.get_alias_keys ~qualifier)
+    ["test._T"]
 
 
 let add_dependent environment handle dependent =
@@ -45,8 +62,8 @@ let assert_dependencies ~environment ~modules ~expected function_to_test =
   assert_equal ~printer:(List.to_string ~f:ident) expected dependencies
 
 
-let test_dependent_of_list _ =
-  let environment = Test.environment () in
+let test_dependent_of_list context =
+  let environment = default_environment context in
   Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
@@ -61,8 +78,8 @@ let test_dependent_of_list _ =
   assert_dependencies ~modules:["test"] ~expected:[]
 
 
-let test_dependent_of_list_duplicates _ =
-  let environment = Test.environment () in
+let test_dependent_of_list_duplicates context =
+  let environment = default_environment context in
   Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
   add_dependent environment "a" "b";
   add_dependent environment "a" "c";
@@ -74,8 +91,8 @@ let test_dependent_of_list_duplicates _ =
   assert_dependencies ~modules:["a"] ~expected:["b"; "c"]
 
 
-let test_transitive_dependent_of_list _ =
-  let environment = Test.environment () in
+let test_transitive_dependent_of_list context =
+  let environment = default_environment context in
   Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
@@ -89,8 +106,8 @@ let test_transitive_dependent_of_list _ =
   assert_dependencies ~modules:["test"] ~expected:[]
 
 
-let test_transitive_dependents _ =
-  let environment = Test.environment () in
+let test_transitive_dependents context =
+  let environment = default_environment context in
   Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
@@ -114,9 +131,9 @@ let test_transitive_dependents _ =
   ()
 
 
-let test_normalize _ =
+let test_normalize context =
   let assert_normalized ~edges expected =
-    let handler = Test.environment () in
+    let handler = default_environment context in
     let (module DependencyHandler) = Environment.dependency_handler handler in
     let add_dependent (left, right) =
       DependencyHandler.add_dependent ~qualifier:(Reference.create left) !&right

@@ -427,9 +427,6 @@ let bracket_tmpfile ?suffix context =
   bracket_tmpfile ?suffix context |> fun (filename, channel) -> Filename.realpath filename, channel
 
 
-(* Common type checking and analysis setup functions. *)
-let mock_configuration = Configuration.Analysis.create ()
-
 let typeshed_stubs ?(include_helper_builtins = true) () =
   let builtins =
     let helper_builtin_stubs =
@@ -1140,22 +1137,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     |> Preprocessing.preprocess ]
 
 
-let populate ~configuration environment sources =
-  let qualifiers = sources |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
-  Environment.purge environment qualifiers;
-  Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment sources
-
-
-let populate_shared_memory =
-  Service.Environment.populate_shared_memory ~scheduler:(Scheduler.mock ())
-
-
-let environment ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
-  let environment = Environment.shared_memory_handler () in
-  populate ~configuration environment sources;
-  environment
-
-
 let mock_signature =
   {
     Define.name = Reference.create "$empty";
@@ -1169,12 +1150,6 @@ let mock_signature =
 
 
 let mock_define = { Define.signature = mock_signature; body = [] }
-
-let resolution ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
-  let environment = environment ~configuration ~sources () in
-  let global_resolution = Environment.resolution environment () in
-  TypeCheck.resolution global_resolution ()
-
 
 let create_type_alias_table type_aliases =
   let aliases primitive = type_aliases primitive >>| fun alias -> Type.TypeAlias alias in
@@ -1260,6 +1235,38 @@ module ScratchProject = struct
       |> List.map ~f:(fun qualifier -> Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
     in
     sources, ast_environment
+
+
+  let build_environment
+      ?(include_typeshed_stubs = true)
+      ?(include_helper_builtins = true)
+      ({ configuration; _ } as project)
+    =
+    let sources, ast_environment = parse_sources project in
+    let environment =
+      let sources =
+        if include_typeshed_stubs then
+          typeshed_stubs ~include_helper_builtins () @ sources
+        else
+          sources
+      in
+      let environment = Environment.shared_memory_handler () in
+      let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+      Environment.purge environment qualifiers;
+      Service.Environment.populate
+        ~configuration
+        ~scheduler:(Scheduler.mock ())
+        environment
+        sources;
+      environment
+    in
+    sources, ast_environment, environment
+
+
+  let build_resolution ?(include_typeshed_stubs = true) project =
+    let _, _, environment = build_environment ~include_typeshed_stubs project in
+    let global_resolution = Environment.resolution environment () in
+    TypeCheck.resolution global_resolution ()
 end
 
 type test_update_environment_with_t = {
@@ -1286,18 +1293,17 @@ let assert_errors
 
   let descriptions =
     let errors =
-      let configuration, sources =
+      let configuration, sources, environment =
         let project =
           let external_sources =
             List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
           in
           ScratchProject.setup ~context ~external_sources [handle, source]
         in
-        let sources, _ = ScratchProject.parse_sources project in
+        let sources, _, environment = ScratchProject.build_environment project in
         let configuration = ScratchProject.configuration_of project in
-        configuration, sources
+        configuration, sources, environment
       in
-      let environment = environment ~configuration ~sources:(typeshed_stubs () @ sources) () in
       let global_resolution = Environment.resolution environment () in
       let configuration = { configuration with debug; strict; declare; infer } in
       let source =

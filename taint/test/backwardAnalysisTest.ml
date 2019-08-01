@@ -19,7 +19,7 @@ let assert_taint ~context source expected =
     let source = List.hd_exn sources in
     Test.ScratchProject.configuration_of project, source
   in
-  let environment = Test.environment ~configuration () in
+  let environment = TestHelper.environment ~configuration () in
   let global_resolution = Environment.resolution environment () in
   Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment [source];
   TypeCheck.run ~configuration ~global_resolution ~source |> ignore;

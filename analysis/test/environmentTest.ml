@@ -13,27 +13,46 @@ open Test
 
 let value option = Option.value_exn option
 
-let configuration = Configuration.Analysis.create ~infer:true ()
+let create_environment
+    ~context
+    ?(include_typeshed_stubs = true)
+    ?(include_helpers = false)
+    ?(additional_sources = [])
+    ()
+  =
+  let sources, _, environment =
+    ScratchProject.setup ~context additional_sources
+    |> ScratchProject.build_environment
+         ~include_typeshed_stubs
+         ~include_helper_builtins:include_helpers
+  in
+  (* TODO (T47159596): This can be done in a more elegant way *)
+  let () =
+    let set_up_shared_memory _ = () in
+    let tear_down_shared_memory () _ =
+      let typeshed_sources =
+        if include_typeshed_stubs then
+          typeshed_stubs ~include_helper_builtins:include_helpers ()
+        else
+          []
+      in
+      let qualifiers =
+        List.append sources typeshed_sources
+        |> List.map ~f:(fun { Source.qualifier; _ } -> qualifier)
+      in
+      Environment.purge environment qualifiers
+    in
+    OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
+  in
+  environment
 
-let create_environment ?(include_helpers = false) ?(additional_sources = []) () =
-  let sources = typeshed_stubs ~include_helper_builtins:include_helpers () @ additional_sources in
-  Test.environment ~configuration ~sources ()
+
+let populate ?include_typeshed_stubs ?include_helpers sources =
+  create_environment ?include_typeshed_stubs ?include_helpers ~additional_sources:sources ()
 
 
-let populate_with_sources ?include_helpers sources =
-  create_environment ?include_helpers ~additional_sources:sources ()
-
-
-let populate ?handle ?include_helpers source =
-  populate_with_sources ?include_helpers [parse ?handle source]
-
-
-let populate_preprocess ?handle source =
-  populate_with_sources [source |> parse ?handle |> Preprocessing.preprocess]
-
-
-let order_and_environment source =
-  let environment = populate source in
+let order_and_environment ~context source =
+  let environment = populate ~context source in
   ( {
       TypeOrder.handler = Environment.class_hierarchy environment;
       constructor = (fun _ ~protocol_assumptions:_ -> None);
@@ -60,8 +79,8 @@ let create_location path start_line start_column end_line end_column =
   { Location.path; start; stop }
 
 
-let test_register_class_definitions _ =
-  let environment = create_environment () in
+let test_register_class_definitions context =
+  let environment = create_environment ~context () in
   Environment.register_class_definitions
     environment
     (parse
@@ -107,8 +126,8 @@ let test_register_class_definitions _ =
     new_annotations
 
 
-let test_register_class_metadata _ =
-  let environment = create_environment ~include_helpers:false () in
+let test_register_class_metadata context =
+  let environment = create_environment ~context ~include_helpers:false () in
   let source =
     parse
       {|
@@ -167,11 +186,8 @@ let test_register_class_metadata _ =
   ()
 
 
-let test_register_aliases _ =
-  let register_all sources =
-    let sources = List.map sources ~f:Preprocessing.preprocess in
-    populate_with_sources sources
-  in
+let test_register_aliases context =
+  let register_all sources = populate ~context sources in
   let assert_resolved sources aliases =
     let environment = register_all sources in
     let assert_alias (alias, target) =
@@ -186,7 +202,7 @@ let test_register_aliases _ =
     List.iter aliases ~f:assert_alias
   in
   assert_resolved
-    [ parse
+    [ ( "__init__.py",
         {|
           class C: ...
           class D(C): pass
@@ -194,56 +210,52 @@ let test_register_aliases _ =
           A = B
           Twiddledee, Twiddledum = C, C
         |}
-    ]
+      ) ]
     ["C", "C"; "D", "D"; "B", "D"; "A", "D"; "Twiddledee", "Twiddledee"; "Twiddledum", "Twiddledum"];
+
   assert_resolved
-    [ parse
-        ~handle:"qualifier.py"
+    [ ( "qualifier.py",
         {|
           class C: ...
           class D(C): pass
           B = D
           A = B
         |}
-    ]
+      ) ]
     [ "qualifier.C", "qualifier.C";
       "qualifier.D", "qualifier.D";
       "qualifier.B", "qualifier.D";
       "qualifier.A", "qualifier.D" ];
-  assert_resolved [parse "X = None"] ["X", "None"];
+  assert_resolved ["__init__.py", "X = None"] ["X", "None"];
   assert_resolved
-    [ parse
-        ~handle:"collections.py"
+    [ ( "collections.py",
         {|
           from typing import Iterator as TypingIterator
           from typing import Iterable
         |}
-    ]
+      ) ]
     [ "collections.TypingIterator", "typing.Iterator[typing.Any]";
       "collections.Iterable", "typing.Iterable[typing.Any]" ];
 
   (* Handle builtins correctly. *)
   assert_resolved
-    [ parse
-        ~handle:"collections.py"
+    [ ( "collections.py",
         {|
           from builtins import int
           from builtins import dict as CDict
         |}
-    ]
+      ) ]
     ["collections.int", "int"; "collections.CDict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
-    [ parse
-        ~handle:"collections.py"
+    [ ( "collections.py",
         {|
           from future.builtins import int
           from future.builtins import dict as CDict
         |}
-    ]
+      ) ]
     ["collections.int", "int"; "collections.CDict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
-    [ parse
-        ~handle:"asyncio/tasks.py"
+    [ ( "asyncio/tasks.py",
         {|
            from typing import TypeVar, Generic, Union
            _T = typing.TypeVar('_T')
@@ -251,80 +263,76 @@ let test_register_aliases _ =
            class Awaitable(Generic[_T]): ...
            _FutureT = Union[Future[_T], Awaitable[_T]]
         |}
-    ]
+      ) ]
     [ "asyncio.tasks.Future[int]", "asyncio.tasks.Future[int]";
       ( "asyncio.tasks._FutureT[int]",
         "typing.Union[asyncio.tasks.Awaitable[int], asyncio.tasks.Future[int]]" ) ];
   assert_resolved
-    [ parse
-        ~handle:"a.py"
+    [ ( "a.py",
         {|
           import typing
           _T = typing.TypeVar("_T")
           _T2 = typing.TypeVar("UnrelatedName")
         |}
-    ]
+      ) ]
     ["a._T", "Variable[a._T]"; "a._T2", "Variable[a._T2]"];
 
   (* Type variable aliases in classes. *)
   assert_resolved
-    [ parse
-        ~handle:"qualifier.py"
+    [ ( "qualifier.py",
         {|
           class Class:
             T = typing.TypeVar('T')
             Int = int
         |}
-    ]
+      ) ]
     ["qualifier.Class.T", "Variable[qualifier.Class.T]"; "qualifier.Class.Int", "int"];
 
   (* Stub-suppressed aliases show up as `Any`. *)
   assert_resolved
-    [ parse ~local_mode:Source.PlaceholderStub ~handle:"stubbed.pyi" "";
-      parse
-        ~handle:"qualifier.py"
+    [ "stubbed.pyi", "# pyre-placeholder-stub";
+      ( "qualifier.py",
         {|
           class str: ...
           T = stubbed.Something
           Q = typing.Union[stubbed.Something, str]
         |}
-    ]
+      ) ]
     ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Union[typing.Any, qualifier.str]"];
   assert_resolved
-    [ parse
-        ~handle:"t.py"
+    [ ( "t.py",
         {|
           import x
           X = typing.Dict[int, int]
           T = typing.Dict[int, X]
           C = typing.Callable[[T], int]
-        |};
-      parse
-        ~handle:"x.py"
+        |}
+      );
+      ( "x.py",
         {|
           import t
           X = typing.Dict[int, int]
           T = typing.Dict[int, t.X]
           C = typing.Callable[[T], int]
         |}
-    ]
+      ) ]
     [ "x.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
       "t.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]" ];
   assert_resolved
-    [ parse ~handle:"t.py" {|
+    [ "t.py", {|
           from typing import Dict
         |};
-      parse ~handle:"x.py" {|
+      "x.py", {|
           from t import *
         |} ]
-    ["x.Dict", "x.Dict"];
+    ["x.Dict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
-    [parse ~handle:"x.py" {|
+    ["x.py", {|
           C = typing.Callable[[gurbage], gurbage]
         |}]
     ["x.C", "x.C"];
   assert_resolved
-    [ parse
+    [ ( "__init__.py",
         {|
           A = int
           B: typing.Type[int] = int
@@ -334,47 +342,41 @@ let test_register_aliases _ =
           F = A
           G = 1
         |}
-    ]
+      ) ]
     ["A", "int"; "B", "B"; "C", "C"; "D", "typing.Any"; "E", "E"; "F", "int"; "G", "G"];
   assert_resolved
-    [ parse ~handle:"a.py" {|
+    ["a.py", {|
           class Foo: ...
-        |};
-      parse ~handle:"b.py" {|
+        |}; "b.py", {|
           import a
-        |} ]
+        |}]
     ["b.a.Foo", "a.Foo"];
   assert_resolved
-    [ parse ~handle:"a.py" {|
+    [ "a.py", {|
           class Foo: ...
         |};
-      parse
-        ~handle:"b.py"
-        {|
+      "b.py", {|
           from a import Foo
           class Foo:
             ...
         |} ]
     ["b.Foo", "b.Foo"];
   assert_resolved
-    [ parse ~handle:"a.py" {|
+    [ "a.py", {|
           class Bar: ...
         |};
-      parse
-        ~handle:"b.py"
-        {|
+      "b.py", {|
           from a import Bar as Foo
           class Foo:
             ...
-        |} ]
+        |}
+    ]
     ["b.Foo", "b.Foo"];
   assert_resolved
-    [ parse ~handle:"a.py" {|
+    [ "a.py", {|
           class Foo: ...
         |};
-      parse
-        ~handle:"b.py"
-        {|
+      "b.py", {|
           from a import Foo as Bar
           class Foo: ...
         |} ]
@@ -391,12 +393,12 @@ let test_register_aliases _ =
     List.iter aliases ~f:assert_alias
   in
   assert_resolved
-    [ parse
+    [ ( "__init__.py",
         {|
           Tparams = pyre_extensions.ParameterSpecification('Tparams')
           Ts = pyre_extensions.ListVariadic('Ts')
       |}
-    ]
+      ) ]
     [ ( "Tparams",
         Type.VariableAlias
           (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Tparams")) );
@@ -406,8 +408,8 @@ let test_register_aliases _ =
   ()
 
 
-let test_register_implicit_submodules _ =
-  let environment = create_environment () in
+let test_register_implicit_submodules context =
+  let environment = create_environment ~context () in
   Environment.register_implicit_submodules environment (Reference.create "a.b.c");
   let global_resolution = Environment.resolution environment () in
   assert_equal
@@ -417,8 +419,8 @@ let test_register_implicit_submodules _ =
   assert_true (Environment.is_module environment (Reference.create "a"))
 
 
-let test_connect_definition _ =
-  let environment = create_environment () in
+let test_connect_definition context =
+  let environment = create_environment ~context () in
   let resolution = Environment.resolution environment () in
   let (module TypeOrderHandler : ClassHierarchy.Handler) =
     Environment.class_hierarchy environment
@@ -456,8 +458,8 @@ let test_connect_definition _ =
   assert_edge ~predecessor:"D" ~successor:"float"
 
 
-let test_register_globals _ =
-  let environment = create_environment () in
+let test_register_globals context =
+  let environment = create_environment ~context () in
   let resolution = Environment.resolution environment () in
   let assert_global reference expected =
     let actual =
@@ -536,8 +538,8 @@ let test_register_globals _ =
   ()
 
 
-let test_connect_type_order _ =
-  let environment = create_environment ~include_helpers:false () in
+let test_connect_type_order context =
+  let environment = create_environment ~context ~include_helpers:false () in
   let resolution = Environment.resolution environment () in
   let source =
     parse
@@ -574,12 +576,14 @@ let test_connect_type_order _ =
   assert_successors "CallMe" ["typing.Callable"; "object"]
 
 
-let test_populate _ =
+let test_populate context =
   (* Test type resolution. *)
-  let environment = populate {|
+  let environment =
+    populate ~context ["__init__.py", {|
       class foo.foo(): ...
       class bar(): ...
-    |} in
+    |}]
+  in
   assert_equal (parse_annotation environment !"foo.foo") (Type.Primitive "foo.foo");
   assert_equal
     (parse_annotation environment (parse_single_expression "Optional[foo.foo]"))
@@ -600,16 +604,16 @@ let test_populate _ =
   (* Check type aliases. *)
   let environment =
     populate
-      {|
-      class str: ...
+      ~context
+      ["test.py", {|
       _T = typing.TypeVar('_T')
       S = str
       S2 = S
-    |}
+    |}]
   in
-  assert_equal (parse_annotation environment !"_T") (Type.variable "_T");
-  assert_equal (parse_annotation environment !"S") Type.string;
-  assert_equal (parse_annotation environment !"S2") Type.string;
+  assert_equal (parse_annotation environment !"test._T") (Type.variable "test._T");
+  assert_equal (parse_annotation environment !"test.S") Type.string;
+  assert_equal (parse_annotation environment !"test.S2") Type.string;
   let assert_superclasses
       ?(superclass_parameters = fun _ -> Type.OrderedTypes.Concrete [])
       ~environment
@@ -644,26 +648,29 @@ let test_populate _ =
   (* Metaclasses aren't superclasses. *)
   let environment =
     populate
+      ~context
       ~include_helpers:false
-      {|
-        class abc.ABCMeta: ...
+      ["test.py", {|
         class C(metaclass=abc.ABCMeta): ...
-      |}
+      |}]
   in
-  assert_superclasses ~environment "C" ~superclasses:["object"];
+  assert_superclasses ~environment "test.C" ~superclasses:["object"];
 
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
     populate
+      ~context
       ~include_helpers:false
-      {|
+      [ ( "test.py",
+          {|
         def foo() -> int:
           return 1
         class C(foo()):
           pass
       |}
+        ) ]
   in
-  assert_superclasses ~environment "C" ~superclasses:["object"];
+  assert_superclasses ~environment "test.C" ~superclasses:["object"];
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =
@@ -677,7 +684,10 @@ let test_populate _ =
       (GlobalResolution.global global_resolution !&actual)
   in
   let assert_global =
-    {|
+    populate
+      ~context
+      [ ( "test.py",
+          {|
       class int(): pass
       A: int = 0
       B = 0
@@ -688,7 +698,7 @@ let test_populate _ =
       G: Foo = ...
       H: alias = ...
     |}
-    |> populate_preprocess ~handle:"test.py"
+        ) ]
     |> assert_global_with_environment
   in
   assert_global
@@ -705,7 +715,10 @@ let test_populate _ =
     "test.H"
     (Annotation.create_immutable ~global:true (parse_annotation environment !"test.Foo"));
   let assert_global =
-    {|
+    populate
+      ~context
+      [ ( "__init__.py",
+          {|
       global_value_set = 1
       global_annotated: int
       global_both: int = 1
@@ -717,7 +730,7 @@ let test_populate _ =
       def function():
         pass
     |}
-    |> populate
+        ) ]
     |> assert_global_with_environment
   in
   assert_global "global_value_set" (Annotation.create_immutable ~global:true Type.integer);
@@ -757,20 +770,23 @@ let test_populate _ =
 
   (* Properties. *)
   let assert_global =
-    {|
+    populate
+      ~context
+      [ ( "test.py",
+          {|
       class Class:
         @property
         def Class.property(self) -> int: ...
     |}
-    |> populate
+        ) ]
     |> assert_global_with_environment
   in
   assert_global
-    "Class.property"
+    "test.Class.property"
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:!&"Class.property"
+          ~name:!&"test.Class.property"
           ~parameters:
             (Type.Callable.Defined
                [ Type.Callable.Parameter.Named
@@ -779,56 +795,69 @@ let test_populate _ =
           ()));
 
   (* Loops. *)
-  ( try populate {|
+  ( try
+      populate
+        ~context
+        ["test.py", {|
         def foo(cls):
           class cls(cls): pass
-      |} |> ignore with
+      |}]
+      |> ignore
+    with
   | ClassHierarchy.Cyclic -> assert_unreached () );
 
   (* Check meta variables are registered. *)
   let assert_global =
-    {|
+    populate ~context ["test.py", {|
       class A:
         pass
-    |} |> populate |> assert_global_with_environment
+    |}]
+    |> assert_global_with_environment
   in
   assert_global
-    "A"
-    ( Type.Primitive "A"
+    "test.A"
+    ( Type.Primitive "test.A"
     |> Type.meta
     |> Annotation.create_immutable ~global:true ~original:(Some Type.Top) );
 
   (* Callable classes. *)
   let environment =
     populate
-      {|
+      ~context
+      [ ( "test.py",
+          {|
       class CallMe:
         def CallMe.__call__(self, x: int) -> str:
           pass
       class AlsoCallable(CallMe):
         pass
   |}
+        ) ]
   in
   let type_parameters annotation =
     match annotation with
     | "typing.Callable" ->
         Type.OrderedTypes.Concrete
-          [ parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
+          [ parse_single_expression "typing.Callable('test.CallMe.__call__')[[Named(x, int)], str]"
             |> Type.create ~aliases:(fun _ -> None) ]
     | _ -> Type.OrderedTypes.Concrete []
   in
   assert_superclasses
     ~superclass_parameters:type_parameters
     ~environment
-    "CallMe"
+    "test.CallMe"
     ~superclasses:["typing.Callable"];
   ();
-  let environment = populate {|
+  let environment = populate ~context ["test.py", {|
       def foo(x: int) -> str: ...
-    |} in
+    |}] in
   let global_resolution = Environment.resolution environment () in
   assert_equal
-    (GlobalResolution.undecorated_signature global_resolution (Reference.create "foo"))
+    ~cmp:(Option.equal (Type.Callable.equal_overload Type.equal))
+    ~printer:(function
+      | None -> "None"
+      | Some callable -> Format.asprintf "Some (%a)" (Type.Callable.pp_overload Type.pp) callable)
+    (GlobalResolution.undecorated_signature global_resolution (Reference.create "test.foo"))
     (Some
        {
          Type.Callable.annotation = Type.string;
@@ -837,16 +866,18 @@ let test_populate _ =
              [ Type.Callable.Parameter.Named
                  { annotation = Type.integer; name = "x"; default = false } ];
          define_location = None;
-       })
+       });
+  ()
 
 
-let test_less_or_equal_type_order _ =
+let test_less_or_equal_type_order context =
   let order, environment =
     order_and_environment
-      {|
-      class module.super(): ...
-      class module.sub(module.super): ...
-    |}
+      ~context
+      ["module.py", {|
+      class super(): ...
+      class sub(super): ...
+    |}]
   in
   let super = parse_annotation environment (parse_single_expression "module.super") in
   assert_equal super (Type.Primitive "module.super");
@@ -858,11 +889,14 @@ let test_less_or_equal_type_order _ =
   assert_false (TypeOrder.always_less_or_equal order ~left:super ~right:sub);
   let order, environment =
     order_and_environment
-      {|
-        class module.sub(module.super): pass
-        class module.super(module.top): pass
-        class module.top(): pass
+      ~context
+      [ ( "module.py",
+          {|
+        class sub(super): pass
+        class super(top): pass
+        class top(): pass
     |}
+        ) ]
   in
   let super = parse_annotation environment (parse_single_expression "module.super") in
   assert_equal super (Type.Primitive "module.super");
@@ -875,111 +909,122 @@ let test_less_or_equal_type_order _ =
   (* Optionals. *)
   let order, _ =
     order_and_environment
-      {|
+      ~context
+      [ ( "test.py",
+          {|
       class A: ...
       class B(A): ...
       class C(typing.Optional[A]): ...
     |}
+        ) ]
   in
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Optional (Type.Primitive "A"))
-       ~right:(Type.Optional (Type.Primitive "A")));
+       ~left:(Type.Optional (Type.Primitive "test.A"))
+       ~right:(Type.Optional (Type.Primitive "test.A")));
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Primitive "A")
-       ~right:(Type.Optional (Type.Primitive "A")));
+       ~left:(Type.Primitive "test.A")
+       ~right:(Type.Optional (Type.Primitive "test.A")));
   assert_false
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Optional (Type.Primitive "A"))
-       ~right:(Type.Primitive "A"));
+       ~left:(Type.Optional (Type.Primitive "test.A"))
+       ~right:(Type.Primitive "test.A"));
 
   (* We're currently not sound with inheritance and optionals. *)
   assert_false
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Optional (Type.Primitive "A"))
-       ~right:(Type.Primitive "C"));
+       ~left:(Type.Optional (Type.Primitive "test.A"))
+       ~right:(Type.Primitive "test.C"));
   assert_false
-    (TypeOrder.always_less_or_equal order ~left:(Type.Primitive "A") ~right:(Type.Primitive "C"));
+    (TypeOrder.always_less_or_equal
+       order
+       ~left:(Type.Primitive "test.A")
+       ~right:(Type.Primitive "test.C"));
 
   (* Unions. *)
   let order, _ =
     order_and_environment
-      {|
+      ~context
+      [ ( "test.py",
+          {|
       class A: ...
       class B(A): ...
       class int(): ...
       class float(): ...
     |}
+        ) ]
   in
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Union [Type.Primitive "A"])
-       ~right:(Type.Union [Type.Primitive "A"]));
+       ~left:(Type.Union [Type.Primitive "test.A"])
+       ~right:(Type.Union [Type.Primitive "test.A"]));
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Union [Type.Primitive "B"])
-       ~right:(Type.Union [Type.Primitive "A"]));
+       ~left:(Type.Union [Type.Primitive "test.B"])
+       ~right:(Type.Union [Type.Primitive "test.A"]));
   assert_false
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Union [Type.Primitive "A"])
-       ~right:(Type.Union [Type.Primitive "B"]));
+       ~left:(Type.Union [Type.Primitive "test.A"])
+       ~right:(Type.Union [Type.Primitive "test.B"]));
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Primitive "A")
-       ~right:(Type.Union [Type.Primitive "A"]));
+       ~left:(Type.Primitive "test.A")
+       ~right:(Type.Union [Type.Primitive "test.A"]));
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Primitive "B")
-       ~right:(Type.Union [Type.Primitive "A"]));
+       ~left:(Type.Primitive "test.B")
+       ~right:(Type.Union [Type.Primitive "test.A"]));
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Primitive "A")
-       ~right:(Type.Union [Type.Primitive "A"; Type.Primitive "B"]));
+       ~left:(Type.Primitive "test.A")
+       ~right:(Type.Union [Type.Primitive "test.A"; Type.Primitive "test.B"]));
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.Primitive "test.A"; Type.Primitive "test.B"; Type.integer])
        ~right:Type.Any);
   assert_true
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.Primitive "test.A"; Type.Primitive "test.B"; Type.integer])
        ~right:(Type.Union [Type.Top; Type.Any; Type.Optional Type.float]));
   assert_false
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.Primitive "test.A"; Type.Primitive "test.B"; Type.integer])
        ~right:Type.float);
   assert_false
     (TypeOrder.always_less_or_equal
        order
-       ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
-       ~right:(Type.Union [Type.float; Type.Primitive "B"; Type.integer]));
+       ~left:(Type.Union [Type.Primitive "test.A"; Type.Primitive "test.B"; Type.integer])
+       ~right:(Type.Union [Type.float; Type.Primitive "test.B"; Type.integer]));
 
   (* Special cases. *)
   assert_true (TypeOrder.always_less_or_equal order ~left:Type.integer ~right:Type.float)
 
 
-let test_join_type_order _ =
+let test_join_type_order context =
   let order, _ =
-    order_and_environment {|
+    order_and_environment
+      ~context
+      ["test.py", {|
       class foo(): ...
       class bar(L[T]): ...
-    |}
+    |}]
   in
-  let foo = Type.Primitive "foo" in
-  let bar = Type.Primitive "bar" in
+  let foo = Type.Primitive "test.foo" in
+  let bar = Type.Primitive "test.bar" in
   assert_equal (TypeOrder.join order Type.Bottom bar) bar;
   assert_equal (TypeOrder.join order Type.Top bar) Type.Top;
   assert_equal (TypeOrder.join order foo bar) (Type.union [foo; bar]);
@@ -990,17 +1035,19 @@ let test_join_type_order _ =
   assert_equal
     (TypeOrder.join order (Type.Union [Type.integer; Type.string]) Type.integer)
     (Type.Union [Type.integer; Type.string]);
-  assert_raises (ClassHierarchy.Untracked (Type.Primitive "durp")) (fun _ ->
-      TypeOrder.join order bar (Type.Primitive "durp"));
+  assert_raises (ClassHierarchy.Untracked (Type.Primitive "test.durp")) (fun _ ->
+      TypeOrder.join order bar (Type.Primitive "test.durp"));
 
   (* Special cases. *)
   assert_equal (TypeOrder.join order Type.integer Type.float) Type.float
 
 
-let test_meet_type_order _ =
+let test_meet_type_order context =
   let order, _ =
     order_and_environment
-      {|
+      ~context
+      [ ( "test.py",
+          {|
       class foo(): ...
       class bar(L[T]): ...
       class A: ...
@@ -1008,6 +1055,7 @@ let test_meet_type_order _ =
       class C(A): ...
       class D(B,C): ...
     |}
+        ) ]
   in
   let assert_meet left right expected =
     assert_equal
@@ -1017,12 +1065,12 @@ let test_meet_type_order _ =
       (TypeOrder.meet order left right)
       expected
   in
-  let foo = Type.Primitive "foo" in
-  let bar = Type.Primitive "bar" in
-  let a = Type.Primitive "A" in
-  let b = Type.Primitive "B" in
-  let c = Type.Primitive "C" in
-  let d = Type.Primitive "D" in
+  let foo = Type.Primitive "test.foo" in
+  let bar = Type.Primitive "test.bar" in
+  let a = Type.Primitive "test.A" in
+  let b = Type.Primitive "test.B" in
+  let c = Type.Primitive "test.C" in
+  let d = Type.Primitive "test.D" in
   assert_meet Type.Bottom bar Type.Bottom;
   assert_meet Type.Top bar bar;
   assert_meet Type.Any Type.Top Type.Any;
@@ -1039,27 +1087,25 @@ let test_meet_type_order _ =
   assert_meet Type.integer Type.float Type.integer
 
 
-let test_supertypes_type_order _ =
-  let environment = populate {|
+let test_supertypes_type_order context =
+  let environment =
+    populate ~context ["test.py", {|
       class foo(): pass
       class bar(foo): pass
-    |} in
+    |}]
+  in
   let order = Environment.class_hierarchy environment in
-  assert_equal ["object"] (ClassHierarchy.successors order "foo");
-  assert_equal ["foo"; "object"] (ClassHierarchy.successors order "bar")
+  assert_equal ["object"] (ClassHierarchy.successors order "test.foo");
+  assert_equal ["test.foo"; "object"] (ClassHierarchy.successors order "test.bar")
 
 
-let test_class_definition _ =
+let test_class_definition context =
   let is_defined environment annotation =
     class_definition environment annotation |> Option.is_some
   in
-  let environment =
-    populate {|
-      class baz.baz(): pass
-      class object():
-        pass
-    |}
-  in
+  let environment = populate ~context ["baz.py", {|
+      class baz(): pass
+    |}] in
   assert_true (is_defined environment (Type.Primitive "baz.baz"));
   assert_true (is_defined environment (Type.parametric "baz.baz" (Concrete [Type.integer])));
   assert_is_some (class_definition environment (Type.Primitive "baz.baz"));
@@ -1070,13 +1116,8 @@ let test_class_definition _ =
   assert_equal any.Class.name !&"object"
 
 
-let test_modules _ =
-  let environment =
-    populate_with_sources
-      [ Source.create ~relative:"wingus.py" [];
-        Source.create ~relative:"dingus.py" [];
-        Source.create ~relative:"os/path.py" [] ]
-  in
+let test_modules context =
+  let environment = populate ~context ["wingus.py", ""; "dingus.py", ""; "os/path.py", ""] in
   let global_resolution = Environment.resolution environment () in
   assert_is_some (GlobalResolution.module_definition global_resolution !&"wingus");
   assert_is_some (GlobalResolution.module_definition global_resolution !&"dingus");
@@ -1090,12 +1131,7 @@ let test_modules _ =
 
 
 let test_import_dependencies context =
-  let create_files_and_test _ =
-    Out_channel.create "test.py" |> Out_channel.close;
-    Out_channel.create "a.py" |> Out_channel.close;
-    Out_channel.create "ignored.py" |> Out_channel.close;
-    Unix.handle_unix_error (fun () -> Unix.mkdir_p "subdirectory");
-    Out_channel.create "subdirectory/b.py" |> Out_channel.close;
+  let environment =
     let source =
       {|
          import a
@@ -1105,28 +1141,21 @@ let test_import_dependencies context =
          from . import ignored
       |}
     in
-    let environment =
-      populate_with_sources
-        [ parse ~handle:"test.py" source;
-          parse ~handle:"a.py" "";
-          parse ~handle:"subdirectory/b.py" "";
-          parse ~handle:"builtins.pyi" "" ]
-    in
-    let dependencies qualifier =
-      Environment.dependencies environment !&qualifier
-      >>| String.Set.Tree.map ~f:Reference.show
-      >>| String.Set.Tree.to_list
-    in
-    assert_equal (dependencies "subdirectory.b") (Some ["test"]);
-    assert_equal (dependencies "a") (Some ["test"]);
-    assert_equal (dependencies "") (Some ["test"]);
-    assert_equal (dependencies "sys") (Some ["test"])
+    populate ~context ["test.py", source; "a.py", ""; "subdirectory/b.py", ""]
   in
-  with_bracket_chdir context (bracket_tmpdir context) create_files_and_test
+  let dependencies qualifier =
+    Environment.dependencies environment !&qualifier
+    >>| String.Set.Tree.map ~f:Reference.show
+    >>| String.Set.Tree.to_list
+  in
+  assert_equal (dependencies "subdirectory.b") (Some ["test"]);
+  assert_equal (dependencies "a") (Some ["test"]);
+  assert_equal (dependencies "") (Some ["test"]);
+  assert_equal (dependencies "sys") (Some ["test"])
 
 
-let test_register_dependencies _ =
-  let environment = create_environment () in
+let test_register_dependencies context =
+  let environment = create_environment ~context () in
   let source =
     {|
          import a # a is added here
@@ -1134,7 +1163,6 @@ let test_register_dependencies _ =
          from . import ignored # no dependency created here
       |}
   in
-  Environment.purge environment [Reference.create "test"; Reference.create "b"];
   Environment.register_dependencies environment (parse ~handle:"test.py" source);
   let dependencies qualifier =
     Environment.dependencies environment !&qualifier
@@ -1145,7 +1173,7 @@ let test_register_dependencies _ =
   assert_equal (dependencies "a") (Some ["test"])
 
 
-let test_purge _ =
+let test_purge context =
   let source =
     {|
       import a
@@ -1157,10 +1185,7 @@ let test_purge _ =
     |}
   in
   let handler =
-    Test.environment
-      ~configuration
-      ~sources:[parse ~handle:"test.py" source |> Preprocessing.preprocess]
-      ()
+    populate ~include_typeshed_stubs:false ~include_helpers:false ~context ["test.py", source]
   in
   let global_resolution = Environment.resolution handler () in
   assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
@@ -1187,12 +1212,11 @@ let test_purge _ =
   ()
 
 
-let test_propagate_nested_classes _ =
+let test_propagate_nested_classes context =
   let test_propagate sources aliases =
     Type.Cache.disable ();
     Type.Cache.enable ();
-    let sources = List.map sources ~f:(fun source -> source |> Preprocessing.preprocess) in
-    let handler = populate_with_sources ~include_helpers:false sources in
+    let handler = populate ~context ~include_helpers:false sources in
     let assert_alias (alias, target) =
       parse_single_expression alias
       |> parse_annotation handler
@@ -1202,7 +1226,7 @@ let test_propagate_nested_classes _ =
     List.iter aliases ~f:assert_alias
   in
   test_propagate
-    [ parse
+    [ ( "test.py",
         {|
           class B:
             class N:
@@ -1210,10 +1234,10 @@ let test_propagate_nested_classes _ =
           class C(B):
             pass
         |}
-    ]
-    ["C.N", "B.N"];
+      ) ]
+    ["test.C.N", "test.B.N"];
   test_propagate
-    [ parse
+    [ ( "test.py",
         {|
           class B:
             class N:
@@ -1222,10 +1246,10 @@ let test_propagate_nested_classes _ =
             class N:
               pass
         |}
-    ]
-    ["C.N", "C.N"];
+      ) ]
+    ["test.C.N", "test.C.N"];
   test_propagate
-    [ parse
+    [ ( "test.py",
         {|
           class B1:
             class N:
@@ -1236,26 +1260,23 @@ let test_propagate_nested_classes _ =
           class C(B1, B2):
             pass
         |}
-    ]
-    ["C.N", "B1.N"];
+      ) ]
+    ["test.C.N", "test.B1.N"];
   test_propagate
-    [ parse
-        ~handle:"qual.py"
-        {|
+    [ "qual.py", {|
           class B:
             class N:
               pass
         |};
-      parse
-        ~handle:"importer.py"
+      ( "importer.py",
         {|
           from qual import B
           class C(B):
             pass
-        |} ]
+        |} ) ]
     ["importer.C.N", "qual.B.N"];
   test_propagate
-    [ parse
+    [ ( "test.py",
         {|
           class B:
             class N:
@@ -1265,8 +1286,8 @@ let test_propagate_nested_classes _ =
           class C(B):
             pass
         |}
-    ]
-    ["C.N.NN.NNN", "B.N.NN.NNN"];
+      ) ]
+    ["test.C.N.NN.NNN", "test.B.N.NN.NNN"];
   ()
 
 

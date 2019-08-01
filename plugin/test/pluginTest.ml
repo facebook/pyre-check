@@ -9,15 +9,12 @@ open Ast
 open Statement
 open Test
 
-let assert_environment_contains source expected =
+let assert_environment_contains ~context source expected =
   Annotated.Class.AttributeCache.clear ();
-  let handle = "" in
-  let environment = environment ~sources:[] () in
-  let source = parse ~handle source |> Preprocessing.preprocess in
-  Test.populate
-    ~configuration:(Configuration.Analysis.create ())
-    environment
-    (source :: typeshed_stubs ~include_helper_builtins:false ());
+  let handle = "__init__.py" in
+  let _, _, environment =
+    ScratchProject.setup ~context [handle, source] |> ScratchProject.build_environment
+  in
   let expected =
     List.map expected ~f:(fun definition -> parse ~handle definition |> Preprocessing.preprocess)
   in

@@ -96,7 +96,7 @@ let test_integration context =
       check_call_graph_expectation callgraph;
       check_overrides_expectation overrides;
       Analysis.compute_fixpoint
-        ~configuration:Test.mock_configuration
+        ~configuration:(Configuration.Analysis.create ())
         ~scheduler:(Scheduler.mock ())
         ~environment
         ~analyses:[Taint.Analysis.abstract_kind]

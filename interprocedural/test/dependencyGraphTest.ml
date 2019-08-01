@@ -11,17 +11,24 @@ open Interprocedural
 open Statement
 open Test
 
-let parse_source ?handle source = parse ~debug:false source ?handle |> Preprocessing.preprocess
-
-let create_call_graph ?(update_environment_with = []) source_text =
-  let source = parse_source source_text in
-  let configuration = Test.mock_configuration in
-  let environment = Test.environment ~configuration () in
-  let sources =
-    source
-    :: List.map update_environment_with ~f:(fun { handle; source } -> parse_source ~handle source)
+let setup ?(update_environment_with = []) ~context ~handle source =
+  let project =
+    let external_sources =
+      List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
+    in
+    ScratchProject.setup ~context ~external_sources [handle, source]
   in
-  Test.populate ~configuration environment sources;
+  let sources, _, environment = ScratchProject.build_environment project in
+  let source =
+    List.find_exn sources ~f:(fun { Source.relative; _ } -> String.equal relative handle)
+  in
+  ScratchProject.configuration_of project, source, environment
+
+
+let create_call_graph ?(update_environment_with = []) ~context source_text =
+  let configuration, source, environment =
+    setup ~update_environment_with ~context ~handle:"__init__.py" source_text
+  in
   let global_resolution = Environment.resolution environment () in
   let errors = TypeCheck.run ~configuration ~global_resolution ~source in
   if not (List.is_empty errors) then
@@ -52,18 +59,18 @@ let compare_dependency_graph call_graph ~expected =
   assert_equal ~printer expected call_graph
 
 
-let assert_call_graph ?update_environment_with source ~expected =
+let assert_call_graph ?update_environment_with ~context source ~expected =
   let graph =
-    create_call_graph ?update_environment_with source
+    create_call_graph ?update_environment_with ~context source
     |> DependencyGraph.from_callgraph
     |> Callable.Map.to_alist
   in
   compare_dependency_graph graph ~expected
 
 
-let assert_reverse_call_graph source ~expected =
+let assert_reverse_call_graph ~context source ~expected =
   let graph =
-    create_call_graph source
+    create_call_graph ~context source
     |> DependencyGraph.from_callgraph
     |> DependencyGraph.reverse
     |> Callable.Map.to_alist
@@ -71,16 +78,17 @@ let assert_reverse_call_graph source ~expected =
   compare_dependency_graph graph ~expected
 
 
-let test_construction _ =
+let test_construction context =
+  let assert_call_graph = assert_call_graph ~context in
   assert_call_graph
     {|
     class Foo:
       def __init__(self):
         pass
-
+  
       def bar(self):
         return 10
-
+  
       def qux(self):
         return self.bar()
     |}
@@ -91,10 +99,10 @@ let test_construction _ =
     class Foo:
       def __init__(self):
         pass
-
+  
       def bar(self):
         return self.qux()
-
+  
       def qux(self):
         return self.bar()
     |}
@@ -107,7 +115,7 @@ let test_construction _ =
      class A:
        def __init__(self) -> None:
          pass
-
+  
      class B:
        def __init__(self) -> None:
          a = A()
@@ -115,12 +123,9 @@ let test_construction _ =
     ~expected:[`Method "A.__init__", []; `Method "B.__init__", [`Method "A.__init__"]];
   assert_call_graph
     ~update_environment_with:
-      [ {
-          handle = "foobar.pyi";
-          source = {|
-            def bar(x: string) -> str: ...
-          |};
-        } ]
+      [{ handle = "foobar.pyi"; source = {|
+            def bar(x: str) -> str: ...
+          |} }]
     {|
      def foo():
        foobar.bar("foo")
@@ -139,8 +144,9 @@ let test_construction _ =
     ~expected:[`Function "foo", [`Function "bar.baz.qux.derp"]]
 
 
-let test_construction_reverse _ =
+let test_construction_reverse context =
   assert_reverse_call_graph
+    ~context
     {|
     class Foo:
       def __init__(self):
@@ -154,6 +160,7 @@ let test_construction_reverse _ =
     |}
     ~expected:[`Method "Foo.bar", [`Method "Foo.qux"]];
   assert_reverse_call_graph
+    ~context
     {|
     class Foo:
       def __init__(self):
@@ -173,13 +180,14 @@ let test_construction_reverse _ =
         `Method "Foo.qux", [`Method "Foo.bar"] ]
 
 
-let test_type_collection _ =
+let test_type_collection context =
   let assert_type_collection source ~handle ~expected =
-    let source = parse_source ~handle source in
-    let configuration = Test.mock_configuration in
-    let environment = Test.environment ~configuration () in
+    let configuration, source, environment =
+      let project = ScratchProject.setup ~context [handle, source] in
+      let sources, _, environment = ScratchProject.build_environment project in
+      ScratchProject.configuration_of project, List.hd_exn sources, environment
+    in
     let global_resolution = Environment.resolution environment () in
-    Test.populate ~configuration environment [source];
     TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
     let defines =
       Preprocessing.defines ~include_toplevels:true source
@@ -257,18 +265,20 @@ let test_type_collection _ =
     ~expected:[5, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo"]
 
 
-let test_method_overrides _ =
-  let assert_method_overrides ?(update_environment_with = []) ?handle source ~expected =
+let test_method_overrides context =
+  let assert_method_overrides
+      ?(update_environment_with = [])
+      ?(handle = "__init__.py")
+      source
+      ~expected
+    =
     let expected =
       let create_callables (member, overriding_types) =
         !&member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in
-    let source = parse_source ?handle source in
-    let configuration = Test.mock_configuration in
-    let environment = Test.environment ~configuration () in
-    Test.populate ~configuration environment (source :: update_environment_with);
+    let _, source, environment = setup ~update_environment_with ~context ~handle source in
     let overrides_map = DependencyGraph.create_overrides ~environment ~source in
     let expected_overrides = Reference.Map.of_alist_exn expected in
     let equal_elements = List.equal Reference.equal in
@@ -309,14 +319,15 @@ let test_method_overrides _ =
     ~expected:[];
   assert_method_overrides
     ~update_environment_with:
-      [ parse
-          ~handle:"module.py"
-          {|
+      [ {
+          handle = "module.py";
+          source =
+            {|
         import module
         class Baz(module.Foo):
           def foo(): pass
-      |}
-      ]
+      |};
+        } ]
     ~handle:"test_module.py"
     {|
       import module
@@ -327,14 +338,11 @@ let test_method_overrides _ =
     ~expected:[]
 
 
-let test_strongly_connected_components _ =
+let test_strongly_connected_components context =
   let assert_strongly_connected_components source ~handle ~expected =
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
-    let source = parse_source ~handle source in
-    let configuration = Test.mock_configuration in
-    let environment = Test.environment ~configuration () in
+    let configuration, source, environment = setup ~context ~handle source in
     let global_resolution = Environment.resolution environment () in
-    Test.populate ~configuration environment [source];
     TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
     let partitions =
       let edges =

@@ -7,19 +7,13 @@ open Core
 open OUnit2
 open Ast
 open Interprocedural
+open Test
 
-let configuration = Configuration.Analysis.create ()
-
-let environment ?(sources = []) ?(configuration = configuration) () =
-  let _ = Test.parse "" in
-  (* Make sure Test module is loaded. *)
-  Test.environment ~configuration ~sources ()
-
-
-let setup_environment ?(sources = []) () =
-  let () = Scheduler.Daemon.check_entry_point () in
-  let environment = environment ~sources ~configuration () in
-  Test.populate ~configuration environment sources
+let setup_environment ~context ?(sources = []) () =
+  let _, _, environment =
+    ScratchProject.setup ~context sources |> ScratchProject.build_environment
+  in
+  environment
 
 
 module ResultA = Interprocedural.Result.Make (struct
@@ -112,13 +106,13 @@ let assert_summaries ~expected summaries =
   assert_equal ~printer:json_printer ~msg:"json summaries" expected summaries
 
 
-let test_unknown_function_analysis _ =
+let test_unknown_function_analysis context =
   let targets =
     List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"]
     |> List.map ~f:(fun name -> Callable.create_function name)
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0 } in
-  let environment = environment () in
+  let environment = setup_environment ~context () in
   let _ = Analysis.one_analysis_pass ~step ~analyses ~environment ~callables:targets in
   let check_obscure_model target =
     match Fixpoint.get_model target with
@@ -163,13 +157,13 @@ let check_meta_data ~step ~is_partial target =
         ~printer:Fixpoint.show_step
 
 
-let test_meta_data _ =
+let test_meta_data context =
   let targets =
     List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"]
     |> List.map ~f:Callable.create_function
   in
   let step1 = Fixpoint.{ epoch = 1; iteration = 0 } in
-  let environment = environment () in
+  let environment = setup_environment ~context () in
   let _ = Analysis.one_analysis_pass ~step:step1 ~analyses ~environment ~callables:targets in
   (* All obscure functions should reach fixpoint in 1st step *)
   let () = List.iter ~f:(check_meta_data ~step:step1 ~is_partial:false) targets in
@@ -177,7 +171,6 @@ let test_meta_data _ =
 
 
 let () =
-  setup_environment ();
   "interproceduralAnalysisTest"
   >::: ["test_obscure" >:: test_unknown_function_analysis; "test_meta_data" >:: test_meta_data]
   |> Test.run

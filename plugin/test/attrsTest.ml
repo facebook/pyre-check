@@ -6,8 +6,9 @@
 open Core
 open OUnit2
 
-let test_transform_environment _ =
-  PluginTest.assert_environment_contains
+let test_transform_environment context =
+  let assert_environment_contains = PluginTest.assert_environment_contains ~context in
+  assert_environment_contains
     {|
       @attr.s
       class Foo:
@@ -32,7 +33,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       if 1 > 2:
         @attr.s
@@ -58,7 +59,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class Foo:
@@ -86,7 +87,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class Foo:
@@ -114,7 +115,7 @@ let test_transform_environment _ =
            pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class Foo:
@@ -140,7 +141,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class Foo:
@@ -166,7 +167,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class Foo:
@@ -198,7 +199,7 @@ let test_transform_environment _ =
     ];
 
   (* Boolean arguments *)
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s(init = False)
       class Foo:
@@ -224,7 +225,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s(repr = False)
       class Foo:
@@ -250,7 +251,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s(cmp = False)
       class Foo:
@@ -268,7 +269,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s(auto_attribs = True)
       class Foo:
@@ -298,7 +299,7 @@ let test_transform_environment _ =
     ];
 
   (* Inheritance *)
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class C(Base):
@@ -352,7 +353,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class C(Base):
@@ -406,7 +407,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class C(Base):
@@ -458,7 +459,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
       class C(B):
@@ -518,21 +519,21 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       @attr.s
-      class C(B, A):
+      class C1(B1, A1):
         z: int = 10
       @attr.s
-      class B:
+      class B1:
         y: int = 5
       @attr.s
-      class A:
+      class A1:
         x: int = 15
     |}
     [ {|
         @attr.s
-        class C(B, A):
+        class C1(B1, A1):
           z: int = 10
           def __init__(self, x: int = 15, y: int = 5, z: int = 10) -> None:
             pass
@@ -551,7 +552,7 @@ let test_transform_environment _ =
       |};
       {|
         @attr.s
-        class B:
+        class B1:
           y: int = 5
           def __init__(self, y: int = 5) -> None:
             pass
@@ -570,7 +571,7 @@ let test_transform_environment _ =
       |};
       {|
         @attr.s
-        class A:
+        class A1:
           x: int = 15
           def __init__(self, x: int = 15) -> None:
             pass
@@ -588,7 +589,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
-  PluginTest.assert_environment_contains
+  assert_environment_contains
     {|
       class NoAttr:
         x: int = 15

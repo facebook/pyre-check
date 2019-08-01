@@ -10,11 +10,10 @@ open Analysis
 open Pyre
 open Statement
 open Test
-open AnnotatedTest
 module Class = Annotated.Class
 module Define = Annotated.Define
 
-let test_parent_definition _ =
+let test_parent_definition context =
   let parent_class_definition environment name parent =
     {
       Statement.Define.signature =
@@ -25,55 +24,68 @@ let test_parent_definition _ =
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = parent >>| Reference.create;
+          parent = Some (Reference.create parent);
         };
       body = [+Pass];
     }
     |> Define.create
     |> Define.parent_definition ~resolution:(Environment.resolution environment ())
   in
-  let environment = populate {|
+  let assert_parent ~expected ~source ~name ~parent =
+    let _, _, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+    in
+    let actual = parent_class_definition environment name parent >>| Class.name in
+    let cmp = Option.equal Reference.equal in
+    let printer = function
+      | None -> "None"
+      | Some name -> Format.asprintf "Some %a" Reference.pp name
+    in
+    assert_equal ~cmp ~printer expected actual
+  in
+  assert_parent
+    ~source:{|
       class foo():
         def bar(): pass
-    |} in
-  let parent = parent_class_definition environment "bar" (Some "foo") |> value in
-  assert_equal ~cmp:Reference.equal ~printer:Reference.show (Class.name parent) !&"foo";
-  let environment = populate {|
+    |}
+    ~name:"test.bar"
+    ~parent:"test.foo"
+    ~expected:(Some !&"test.foo");
+  assert_parent
+    ~source:{|
       def bar(): pass
-    |} in
-  let parent = parent_class_definition environment "bar" (Some "foo") in
-  assert_is_none parent;
-  let environment =
-    populate
+    |}
+    ~name:"test.bar"
+    ~parent:"test.foo"
+    ~expected:None;
+  assert_parent
+    ~source:
       {|
       class superfoo(): ...
       class foo(superfoo):
         def bar(): pass
     |}
-  in
-  let parent = parent_class_definition environment "bar" (Some "foo") |> value in
-  let base_type =
-    match List.hd (Class.bases parent) with
-    | Some { Expression.Call.Argument.value; _ } ->
-        Environment.resolution environment ()
-        |> fun resolution -> GlobalResolution.parse_annotation resolution value
-    | _ -> Type.Top
-  in
-  assert_equal ~cmp:Reference.equal ~printer:Reference.show (Class.name parent) !&"foo";
-  assert_equal base_type (Type.Primitive "superfoo")
+    ~name:"test.bar"
+    ~parent:"test.foo"
+    ~expected:(Some !&"test.foo")
 
 
-let test_decorate _ =
+let test_decorate context =
   let open Statement.Define in
-  let resolution = Environment.resolution (Test.environment ()) () in
   let assert_decorated source ~expected =
+    let source, environment =
+      let sources, _, environment =
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      in
+      List.hd_exn sources, environment
+    in
+    let resolution = Environment.resolution environment () in
     let take_define = function
       | [{ Node.value = Statement.Define define; _ }] -> define
       | _ -> failwith "Expected a define"
     in
     let define =
-      Test.parse source
-      |> Source.statements
+      Source.statements source
       |> take_define
       |> Annotated.Define.create
       |> Annotated.Define.decorate ~resolution

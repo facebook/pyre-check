@@ -11,24 +11,19 @@ open TypeCheck
 
 let ignore_lines_test context =
   let assert_errors ?(show_error_traces = false) input_source expected_errors =
-    let configuration, source_paths, qualifiers =
+    let configuration, source_paths, environment =
       let project = ScratchProject.setup ~context ["test.py", input_source] in
-      let _ = ScratchProject.parse_sources project in
+      let _, _, environment = ScratchProject.build_environment project in
       let configuration = ScratchProject.configuration_of project in
       let source_paths = ScratchProject.source_paths_of project in
-      let qualifiers = ScratchProject.qualifiers_of project in
-      configuration, source_paths, qualifiers
+      configuration, source_paths, environment
     in
-    Test.populate_shared_memory ~configuration qualifiers;
-    let environment = Service.Environment.shared_handler in
-    Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
     let scheduler = Scheduler.mock () in
     Service.Postprocess.register_ignores ~configuration scheduler source_paths;
     let descriptions =
       Service.Check.analyze_sources ~scheduler ~configuration ~environment source_paths
       |> List.map ~f:(fun error -> Error.description error ~show_error_traces)
     in
-    Analysis.Environment.purge environment qualifiers;
     let description_list_to_string descriptions =
       Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]
     in

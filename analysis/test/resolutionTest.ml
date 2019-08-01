@@ -11,14 +11,14 @@ open Pyre
 open Statement
 open Test
 
-let test_set_local _ =
+let test_set_local context =
   let assert_local ~resolution ~name ~expected =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
       (Resolution.get_local resolution ~reference:!&name >>| Annotation.annotation)
   in
-  let resolution = Test.resolution ~sources:[] () in
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
   assert_local ~resolution ~name:"local" ~expected:None;
   let resolution =
     Resolution.set_local
@@ -33,7 +33,7 @@ let test_set_local _ =
   assert_local ~resolution ~name:"local" ~expected:(Some "float")
 
 
-let test_parse_annotation _ =
+let test_parse_annotation context =
   let assert_parse_annotation ?(allow_untracked = false) ~resolution ~expected expression =
     assert_equal
       ~cmp:Type.equal
@@ -43,13 +43,13 @@ let test_parse_annotation _ =
       |> GlobalResolution.parse_annotation ~allow_untracked resolution )
   in
   let resolution =
-    Test.resolution
-      ~sources:
-        ( [ parse ~handle:"empty.pyi" "class Empty: ...";
-            parse ~local_mode:Source.PlaceholderStub ~handle:"empty/stub.pyi" "" ]
-        @ Test.typeshed_stubs () )
-      ()
-    |> Resolution.global_resolution
+    let resolution =
+      ScratchProject.setup
+        ~context
+        ["empty.pyi", "class Empty: ... "; "empty/stub.pyi", "# pyre-placeholder-stub"]
+      |> ScratchProject.build_resolution
+    in
+    Resolution.global_resolution resolution
   in
   assert_parse_annotation ~resolution ~expected:"int" "int";
   assert_parse_annotation
@@ -64,18 +64,13 @@ let test_parse_annotation _ =
     "typing.Dict[str, empty.stub.Annotation]"
 
 
-let make_resolution source =
-  let configuration = Configuration.Analysis.create () in
-  let populate source =
-    Test.environment ~configuration ~sources:(parse source :: typeshed_stubs ()) ()
-  in
-  let global_resolution = Environment.resolution (populate source) () in
-  TypeCheck.resolution global_resolution ()
+let make_resolution ~context source =
+  ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
 
 
-let test_parse_reference _ =
+let test_parse_reference context =
   let resolution =
-    make_resolution {|
+    make_resolution ~context {|
       import typing
       class Foo: ...
       MyType = int
@@ -94,9 +89,10 @@ let test_parse_reference _ =
   assert_parse_reference "typing.List" (Type.Primitive "list")
 
 
-let test_resolve_literal _ =
+let test_resolve_literal context =
   let resolution =
     make_resolution
+      ~context
       {|
       class C:
         def __init__(self) -> None:
@@ -171,17 +167,13 @@ let test_resolve_literal _ =
   assert_resolve_literal "1 if i else i" Type.Any
 
 
-let test_resolve_exports _ =
+let test_resolve_exports context =
   let assert_resolve ~sources name expected =
     let resolution =
-      let sources =
-        let to_source (qualifier, source) =
-          parse ~handle:(qualifier ^ ".pyi") source |> Preprocessing.preprocess
-        in
-        List.map sources ~f:to_source
+      let _, _, environment =
+        ScratchProject.setup ~context sources |> ScratchProject.build_environment
       in
-      AnnotatedTest.populate_with_sources (sources @ Test.typeshed_stubs ())
-      |> fun environment -> Environment.resolution environment ()
+      Environment.resolution environment ()
     in
     let reference =
       GlobalResolution.resolve_exports resolution ~reference:(Reference.create name)
@@ -192,29 +184,30 @@ let test_resolve_exports _ =
   assert_resolve ~sources:["a", "from b import foo"; "b", "foo = 1"] "a.foo" "b.foo";
   assert_resolve
     ~sources:
-      [ "a", "from b import foo";
-        "b", "from c import bar as foo";
-        "c", "from d import cow as bar";
-        "d", "cow = 1" ]
+      [ "a.py", "from b import foo";
+        "b.py", "from c import bar as foo";
+        "c.py", "from d import cow as bar";
+        "d.py", "cow = 1" ]
     "a.foo"
     "d.cow";
   assert_resolve
     ~sources:
-      [ "qualifier", "from qualifier.foo import foo";
+      [ "qualifier.py", "from qualifier.foo import foo";
         (* __init__.py module. *)
-        "qualifier.foo", "foo = 1" ]
+        "qualifier/foo/__init__.py", "foo = 1" ]
     "qualifier.foo.foo"
     "qualifier.foo.foo";
   assert_resolve
     ~sources:
-      ["placeholder", "# pyre-placeholder-stub"; "a", "from placeholder.nonexistent import foo"]
+      [ "placeholder.py", "# pyre-placeholder-stub";
+        "a.py", "from placeholder.nonexistent import foo" ]
     "a.foo"
     "placeholder.nonexistent.foo"
 
 
-let test_resolve_mutable_literals _ =
+let test_resolve_mutable_literals context =
   let resolution =
-    make_resolution {|
+    make_resolution ~context {|
       class C: ...
       class D(C): ...
       class Q: ...
@@ -280,11 +273,8 @@ let test_resolve_mutable_literals _ =
 let test_function_definitions context =
   let assert_functions sources function_name expected =
     let project = ScratchProject.setup ~context sources in
-    let sources, _ = ScratchProject.parse_sources project in
-    let resolution =
-      let configuration = ScratchProject.configuration_of project in
-      resolution ~sources ~configuration () |> Resolution.global_resolution
-    in
+    let resolution = ScratchProject.build_resolution project in
+    let resolution = Resolution.global_resolution resolution in
     let functions =
       GlobalResolution.function_definitions resolution !&function_name
       >>| List.map ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
@@ -343,12 +333,14 @@ let test_resolution_shared_memory _ =
   ResolutionSharedMemory.Keys.LocalChanges.pop_stack ()
 
 
-let test_source_is_unit_test _ =
+let test_source_is_unit_test context =
   let assert_is_unit_test ?(expected = true) source =
-    let resolution = make_resolution source |> Resolution.global_resolution in
-    assert_equal
-      expected
-      (GlobalResolution.source_is_unit_test resolution ~source:(Test.parse source))
+    let sources, _, environment =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    in
+    let resolution = Environment.resolution environment () in
+    let source = List.hd_exn sources in
+    assert_equal expected (GlobalResolution.source_is_unit_test resolution ~source)
   in
   let assert_not_unit_test = assert_is_unit_test ~expected:false in
   assert_is_unit_test "class C(unittest.case.TestCase): ...";

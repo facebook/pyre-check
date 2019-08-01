@@ -24,8 +24,16 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   let source_paths, _ = Service.Parser.parse_all ~configuration ~scheduler module_tracker in
   let environment = Service.Environment.shared_handler in
   let qualifiers = List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) in
-  Test.populate_shared_memory ~configuration qualifiers;
-  Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
+  let () =
+    let qualifiers =
+      let typeshed_qualifiers =
+        typeshed_stubs ~include_helper_builtins:false ()
+        |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
+      in
+      List.append typeshed_qualifiers qualifiers
+    in
+    Service.Environment.populate_shared_memory ~configuration ~scheduler qualifiers
+  in
   let actual_errors =
     Service.Check.analyze_sources
       ~scheduler
@@ -34,8 +42,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
       (Analysis.ModuleTracker.source_paths module_tracker)
     |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
   in
-  List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier)
-  |> Analysis.Environment.purge environment;
+  Analysis.Environment.purge environment qualifiers;
   assert_equal
     ~printer:(List.to_string ~f:ident)
     ~cmp:(List.equal String.equal)
