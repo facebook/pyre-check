@@ -4267,18 +4267,20 @@ module State (Context : Context) = struct
               | _ -> resolution
             in
             { state with resolution }
-        | Name name when Expression.is_simple_name name ->
+        | Name name when Expression.is_simple_name name -> (
             let reference = Expression.name_to_reference_exn name in
-            let resolution =
-              match Resolution.get_local resolution ~reference with
-              | Some ({ Annotation.annotation = Type.Optional parameter; _ } as annotation) ->
+            match Resolution.get_local resolution ~reference with
+            | Some { Annotation.annotation = Type.Optional Type.Bottom; _ } ->
+                { state with bottom = true }
+            | Some ({ Annotation.annotation = Type.Optional parameter; _ } as annotation) ->
+                let resolution =
                   Resolution.set_local
                     resolution
                     ~reference
                     ~annotation:{ annotation with Annotation.annotation = parameter }
-              | _ -> resolution
-            in
-            { state with resolution }
+                in
+                { state with resolution }
+            | _ -> state )
         | BooleanOperator { BooleanOperator.left; operator; right } -> (
             let update state expression =
               forward_statement ~state ~statement:(Statement.assume expression)

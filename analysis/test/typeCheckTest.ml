@@ -1298,6 +1298,8 @@ let test_forward_statement context =
     ["x", Type.float]
     "assert x in [1]"
     ["x", Type.float];
+  assert_forward ~bottom:true ["x", Type.none] "assert x" ["x", Type.none];
+  assert_forward ~bottom:true ["x", Type.none] "assert x is not None" ["x", Type.none];
 
   (* Isinstance. *)
   assert_forward ["x", Type.Any] "assert isinstance(x, int)" ["x", Type.integer];
