@@ -9,6 +9,9 @@ open Expression
 
 val is_local : Identifier.t -> bool
 
+(* Evaluates to the representation of literal strings, integers and enums. *)
+val extract_constant_name : Expression.t -> string option
+
 val get_global_targets
   :  resolution:Resolution.t ->
   global:Reference.t ->

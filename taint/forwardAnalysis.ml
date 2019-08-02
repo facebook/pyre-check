@@ -115,11 +115,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     let add_first_index index =
-      match index with
-      | AbstractTreeDomain.Label.Field name when is_numeric name ->
-          add_first Features.Breadcrumb.FirstIndex "<numeric>"
-      | AbstractTreeDomain.Label.Field name -> add_first Features.Breadcrumb.FirstIndex name
-      | AbstractTreeDomain.Label.Any -> add_first Features.Breadcrumb.FirstIndex "<unknown>"
+      let feature =
+        match index with
+        | AbstractTreeDomain.Label.Field name when is_numeric name -> "<numeric>"
+        | Field name -> name
+        | Any -> "<unknown>"
+      in
+      add_first Features.Breadcrumb.FirstIndex feature
 
 
     let global_model ~location reference =
@@ -156,7 +158,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and apply_call_targets ~resolution call_location arguments state call_targets =
       let apply_call_target (call_target, _implicit) =
-        let taint_model = Model.get_callsite_model ~call_target in
+        let taint_model = Model.get_callsite_model ~call_target ~arguments in
         if not taint_model.is_obscure then
           let { TaintResult.forward; backward; _ } = taint_model.model in
           let sink_argument_matches =
@@ -697,6 +699,9 @@ let extract_features_to_attach existing_taint =
   | Some taint ->
       let gather_features features = function
         | Features.Simple.Breadcrumb _ as feature -> feature :: features
+        (* The ViaValueOf models will be converted to breadcrumbs at the call site via
+           `get_callsite_model`. *)
+        | Features.Simple.ViaValueOf _ as feature -> feature :: features
         | _ -> features
       in
       ForwardTaint.fold ForwardTaint.simple_feature ~f:gather_features ~init:[] taint

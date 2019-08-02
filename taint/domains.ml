@@ -205,6 +205,7 @@ module FlowDetails = struct
   let gather_leaf_names accumulator = function
     | Features.Simple.LeafName name -> name :: accumulator
     | Breadcrumb _
+    | ViaValueOf _
     | TitoPosition _ ->
         accumulator
 
@@ -304,6 +305,9 @@ end = struct
                 |> location_to_json ~include_filename:false
               in
               breadcrumbs, tito_location_json :: tito, leaves
+          | ViaValueOf _ ->
+              (* The taint analysis creates breadcrumbs for ViaValueOf features dynamically.*)
+              breadcrumbs, tito, leaves
           | Breadcrumb breadcrumb ->
               let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb in
               breadcrumb_json :: breadcrumbs, tito, leaves

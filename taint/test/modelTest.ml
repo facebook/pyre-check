@@ -62,6 +62,11 @@ let test_source_models context =
           ~kind:`Object
           ~sink_parameters:[{ name = "$global"; sinks = [Sinks.Test] }]
           "os.environ" ]
+    ();
+  assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def f(x) -> TaintSource[Test, ViaValueOf[x]]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "f"]
     ()
 
 
@@ -114,6 +119,18 @@ let test_sink_models context =
           ~returns:[Sources.Demo]
           ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.Demo] }]
           "both" ]
+    ();
+  assert_model
+    ~model_source:
+      "def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test, \
+       ViaValueOf[parameter0]]): ..."
+    ~expect:
+      [ outcome
+          ~kind:`Function
+          ~sink_parameters:
+            [ { name = "parameter0"; sinks = [Sinks.Test] };
+              { name = "parameter1"; sinks = [Sinks.Test] } ]
+          "sink" ]
     ();
   assert_model
     ~model_source:"def xss(parameter: TaintSink[XSS]): ..."
@@ -520,6 +537,13 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `sink`: Default values of parameters must be `...`. Did you mean to \
        write `parameter: 1`?"
+    ();
+
+  (* ViaValueOf models must specify existing parameters. *)
+  assert_invalid_model
+    ~model_source:
+      "def sink(parameter) -> TaintSource[Test, ViaValueOf[nonexistent_parameter]]: ..."
+    ~expect:"Invalid model for `sink`: No such parameter `nonexistent_parameter`"
     ()
 
 

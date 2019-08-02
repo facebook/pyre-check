@@ -158,6 +158,13 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Tuple expressions -> List.concat_map ~f:extract_breadcrumbs expressions
     | _ -> []
   in
+  let rec extract_via_value_of expression =
+    match expression.Node.value with
+    | Name (Name.Identifier name) ->
+        [Features.Simple.ViaValueOf { position = get_parameter_position name }]
+    | Tuple expressions -> List.concat_map ~f:extract_via_value_of expressions
+    | _ -> []
+  in
   let rec extract_names expression =
     match expression.Node.value with
     | Name (Name.Identifier name) -> [name]
@@ -180,6 +187,9 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
       when base_matches "Via" callee ->
         [Breadcrumbs (extract_breadcrumbs expression)]
+    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+      when base_matches "ViaValueOf" callee ->
+        [Breadcrumbs (extract_via_value_of expression)]
     | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
       when base_matches "Updates" callee ->
         extract_names expression
@@ -768,16 +778,38 @@ let create ~resolution ?path ~configuration source =
   List.map signatures ~f:create_model
 
 
-let get_callsite_model ~call_target =
+let get_callsite_model ~call_target ~arguments =
   let call_target = (call_target :> Callable.t) in
   match Interprocedural.Fixpoint.get_model call_target with
   | None -> { is_obscure = true; call_target; model = TaintResult.empty_model }
   | Some model ->
-      let strip_for_call_site model = model in
+      let expand_via_value_of
+          { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
+        =
+        let expand features =
+          let transform = function
+            | Features.Simple.ViaValueOf { position } ->
+                List.nth arguments position
+                >>= fun argument -> Features.Simple.via_value_of_breadcrumb ~argument
+            | feature -> Some feature
+          in
+          List.filter_map features ~f:transform
+        in
+        let source_taint =
+          ForwardState.transform ForwardTaint.simple_feature_set ~f:expand source_taint
+        in
+        let sink_taint =
+          BackwardState.transform BackwardTaint.simple_feature_set ~f:expand sink_taint
+        in
+        let taint_in_taint_out =
+          BackwardState.transform BackwardTaint.simple_feature_set ~f:expand taint_in_taint_out
+        in
+        { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
+      in
       let taint_model =
         Interprocedural.Result.get_model TaintResult.kind model
         |> Option.value ~default:TaintResult.empty_model
-        |> strip_for_call_site
+        |> expand_via_value_of
       in
       { is_obscure = model.is_obscure; call_target; model = taint_model }
 
@@ -805,7 +837,8 @@ let get_global_model ~resolution ~expression =
   match call_target with
   | Some target ->
       let model =
-        Callable.create_object target |> fun call_target -> get_callsite_model ~call_target
+        Callable.create_object target
+        |> fun call_target -> get_callsite_model ~call_target ~arguments:[]
       in
       Some (target, model)
   | None -> None

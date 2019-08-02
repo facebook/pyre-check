@@ -16,7 +16,10 @@ type t = {
 
 exception InvalidModel of string
 
-val get_callsite_model : call_target:[< Callable.t ] -> t
+val get_callsite_model
+  :  call_target:[< Callable.t ] ->
+  arguments:Expression.t Expression.Call.Argument.t list ->
+  t
 
 val get_global_sink_model
   :  resolution:Resolution.t ->

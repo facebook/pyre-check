@@ -52,6 +52,22 @@ let get_property_defining_parent ~resolution ~base ~attribute =
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
 
+let extract_constant_name { Node.value = expression; _ } =
+  match expression with
+  | String literal -> Some literal.value
+  | Integer i -> Some (string_of_int i)
+  | Name name -> (
+      let name = Expression.name_to_reference name >>| Reference.delocalize >>| Reference.last in
+      match name with
+      (* Heuristic: All uppercase names tend to be enums, so only taint the field in those cases. *)
+      | Some name
+        when String.for_all name ~f:(fun character ->
+                 (not (Char.is_alpha character)) || Char.is_uppercase character) ->
+          Some name
+      | _ -> None )
+  | _ -> None
+
+
 (* Figure out what target to pick for an indirect call that resolves to target_name.
    E.g., if the receiver type is A, and A derives from Base, and the target is Base.method, then
    targetting the override tree of Base.method is wrong, as it would include all siblings for A.

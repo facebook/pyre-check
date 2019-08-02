@@ -1,0 +1,17 @@
+@generated
+Call dependencies
+via_value_of.attach_to_sink (fun) -> [__test_sink (fun)]
+via_value_of.attach_to_source (fun) -> [__test_source (fun)]
+via_value_of.meta (fun) -> [via_value_of.return_via_parameter_name (fun)]
+via_value_of.meta_sink (fun) -> [via_value_of.sink_via_value_of (fun)]
+via_value_of.return_via_parameter_name (fun) -> []
+via_value_of.test_attach_to_sink (fun) -> [via_value_of.attach_to_sink (fun)]
+via_value_of.test_attach_to_source (fun) -> [via_value_of.attach_to_source (fun)]
+via_value_of.test_backwards_tito (fun) -> [via_value_of.tito (fun)]
+via_value_of.test_enums (fun) -> [via_value_of.return_via_parameter_name (fun)]
+via_value_of.test_numerals (fun) -> [via_value_of.return_via_parameter_name (fun)]
+via_value_of.test_sink (fun) -> [via_value_of.sink_via_value_of (fun)]
+via_value_of.test_sinks_do_not_propagate (fun) -> [via_value_of.meta_sink (fun)]
+via_value_of.test_string_literals (fun) -> [via_value_of.return_via_parameter_name (fun)]
+via_value_of.test_tito (fun) -> [__test_source (fun) via_value_of.tito (fun)]
+via_value_of.test_via_value_of_does_not_propagate (fun) -> [via_value_of.meta (fun)]

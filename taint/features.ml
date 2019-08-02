@@ -6,6 +6,7 @@
 open Core
 open Ast
 open Analysis
+open Pyre
 
 module Breadcrumb = struct
   type first_kind =
@@ -23,6 +24,7 @@ module Breadcrumb = struct
     | HasFirst of first_kind
     | Obscure
     | SimpleVia of string (* Declared breadcrumbs *)
+    | ViaValue of string (* Via inferred from ViaValueOf. *)
     | Tito
     | Type of string (* Type constraint *)
   [@@deriving show, sexp, compare]
@@ -35,6 +37,7 @@ module Breadcrumb = struct
     | HasFirst FirstIndex -> `Assoc ["has", `String "first-index"]
     | Obscure -> `Assoc ["via", `String "obscure"]
     | SimpleVia name -> `Assoc ["via", `String name]
+    | ViaValue name -> `Assoc ["via-value", `String name]
     | Tito -> `Assoc ["via", `String "tito"]
     | Type name -> `Assoc ["type", `String name]
 
@@ -52,7 +55,12 @@ module Simple = struct
     | LeafName of string
     | TitoPosition of Location.Reference.t
     | Breadcrumb of Breadcrumb.t
+    | ViaValueOf of { position: int }
   [@@deriving show, sexp, compare]
+
+  let via_value_of_breadcrumb ~argument:{ Expression.Call.Argument.value; _ } =
+    Interprocedural.CallResolution.extract_constant_name value
+    >>| fun feature -> Breadcrumb (Breadcrumb.ViaValue feature)
 end
 
 module SimpleSet = AbstractSetDomain.Make (Simple)
