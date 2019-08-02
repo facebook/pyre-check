@@ -25,6 +25,7 @@ module Environment = Environment
 module Error = AnalysisError
 module Fixpoint = Fixpoint
 module GlobalResolution = GlobalResolution
+module LivenessCheck = LivenessCheck
 module Lookup = Lookup
 module ModuleTracker = ModuleTracker
 module Preprocessing = Preprocessing

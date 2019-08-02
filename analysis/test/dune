@@ -1,30 +1,31 @@
 (tests
  (names
-  moduleTrackerTest
+  abstractDomainTest
+  analysisErrorTest
+  annotatedCallableTest
+  annotatedClassTest
+  annotatedDefineTest
+  annotatedSignatureTest
   astEnvironmentTest
   awaitableCheckTest
-  coverageTest
-  abstractDomainTest
   cfgTest
   classHierarchyTest
+  coverageTest
   deobfuscationCheckTest
   dependentTest
   environmentTest
-  analysisErrorTest
   fixpointTest
   inferenceTest
+  livenessCheckTest
   lookupTest
+  moduleTrackerTest
   preprocessingTest
   refinementTest
   resolutionTest
   typeCheckTest
   typeConstraintsTest
   typeOrderTest
-  typeTest
-  annotatedCallableTest
-  annotatedClassTest
-  annotatedDefineTest
-  annotatedSignatureTest)
+  typeTest)
  (preprocess
   (pps
    ppx_deriving.eq
