@@ -564,7 +564,7 @@ let create ~resolution ?path ~configuration source =
   let global_resolution = Resolution.global_resolution resolution in
   let signatures =
     let filter_define_signature = function
-      | { Node.value = Define { signature = { name; _ } as signature; _ }; _ } ->
+      | { Node.value = Define { signature = { name; _ } as signature; _ }; location } ->
           let class_candidate =
             Reference.prefix name
             >>| GlobalResolution.parse_reference global_resolution
@@ -575,7 +575,7 @@ let create ~resolution ?path ~configuration source =
             | Some _ -> Callable.create_method name
             | None -> Callable.create_function name
           in
-          [signature, call_target]
+          [signature, location, call_target]
       | { Node.value = Class { Class.name; bases; body; _ }; _ } ->
           begin
             match body with
@@ -607,7 +607,7 @@ let create ~resolution ?path ~configuration source =
               global_resolution
               (Type.Primitive (Reference.show name))
             >>| (fun { Node.value = { Class.body; _ }; _ } ->
-                  let signature { Node.value; _ } =
+                  let signature { Node.value; location } =
                     match value with
                     | Define { Define.signature = { Define.name; parameters; _ } as signature; _ }
                       ->
@@ -627,7 +627,7 @@ let create ~resolution ?path ~configuration source =
                             return_annotation = source_annotation;
                           }
                         in
-                        Some (signature, Callable.create_method name)
+                        Some (signature, location, Callable.create_method name)
                     | _ -> None
                   in
                   List.filter_map body ~f:signature)
@@ -638,7 +638,7 @@ let create ~resolution ?path ~configuration source =
           Node.value =
             Assign
               { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
-          _;
+          location;
         }
         when Expression.is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
@@ -654,12 +654,12 @@ let create ~resolution ?path ~configuration source =
               parent = None;
             }
           in
-          [signature, Callable.create_object name]
+          [signature, location, Callable.create_object name]
       | {
           Node.value =
             Assign
               { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
-          _;
+          location;
         }
         when Expression.is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
@@ -676,7 +676,7 @@ let create ~resolution ?path ~configuration source =
               parent = None;
             }
           in
-          [signature, Callable.create_object name]
+          [signature, location, Callable.create_object name]
       | _ -> []
     in
     String.split ~on:'\n' source
@@ -719,7 +719,7 @@ let create ~resolution ?path ~configuration source =
           raise_invalid_model message )
     | _ -> ()
   in
-  let create_model ({ Define.name; parameters; return_annotation; _ }, call_target) =
+  let create_model ({ Define.name; parameters; return_annotation; _ }, location, call_target) =
     (* Make sure we know about what we model. *)
     let global_resolution = Resolution.global_resolution resolution in
     try
@@ -770,7 +770,11 @@ let create ~resolution ?path ~configuration source =
         let model_origin =
           match path with
           | None -> ""
-          | Some path -> Format.sprintf " defined in `%s`" (Path.absolute path)
+          | Some path ->
+              Format.sprintf
+                " defined in `%s:%d`"
+                (Path.absolute path)
+                location.Location.start.Location.line
         in
         Format.asprintf "Invalid model for `%a`%s: %s" Reference.pp name model_origin message
         |> raise_invalid_model

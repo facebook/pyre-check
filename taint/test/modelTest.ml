@@ -468,7 +468,8 @@ let test_invalid_models context =
     ~path:"broken_model.pysa"
     ~model_source:"def sink(parameter: Any): ..."
     ~expect:
-      "Invalid model for `sink` defined in `broken_model.pysa`: Unrecognized taint annotation `Any`"
+      "Invalid model for `sink` defined in `broken_model.pysa:1`: Unrecognized taint annotation \
+       `Any`"
     ();
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
