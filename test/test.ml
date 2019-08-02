@@ -1158,6 +1158,7 @@ let create_type_alias_table type_aliases =
 
 module ScratchProject = struct
   type t = {
+    context: test_ctxt;
     configuration: Configuration.Analysis.t;
     module_tracker: ModuleTracker.t;
   }
@@ -1190,15 +1191,7 @@ module ScratchProject = struct
     List.iter sources ~f:(add_source ~root:local_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
     let module_tracker = ModuleTracker.create configuration in
-    let () =
-      (* Clean shared memory up before the test *)
-      clean_ast_shared_memory module_tracker;
-      let set_up_shared_memory _ = () in
-      let tear_down_shared_memory () _ = clean_ast_shared_memory module_tracker in
-      (* Clean shared memory up after the test *)
-      OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
-    in
-    { configuration; module_tracker }
+    { context; configuration; module_tracker }
 
 
   let configuration_of { configuration; _ } = configuration
@@ -1212,8 +1205,16 @@ module ScratchProject = struct
     |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
-  let parse_sources ({ configuration; module_tracker } as project) =
+  let parse_sources ({ context; configuration; module_tracker } as project) =
     let ast_environment = AstEnvironment.create module_tracker in
+    let () =
+      (* Clean shared memory up before the test *)
+      clean_ast_shared_memory module_tracker;
+      let set_up_shared_memory _ = () in
+      let tear_down_shared_memory () _ = clean_ast_shared_memory module_tracker in
+      (* Clean shared memory up after the test *)
+      OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
+    in
     let { Service.Parser.syntax_error; system_error; _ } =
       Analysis.ModuleTracker.source_paths module_tracker
       |> Service.Parser.parse_sources

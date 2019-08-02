@@ -73,7 +73,7 @@ type locally_changed_file = {
 
 let test_compute_locally_changed_files context =
   let assert_changed_files ~files ~expected =
-    let { ScratchProject.configuration; module_tracker } =
+    let { ScratchProject.configuration; module_tracker; _ } =
       let sources =
         List.filter_map files ~f:(fun { relative; old_content; _ } ->
             old_content >>| fun content -> relative, content)

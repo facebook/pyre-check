@@ -147,7 +147,7 @@ module ScratchServer = struct
       sources
     =
     let configuration, module_tracker, ast_environment, environment, sources =
-      let ({ ScratchProject.module_tracker; configuration } as project) =
+      let ({ ScratchProject.module_tracker; configuration; _ } as project) =
         ScratchProject.setup ~context ~external_sources sources
       in
       let sources, ast_environment, environment =

@@ -28,7 +28,7 @@ let test_basic context =
       def baz() -> int:
         return 42
       |} in
-  let { ScratchProject.configuration; module_tracker } =
+  let { ScratchProject.configuration; module_tracker; _ } =
     ScratchProject.setup ~context [handle_a, source_a; handle_b, source_b; handle_c, source_c]
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
