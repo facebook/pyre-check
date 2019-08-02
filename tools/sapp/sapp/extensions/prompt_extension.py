@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 from IPython.core.interactiveshell import InteractiveShell
 from IPython.core.magic import Magics
 from IPython.terminal.prompts import Prompts, Token
-from prompt_toolkit import CommandLineInterface
+from prompt_toolkit import Application as CommandLineInterface
 from pygments.token import _TokenType
 
 from ..interactive import Interactive

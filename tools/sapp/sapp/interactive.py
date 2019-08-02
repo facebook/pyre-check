@@ -26,7 +26,7 @@ from IPython import paths
 from IPython.core import page
 from prompt_toolkit import prompt
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.contrib.completers import PathCompleter
+from prompt_toolkit.completion import PathCompleter
 from prompt_toolkit.history import FileHistory, History
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
