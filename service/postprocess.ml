@@ -9,8 +9,8 @@ open Analysis
 open Pyre
 open PostprocessSharedMemory
 
-let register_ignores ~configuration scheduler source_paths =
-  let handles = List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative) in
+let register_ignores ~configuration scheduler sources =
+  let handles = List.map sources ~f:(fun { Source.relative; _ } -> relative) in
   (* Invalidate keys before updating *)
   let remove_ignores handles =
     List.filter_map ~f:IgnoreKeys.get handles
@@ -23,26 +23,19 @@ let register_ignores ~configuration scheduler source_paths =
   remove_ignores handles;
 
   (* Register new values *)
-  let register_ignore { SourcePath.relative; qualifier; _ } =
+  let register_ignore { Source.relative; metadata = { Source.Metadata.ignore_lines; _ }; _ } =
     (* Register new ignores. *)
-    match Ast.SharedMemory.Sources.get qualifier with
-    | Some source ->
-        let ignore_lines = Source.ignore_lines source in
-        let ignore_map =
-          let add_ignore ignore_map ignore_line =
-            Location.Reference.Map.add_multi
-              ~key:(Ignore.key ignore_line)
-              ~data:ignore_line
-              ignore_map
-          in
-          List.fold ~init:Location.Reference.Map.empty ~f:add_ignore ignore_lines
-        in
-        Map.iteri ~f:(fun ~key ~data -> IgnoreLines.add key data) ignore_map;
-        IgnoreKeys.add relative (List.map ~f:Ignore.key ignore_lines)
-    | _ -> ()
+    let ignore_map =
+      let add_ignore ignore_map ignore_line =
+        Location.Reference.Map.add_multi ~key:(Ignore.key ignore_line) ~data:ignore_line ignore_map
+      in
+      List.fold ~init:Location.Reference.Map.empty ~f:add_ignore ignore_lines
+    in
+    Map.iteri ~f:(fun ~key ~data -> IgnoreLines.add key data) ignore_map;
+    IgnoreKeys.add relative (List.map ~f:Ignore.key ignore_lines)
   in
   let register source_paths = List.iter source_paths ~f:register_ignore in
-  Scheduler.iter scheduler ~configuration ~f:register ~inputs:source_paths;
+  Scheduler.iter scheduler ~configuration ~f:register ~inputs:sources;
   Statistics.performance ~name:"registered ignores" ~timer ()
 
 

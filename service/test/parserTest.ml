@@ -10,7 +10,7 @@ open Ast
 open Pyre
 
 let test_parse_stubs_modules_list context =
-  let _ =
+  let _, ast_environment =
     let stub_content = "def f()->int: ...\n" in
     let source_content = "def f()->int:\n    return 1\n" in
     ScratchProject.setup
@@ -27,7 +27,7 @@ let test_parse_stubs_modules_list context =
   in
   let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
-      match Ast.SharedMemory.Sources.get qualifier with
+      match Analysis.AstEnvironment.get_source ast_environment qualifier with
       | Some
           {
             Source.statements =
@@ -55,13 +55,13 @@ let test_parse_stubs_modules_list context =
 
 
 let test_parse_source context =
-  let sources, _ =
+  let sources, ast_environment =
     ScratchProject.setup ~context ["x.py", "def foo()->int:\n    return 1\n"]
     |> ScratchProject.parse_sources
   in
   let handles = List.map sources ~f:(fun { Source.relative; _ } -> relative) in
   assert_equal handles ["x.py"];
-  let source = Ast.SharedMemory.Sources.get !&"x" in
+  let source = Analysis.AstEnvironment.get_source ast_environment !&"x" in
   assert_equal (Option.is_some source) true;
   let { Source.relative; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
     Option.value_exn source
@@ -77,7 +77,7 @@ let test_parse_source context =
 let test_parse_sources context =
   let scheduler = Scheduler.mock () in
   let content = "def foo() -> int: ..." in
-  let source_handles =
+  let source_handles, ast_environment =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let typeshed_root =
       Path.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
@@ -110,9 +110,14 @@ let test_parse_sources context =
         ()
     in
     let module_tracker = Analysis.ModuleTracker.create configuration in
-    let source_paths, _ = Service.Parser.parse_all ~scheduler ~configuration module_tracker in
-    List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative)
-    |> List.sort ~compare:String.compare
+    let source_paths, ast_environment =
+      Service.Parser.parse_all ~scheduler ~configuration module_tracker
+    in
+    let sorted_handles =
+      List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative)
+      |> List.sort ~compare:String.compare
+    in
+    sorted_handles, ast_environment
   in
   assert_equal
     ~cmp:(List.equal String.equal)
@@ -135,7 +140,9 @@ let test_parse_sources context =
     in
     write_file local_root "a.py";
     write_file stub_root "stub.pyi";
-    Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "stub"];
+    Analysis.AstEnvironment.remove_sources
+      ast_environment
+      [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Analysis.ModuleTracker.create configuration in
     let source_paths, _ = Service.Parser.parse_all ~scheduler ~configuration module_tracker in
     List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative)
@@ -150,7 +157,7 @@ let test_parse_sources context =
       List.equal String.equal left_handles right_handles)
     source_handles
     ["stub.pyi"; "a.py"];
-  match Ast.SharedMemory.Sources.get (Reference.create "c") with
+  match Analysis.AstEnvironment.get_source ast_environment (Reference.create "c") with
   | Some { Source.hash; _ } ->
       assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
   | None -> assert_unreached ()

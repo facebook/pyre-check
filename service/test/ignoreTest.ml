@@ -11,15 +11,15 @@ open TypeCheck
 
 let ignore_lines_test context =
   let assert_errors ?(show_error_traces = false) input_source expected_errors =
-    let configuration, source_paths, environment =
+    let configuration, sources, source_paths, environment =
       let project = ScratchProject.setup ~context ["test.py", input_source] in
-      let _, _, environment = ScratchProject.build_environment project in
+      let sources, _, environment = ScratchProject.build_environment project in
       let configuration = ScratchProject.configuration_of project in
       let source_paths = ScratchProject.source_paths_of project in
-      configuration, source_paths, environment
+      configuration, sources, source_paths, environment
     in
     let scheduler = Scheduler.mock () in
-    Service.Postprocess.register_ignores ~configuration scheduler source_paths;
+    Service.Postprocess.register_ignores ~configuration scheduler sources;
     let descriptions =
       Service.Check.analyze_sources ~scheduler ~configuration ~environment source_paths
       |> List.map ~f:(fun error -> Error.description error ~show_error_traces)

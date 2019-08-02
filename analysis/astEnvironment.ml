@@ -4,6 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Ast
+open Core
 
 type t = {
   add_source: Source.t -> unit;
@@ -12,11 +13,23 @@ type t = {
   get_source_path: Reference.t -> SourcePath.t option;
 }
 
+module SourceValue = struct
+  type t = Source.t
+
+  let prefix = Prefix.make ()
+
+  let description = "AST"
+
+  let unmarshall value = Marshal.from_string value 0
+end
+
+module Sources = Memory.NoCache (Reference.Key) (SourceValue)
+
 let create module_tracker =
   {
-    add_source = Ast.SharedMemory.Sources.add;
-    remove_sources = Ast.SharedMemory.Sources.remove;
-    get_source = Ast.SharedMemory.Sources.get;
+    add_source = (fun ({ Source.qualifier; _ } as source) -> Sources.add qualifier source);
+    remove_sources = (fun qualifiers -> Sources.KeySet.of_list qualifiers |> Sources.remove_batch);
+    get_source = Sources.get;
     get_source_path = ModuleTracker.lookup module_tracker;
   }
 
@@ -35,6 +48,33 @@ let get_source_path { get_source_path; _ } = get_source_path
 let store _ = ()
 
 let load = create
+
+let shared_memory_hash_to_key_map qualifiers =
+  let extend_map map ~new_map =
+    Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
+  in
+  Sources.compute_hashes_to_keys ~keys:qualifiers
+  |> extend_map ~new_map:(Ast.SharedMemory.Handles.compute_hashes_to_keys ~keys:qualifiers)
+
+
+let serialize_decoded decoded =
+  match decoded with
+  | Sources.Decoded (key, value) ->
+      Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
+  | Ast.SharedMemory.Handles.Paths.Decoded (key, value) ->
+      Some (Ast.SharedMemory.Handles.PathValue.description, Reference.show key, value)
+  | _ -> None
+
+
+let decoded_equal first second =
+  match first, second with
+  | Sources.Decoded (_, first), Sources.Decoded (_, second) ->
+      Some (Option.equal Source.equal first second)
+  | ( Ast.SharedMemory.Handles.Paths.Decoded (_, first),
+      Ast.SharedMemory.Handles.Paths.Decoded (_, second) ) ->
+      Some (Option.equal String.equal first second)
+  | _ -> None
+
 
 type environment_t = t
 

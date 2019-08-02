@@ -132,7 +132,7 @@ let test_populate context =
       environment
       ~configuration
       ~scheduler:(Scheduler.mock ())
-      [Option.value_exn (Ast.SharedMemory.Sources.get (Reference.create "a"))]
+      [Option.value_exn (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a"))]
   in
   assert_successors "a.C" ["a.D"; "object"]
 

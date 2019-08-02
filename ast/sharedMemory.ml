@@ -19,36 +19,6 @@ module IntKey = struct
   let from_string = Int.of_string
 end
 
-module Sources = struct
-  module SourceValue = struct
-    type t = Source.t
-
-    let prefix = Prefix.make ()
-
-    let description = "AST"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module Sources = SharedMemory.NoCache (Reference.Key) (SourceValue)
-
-  let get = Sources.get
-
-  let add ({ Source.qualifier; _ } as source) = Sources.add qualifier source
-
-  let remove qualifiers = Sources.KeySet.of_list qualifiers |> Sources.remove_batch
-
-  let hash_of_qualifier = Sources.hash_of_key
-
-  let serialize_qualifier = Sources.serialize_key
-
-  let compute_hashes_to_keys ~keys =
-    let add map qualifier =
-      Map.set map ~key:(hash_of_qualifier qualifier) ~data:(serialize_qualifier qualifier)
-    in
-    List.fold keys ~init:String.Map.empty ~f:add
-end
-
 module Handles = struct
   module PathValue = struct
     type t = string

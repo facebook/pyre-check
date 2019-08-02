@@ -77,7 +77,10 @@ let build environment ~configuration ~scheduler qualifiers =
   (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
      sequentially until we find a way to build the environment in parallel. *)
   let timer = Timer.start () in
-  let sources = List.filter_map qualifiers ~f:Ast.SharedMemory.Sources.get in
+  let sources =
+    let ast_environment = Environment.ast_environment environment in
+    List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+  in
   populate ~configuration ~scheduler environment sources;
   Statistics.performance ~name:"full environment built" ~timer ();
   if Log.is_enabled `Dotty then (

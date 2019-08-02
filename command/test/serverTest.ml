@@ -25,18 +25,17 @@ let file ~local_root ?content path =
 
 let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let configuration = Configuration.Analysis.create ~local_root () in
-  let filename =
-    let path = Path.create_relative ~root:local_root ~relative:"filename.py" in
-    File.write (File.create ~content:"" path);
-    "filename.py"
+  let handle = "filename.py" in
+  let configuration =
+    let project = ScratchProject.setup ~context [handle, ""] in
+    let _ = ScratchProject.parse_sources project in
+    ScratchProject.configuration_of project
   in
-  Ast.SharedMemory.Sources.add (Source.create ~relative:filename []);
+  let { Configuration.Analysis.local_root; _ } = configuration in
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
       ~context
-      ~handle:filename
+      ~handle
       {|
         class unittest.mock.Base: ...
         class unittest.mock.NonCallableMock: ...
@@ -45,7 +44,7 @@ let test_language_server_protocol_json_format context =
       |}
     |> List.hd_exn
   in
-  let type_error = { type_error with location = { location with Location.path = filename } } in
+  let type_error = { type_error with location = { location with Location.path = handle } } in
   let normalize string =
     (* Working around OS inconsitencies. *)
     string
@@ -54,7 +53,7 @@ let test_language_server_protocol_json_format context =
     |> String.filter ~f:(fun character -> not (Char.is_whitespace character))
   in
   let json_error =
-    LanguageServer.Protocol.PublishDiagnostics.of_errors ~configuration filename [type_error]
+    LanguageServer.Protocol.PublishDiagnostics.of_errors ~configuration handle [type_error]
     |> Or_error.ok_exn
     |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
     |> Yojson.Safe.sort
@@ -85,7 +84,7 @@ let test_language_server_protocol_json_format context =
           }
         }
      |}
-      (Path.create_relative ~root:local_root ~relative:filename |> Path.absolute)
+      (Path.create_relative ~root:local_root ~relative:handle |> Path.absolute)
     |> Test.trim_extra_indentation
     |> normalize
   in
@@ -1182,7 +1181,8 @@ let test_incremental_lookups context =
   let { Request.state; _ } = Request.process ~state ~configuration:server_configuration ~request in
   let global_resolution = Environment.resolution state.State.environment () in
   let annotations =
-    Ast.SharedMemory.Sources.get qualifier
+    let ast_environment = GlobalResolution.ast_environment global_resolution in
+    AstEnvironment.ReadOnly.get_source ast_environment qualifier
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source global_resolution
     |> Lookup.get_all_annotations

@@ -68,7 +68,7 @@ let recheck
     let timer = Timer.start () in
     (* Clean up all data related to updated files. *)
     let qualifiers = List.append removed recheck_modules in
-    Ast.SharedMemory.Sources.remove qualifiers;
+    AstEnvironment.remove_sources ast_environment qualifiers;
     Analysis.Environment.purge environment ~debug qualifiers;
     List.iter qualifiers ~f:(LookupCache.evict ~state);
     Statistics.performance
@@ -103,14 +103,16 @@ let recheck
       [%message (parsed_paths : string list)];
     Log.info "Updating the type environment for %d files." (List.length parsed)
   in
-  List.filter_map ~f:Ast.SharedMemory.Sources.get recheck_modules
-  |> Service.Environment.populate ~configuration ~scheduler environment;
+  let recheck_sources =
+    List.filter_map ~f:(AstEnvironment.get_source ast_environment) recheck_modules
+  in
+  Service.Environment.populate ~configuration ~scheduler environment recheck_sources;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
     ~integers:["size", Ast.SharedMemory.heap_size ()]
     ();
-  Service.Postprocess.register_ignores ~configuration scheduler recheck_source_paths;
+  Service.Postprocess.register_ignores ~configuration scheduler recheck_sources;
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)

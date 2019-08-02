@@ -24,6 +24,12 @@ val store : t -> unit
    loading an `AstEnvironment` must be done after loading a `ModuleTracker` *)
 val load : ModuleTracker.t -> t
 
+val shared_memory_hash_to_key_map : Reference.t list -> string Core.String.Map.t
+
+val serialize_decoded : Memory.decodable -> (string * string * string option) option
+
+val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
+
 type environment_t = t
 
 module ReadOnly : sig

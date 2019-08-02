@@ -1609,7 +1609,7 @@ let test_expand_type_checking_imports _ =
 
 let test_expand_wildcard_imports context =
   let assert_expanded external_sources check_source expected =
-    let _ =
+    let _, ast_environment =
       ScratchProject.setup ~context ~external_sources ["test.py", check_source]
       |> ScratchProject.parse_sources
     in
@@ -1618,7 +1618,7 @@ let test_expand_wildcard_imports context =
       ~printer:(fun statement_list ->
         List.map statement_list ~f:Statement.show |> String.concat ~sep:", ")
       (Source.statements (parse expected))
-      (Source.statements (Option.value_exn (Ast.SharedMemory.Sources.get !&"test")))
+      (Source.statements (Option.value_exn (AstEnvironment.get_source ast_environment !&"test")))
   in
   assert_expanded
     ["a.py", "def foo(): pass"]

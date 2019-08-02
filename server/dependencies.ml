@@ -10,7 +10,7 @@ open Configuration.Analysis
 open Pyre
 
 let compute_dependencies
-    ~state:{ State.environment; scheduler; _ }
+    ~state:{ State.ast_environment; environment; scheduler; _ }
     ~configuration:({ incremental_transitive_dependencies; _ } as configuration)
     source_paths
   =
@@ -21,7 +21,9 @@ let compute_dependencies
       let table = Reference.Table.create () in
       let add_signature_hash qualifier =
         let signature_hash =
-          Ast.SharedMemory.Sources.get qualifier >>| Source.signature_hash |> Option.value ~default
+          AstEnvironment.get_source ast_environment qualifier
+          >>| Source.signature_hash
+          |> Option.value ~default
         in
         Hashtbl.set table ~key:qualifier ~data:signature_hash
       in
@@ -29,7 +31,7 @@ let compute_dependencies
       table
     in
     let old_signature_hashes = signature_hashes ~default:0 in
-    Ast.SharedMemory.Sources.remove qualifiers;
+    AstEnvironment.remove_sources ast_environment qualifiers;
     Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None source_paths
     |> ignore;
     let new_signature_hashes = signature_hashes ~default:(-1) in

@@ -1163,12 +1163,12 @@ module ScratchProject = struct
     module_tracker: ModuleTracker.t;
   }
 
-  let clean_ast_shared_memory module_tracker =
+  let clean_ast_shared_memory module_tracker ast_environment =
     let qualifiers =
       ModuleTracker.source_paths module_tracker
       |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
     in
-    Ast.SharedMemory.Sources.remove qualifiers;
+    AstEnvironment.remove_sources ast_environment qualifiers;
     Ast.SharedMemory.Modules.remove ~qualifiers
 
 
@@ -1209,9 +1209,9 @@ module ScratchProject = struct
     let ast_environment = AstEnvironment.create module_tracker in
     let () =
       (* Clean shared memory up before the test *)
-      clean_ast_shared_memory module_tracker;
+      clean_ast_shared_memory module_tracker ast_environment;
       let set_up_shared_memory _ = () in
-      let tear_down_shared_memory () _ = clean_ast_shared_memory module_tracker in
+      let tear_down_shared_memory () _ = clean_ast_shared_memory module_tracker ast_environment in
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
@@ -1233,7 +1233,8 @@ module ScratchProject = struct
         raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
     let sources =
       qualifiers_of project
-      |> List.map ~f:(fun qualifier -> Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
+      |> List.map ~f:(fun qualifier ->
+             Option.value_exn (AstEnvironment.get_source ast_environment qualifier))
     in
     sources, ast_environment
 

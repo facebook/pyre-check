@@ -7,25 +7,6 @@ open Core
 
 module IntKey : Memory.KeyType with type t = int and type out = int
 
-module Sources : sig
-  module SourceValue : Memory.ValueType with type t = Source.t
-
-  module Sources : module type of Memory.NoCache (Reference.Key) (SourceValue)
-
-  val get : Reference.t -> Source.t option
-
-  val add : Source.t -> unit
-
-  val remove : Reference.t list -> unit
-
-  (* Exposed for testing. *)
-  val hash_of_qualifier : Reference.t -> string
-
-  val serialize_qualifier : Reference.t -> string
-
-  val compute_hashes_to_keys : keys:Reference.t list -> string String.Map.t
-end
-
 module Modules : sig
   module ModuleValue : Memory.ValueType with type t = Module.t
 

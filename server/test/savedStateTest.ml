@@ -73,14 +73,14 @@ type locally_changed_file = {
 
 let test_compute_locally_changed_files context =
   let assert_changed_files ~files ~expected =
-    let { ScratchProject.configuration; module_tracker; _ } =
+    let { ScratchProject.configuration; module_tracker; _ }, ast_environment =
       let sources =
         List.filter_map files ~f:(fun { relative; old_content; _ } ->
             old_content >>| fun content -> relative, content)
       in
       let project = ScratchProject.setup ~context sources in
-      let _ = ScratchProject.parse_sources project in
-      project
+      let _, ast_environment = ScratchProject.parse_sources project in
+      project, ast_environment
     in
     let { Configuration.Analysis.local_root; _ } = configuration in
     let write_new_file { relative; new_content; _ } =
@@ -96,11 +96,12 @@ let test_compute_locally_changed_files context =
         ~scheduler:(Scheduler.mock ())
         ~configuration
         ~module_tracker
+        ~ast_environment:(Analysis.AstEnvironment.read_only ast_environment)
       |> List.filter_map ~f:(fun path -> Path.get_relative_to_root ~root:local_root ~path)
     in
     (* Ensure sources are cleaned up afterwards. *)
     List.map files ~f:(fun { relative; _ } -> Ast.SourcePath.qualifier_of_relative relative)
-    |> Ast.SharedMemory.Sources.remove;
+    |> Analysis.AstEnvironment.remove_sources ast_environment;
     assert_equal
       ~printer:(List.to_string ~f:ident)
       (List.sort ~compare:String.compare expected)

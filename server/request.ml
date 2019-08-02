@@ -466,12 +466,11 @@ let process_type_query_request
           Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
         in
         let qualifiers = ModuleTracker.qualifiers module_tracker in
+        let ast_environment = Environment.ast_environment environment in
         let map = Analysis.Environment.shared_memory_hash_to_key_map ~qualifiers () in
         (* AST shared memory. *)
         let map =
-          map
-          |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map ~new_map:(Ast.SharedMemory.Handles.compute_hashes_to_keys ~keys:qualifiers)
+          map |> extend_map ~new_map:(AstEnvironment.shared_memory_hash_to_key_map qualifiers)
         in
         (* Resolution shared memory. *)
         let map =
@@ -489,7 +488,7 @@ let process_type_query_request
         let map =
           let keys =
             let open Statement.Define in
-            List.filter_map qualifiers ~f:Ast.SharedMemory.Sources.get
+            List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
             |> List.concat_map
                  ~f:
                    (Preprocessing.defines
@@ -538,13 +537,6 @@ let process_type_query_request
         in
         let serialize_decoded decoded =
           match decoded with
-          | Ast.SharedMemory.Sources.Sources.Decoded (key, value) ->
-              Some
-                ( Ast.SharedMemory.Sources.SourceValue.description,
-                  Reference.show key,
-                  value >>| Source.show )
-          | Ast.SharedMemory.Handles.Paths.Decoded (key, value) ->
-              Some (Ast.SharedMemory.Handles.PathValue.description, Reference.show key, value)
           | Coverage.SharedMemory.Decoded (key, value) ->
               Some (Coverage.CoverageValue.description, Reference.show key, value >>| Coverage.show)
           | Analysis.Dependencies.Callgraph.SharedMemory.Decoded (key, value) ->
@@ -559,7 +551,10 @@ let process_type_query_request
                 ( ResolutionSharedMemory.TypeAnnotationsValue.description,
                   Reference.show key,
                   value >>| ResolutionSharedMemory.show_annotations )
-          | _ -> Environment.serialize_decoded decoded
+          | _ -> (
+            match AstEnvironment.serialize_decoded decoded with
+            | Some _ as serialized -> serialized
+            | None -> Environment.serialize_decoded decoded )
         in
         let build_response { TypeQuery.decoded; undecodable_keys } = function
           | TypeQuery.SerializedValue { serialized_key; serialized_value } -> (
@@ -581,19 +576,16 @@ let process_type_query_request
               | Some first, Some second -> (
                   let equal =
                     match first, second with
-                    | ( Ast.SharedMemory.Sources.Sources.Decoded (_, first),
-                        Ast.SharedMemory.Sources.Sources.Decoded (_, second) ) ->
-                        Option.equal Source.equal first second
-                    | ( Ast.SharedMemory.Handles.Paths.Decoded (_, first),
-                        Ast.SharedMemory.Handles.Paths.Decoded (_, second) ) ->
-                        Option.equal String.equal first second
                     | ( Coverage.SharedMemory.Decoded (_, first),
                         Coverage.SharedMemory.Decoded (_, second) ) ->
                         Option.equal Coverage.equal first second
                     | ( ResolutionSharedMemory.Decoded (_, first),
                         ResolutionSharedMemory.Decoded (_, second) ) ->
                         Option.equal ResolutionSharedMemory.equal_annotations first second
-                    | _ -> Environment.decoded_equal first second
+                    | _ -> (
+                      match AstEnvironment.decoded_equal first second with
+                      | Some result -> result
+                      | None -> Environment.decoded_equal first second )
                   in
                   match serialize_decoded first, serialize_decoded second with
                   | Some (kind, key, first_value), Some (_, _, second_value) ->
@@ -626,6 +618,7 @@ let process_type_query_request
           List.filter_map paths ~f:(ModuleTracker.lookup_path ~configuration module_tracker)
           |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
         in
+        let ast_environment = Environment.ast_environment environment in
         let get_dependencies = Environment.dependencies environment in
         let dependency_set = Dependencies.transitive_of_list ~get_dependencies ~modules in
         let dependencies =
@@ -634,7 +627,7 @@ let process_type_query_request
             define_to_name (Source.top_level_define source)
           in
           Reference.Set.to_list dependency_set
-          |> List.filter_map ~f:Ast.SharedMemory.Sources.get
+          |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
           |> List.map ~f:source_to_define_name
         in
         TypeQuery.Response (TypeQuery.References dependencies)

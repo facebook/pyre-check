@@ -9,16 +9,15 @@ open Analysis
 
 let test_coverage context =
   let coverage =
-    let qualifiers =
+    let sources, _ =
       Test.ScratchProject.setup
         ~context
         [ "a.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
           "b.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
           "c.py", "#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n" ]
       |> Test.ScratchProject.parse_sources
-      |> fun (sources, _) -> List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
     in
-    Coverage.coverage ~number_of_files:3 ~sources:qualifiers
+    Coverage.coverage ~number_of_files:3 ~sources
   in
   assert_equal
     coverage

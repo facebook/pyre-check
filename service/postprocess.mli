@@ -8,7 +8,7 @@ open Analysis
 val register_ignores
   :  configuration:Configuration.Analysis.t ->
   Scheduler.t ->
-  Ast.SourcePath.t list ->
+  Ast.Source.t list ->
   unit
 
 val ignore

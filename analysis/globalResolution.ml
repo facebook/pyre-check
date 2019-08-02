@@ -408,7 +408,8 @@ let function_definitions resolution reference =
         qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
       in
       let result =
-        Ast.SharedMemory.Sources.get qualifier
+        let ast_environment = ast_environment resolution in
+        AstEnvironment.ReadOnly.get_source ast_environment qualifier
         >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
         >>| List.filter ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
                 Reference.equal reference name)

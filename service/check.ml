@@ -36,6 +36,7 @@ let analyze_sources
     let timer = Timer.start () in
     let empty_result = { errors = []; number_files = 0 } in
     let number_of_sources = List.length checked_source_paths in
+    let ast_environment = Environment.ast_environment environment in
     Log.info "Checking %d sources..." number_of_sources;
     let run (module Check : Analysis.Check.Signature) =
       Log.info "Running check `%s`..." Check.name;
@@ -45,7 +46,7 @@ let analyze_sources
         Module.Cache.clear ();
         let analyze_source { errors; number_files } ({ SourcePath.qualifier; _ } as source_path) =
           let path = SourcePath.full_path ~configuration source_path in
-          match SharedMemory.Sources.get qualifier with
+          match AstEnvironment.ReadOnly.get_source ast_environment qualifier with
           | Some source ->
               let configuration =
                 if PyrePath.Map.mem open_documents path then
@@ -131,7 +132,11 @@ let check
   let source_paths =
     List.filter source_paths ~f:(fun { SourcePath.is_external; _ } -> not is_external)
   in
-  Postprocess.register_ignores ~configuration scheduler source_paths;
+  let checked_sources =
+    List.filter_map source_paths ~f:(fun { SourcePath.qualifier; _ } ->
+        Analysis.AstEnvironment.get_source ast_environment qualifier)
+  in
+  Postprocess.register_ignores ~configuration scheduler checked_sources;
   let errors = analyze_sources ~scheduler ~configuration ~environment source_paths in
   (* Log coverage results *)
   let path_to_files =
@@ -141,8 +146,7 @@ let check
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
     let number_of_files = List.length source_paths in
-    let sources = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
-    Coverage.coverage ~sources ~number_of_files
+    Coverage.coverage ~sources:checked_sources ~number_of_files
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
     let aggregate sofar { SourcePath.qualifier; _ } =

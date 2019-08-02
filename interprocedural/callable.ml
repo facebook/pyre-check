@@ -135,7 +135,7 @@ let get_definition ~resolution = function
   | `Function name when String.is_suffix name ~suffix:".$toplevel" ->
       String.drop_suffix name 10
       |> Reference.create
-      |> SharedMemory.Sources.get
+      |> AstEnvironment.ReadOnly.get_source (GlobalResolution.ast_environment resolution)
       >>| Source.top_level_define_node
   | `Function name ->
       Reference.create name

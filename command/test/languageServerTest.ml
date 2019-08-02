@@ -650,21 +650,12 @@ let test_language_server_definition_response context =
     ~id:(string_request_id "abcd")
     ~location:None
     ~expected:(`Assoc ["id", `String "abcd"; "jsonrpc", `String "2.0"; "result", `List []]);
-  let add_paths relatives =
-    List.map relatives ~f:Ast.SourcePath.qualifier_of_relative |> Ast.SharedMemory.Sources.remove;
-    let add_source relative =
-      let source = Ast.Source.create ~relative [] in
-      Ast.SharedMemory.Sources.add source
-    in
-    List.iter relatives ~f:add_source
-  in
+
   let touch path = File.create ~content:"" path |> File.write in
   let file = Path.create_relative ~root:local_root ~relative:"a.py" in
   touch file;
   let stub = Path.create_relative ~root:local_root ~relative:"b.pyi" in
   touch stub;
-  let relatives = ["a.py"; "b.pyi"] in
-  add_paths relatives;
   assert_response
     ~id:(int_request_id 1)
     ~location:

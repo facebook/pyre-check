@@ -44,8 +44,8 @@ let find_module_reference ~cursor_position:{ Location.line; column } source =
   |> Reference.create
 
 
-let get_exported_imports ~module_reference =
-  SharedMemory.Sources.get module_reference
+let get_exported_imports ~ast_environment module_reference =
+  AstEnvironment.ReadOnly.get_source ast_environment module_reference
   >>| Source.statements
   >>| List.concat_map ~f:(function
           | { Node.value = Statement.Import { imports; _ }; _ } ->
@@ -115,7 +115,10 @@ let get_module_members_list
   let open LanguageServer.Types in
   let position = Position.from_pyre_position ~line ~column in
   let text_edit_range = { Range.start = position; end_ = position } in
-  let exported_imports = get_exported_imports ~module_reference in
+  let ast_environment =
+    Resolution.global_resolution resolution |> GlobalResolution.ast_environment
+  in
+  let exported_imports = get_exported_imports ~ast_environment module_reference in
   let get_member_name_and_type member_reference =
     (* We remove members which are exported by importing some other modules. They should not show
        up in autocompletion. *)

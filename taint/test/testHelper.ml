@@ -48,9 +48,9 @@ let populate ~configuration environment sources =
 let environment
     ?(sources = Test.typeshed_stubs ())
     ?(configuration = Configuration.Analysis.create ())
+    ?(ast_environment = AstEnvironment.ReadOnly.create ())
     ()
   =
-  let ast_environment = AstEnvironment.ReadOnly.create () in
   let environment = Environment.shared_memory_handler ast_environment in
   populate ~configuration environment sources;
   environment
@@ -373,13 +373,15 @@ type test_environment = {
 }
 
 let initialize ?(handle = "test.py") ?models ~context source_content =
-  let configuration, source =
+  let configuration, source, ast_environment =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    let sources, _ = Test.ScratchProject.parse_sources project in
+    let sources, ast_environment = Test.ScratchProject.parse_sources project in
     let source = List.hd_exn sources in
-    Test.ScratchProject.configuration_of project, source
+    Test.ScratchProject.configuration_of project, source, AstEnvironment.read_only ast_environment
   in
-  let environment = environment ~sources:(Test.typeshed_stubs () @ [source]) ~configuration () in
+  let environment =
+    environment ~sources:(Test.typeshed_stubs () @ [source]) ~configuration ~ast_environment ()
+  in
   let global_resolution = Environment.resolution environment () in
   let errors =
     let keep error =
