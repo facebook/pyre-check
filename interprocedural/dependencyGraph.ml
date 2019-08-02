@@ -21,7 +21,26 @@ let empty_callgraph = Callable.RealMap.empty
 
 let empty_overrides = Reference.Map.empty
 
-let create_callgraph ~environment ~source =
+let type_checking_callgraph
+    dependencies
+    ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
+  =
+  let module Callgraph = Analysis.Dependencies.Callgraph in
+  let callees = function
+    | Callgraph.Function name -> Callable.create_function name
+    | Callgraph.Method { static_target; dispatch = Dynamic; _ } ->
+        if DependencyGraphSharedMemory.overrides_exist static_target then
+          Callable.create_override static_target
+        else
+          Callable.create_method static_target
+    | Callgraph.Method { static_target; dispatch = Static; _ } ->
+        Callable.create_method static_target
+  in
+  let callees = Callgraph.get ~caller:name |> List.map ~f:callees in
+  Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees
+
+
+let create_callgraph ?(use_type_checking_callgraph = false) ~environment ~source =
   let fold_defines
       dependencies
       ({ Node.value = { Define.signature = { name = caller; parent; _ }; _ }; _ } as define)
@@ -70,6 +89,12 @@ let create_callgraph ~environment ~source =
       Hashtbl.fold cfg ~init:[] ~f:fold_cfg |> List.dedup_and_sort ~compare:Callable.compare
     in
     Callable.RealMap.set dependencies ~key:caller_callable ~data:callees
+  in
+  let fold_defines =
+    if use_type_checking_callgraph then
+      type_checking_callgraph
+    else
+      fold_defines
   in
   Preprocessing.defines source |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
 

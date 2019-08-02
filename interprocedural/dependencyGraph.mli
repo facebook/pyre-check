@@ -35,7 +35,11 @@ val from_overrides : overrides -> t
 
 val from_callgraph : callgraph -> t
 
-val create_callgraph : environment:Environment.t -> source:Source.t -> callgraph
+val create_callgraph
+  :  ?use_type_checking_callgraph:bool ->
+  environment:Environment.t ->
+  source:Source.t ->
+  callgraph
 
 val create_overrides : environment:Environment.t -> source:Source.t -> overrides
 

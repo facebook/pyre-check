@@ -25,7 +25,12 @@ let setup ?(update_environment_with = []) ~context ~handle source =
   ScratchProject.configuration_of project, source, environment
 
 
-let create_call_graph ?(update_environment_with = []) ~context source_text =
+let create_call_graph
+    ?(update_environment_with = [])
+    ~use_type_checking_callgraph
+    ~context
+    source_text
+  =
   let configuration, source, environment =
     setup ~update_environment_with ~context ~handle:"__init__.py" source_text
   in
@@ -38,7 +43,7 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
       (Format.pp_print_list TypeCheck.Error.pp)
       errors
     |> failwith;
-  DependencyGraph.create_callgraph ~environment ~source
+  DependencyGraph.create_callgraph ~use_type_checking_callgraph ~environment ~source
 
 
 let create_callable = function
@@ -60,22 +65,24 @@ let compare_dependency_graph call_graph ~expected =
 
 
 let assert_call_graph ?update_environment_with ~context source ~expected =
-  let graph =
-    create_call_graph ?update_environment_with ~context source
+  let graph ~use_type_checking_callgraph =
+    create_call_graph ?update_environment_with ~use_type_checking_callgraph ~context source
     |> DependencyGraph.from_callgraph
     |> Callable.Map.to_alist
   in
-  compare_dependency_graph graph ~expected
+  compare_dependency_graph (graph ~use_type_checking_callgraph:false) ~expected;
+  compare_dependency_graph (graph ~use_type_checking_callgraph:true) ~expected
 
 
 let assert_reverse_call_graph ~context source ~expected =
-  let graph =
-    create_call_graph ~context source
+  let graph ~use_type_checking_callgraph =
+    create_call_graph ~use_type_checking_callgraph ~context source
     |> DependencyGraph.from_callgraph
     |> DependencyGraph.reverse
     |> Callable.Map.to_alist
   in
-  compare_dependency_graph graph ~expected
+  compare_dependency_graph (graph ~use_type_checking_callgraph:false) ~expected;
+  compare_dependency_graph (graph ~use_type_checking_callgraph:true) ~expected
 
 
 let test_construction context =
@@ -85,10 +92,10 @@ let test_construction context =
     class Foo:
       def __init__(self):
         pass
-  
+
       def bar(self):
         return 10
-  
+
       def qux(self):
         return self.bar()
     |}
@@ -99,10 +106,10 @@ let test_construction context =
     class Foo:
       def __init__(self):
         pass
-  
+
       def bar(self):
         return self.qux()
-  
+
       def qux(self):
         return self.bar()
     |}
@@ -115,7 +122,7 @@ let test_construction context =
      class A:
        def __init__(self) -> None:
          pass
-  
+
      class B:
        def __init__(self) -> None:
          a = A()
@@ -344,14 +351,16 @@ let test_strongly_connected_components context =
     let configuration, source, environment = setup ~context ~handle source in
     let global_resolution = Environment.resolution environment () in
     TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
-    let partitions =
+    let partitions ~use_type_checking_callgraph =
       let edges =
-        DependencyGraph.create_callgraph ~environment ~source |> DependencyGraph.from_callgraph
+        DependencyGraph.create_callgraph ~use_type_checking_callgraph ~environment ~source
+        |> DependencyGraph.from_callgraph
       in
       DependencyGraph.partition ~edges
     in
     let printer partitions = Format.asprintf "%a" DependencyGraph.pp_partitions partitions in
-    assert_equal ~printer expected partitions
+    assert_equal ~printer expected (partitions ~use_type_checking_callgraph:false);
+    assert_equal ~printer expected (partitions ~use_type_checking_callgraph:true)
   in
   assert_strongly_connected_components
     {|
