@@ -17,6 +17,7 @@ from typing import Callable, Dict, Mapping, Optional, Set, Union
 import _ast
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
+from .generator_specs import DecoratorAnnotationSpec
 from .model_generator import Configuration, Registry
 
 
@@ -69,6 +70,15 @@ def main() -> None:
     parser.add_argument(
         "--output-directory", type=_file_exists, help="Directory to write models to"
     )
+    parser.add_argument(
+        "--annotation-spec",
+        action="append",
+        nargs=5,
+        metavar=DecoratorAnnotationSpec._fields,
+        help="Identify free functions decorated with 'decorator' and generate "
+        "models with the arguments and return annotated according to the "
+        "provided '*_annotation' arguments",
+    )
     parser.add_argument("--mode", action="append", choices=Registry.generators.keys())
     arguments: argparse.Namespace = parser.parse_args()
 
@@ -89,6 +99,11 @@ def main() -> None:
     stub_root = arguments.stub_root
     if stub_root:
         Configuration.stub_root = os.path.abspath(stub_root)
+
+    Configuration.annotation_specs = [
+        DecoratorAnnotationSpec(**dict(zip(DecoratorAnnotationSpec._fields, spec)))
+        for spec in arguments.annotation_spec
+    ]
 
     modes = arguments.mode or Registry.default_generators
     models = Registry.generate_models(modes)

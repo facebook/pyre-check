@@ -1,3 +1,10 @@
+# Copyright (c) 2016-present, Facebook, Inc.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+# pyre-strict
+
 import ast
 import inspect
 import types
@@ -69,9 +76,47 @@ class CallableModel(NamedTuple):
         return f"def {view_name}({parameters}){returns}: ..."
 
 
+def _annotate(argument: str, annotation: Optional[str]) -> str:
+    if annotation:
+        return f"{argument}: {annotation}"
+    else:
+        return argument
+
+
+class FunctionDefinitionModel(NamedTuple):
+    definition: FunctionDefinition
+    arg: Optional[str] = None
+    vararg: Optional[str] = None
+    kwarg: Optional[str] = None
+    returns: Optional[str] = None
+    qualifier: Optional[str] = None
+
+    def generate(self) -> str:
+        annotated_params: List[str] = []
+        parameters = self.definition.args
+
+        for ast_arg in self.definition.args.args:
+            annotated_params.append(_annotate(ast_arg.arg, self.arg))
+
+        if isinstance(parameters.vararg, ast.arg):
+            annotated_params.append(_annotate(f"*{parameters.vararg.arg}", self.vararg))
+
+        if isinstance(parameters.kwarg, ast.arg):
+            annotated_params.append(_annotate(f"**{parameters.kwarg.arg}", self.kwarg))
+
+        combined_params = ", ".join(annotated_params) if annotated_params else ""
+
+        returns = f" -> {self.returns}" if self.returns else ""
+        qualifier = f"{self.qualifier}." if self.qualifier else ""
+
+        fn_name = self.definition.name
+
+        return f"def {qualifier}{fn_name}({combined_params}){returns}: ..."
+
+
 class AssignmentModel(NamedTuple):
     annotation: str
     target: str
 
-    def generate(self):
+    def generate(self) -> str:
         return f"{self.target}: {self.annotation} = ..."

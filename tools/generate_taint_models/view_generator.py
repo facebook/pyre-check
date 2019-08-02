@@ -5,7 +5,6 @@
 
 # pyre-strict
 
-
 import logging
 from abc import ABC
 from importlib import import_module

@@ -14,21 +14,10 @@ from typing import Callable, Iterable, Optional, Set
 
 from .model import AssignmentModel
 from .model_generator import Configuration, ModelGenerator, Registry, qualifier
+from .module_loader import find_all_paths, load_module
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-def _load_module(module_path: str) -> Optional[ast.Module]:
-    try:
-        with open(module_path, "r") as file:
-            parsed = ast.parse(file.read())
-            if not isinstance(parsed, ast.Module):
-                return None
-            return parsed
-    except (FileNotFoundError, SyntaxError) as error:
-        LOG.warning(f"Could not load `{module_path}`: {str(error)}")
-    return None
 
 
 def _get_self_attribute(target: ast.expr) -> Optional[str]:
@@ -43,7 +32,7 @@ class GlobalModelGenerator(ModelGenerator):
     def _globals(self, root: str, path: str) -> Iterable[str]:
         globals: Set[str] = set()
 
-        module = _load_module(path)
+        module = load_module(path)
 
         if not module:
             return globals
@@ -182,15 +171,9 @@ class GlobalModelGenerator(ModelGenerator):
     ) -> Iterable[str]:
         sinks: Set[str] = set()
 
-        paths = [
-            path for path in glob.glob(Configuration.root + "/**/*.py", recursive=True)
-        ]
-        for path in paths:
-            # Stubs take precedence if both module.py and module.pyi exist.
-            stub_path = f"{path}i"
-            if os.path.exists(stub_path):
-                path = stub_path
+        for path in find_all_paths():
             sinks = sinks.union(self._globals(Configuration.root, path))
+
         stub_root = Configuration.stub_root
         if stub_root:
             stub_root = os.path.abspath(stub_root)

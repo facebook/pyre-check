@@ -1,5 +1,12 @@
+# Copyright (c) 2016-present, Facebook, Inc.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 # pyre-strict
 
+import ast
+import textwrap
 import unittest
 
 from .. import model
@@ -10,7 +17,7 @@ def test_function(argument: str, *variable: str, **keyword: str) -> None:
 
 
 class ModelTest(unittest.TestCase):
-    def test_generate_model(self) -> None:
+    def test_callable_model(self) -> None:
         name = f"{__name__}.test_function"
         self.assertEqual(
             model.CallableModel(
@@ -62,6 +69,124 @@ class ModelTest(unittest.TestCase):
                 pass
 
         self.assertEqual(model.CallableModel(callable=CallMe).generate(), None)
+
+    def assert_modeled(self, source: str, expected: str, **kwargs: str) -> None:
+        parsed_function = ast.parse(textwrap.dedent(source)).body[0]
+
+        parsed_function: model.FunctionDefinition
+
+        self.assertEqual(
+            model.FunctionDefinitionModel(
+                definition=parsed_function, **kwargs
+            ).generate(),
+            expected,
+        )
+
+    def test_function_definition_model(self) -> None:
+        all_args_source = """
+            def test_fn(arg1, arg2, *v, **kw):
+                pass
+        """
+
+        # Check that annotations work one at a time
+        self.assert_modeled(
+            all_args_source,
+            "def test_fn(arg1: Arg, arg2: Arg, *v, **kw): ...",
+            arg="Arg",
+        )
+
+        self.assert_modeled(
+            all_args_source,
+            "def test_fn(arg1, arg2, *v: Vararg, **kw): ...",
+            vararg="Vararg",
+        )
+
+        self.assert_modeled(
+            all_args_source,
+            "def test_fn(arg1, arg2, *v, **kw: Kwarg): ...",
+            kwarg="Kwarg",
+        )
+
+        self.assert_modeled(
+            all_args_source,
+            "def test_fn(arg1, arg2, *v, **kw) -> Return: ...",
+            returns="Return",
+        )
+
+        self.assert_modeled(
+            all_args_source,
+            "def qualifier.test_fn(arg1, arg2, *v, **kw): ...",
+            qualifier="qualifier",
+        )
+
+        # Check that all the bells and whistles work
+        self.assert_modeled(
+            all_args_source,
+            "def qualifier.test_fn(arg1: Arg, arg2: Arg, *v: Vararg, "
+            "**kw: Kwarg) -> Return: ...",
+            arg="Arg",
+            vararg="Vararg",
+            kwarg="Kwarg",
+            returns="Return",
+            qualifier="qualifier",
+        )
+
+        # Check that we handle functions without all arg types
+        self.assert_modeled(
+            """
+            def test_fn(arg1: str, arg2):
+                pass
+            """,
+            "def test_fn(arg1: Arg, arg2: Arg): ...",
+            arg="Arg",
+        )
+
+        self.assert_modeled(
+            """
+            def test_fn(*v):
+                pass
+            """,
+            "def test_fn(*v: Vararg): ...",
+            vararg="Vararg",
+        )
+
+        self.assert_modeled(
+            """
+            def test_fn(**kw):
+                pass
+            """,
+            "def test_fn(**kw: Kwarg): ...",
+            kwarg="Kwarg",
+        )
+
+        # Check that we handle async functions
+        self.assert_modeled(
+            """
+            async def test_fn(arg1, arg2, *v, **kw):
+                pass
+            """,
+            "def qualifier.test_fn(arg1: Arg, arg2: Arg, *v: Vararg, "
+            "**kw: Kwarg) -> Return: ...",
+            arg="Arg",
+            vararg="Vararg",
+            kwarg="Kwarg",
+            returns="Return",
+            qualifier="qualifier",
+        )
+
+        # Check that we gracefully handle unused annotation parameters
+        self.assert_modeled(
+            """
+            def test_fn():
+                pass
+            """,
+            "def qualifier.test_fn() -> Return: ...",
+            arg="Arg",
+            vararg="Vararg",
+            kwarg="Kwarg",
+            returns="Return",
+            qualifier="qualifier",
+        )
 
     def test_assignment_model(self) -> None:
         self.assertEqual(

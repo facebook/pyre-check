@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-strict
-
+from . import get_annotated_free_functions_with_decorator  # noqa
 from . import get_exit_nodes  # noqa
 from . import get_globals  # noqa
 from . import get_graphql_sources  # noqa
