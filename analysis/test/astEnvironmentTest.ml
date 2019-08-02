@@ -87,7 +87,7 @@ let test_basic context =
     assert_no_source ~get_source !&"c"
   in
   let () =
-    let read_only_environment = AstEnvironment.ReadOnly.create ast_environment in
+    let read_only_environment = AstEnvironment.read_only ast_environment in
     let get_source = AstEnvironment.ReadOnly.get_source read_only_environment in
     assert_source ~get_source ~expected:source_a !&"a";
     assert_source ~get_source ~expected:source_b !&"b";

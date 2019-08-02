@@ -91,16 +91,16 @@ let build environment ~configuration ~scheduler qualifiers =
     File.create ~content:(ClassHierarchy.to_dot hierarchy) type_order_file |> File.write )
 
 
-let shared_handler = Environment.shared_memory_handler ()
-
 (** First dumps environment to shared memory, then exposes through Environment_handler *)
 let populate_shared_memory
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
+    ~ast_environment
     qualifiers
   =
   Log.info "Adding built-in environment information to shared memory...";
   let timer = Timer.start () in
+  let shared_handler = Environment.shared_memory_handler ast_environment in
   Environment.fill_shared_memory_with_default_typeorder ();
   Environment.add_special_classes shared_handler;
   Environment.add_dummy_modules shared_handler;
@@ -114,4 +114,5 @@ let populate_shared_memory
       ~section:`Memory
       ~name:"shared memory size"
       ~integers:["size", Ast.SharedMemory.heap_size ()]
-      () )
+      () );
+  shared_handler

@@ -122,10 +122,10 @@ let check
   let module_tracker = Analysis.ModuleTracker.create configuration in
   (* Parse sources. *)
   let source_paths, ast_environment = Parser.parse_all ~scheduler ~configuration module_tracker in
-  let environment = Environment.shared_handler in
-  let () =
+  let environment =
+    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
     let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
-    Environment.populate_shared_memory ~configuration ~scheduler qualifiers
+    Environment.populate_shared_memory ~configuration ~scheduler ~ast_environment qualifiers
   in
   (* Do not count external files when computing ignores / checking types / computing coverages *)
   let source_paths =

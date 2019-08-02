@@ -196,13 +196,15 @@ let load
     | _ -> raise (IncompatibleState "unexpected saved state parameters")
   in
   let scheduler = Scheduler.create ~configuration () in
-  let environment = Environment.shared_handler in
+  let module_tracker = ModuleTracker.SharedMemory.load () in
+  let ast_environment = AstEnvironment.load module_tracker in
+  let environment =
+    Analysis.Environment.shared_memory_handler (AstEnvironment.read_only ast_environment)
+  in
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
-  let module_tracker = ModuleTracker.SharedMemory.load () in
-  let ast_environment = AstEnvironment.load module_tracker in
   let symlink_targets_to_sources = SymlinkTargetsToSources.load () in
   let changed_paths =
     match changed_paths with

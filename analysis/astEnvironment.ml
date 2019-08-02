@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Core
 
 type t = {
   add_source: Source.t -> unit;
@@ -40,11 +39,18 @@ let load = create
 type environment_t = t
 
 module ReadOnly = struct
-  type t = environment_t
+  type t = {
+    get_source: Reference.t -> Source.t option;
+    get_source_path: Reference.t -> SourcePath.t option;
+  }
 
-  let create = Fn.id
+  let create ?(get_source = fun _ -> None) ?(get_source_path = fun _ -> None) () =
+    { get_source; get_source_path }
 
-  let get_source = get_source
 
-  let get_source_path = get_source_path
+  let get_source { get_source; _ } = get_source
+
+  let get_source_path { get_source_path; _ } = get_source_path
 end
+
+let read_only { get_source; get_source_path; _ } = { ReadOnly.get_source; get_source_path }

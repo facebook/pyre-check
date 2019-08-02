@@ -31,6 +31,8 @@ module type Handler = sig
 
   val purge : ?debug:bool -> Reference.t list -> unit
 
+  val ast_environment : AstEnvironment.ReadOnly.t
+
   val class_definition : Identifier.t -> Class.t Node.t option
 
   val class_metadata : Identifier.t -> GlobalResolution.class_metadata option
@@ -139,6 +141,7 @@ let resolution (module Handler : Handler) () =
     | _ -> Handler.globals reference
   in
   GlobalResolution.create
+    ~ast_environment:Handler.ast_environment
     ~class_hierarchy
     ~aliases
     ~module_definition:Handler.module_definition
@@ -151,6 +154,8 @@ let resolution (module Handler : Handler) () =
     ~global
     ()
 
+
+let ast_environment (module Handler : Handler) = Handler.ast_environment
 
 let connect_definition
     (module Handler : Handler)
@@ -1624,7 +1629,13 @@ module SharedMemoryPartialHandler = struct
       ClassHierarchy.check_integrity (module SharedMemoryClassHierarchyHandler)
 end
 
-let shared_memory_handler () = (module SharedMemoryPartialHandler : Handler)
+let shared_memory_handler ast_environment =
+  ( module struct
+    include SharedMemoryPartialHandler
+
+    let ast_environment = ast_environment
+  end : Handler )
+
 
 let normalize_shared_memory qualifiers =
   (* Since we don't provide an API to the raw order keys in the type order handler, handle it

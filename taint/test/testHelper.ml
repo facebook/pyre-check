@@ -50,7 +50,8 @@ let environment
     ?(configuration = Configuration.Analysis.create ())
     ()
   =
-  let environment = Environment.shared_memory_handler () in
+  let ast_environment = AstEnvironment.ReadOnly.create () in
+  let environment = Environment.shared_memory_handler ast_environment in
   populate ~configuration environment sources;
   environment
 

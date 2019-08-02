@@ -29,9 +29,15 @@ type environment_t = t
 module ReadOnly : sig
   type t
 
-  val create : environment_t -> t
+  val create
+    :  ?get_source:(Reference.t -> Source.t option) ->
+    ?get_source_path:(Reference.t -> SourcePath.t option) ->
+    unit ->
+    t
 
   val get_source : t -> Reference.t -> Source.t option
 
   val get_source_path : t -> Reference.t -> SourcePath.t option
 end
+
+val read_only : t -> ReadOnly.t

@@ -21,10 +21,11 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   let scheduler = Scheduler.mock () in
   List.iter ~f:File.write files;
   let module_tracker = Analysis.ModuleTracker.create configuration in
-  let source_paths, _ = Service.Parser.parse_all ~configuration ~scheduler module_tracker in
-  let environment = Service.Environment.shared_handler in
+  let source_paths, ast_environment =
+    Service.Parser.parse_all ~configuration ~scheduler module_tracker
+  in
   let qualifiers = List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) in
-  let () =
+  let environment =
     let qualifiers =
       let typeshed_qualifiers =
         typeshed_stubs ~include_helper_builtins:false ()
@@ -32,7 +33,12 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
       in
       List.append typeshed_qualifiers qualifiers
     in
-    Service.Environment.populate_shared_memory ~configuration ~scheduler qualifiers
+    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+    Service.Environment.populate_shared_memory
+      ~configuration
+      ~scheduler
+      ~ast_environment
+      qualifiers
   in
   let actual_errors =
     Service.Check.analyze_sources

@@ -1250,7 +1250,9 @@ module ScratchProject = struct
         else
           sources
       in
-      let environment = Environment.shared_memory_handler () in
+      let environment =
+        Environment.shared_memory_handler (AstEnvironment.read_only ast_environment)
+      in
       let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
       Environment.purge environment qualifiers;
       Service.Environment.populate

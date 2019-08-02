@@ -15,6 +15,8 @@ val add_dummy_modules : t -> unit
 
 val add_special_globals : t -> unit
 
+val ast_environment : t -> AstEnvironment.ReadOnly.t
+
 val resolution : t -> unit -> GlobalResolution.t
 
 val dependencies : t -> Reference.t -> Reference.Set.Tree.t option
@@ -55,7 +57,7 @@ val register_class_metadata : t -> Identifier.t -> unit
 
 val transaction : t -> ?only_global_keys:bool -> f:(unit -> 'a) -> unit -> 'a
 
-val shared_memory_handler : unit -> t
+val shared_memory_handler : AstEnvironment.ReadOnly.t -> t
 
 val normalize_shared_memory : Reference.t list -> unit
 

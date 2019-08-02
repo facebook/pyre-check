@@ -40,6 +40,7 @@ type class_metadata = {
 type global = Annotation.t Node.t [@@deriving eq, show]
 
 type t = {
+  ast_environment: AstEnvironment.ReadOnly.t;
   class_hierarchy: (module ClassHierarchy.Handler);
   aliases: Type.Primitive.t -> Type.alias option;
   module_definition: Reference.t -> Module.t option;
@@ -54,6 +55,7 @@ type t = {
 }
 
 let create
+    ~ast_environment
     ~class_hierarchy
     ~aliases
     ~module_definition
@@ -67,6 +69,7 @@ let create
     ()
   =
   {
+    ast_environment;
     class_hierarchy;
     aliases;
     module_definition;
@@ -358,6 +361,8 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
 
 
 let undecorated_signature { undecorated_signature; _ } = undecorated_signature
+
+let ast_environment { ast_environment; _ } = ast_environment
 
 let aliases { aliases; _ } = aliases
 

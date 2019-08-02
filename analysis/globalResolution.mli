@@ -40,7 +40,8 @@ type global = Annotation.t Node.t [@@deriving eq, show]
 type t
 
 val create
-  :  class_hierarchy:(module ClassHierarchy.Handler) ->
+  :  ast_environment:AstEnvironment.ReadOnly.t ->
+  class_hierarchy:(module ClassHierarchy.Handler) ->
   aliases:(Type.Primitive.t -> Type.alias option) ->
   module_definition:(Reference.t -> Module.t option) ->
   class_definition:(Type.Primitive.t -> Class.t Node.t option) ->
@@ -130,6 +131,8 @@ val widen
   Type.t
 
 val resolve_exports : t -> reference:Reference.t -> Reference.t
+
+val ast_environment : t -> AstEnvironment.ReadOnly.t
 
 val aliases : t -> Type.Primitive.t -> Type.alias option
 
