@@ -157,9 +157,8 @@ let get_definition ~resolution = function
       >>= Class.find_define ~method_name
 
 
-let get_method_implementation ~resolution ~class_type ~method_name =
+let resolve_method ~resolution ~class_type ~method_name =
   let callable_implementation =
-    let last = Reference.last method_name in
     GlobalResolution.class_definition resolution class_type
     >>| Annotated.Class.create
     >>| fun definition ->
@@ -167,7 +166,7 @@ let get_method_implementation ~resolution ~class_type ~method_name =
       ~transitive:true
       definition
       ~resolution
-      ~name:last
+      ~name:method_name
       ~instantiated:class_type
   in
   match callable_implementation with

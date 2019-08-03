@@ -122,10 +122,10 @@ val get_definition
   [< real_target ] ->
   Define.t Node.t option
 
-val get_method_implementation
+val resolve_method
   :  resolution:Analysis.GlobalResolution.t ->
   class_type:Type.t ->
-  method_name:Reference.t ->
+  method_name:string ->
   [> method_target ] option
 
 module Map : Core.Map.S with type Key.t = t

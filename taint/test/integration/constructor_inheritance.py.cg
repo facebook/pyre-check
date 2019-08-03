@@ -1,0 +1,4 @@
+@generated
+Call dependencies
+constructor_inheritance.MyBaseClass::__init__ (method) -> [__test_sink (fun)]
+constructor_inheritance.test (fun) -> [__test_source (fun) constructor_inheritance.MyBaseClass::__init__ (method)]

@@ -1,0 +1,124 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructor_inheritance.test",
+    "callable_line": 16,
+    "code": 5002,
+    "line": 18,
+    "start": 29,
+    "end": 44,
+    "filename": "constructor_inheritance.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "constructor_inheritance.py",
+              "line": 18,
+              "start": 42,
+              "end": 44
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "constructor_inheritance.py",
+                "line": 18,
+                "start": 29,
+                "end": 44
+              },
+              "resolves_to": [
+                "constructor_inheritance.MyBaseClass.__init__"
+              ],
+              "port": "formal(argument)",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(argument)",
+        "taint": [
+          {
+            "root": {
+              "filename": "constructor_inheritance.py",
+              "line": 9,
+              "start": 20,
+              "end": 28
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructor_inheritance.MyBaseClass.__init__",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(argument)",
+        "taint": [
+          {
+            "root": {
+              "filename": "constructor_inheritance.py",
+              "line": 9,
+              "start": 20,
+              "end": 28
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -26,31 +26,33 @@ let normalize_global ~resolution reference =
     reference, []
 
 
-let get_property_defining_parent ~resolution ~base ~attribute =
+let defining_attribute ~resolution parent_type attribute =
   let global_resolution = Resolution.global_resolution resolution in
+  GlobalResolution.class_definition global_resolution parent_type
+  >>| Annotated.Class.create
+  >>| (fun definition ->
+        Annotated.Class.attribute
+          ~transitive:true
+          definition
+          ~resolution:global_resolution
+          ~name:attribute
+          ~instantiated:parent_type)
+  >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
+
+
+let get_property_defining_parent ~resolution ~base ~attribute =
   let annotation = Resolution.resolve resolution base in
   let annotation =
     if Type.is_meta annotation then Type.single_parameter annotation else annotation
   in
-  let property =
-    GlobalResolution.class_definition global_resolution annotation
-    >>| Annotated.Class.create
-    >>| (fun definition ->
-          Annotated.Class.attribute
-            ~transitive:true
-            definition
-            ~resolution:global_resolution
-            ~name:attribute
-            ~instantiated:annotation)
-    >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
-  in
-  match property with
+  match defining_attribute ~resolution annotation attribute with
   | Some property when Option.is_some (Annotated.Attribute.property property) ->
       Annotated.Attribute.parent property |> Type.primitive_name >>| Reference.create
   | _ -> None
 
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
+
 
 let extract_constant_name { Node.value = expression; _ } =
   match expression with
@@ -68,19 +70,20 @@ let extract_constant_name { Node.value = expression; _ } =
   | _ -> None
 
 
-(* Figure out what target to pick for an indirect call that resolves to target_name.
+(* Figure out what target to pick for an indirect call that resolves to implementation_target.
    E.g., if the receiver type is A, and A derives from Base, and the target is Base.method, then
    targetting the override tree of Base.method is wrong, as it would include all siblings for A.
 
  * Instead, we have the following cases:
- * a) receiver type matches target_name's declaring type -> override target_name
- * b) no target_name override entries are subclasses of A -> real target_name
+ * a) receiver type matches implementation_target's declaring type -> override implementation_target
+ * b) no implementation_target override entries are subclasses of A -> real implementation_target
  * c) some override entries are subclasses of A -> search upwards for actual implementation,
  *    and override all those where the override name is
  *  1) the override target if it exists in the override shared mem
  *  2) the real target otherwise
  *)
-let compute_indirect_targets ~resolution ~receiver_type target_name =
+let compute_indirect_targets ~resolution ~receiver_type implementation_target =
+  (* Target name must be the resolved implementation target *)
   let global_resolution = Resolution.global_resolution resolution in
   let get_class_type = GlobalResolution.parse_reference global_resolution in
   let get_actual_target method_name =
@@ -97,14 +100,15 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
     in
     strip_optional_and_meta receiver_type
   in
-  let declaring_type = Reference.prefix target_name >>| get_class_type in
+  let declaring_type = Reference.prefix implementation_target >>| get_class_type in
   if declaring_type >>| Type.equal receiver_type |> Option.value ~default:false then (* case a *)
-    [get_actual_target target_name]
+    [get_actual_target implementation_target]
   else
-    match DependencyGraphSharedMemory.get_overriding_types ~member:target_name with
+    let target_callable = Callable.create_method implementation_target in
+    match DependencyGraphSharedMemory.get_overriding_types ~member:implementation_target with
     | None ->
         (* case b *)
-        [Callable.create_method target_name]
+        [target_callable]
     | Some overriding_types -> (
         let keep_subtypes candidate =
           let candidate_type = get_class_type candidate in
@@ -116,26 +120,14 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
         match List.filter overriding_types ~f:keep_subtypes with
         | [] ->
             (* case b *)
-            [Callable.create_method target_name]
+            [target_callable]
         | subtypes ->
             (* case c *)
+            let method_name = Reference.last implementation_target in
             let create_override_target class_name =
-              Reference.create ~prefix:class_name (Reference.last target_name) |> get_actual_target
+              Reference.create ~prefix:class_name method_name |> get_actual_target
             in
-            let actual_target =
-              let actual_implementation =
-                declaring_type
-                >>= fun class_type ->
-                Callable.get_method_implementation
-                  ~resolution:global_resolution
-                  ~class_type
-                  ~method_name:target_name
-              in
-              match actual_implementation with
-              | Some implementation -> implementation
-              | None -> get_actual_target target_name
-            in
-            actual_target :: List.map subtypes ~f:create_override_target )
+            target_callable :: List.map subtypes ~f:create_override_target )
 
 
 let rec is_all_names = function
@@ -194,19 +186,19 @@ let resolve_target ~resolution ?receiver_type callee =
     | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class, _ ->
         compute_indirect_targets ~resolution ~receiver_type:type_or_class name
         |> List.map ~f:(fun target -> target, implicit)
-    | callable_type, _, Some global when Type.is_meta callable_type ->
-        let reference, _ = normalize_global ~resolution global in
-        [ ( Callable.create_method reference,
-            Some { Type.Callable.implicit_annotation = callable_type; name = "self" } ) ]
     | Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
     | Type.Optional annotation, _, _ -> resolve_type annotation
     | _, _, _ when Type.is_meta callable_type -> (
         let class_type = Type.single_parameter callable_type in
         match Type.primitive_name class_type with
         | Some class_name when class_name <> "super" ->
-            let class_reference = Reference.create class_name in
-            [ ( Callable.create_method (Reference.create ~prefix:class_reference "__init__"),
-                Some { Type.Callable.implicit_annotation = callable_type; name = "self" } ) ]
+            let resolution = Resolution.global_resolution resolution in
+            Callable.resolve_method ~resolution ~class_type ~method_name:"__init__"
+            >>| (fun callable ->
+                  [ ( callable,
+                      Some { Type.Callable.implicit_annotation = callable_type; name = "self" } )
+                  ])
+            |> Option.value ~default:[]
         | _ -> [] )
     | _ -> []
   in
