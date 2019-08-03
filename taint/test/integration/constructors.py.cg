@@ -1,0 +1,6 @@
+@generated
+Call dependencies
+constructors.SomeAPI::__init__ (method) -> []
+constructors.SomeAPI::async_get_authenticated_user (method) -> [eval (fun)]
+constructors.SomeAPI::from_default_keys (method) -> [constructors.SomeAPI::__init__ (method)]
+constructors.test_construction (fun) -> [constructors.SomeAPI::async_get_authenticated_user (method) constructors.SomeAPI::from_default_keys (method)]

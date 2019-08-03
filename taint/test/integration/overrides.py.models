@@ -1029,3 +1029,41 @@
     "tito": []
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "overrides.constructorTest",
+    "sources": [
+      {
+        "port": "result[r]",
+        "taint": [
+          {
+            "root": {
+              "filename": "overrides.py",
+              "line": 151,
+              "start": 28,
+              "end": 30
+            },
+            "tito": [ { "line": 151, "start": 15, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(cls)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 151, "start": 11, "end": 14 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

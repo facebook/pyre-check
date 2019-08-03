@@ -415,6 +415,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
           |> apply_call_targets ~resolution location arguments state
           |>> add_index_breadcrumb_if_necessary
+      | None, Name (Name.Identifier _name) ->
+          let arguments =
+            let receiver = { Call.Argument.name = None; value = callee } in
+            receiver :: arguments
+          in
+          Interprocedural.CallResolution.get_indirect_targets
+            ~resolution
+            ~receiver:callee
+            ~method_name:"__init__"
+          |> apply_call_targets ~resolution location arguments state
       | _ ->
           (* No target, treat call as obscure *)
           let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in

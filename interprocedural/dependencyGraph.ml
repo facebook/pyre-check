@@ -69,7 +69,7 @@ let create_callgraph ?(use_type_checking_callgraph = false) ~environment ~source
               callee;
             callee :: callees
           in
-          match expression with
+          match expression.Node.value with
           | Expression.Call call ->
               let new_callees = CallResolution.resolve_call_targets ~resolution call in
               List.fold new_callees ~f:add_call_edge ~init:callees
@@ -79,9 +79,7 @@ let create_callgraph ?(use_type_checking_callgraph = false) ~environment ~source
               |> Option.value ~default:callees
           | _ -> callees
         in
-        Visit.collect_calls_and_names statement
-        |> List.map ~f:Node.value
-        |> List.fold ~init:callees ~f:process_call
+        Visit.collect_calls_and_names statement |> List.fold ~init:callees ~f:process_call
       in
       List.foldi statements ~init:callees ~f:fold_statements
     in

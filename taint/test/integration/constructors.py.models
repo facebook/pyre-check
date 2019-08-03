@@ -1,0 +1,182 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(oauth_token_secret)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
+            ]
+          }
+        ]
+      },
+      {
+        "port": "formal(oauth_token)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SomeAPI.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(oauth_token_secret)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
+            ]
+          }
+        ]
+      },
+      {
+        "port": "formal(oauth_token)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SomeAPI.async_get_authenticated_user",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(self)[AUTHENTICATE_URL]",
+        "taint": [
+          {
+            "root": {
+              "filename": "constructors.py",
+              "line": 17,
+              "start": 13,
+              "end": 34
+            },
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SomeAPI.from_default_keys",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(oauth_token_secret)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 14, "start": 32, "end": 50 } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
+            ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(oauth_token)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 14, "start": 19, "end": 30 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(cls)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 14, "start": 15, "end": 18 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.test_construction",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(request)[POST][2]",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 22, "start": 52, "end": 61 } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
+            ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(request)[POST][1]",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 22, "start": 41, "end": 50 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

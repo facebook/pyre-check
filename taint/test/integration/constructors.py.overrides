@@ -1,0 +1,3 @@
+@generated
+Overrides
+object::__init__ (override) -> [constructors.SomeAPI::__init__ (override)]

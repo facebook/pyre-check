@@ -200,6 +200,14 @@ let resolve_target ~resolution ?receiver_type callee =
             Some { Type.Callable.implicit_annotation = callable_type; name = "self" } ) ]
     | Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
     | Type.Optional annotation, _, _ -> resolve_type annotation
+    | _, _, _ when Type.is_meta callable_type -> (
+        let class_type = Type.single_parameter callable_type in
+        match Type.primitive_name class_type with
+        | Some class_name when class_name <> "super" ->
+            let class_reference = Reference.create class_name in
+            [ ( Callable.create_method (Reference.create ~prefix:class_reference "__init__"),
+                Some { Type.Callable.implicit_annotation = callable_type; name = "self" } ) ]
+        | _ -> [] )
     | _ -> []
   in
   resolve_type callable_type
@@ -234,9 +242,18 @@ let get_global_targets ~resolution ~global =
 
 
 let resolve_call_targets ~resolution { Call.callee; _ } =
-  let receiver_type =
-    match Node.value callee with
-    | Name (Name.Attribute { base; _ }) -> Some (Resolution.resolve resolution base)
-    | _ -> None
-  in
-  resolve_target ~resolution ?receiver_type callee
+  match Node.value callee with
+  | Name (Name.Attribute { base; _ }) ->
+      let receiver_type = Resolution.resolve resolution base in
+      resolve_target ~resolution ~receiver_type callee
+  | Name (Name.Identifier name) when name <> "super" ->
+      let receiver_type = Resolution.resolve resolution callee in
+      if Type.is_meta receiver_type then
+        let callee =
+          Name (Name.Attribute { base = callee; attribute = "__init__"; special = false })
+          |> Node.create_with_default_location
+        in
+        resolve_target ~resolution ~receiver_type callee
+      else
+        resolve_target ~resolution callee
+  | _ -> resolve_target ~resolution callee

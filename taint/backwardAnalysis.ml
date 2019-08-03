@@ -105,7 +105,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       analyze_expression ~resolution ~taint ~state ~expression:argument
 
 
-    and apply_call_targets ~resolution arguments state call_taint call_targets =
+    and apply_call_targets ~resolution _location arguments state call_taint call_targets =
       let analyze_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~call_target ~arguments in
         let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
@@ -231,7 +231,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_unstarred_expression ~resolution argument_taint argument state
           in
           List.fold ~f:analyze_argument combined_matches ~init:state
-        else (* obscure or no model *)
+        else (* obscure *)
           let obscure_taint =
             collapsed_call_taint
             |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
@@ -289,7 +289,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> analyze_expression ~resolution ~taint ~state ~expression
 
 
-    and analyze_call ~resolution ~taint ~state callee arguments =
+    and analyze_call ~resolution location ~taint ~state callee arguments =
       match AccessPath.get_global ~resolution callee, Node.value callee with
       | _, Name (Name.Identifier "super") -> (
         match arguments with
@@ -306,7 +306,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             Interprocedural.CallResolution.normalize_global ~resolution global
           in
           let arguments = extra_arguments @ arguments in
-          apply_call_targets ~resolution arguments state taint targets
+          apply_call_targets ~resolution location arguments state taint targets
       | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
           let taint =
             (* Specially handle super.__init__ calls in constructors for tito *)
@@ -325,7 +325,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~resolution
             ~receiver
             ~method_name:attribute
-          |> apply_call_targets ~resolution arguments state taint
+          |> apply_call_targets ~resolution location arguments state taint
+      | None, Name (Name.Identifier _name) ->
+          let arguments =
+            let receiver = { Call.Argument.name = None; value = callee } in
+            receiver :: arguments
+          in
+          Interprocedural.CallResolution.get_indirect_targets
+            ~resolution
+            ~receiver:callee
+            ~method_name:"__init__"
+          |> apply_call_targets ~resolution location arguments state taint
       | _ ->
           (* No targets, treat call as obscure *)
           let obscure_taint =
@@ -374,7 +384,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let index = AccessPath.get_index argument_value in
           let taint = BackwardState.Tree.prepend [index] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
-      | Call { callee; arguments } -> analyze_call ~resolution ~taint ~state callee arguments
+      | Call { callee; arguments } ->
+          analyze_call ~resolution location ~taint ~state callee arguments
       | Complex _ -> state
       | Dictionary dictionary ->
           List.fold ~f:(analyze_dictionary_entry ~resolution taint) dictionary.entries ~init:state
@@ -408,7 +419,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~taint ~state ~expression:base
         | Some targets ->
             let arguments = [{ Call.Argument.name = None; value = base }] in
-            apply_call_targets ~resolution arguments state taint targets )
+            apply_call_targets ~resolution location arguments state taint targets )
       | Set set ->
           let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
           List.fold
