@@ -5,8 +5,8 @@ class Base:
     q: str = "q"
     r: str = "r"
 
-    def __init__(self):
-        pass
+    def __init__(self, arg):
+        self.r = arg
 
     def methodA(self, arg):
         pass
@@ -22,8 +22,8 @@ class Base:
 class A(Base):
     q: str = "q"
 
-    def __init__(self):
-        super(Base, self).__init__()
+    def __init__(self, arg):
+        super(Base, self).__init__(arg)
 
     def methodA(self, arg):
         __test_sink(arg)
@@ -32,8 +32,8 @@ class A(Base):
 class B(Base):
     r: str = "r"
 
-    def __init__(self):
-        super(Base, self).__init__()
+    def __init__(self, arg):
+        super(Base, self).__init__(arg)
 
     def methodB(self):
         return __test_source()
@@ -46,8 +46,8 @@ class B(Base):
 class C(B):
     q: str = "q"
 
-    def __init__(self):
-        super(B, self).__init__()
+    def __init__(self, arg):
+        super(B, self).__init__(arg)
 
     def methodA(self, arg):
         pass
@@ -58,8 +58,8 @@ class C(B):
 
 
 class D(C):
-    def __init__(self):
-        super(C, self).__init__()
+    def __init__(self, arg):
+        super(C, self).__init__(arg)
 
     def methodA(self, arg):
         __test_sink(arg)

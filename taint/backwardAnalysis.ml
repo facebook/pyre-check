@@ -20,28 +20,12 @@ module type FixpointState = sig
   val create : unit -> t
 end
 
-let initial_taint define =
-  match Reference.last define.Define.signature.name with
-  | "__init__" -> (
-    (* Constructor. Make self the return value *)
-    match define.Define.signature.parameters with
-    | { Node.value = { Parameter.name; _ }; _ } :: _ ->
-        BackwardState.assign
-          ~root:(Root.Variable name)
-          ~path:[]
-          (BackwardState.Tree.create_leaf Domains.local_return_taint)
-          BackwardState.empty
-    | _ -> BackwardState.empty )
-  | _ ->
-      BackwardState.assign
-        ~root:Root.LocalResult
-        ~path:[]
-        (BackwardState.Tree.create_leaf Domains.local_return_taint)
-        BackwardState.empty
-
-
 module type FUNCTION_CONTEXT = sig
   val definition : Define.t Node.t
+
+  val first_parameter : unit -> Root.t option (* For implicit self reference in super() *)
+
+  val is_constructor : unit -> bool
 
   val environment : Environment.t
 end
@@ -49,6 +33,24 @@ end
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
      paths for more precise tito. *)
+  let initial_taint =
+    if FunctionContext.is_constructor () then (* Constructor. Make self the return value *)
+      match FunctionContext.first_parameter () with
+      | Some root ->
+          BackwardState.assign
+            ~root
+            ~path:[]
+            (BackwardState.Tree.create_leaf Domains.local_return_taint)
+            BackwardState.empty
+      | _ -> BackwardState.empty
+    else
+      BackwardState.assign
+        ~root:Root.LocalResult
+        ~path:[]
+        (BackwardState.Tree.create_leaf Domains.local_return_taint)
+        BackwardState.empty
+
+
   let transform_non_leaves path taint =
     let f feature =
       match feature with
@@ -61,6 +63,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let read_tree = BackwardState.Tree.read ~transform_non_leaves
+
+  let is_super expression =
+    match expression.Node.value with
+    | Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
+    | _ -> false
+
 
   module rec FixpointState : FixpointState = struct
     type t = { taint: BackwardState.t } [@@deriving show]
@@ -283,6 +291,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_call ~resolution ~taint ~state callee arguments =
       match AccessPath.get_global ~resolution callee, Node.value callee with
+      | _, Name (Name.Identifier "super") -> (
+        match arguments with
+        | [_; Call.Argument.{ value = object_; _ }] ->
+            analyze_expression ~resolution ~taint ~state ~expression:object_
+        | _ -> (
+          (* Use implicit self *)
+          match FunctionContext.first_parameter () with
+          | Some root -> store_weak_taint ~root ~path:[] taint state
+          | None -> state ) )
       | Some global, _ ->
           let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
           let _, extra_arguments =
@@ -291,6 +308,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution arguments state taint targets
       | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
+          let taint =
+            (* Specially handle super.__init__ calls in constructors for tito *)
+            if FunctionContext.is_constructor () && attribute = "__init__" && is_super receiver
+            then
+              BackwardState.Tree.create_leaf Domains.local_return_taint
+              |> BackwardState.Tree.join taint
+            else
+              taint
+          in
           let arguments =
             let receiver = { Call.Argument.name = None; value = receiver } in
             receiver :: arguments
@@ -637,10 +663,21 @@ let run ~environment ~define ~existing_model =
     let definition = define
 
     let environment = environment
+
+    let is_constructor () =
+      match Reference.last name with
+      | "__init__" -> true
+      | _ -> false
+
+
+    let first_parameter () =
+      match define.value.Define.signature.parameters with
+      | { Node.value = { Parameter.name; _ }; _ } :: _ -> Some (Root.Variable name)
+      | _ -> None
   end)
   in
   let open AnalysisInstance in
-  let initial = FixpointState.{ taint = initial_taint define.Node.value } in
+  let initial = FixpointState.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in
   let entry_state = Analyzer.backward ~cfg ~initial |> Analyzer.entry in
   let () =

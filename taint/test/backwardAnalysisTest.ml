@@ -1170,6 +1170,11 @@ let test_constructor_argument_tito context =
       def test_tito_via_multiple_none(tito, no_tito):
           x = deep_tito_via_multiple(tito, no_tito)
           return x.g.q
+
+      class DerivedData(Data):
+        def __init__(self, tito, no_tito):
+          super(Data, self).__init__(tito, no_tito)
+
     |}
     [ outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.Data.__init__";
       outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.tito_via_construction";
@@ -1191,7 +1196,8 @@ let test_constructor_argument_tito context =
         ~kind:`Function
         ~tito_parameters:["tito"]
         "qualifier.test_tito_via_multiple_some_more";
-      outcome ~kind:`Function ~tito_parameters:[] "qualifier.test_tito_via_multiple_none" ]
+      outcome ~kind:`Function ~tito_parameters:[] "qualifier.test_tito_via_multiple_none";
+      outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.DerivedData.__init__" ]
 
 
 let test_decorator context =

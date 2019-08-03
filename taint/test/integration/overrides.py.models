@@ -414,11 +414,34 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [
+              { "line": 62, "start": 32, "end": 35 },
+              { "line": 50, "start": 32, "end": 35 },
+              { "line": 36, "start": 35, "end": 38 },
+              { "line": 26, "start": 35, "end": 38 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "tito": [
+              { "line": 62, "start": 8, "end": 22 },
+              { "line": 50, "start": 8, "end": 22 },
+              { "line": 36, "start": 8, "end": 25 },
+              { "line": 26, "start": 8, "end": 25 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -433,11 +456,32 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [
+              { "line": 62, "start": 32, "end": 35 },
+              { "line": 50, "start": 32, "end": 35 },
+              { "line": 36, "start": 35, "end": 38 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "tito": [
+              { "line": 62, "start": 8, "end": 22 },
+              { "line": 50, "start": 8, "end": 22 },
+              { "line": 36, "start": 8, "end": 25 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -512,11 +556,34 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [
+              { "line": 62, "start": 32, "end": 35 },
+              { "line": 50, "start": 32, "end": 35 },
+              { "line": 36, "start": 35, "end": 38 },
+              { "line": 26, "start": 35, "end": 38 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "tito": [
+              { "line": 62, "start": 8, "end": 22 },
+              { "line": 50, "start": 8, "end": 22 },
+              { "line": 36, "start": 8, "end": 25 },
+              { "line": 26, "start": 8, "end": 25 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -626,11 +693,30 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [
+              { "line": 62, "start": 32, "end": 35 },
+              { "line": 50, "start": 32, "end": 35 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "tito": [
+              { "line": 62, "start": 8, "end": 22 },
+              { "line": 50, "start": 8, "end": 22 }
+            ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -670,11 +756,24 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 26, "start": 35, "end": 38 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "tito": [ { "line": 26, "start": 8, "end": 25 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -714,11 +813,24 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 36, "start": 35, "end": 38 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "tito": [ { "line": 36, "start": 8, "end": 25 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -783,6 +895,15 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
@@ -802,11 +923,24 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 50, "start": 32, "end": 35 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "tito": [ { "line": 50, "start": 8, "end": 22 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
@@ -821,11 +955,24 @@
     "sinks": [],
     "tito": [
       {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 62, "start": 32, "end": 35 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(self)",
         "taint": [
           {
             "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+            "tito": [ { "line": 62, "start": 8, "end": 22 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
           }
         ]
       }
