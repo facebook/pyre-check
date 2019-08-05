@@ -123,6 +123,13 @@ module State (Context : Context) = struct
       { unawaited; locals }
 
 
+  let mark_location_as_awaited { unawaited; locals } ~location =
+    if Map.mem unawaited location then
+      { unawaited = Map.set unawaited ~key:location ~data:Awaited; locals }
+    else
+      { unawaited; locals }
+
+
   let rec forward_generator
       state
       { Expression.Comprehension.target = _; iterator; conditions; async = _ }
@@ -191,10 +198,12 @@ module State (Context : Context) = struct
         let state = List.fold generators ~init:state ~f:forward_generator in
         let state = forward_expression ~state ~expression:key in
         forward_expression ~state ~expression:value
-    | Name (Name.Attribute { base = { Node.value = Name base; _ } as base_expression; _ }) ->
+    | Name (Name.Attribute { base = { Node.value = Name base; location } as base_expression; _ })
+      ->
         (* Attribute access on an awaitable should mark it as being awaited, as we might be facing
            classes that subclass coroutines and have methods. *)
         let state = forward_expression ~state ~expression:base_expression in
+        let state = mark_location_as_awaited state ~location in
         if Expression.is_simple_name base then
           mark_name_as_awaited state ~name:base
         else

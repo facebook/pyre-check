@@ -500,6 +500,17 @@ let test_attribute_access context =
       async def foo() -> None:
         await awaitable().method()
     |}
+    [];
+
+  (* Even unnamed awaitables don't have to be awaited. *)
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def foo() -> None:
+        awaitable().attribute
+    |}
     []
 
 
