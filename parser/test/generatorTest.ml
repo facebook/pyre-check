@@ -1318,6 +1318,21 @@ let test_binary_operator _ =
                arguments = [{ Call.Argument.name = None; value = +Integer 3 }];
              }) ];
   assert_parsed_equal
+    "1 >> a.b"
+    [ +Expression
+         (+Call
+             {
+               callee =
+                 +Name
+                    (Name.Attribute { base = +Integer 1; attribute = "__rshift__"; special = true });
+               arguments =
+                 [ {
+                     Call.Argument.name = None;
+                     value =
+                       +Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                   } ];
+             }) ];
+  assert_parsed_equal
     "1 - 2 + 3"
     [ +Expression
          (+Call
