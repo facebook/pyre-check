@@ -143,13 +143,15 @@ module State (Context : Context) = struct
     forward_expression ~state ~expression:iterator
 
 
-  and forward_expression ~state ~expression:{ Node.value; _ } =
+  and forward_expression ~state ~expression:{ Node.value; location } =
     let open Expression in
     match value with
     | Await ({ Node.value = Name name; _ } as expression) when Expression.is_simple_name name ->
         let state = forward_expression ~state ~expression in
         mark_name_as_awaited state ~name
-    | Await expression -> forward_expression ~state ~expression
+    | Await expression ->
+        let state = forward_expression ~state ~expression in
+        mark_location_as_awaited state ~location
     | BooleanOperator { BooleanOperator.left; right; _ } ->
         let state = forward_expression ~state ~expression:left in
         forward_expression ~state ~expression:right

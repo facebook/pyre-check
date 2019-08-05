@@ -453,7 +453,16 @@ let test_forward context =
         def await_the_awaitable(self):
           await self.a
     |}
-    ["Unawaited awaitable [101]: Awaitable assigned to `C.a` is never awaited."]
+    ["Unawaited awaitable [101]: Awaitable assigned to `C.a` is never awaited."];
+  assert_awaitable_errors
+    {|
+      import typing
+      class C:
+        async def foo() -> typing.Awaitable[int]: ...
+      def foo(c: C):
+       await c.foo()
+    |}
+    []
 
 
 let test_state context =
