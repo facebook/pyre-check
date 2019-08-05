@@ -421,20 +421,21 @@ let test_forward context =
     {|
       async def awaitable() -> int: ...
       async def foo():
-        a, *b, c = awaitable(), awaitable(), awaitable(), awaitable(), awaitable()
+        a, *b, c = awaitable(), awaitable(), awaitable()
         await a
     |}
-    ["Unawaited awaitable [101]: Awaitable assigned to `c` is never awaited."];
+    [ "Unawaited awaitable [101]: `awaitable()` is never awaited.";
+      "Unawaited awaitable [101]: Awaitable assigned to `c` is never awaited." ];
 
   (* We don't validate that every expression in a starred one is awaited. *)
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
       async def foo():
-        a, *b, c = awaitable(), awaitable(), awaitable(), awaitable(), awaitable()
+        a, *b, c = awaitable(), awaitable(), awaitable()
         await asyncio.gather(a, c)
     |}
-    [];
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
 
   (* We have limitations at the moment. *)
   assert_awaitable_errors
