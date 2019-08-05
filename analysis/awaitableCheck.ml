@@ -139,7 +139,8 @@ module State (Context : Context) = struct
   and forward_expression ~state ~expression:{ Node.value; _ } =
     let open Expression in
     match value with
-    | Await { Node.value = Name name; _ } when Expression.is_simple_name name ->
+    | Await ({ Node.value = Name name; _ } as expression) when Expression.is_simple_name name ->
+        let state = forward_expression ~state ~expression in
         mark_name_as_awaited state ~name
     | Await expression -> forward_expression ~state ~expression
     | BooleanOperator { BooleanOperator.left; right; _ } ->
@@ -190,14 +191,22 @@ module State (Context : Context) = struct
         let state = List.fold generators ~init:state ~f:forward_generator in
         let state = forward_expression ~state ~expression:key in
         forward_expression ~state ~expression:value
+    | Name (Name.Attribute { base = { Node.value = Name base; _ } as base_expression; _ }) ->
+        (* Attribute access on an awaitable should mark it as being awaited, as we might be facing
+           classes that subclass coroutines and have methods. *)
+        let state = forward_expression ~state ~expression:base_expression in
+        if Expression.is_simple_name base then
+          mark_name_as_awaited state ~name:base
+        else
+          state
     (* Base cases. *)
     | Complex _
     | False
     | Float _
     | Integer _
     | String _
-    | True
     | Name _
+    | True
     | Ellipsis ->
         state
 

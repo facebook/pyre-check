@@ -478,4 +478,34 @@ let test_state context =
     []
 
 
-let () = "awaitableCheck" >::: ["forward" >:: test_forward; "state" >:: test_state] |> Test.run
+let test_attribute_access context =
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      class C:
+        async def method() -> typing.Awaitable[int]: ...
+      async def awaitable() -> typing.Awaitable[C]: ...
+
+      async def foo() -> None:
+        unawaited = awaitable()
+        await unawaited.method()
+    |}
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def foo() -> None:
+        await awaitable().method()
+    |}
+    []
+
+
+let () =
+  "awaitableCheck"
+  >::: [ "forward" >:: test_forward;
+         "state" >:: test_state;
+         "attribute_access" >:: test_attribute_access ]
+  |> Test.run
