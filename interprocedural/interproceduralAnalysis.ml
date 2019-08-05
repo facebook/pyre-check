@@ -301,6 +301,18 @@ let analyze_define
     results
 
 
+let strip_for_callsite model =
+  let open Result in
+  (* list them to make the type system do its work *)
+  let strip akind (Pkg { kind = ModelPart kind; value = model }) models =
+    let module Analysis = (val get_analysis kind) in
+    let model = Analysis.strip_for_callsite model in
+    Kind.Map.add akind (Pkg { kind = ModelPart kind; value = model }) models
+  in
+  let models = Kind.Map.fold strip model.InterproceduralResult.models Kind.Map.empty in
+  { model with models }
+
+
 let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
   let overrides =
     DependencyGraphSharedMemory.get_overriding_types
@@ -325,6 +337,7 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
             override;
           result
       | Some model ->
+          let model = strip_for_callsite model in
           {
             is_obscure = is_obscure || model.is_obscure;
             models = join_models ~iteration models model.models;
@@ -333,6 +346,7 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     let direct_model =
       Fixpoint.get_model (Callable.get_corresponding_method callable)
       |> Option.value ~default:Result.empty_model
+      |> strip_for_callsite
     in
     List.fold overrides ~f:lookup_and_join ~init:direct_model
   in

@@ -34,6 +34,9 @@ module type ANALYSIS_PROVIDED = sig
   val externalize : Callable.t -> result option -> call_model -> Yojson.Safe.json list
 
   val metadata : unit -> Yojson.Safe.json
+
+  (* remove aspects from the model that are not needed at call sites. Just for optimization. *)
+  val strip_for_callsite : call_model -> call_model
 end
 
 (* Representation of the kind of data manipulated by each individual analysis. NOTE, we use an

@@ -61,6 +61,14 @@ module Simple = struct
   let via_value_of_breadcrumb ~argument:{ Expression.Call.Argument.value; _ } =
     Interprocedural.CallResolution.extract_constant_name value
     >>| fun feature -> Breadcrumb (Breadcrumb.ViaValue feature)
+
+
+  let strip_for_callsite features =
+    let strip = function
+      | TitoPosition _ -> None
+      | feature -> Some feature
+    in
+    List.filter_map ~f:strip features
 end
 
 module SimpleSet = AbstractSetDomain.Make (Simple)

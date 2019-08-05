@@ -279,4 +279,4 @@ let expand_callees callees =
         Callable.get_corresponding_method override
         :: List.fold overrides ~f:expand_and_gather ~init:expanded
   in
-  List.fold callees ~init:[] ~f:expand_and_gather
+  List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Callable.compare

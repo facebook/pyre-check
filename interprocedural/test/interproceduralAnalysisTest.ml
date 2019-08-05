@@ -49,6 +49,8 @@ module ResultA = Interprocedural.Result.Make (struct
 
 
   let metadata () = `Assoc ["codes", `List [`String "A"]]
+
+  let strip_for_callsite model = model
 end)
 
 module AnalysisA = ResultA.Register (struct
@@ -90,6 +92,8 @@ module ResultB = Interprocedural.Result.Make (struct
 
 
   let metadata () = `Assoc ["codes", `List [`String "B"]]
+
+  let strip_for_callsite model = model
 end)
 
 module AnalysisB = ResultB.Register (struct

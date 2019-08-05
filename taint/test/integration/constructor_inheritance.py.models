@@ -62,12 +62,7 @@
         "port": "formal(argument)",
         "taint": [
           {
-            "root": {
-              "filename": "constructor_inheritance.py",
-              "line": 9,
-              "start": 20,
-              "end": 28
-            },
+            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }

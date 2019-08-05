@@ -55,3 +55,5 @@ val record_initial_models
   stubs:Callable.t list ->
   InterproceduralResult.model_t Callable.Map.t ->
   unit
+
+val strip_for_callsite : InterproceduralResult.model_t -> InterproceduralResult.model_t

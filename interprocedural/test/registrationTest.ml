@@ -29,6 +29,8 @@ module SimpleAnalysis = Interprocedural.Result.Make (struct
   let externalize _ _ _ = []
 
   let metadata () = `Assoc ["foo", `String "bar"]
+
+  let strip_for_callsite model = model
 end)
 
 include SimpleAnalysis.Register (struct

@@ -107,6 +107,25 @@ module TraceInfo = struct
            -> true)
 
 
+  (* Only called when emitting models before we compute the json so we can dedup *)
+  let expand_call_site trace =
+    match trace with
+    | CallSite { location; callees; port; path; trace_length } ->
+        let callees =
+          Interprocedural.DependencyGraph.expand_callees callees
+          |> List.filter ~f:(!has_significant_summary port path)
+        in
+        CallSite
+          {
+            location;
+            callees = (callees :> Interprocedural.Callable.t list);
+            port;
+            path;
+            trace_length;
+          }
+    | _ -> trace
+
+
   (* Returns the (dictionary key * json) to emit *)
   let to_json trace : (string * Yojson.Safe.json) option =
     match trace with
@@ -167,6 +186,12 @@ module TraceInfo = struct
 
 
   let widen set = set
+
+  let strip_for_callsite = function
+    | Origin _ -> Origin Location.Reference.any
+    | CallSite { port; path; location = _; callees; trace_length } ->
+        CallSite { port; path; location = Location.Reference.any; callees; trace_length }
+    | Declaration -> Declaration
 end
 
 module TraceInfoSet = AbstractElementSetDomain.Make (TraceInfo)
@@ -291,7 +316,12 @@ end = struct
   let to_json taint =
     let element_to_json (leaf, features) =
       let trace_info =
-        FlowDetails.(fold trace_info ~f:(Fn.flip List.cons) ~init:[] features)
+        FlowDetails.(
+          fold
+            trace_info
+            ~f:(fun accumulator trace_info -> TraceInfo.expand_call_site trace_info :: accumulator)
+            ~init:[]
+            features)
         |> List.dedup_and_sort ~compare:TraceInfo.compare
       in
       let leaf_kind_json = `String (Leaf.show leaf) in
