@@ -54,7 +54,11 @@ class FastBuckBuilder(BuckBuilder):
         else:
             builder_binary = self._buck_builder_binary
             executable_parts = (
-                [builder_binary]
+                [
+                    builder_binary,
+                    "-J-Djava.net.preferIPv6Addresses=true",
+                    "-J-Djava.net.preferIPv6Stack=true",
+                ]
                 if builder_binary
                 else ["buck", "run", "//tools/pyre/tools/buck_project_builder", "--"]
             )
