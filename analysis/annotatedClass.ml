@@ -199,7 +199,7 @@ let find_propagated_type_variables bases ~resolution =
     |> Type.Variable.all_free_variables
   in
   let handle_deduplicated = function
-    | [Type.Variable.ListVariadic variable] -> Type.OrderedTypes.Variable variable
+    | [Type.Variable.ListVariadic variable] -> Type.Variable.Variadic.List.self_reference variable
     | deduplicated ->
         let to_unary = function
           | Type.Variable.Unary variable -> Some (Type.Variable variable)

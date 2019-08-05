@@ -116,8 +116,16 @@ let exists_in_bounds { unaries; callable_parameters; list_variadics } ~variables
   let exists_in_list_variadic_interval_bounds interval =
     let exists = function
       | Type.OrderedTypes.Concrete types -> List.exists types ~f:contains_variable
-      | Type.OrderedTypes.Variable variable ->
-          List.mem variables (Type.Variable.ListVariadic variable) ~equal:Type.Variable.equal
+      | Concatenation concatenation ->
+          let contains = List.exists ~f:contains_variable in
+          let in_head () = Type.OrderedTypes.Concatenation.head concatenation |> contains in
+          let in_middle () =
+            Type.OrderedTypes.Concatenation.variable concatenation
+            |> (fun variable -> Type.Variable.ListVariadic variable)
+            |> List.mem variables ~equal:Type.Variable.equal
+          in
+          let in_tail () = Type.OrderedTypes.Concatenation.tail concatenation |> contains in
+          in_head () || in_middle () || in_tail ()
       | _ -> false
     in
     match interval with
@@ -212,13 +220,13 @@ module Solution = struct
         List.map concretes ~f:(instantiate solution)
         |> fun concretes -> Type.OrderedTypes.Concrete concretes
     | Any -> Any
-    | Map map ->
+    | Concatenation concatenation ->
+        let mapped =
+          Type.OrderedTypes.Concatenation.map_head_and_tail concatenation ~f:(instantiate solution)
+        in
         let replacement = instantiate_single_list_variadic_variable solution in
-        Type.OrderedTypes.Map.replace_variable map ~replacement
-        |> Option.value ~default:(Type.OrderedTypes.Map map)
-    | Variable variable ->
-        instantiate_single_list_variadic_variable solution variable
-        |> Option.value ~default:(Type.OrderedTypes.Variable variable)
+        Type.OrderedTypes.Concatenation.replace_variable mapped ~replacement
+        |> Option.value ~default:(Type.OrderedTypes.Concatenation mapped)
 
 
   let set ({ unaries; callable_parameters; list_variadics } as solution) = function
@@ -514,10 +522,8 @@ module OrderedConstraints (Order : OrderType) = struct
         | _, Any
         | Any, _ ->
             true
-        | _, Map _
-        | Map _, _
-        | _, Variable _
-        | Variable _, _ ->
+        | Concatenation _, _
+        | _, Concatenation _ ->
             false
         | Concrete upper_bounds, Concrete lower_bounds -> (
           match List.zip upper_bounds lower_bounds with
@@ -603,21 +609,13 @@ module OrderedConstraints (Order : OrderType) = struct
         | OnlyLowerBound lower -> None, Some lower
         | BothBounds { upper; lower } -> Some upper, Some lower
       in
-      let smart_instantiate = function
-        | Type.OrderedTypes.Any -> Some Type.OrderedTypes.Any
-        | Variable variable_bound -> (
-          match ListVariadic.Map.find solution.Solution.list_variadics variable_bound with
-          | Some (Variable variable_replacement)
-            when ListVariadic.equal variable variable_replacement ->
-              (* We don't want variables bounded by themselves *)
-              None
-          | result ->
-              Some (Option.value result ~default:(Type.OrderedTypes.Variable variable_bound)) )
-        | Concrete types -> Some (Concrete (List.map types ~f:(Solution.instantiate solution)))
-        | Map map ->
-            Type.OrderedTypes.Map.replace_variable
-              map
-              ~replacement:(ListVariadic.Map.find solution.Solution.list_variadics)
+      let smart_instantiate ordered_types =
+        let instantiated = Solution.instantiate_ordered_types solution ordered_types in
+        if Type.OrderedTypes.equal (ListVariadic.self_reference variable) instantiated then
+          (* We don't want variables bounded by themselves *)
+          None
+        else
+          Some instantiated
       in
       create
         ?upper_bound:(upper_bound >>= smart_instantiate)
@@ -641,18 +639,18 @@ module OrderedConstraints (Order : OrderType) = struct
       in
       let extract = function
         | Type.OrderedTypes.Any -> []
-        | Variable variable ->
-            if Type.Variable.Variadic.List.is_free variable then
-              [Type.Variable.ListVariadic variable]
-            else
-              []
         | Concrete types -> List.concat_map types ~f:Type.Variable.all_free_variables
-        | Map map ->
-            let var = Type.OrderedTypes.Map.variable map in
-            if Type.Variable.Variadic.List.is_free var then
-              [Type.Variable.ListVariadic var]
+        | Concatenation concatenation ->
+            let outer =
+              Type.OrderedTypes.Concatenation.head concatenation
+              @ Type.OrderedTypes.Concatenation.tail concatenation
+              |> List.concat_map ~f:Type.Variable.all_free_variables
+            in
+            let inner = Type.OrderedTypes.Concatenation.variable concatenation in
+            if Type.Variable.Variadic.List.is_free inner then
+              ListVariadic inner :: outer
             else
-              []
+              outer
       in
       List.concat_map bounds ~f:extract
   end

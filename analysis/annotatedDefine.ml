@@ -82,17 +82,10 @@ let decorate
                       ~annotation:(Type.expression annotation)
                       ~name:"*args"
                       ()
-                | Type.Callable.Parameter.Variable (Variadic variable) ->
-                    let name = Type.Variable.Variadic.List.name variable in
+                | Type.Callable.Parameter.Variable (Concatenation concatenation) ->
                     Ast.Parameter.create
                       ~location
-                      ~annotation:(Type.expression (Primitive name))
-                      ~name:"*args"
-                      ()
-                | Type.Callable.Parameter.Variable (Map map) ->
-                    Ast.Parameter.create
-                      ~location
-                      ~annotation:(Type.OrderedTypes.Map.expression map)
+                      ~annotation:(Type.OrderedTypes.Concatenation.expression concatenation)
                       ~name:"*args"
                       ()
                 | Type.Callable.Parameter.Keywords annotation ->

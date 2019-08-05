@@ -641,17 +641,19 @@ let test_less_or_equal context =
        ~left:(Type.tuple [Type.integer; Type.float])
        ~right:(Type.Tuple (Type.Unbounded Type.float)));
   let list_variadic =
-    Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_bound
+    Type.Variable.Variadic.List.create "Ts"
+    |> Type.Variable.Variadic.List.mark_as_bound
+    |> Type.Variable.Variadic.List.self_reference
   in
   assert_false
     (less_or_equal
        default
-       ~left:(Type.Tuple (Bounded (Variable list_variadic)))
+       ~left:(Type.Tuple (Bounded list_variadic))
        ~right:(Type.Tuple (Type.Unbounded Type.integer)));
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Tuple (Bounded (Variable list_variadic)))
+       ~left:(Type.Tuple (Bounded list_variadic))
        ~right:(Type.Tuple (Type.Unbounded Type.object_primitive)));
   assert_true
     (less_or_equal
@@ -2521,7 +2523,9 @@ let test_solve_less_or_equal context =
         then
           None
         else
-          Some (Type.OrderedTypes.Variable (Type.Variable.Variadic.List.mark_as_bound variable))
+          Some
+            (Type.Variable.Variadic.List.self_reference
+               (Type.Variable.Variadic.List.mark_as_bound variable))
       in
       parse_annotation left
       |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
@@ -2872,7 +2876,8 @@ let test_solve_less_or_equal context =
     ~left:"typing.Tuple[Ts]"
     ~right:"typing.Tuple[T2s]"
     [["T2s", "Ts"]; ["Ts", "T2s"]];
-  assert_solve ~left:"typing.Tuple[...]" ~right:"typing.Tuple[Ts]" [["Ts", "..."]];
+
+  assert_solve ~left:"typing.Tuple[...]" ~right:"typing.Tuple[Ts]" [[]];
   assert_solve
     ~left:"typing.Callable[[int, str, bool], int]"
     ~right:"typing.Callable[[Ts], int]"
@@ -3021,6 +3026,20 @@ let test_solve_less_or_equal context =
     ~left:"UserDefinedVariadicMapChild[int, str]"
     ~right:"UserDefinedVariadic[pyre_extensions.type_variable_operators.Map[typing.List, Ts]]"
     [["Ts", "int, str"]];
+  assert_solve
+    ~left:"typing.Tuple[int, str, float, bool]"
+    ~right:"typing.Tuple[pyre_extensions.type_variable_operators.Concatenate[int, Ts, bool]]"
+    [["Ts", "str, float"]];
+  assert_solve
+    ~left:"typing.Tuple[str, int, bool, float]"
+    ~right:"typing.Tuple[pyre_extensions.type_variable_operators.Concatenate[int, Ts, bool]]"
+    [];
+  assert_solve
+    ~left:"typing.Tuple[int, typing.List[str], typing.List[float], bool]"
+    ~right:
+      "typing.Tuple[pyre_extensions.type_variable_operators.Concatenate[int, \
+       pyre_extensions.type_variable_operators.Map[list, Ts], bool]]"
+    [["Ts", "str, float"]];
   ()
 
 

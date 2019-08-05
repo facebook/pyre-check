@@ -346,7 +346,10 @@ let test_multiple_variable_solution _ =
   let list_variadic_b = Type.Variable.Variadic.List.create "TsB" in
   assert_solution
     ~sequentially_applied_bounds:
-      [ `Lower (ListVariadicPair (list_variadic_a, Type.OrderedTypes.Variable list_variadic_b));
+      [ `Lower
+          (ListVariadicPair
+             ( list_variadic_a,
+               Concatenation (Type.OrderedTypes.Concatenation.create (Variable list_variadic_b)) ));
         `Lower
           (ListVariadicPair
              (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string])) ]
@@ -359,8 +362,15 @@ let test_multiple_variable_solution _ =
      this yet *)
   assert_solution
     ~sequentially_applied_bounds:
-      [ `Lower (ListVariadicPair (list_variadic_a, Type.OrderedTypes.Variable list_variadic_b));
-        `Lower (ListVariadicPair (list_variadic_b, Type.OrderedTypes.Variable list_variadic_a)) ]
+      [ `Lower
+          (ListVariadicPair
+             ( list_variadic_a,
+               Concatenation (Type.OrderedTypes.Concatenation.create (Variable list_variadic_b)) ));
+        `Lower
+          (ListVariadicPair
+             ( list_variadic_b,
+               Concatenation (Type.OrderedTypes.Concatenation.create (Variable list_variadic_a)) ))
+      ]
     None;
   assert_solution
     ~sequentially_applied_bounds:
@@ -376,8 +386,10 @@ let test_multiple_variable_solution _ =
       [ `Lower
           (ListVariadicPair
              ( list_variadic_a,
-               Type.OrderedTypes.Map
-                 (Type.OrderedTypes.Map.create ~mappers:["Foo"] ~variable:list_variadic_b) ));
+               Concatenation
+                 (Type.OrderedTypes.Concatenation.create
+                    (Map (Type.OrderedTypes.Map.create ~mappers:["Foo"] ~variable:list_variadic_b)))
+             ));
         `Lower
           (ListVariadicPair
              (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string])) ]
@@ -464,9 +476,19 @@ let test_partial_solution _ =
   expect_split_solution
     ~variables:[Type.Variable.ListVariadic list_variadic_a]
     ~bounds:
-      [ `Lower (ListVariadicPair (list_variadic_a, Type.OrderedTypes.Variable list_variadic_b));
-        `Lower (ListVariadicPair (list_variadic_b, Type.OrderedTypes.Variable list_variadic_a)) ]
-    (Some [ListVariadicPair (list_variadic_a, Type.OrderedTypes.Variable list_variadic_b)])
+      [ `Lower
+          (ListVariadicPair
+             ( list_variadic_a,
+               Concatenation (Type.OrderedTypes.Concatenation.create (Variable list_variadic_b)) ));
+        `Lower
+          (ListVariadicPair
+             ( list_variadic_b,
+               Concatenation (Type.OrderedTypes.Concatenation.create (Variable list_variadic_a)) ))
+      ]
+    (Some
+       [ ListVariadicPair
+           ( list_variadic_a,
+             Concatenation (Type.OrderedTypes.Concatenation.create (Variable list_variadic_b)) ) ])
     (Some []);
   ()
 
@@ -512,7 +534,9 @@ let test_exists _ =
   let list_variadic_b = Type.Variable.Variadic.List.create "TsB" in
   let constraints_with_list_variadic_b =
     let pair =
-      Type.Variable.ListVariadicPair (list_variadic_a, Type.OrderedTypes.Variable list_variadic_b)
+      Type.Variable.ListVariadicPair
+        ( list_variadic_a,
+          Concatenation (Type.OrderedTypes.Concatenation.create (Variable list_variadic_b)) )
     in
     DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
     |> function

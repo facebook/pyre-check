@@ -66,11 +66,21 @@ module Record : sig
       type 'annotation record [@@deriving compare, eq, sexp, show, hash]
     end
 
+    module RecordConcatenate : sig
+      module Middle : sig
+        type 'annotation t =
+          | Variable of 'annotation Variable.RecordVariadic.RecordList.record
+          | Map of 'annotation RecordMap.record
+        [@@deriving compare, eq, sexp, show, hash]
+      end
+
+      type 'annotation t [@@deriving compare, eq, sexp, show, hash]
+    end
+
     type 'annotation record =
       | Concrete of 'annotation list
-      | Variable of 'annotation Variable.RecordVariadic.RecordList.record
       | Any
-      | Map of 'annotation RecordMap.record
+      | Concatenation of 'annotation RecordConcatenate.t
     [@@deriving compare, eq, sexp, show, hash]
 
     val pp_concise
@@ -90,8 +100,7 @@ module Record : sig
 
       and 'annotation variable =
         | Concrete of 'annotation
-        | Variadic of 'annotation Variable.RecordVariadic.RecordList.record
-        | Map of 'annotation OrderedTypes.RecordMap.record
+        | Concatenation of 'annotation OrderedTypes.RecordConcatenate.t
 
       and 'annotation t =
         | Anonymous of {
@@ -484,8 +493,6 @@ module OrderedTypes : sig
 
     type t = type_t record [@@deriving compare, eq, sexp, show, hash]
 
-    val parse : Expression.t -> aliases:(Primitive.t -> alias option) -> t option
-
     (* For testing only *)
     val create
       :  mappers:string list ->
@@ -505,6 +512,35 @@ module OrderedTypes : sig
       ordered_types_t option
 
     val expression : t -> Expression.t
+  end
+
+  module Concatenation : sig
+    include module type of struct
+      include Record.OrderedTypes.RecordConcatenate
+    end
+
+    val map_head_and_tail : type_t t -> f:(type_t -> type_t) -> type_t t
+
+    val replace_variable
+      :  type_t t ->
+      replacement:
+        (type_t Record.Variable.RecordVariadic.RecordList.record -> ordered_types_t option) ->
+      ordered_types_t option
+
+    val head : type_t t -> type_t list
+
+    val middle : type_t t -> type_t Middle.t
+
+    val tail : type_t t -> type_t list
+
+    val variable : type_t t -> type_t Record.Variable.RecordVariadic.RecordList.record
+
+    val expression : type_t t -> Expression.t
+
+    val parse : Expression.t -> aliases:(Primitive.t -> alias option) -> type_t t option
+
+    (* Only for testing *)
+    val create : ?head:type_t list -> ?tail:type_t list -> type_t Middle.t -> type_t t
   end
 
   val union_upper_bound : t -> type_t

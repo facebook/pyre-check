@@ -830,8 +830,8 @@ let test_list_variadics context =
       reveal_type(x)
       return x
     |}
-    [ "Incomplete type [37]: Type `typing.Tuple[ListVariadic[Ts]]` inferred for `x` is \
-       incomplete, add an explicit annotation.";
+    [ "Incomplete type [37]: Type `typing.Tuple[Ts]` inferred for `x` is incomplete, add an \
+       explicit annotation.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[...]`." ];
   assert_type_errors
     {|
@@ -852,7 +852,7 @@ let test_list_variadics context =
       pass
     |}
     [ "Invalid type parameters [24]: Concrete type parameter `Variable[_T]` expected, but a \
-       variadic type parameter `ListVariadic[Ts]` was given for generic type list." ];
+       variadic type parameter `Ts` was given for generic type list." ];
   assert_type_errors
     {|
      from typing import Dict
@@ -861,8 +861,7 @@ let test_list_variadics context =
        pass
      |}
     [ "Invalid type parameters [24]: Concrete type parameters `Variable[_T], Variable[_S]` \
-       expected, but a variadic type parameter `ListVariadic[Ts]` was given for generic type dict."
-    ];
+       expected, but a variadic type parameter `Ts` was given for generic type dict." ];
 
   (* Concatenation isn't implemented yet, and I'm not even sure this is going to be the final
    * syntax for it *)
@@ -878,8 +877,8 @@ let test_list_variadics context =
     [ "Undefined type [11]: Type `Ts` is not defined.";
       "Invalid type variable [34]: The type variable `Ts` isn't present in the function's \
        parameters.";
-      "Incomplete type [37]: Type `typing.Tuple[ListVariadic[Ts]]` inferred for `x` is \
-       incomplete, add an explicit annotation.";
+      "Incomplete type [37]: Type `typing.Tuple[Ts]` inferred for `x` is incomplete, add an \
+       explicit annotation.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[...]`." ];
   assert_type_errors
     {|
@@ -960,8 +959,8 @@ let test_list_variadics context =
     |}
     [ "Revealed type [-1]: Revealed type for `call_with_tuple(foo, (1, \"A\", False))` is `str`.";
       "Revealed type [-1]: Revealed type for `call_with_tuple(bar, (True, 19, 37))` is `int`.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[ListVariadic[Ts]]` for 2nd \
-       anonymous parameter to call `call_with_tuple` but got `typing.Tuple[bool, float, int]`." ];
+      "Incompatible parameter type [6]: Expected `typing.Tuple[Ts]` for 2nd anonymous parameter \
+       to call `call_with_tuple` but got `typing.Tuple[bool, float, int]`." ];
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, Protocol
@@ -1011,8 +1010,8 @@ let test_list_variadics context =
     |}
     [ "Revealed type [-1]: Revealed type for `call_with_args(foo, x, y, z)` is `str`.";
       "Revealed type [-1]: Revealed type for `call_with_args(bar, z, x, x)` is `int`.";
-      "Invalid argument [32]: Types `int, str, bool` conflict with existing constraints on \
-       `ListVariadic[Ts]`." ];
+      "Invalid argument [32]: Types `int, str, bool` conflict with existing constraints on `Ts`."
+    ];
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, TypeVar
@@ -1028,7 +1027,7 @@ let test_list_variadics context =
     |}
     [ "Revealed type [-1]: Revealed type for `call_with_args(foo, *$parameter$x)` is `str`.";
       "Invalid argument [32]: Variable argument `y` has type `typing.Tuple[int, ...]` but must be \
-       a definite tuple to be included in variadic type variable `ListVariadic[Ts]`." ];
+       a definite tuple to be included in variadic type variable `Ts`." ];
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, TypeVar
@@ -1043,9 +1042,8 @@ let test_list_variadics context =
       call_with_args(bar, *x, *y)
     |}
     [ "Revealed type [-1]: Revealed type for `call_with_args(foo, *$parameter$x, True)` is `str`.";
-      "Invalid argument [32]: Variadic type variable `ListVariadic[Ts]` cannot be made to contain \
-       `int, str, ListVariadic[Ts]`, concatenation of variadic type variables is not yet \
-       implemented." ];
+      "Invalid argument [32]: Variadic type variable `Ts` cannot be made to contain `int, str, \
+       Ts`, concatenation of variadic type variables is not yet implemented." ];
   assert_type_errors
     {|
     from typing import Tuple, List, Generic, TypeVar
@@ -1061,7 +1059,7 @@ let test_list_variadics context =
         reveal_type(i)
     |}
     [ "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[Map[list, Ts]]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[ListVariadic[Ts]]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[Ts]`.";
       "Revealed type [-1]: Revealed type for `i` is `object`.";
       "Revealed type [-1]: Revealed type for `i` is `object`." ];
   assert_type_errors
@@ -1079,7 +1077,7 @@ let test_list_variadics context =
         reveal_type(i)
     |}
     [ "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[Map[list, Ts]]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[ListVariadic[Ts]]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[Ts]`.";
       "Revealed type [-1]: Revealed type for `i` is `object`.";
       "Revealed type [-1]: Revealed type for `i` is `object`." ];
   ()
@@ -1257,6 +1255,48 @@ let test_user_defined_variadics context =
   ()
 
 
+let test_concatenation_operator context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+    from typing import Generic, Tuple, List
+    from pyre_extensions.type_variable_operators import Concatenate
+    Ts = pyre_extensions.ListVariadic("Ts")
+    def add_on(t: Tuple[Ts]) -> Tuple[Concatenate[int, Ts, float]]:
+      ...
+    def strip_off(t: Tuple[Concatenate[int, Ts, bool]]) -> Tuple[Ts]:
+      ...
+    def bar(t: Tuple[int, str, bool]) -> None:
+      added = add_on(t)
+      reveal_type(added)
+      removed = strip_off(t)
+      reveal_type(removed)
+    |}
+    [ "Revealed type [-1]: Revealed type for `added` is `typing.Tuple[int, int, str, bool, float]`.";
+      "Revealed type [-1]: Revealed type for `removed` is `typing.Tuple[str]`." ];
+  assert_type_errors
+    {|
+    from typing import Generic, Tuple, List
+    from pyre_extensions.type_variable_operators import Concatenate, Map
+    Ts = pyre_extensions.ListVariadic("Ts")
+    def map_tuple(t: Tuple[Ts]) -> Tuple[Map[List, Ts]]:
+      ...
+    def unmap_tuple(t: Tuple[Map[List, Ts]]) -> Tuple[Ts]:
+      ...
+    def foo(t: Tuple[Concatenate[int, Ts, bool]]) -> None:
+      x = map_tuple(t)
+      reveal_type(x)
+      # this is not implemented yet (T48180915)
+      unmap_tuple(x)
+    |}
+    [ "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[Concatenate[List[int], \
+       Map[list, Ts], List[bool]]]`.";
+      "Incompatible parameter type [6]: Expected `typing.Tuple[Map[list, Ts]]` for 1st anonymous \
+       parameter to call `unmap_tuple` but got `typing.Tuple[Concatenate[List[int], Map[list, \
+       Ts], List[bool]]]`." ];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [ "check_unbounded_variables" >:: test_check_unbounded_variables;
@@ -1268,5 +1308,6 @@ let () =
          "callable_parameter_variadics" >:: test_callable_parameter_variadics;
          "list_variadics" >:: test_list_variadics;
          "map" >:: test_map;
-         "user_defined_variadics" >:: test_user_defined_variadics ]
+         "user_defined_variadics" >:: test_user_defined_variadics;
+         "concatenation" >:: test_concatenation_operator ]
   |> Test.run

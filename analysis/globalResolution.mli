@@ -113,10 +113,7 @@ val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
 
 val parse_as_list_variadic : t -> Expression.t -> Type.Variable.Variadic.List.t option
 
-val parse_as_list_variadic_map_operator
-  :  t ->
-  Expression.t ->
-  Type.OrderedTypes.Map.t option
+val parse_as_concatenation : t -> Expression.t -> Type.t Type.OrderedTypes.Concatenation.t option
 
 val join : t -> Type.t -> Type.t -> Type.t
 

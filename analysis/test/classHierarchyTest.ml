@@ -457,42 +457,40 @@ let parametric_order =
 
 let variadic_order =
   let variadic = Type.Variable.Variadic.List.create "Ts" in
+  let simple_variadic =
+    Type.OrderedTypes.Concatenation (Type.OrderedTypes.Concatenation.create (Variable variadic))
+  in
   let order = parametric_order in
   insert order "UserTuple";
-  connect
-    order
-    ~predecessor:"UserTuple"
-    ~successor:"typing.Generic"
-    ~parameters:(Variable variadic);
+  connect order ~predecessor:"UserTuple" ~successor:"typing.Generic" ~parameters:simple_variadic;
 
   (* Contrived example *)
   connect
     order
     ~predecessor:"UserTuple"
     ~successor:"list"
-    ~parameters:(Concrete [Type.Tuple (Bounded (Variable variadic))]);
+    ~parameters:
+      (Concrete
+         [ Type.Tuple
+             (Bounded (Concatenation (Type.OrderedTypes.Concatenation.create (Variable variadic))))
+         ]);
   insert order "SimpleTupleChild";
   connect
     order
     ~predecessor:"SimpleTupleChild"
     ~successor:"typing.Generic"
-    ~parameters:(Variable variadic);
-  connect
-    order
-    ~predecessor:"SimpleTupleChild"
-    ~successor:"UserTuple"
-    ~parameters:(Variable variadic);
+    ~parameters:simple_variadic;
+  connect order ~predecessor:"SimpleTupleChild" ~successor:"UserTuple" ~parameters:simple_variadic;
   insert order "TupleOfLists";
-  connect
-    order
-    ~predecessor:"TupleOfLists"
-    ~successor:"typing.Generic"
-    ~parameters:(Variable variadic);
+  connect order ~predecessor:"TupleOfLists" ~successor:"typing.Generic" ~parameters:simple_variadic;
   connect
     order
     ~predecessor:"TupleOfLists"
     ~successor:"UserTuple"
-    ~parameters:(Map (Type.OrderedTypes.Map.create ~mappers:["list"] ~variable:variadic));
+    ~parameters:
+      (Concatenation
+         (Type.OrderedTypes.Concatenation.create
+            (Map (Type.OrderedTypes.Map.create ~mappers:["list"] ~variable:variadic))));
   order
 
 

@@ -356,11 +356,8 @@ let select
                     | other, Concrete []
                     | Concrete [], other ->
                         Some other
-                    | _, Map _
-                    | Map _, _
-                    | Variable _, Variable _
-                    | Concrete _, Variable _
-                    | Variable _, Concrete _ ->
+                    | _, Concatenation _
+                    | Concatenation _, _ ->
                         (* TODO(T45636537): support these when we have support for concatenation *)
                         None
                   in
@@ -396,10 +393,10 @@ let select
         extract arguments >>= concatenate >>= solve |> make_signature_match
       in
       match key, data with
-      | Parameter.Variable (Variadic variable), arguments ->
-          bind_arguments_to_variadic ~expected:(Type.OrderedTypes.Variable variable) ~arguments
-      | Parameter.Variable (Map map), arguments ->
-          bind_arguments_to_variadic ~expected:(Type.OrderedTypes.Map map) ~arguments
+      | Parameter.Variable (Concatenation concatenation), arguments ->
+          bind_arguments_to_variadic
+            ~expected:(Type.OrderedTypes.Concatenation concatenation)
+            ~arguments
       | Parameter.Variable _, []
       | Parameter.Keywords _, [] ->
           (* Parameter was not matched, but empty is acceptable for variable arguments and keyword

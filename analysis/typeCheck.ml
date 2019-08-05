@@ -1130,7 +1130,11 @@ module State (Context : Context) = struct
                           in
                           Type.Parametric { name = parent_name; parameters = Concrete variables }
                       | Some (ListVariadic variable) ->
-                          Type.Parametric { name = parent_name; parameters = Variable variable }
+                          Type.Parametric
+                            {
+                              name = parent_name;
+                              parameters = Type.Variable.Variadic.List.self_reference variable;
+                            }
                       | exception _ -> parent_type
                     in
                     if Define.is_class_method define || Define.is_class_property define then
@@ -1266,22 +1270,14 @@ module State (Context : Context) = struct
                 |> Annotation.create
                 |> fun annotation -> state, annotation
               in
-              let parsed_as_list_variadic () =
+              let parsed_as_concatenation () =
                 annotation
-                >>= GlobalResolution.parse_as_list_variadic global_resolution
-                >>| fun variable -> Type.OrderedTypes.Variable variable
+                >>= GlobalResolution.parse_as_concatenation global_resolution
+                >>| fun concatenation -> Type.OrderedTypes.Concatenation concatenation
               in
-              let parsed_as_list_variadic_map_operator () =
-                annotation
-                >>= GlobalResolution.parse_as_list_variadic_map_operator global_resolution
-                >>| fun map -> Type.OrderedTypes.Map map
-              in
-              match parsed_as_list_variadic () with
-              | Some variable -> make_tuple variable
-              | None -> (
-                match parsed_as_list_variadic_map_operator () with
-                | Some map -> make_tuple map
-                | None -> parse_as_unary () )
+              match parsed_as_concatenation () with
+              | Some map -> make_tuple map
+              | None -> parse_as_unary ()
             else
               parse_as_unary ()
           in
@@ -1670,8 +1666,7 @@ module State (Context : Context) = struct
                             in
                             List.find_map overriding_parameters ~f:find_variable_parameter
                             |> validate_match ~expected:annotation
-                        | Variable (Map _)
-                        | Variable (Variadic _) ->
+                        | Variable (Concatenation _) ->
                             (* TODO(T44178876): There is no reasonable way to compare either of
                                these alone, which is the central issue with this comparison
                                strategy. For now, let's just ignore this *)

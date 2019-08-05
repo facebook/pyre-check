@@ -370,10 +370,16 @@ let clean = function
           | _ -> None)
       |> Option.all
       >>| fun unaries -> Unaries unaries
-  | Variable variable -> Some (ListVariadic variable)
-  | Map _
-  | Any ->
-      None
+  | Concatenation concatenation ->
+      let head = Type.OrderedTypes.Concatenation.head concatenation in
+      let tail = Type.OrderedTypes.Concatenation.tail concatenation in
+      if List.is_empty head && List.is_empty tail then
+        match Type.OrderedTypes.Concatenation.middle concatenation with
+        | Variable variable -> Some (ListVariadic variable)
+        | Map _ -> None
+      else (* TODO(T48185332) allow for this, and add it to type variables *)
+        None
+  | Any -> None
 
 
 let variables ?(default = None) (module Handler : Handler) = function
@@ -553,8 +559,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       let set_to_anys = function
         | Type.OrderedTypes.Concrete concrete ->
             List.map concrete ~f:(fun _ -> Type.Any) |> fun anys -> Type.OrderedTypes.Concrete anys
-        | Map _
-        | Variable _
+        | Concatenation _
         | Any ->
             Type.OrderedTypes.Any
       in
@@ -601,9 +606,8 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                             match List.zip variables parameters with
                             | Ok zipped -> Some zipped
                             | _ -> None )
-                          | Variable _
-                          | Any
-                          | Map _ ->
+                          | Concatenation _
+                          | Any ->
                               None
                         in
                         match zipped with

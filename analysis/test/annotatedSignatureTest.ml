@@ -633,7 +633,9 @@ let test_select context =
       ( "[[Variable(Ts)], int]",
         Some
           (MismatchWithListVariadicTypeVariable
-             ( Variable (Type.Variable.Variadic.List.create "Ts"),
+             ( Concatenation
+                 (Type.OrderedTypes.Concatenation.create
+                    (Variable (Type.Variable.Variadic.List.create "Ts"))),
                NotDefiniteTuple
                  {
                    expression = +Name (Name.Identifier "unbounded_tuple");
@@ -646,7 +648,9 @@ let test_select context =
       ( "[[typing.Tuple[$literal_one, $literal_string], $literal_one, $literal_string], int]",
         Some
           (MismatchWithListVariadicTypeVariable
-             ( Variable (Type.Variable.Variadic.List.create "Ts"),
+             ( Concatenation
+                 (Type.OrderedTypes.Concatenation.create
+                    (Variable (Type.Variable.Variadic.List.create "Ts"))),
                ConstraintFailure (Concrete [Type.float]) )) ));
   assert_select
     "[[pyre_extensions.type_variable_operators.Map[typing.List, Ts]], int]"
