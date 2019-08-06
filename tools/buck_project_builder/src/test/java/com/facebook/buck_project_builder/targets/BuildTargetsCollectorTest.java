@@ -14,16 +14,17 @@ import static org.junit.Assert.assertEquals;
 public class BuildTargetsCollectorTest {
 
   private static final JsonParser JSON_PARSER = new JsonParser();
+  private static final String BUCK_ROOT = ".";
+  private static final String OUTPUT_DIRECTORY = ".";
 
   private static void assertExpectedParsedBuildTarget(
       String targetJsonString,
       @Nullable BuildTarget expectedTarget,
       @Nullable String cellPath,
-      String buckRoot,
       String buildTargetName,
       ImmutableSet<String> requiredRemoteFiles) {
     BuildTarget actualBuiltTarget =
-        new BuildTargetsCollector(buckRoot, requiredRemoteFiles)
+        new BuildTargetsCollector(BUCK_ROOT, OUTPUT_DIRECTORY, requiredRemoteFiles)
             .parseBuildTarget(
                 JSON_PARSER.parse(targetJsonString).getAsJsonObject(), cellPath, buildTargetName);
     assertEquals(expectedTarget, actualBuiltTarget);
@@ -31,14 +32,13 @@ public class BuildTargetsCollectorTest {
 
   private static void assertExpectedParsedBuildTarget(
       String targetJsonString, @Nullable BuildTarget expectedTarget) {
-    assertExpectedParsedBuildTarget(
-        targetJsonString, expectedTarget, null, ".", "", ImmutableSet.of());
+    assertExpectedParsedBuildTarget(targetJsonString, expectedTarget, null, "", ImmutableSet.of());
   }
 
   private static void assertExpectedParsedBuildTargetList(
       String targetsJsonString, ImmutableList<BuildTarget> expectedTargets) {
     ImmutableList<BuildTarget> actualBuiltTarget =
-        new BuildTargetsCollector(".")
+        new BuildTargetsCollector(BUCK_ROOT, OUTPUT_DIRECTORY)
             .parseBuildTargetList(
                 ImmutableMap.of(), JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
     assertEquals(expectedTargets, actualBuiltTarget);
@@ -46,7 +46,7 @@ public class BuildTargetsCollectorTest {
 
   @Test(expected = BuilderException.class)
   public void emptyTargetListNotAllowed() throws BuilderException {
-    new BuildTargetsCollector(".").collectBuckTargets(ImmutableList.of());
+    new BuildTargetsCollector(BUCK_ROOT, OUTPUT_DIRECTORY).collectBuckTargets(ImmutableList.of());
   }
 
   @Test
@@ -365,7 +365,6 @@ public class BuildTargetsCollectorTest {
         targetJson,
         new RemoteFileTarget("URL"),
         "../path/to",
-        ".",
         "PATH:NAME",
         ImmutableSet.of("PATH:NAME"));
     targetJson =
@@ -377,7 +376,7 @@ public class BuildTargetsCollectorTest {
             + "  \"url\": \"URL\"\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, null, ".", ".", "build-target-name", ImmutableSet.of("PATH:BAD_NAME"));
+        targetJson, null, ".", "build-target-name", ImmutableSet.of("PATH:BAD_NAME"));
 
     // Cell path has impact on build target.
     targetJson =
@@ -391,7 +390,6 @@ public class BuildTargetsCollectorTest {
         new PythonTarget(
             "../path/to/", "PATH", null, ImmutableMap.of("a.py", "a.py"), ImmutableSet.of()),
         "../path/to/",
-        ".",
         "",
         ImmutableSet.of());
 

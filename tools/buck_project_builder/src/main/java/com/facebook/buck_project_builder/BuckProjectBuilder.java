@@ -31,6 +31,7 @@ public final class BuckProjectBuilder {
       return;
     }
     String buckRoot = command.getBuckRoot();
+    String outputDirectory = command.getOutputDirectory();
     ImmutableList<String> targets = command.getTargets();
     BuildTargetsBuilder builder =
         new BuildTargetsBuilder(start, buckRoot, command.getOutputDirectory(), targets);
@@ -38,7 +39,7 @@ public final class BuckProjectBuilder {
     try {
       CacheLock.synchronize(
           () -> {
-            new BuildTargetsCollector(buckRoot)
+            new BuildTargetsCollector(buckRoot, outputDirectory)
                 .collectBuckTargets(targets)
                 .forEach(target -> target.addToBuilder(builder));
             DebugOutput debugOutput = builder.buildTargets();

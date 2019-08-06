@@ -18,7 +18,7 @@ public final class SwigLibraryTarget implements BuildTarget {
   }
 
   static @Nullable SwigLibraryTarget parse(
-      String cellPath, String buckRoot, JsonObject targetJsonObject) {
+      String cellPath, String buckRoot, String outputDirectory, JsonObject targetJsonObject) {
     if (!targetJsonObject.get("name").getAsString().endsWith("-py-gen")) {
       // Generated swig library rule names always end with -py-gen. We use this to identify swig
       // library rules.
@@ -32,14 +32,8 @@ public final class SwigLibraryTarget implements BuildTarget {
     if (sources == null) {
       return null;
     }
-    return new SwigLibraryTarget(command, sources);
-  }
-
-  @Override
-  public void addToBuilder(BuildTargetsBuilder builder) {
-    String outputDirectory = builder.getOutputDirectory();
-    String builderCommand =
-        this.command
+    command =
+        command
             .replaceFirst(
                 "mkdir .+\\$\\(exe //third-party-buck/platform007/tools/swig:bin/swig\\)", "")
             .replaceFirst(
@@ -51,7 +45,12 @@ public final class SwigLibraryTarget implements BuildTarget {
                     outputDirectory + "/temp.h",
                     String.join(" ", sources)))
             .replaceAll("'", "");
-    builder.addSwigLibraryBuildCommand(builderCommand);
+    return new SwigLibraryTarget(command, sources);
+  }
+
+  @Override
+  public void addToBuilder(BuildTargetsBuilder builder) {
+    builder.addSwigLibraryBuildCommand(this.command);
   }
 
   @Override

@@ -17,14 +17,16 @@ import java.util.Set;
 public final class BuildTargetsCollector {
 
   private final String buckRoot;
+  private final String outputDirectory;
   private final Set<String> requiredRemoteFiles;
 
-  public BuildTargetsCollector(String buckRoot) {
-    this(buckRoot, new HashSet<>());
+  public BuildTargetsCollector(String buckRoot, String outputDirectory) {
+    this(buckRoot, outputDirectory, new HashSet<>());
   }
 
-  BuildTargetsCollector(String buckRoot, Set<String> requiredRemoteFiles) {
+  BuildTargetsCollector(String buckRoot, String outputDirectory, Set<String> requiredRemoteFiles) {
     this.buckRoot = buckRoot;
+    this.outputDirectory = outputDirectory;
     this.requiredRemoteFiles = requiredRemoteFiles;
   }
 
@@ -76,10 +78,12 @@ public final class BuildTargetsCollector {
         if (parsedTarget != null) {
           return parsedTarget;
         }
-        return Antlr4LibraryTarget.parse(cellPath, this.buckRoot, targetJsonObject);
+        return Antlr4LibraryTarget.parse(
+            cellPath, this.buckRoot, this.outputDirectory, targetJsonObject);
       case "cxx_genrule":
         // Swig library targets have cxx_genrule rule type.
-        return SwigLibraryTarget.parse(cellPath, this.buckRoot, targetJsonObject);
+        return SwigLibraryTarget.parse(
+            cellPath, this.buckRoot, this.outputDirectory, targetJsonObject);
       case "remote_file":
         return this.requiredRemoteFiles.contains(buildTargetName)
             ? RemoteFileTarget.parse(targetJsonObject)

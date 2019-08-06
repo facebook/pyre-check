@@ -22,7 +22,10 @@ public final class Antlr4LibraryTarget implements BuildTarget {
   }
 
   static @Nullable Antlr4LibraryTarget parse(
-      @Nullable String cellPath, String buckRoot, JsonObject targetJsonObject) {
+      @Nullable String cellPath,
+      String buckRoot,
+      String outputDirectory,
+      JsonObject targetJsonObject) {
     JsonElement commandField = targetJsonObject.get("cmd");
     if (commandField == null) {
       return null;
@@ -39,21 +42,20 @@ public final class Antlr4LibraryTarget implements BuildTarget {
     if (sources == null) {
       return null;
     }
-    return new Antlr4LibraryTarget(command, basePath, sources);
-  }
-
-  @Override
-  public void addToBuilder(BuildTargetsBuilder builder) {
-    String outputDirectory = builder.getOutputDirectory();
-    String builderCommand =
-        this.command
+    command =
+        command
             .replaceFirst("mkdir .+\\$\\(exe //tools/antlr4:antlr4_wrapper\\)", "")
             .replace(
                 "--install_dir=\"$OUT\"",
                 String.format("--install_dir=\"%s\"", Paths.get(outputDirectory, basePath)))
             .replace("--antlr4_command=$(location //tools/antlr4:antlr4)", "")
             .replaceFirst("--grammars .+$", "--grammars " + String.join(" ", sources));
-    builder.addAntlr4LibraryBuildCommand(builderCommand);
+    return new Antlr4LibraryTarget(command, basePath, sources);
+  }
+
+  @Override
+  public void addToBuilder(BuildTargetsBuilder builder) {
+    builder.addAntlr4LibraryBuildCommand(this.command);
   }
 
   @Override
