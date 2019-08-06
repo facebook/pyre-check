@@ -15,6 +15,7 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class KillTest(unittest.TestCase):
+    @patch("os.getpgid", side_effect=lambda id: id)
     @patch("os.kill")
     @patch("os.remove")
     @patch("os.unlink")
@@ -31,7 +32,9 @@ class KillTest(unittest.TestCase):
     )
     @patch("os.path.realpath")
     @patch("subprocess.run")
-    def test_kill(self, run, realpath, readlink, unlink, remove, kill) -> None:
+    def test_kill(
+        self, run, realpath, readlink, unlink, remove, kill, _get_process_group_id
+    ) -> None:
         with patch("os.getenv", return_value=None), patch(
             "os.getpid", return_value=1234
         ):
@@ -51,7 +54,7 @@ class KillTest(unittest.TestCase):
                 ]
             )
             kill.assert_has_calls(
-                [call("5678", signal.SIGKILL), call("9101112", signal.SIGKILL)]
+                [call(5678, signal.SIGKILL), call(9101112, signal.SIGKILL)]
             )
             remove.assert_has_calls(
                 [call("/tmp/actual_socket"), call("/tmp/json_socket")]

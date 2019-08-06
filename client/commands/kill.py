@@ -2,24 +2,34 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+# pyre-strict
 
+import argparse
 import logging
 import os
 import shutil
 import signal
 import subprocess
+from typing import Iterable  # noqa
 
 from .. import BINARY_NAME, CLIENT_NAME
+from ..configuration import Configuration
+from ..filesystem import AnalysisDirectory
 from .command import Command
 
 
-LOG = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
 class Kill(Command):
     NAME = "kill"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments: argparse.Namespace,
+        configuration: Configuration,
+        analysis_directory: AnalysisDirectory,
+    ) -> None:
         super(Kill, self).__init__(arguments, configuration, analysis_directory)
 
     def _run(self) -> None:
@@ -63,12 +73,13 @@ class Kill(Command):
             .split()
         )
         for process_id in process_ids:
-            if int(process_id) == os.getpid():
+            id = int(process_id)
+            if id == os.getpid():
                 continue
-            os.kill(process_id, signal.SIGKILL)
+            os.kill(os.getpgid(id), signal.SIGKILL)
 
 
-def _get_process_name(environment_variable_name: str, default: str):
+def _get_process_name(environment_variable_name: str, default: str) -> str:
     overridden = os.getenv(environment_variable_name)
     if overridden is not None:
         return os.path.basename(overridden)
