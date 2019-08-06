@@ -24,6 +24,7 @@ class Analyze(Check):
         analysis_directory: AnalysisDirectory,
     ) -> None:
         super(Analyze, self).__init__(arguments, configuration, analysis_directory)
+        self._analysis = arguments.analysis  # type: str
         self._taint_models_path = (
             arguments.taint_models_path or configuration.taint_models_path
         )  # type: List[str]
@@ -32,6 +33,7 @@ class Analyze(Check):
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
+        flags.extend(["-analysis", self._analysis])
         if self._taint_models_path:
             for path in self._taint_models_path:
                 flags.extend(["-taint-models", path])

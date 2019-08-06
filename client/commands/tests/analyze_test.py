@@ -45,6 +45,8 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-search-path",
                     "path1,path2,path3",
+                    "-analysis",
+                    "taint",
                     "-dump-call-graph",
                 ],
             )
@@ -67,6 +69,8 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-search-path",
                     "path1,path2,path3",
+                    "-analysis",
+                    "taint",
                     "-taint-models",
                     "taint_models",
                     "-dump-call-graph",
@@ -91,6 +95,8 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-search-path",
                     "path1,path2,path3",
+                    "-analysis",
+                    "taint",
                     "-taint-models",
                     "taint_models_1",
                     "-taint-models",
@@ -118,6 +124,8 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-search-path",
                     "path1,path2,path3",
+                    "-analysis",
+                    "taint",
                     "-taint-models",
                     "overriding_models",
                     "-dump-call-graph",
@@ -144,6 +152,8 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-search-path",
                     "path1,path2,path3",
+                    "-analysis",
+                    "taint",
                     "-taint-models",
                     "taint_models",
                     "-save-results-to",
@@ -171,10 +181,39 @@ class AnalyzeTest(unittest.TestCase):
                     "5",
                     "-search-path",
                     "path1,path2,path3",
+                    "-analysis",
+                    "taint",
                     "-taint-models",
                     "taint_models",
                     "-save-results-to",
                     "/tmp/results.json",
+                    "-dump-call-graph",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
+        arguments = mock_arguments()
+        arguments.analysis = "liveness"
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "parser",
+                    "-project-root",
+                    ".",
+                    "-workers",
+                    "5",
+                    "-search-path",
+                    "path1,path2,path3",
+                    "-analysis",
+                    "liveness",
+                    "-taint-models",
+                    "taint_models",
                     "-dump-call-graph",
                 ],
             )

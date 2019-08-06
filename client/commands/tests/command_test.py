@@ -31,6 +31,7 @@ def mock_arguments(
     store_type_check_resolution=False,
 ) -> MagicMock:
     arguments = MagicMock()
+    arguments.analysis = "taint"
     arguments.build = build
     arguments.command = command
     arguments.current_directory = "."

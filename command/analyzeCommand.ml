@@ -7,7 +7,7 @@ open Core
 open Pyre
 
 let run_analysis
-    _taint
+    _analysis
     result_json_path
     dump_call_graph
     verbose
@@ -127,7 +127,7 @@ let command =
     ~summary:"Runs a static analysis without a server (default)."
     Command.Spec.(
       empty
-      +> flag "-taint" no_arg ~doc:"Run the taint analysis."
+      +> flag "-analysis" (optional_with_default "taint" string) ~doc:"Type of analysis to run."
       +> flag
            "-save-results-to"
            (optional string)
