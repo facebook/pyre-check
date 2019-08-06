@@ -27,6 +27,11 @@ let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } pat
   |> Option.value ~default:[]
 
 
+let instantiate_error ~state:{ State.environment; _ } error =
+  let ast_environment = Environment.ast_environment environment in
+  Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) error
+
+
 let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
@@ -807,7 +812,14 @@ let process_type_query_request
         | [] -> TypeQuery.Response (TypeQuery.Type annotation)
         | errors ->
             let descriptions =
-              List.map errors ~f:(Analysis.Error.description ~show_error_traces:false)
+              let lookup reference =
+                let ast_environment = Environment.ast_environment environment in
+                AstEnvironment.ReadOnly.get_source_path ast_environment reference
+                >>| fun { SourcePath.relative; _ } -> relative
+              in
+              errors
+              |> List.map ~f:(Analysis.Error.instantiate ~lookup)
+              |> List.map ~f:(Analysis.Error.Instantiated.description ~show_error_traces:false)
               |> String.concat ~sep:", "
             in
             TypeQuery.Error (Format.sprintf "Expression had errors: %s" descriptions) )
@@ -900,6 +912,7 @@ let process_type_query_request
 
 let process_type_check_request ~state ~configuration paths =
   let state, response = IncrementalCheck.recheck ~state ~configuration paths in
+  let response = List.map response ~f:(instantiate_error ~state) in
   { state; response = Some (TypeCheckResponse response) }
 
 
@@ -910,6 +923,7 @@ let process_display_type_errors_request ~state ~configuration paths =
     | [] -> Hashtbl.data errors |> List.concat |> List.sort ~compare:Error.compare
     | _ -> List.concat_map ~f:(errors_of_path ~configuration ~state) paths
   in
+  let errors = List.map errors ~f:(instantiate_error ~state) in
   { state; response = Some (TypeCheckResponse errors) }
 
 

@@ -39,7 +39,7 @@ let mock_define = define ()
 
 let mock_parent = Type.Primitive "foo"
 
-let error ?(signature = mock_signature) ?(location = Location.Instantiated.any) kind =
+let error ?(signature = mock_signature) ?(location = Location.Reference.any) kind =
   { Error.location; kind; signature }
 
 
@@ -977,24 +977,15 @@ let test_join context =
   assert_join
     (error
        ~location:
-         {
-           Location.Instantiated.synthetic with
-           Location.start = { Location.line = 1; column = 0 };
-         }
+         { Location.Reference.synthetic with Location.start = { Location.line = 1; column = 0 } }
        (revealed_type "a" (Annotation.create Type.integer)))
     (error
        ~location:
-         {
-           Location.Instantiated.synthetic with
-           Location.start = { Location.line = 2; column = 1 };
-         }
+         { Location.Reference.synthetic with Location.start = { Location.line = 2; column = 1 } }
        (revealed_type "a" (Annotation.create Type.float)))
     (error
        ~location:
-         {
-           Location.Instantiated.synthetic with
-           Location.start = { Location.line = 1; column = 0 };
-         }
+         { Location.Reference.synthetic with Location.start = { Location.line = 1; column = 0 } }
        (revealed_type "a" (Annotation.create Type.float)))
 
 
@@ -1084,20 +1075,18 @@ let test_filter context =
     in
     Environment.resolution environment ()
   in
-  let assert_filtered ?(location = Location.Instantiated.any) ?(signature = mock_signature) kind =
+  let assert_filtered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
     assert_equal [] (filter ~configuration ~resolution errors)
   in
-  let assert_unfiltered ?(location = Location.Instantiated.any) ?(signature = mock_signature) kind =
+  let assert_unfiltered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
     assert_equal ~cmp:(List.equal equal) errors (filter ~configuration ~resolution errors)
   in
   (* Suppress stub errors. *)
-  let stub = { Location.Instantiated.any with Location.path = "stub.pyi" } in
+  let stub = { Location.Reference.any with Location.path = !&"stub" } in
   assert_unfiltered ~location:stub (undefined_attribute (Type.Primitive "Foo"));
-  assert_unfiltered
-    ~location:Location.Instantiated.any
-    (undefined_attribute (Type.Primitive "Foo"));
+  assert_unfiltered ~location:Location.Reference.any (undefined_attribute (Type.Primitive "Foo"));
 
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.Primitive "unittest.mock.Mock") Type.integer);
@@ -1209,19 +1198,19 @@ let test_suppress context =
   (* Always suppress synthetic locations. *)
   assert_suppressed
     Source.Infer
-    ~location:Location.Instantiated.synthetic
+    ~location:Location.Reference.synthetic
     (missing_return Type.integer);
   assert_suppressed
     Source.Declare
-    ~location:Location.Instantiated.synthetic
+    ~location:Location.Reference.synthetic
     (missing_return Type.integer);
   assert_suppressed
     Source.Default
-    ~location:Location.Instantiated.synthetic
+    ~location:Location.Reference.synthetic
     (missing_return Type.integer);
   assert_suppressed
     Source.Strict
-    ~location:Location.Instantiated.synthetic
+    ~location:Location.Reference.synthetic
     (missing_return Type.integer);
   assert_suppressed
     Source.Declare

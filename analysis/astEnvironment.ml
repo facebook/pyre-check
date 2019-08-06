@@ -91,6 +91,10 @@ module ReadOnly = struct
   let get_source { get_source; _ } = get_source
 
   let get_source_path { get_source_path; _ } = get_source_path
+
+  let get_relative read_only qualifier =
+    let open Option in
+    get_source_path read_only qualifier >>| fun { SourcePath.relative; _ } -> relative
 end
 
 let read_only { get_source; get_source_path; _ } = { ReadOnly.get_source; get_source_path }

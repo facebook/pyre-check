@@ -6,7 +6,6 @@
 open Pyre
 open Core
 open OUnit2
-open Taint
 open Test
 open TestHelper
 module Callable = Interprocedural.Callable
@@ -17,24 +16,30 @@ let assert_model ?source ~context ~model_source ~expect () =
     | None -> model_source
     | Some source -> source
   in
-  let resolution =
-    ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+  let _, _, environment =
+    ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
   in
   let configuration =
-    TaintConfiguration.
+    Taint.TaintConfiguration.
       { sources = ["TestTest"]; sinks = ["TestSink"]; features = ["special"]; rules = [] }
   in
   let models =
     let source = Test.trim_extra_indentation model_source in
-    Model.parse ~resolution ~source ~configuration Callable.Map.empty
+    let resolution =
+      let global_resolution = Analysis.Environment.resolution environment () in
+      TypeCheck.resolution global_resolution ()
+    in
+    Taint.Model.parse ~resolution ~source ~configuration Callable.Map.empty
   in
   let get_model callable =
     let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
     Callable.Map.find models callable |> Option.value_exn ?here:None ?error:None ~message, false
     (* obscure *)
   in
-  List.iter ~f:(check_expectation ~get_model) expect
+  List.iter ~f:(check_expectation ~environment ~get_model) expect
 
+
+open Taint
 
 let test_source_models context =
   let assert_model = assert_model ~context in

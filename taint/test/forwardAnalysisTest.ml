@@ -54,7 +54,7 @@ let assert_taint ?models ~context source expect =
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  List.iter ~f:check_expectation expect
+  List.iter ~f:(check_expectation ~environment) expect
 
 
 let test_no_model context =

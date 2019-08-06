@@ -48,10 +48,11 @@ module State (Context : Context) = struct
   }
 
   let pp format { resolution; errors; bottom; _ } =
+    let global_resolution = Resolution.global_resolution resolution in
     let expected =
       Annotated.Callable.return_annotation
         ~define:(Node.value Context.define)
-        ~resolution:(Resolution.global_resolution resolution)
+        ~resolution:global_resolution
     in
     let annotations =
       let annotation_to_string (name, annotation) =
@@ -63,12 +64,20 @@ module State (Context : Context) = struct
       |> String.concat ~sep:"\n"
     in
     let errors =
-      let error_to_string ({ Error.location; _ } as error) =
+      let error_to_string error =
+        let error =
+          let lookup reference =
+            GlobalResolution.ast_environment global_resolution
+            |> fun ast_environment ->
+            AstEnvironment.ReadOnly.get_relative ast_environment reference
+          in
+          Error.instantiate ~lookup error
+        in
         Format.asprintf
           "    %a -> %s"
           Location.Instantiated.pp
-          location
-          (Error.description error ~show_error_traces:true)
+          (Error.Instantiated.location error)
+          (Error.Instantiated.description error ~show_error_traces:true)
       in
       List.map (Map.data errors) ~f:error_to_string |> String.concat ~sep:"\n"
     in

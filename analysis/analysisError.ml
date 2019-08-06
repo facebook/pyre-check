@@ -1898,7 +1898,7 @@ let less_or_equal ~resolution left right =
     GlobalResolution.less_or_equal resolution ~left:left.actual ~right:right.actual
     && GlobalResolution.less_or_equal resolution ~left:left.expected ~right:right.expected
   in
-  Location.Instantiated.equal left.location right.location
+  Location.equal left.location right.location
   &&
   match left.kind, right.kind with
   | AnalysisFailure left, AnalysisFailure right -> Type.equal left right
@@ -2450,7 +2450,7 @@ let join ~resolution left right =
         let { location; _ } = left in
         Log.debug
           "Incompatible type in error join at %a: %a %a"
-          Location.Instantiated.pp
+          Location.pp
           location
           pp_kind
           left.kind
@@ -2459,7 +2459,7 @@ let join ~resolution left right =
         Top
   in
   let location =
-    if Location.Instantiated.compare left.location right.location <= 0 then
+    if Location.compare left.location right.location <= 0 then
       left.location
     else
       right.location
@@ -2621,12 +2621,14 @@ let filter ~configuration ~resolution errors =
         | _ -> false )
       | _ -> false
     in
-    let is_stub_error { kind; location; _ } =
-      let is_stub_path () = Location.path location |> String.is_suffix ~suffix:".pyi" in
+    let is_stub_error { kind; location = { Location.path; _ }; _ } =
       match kind with
       | UninitializedAttribute _
-      | MissingOverloadImplementation _ ->
-          is_stub_path ()
+      | MissingOverloadImplementation _ -> (
+          let ast_environment = GlobalResolution.ast_environment resolution in
+          match AstEnvironment.ReadOnly.get_source_path ast_environment path with
+          | Some { SourcePath.is_stub; _ } -> is_stub
+          | _ -> false )
       | _ -> false
     in
     is_stub_error error
@@ -2702,7 +2704,7 @@ let suppress ~mode ~resolution ({ location; _ } as error) =
         Type.is_untyped actual
     | _ -> true
   in
-  if Location.Instantiated.equal Location.Instantiated.synthetic location then
+  if Location.equal Location.Reference.synthetic location then
     true
   else
     try
@@ -2912,8 +2914,7 @@ let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant 
   }
 
 
-let language_server_hint { kind; _ } =
-  match kind with
+let language_server_hint = function
   | MissingReturnAnnotation _
   | MissingAttributeAnnotation _
   | MissingParameterAnnotation _

@@ -21,8 +21,11 @@ let ignore_lines_test context =
     let scheduler = Scheduler.mock () in
     Service.Postprocess.register_ignores ~configuration scheduler sources;
     let descriptions =
+      let ast_environment = Environment.ast_environment environment in
       Service.Check.analyze_sources ~scheduler ~configuration ~environment source_paths
-      |> List.map ~f:(fun error -> Error.description error ~show_error_traces)
+      |> List.map ~f:(fun error ->
+             Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) error
+             |> Error.Instantiated.description ~show_error_traces)
     in
     let description_list_to_string descriptions =
       Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]

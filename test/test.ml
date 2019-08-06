@@ -1309,25 +1309,33 @@ let assert_errors
         configuration, sources, environment
       in
       let global_resolution = Environment.resolution environment () in
+      let ast_environment = Environment.ast_environment environment in
       let configuration = { configuration with debug; strict; declare; infer } in
       let source =
         List.find_exn sources ~f:(fun { Source.relative; _ } -> String.equal handle relative)
       in
       check ~configuration ~global_resolution ~source
+      |> List.map
+           ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
     in
     let errors_with_any_location =
-      List.filter_map errors ~f:(fun { Error.location; _ } ->
+      List.filter_map errors ~f:(fun error ->
+          let location = Error.Instantiated.location error in
           Option.some_if (Location.Instantiated.equal location Location.Instantiated.any) location)
     in
     let found_any = not (List.is_empty errors_with_any_location) in
     ( if found_any then
         let errors =
-          List.map ~f:(fun error -> Error.description error ~show_error_traces ~concise) errors
+          List.map
+            ~f:(fun error -> Error.Instantiated.description error ~show_error_traces ~concise)
+            errors
           |> String.concat ~sep:"\n"
         in
         Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore );
     assert_false found_any;
-    List.map ~f:(fun error -> Error.description error ~show_error_traces ~concise) errors
+    List.map
+      ~f:(fun error -> Error.Instantiated.description error ~show_error_traces ~concise)
+      errors
   in
   assert_equal
     ~cmp:(List.equal String.equal)

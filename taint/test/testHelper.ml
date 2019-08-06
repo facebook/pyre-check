@@ -99,6 +99,7 @@ let create_callable kind define_name =
 
 let check_expectation
     ?(get_model = get_model)
+    ~environment
     {
       define_name;
       source_parameters;
@@ -255,14 +256,14 @@ let check_expectation
   in
   let expected_sources = List.map ~f:Sources.show returns |> String.Set.of_list in
   let assert_error { code; pattern } error =
-    if code <> Error.code error then
+    if code <> Error.Instantiated.code error then
       Format.sprintf
         "Expected error code %d for %s, but got %d"
         code
         define_name
-        (Error.code error)
+        (Error.Instantiated.code error)
       |> assert_failure;
-    let error_string = Error.description ~show_error_traces:true error in
+    let error_string = Error.Instantiated.description ~show_error_traces:true error in
     let regexp = Str.regexp pattern in
     if not (Str.string_match regexp error_string 0) then
       Format.sprintf
@@ -324,6 +325,12 @@ let check_expectation
     |> Result.get_result Taint.Result.kind
     >>| List.map ~f:Flow.generate_error
     |> Option.value ~default:[]
+  in
+  let actual_errors =
+    let ast_environment = Environment.ast_environment environment in
+    List.map
+      actual_errors
+      ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
   in
   assert_errors errors actual_errors
 
@@ -395,7 +402,11 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
   ( if not (List.is_empty errors) then
       let errors =
         errors
-        |> List.map ~f:(AnalysisError.description ~show_error_traces:false)
+        |> List.map ~f:(fun error ->
+               AnalysisError.instantiate
+                 ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+                 error
+               |> AnalysisError.Instantiated.description ~show_error_traces:false)
         |> String.concat ~sep:"\n"
       in
       failwithf "Pyre errors were found in `%s`:\n%s" handle errors () );

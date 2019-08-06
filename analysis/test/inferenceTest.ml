@@ -163,7 +163,10 @@ let assert_infer
     errors
   =
   let check_errors configuration global_resolution source =
+    let ast_environment = GlobalResolution.ast_environment global_resolution in
     Inference.run ~configuration ~global_resolution ~source
+    |> List.map
+         ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
   in
   let fields_of_error error =
     let field_of_error field =
@@ -174,7 +177,7 @@ let assert_infer
         | _ -> `String "TEST FAIL: ERROR ACCESSING FIELD IN ERROR JSON"
       in
       List.fold
-        ~init:(Error.to_json ~show_error_traces error)
+        ~init:(Error.Instantiated.to_json ~show_error_traces error)
         ~f:access_field
         (String.split ~on:'.' field)
     in

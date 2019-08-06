@@ -73,7 +73,7 @@ let run_check
   in
   (fun () ->
     let timer = Timer.start () in
-    let { Check.errors; _ } = Check.check ~scheduler:None ~configuration in
+    let { Check.errors; environment; _ } = Check.check ~scheduler:None ~configuration in
     let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
     Statistics.performance
       ~name:"check"
@@ -88,9 +88,19 @@ let run_check
       Memory.report_statistics ();
 
     (* Print results. *)
+    let errors =
+      let ast_environment = Analysis.Environment.ast_environment environment in
+      List.map
+        errors
+        ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+    in
     Yojson.Safe.to_string
       (`Assoc
-        ["errors", `List (List.map ~f:(fun error -> Error.to_json ~show_error_traces error) errors)])
+        [ ( "errors",
+            `List
+              (List.map
+                 ~f:(fun error -> Error.Instantiated.to_json ~show_error_traces error)
+                 errors) ) ])
     |> Log.print "%s")
   |> Scheduler.run_process ~configuration
 

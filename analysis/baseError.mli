@@ -28,25 +28,39 @@ module type Error = sig
   type kind
 
   type t = {
-    location: Location.Instantiated.t;
+    location: Location.t;
     kind: kind;
     signature: Define.signature Node.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
 
+  module Instantiated : sig
+    type t [@@deriving sexp, compare, eq, show, hash]
+
+    val location : t -> Location.Instantiated.t
+
+    val path : t -> string
+
+    val kind : t -> kind
+
+    val code : t -> int
+
+    val description : ?separator:string -> ?concise:bool -> t -> show_error_traces:bool -> string
+
+    val to_json : show_error_traces:bool -> t -> Yojson.Safe.json
+  end
+
   include Hashable with type t := t
 
   val create : location:Location.t -> kind:kind -> define:Define.t Node.t -> t
 
-  val path : t -> string
+  val path : t -> Reference.t
 
   val key : t -> Location.t
 
   val code : t -> int
 
-  val description : ?separator:string -> ?concise:bool -> t -> show_error_traces:bool -> string
-
-  val to_json : show_error_traces:bool -> t -> Yojson.Safe.json
+  val instantiate : lookup:(Reference.t -> string option) -> t -> Instantiated.t
 end
 
 module Make (Kind : Kind) : Error with type kind := Kind.t

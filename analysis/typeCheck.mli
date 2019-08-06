@@ -10,7 +10,7 @@ module Error = AnalysisError
 
 module ErrorMap : sig
   type key = {
-    location: Location.Instantiated.t;
+    location: Location.t;
     kind: int;
   }
   [@@deriving compare, sexp]

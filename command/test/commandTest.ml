@@ -61,7 +61,9 @@ let make_errors ~context ?(handle = "test.py") source =
   in
   let configuration = ScratchProject.configuration_of project in
   let global_resolution = Environment.resolution environment () in
+  let ast_environment = GlobalResolution.ast_environment global_resolution in
   TypeCheck.run ~configuration ~global_resolution ~source
+  |> List.map ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
 
 
 let run_command_tests test_category tests =

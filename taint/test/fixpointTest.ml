@@ -38,7 +38,7 @@ let assert_fixpoint ?models ~context source ~expect:{ iterations = expect_iterat
   in
   assert_bool "Callgraph is empty!" (Callable.RealMap.length callgraph > 0);
   assert_equal ~msg:"Fixpoint iterations" expect_iterations iterations ~printer:Int.to_string;
-  List.iter ~f:check_expectation expect
+  List.iter ~f:(check_expectation ~environment) expect
 
 
 let test_fixpoint context =

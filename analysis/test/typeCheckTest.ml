@@ -51,6 +51,14 @@ let list_orderless_equal left right =
     (List.dedup_and_sort ~compare:String.compare right)
 
 
+let description ~resolution error =
+  let ast_environment =
+    Resolution.global_resolution resolution |> GlobalResolution.ast_environment
+  in
+  Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) error
+  |> Error.Instantiated.description ~show_error_traces:false
+
+
 let test_initial context =
   let assert_initial
       ?parent
@@ -111,7 +119,7 @@ let test_initial context =
     assert_equal
       ~cmp:(List.equal String.equal)
       ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
-      (List.map (State.errors initial) ~f:(Error.description ~show_error_traces:false))
+      (List.map (State.errors initial) ~f:(description ~resolution))
       errors
   in
   assert_initial
@@ -273,7 +281,7 @@ let test_check_annotation context =
     let module State = State (DefaultContext) in
     let state = create [] in
     let errors = State.parse_and_check_annotation ~state !expression |> fst |> State.errors in
-    let errors = List.map ~f:(Error.description ~show_error_traces:false) errors in
+    let errors = List.map ~f:(description ~resolution) errors in
     assert_equal
       ~cmp:(List.equal String.equal)
       ~printer:(String.concat ~sep:"\n")
@@ -538,7 +546,7 @@ let test_forward_expression context =
       ~cmp:list_orderless_equal
       ~printer:(String.concat ~sep:"\n")
       errors
-      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false));
+      (State.errors forwarded |> List.map ~f:(description ~resolution));
     assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved
   in
   (* Await. *)
@@ -1016,7 +1024,7 @@ let test_forward_statement context =
       ~cmp:list_orderless_equal
       ~printer:(String.concat ~sep:"\n")
       errors
-      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
+      (State.errors forwarded |> List.map ~f:(description ~resolution))
   in
   (* Assignments. *)
   assert_forward ["y", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];

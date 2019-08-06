@@ -29,20 +29,23 @@ module PublishDiagnostics = struct
   include Types.PublishDiagnostics
 
   let diagnostic_severity error =
-    match Error.language_server_hint error with
+    let kind = Error.Instantiated.kind error in
+    match Error.language_server_hint kind with
     | true -> Some DiagnosticSeverity.Information
     | false -> Some DiagnosticSeverity.Error
 
 
   let of_errors ~configuration relative errors =
-    let diagnostic_of_error ({ Error.location = { Ast.Location.start; stop; _ }; _ } as error) =
+    let diagnostic_of_error error =
+      let { Ast.Location.start; stop; _ } = TypeCheck.Error.Instantiated.location error in
       Diagnostic.
         {
           range = Range.create ~start ~stop;
           severity = diagnostic_severity error;
           code = None;
           source = Some "Pyre";
-          message = TypeCheck.Error.description error ~show_error_traces:true ~separator:"\n";
+          message =
+            TypeCheck.Error.Instantiated.description error ~show_error_traces:true ~separator:"\n";
         }
     in
     let failed_response =

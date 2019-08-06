@@ -38,7 +38,7 @@ let computation_thread
           | None -> [error]
           | Some errors -> error :: errors
         in
-        let key = Error.path error in
+        let key = Error.Instantiated.path error in
         Hashtbl.update table key ~f:update
       in
       List.iter error_list ~f:add_to_table;

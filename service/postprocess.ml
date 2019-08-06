@@ -100,8 +100,7 @@ let ignore ~configuration scheduler source_paths errors =
   let create_unused_ignore_error errors unused_ignore =
     let error =
       {
-        Error.location =
-          Location.instantiate (Ignore.location unused_ignore) ~lookup:Ast.SharedMemory.Handles.get;
+        Error.location = Ignore.location unused_ignore;
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         signature =
           {

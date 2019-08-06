@@ -12,7 +12,7 @@ module Error = AnalysisError
 
 module ErrorMap = struct
   type key = {
-    location: Location.Instantiated.t;
+    location: Location.t;
     kind: int;
   }
   [@@deriving compare, sexp]
@@ -114,10 +114,11 @@ module State (Context : Context) = struct
 
 
   let pp format { resolution; errors; nested_defines; bottom; _ } =
+    let global_resolution = Resolution.global_resolution resolution in
     let expected =
       Annotated.Callable.return_annotation
         ~define:(Node.value Context.define)
-        ~resolution:(Resolution.global_resolution resolution)
+        ~resolution:global_resolution
     in
     let nested_defines =
       let nested_define_to_string nested_define =
@@ -135,12 +136,20 @@ module State (Context : Context) = struct
       |> String.concat ~sep:"\n"
     in
     let errors =
-      let error_to_string ({ Error.location; _ } as error) =
+      let error_to_string error =
+        let error =
+          let lookup reference =
+            GlobalResolution.ast_environment global_resolution
+            |> fun ast_environment ->
+            AstEnvironment.ReadOnly.get_relative ast_environment reference
+          in
+          Error.instantiate ~lookup error
+        in
         Format.asprintf
           "    %a -> %s"
           Location.Instantiated.pp
-          location
-          (Error.description error ~show_error_traces:true)
+          (Error.Instantiated.location error)
+          (Error.Instantiated.description error ~show_error_traces:true)
       in
       List.map (Map.data errors) ~f:error_to_string |> String.concat ~sep:"\n"
     in
@@ -1046,7 +1055,10 @@ module State (Context : Context) = struct
               state
             else
               let instantiate location =
-                Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location
+                let ast_environment = GlobalResolution.ast_environment global_resolution in
+                Location.instantiate
+                  ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+                  location
               in
               emit_error
                 ~state
@@ -3154,7 +3166,8 @@ module State (Context : Context) = struct
       Context.define
     in
     let instantiate location =
-      Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location
+      let ast_environment = GlobalResolution.ast_environment global_resolution in
+      Location.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) location
     in
     (* We weaken type inference of mutable literals for assignments and returns to get around the
        invariance of containers when we can prove that casting to a supertype is safe. *)
@@ -4709,7 +4722,7 @@ let check_define
     let filter_hints errors =
       match mode with
       | Default when not include_hints ->
-          List.filter errors ~f:(fun error -> not (Error.language_server_hint error))
+          List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
       | _ -> errors
     in
     filter errors

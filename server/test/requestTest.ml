@@ -166,7 +166,7 @@ let test_process_type_query_request context =
 
 let assert_errors_equal ~actual_errors ~expected_errors =
   let actual_errors =
-    List.map actual_errors ~f:(Analysis.Error.description ~show_error_traces:false)
+    List.map actual_errors ~f:(Analysis.Error.Instantiated.description ~show_error_traces:false)
   in
   let equal left right =
     List.equal
@@ -479,7 +479,10 @@ let test_create_annotation_edit context =
       due_to_invariance = false;
     }
   in
-  let location = { Location.Instantiated.any with start = { line = 0; column = 0 } } in
+  let location = { Location.Reference.any with start = { line = 0; column = 0 } } in
+  let instantiated_location =
+    { Location.Instantiated.any with start = { line = 0; column = 0 } }
+  in
   let assert_edit ~source ~error ~expected_text ~expected_range =
     let file =
       let path = Path.create_relative ~root ~relative:"test.py" in
@@ -614,7 +617,7 @@ let test_create_annotation_edit context =
            Analysis.Error.location;
            kind =
              Analysis.Error.IncompatibleVariableType
-               { name = !&"x"; mismatch = mock_mismatch; declare_location = location };
+               { name = !&"x"; mismatch = mock_mismatch; declare_location = instantiated_location };
            signature = +mock_signature;
          })
 

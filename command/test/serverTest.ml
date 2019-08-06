@@ -24,7 +24,6 @@ let file ~local_root ?content path =
 
 
 let test_language_server_protocol_json_format context =
-  let open TypeCheck.Error in
   let handle = "filename.py" in
   let configuration =
     let project = ScratchProject.setup ~context [handle, ""] in
@@ -32,7 +31,7 @@ let test_language_server_protocol_json_format context =
     ScratchProject.configuration_of project
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let ({ Error.location; _ } as type_error) =
+  let type_error =
     CommandTest.make_errors
       ~context
       ~handle
@@ -44,7 +43,6 @@ let test_language_server_protocol_json_format context =
       |}
     |> List.hd_exn
   in
-  let type_error = { type_error with location = { location with Location.path = handle } } in
   let normalize string =
     (* Working around OS inconsitencies. *)
     string
@@ -1321,11 +1319,14 @@ let test_incremental_attribute_caching context =
     ScratchServer.start ~context [handle, content_with_annotation]
   in
   let assert_errors ~state expected =
-    let get_error_strings { State.errors; _ } =
+    let get_error_strings { State.errors; environment; _ } =
+      let ast_environment = Environment.ast_environment environment in
       Hashtbl.to_alist errors
       |> List.map ~f:snd
       |> List.concat
-      |> List.map ~f:(Error.description ~show_error_traces:false)
+      |> List.map ~f:(fun error ->
+             Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) error
+             |> Error.Instantiated.description ~show_error_traces:false)
     in
     let printer = String.concat ~sep:"\n" in
     assert_equal ~printer expected (get_error_strings state)

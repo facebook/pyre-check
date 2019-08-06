@@ -41,12 +41,17 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
       qualifiers
   in
   let actual_errors =
+    let ast_environment = Analysis.Environment.ast_environment environment in
     Service.Check.analyze_sources
       ~scheduler
       ~configuration
       ~environment
       (Analysis.ModuleTracker.source_paths module_tracker)
-    |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
+    |> List.map ~f:(fun error ->
+           Analysis.Error.instantiate
+             ~lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
+             error
+           |> Analysis.Error.Instantiated.description ~show_error_traces:false)
   in
   Analysis.Environment.purge environment qualifiers;
   assert_equal

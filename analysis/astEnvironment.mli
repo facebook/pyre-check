@@ -44,6 +44,8 @@ module ReadOnly : sig
   val get_source : t -> Reference.t -> Source.t option
 
   val get_source_path : t -> Reference.t -> SourcePath.t option
+
+  val get_relative : t -> Reference.t -> string option
 end
 
 val read_only : t -> ReadOnly.t

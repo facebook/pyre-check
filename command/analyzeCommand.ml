@@ -89,20 +89,23 @@ let run_analysis
       | _ -> 10
     in
     let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
-    let errors =
+    let errors, ast_environment =
       Service.Check.check ~scheduler:(Some scheduler) ~configuration
       |> fun { module_tracker; environment; _ } ->
       let qualifiers =
         Analysis.ModuleTracker.source_paths module_tracker
         |> List.map ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier)
       in
-      Service.StaticAnalysis.analyze
-        ~scheduler
-        ~configuration:
-          { Configuration.StaticAnalysis.configuration; result_json_path; dump_call_graph }
-        ~environment
-        ~qualifiers
-        ()
+      let errors =
+        Service.StaticAnalysis.analyze
+          ~scheduler
+          ~configuration:
+            { Configuration.StaticAnalysis.configuration; result_json_path; dump_call_graph }
+          ~environment
+          ~qualifiers
+          ()
+      in
+      errors, Analysis.Environment.ast_environment environment
     in
     let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
     Statistics.performance
@@ -115,7 +118,11 @@ let run_analysis
       ();
 
     (* Print results. *)
-    List.map errors ~f:(fun error -> Interprocedural.Error.to_json ~show_error_traces error)
+    List.map errors ~f:(fun error ->
+        Interprocedural.Error.instantiate
+          ~lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
+          error
+        |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
     |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
     |> Log.print "%s";
     Scheduler.destroy scheduler)

@@ -131,7 +131,7 @@ let recheck
 
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
-      let key = Error.path error |> Ast.SourcePath.qualifier_of_relative in
+      let key = Error.path error in
       Hashtbl.add_multi errors ~key ~data:error);
 
   Statistics.performance

@@ -27,8 +27,10 @@ let run_query serialized local_root () =
           | TypeCheckResponse errors ->
               `Assoc
                 [ ( "response",
-                    `List (List.map ~f:(Analysis.Error.to_json ~show_error_traces:false) errors) )
-                ]
+                    `List
+                      (List.map
+                         ~f:(Analysis.Error.Instantiated.to_json ~show_error_traces:false)
+                         errors) ) ]
           | response ->
               `Assoc
                 [ ( "response",

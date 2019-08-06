@@ -305,4 +305,4 @@ val create_mismatch
   covariant:bool ->
   mismatch
 
-val language_server_hint : t -> bool
+val language_server_hint : kind -> bool
