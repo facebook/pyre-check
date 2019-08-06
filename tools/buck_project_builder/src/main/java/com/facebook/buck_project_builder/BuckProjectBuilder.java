@@ -38,7 +38,8 @@ public final class BuckProjectBuilder {
     try {
       CacheLock.synchronize(
           () -> {
-            BuildTargetsCollector.collectBuckTargets(buckRoot, targets)
+            new BuildTargetsCollector(buckRoot)
+                .collectBuckTargets(targets)
                 .forEach(target -> target.addToBuilder(builder));
             DebugOutput debugOutput = builder.buildTargets();
             if (command.isDebug()) {

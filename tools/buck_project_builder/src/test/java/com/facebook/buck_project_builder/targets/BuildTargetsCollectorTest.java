@@ -23,12 +23,9 @@ public class BuildTargetsCollectorTest {
       String buildTargetName,
       ImmutableSet<String> requiredRemoteFiles) {
     BuildTarget actualBuiltTarget =
-        BuildTargetsCollector.parseBuildTarget(
-            JSON_PARSER.parse(targetJsonString).getAsJsonObject(),
-            cellPath,
-            buckRoot,
-            buildTargetName,
-            requiredRemoteFiles);
+        new BuildTargetsCollector(buckRoot, requiredRemoteFiles)
+            .parseBuildTarget(
+                JSON_PARSER.parse(targetJsonString).getAsJsonObject(), cellPath, buildTargetName);
     assertEquals(expectedTarget, actualBuiltTarget);
   }
 
@@ -41,14 +38,15 @@ public class BuildTargetsCollectorTest {
   private static void assertExpectedParsedBuildTargetList(
       String targetsJsonString, ImmutableList<BuildTarget> expectedTargets) {
     ImmutableList<BuildTarget> actualBuiltTarget =
-        BuildTargetsCollector.parseBuildTargetList(
-            ImmutableMap.of(), ".", JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
+        new BuildTargetsCollector(".")
+            .parseBuildTargetList(
+                ImmutableMap.of(), JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
     assertEquals(expectedTargets, actualBuiltTarget);
   }
 
   @Test(expected = BuilderException.class)
   public void emptyTargetListNotAllowed() throws BuilderException {
-    BuildTargetsCollector.collectBuckTargets(".", ImmutableList.of());
+    new BuildTargetsCollector(".").collectBuckTargets(ImmutableList.of());
   }
 
   @Test
@@ -276,10 +274,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new ThriftLibraryTarget(
-            "CMD",
-            "PATH",
-            ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
+        new ThriftLibraryTarget("CMD", "PATH", ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -300,10 +295,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new ThriftLibraryTarget(
-            "CMD",
-            "PATH",
-            ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
+        new ThriftLibraryTarget("CMD", "PATH", ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
 
     targetJson =
         "{\n"
@@ -315,10 +307,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new ThriftLibraryTarget(
-            "CMD",
-            "PATH",
-            ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
+        new ThriftLibraryTarget("CMD", "PATH", ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
 
     targetJson =
         "{\n"
@@ -330,10 +319,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new ThriftLibraryTarget(
-            "CMD",
-            "PATH",
-            ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
+        new ThriftLibraryTarget("CMD", "PATH", ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
 
     targetJson =
         "{\n"
