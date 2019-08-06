@@ -2387,11 +2387,19 @@ module State (Context : Context) = struct
           arguments = [{ Call.Argument.value; _ }];
         } ->
         (* Special case reveal_type(). *)
+        let is_type_alias =
+          match Node.value value with
+          | Expression.Name _ ->
+              let name = Expression.show (Expression.delocalize value) in
+              GlobalResolution.aliases global_resolution name |> Option.is_some
+          | _ -> false
+        in
         let annotation =
           let annotation = Resolution.resolve_to_annotation resolution value in
           if
             (not (Annotation.is_immutable annotation))
             && Type.is_untyped (Annotation.annotation annotation)
+            || is_type_alias
           then
             let parsed = GlobalResolution.parse_annotation global_resolution value in
             if Type.is_untyped parsed then annotation else Annotation.create (Type.meta parsed)

@@ -155,7 +155,24 @@ let test_check_assign context =
       a = A()
       a.foo = 1
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      x = typing.List[int]
+      reveal_type(x)
+
+      y = typing.Mapping[int, str]
+      reveal_type(y)
+    |}
+    [ "Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.List[int]]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Type[typing.Mapping[int, str]]`." ];
+  assert_type_errors
+    {|
+      x = typing.List["foo"]
+      reveal_type(x)
+    |}
+    [ "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
+      "Revealed type [-1]: Revealed type for `x` is `unknown`." ]
 
 
 let () = "assign" >::: ["check_assign" >:: test_check_assign] |> Test.run
