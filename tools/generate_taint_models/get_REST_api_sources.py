@@ -39,4 +39,6 @@ class RESTApiSourceGenerator(ViewGenerator):
         return sorted(entry_points)
 
 
-Registry.register("get_REST_api_sources", RESTApiSourceGenerator)
+Registry.register(
+    "get_REST_api_sources", RESTApiSourceGenerator, include_by_default=True
+)

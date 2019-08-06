@@ -59,4 +59,6 @@ class GraphQLSourceGenerator(ModelGenerator):
         return sorted(graphql_models)
 
 
-Registry.register("get_graphql_sources", GraphQLSourceGenerator)
+Registry.register(
+    "get_graphql_sources", GraphQLSourceGenerator, include_by_default=True
+)

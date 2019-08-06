@@ -72,7 +72,7 @@ class Registry:
 
     @classmethod
     def register(
-        cls, name: str, generator: Type[ModelGenerator], include_by_default: bool = True
+        cls, name: str, generator: Type[ModelGenerator], include_by_default: bool
     ) -> None:
         cls.generators[name] = generator
         if include_by_default:

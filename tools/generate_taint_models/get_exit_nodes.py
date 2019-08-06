@@ -35,4 +35,4 @@ class ExitNodeGenerator(ViewGenerator):
         return sorted(exit_nodes)
 
 
-Registry.register("get_exit_nodes", ExitNodeGenerator)
+Registry.register("get_exit_nodes", ExitNodeGenerator, include_by_default=True)

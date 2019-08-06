@@ -96,5 +96,5 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
 Registry.register(
     "get_annotated_free_functions_with_decorator",
     AnnotatedFreeFunctionWithDecoratorGenerator,
-    False,
+    include_by_default=False,
 )
