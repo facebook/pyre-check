@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+# Copyright (c) 2016-present, Facebook, Inc.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
 
 from collections import Counter
 from typing import Any, Iterable, List, Optional, Set, Tuple
