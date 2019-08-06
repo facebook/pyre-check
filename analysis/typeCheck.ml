@@ -135,11 +135,11 @@ module State (Context : Context) = struct
       |> String.concat ~sep:"\n"
     in
     let errors =
-      let error_to_string error =
+      let error_to_string ({ Error.location; _ } as error) =
         Format.asprintf
           "    %a -> %s"
           Location.Instantiated.pp
-          (Error.location error)
+          location
           (Error.description error ~show_error_traces:true)
       in
       List.map (Map.data errors) ~f:error_to_string |> String.concat ~sep:"\n"
@@ -2272,9 +2272,9 @@ module State (Context : Context) = struct
         base = None;
       }
     in
-    let is_terminating_error error =
+    let is_terminating_error { Error.kind; _ } =
       let open Error in
-      match kind error with
+      match kind with
       | UndefinedAttribute _
       | UndefinedName _ ->
           true
@@ -3845,10 +3845,8 @@ module State (Context : Context) = struct
               in
               let state = error >>| emit_raw_error ~state |> Option.value ~default:state in
               let is_valid_annotation =
-                error
-                >>| Error.kind
-                |> function
-                | Some (Error.IllegalAnnotationTarget _) -> false
+                match error with
+                | Some { Error.kind = IllegalAnnotationTarget _; _ } -> false
                 | _ -> true
               in
               (* Propagate annotations. *)

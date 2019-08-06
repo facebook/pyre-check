@@ -1316,8 +1316,8 @@ let assert_errors
       check ~configuration ~global_resolution ~source
     in
     let errors_with_any_location =
-      List.map ~f:Error.location errors
-      |> List.filter ~f:(Location.Instantiated.equal Location.Instantiated.any)
+      List.filter_map errors ~f:(fun { Error.location; _ } ->
+          Option.some_if (Location.Instantiated.equal location Location.Instantiated.any) location)
     in
     let found_any = not (List.is_empty errors_with_any_location) in
     ( if found_any then

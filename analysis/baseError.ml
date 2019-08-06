@@ -38,11 +38,7 @@ module type Error = sig
 
   val create : location:Location.t -> kind:kind -> define:Define.t Node.t -> t
 
-  val kind : t -> kind
-
   val path : t -> string
-
-  val location : t -> Location.Instantiated.t
 
   val key : t -> Location.t
 
@@ -86,11 +82,7 @@ module Make (Kind : Kind) = struct
     }
 
 
-  let kind { kind; _ } = kind
-
   let path { location = { Location.path; _ }; _ } = path
-
-  let location { location; _ } = location
 
   let key { location = { Location.start = { Location.line; _ }; path; _ }; _ } =
     let start = { Location.line; column = -1 } in

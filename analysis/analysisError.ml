@@ -2447,10 +2447,11 @@ let join ~resolution left right =
     | AbstractClass _, _
     | Unpack _, _
     | UnusedIgnore _, _ ->
+        let { location; _ } = left in
         Log.debug
           "Incompatible type in error join at %a: %a %a"
           Location.Instantiated.pp
-          (location left)
+          location
           pp_kind
           left.kind
           pp_kind
@@ -2641,7 +2642,7 @@ let filter ~configuration ~resolution errors =
   | _ -> List.filter ~f:(fun error -> not (should_filter error)) errors
 
 
-let suppress ~mode ~resolution error =
+let suppress ~mode ~resolution ({ location; _ } as error) =
   let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
       true
@@ -2701,7 +2702,7 @@ let suppress ~mode ~resolution error =
         Type.is_untyped actual
     | _ -> true
   in
-  if Location.Instantiated.equal Location.Instantiated.synthetic (location error) then
+  if Location.Instantiated.equal Location.Instantiated.synthetic location then
     true
   else
     try
@@ -2911,8 +2912,8 @@ let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant 
   }
 
 
-let language_server_hint error =
-  match kind error with
+let language_server_hint { kind; _ } =
+  match kind with
   | MissingReturnAnnotation _
   | MissingAttributeAnnotation _
   | MissingParameterAnnotation _

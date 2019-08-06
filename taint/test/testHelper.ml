@@ -384,8 +384,8 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
   in
   let global_resolution = Environment.resolution environment () in
   let errors =
-    let keep error =
-      match AnalysisError.kind error with
+    let keep { AnalysisError.kind; _ } =
+      match kind with
       (* TODO(T47874282): Don't filter these. *)
       | AnalysisError.NotCallable _ -> false
       | _ -> true

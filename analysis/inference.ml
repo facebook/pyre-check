@@ -63,11 +63,11 @@ module State (Context : Context) = struct
       |> String.concat ~sep:"\n"
     in
     let errors =
-      let error_to_string error =
+      let error_to_string ({ Error.location; _ } as error) =
         Format.asprintf
           "    %a -> %s"
           Location.Instantiated.pp
-          (Error.location error)
+          location
           (Error.description error ~show_error_traces:true)
       in
       List.map (Map.data errors) ~f:error_to_string |> String.concat ~sep:"\n"
@@ -619,8 +619,8 @@ let run
         }
   in
   let format_errors errors =
-    let contains_unknown error =
-      match Error.kind error with
+    let contains_unknown { Error.kind; _ } =
+      match kind with
       | MissingReturnAnnotation { annotation = Some annotation; _ }
       | MissingParameterAnnotation { annotation = Some annotation; _ }
       | MissingAttributeAnnotation { missing_annotation = { annotation = Some annotation; _ }; _ }

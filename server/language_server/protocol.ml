@@ -35,8 +35,7 @@ module PublishDiagnostics = struct
 
 
   let of_errors ~configuration relative errors =
-    let diagnostic_of_error error =
-      let { Ast.Location.start; stop; _ } = TypeCheck.Error.location error in
+    let diagnostic_of_error ({ Error.location = { Ast.Location.start; stop; _ }; _ } as error) =
       Diagnostic.
         {
           range = Range.create ~start ~stop;

@@ -308,8 +308,7 @@ module AnnotationEdit = struct
     | _ -> false
 
 
-  let create_range ~error ~file =
-    let error_kind = Error.kind error in
+  let create_range ~error:{ Error.kind = error_kind; location; _ } ~file =
     let token =
       match error_kind with
       | Error.MissingReturnAnnotation _ -> Some "):"
@@ -328,7 +327,7 @@ module AnnotationEdit = struct
         match error_kind with
         | Error.IncompatibleReturnType { define_location; _ } -> Location.line define_location
         | Error.IncompatibleVariableType { declare_location; _ } -> Location.line declare_location
-        | _ -> Error.location error |> Location.line
+        | _ -> Location.line location
       in
       line - 1
     in
@@ -364,10 +363,9 @@ module AnnotationEdit = struct
 
   let create ~file ~error =
     error
-    >>| (fun error ->
-          let error_kind = Error.kind error in
+    >>| (fun ({ Error.kind; _ } as error) ->
           let new_text =
-            match error_kind with
+            match kind with
             | Error.MissingReturnAnnotation { annotation = Some annotation; _ } ->
                 Some (" -> " ^ Type.show (Type.weaken_literals annotation))
             | Error.MissingAttributeAnnotation
@@ -383,7 +381,7 @@ module AnnotationEdit = struct
           in
           let range = create_range ~error ~file in
           let title =
-            if is_replacement_edit error_kind then
+            if is_replacement_edit kind then
               "Fix annotation"
             else
               "Add annotation"
