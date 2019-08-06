@@ -6,8 +6,15 @@
 open Core
 open Pyre
 
+let get_analysis_kind = function
+  | "taint" -> Taint.Analysis.abstract_kind
+  | _ ->
+      Log.error "Invalid analysis kind specified.";
+      failwith "bad argument"
+
+
 let run_analysis
-    _analysis
+    analysis
     result_json_path
     dump_call_graph
     verbose
@@ -99,6 +106,7 @@ let run_analysis
       let errors =
         Service.StaticAnalysis.analyze
           ~scheduler
+          ~analysis_kind:(get_analysis_kind analysis)
           ~configuration:
             { Configuration.StaticAnalysis.configuration; result_json_path; dump_call_graph }
           ~environment

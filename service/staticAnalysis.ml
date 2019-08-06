@@ -69,6 +69,7 @@ let callables ~resolution ~source =
 
 let analyze
     ~scheduler
+    ~analysis_kind
     ~configuration:( { Configuration.StaticAnalysis.configuration; dump_call_graph; _ } as
                    analysis_configuration )
     ~environment
@@ -171,7 +172,7 @@ let analyze
     in
     `Assoc ["taint", `Assoc ["model_directories", `List taint_models_directories]]
   in
-  let analyses = [Taint.Analysis.abstract_kind] in
+  let analyses = [analysis_kind] in
   (* Initialize and add initial models of analyses to shared mem. *)
   let () =
     Analysis.initialize

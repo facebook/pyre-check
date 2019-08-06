@@ -23,6 +23,7 @@ val callables
 
 val analyze
   :  scheduler:Scheduler.t ->
+  analysis_kind:Interprocedural.AnalysisKind.abstract ->
   configuration:Configuration.StaticAnalysis.t ->
   environment:Environment.t ->
   qualifiers:Reference.t list ->

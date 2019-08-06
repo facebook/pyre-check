@@ -298,7 +298,7 @@ def main() -> int:
     analyze = parsed_commands.add_parser(commands.Analyze.NAME)
     analyze.set_defaults(command=commands.Analyze)
     analyze.add_argument(
-        "analysis", nargs="?", default="taint", help="Type of analysis to run"
+        "analysis", nargs="?", default="taint", help="Type of analysis to run: {taint}"
     )
     analyze.add_argument(
         "--taint-models-path",
