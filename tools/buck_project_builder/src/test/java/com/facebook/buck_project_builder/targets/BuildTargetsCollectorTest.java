@@ -16,7 +16,9 @@ import static org.junit.Assert.assertEquals;
 public class BuildTargetsCollectorTest {
 
   private static BuildTargetsCollector collectTargetsFromJson(String targetsJsonString) {
-    BuildTargetsCollector collector = new BuildTargetsCollector(BUCK_ROOT, OUTPUT_DIRECTORY);
+    BuildTargetsCollector collector =
+        new BuildTargetsCollector(
+            BUCK_ROOT, OUTPUT_DIRECTORY, new PlatformSelector(), new CommandRewriter());
     collector.collectBuildTargets(
         ImmutableMap.of(), JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
     return collector;
@@ -24,7 +26,9 @@ public class BuildTargetsCollectorTest {
 
   @Test(expected = BuilderException.class)
   public void emptyTargetListNotAllowed() throws BuilderException {
-    new BuildTargetsCollector(BUCK_ROOT, OUTPUT_DIRECTORY).getBuilder(0, ImmutableList.of());
+    new BuildTargetsCollector(
+            BUCK_ROOT, OUTPUT_DIRECTORY, new PlatformSelector(), new CommandRewriter())
+        .getBuilder(0, ImmutableList.of());
   }
 
   @Test

@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -46,7 +45,10 @@ public final class ThriftLibraryTarget {
   }
 
   static @Nullable ThriftLibraryTarget parse(
-      @Nullable String cellPath, String buckRoot, JsonObject targetJsonObject) {
+      @Nullable String cellPath,
+      String buckRoot,
+      CommandRewriter rewriter,
+      JsonObject targetJsonObject) {
     JsonElement labelsField = targetJsonObject.get("labels");
     if (labelsField == null) {
       return null;
@@ -74,21 +76,7 @@ public final class ThriftLibraryTarget {
     if (sources == null) {
       return null;
     }
-    // Replace buck cmd macro with predefined values.
-    command =
-        command
-            .replace("$(exe //thrift/compiler:thrift)", "thrift")
-            .replace(
-                "$(location //thrift/compiler/generate/templates:templates)",
-                "thrift/compiler/generate/templates")
-            .replaceFirst("-I \\$\\(location .*\\)", "-I .")
-            .replace(
-                "-o \"$OUT\"",
-                String.format(
-                    "-out \"%s\"",
-                    Paths.get(BuilderCache.THRIFT_CACHE_PATH, DigestUtils.md5Hex(baseModulePath))))
-            .replace("\"$SRCS\"", String.join(" ", sources))
-            .replaceFirst(" &&.*", "");
+    command = rewriter.rewriteThriftLibraryBuildCommand(command, baseModulePath, sources);
     return new ThriftLibraryTarget(command, baseModulePath, sources);
   }
 

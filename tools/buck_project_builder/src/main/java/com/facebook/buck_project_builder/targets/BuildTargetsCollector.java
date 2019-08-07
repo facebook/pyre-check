@@ -23,6 +23,8 @@ public final class BuildTargetsCollector {
 
   private final String buckRoot;
   private final String outputDirectory;
+  private final PlatformSelector selector;
+  private final CommandRewriter rewriter;
   private final Set<String> requiredRemoteFiles;
 
   /** key: output path, value: source path */
@@ -36,13 +38,24 @@ public final class BuildTargetsCollector {
 
   private final Set<String> conflictingFiles = new HashSet<>();
 
-  public BuildTargetsCollector(String buckRoot, String outputDirectory) {
-    this(buckRoot, outputDirectory, new HashSet<>());
+  public BuildTargetsCollector(
+      String buckRoot,
+      String outputDirectory,
+      PlatformSelector selector,
+      CommandRewriter rewriter) {
+    this(buckRoot, outputDirectory, selector, rewriter, new HashSet<>());
   }
 
-  BuildTargetsCollector(String buckRoot, String outputDirectory, Set<String> requiredRemoteFiles) {
+  BuildTargetsCollector(
+      String buckRoot,
+      String outputDirectory,
+      PlatformSelector selector,
+      CommandRewriter rewriter,
+      Set<String> requiredRemoteFiles) {
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
+    this.selector = selector;
+    this.rewriter = rewriter;
     this.requiredRemoteFiles = requiredRemoteFiles;
   }
 
@@ -103,8 +116,7 @@ public final class BuildTargetsCollector {
   }
 
   @VisibleForTesting
-  void collectBuildTargets(
-      ImmutableMap<String, String> cellMappings, JsonObject targetJsonMap) {
+  void collectBuildTargets(ImmutableMap<String, String> cellMappings, JsonObject targetJsonMap) {
     // The first pass collects python_library that refers to a remote python_file
     for (Map.Entry<String, JsonElement> entry : targetJsonMap.entrySet()) {
       JsonObject targetJsonObject = entry.getValue().getAsJsonObject();
@@ -135,14 +147,14 @@ public final class BuildTargetsCollector {
       case "genrule":
         // Thrift library targets have genrule rule type.
         ThriftLibraryTarget thriftLibraryTarget =
-            ThriftLibraryTarget.parse(cellPath, this.buckRoot, targetJsonObject);
+            ThriftLibraryTarget.parse(cellPath, this.buckRoot, this.rewriter, targetJsonObject);
         if (thriftLibraryTarget != null) {
           this.thriftLibraryTargets.add(thriftLibraryTarget);
           return;
         }
         String antlr4LibraryCommand =
             Antlr4LibraryTarget.parseCommand(
-                cellPath, this.buckRoot, this.outputDirectory, targetJsonObject);
+                cellPath, this.buckRoot, this.outputDirectory, this.rewriter, targetJsonObject);
         if (antlr4LibraryCommand != null) {
           this.antlr4LibraryBuildCommands.add(antlr4LibraryCommand);
         }
@@ -151,7 +163,7 @@ public final class BuildTargetsCollector {
         // Swig library targets have cxx_genrule rule type.
         String swigLibraryCommand =
             SwigLibraryTarget.parseCommand(
-                cellPath, this.buckRoot, this.outputDirectory, targetJsonObject);
+                cellPath, this.buckRoot, this.outputDirectory, this.rewriter, targetJsonObject);
         if (swigLibraryCommand != null) {
           this.swigLibraryBuildCommands.add(swigLibraryCommand);
         }
@@ -193,17 +205,6 @@ public final class BuildTargetsCollector {
         ImmutableSet.copyOf(this.antlr4LibraryBuildCommands));
   }
 
-  private @Nullable String getSupportedPlatformDependency(JsonElement platformDependenciesField) {
-    for (JsonElement platformDependencyTuple : platformDependenciesField.getAsJsonArray()) {
-      JsonArray pair = platformDependencyTuple.getAsJsonArray();
-      if (!pair.get(0).getAsString().equals("py3-platform007$")) {
-        continue;
-      }
-      return pair.get(1).getAsJsonArray().get(0).getAsString();
-    }
-    return null;
-  }
-
   private void addRemotePythonFiles(JsonObject targetJsonObject, JsonObject targetJsonMap) {
     if (!targetJsonObject.get("buck.type").getAsString().equals("python_library")
         || targetJsonObject.get("deps") != null) {
@@ -214,7 +215,8 @@ public final class BuildTargetsCollector {
     if (platformDependenciesField == null) {
       return;
     }
-    String versionedSuffix = getSupportedPlatformDependency(platformDependenciesField);
+    String versionedSuffix =
+        this.selector.getSupportedPlatformDependency(platformDependenciesField);
     if (versionedSuffix == null) {
       return;
     }
@@ -223,7 +225,8 @@ public final class BuildTargetsCollector {
     if (versionedTarget == null) {
       return;
     }
-    String wheelSuffix = getSupportedPlatformDependency(versionedTarget.get("platform_deps"));
+    String wheelSuffix =
+        this.selector.getSupportedPlatformDependency(versionedTarget.get("platform_deps"));
     if (wheelSuffix == null) {
       return;
     }

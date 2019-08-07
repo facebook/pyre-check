@@ -5,7 +5,6 @@ import com.facebook.buck_project_builder.DebugOutput;
 import com.facebook.buck_project_builder.FileSystem;
 import com.facebook.buck_project_builder.SimpleLogger;
 import com.facebook.buck_project_builder.cache.BuilderCache;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -20,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -207,8 +205,6 @@ public final class BuildTargetsBuilder {
       return;
     }
     SimpleLogger.info("Building " + this.swigLibraryBuildCommands.size() + " swig libraries...");
-    // Avoid `buck build` to build the compiler for performance.
-    String builderExecutable = "./third-party-buck/platform007/tools/swig/bin/swig";
     long start = System.currentTimeMillis();
     // Swig command contains buck run, so it's better not to make it run in parallel.
     this.swigLibraryBuildCommands
@@ -216,8 +212,7 @@ public final class BuildTargetsBuilder {
         .forEach(
             command -> {
               try {
-                GeneratedBuildRuleRunner.runBuilderCommand(
-                    builderExecutable + command, this.buckRoot);
+                GeneratedBuildRuleRunner.runBuilderCommand(command, this.buckRoot);
               } catch (IOException exception) {
                 logCodeGenerationIOException(exception);
               }

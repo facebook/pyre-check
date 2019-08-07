@@ -6,7 +6,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
-import java.nio.file.Paths;
 
 public final class Antlr4LibraryTarget {
 
@@ -14,6 +13,7 @@ public final class Antlr4LibraryTarget {
       @Nullable String cellPath,
       String buckRoot,
       String outputDirectory,
+      CommandRewriter rewriter,
       JsonObject targetJsonObject) {
     JsonElement commandField = targetJsonObject.get("cmd");
     if (commandField == null) {
@@ -31,12 +31,6 @@ public final class Antlr4LibraryTarget {
     if (sources == null) {
       return null;
     }
-    return command
-        .replaceFirst("mkdir .+\\$\\(exe //tools/antlr4:antlr4_wrapper\\)", "")
-        .replace(
-            "--install_dir=\"$OUT\"",
-            String.format("--install_dir=\"%s\"", Paths.get(outputDirectory, basePath)))
-        .replace("--antlr4_command=$(location //tools/antlr4:antlr4)", "")
-        .replaceFirst("--grammars .+$", "--grammars " + String.join(" ", sources));
+    return rewriter.rewriteAntlr4LibraryBuildCommand(command, basePath, outputDirectory, sources);
   }
 }

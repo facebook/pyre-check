@@ -17,7 +17,10 @@ public class ThriftLibraryTargetTest {
     assertEquals(
         expectedTarget,
         ThriftLibraryTarget.parse(
-            null, BUCK_ROOT, JSON_PARSER.parse(targetJsonString).getAsJsonObject()));
+            null,
+            BUCK_ROOT,
+            new CommandRewriter(),
+            JSON_PARSER.parse(targetJsonString).getAsJsonObject()));
   }
 
   @Test

@@ -9,7 +9,11 @@ import javax.annotation.Nullable;
 public final class SwigLibraryTarget {
 
   static @Nullable String parseCommand(
-      String cellPath, String buckRoot, String outputDirectory, JsonObject targetJsonObject) {
+      String cellPath,
+      String buckRoot,
+      String outputDirectory,
+      CommandRewriter rewriter,
+      JsonObject targetJsonObject) {
     if (!targetJsonObject.get("name").getAsString().endsWith("-py-gen")) {
       // Generated swig library rule names always end with -py-gen. We use this to identify swig
       // library rules.
@@ -23,16 +27,6 @@ public final class SwigLibraryTarget {
     if (sources == null) {
       return null;
     }
-    return command
-        .replaceFirst("mkdir .+\\$\\(exe //third-party-buck/platform007/tools/swig:bin/swig\\)", "")
-        .replaceFirst(
-            " -I- -I.+$",
-            String.format(
-                " -I- -I. -outdir %s -o %s -oh %s %s",
-                outputDirectory,
-                outputDirectory + "/temp.cc",
-                outputDirectory + "/temp.h",
-                String.join(" ", sources)))
-        .replaceAll("'", "");
+    return rewriter.rewriteSwigLibraryBuildCommand(command, outputDirectory, sources);
   }
 }
