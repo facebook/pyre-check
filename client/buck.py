@@ -42,41 +42,38 @@ class FastBuckBuilder(BuckBuilder):
         self.conflicting_files = []
         self.unsupported_files = []
 
-    def build(self, targets: Iterable[str]) -> List[str]:
-        if self._debug_mode:
-            executable_parts = [
-                "buck",
-                "run",
-                "//tools/pyre/facebook/fb_buck_project_builder",
-                "--",
-                "--debug",
-            ]
-        else:
-            builder_binary = self._buck_builder_binary
-            executable_parts = (
+    def _get_builder_executable(self) -> str:
+        builder_binary = self._buck_builder_binary
+        if not self._debug_mode and builder_binary is not None:
+            return builder_binary
+        binary_relative_path = (
+            subprocess.check_output(
                 [
-                    builder_binary,
-                    "-J-Djava.net.preferIPv6Addresses=true",
-                    "-J-Djava.net.preferIPv6Stack=true",
-                ]
-                if builder_binary
-                else [
                     "buck",
-                    "run",
+                    "build",
+                    "--show-output",
                     "//tools/pyre/facebook/fb_buck_project_builder",
-                    "--",
-                ]
+                ],
+                stderr=subprocess.DEVNULL,
             )
-        command = (
-            executable_parts
-            + [
-                "--buck_root",
-                self._buck_root,
-                "--output_directory",
-                self._output_directory,
-            ]
-            + list(targets)
+            .decode()
+            .strip()
+            .split(" ")[1]
         )
+        return os.path.join(self._buck_root, binary_relative_path)
+
+    def build(self, targets: Iterable[str]) -> List[str]:
+        command = [
+            self._get_builder_executable(),
+            "-J-Djava.net.preferIPv6Addresses=true",
+            "-J-Djava.net.preferIPv6Stack=true",
+            "--buck_root",
+            self._buck_root,
+            "--output_directory",
+            self._output_directory,
+        ] + list(targets)
+        if self._debug_mode:
+            command.append("--debug")
         with subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         ) as buck_builder_process:
