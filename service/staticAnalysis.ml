@@ -160,10 +160,6 @@ let analyze
     in
     List.fold qualifiers ~f:make_callables ~init:([], [])
   in
-  (* TODO(T41380664): generalize this to handle more than taint analysis. The
-     analysis_configuration here should be picked from the command line somehow and it would
-     indicate which analysis to run (taint vs others), and also contain particular analysis options
-     passed the the analysis initialization code. *)
   let configuration_json =
     let taint_models_directories =
       configuration.Configuration.Analysis.taint_models_directories
