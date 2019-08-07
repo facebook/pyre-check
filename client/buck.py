@@ -47,7 +47,7 @@ class FastBuckBuilder(BuckBuilder):
             executable_parts = [
                 "buck",
                 "run",
-                "//tools/pyre/tools/buck_project_builder",
+                "//tools/pyre/facebook/fb_buck_project_builder",
                 "--",
                 "--debug",
             ]
@@ -60,7 +60,12 @@ class FastBuckBuilder(BuckBuilder):
                     "-J-Djava.net.preferIPv6Stack=true",
                 ]
                 if builder_binary
-                else ["buck", "run", "//tools/pyre/tools/buck_project_builder", "--"]
+                else [
+                    "buck",
+                    "run",
+                    "//tools/pyre/facebook/fb_buck_project_builder",
+                    "--",
+                ]
             )
         command = (
             executable_parts

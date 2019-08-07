@@ -56,6 +56,6 @@ public final class BuckProjectBuilder {
   }
 
   public static void main(String[] arguments) {
-    new BuckProjectBuilder(arguments, new PlatformSelector(), new CommandRewriter());
+    new BuckProjectBuilder(arguments, new PlatformSelector() {}, new CommandRewriter() {});
   }
 }
