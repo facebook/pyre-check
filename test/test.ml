@@ -1206,7 +1206,7 @@ module ScratchProject = struct
     |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
-  let parse_sources ({ context; configuration; module_tracker } as project) =
+  let parse_sources { context; configuration; module_tracker } =
     let ast_environment = AstEnvironment.create module_tracker in
     let () =
       (* Clean shared memory up before the test *)
@@ -1216,7 +1216,7 @@ module ScratchProject = struct
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
-    let { Service.Parser.syntax_error; system_error; _ } =
+    let { Service.Parser.parsed; syntax_error; system_error } =
       Analysis.ModuleTracker.source_paths module_tracker
       |> Service.Parser.parse_sources
            ~configuration
@@ -1232,12 +1232,7 @@ module ScratchProject = struct
           |> String.concat ~sep:", "
         in
         raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
-    let sources =
-      qualifiers_of project
-      |> List.map ~f:(fun qualifier ->
-             Option.value_exn (AstEnvironment.get_source ast_environment qualifier))
-    in
-    sources, ast_environment
+    parsed, ast_environment
 
 
   let build_environment

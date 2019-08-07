@@ -71,16 +71,12 @@ let populate
   Annotated.Class.AttributeCache.clear ()
 
 
-let build environment ~configuration ~scheduler qualifiers =
+let build environment ~configuration ~scheduler sources =
   Log.info "Building type environment...";
 
   (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
      sequentially until we find a way to build the environment in parallel. *)
   let timer = Timer.start () in
-  let sources =
-    let ast_environment = Environment.ast_environment environment in
-    List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-  in
   populate ~configuration ~scheduler environment sources;
   Statistics.performance ~name:"full environment built" ~timer ();
   if Log.is_enabled `Dotty then (
@@ -99,7 +95,7 @@ let populate_shared_memory
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
     ~ast_environment
-    qualifiers
+    sources
   =
   Log.info "Adding built-in environment information to shared memory...";
   let timer = Timer.start () in
@@ -109,7 +105,7 @@ let populate_shared_memory
   Environment.add_dummy_modules shared_handler;
   Environment.add_special_globals shared_handler;
   Statistics.performance ~name:"added environment to shared memory" ~timer ();
-  build shared_handler ~configuration ~scheduler qualifiers;
+  build shared_handler ~configuration ~scheduler sources;
   if debug then (
     let order = Environment.class_hierarchy shared_handler in
     ClassHierarchy.check_integrity order;

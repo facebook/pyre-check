@@ -78,7 +78,7 @@ let test_normalize _ =
 
 
 let test_populate context =
-  let configuration, ast_environment =
+  let configuration, sources, ast_environment =
     let project =
       ScratchProject.setup
         ~context
@@ -92,15 +92,15 @@ let test_populate context =
           |}
           ) ]
     in
-    let _, ast_environment = ScratchProject.parse_sources project in
-    ScratchProject.configuration_of project, AstEnvironment.read_only ast_environment
+    let sources, ast_environment = ScratchProject.parse_sources project in
+    ScratchProject.configuration_of project, sources, AstEnvironment.read_only ast_environment
   in
   let environment =
     Service.Environment.populate_shared_memory
       ~configuration
       ~scheduler:(Scheduler.mock ())
       ~ast_environment
-      [!&"a"]
+      sources
   in
   let global_resolution = Analysis.Environment.resolution environment () in
   let (module DependenciesHandler) = Environment.dependency_handler environment in

@@ -39,7 +39,7 @@ let register_ignores ~configuration scheduler sources =
   Statistics.performance ~name:"registered ignores" ~timer ()
 
 
-let ignore ~configuration scheduler source_paths errors =
+let ignore ~configuration scheduler sources errors =
   let error_lookup =
     let add_to_lookup lookup error =
       Map.add_multi ~key:(Error.key error) ~data:(Error.code error) lookup
@@ -59,7 +59,7 @@ let ignore ~configuration scheduler source_paths errors =
     List.filter ~f:not_ignored errors
   in
   let unused_ignores =
-    let get_unused_ignores { SourcePath.relative; _ } =
+    let get_unused_ignores { Source.relative; _ } =
       let ignores =
         let key_to_ignores sofar key =
           IgnoreLines.get key >>| (fun ignores -> ignores @ sofar) |> Option.value ~default:sofar
@@ -94,7 +94,7 @@ let ignore ~configuration scheduler source_paths errors =
       ~map
       ~reduce:List.append
       ~initial:[]
-      ~inputs:source_paths
+      ~inputs:sources
       ()
   in
   let create_unused_ignore_error errors unused_ignore =

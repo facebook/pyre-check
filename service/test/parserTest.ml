@@ -110,11 +110,11 @@ let test_parse_sources context =
         ()
     in
     let module_tracker = Analysis.ModuleTracker.create configuration in
-    let source_paths, ast_environment =
+    let sources, ast_environment =
       Service.Parser.parse_all ~scheduler ~configuration module_tracker
     in
     let sorted_handles =
-      List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative)
+      List.map sources ~f:(fun { Source.relative; _ } -> relative)
       |> List.sort ~compare:String.compare
     in
     sorted_handles, ast_environment
@@ -144,8 +144,8 @@ let test_parse_sources context =
       ast_environment
       [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Analysis.ModuleTracker.create configuration in
-    let source_paths, _ = Service.Parser.parse_all ~scheduler ~configuration module_tracker in
-    List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative)
+    let sources, _ = Service.Parser.parse_all ~scheduler ~configuration module_tracker in
+    List.map sources ~f:(fun { Source.relative; _ } -> relative)
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)

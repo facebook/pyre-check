@@ -17,5 +17,5 @@ val populate_shared_memory
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
   ast_environment:AstEnvironment.ReadOnly.t ->
-  Reference.t list ->
+  Source.t list ->
   Environment.t

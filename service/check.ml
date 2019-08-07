@@ -20,42 +20,35 @@ type analyze_source_results = {
 }
 (** Internal result type; not exposed. *)
 
-let analyze_sources ?open_documents ~scheduler ~configuration ~environment source_paths =
+let analyze_sources ?open_documents ~scheduler ~configuration ~environment sources =
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
-  let checked_source_paths =
-    List.filter source_paths ~f:(fun { SourcePath.is_external; _ } -> not is_external)
+  let checked_sources =
+    List.filter sources ~f:(fun { Source.is_external; _ } -> not is_external)
   in
   let errors =
     let timer = Timer.start () in
     let empty_result = { errors = []; number_files = 0 } in
-    let number_of_sources = List.length checked_source_paths in
-    let ast_environment = Environment.ast_environment environment in
+    let number_of_sources = List.length checked_sources in
     Log.info "Checking %d sources..." number_of_sources;
     let run (module Check : Analysis.Check.Signature) =
       Log.info "Running check `%s`..." Check.name;
       let timer = Timer.start () in
-      let map _ source_paths =
+      let map _ sources =
         Annotated.Class.AttributeCache.clear ();
         Module.Cache.clear ();
-        let analyze_source { errors; number_files } { SourcePath.qualifier; _ } =
-          match AstEnvironment.ReadOnly.get_source ast_environment qualifier with
-          | Some source ->
-              let configuration =
-                match open_documents with
-                | Some predicate when predicate qualifier ->
-                    {
-                      configuration with
-                      Configuration.Analysis.store_type_check_resolution = true;
-                    }
-                | _ -> configuration
-              in
-              let global_resolution = Environment.resolution environment () in
-              let new_errors = Check.run ~configuration ~global_resolution ~source in
-              { errors = List.append new_errors errors; number_files = number_files + 1 }
-          | _ -> { errors; number_files = number_files + 1 }
+        let analyze_source { errors; number_files } ({ Source.qualifier; _ } as source) =
+          let configuration =
+            match open_documents with
+            | Some predicate when predicate qualifier ->
+                { configuration with Configuration.Analysis.store_type_check_resolution = true }
+            | _ -> configuration
+          in
+          let global_resolution = Environment.resolution environment () in
+          let new_errors = Check.run ~configuration ~global_resolution ~source in
+          { errors = List.append new_errors errors; number_files = number_files + 1 }
         in
-        List.fold source_paths ~init:empty_result ~f:analyze_source
+        List.fold sources ~init:empty_result ~f:analyze_source
       in
       let reduce left right =
         let number_files = left.number_files + right.number_files in
@@ -70,7 +63,7 @@ let analyze_sources ?open_documents ~scheduler ~configuration ~environment sourc
           ~initial:empty_result
           ~map
           ~reduce
-          ~inputs:checked_source_paths
+          ~inputs:checked_sources
           ()
       in
       Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
@@ -86,7 +79,7 @@ let analyze_sources ?open_documents ~scheduler ~configuration ~environment sourc
     errors
   in
   let timer = Timer.start () in
-  let errors = Postprocess.ignore ~configuration scheduler source_paths errors in
+  let errors = Postprocess.ignore ~configuration scheduler sources errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
   errors
 
@@ -118,22 +111,17 @@ let check
   (* Find sources to parse *)
   let module_tracker = Analysis.ModuleTracker.create configuration in
   (* Parse sources. *)
-  let source_paths, ast_environment = Parser.parse_all ~scheduler ~configuration module_tracker in
+  let sources, ast_environment = Parser.parse_all ~scheduler ~configuration module_tracker in
   let environment =
     let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-    let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
-    Environment.populate_shared_memory ~configuration ~scheduler ~ast_environment qualifiers
+    Environment.populate_shared_memory ~configuration ~scheduler ~ast_environment sources
   in
   (* Do not count external files when computing ignores / checking types / computing coverages *)
-  let source_paths =
-    List.filter source_paths ~f:(fun { SourcePath.is_external; _ } -> not is_external)
-  in
   let checked_sources =
-    List.filter_map source_paths ~f:(fun { SourcePath.qualifier; _ } ->
-        Analysis.AstEnvironment.get_source ast_environment qualifier)
+    List.filter sources ~f:(fun { Source.is_external; _ } -> not is_external)
   in
   Postprocess.register_ignores ~configuration scheduler checked_sources;
-  let errors = analyze_sources ~scheduler ~configuration ~environment source_paths in
+  let errors = analyze_sources ~scheduler ~configuration ~environment checked_sources in
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
@@ -141,16 +129,16 @@ let check
   in
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
-    let number_of_files = List.length source_paths in
+    let number_of_files = List.length sources in
     Coverage.coverage ~sources:checked_sources ~number_of_files
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
-    let aggregate sofar { SourcePath.qualifier; _ } =
+    let aggregate sofar { Source.qualifier; _ } =
       match Coverage.get ~qualifier with
       | Some coverage -> Coverage.sum sofar coverage
       | _ -> sofar
     in
-    List.fold source_paths ~init:(Coverage.create ()) ~f:aggregate
+    List.fold sources ~init:(Coverage.create ()) ~f:aggregate
   in
   Statistics.coverage
     ~randomly_log_every:20

@@ -79,16 +79,19 @@ let parse_sources_job ~configuration ~preprocessing_state ~ast_environment ~forc
 
         (* TODO (T47860888): Deprecate Ast.SharedMemory.Handles *)
         Ast.SharedMemory.Handles.add qualifier ~handle:relative;
-        AstEnvironment.add_source ast_environment (Plugin.apply_to_ast preprocessed)
+
+        let stored = Plugin.apply_to_ast preprocessed in
+        AstEnvironment.add_source ast_environment stored;
+        stored
       in
       match force with
       | true ->
-          store_result (Preprocessing.preprocess source);
+          let source = store_result (Preprocessing.preprocess source) in
           { result with parsed = { source_path; parse_result = Success source } :: parsed }
       | false -> (
         match Preprocessing.try_preprocess source with
         | Some preprocessed ->
-            store_result preprocessed;
+            let source = store_result preprocessed in
             { result with parsed = { source_path; parse_result = Success source } :: parsed }
         | None -> { result with not_parsed = source_path :: not_parsed } )
     in
@@ -102,7 +105,7 @@ let parse_sources_job ~configuration ~preprocessing_state ~ast_environment ~forc
 
 
 type parse_sources_result = {
-  parsed: SourcePath.t list;
+  parsed: Source.t list;
   syntax_error: SourcePath.t list;
   system_error: SourcePath.t list;
 }
@@ -143,7 +146,7 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environmen
       { FixpointResult.source_path; parse_result }
     =
     match parse_result with
-    | Success _ -> { result with parsed = source_path :: parsed }
+    | Success source -> { result with parsed = source :: parsed }
     | SyntaxError message ->
         Log.log ~section:`Parser "%s" message;
         { result with syntax_error = source_path :: syntax_error }

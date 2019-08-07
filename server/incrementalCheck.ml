@@ -64,7 +64,7 @@ let recheck
     ~message:"Repopulating the environment"
     ~short_message:(Some "[Repopulating]")
     ~state;
-  let () =
+  let recheck_sources =
     let timer = Timer.start () in
     (* Clean up all data related to updated files. *)
     let qualifiers = List.append removed recheck_modules in
@@ -95,16 +95,14 @@ let recheck
         "Unable to parse `%s`."
         ( List.map unparsed ~f:(fun { SourcePath.relative; _ } -> relative)
         |> String.concat ~sep:", " );
-    let parsed_paths = List.map parsed ~f:(fun { SourcePath.relative; _ } -> relative) in
+    let parsed_paths = List.map parsed ~f:(fun { Source.relative; _ } -> relative) in
     Log.log
       ~section:`Debug
       "Repopulating the environment with %a"
       Sexp.pp
       [%message (parsed_paths : string list)];
-    Log.info "Updating the type environment for %d files." (List.length parsed)
-  in
-  let recheck_sources =
-    List.filter_map ~f:(AstEnvironment.get_source ast_environment) recheck_modules
+    Log.info "Updating the type environment for %d files." (List.length parsed);
+    parsed
   in
   Service.Environment.populate ~configuration ~scheduler environment recheck_sources;
   Statistics.event
@@ -124,7 +122,7 @@ let recheck
       ~scheduler
       ~configuration
       ~environment
-      recheck_source_paths
+      recheck_sources
   in
   (* Kill all previous errors for new files we just checked *)
   List.iter ~f:(Hashtbl.remove errors) (removed @ recheck_modules);

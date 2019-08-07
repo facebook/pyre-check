@@ -57,11 +57,16 @@ let get_lookups
     in
     let source_paths = List.map paths ~f:(fun (_, source_path) -> source_path) in
     if not store_type_check_resolution then (
+      let ast_environment = Environment.ast_environment environment in
+      let sources =
+        List.filter_map source_paths ~f:(fun { SourcePath.qualifier; _ } ->
+            AstEnvironment.ReadOnly.get_source ast_environment qualifier)
+      in
       Service.Check.analyze_sources
         ~scheduler:(Scheduler.with_parallel scheduler ~is_parallel:(List.length paths > 5))
         ~configuration:{ configuration with store_type_check_resolution = true }
         ~environment
-        source_paths
+        sources
       |> ignore;
       let lookups = List.map ~f:generate_lookup paths in
       ResolutionSharedMemory.remove

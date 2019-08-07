@@ -17,7 +17,7 @@ val analyze_sources
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:Environment.t ->
-  Ast.SourcePath.t list ->
+  Ast.Source.t list ->
   Error.t list
 
 val check : scheduler:Scheduler.t option -> configuration:Configuration.Analysis.t -> result

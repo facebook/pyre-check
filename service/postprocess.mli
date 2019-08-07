@@ -14,6 +14,6 @@ val register_ignores
 val ignore
   :  configuration:Configuration.Analysis.t ->
   Scheduler.t ->
-  Ast.SourcePath.t list ->
+  Ast.Source.t list ->
   Error.t list ->
   Error.t list

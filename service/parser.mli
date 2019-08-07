@@ -11,7 +11,7 @@ type parse_result =
 val parse_source : configuration:Configuration.Analysis.t -> Ast.SourcePath.t -> parse_result
 
 type parse_sources_result = {
-  parsed: Ast.SourcePath.t list;
+  parsed: Ast.Source.t list;
   syntax_error: Ast.SourcePath.t list;
   system_error: Ast.SourcePath.t list;
 }
@@ -28,4 +28,4 @@ val parse_all
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   Analysis.ModuleTracker.t ->
-  Ast.SourcePath.t list * Analysis.AstEnvironment.t
+  Ast.Source.t list * Analysis.AstEnvironment.t
