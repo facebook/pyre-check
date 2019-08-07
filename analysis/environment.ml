@@ -806,21 +806,11 @@ let register_values
         List.iter ~f:visit orelse
     | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
         let explicit = Option.is_some annotation in
-        let literal_annotation =
-          try GlobalResolution.resolve_literal resolution value with
-          | _ -> Type.Top
-        in
+        let literal_annotation = GlobalResolution.resolve_literal resolution value in
         let annotation =
-          let get_annotation ({ Node.value; _ } as annotation) =
-            let annotation =
-              match value with
-              | Name name when Expression.is_simple_name name -> Expression.delocalize annotation
-              | _ -> annotation
-            in
-            Type.create ~aliases:Handler.aliases annotation
-          in
           annotation
-          >>| get_annotation
+          >>| Expression.delocalize
+          >>| Type.create ~aliases:Handler.aliases
           >>= (fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation)
           |> Option.value ~default:literal_annotation
         in
