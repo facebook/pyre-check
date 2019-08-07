@@ -129,7 +129,7 @@ public final class BuildTargetsCollector {
       case "python_binary":
       case "python_library":
       case "python_test":
-        PythonTarget pythonTarget = PythonTarget.parse(cellPath, targetJsonObject);
+        PythonTarget pythonTarget = PythonTarget.parse(cellPath, this.selector, targetJsonObject);
         if (pythonTarget != null) {
           pythonTarget.addToCollector(this);
         }

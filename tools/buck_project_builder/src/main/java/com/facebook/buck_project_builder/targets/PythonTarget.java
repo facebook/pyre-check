@@ -14,14 +14,6 @@ import java.util.Objects;
 
 public final class PythonTarget {
 
-  private static final String[] SUPPORTED_PLATFORMS = {
-    "//third-party-buck/platform007/build/python:__project__",
-    "//third-party-buck/platform007/build/python:python"
-  };
-  private static final String[] SUPPORTED_PYTHON_VERSIONS = {
-    "3.6", "3.7", "ouroboros.3.6", "cinder.3.6"
-  };
-
   private final @Nullable String cellPath;
   private final String basePath;
   private final @Nullable String baseModule;
@@ -78,33 +70,12 @@ public final class PythonTarget {
     }
   }
 
-  private static @Nullable JsonElement getSupportedVersionedSources(
-      JsonArray versionedSourcesArray) {
-    for (String supportedPlatform : SUPPORTED_PLATFORMS) {
-      for (String supportedPythonVersion : SUPPORTED_PYTHON_VERSIONS) {
-        for (JsonElement versionedSourceElement : versionedSourcesArray) {
-          JsonArray versionedSourcePair = versionedSourceElement.getAsJsonArray();
-          JsonObject versions = versionedSourcePair.get(0).getAsJsonObject();
-          JsonElement pythonVersionValue = versions.get(supportedPlatform);
-          if (pythonVersionValue == null) {
-            continue;
-          }
-          String pythonVersion = pythonVersionValue.getAsString();
-          if (!pythonVersion.equals(supportedPythonVersion)) {
-            continue;
-          }
-          return versionedSourcePair.get(1);
-        }
-      }
-    }
-    return null;
-  }
-
   private static void addVersionedSources(
       JsonArray versionedSourcesArray,
+      PlatformSelector selector,
       ImmutableMap.Builder<String, String> sourcesBuilder,
       ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder) {
-    JsonElement sourceSet = getSupportedVersionedSources(versionedSourcesArray);
+    JsonElement sourceSet = selector.getSupportedVersionedSources(versionedSourcesArray);
     if (sourceSet == null) {
       return;
     }
@@ -123,7 +94,8 @@ public final class PythonTarget {
     }
   }
 
-  static @Nullable PythonTarget parse(@Nullable String cellPath, JsonObject targetJsonObject) {
+  static @Nullable PythonTarget parse(
+      @Nullable String cellPath, PlatformSelector platformSelector, JsonObject targetJsonObject) {
     ImmutableMap.Builder<String, String> sourcesBuilder = ImmutableMap.builder();
     ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder = ImmutableSet.builder();
     // Both `srcs` and `versioned_srcs` might be present in a target.
@@ -135,6 +107,7 @@ public final class PythonTarget {
     if (versionedSourcesField != null) {
       addVersionedSources(
           versionedSourcesField.getAsJsonArray(),
+          platformSelector,
           sourcesBuilder,
           unsupportedGeneratedSourcesBuilder);
     }
