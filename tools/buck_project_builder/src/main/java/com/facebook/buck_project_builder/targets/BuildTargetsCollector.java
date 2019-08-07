@@ -25,7 +25,7 @@ public final class BuildTargetsCollector {
   private final String outputDirectory;
   private final PlatformSelector selector;
   private final CommandRewriter rewriter;
-  private final Set<String> requiredRemoteFiles;
+  private final Set<String> requiredRemoteFiles = new HashSet<>();
 
   /** key: output path, value: source path */
   private final Map<Path, Path> sources = new HashMap<>();
@@ -43,20 +43,10 @@ public final class BuildTargetsCollector {
       String outputDirectory,
       PlatformSelector selector,
       CommandRewriter rewriter) {
-    this(buckRoot, outputDirectory, selector, rewriter, new HashSet<>());
-  }
-
-  BuildTargetsCollector(
-      String buckRoot,
-      String outputDirectory,
-      PlatformSelector selector,
-      CommandRewriter rewriter,
-      Set<String> requiredRemoteFiles) {
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
     this.selector = selector;
     this.rewriter = rewriter;
-    this.requiredRemoteFiles = requiredRemoteFiles;
   }
 
   public String getBuckRoot() {
