@@ -1,6 +1,5 @@
 package com.facebook.buck_project_builder.targets;
 
-import com.facebook.buck_project_builder.FileSystem;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonArray;
@@ -8,38 +7,30 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 
 public final class PythonTarget {
 
-  private final @Nullable String cellPath;
-  private final String basePath;
-  private final @Nullable String baseModule;
-  private final ImmutableMap<String, String> sources;
+  private final ImmutableMap<Path, Path> sources;
   private final ImmutableSet<String> unsupportedGeneratedSources;
 
-  PythonTarget(
-      @Nullable String cellPath,
-      String basePath,
-      @Nullable String baseModule,
-      ImmutableMap<String, String> sources,
-      ImmutableSet<String> unsupportedGeneratedSources) {
-    this.cellPath = cellPath;
-    this.basePath = basePath;
-    this.baseModule = baseModule;
+  PythonTarget(ImmutableMap<Path, Path> sources, ImmutableSet<String> unsupportedGeneratedSources) {
     this.sources = sources;
     this.unsupportedGeneratedSources = unsupportedGeneratedSources;
   }
 
-  PythonTarget(String basePath, @Nullable String baseModule, ImmutableMap<String, String> sources) {
-    this(null, basePath, baseModule, sources, ImmutableSet.of());
+  PythonTarget(ImmutableMap<Path, Path> sources) {
+    this(sources, ImmutableSet.of());
   }
 
   private static void addSources(
       JsonElement sourcesField,
-      ImmutableMap.Builder<String, String> sourcesBuilder,
+      String sourceRoot,
+      String outputRoot,
+      ImmutableMap.Builder<Path, Path> sourcesBuilder,
       ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder) {
     if (sourcesField.isJsonObject()) {
       // Parse srcs of the form { "a": "b", "c": "d" } into Java Map.
@@ -49,17 +40,17 @@ public final class PythonTarget {
         if (source.contains("//") || source.startsWith(":")) {
           if (outputFile.endsWith(".py") || outputFile.endsWith(".pyi")) {
             // We only care about unsupported generated python code.
-            unsupportedGeneratedSourcesBuilder.add(outputFile);
+            unsupportedGeneratedSourcesBuilder.add(Paths.get(outputRoot, outputFile).toString());
           }
         } else {
-          sourcesBuilder.put(source, outputFile);
+          sourcesBuilder.put(Paths.get(outputRoot, outputFile), Paths.get(sourceRoot, source));
         }
       }
     } else if (sourcesField.isJsonArray()) {
       // Parse srcs of the form ["a", "b", "c"] into { "a": "a", "b": "b", "c": "c" }
       for (JsonElement sourceElement : sourcesField.getAsJsonArray()) {
         String source = sourceElement.getAsString();
-        sourcesBuilder.put(source, source);
+        sourcesBuilder.put(Paths.get(outputRoot, source), Paths.get(sourceRoot, source));
       }
     } else {
       throw new Error(
@@ -72,41 +63,66 @@ public final class PythonTarget {
 
   private static void addVersionedSources(
       JsonArray versionedSourcesArray,
+      String sourceRoot,
+      String outputRoot,
       PlatformSelector selector,
-      ImmutableMap.Builder<String, String> sourcesBuilder,
+      ImmutableMap.Builder<Path, Path> sourcesBuilder,
       ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder) {
     JsonElement sourceSet = selector.getSupportedVersionedSources(versionedSourcesArray);
     if (sourceSet == null) {
       return;
     }
-    addSources(sourceSet, sourcesBuilder, unsupportedGeneratedSourcesBuilder);
+    addSources(
+        sourceSet, sourceRoot, outputRoot, sourcesBuilder, unsupportedGeneratedSourcesBuilder);
   }
 
   private static void addPlatformSources(
       JsonArray platformSourcesArray,
-      ImmutableMap.Builder<String, String> sourcesBuilder,
+      String sourceRoot,
+      String outputRoot,
+      ImmutableMap.Builder<Path, Path> sourcesBuilder,
       ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder) {
     for (JsonElement platformSourceElement : platformSourcesArray) {
       JsonArray platformSourcePair = platformSourceElement.getAsJsonArray();
       if (platformSourcePair.get(0).getAsString().equals("py3")) {
-        addSources(platformSourcePair.get(1), sourcesBuilder, unsupportedGeneratedSourcesBuilder);
+        addSources(
+            platformSourcePair.get(1),
+            sourceRoot,
+            outputRoot,
+            sourcesBuilder,
+            unsupportedGeneratedSourcesBuilder);
       }
     }
   }
 
   static @Nullable PythonTarget parse(
-      @Nullable String cellPath, PlatformSelector platformSelector, JsonObject targetJsonObject) {
-    ImmutableMap.Builder<String, String> sourcesBuilder = ImmutableMap.builder();
+      @Nullable String cellPath,
+      String buckRoot,
+      String outputDirectory,
+      PlatformSelector platformSelector,
+      JsonObject targetJsonObject) {
+    String basePath = targetJsonObject.get("buck.base_path").getAsString();
+    String sourceRoot = Paths.get(cellPath != null ? cellPath : buckRoot, basePath).toString();
+    JsonElement baseModuleField = targetJsonObject.get("base_module");
+    String outputBasePath =
+        baseModuleField == null
+            ? basePath
+            : Paths.get(".", baseModuleField.getAsString().split("\\.")).toString();
+    String outputRoot = Paths.get(outputDirectory, outputBasePath).toString();
+    ImmutableMap.Builder<Path, Path> sourcesBuilder = ImmutableMap.builder();
     ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder = ImmutableSet.builder();
     // Both `srcs` and `versioned_srcs` might be present in a target.
     JsonElement sourcesField = targetJsonObject.get("srcs");
     if (sourcesField != null) {
-      addSources(sourcesField, sourcesBuilder, unsupportedGeneratedSourcesBuilder);
+      addSources(
+          sourcesField, sourceRoot, outputRoot, sourcesBuilder, unsupportedGeneratedSourcesBuilder);
     }
     JsonElement versionedSourcesField = targetJsonObject.get("versioned_srcs");
     if (versionedSourcesField != null) {
       addVersionedSources(
           versionedSourcesField.getAsJsonArray(),
+          sourceRoot,
+          outputRoot,
           platformSelector,
           sourcesBuilder,
           unsupportedGeneratedSourcesBuilder);
@@ -115,44 +131,32 @@ public final class PythonTarget {
     if (platformSourcesField != null) {
       addPlatformSources(
           platformSourcesField.getAsJsonArray(),
+          sourceRoot,
+          outputRoot,
           sourcesBuilder,
           unsupportedGeneratedSourcesBuilder);
     }
-    ImmutableMap<String, String> sources = sourcesBuilder.build();
+    ImmutableMap<Path, Path> sources = sourcesBuilder.build();
     ImmutableSet<String> unsupportedGeneratedSources = unsupportedGeneratedSourcesBuilder.build();
     // Ignore any target that contains no sources.
     if (sources.isEmpty() && unsupportedGeneratedSources.isEmpty()) {
       return null;
     }
-    String basePath = targetJsonObject.get("buck.base_path").getAsString();
-    JsonElement baseModuleField = targetJsonObject.get("base_module");
-    String baseModule = baseModuleField == null ? null : baseModuleField.getAsString();
-    return new PythonTarget(cellPath, basePath, baseModule, sources, unsupportedGeneratedSources);
+    return new PythonTarget(sources, unsupportedGeneratedSources);
   }
 
-  public void addToCollector(BuildTargetsCollector collector) {
-    String sourceDirectory =
-        Paths.get(this.cellPath != null ? this.cellPath : collector.getBuckRoot(), basePath)
-            .toString();
-    String outputBasePath =
-        baseModule == null ? basePath : Paths.get(".", baseModule.split("\\.")).toString();
-    String outputDirectory = Paths.get(collector.getOutputDirectory(), outputBasePath).toString();
-    Map<String, String> sourceMapping =
-        FileSystem.resolveSourceMapping(sourceDirectory, outputDirectory, sources);
-    for (Map.Entry<String, String> entry : sourceMapping.entrySet()) {
-      collector.addSourceMapping(Paths.get(entry.getKey()), Paths.get(entry.getValue()));
-    }
-    for (String unsupportedGeneratedSource : unsupportedGeneratedSources) {
-      collector.addUnsupportedGeneratedSource(
-          Paths.get(outputDirectory, unsupportedGeneratedSource).toString());
-    }
+  public ImmutableMap<Path, Path> getSources() {
+    return sources;
+  }
+
+  public ImmutableSet<String> getUnsupportedGeneratedSources() {
+    return unsupportedGeneratedSources;
   }
 
   @Override
   public String toString() {
     return String.format(
-        "{cellPath=%s, basePath=%s, baseModule=%s, sources=%s, unsupportedGeneratedSources=%s}",
-        cellPath, basePath, baseModule, sources, unsupportedGeneratedSources);
+        "{sources=%s, unsupportedGeneratedSources=%s}", sources, unsupportedGeneratedSources);
   }
 
   @Override
@@ -164,15 +168,12 @@ public final class PythonTarget {
       return false;
     }
     PythonTarget pythonTarget = (PythonTarget) other;
-    return Objects.equals(cellPath, pythonTarget.cellPath)
-        && basePath.equals(pythonTarget.basePath)
-        && Objects.equals(baseModule, pythonTarget.baseModule)
-        && sources.equals(pythonTarget.sources)
+    return sources.equals(pythonTarget.sources)
         && unsupportedGeneratedSources.equals(pythonTarget.unsupportedGeneratedSources);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(cellPath, basePath, baseModule, sources, unsupportedGeneratedSources);
+    return Objects.hash(sources, unsupportedGeneratedSources);
   }
 }

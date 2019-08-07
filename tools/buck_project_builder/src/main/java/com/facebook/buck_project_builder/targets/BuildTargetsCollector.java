@@ -91,7 +91,7 @@ public final class BuildTargetsCollector {
     return conflictingFiles;
   }
 
-  void addSourceMapping(Path sourcePath, Path outputPath) {
+  void addSourceMapping(Path outputPath, Path sourcePath) {
     Path existingSourcePath = this.sources.get(outputPath);
     if (existingSourcePath != null && !existingSourcePath.equals(sourcePath)) {
       this.conflictingFiles.add(
@@ -129,9 +129,14 @@ public final class BuildTargetsCollector {
       case "python_binary":
       case "python_library":
       case "python_test":
-        PythonTarget pythonTarget = PythonTarget.parse(cellPath, this.selector, targetJsonObject);
+        PythonTarget pythonTarget =
+            PythonTarget.parse(
+                cellPath, this.buckRoot, this.outputDirectory, this.selector, targetJsonObject);
         if (pythonTarget != null) {
-          pythonTarget.addToCollector(this);
+          pythonTarget.getSources().forEach(this::addSourceMapping);
+          pythonTarget
+              .getUnsupportedGeneratedSources()
+              .forEach(this::addUnsupportedGeneratedSource);
         }
         return;
       case "genrule":
