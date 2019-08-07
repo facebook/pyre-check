@@ -2,10 +2,162 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "class_flows.tainted_attribute_flow",
-    "callable_line": 15,
+    "callable":
+      "class_flows.tainted_class_attribute_through_double_underscore_class_issue",
+    "callable_line": 41,
     "code": 5002,
-    "line": 16,
+    "line": 42,
+    "start": 4,
+    "end": 39,
+    "filename": "class_flows.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 42,
+              "start": 55,
+              "end": 57
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 42,
+              "start": 4,
+              "end": 39
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "class_flows.C.__class__.tainted_class_attribute"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable":
+      "class_flows.tainted_class_attribute_through_optional_class_issue",
+    "callable_line": 45,
+    "code": 5002,
+    "line": 47,
+    "start": 8,
+    "end": 44,
+    "filename": "class_flows.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 47,
+              "start": 60,
+              "end": 62
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 47,
+              "start": 8,
+              "end": 44
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "class_flows.C.__class__.tainted_class_attribute"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.global_class_attribute_issue",
+    "callable_line": 50,
+    "code": 5002,
+    "line": 51,
+    "start": 4,
+    "end": 29,
+    "filename": "class_flows.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 51,
+              "start": 45,
+              "end": 47
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 51,
+              "start": 4,
+              "end": 29
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "class_flows.C.__class__.tainted_class_attribute"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_attribute_flow_issue",
+    "callable_line": 16,
+    "code": 5002,
+    "line": 17,
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
@@ -18,7 +170,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 16,
+              "line": 17,
               "start": 39,
               "end": 41
             },
@@ -33,7 +185,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 16,
+              "line": 17,
               "start": 4,
               "end": 23
             },
@@ -49,12 +201,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "class_flows.tainted_attribute_for_class",
-    "callable_line": 23,
+    "callable": "class_flows.tainted_class_attribute_through_class_issue",
+    "callable_line": 37,
     "code": 5002,
-    "line": 24,
+    "line": 38,
     "start": 4,
-    "end": 23,
+    "end": 40,
     "filename": "class_flows.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
@@ -65,9 +217,9 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 24,
-              "start": 39,
-              "end": 41
+              "line": 38,
+              "start": 56,
+              "end": 58
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
@@ -80,12 +232,15 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 24,
+              "line": 38,
               "start": 4,
-              "end": 23
+              "end": 40
             },
             "leaves": [
-              { "kind": "Test", "name": "class_flows.C.tainted_attribute" }
+              {
+                "kind": "Test",
+                "name": "class_flows.C.__class__.tainted_class_attribute"
+              }
             ]
           }
         ]

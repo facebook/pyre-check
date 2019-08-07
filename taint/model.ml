@@ -560,6 +560,17 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
   errors
 
 
+let demangle_class_attribute name =
+  if String.is_substring ~substring:"__class__" name then
+    String.split name ~on:'.'
+    |> List.rev
+    |> function
+    | attribute :: "__class__" :: rest -> List.rev (attribute :: rest) |> String.concat ~sep:"."
+    | _ -> name
+  else
+    name
+
+
 let create ~resolution ?path ~configuration source =
   let global_resolution = Resolution.global_resolution resolution in
   let signatures =
@@ -697,6 +708,7 @@ let create ~resolution ?path ~configuration source =
         let model_compatibility_errors =
           (* Make self as an explicit parameter in type's parameter list *)
           let implicit_to_explicit_self { Type.Callable.name; implicit_annotation } =
+            let name = demangle_class_attribute name in
             let open Type.Callable.RecordParameter in
             Named { name; annotation = implicit_annotation; default = false }
           in
@@ -823,14 +835,22 @@ let get_global_model ~resolution ~expression =
     match Node.value expression, AccessPath.get_global ~resolution expression with
     | _, Some global -> Some global
     | Name (Name.Attribute { base; attribute; _ }), _ ->
-        let annotation =
-          match Resolution.resolve resolution base with
-          | Type.Optional annotation -> annotation
-          | annotation ->
-              if Type.is_meta annotation then
-                Type.single_parameter annotation
-              else
-                annotation
+        let is_meta, annotation =
+          let rec is_meta = function
+            | Type.Optional annotation -> is_meta annotation
+            | annotation ->
+                if Type.is_meta annotation then
+                  true, Type.single_parameter annotation
+                else
+                  false, annotation
+          in
+          is_meta (Resolution.resolve resolution base)
+        in
+        let attribute =
+          if is_meta then
+            Format.sprintf "__class__.%s" attribute
+          else
+            attribute
         in
         annotation
         |> Type.class_name

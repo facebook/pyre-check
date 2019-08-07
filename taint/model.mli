@@ -16,6 +16,9 @@ type t = {
 
 exception InvalidModel of string
 
+(* Exposed for testing. *)
+val demangle_class_attribute : string -> string
+
 val get_callsite_model
   :  call_target:[< Callable.t ] ->
   arguments:Expression.t Expression.Call.Argument.t list ->

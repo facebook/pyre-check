@@ -553,6 +553,18 @@ let test_invalid_models context =
     ()
 
 
+let test_demangle_class_attributes _ =
+  let assert_demangle ~expected name =
+    assert_equal expected (Model.demangle_class_attribute name)
+  in
+  assert_demangle ~expected:"a.B" "a.B";
+  assert_demangle ~expected:"a.B" "a.__class__.B";
+
+  (* We require `__class__` to directly precede the attribute of the `.`-separated names. *)
+  assert_demangle ~expected:"a.B.__class__" "a.B.__class__";
+  assert_demangle ~expected:"a.__class__.B.C" "a.__class__.B.C"
+
+
 let () =
   "taint_model"
   >::: [ "attach_features" >:: test_attach_features;
@@ -566,5 +578,6 @@ let () =
          "test_source_breadcrumbs" >:: test_source_breadcrumbs;
          "test_sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "test_tito_breadcrumbs" >:: test_tito_breadcrumbs;
-         "invalid_models" >:: test_invalid_models ]
+         "invalid_models" >:: test_invalid_models;
+         "demangle_class_attributes" >:: test_demangle_class_attributes ]
   |> Test.run
