@@ -224,7 +224,10 @@ type kind =
   | MissingReturnAnnotation of missing_annotation
   | MutuallyRecursiveTypeVariables of Reference.t option
   | NotCallable of Type.t
-  | ProhibitedAny of missing_annotation
+  | ProhibitedAny of {
+      is_type_alias: bool;
+      missing_annotation: missing_annotation;
+    }
   | RedundantCast of Type.t
   | RevealedType of {
       expression: Expression.t;
@@ -436,8 +439,9 @@ let weaken_literals kind =
       MissingParameterAnnotation (weaken_missing_annotation missing_annotation)
   | MissingReturnAnnotation missing_annotation ->
       MissingReturnAnnotation (weaken_missing_annotation missing_annotation)
-  | ProhibitedAny missing_annotation ->
-      ProhibitedAny (weaken_missing_annotation missing_annotation)
+  | ProhibitedAny { is_type_alias; missing_annotation } ->
+      ProhibitedAny
+        { is_type_alias; missing_annotation = weaken_missing_annotation missing_annotation }
   | Unpack { expected_count; unpack_problem = UnacceptableType annotation } ->
       Unpack
         { expected_count; unpack_problem = UnacceptableType (Type.weaken_literals annotation) }
@@ -1305,12 +1309,14 @@ let messages ~concise ~signature location kind =
           pp_type
           annotation ]
   | NotCallable annotation -> [Format.asprintf "`%a` is not a function." pp_type annotation]
-  | ProhibitedAny { given_annotation; _ } when concise ->
+  | ProhibitedAny { is_type_alias; missing_annotation = { given_annotation; _ } } when concise ->
+      let annotation_kind = if is_type_alias then "Aliased" else "Given" in
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
-        ["Given annotation cannot be `Any`."]
+        [Format.asprintf "%s annotation cannot be `Any`." annotation_kind]
       else
-        ["Given annotation cannot contain `Any`."]
-  | ProhibitedAny { name; annotation = Some annotation; given_annotation; _ }
+        [Format.asprintf "%s annotation cannot contain `Any`." annotation_kind]
+  | ProhibitedAny
+      { missing_annotation = { name; annotation = Some annotation; given_annotation; _ }; _ }
     when Type.is_concrete annotation -> (
     match given_annotation with
     | Some given_annotation when Type.is_any given_annotation ->
@@ -1327,12 +1333,17 @@ let messages ~concise ~signature location kind =
             name
             pp_type
             annotation ] )
-  | ProhibitedAny { name; given_annotation; _ } -> (
+  | ProhibitedAny { is_type_alias = false; missing_annotation = { name; given_annotation; _ } }
+    -> (
     match given_annotation with
     | Some given_annotation when Type.is_any given_annotation ->
         [Format.asprintf "Explicit annotation for `%a` cannot be `Any`." pp_reference name]
     | _ -> [Format.asprintf "Explicit annotation for `%a` cannot contain `Any`." pp_reference name]
     )
+  | ProhibitedAny { is_type_alias = true; missing_annotation = { name; given_annotation; _ } } -> (
+    match given_annotation with
+    | Some Type.Any -> [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
+    | _ -> [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name] )
   | RedundantCast _ when concise -> ["The cast is redundant."]
   | RedundantCast annotation ->
       [Format.asprintf "The value being cast is already of type `%a`." pp_type annotation]
@@ -1742,7 +1753,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidType (InvalidType actual)
   | InvalidType (FinalNested actual)
   | NotCallable actual
-  | ProhibitedAny { given_annotation = Some actual; _ }
+  | ProhibitedAny { missing_annotation = { given_annotation = Some actual; _ }; _ }
   | RedundantCast actual
   | UninitializedAttribute { mismatch = { actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
@@ -2012,7 +2023,7 @@ let less_or_equal ~resolution left right =
     | Abstract left_name, Protocol right_name ->
         Reference.equal left_name right_name
     | _, _ -> false )
-  | ProhibitedAny left, ProhibitedAny right
+  | ProhibitedAny { missing_annotation = left; _ }, ProhibitedAny { missing_annotation = right; _ }
   | MissingParameterAnnotation left, MissingParameterAnnotation right
   | MissingReturnAnnotation left, MissingReturnAnnotation right
   | ( MissingAttributeAnnotation { missing_annotation = left; _ },
@@ -2215,7 +2226,14 @@ let join ~resolution left right =
         MissingOverloadImplementation left
     | NotCallable left, NotCallable right ->
         NotCallable (GlobalResolution.join resolution left right)
-    | ProhibitedAny left, ProhibitedAny right -> ProhibitedAny (join_missing_annotation left right)
+    | ( ProhibitedAny { is_type_alias = is_type_alias_left; missing_annotation = left },
+        ProhibitedAny { is_type_alias = is_type_alias_right; missing_annotation = right } )
+      when is_type_alias_left = is_type_alias_right ->
+        ProhibitedAny
+          {
+            is_type_alias = is_type_alias_left;
+            missing_annotation = join_missing_annotation left right;
+          }
     | RedundantCast left, RedundantCast right ->
         RedundantCast (GlobalResolution.join resolution left right)
     | ( RevealedType
@@ -2812,8 +2830,13 @@ let dequalify
     | MissingOverloadImplementation name -> MissingOverloadImplementation name
     | MutuallyRecursiveTypeVariables callee -> MutuallyRecursiveTypeVariables callee
     | NotCallable annotation -> NotCallable (dequalify annotation)
-    | ProhibitedAny ({ annotation; _ } as missing_annotation) ->
-        ProhibitedAny { missing_annotation with annotation = annotation >>| dequalify }
+    | ProhibitedAny { is_type_alias; missing_annotation = { annotation; _ } as missing_annotation }
+      ->
+        ProhibitedAny
+          {
+            is_type_alias;
+            missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
+          }
     | RedundantCast annotation -> RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
         RevealedType { expression; annotation = dequalify_annotation annotation }

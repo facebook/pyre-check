@@ -235,8 +235,8 @@ let test_check_undefined_type context =
         typing.cast(Derp, x)
         typing.cast(Herp, x)
     |}
-    [ "Prohibited any [33]: Explicit annotation for `Derp` cannot be `Any`.";
-      "Prohibited any [33]: Explicit annotation for `Herp` cannot contain `Any`." ];
+    [ "Prohibited any [33]: `Derp` cannot alias to `Any`.";
+      "Prohibited any [33]: `Herp` cannot alias to a type containing `Any`." ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -301,13 +301,13 @@ let test_check_invalid_type context =
       MyType = typing.Any
       x: MyType = 1
     |}
-    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_type_errors
     {|
       MyType = typing.Any
       x: typing.List[MyType] = [1]
     |}
-    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
 
   (* Un-parseable expressions *)
   assert_type_errors

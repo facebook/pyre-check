@@ -215,7 +215,10 @@ type kind =
   | MissingReturnAnnotation of missing_annotation
   | MutuallyRecursiveTypeVariables of Reference.t option
   | NotCallable of Type.t
-  | ProhibitedAny of missing_annotation
+  | ProhibitedAny of {
+      is_type_alias: bool;
+      missing_annotation: missing_annotation;
+    }
   | RedundantCast of Type.t
   | RevealedType of {
       expression: Expression.t;

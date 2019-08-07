@@ -2445,11 +2445,15 @@ module State (Context : Context) = struct
               ~kind:
                 (Error.ProhibitedAny
                    {
-                     Error.name = Expression.name_to_reference_exn name;
-                     annotation = None;
-                     given_annotation = Some cast_annotation;
-                     evidence_locations = [];
-                     thrown_at_source = true;
+                     missing_annotation =
+                       {
+                         Error.name = Expression.name_to_reference_exn name;
+                         annotation = None;
+                         given_annotation = Some cast_annotation;
+                         evidence_locations = [];
+                         thrown_at_source = true;
+                       };
+                     is_type_alias = false;
                    })
           else if Type.equal cast_annotation resolved then
             emit_error ~state ~location ~kind:(Error.RedundantCast resolved)
@@ -3736,11 +3740,15 @@ module State (Context : Context) = struct
                         ~kind:
                           (Error.ProhibitedAny
                              {
-                               Error.name = reference;
-                               annotation = actual_annotation;
-                               given_annotation = Option.some_if is_immutable expected;
-                               evidence_locations;
-                               thrown_at_source = true;
+                               missing_annotation =
+                                 {
+                                   Error.name = reference;
+                                   annotation = actual_annotation;
+                                   given_annotation = Option.some_if is_immutable expected;
+                                   evidence_locations;
+                                   thrown_at_source = true;
+                                 };
+                               is_type_alias = false;
                              })
                         ~define:Context.define
                       |> Option.some_if
@@ -3757,11 +3765,15 @@ module State (Context : Context) = struct
                         ~kind:
                           (Error.ProhibitedAny
                              {
-                               Error.name = reference;
-                               annotation = None;
-                               given_annotation = Some value_annotation;
-                               evidence_locations;
-                               thrown_at_source = true;
+                               missing_annotation =
+                                 {
+                                   Error.name = reference;
+                                   annotation = None;
+                                   given_annotation = Some value_annotation;
+                                   evidence_locations;
+                                   thrown_at_source = true;
+                                 };
+                               is_type_alias;
                              })
                         ~define:Context.define
                       |> Option.some_if
@@ -3784,11 +3796,15 @@ module State (Context : Context) = struct
                         ~kind:
                           (Error.ProhibitedAny
                              {
-                               Error.name = Reference.create ~prefix:reference attribute;
-                               annotation = actual_annotation;
-                               given_annotation = Option.some_if is_immutable expected;
-                               evidence_locations;
-                               thrown_at_source = true;
+                               missing_annotation =
+                                 {
+                                   Error.name = Reference.create ~prefix:reference attribute;
+                                   annotation = actual_annotation;
+                                   given_annotation = Option.some_if is_immutable expected;
+                                   evidence_locations;
+                                   thrown_at_source = true;
+                                 };
+                               is_type_alias = false;
                              })
                         ~define:Context.define
                       |> Option.some
@@ -3842,11 +3858,15 @@ module State (Context : Context) = struct
                         ~kind:
                           (Error.ProhibitedAny
                              {
-                               Error.name = reference;
-                               annotation = actual_annotation;
-                               given_annotation = Option.some_if is_immutable expected;
-                               evidence_locations;
-                               thrown_at_source = true;
+                               missing_annotation =
+                                 {
+                                   Error.name = reference;
+                                   annotation = actual_annotation;
+                                   given_annotation = Option.some_if is_immutable expected;
+                                   evidence_locations;
+                                   thrown_at_source = true;
+                                 };
+                               is_type_alias = false;
                              })
                         ~define:Context.define
                       |> Option.some

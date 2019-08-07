@@ -330,7 +330,7 @@ let test_check_globals context =
     {|
       MyType = typing.List[typing.Any]
     |}
-    ["Prohibited any [33]: Explicit annotation for `MyType` cannot contain `Any`."]
+    ["Prohibited any [33]: `MyType` cannot alias to a type containing `Any`."]
 
 
 let () =

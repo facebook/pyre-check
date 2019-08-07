@@ -211,7 +211,7 @@ let test_check_attributes context =
           self.bar = 1
           return self.bar
     |}
-    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_type_errors
     {|
       class Foo:
@@ -803,7 +803,7 @@ let test_check_missing_attribute context =
           self.a = a
           self.b: MyType = 1
     |}
-    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_type_errors
     {|
       class Foo:

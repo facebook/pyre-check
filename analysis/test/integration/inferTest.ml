@@ -53,7 +53,7 @@ let test_check_missing_parameter context =
       def foo(x: MyType) -> int:
         return 1
     |}
-    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_strict_type_errors
     {|
       def foo(x: typing.Any = unknown) -> int:
@@ -128,7 +128,7 @@ let test_check_missing_return context =
       def foo() -> MyType:
         return 1
     |}
-    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_type_errors
     ~update_environment_with:[{ handle = "export.py"; source = "MyType = typing.List[typing.Any]" }]
     {|
@@ -139,7 +139,7 @@ let test_check_missing_return context =
       def bar() -> MyTypeLocal:
         return []
     |}
-    ["Prohibited any [33]: Explicit annotation for `MyTypeLocal` cannot contain `Any`."];
+    ["Prohibited any [33]: `MyTypeLocal` cannot alias to a type containing `Any`."];
   assert_type_errors
     {|
       def foo() -> None:
