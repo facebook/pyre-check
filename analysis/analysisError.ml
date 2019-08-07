@@ -2701,7 +2701,7 @@ let suppress ~mode ~resolution ({ location; _ } as error) =
     | MissingParameterAnnotation { annotation = Some actual; _ }
     | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
     | MissingGlobalAnnotation { annotation = Some actual; _ } ->
-        Type.is_untyped actual
+        Type.is_untyped actual || Type.contains_unknown actual || Type.is_undeclared actual
     | _ -> true
   in
   if Location.equal Location.Reference.synthetic location then

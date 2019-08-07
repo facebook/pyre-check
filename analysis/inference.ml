@@ -628,22 +628,12 @@ let run
         }
   in
   let format_errors errors =
-    let contains_unknown { Error.kind; _ } =
-      match kind with
-      | MissingReturnAnnotation { annotation = Some annotation; _ }
-      | MissingParameterAnnotation { annotation = Some annotation; _ }
-      | MissingAttributeAnnotation { missing_annotation = { annotation = Some annotation; _ }; _ }
-      | MissingGlobalAnnotation { annotation = Some annotation; _ } ->
-          Type.contains_unknown annotation || Type.is_undeclared annotation
-      | _ -> false
-    in
     errors
     |> List.map
          ~f:(Error.dequalify dequalify_map ~resolution:(Resolution.global_resolution resolution))
     |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
            { error with kind = Error.weaken_literals kind })
     |> List.sort ~compare:Error.compare
-    |> List.filter ~f:(fun error -> not (contains_unknown error))
   in
   if is_stub then
     []
