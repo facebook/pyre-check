@@ -3287,15 +3287,19 @@ module State (Context : Context) = struct
             value
         in
         let is_type_alias =
-          (* Consider anything with a RHS that is a type to be an alias. *)
-          match Node.value value with
-          | Expression.String _ -> false
-          | _ -> (
-            match parsed with
-            | Type.Top -> Option.is_some (Type.Variable.parse_declaration value)
-            | Type.Optional Type.Bottom -> false
-            | annotation -> not (GlobalResolution.contains_untracked global_resolution annotation)
-            )
+          let value_is_type =
+            (* Consider anything with a RHS that is a type to be an alias. *)
+            match Node.value value with
+            | Expression.String _ -> false
+            | _ -> (
+              match parsed with
+              | Type.Top -> Option.is_some (Type.Variable.parse_declaration value)
+              | Type.Optional Type.Bottom -> false
+              | annotation ->
+                  not (GlobalResolution.contains_untracked global_resolution annotation) )
+          in
+          value_is_type
+          || original_annotation >>| Type.is_type_alias |> Option.value ~default:false
         in
         let state, resolved =
           let { state = { resolution; _ } as new_state; resolved; _ } =
@@ -3542,7 +3546,7 @@ module State (Context : Context) = struct
               in
               let expected, is_immutable =
                 match original_annotation, target_annotation with
-                | Some original, _ -> original, true
+                | Some original, _ when not (Type.is_type_alias original) -> original, true
                 | _, target_annotation when Annotation.is_immutable target_annotation ->
                     Annotation.original target_annotation, true
                 | _ -> Type.Top, false

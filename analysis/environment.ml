@@ -468,6 +468,32 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
               { UnresolvedAlias.qualifier; target; value } :: aliases
             else
               aliases
+        | ( Call _,
+            Some
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        attribute = "TypeAlias";
+                        _;
+                      });
+                _;
+              } )
+        | ( Name _,
+            Some
+              {
+                Node.value =
+                  Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        attribute = "TypeAlias";
+                        _;
+                      });
+                _;
+              } )
         | Call _, None
         | Name _, None -> (
             let value = Expression.delocalize value in
@@ -779,21 +805,24 @@ let register_values
         List.iter ~f:visit body;
         List.iter ~f:visit orelse
     | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
-        let annotation, explicit =
-          match annotation with
-          | Some ({ Node.value; _ } as annotation) ->
-              let annotation =
-                match value with
-                | Name name when Expression.is_simple_name name -> Expression.delocalize annotation
-                | _ -> annotation
-              in
-              Type.create ~aliases:Handler.aliases annotation, true
-          | None ->
-              let annotation =
-                try GlobalResolution.resolve_literal resolution value with
-                | _ -> Type.Top
-              in
-              annotation, false
+        let explicit = Option.is_some annotation in
+        let literal_annotation =
+          try GlobalResolution.resolve_literal resolution value with
+          | _ -> Type.Top
+        in
+        let annotation =
+          let get_annotation ({ Node.value; _ } as annotation) =
+            let annotation =
+              match value with
+              | Name name when Expression.is_simple_name name -> Expression.delocalize annotation
+              | _ -> annotation
+            in
+            Type.create ~aliases:Handler.aliases annotation
+          in
+          annotation
+          >>| get_annotation
+          >>= (fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation)
+          |> Option.value ~default:literal_annotation
         in
         let rec register_assign ~target ~annotation =
           let register ~location reference annotation =

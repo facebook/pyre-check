@@ -201,6 +201,36 @@ let test_register_aliases context =
     in
     List.iter aliases ~f:assert_alias
   in
+  (* Explicit Aliases *)
+  assert_resolved
+    [ ( "__init__.py",
+        {|
+          class C: ...
+          class D(C): pass
+          B: typing.TypeAlias = D
+          A: typing.TypeAlias = B
+          Twiddledee: typing.TypeAlias
+          Twiddledum: typing.TypeAlias
+          Twiddledee, Twiddledum = C, C
+        |}
+      ) ]
+    ["C", "C"; "D", "D"; "B", "D"; "A", "D"; "Twiddledee", "Twiddledee"; "Twiddledum", "Twiddledum"];
+
+  assert_resolved
+    [ ( "qualifier.py",
+        {|
+          class C: ...
+          class D(C): pass
+          B: typing.TypeAlias = D
+          A: typing.TypeAlias = B
+        |}
+      ) ]
+    [ "qualifier.C", "qualifier.C";
+      "qualifier.D", "qualifier.D";
+      "qualifier.B", "qualifier.D";
+      "qualifier.A", "qualifier.D" ];
+
+  (* Non-explicit Alaises *)
   assert_resolved
     [ ( "__init__.py",
         {|
@@ -227,6 +257,8 @@ let test_register_aliases context =
       "qualifier.B", "qualifier.D";
       "qualifier.A", "qualifier.D" ];
   assert_resolved ["__init__.py", "X = None"] ["X", "None"];
+
+  (* Imports *)
   assert_resolved
     [ ( "collections.py",
         {|

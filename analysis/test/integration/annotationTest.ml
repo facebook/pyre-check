@@ -259,6 +259,10 @@ let test_check_invalid_type context =
       MyType = int
       x: MyType = 1
     |} [];
+  assert_type_errors {|
+      MyType: typing.TypeAlias = int
+      x: MyType = 1
+    |} [];
   assert_type_errors
     {|
       # Type aliases cannot be annotated
