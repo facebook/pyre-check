@@ -84,7 +84,13 @@ let test_get_completion_items context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       Path.create_relative ~root:local_root ~relative:handle
     in
-    let state = { state with open_documents = PyrePath.Map.singleton path source } in
+    let state =
+      {
+        state with
+        open_documents =
+          Reference.Table.of_alist_exn [SourcePath.qualifier_of_relative handle, source];
+      }
+    in
     let actual = AutoComplete.get_completion_items ~state ~configuration ~path ~cursor_position in
     assert_equal ~printer:Types.CompletionItems.show expected actual
   in
@@ -204,7 +210,13 @@ let test_untracked_path context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       Path.create_relative ~root:local_root ~relative
     in
-    let state = { state with open_documents = PyrePath.Map.singleton path source } in
+    let state =
+      {
+        state with
+        open_documents =
+          Reference.Table.of_alist_exn [SourcePath.qualifier_of_relative tracked_handle, source];
+      }
+    in
     let completion_items =
       AutoComplete.get_completion_items ~state ~configuration ~path ~cursor_position
     in

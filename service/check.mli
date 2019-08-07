@@ -13,7 +13,7 @@ type result = {
 }
 
 val analyze_sources
-  :  ?open_documents:string Pyre.Path.Map.t ->
+  :  ?open_documents:(Ast.Reference.t -> bool) ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:Environment.t ->

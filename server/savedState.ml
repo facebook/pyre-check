@@ -238,7 +238,7 @@ let load
       last_integrity_check = Unix.time ();
       connections;
       lookups = String.Table.create ();
-      open_documents = Path.Map.empty;
+      open_documents = Reference.Table.create ();
     }
   in
   Log.info "Reanalyzing %d files and their dependencies." (List.length changed_paths);

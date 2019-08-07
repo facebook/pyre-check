@@ -30,5 +30,5 @@ type t = {
   last_integrity_check: float;
   last_request_time: float;
   connections: connections;
-  open_documents: string PyrePath.Map.t;
+  open_documents: string Ast.Reference.Table.t;
 }

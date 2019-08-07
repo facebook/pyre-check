@@ -120,7 +120,7 @@ let recheck
   Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list recheck_modules);
   let new_errors =
     Service.Check.analyze_sources
-      ~open_documents
+      ~open_documents:(Reference.Table.mem open_documents)
       ~scheduler
       ~configuration
       ~environment

@@ -202,7 +202,7 @@ module ScratchServer = struct
                 };
           };
         scheduler = Scheduler.mock ();
-        open_documents = Path.Map.empty;
+        open_documents = Ast.Reference.Table.create ();
       }
     in
     { configuration; server_configuration; state }

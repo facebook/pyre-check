@@ -138,8 +138,8 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
   let { State.open_documents; module_tracker; environment; _ } = state in
   match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
   | None -> []
-  | Some _ -> (
-    match Path.Map.find open_documents path with
+  | Some { SourcePath.qualifier; _ } -> (
+    match Reference.Table.find open_documents qualifier with
     | None -> []
     | Some content ->
         let content = remove_dot ~cursor_position content in

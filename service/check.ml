@@ -20,13 +20,7 @@ type analyze_source_results = {
 }
 (** Internal result type; not exposed. *)
 
-let analyze_sources
-    ?(open_documents = Path.Map.empty)
-    ~scheduler
-    ~configuration
-    ~environment
-    source_paths
-  =
+let analyze_sources ?open_documents ~scheduler ~configuration ~environment source_paths =
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
   let checked_source_paths =
@@ -44,15 +38,17 @@ let analyze_sources
       let map _ source_paths =
         Annotated.Class.AttributeCache.clear ();
         Module.Cache.clear ();
-        let analyze_source { errors; number_files } ({ SourcePath.qualifier; _ } as source_path) =
-          let path = SourcePath.full_path ~configuration source_path in
+        let analyze_source { errors; number_files } { SourcePath.qualifier; _ } =
           match AstEnvironment.ReadOnly.get_source ast_environment qualifier with
           | Some source ->
               let configuration =
-                if PyrePath.Map.mem open_documents path then
-                  { configuration with Configuration.Analysis.store_type_check_resolution = true }
-                else
-                  configuration
+                match open_documents with
+                | Some predicate when predicate qualifier ->
+                    {
+                      configuration with
+                      Configuration.Analysis.store_type_check_resolution = true;
+                    }
+                | _ -> configuration
               in
               let global_resolution = Environment.resolution environment () in
               let new_errors = Check.run ~configuration ~global_resolution ~source in

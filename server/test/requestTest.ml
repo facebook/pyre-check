@@ -633,25 +633,21 @@ let test_open_document_state context =
     ScratchServer.start ~context ["a.py", ""; "b.py", ""]
   in
   let create_path name = Path.create_relative ~root:local_root ~relative:name in
-  let mock_map ~name ~content =
-    let file = create_path name |> File.create ~content:"" in
-    Path.Map.singleton (File.path file) content
-  in
   let assert_open_documents ~start ~request ~expected =
     let state = { state with open_documents = start } in
     let ({ state = { open_documents; _ }; _ } : Request.response) =
       Request.process ~configuration:server_configuration ~state ~request
     in
-    assert_true (Path.Map.equal String.equal open_documents expected)
+    assert_true (Reference.Table.equal open_documents expected String.equal)
   in
   assert_open_documents
-    ~start:Path.Map.empty
+    ~start:(Reference.Table.create ())
     ~request:(Protocol.Request.OpenDocument (create_path "a.py"))
-    ~expected:(mock_map ~name:"a.py" ~content:"");
+    ~expected:(Reference.Table.of_alist_exn [!&"a", ""]);
   assert_open_documents
-    ~start:(mock_map ~name:"a.py" ~content:"")
+    ~start:(Reference.Table.of_alist_exn [!&"a", ""])
     ~request:(Protocol.Request.CloseDocument (create_path "a.py"))
-    ~expected:Path.Map.empty
+    ~expected:(Reference.Table.create ())
 
 
 let test_resolution_shared_memory_added_for_open_documents context =
@@ -668,9 +664,7 @@ let test_resolution_shared_memory_added_for_open_documents context =
   File.write test_file_a;
   File.write test_file_b;
   let paths = [test_path_a; test_path_b] in
-  let state =
-    { state with open_documents = Path.Map.singleton (File.path test_file_a) test_code }
-  in
+  let state = { state with open_documents = Reference.Table.of_alist_exn [!&"a", test_code] } in
   let contains_resolution_shared_memory_reference key_string =
     key_string |> Reference.create |> Analysis.ResolutionSharedMemory.get |> Option.is_some
   in

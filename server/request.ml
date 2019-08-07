@@ -1095,34 +1095,44 @@ let rec process
           (* Make sure the IDE flushes its state about this file, by sending back all the errors
              for this file. *)
           let { State.open_documents; _ } = state in
-          let open_documents =
-            Path.Map.set
-              open_documents
-              ~key:path
-              ~data:(File.create path |> File.content |> Option.value ~default:"")
+          let _ =
+            match ModuleTracker.lookup_path ~configuration module_tracker path with
+            | Some { SourcePath.qualifier; _ } ->
+                Reference.Table.set
+                  open_documents
+                  ~key:qualifier
+                  ~data:(File.create path |> File.content |> Option.value ~default:"")
+            | _ -> ()
           in
           (* We do not recheck dependencies because nothing changes when we open a document, and we
              do the type checking here just to make type checking resolution appear in shared
              memory. *)
           process_type_check_request
-            ~state:{ state with open_documents }
+            ~state
             ~configuration:{ configuration with ignore_dependencies = true }
             [path]
       | CloseDocument path ->
           let { State.open_documents; _ } = state in
-          let open_documents = Path.Map.remove open_documents path in
+          let _ =
+            match ModuleTracker.lookup_path ~configuration module_tracker path with
+            | Some { SourcePath.qualifier; _ } -> Reference.Table.remove open_documents qualifier
+            | _ -> ()
+          in
           LookupCache.evict_path ~state ~configuration path;
-          { state = { state with open_documents }; response = None }
+          { state; response = None }
       | DocumentChange file ->
           (* On change, update open document's content but do not trigger recheck. *)
           let { State.open_documents; _ } = state in
-          let open_documents =
-            Path.Map.set
-              open_documents
-              ~key:(File.path file)
-              ~data:(File.content file |> Option.value ~default:"")
+          let _ =
+            match ModuleTracker.lookup_path ~configuration module_tracker (File.path file) with
+            | Some { SourcePath.qualifier; _ } ->
+                Reference.Table.set
+                  open_documents
+                  ~key:qualifier
+                  ~data:(File.content file |> Option.value ~default:"")
+            | _ -> ()
           in
-          { state = { state with open_documents }; response = None }
+          { state; response = None }
       | SaveDocument path ->
           (* On save, evict entries from the lookup cache. The updated source will be picked up at
              the next lookup (if any). *)
