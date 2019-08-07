@@ -5,19 +5,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
-public final class SwigLibraryTarget implements BuildTarget {
+public final class SwigLibraryTarget {
 
-  private final String command;
-  private final ImmutableList<String> sources;
-
-  SwigLibraryTarget(String command, ImmutableList<String> sources) {
-    this.command = command;
-    this.sources = sources;
-  }
-
-  static @Nullable SwigLibraryTarget parse(
+  static @Nullable String parseCommand(
       String cellPath, String buckRoot, String outputDirectory, JsonObject targetJsonObject) {
     if (!targetJsonObject.get("name").getAsString().endsWith("-py-gen")) {
       // Generated swig library rule names always end with -py-gen. We use this to identify swig
@@ -32,46 +23,16 @@ public final class SwigLibraryTarget implements BuildTarget {
     if (sources == null) {
       return null;
     }
-    command =
-        command
-            .replaceFirst(
-                "mkdir .+\\$\\(exe //third-party-buck/platform007/tools/swig:bin/swig\\)", "")
-            .replaceFirst(
-                " -I- -I.+$",
-                String.format(
-                    " -I- -I. -outdir %s -o %s -oh %s %s",
-                    outputDirectory,
-                    outputDirectory + "/temp.cc",
-                    outputDirectory + "/temp.h",
-                    String.join(" ", sources)))
-            .replaceAll("'", "");
-    return new SwigLibraryTarget(command, sources);
-  }
-
-  @Override
-  public void addToBuilder(BuildTargetsBuilder builder) {
-    builder.addSwigLibraryBuildCommand(this.command);
-  }
-
-  @Override
-  public String toString() {
-    return String.format("{command=%s, sources=%s}", command, sources);
-  }
-
-  @Override
-  public boolean equals(@Nullable Object other) {
-    if (this == other) {
-      return true;
-    }
-    if (other == null || getClass() != other.getClass()) {
-      return false;
-    }
-    SwigLibraryTarget swigLibraryTarget = (SwigLibraryTarget) other;
-    return command.equals(swigLibraryTarget.command) && sources.equals(swigLibraryTarget.sources);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(command, sources);
+    return command
+        .replaceFirst("mkdir .+\\$\\(exe //third-party-buck/platform007/tools/swig:bin/swig\\)", "")
+        .replaceFirst(
+            " -I- -I.+$",
+            String.format(
+                " -I- -I. -outdir %s -o %s -oh %s %s",
+                outputDirectory,
+                outputDirectory + "/temp.cc",
+                outputDirectory + "/temp.h",
+                String.join(" ", sources)))
+        .replaceAll("'", "");
   }
 }

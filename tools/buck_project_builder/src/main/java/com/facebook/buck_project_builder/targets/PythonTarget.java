@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 
-public final class PythonTarget implements BuildTarget {
+public final class PythonTarget {
 
   private static final String[] SUPPORTED_PLATFORMS = {
     "//third-party-buck/platform007/build/python:__project__",
@@ -157,21 +157,20 @@ public final class PythonTarget implements BuildTarget {
     return new PythonTarget(cellPath, basePath, baseModule, sources, unsupportedGeneratedSources);
   }
 
-  @Override
-  public void addToBuilder(BuildTargetsBuilder builder) {
+  public void addToCollector(BuildTargetsCollector collector) {
     String sourceDirectory =
-        Paths.get(this.cellPath != null ? this.cellPath : builder.getBuckRoot(), basePath)
+        Paths.get(this.cellPath != null ? this.cellPath : collector.getBuckRoot(), basePath)
             .toString();
     String outputBasePath =
         baseModule == null ? basePath : Paths.get(".", baseModule.split("\\.")).toString();
-    String outputDirectory = Paths.get(builder.getOutputDirectory(), outputBasePath).toString();
+    String outputDirectory = Paths.get(collector.getOutputDirectory(), outputBasePath).toString();
     Map<String, String> sourceMapping =
         FileSystem.resolveSourceMapping(sourceDirectory, outputDirectory, sources);
     for (Map.Entry<String, String> entry : sourceMapping.entrySet()) {
-      builder.addSourceMapping(Paths.get(entry.getKey()), Paths.get(entry.getValue()));
+      collector.addSourceMapping(Paths.get(entry.getKey()), Paths.get(entry.getValue()));
     }
     for (String unsupportedGeneratedSource : unsupportedGeneratedSources) {
-      builder.addUnsupportedGeneratedSource(
+      collector.addUnsupportedGeneratedSource(
           Paths.get(outputDirectory, unsupportedGeneratedSource).toString());
     }
   }

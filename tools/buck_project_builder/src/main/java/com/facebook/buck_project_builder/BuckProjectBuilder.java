@@ -4,7 +4,6 @@ package com.facebook.buck_project_builder;
 
 import com.facebook.buck_project_builder.cache.BuilderCache;
 import com.facebook.buck_project_builder.cache.CacheLock;
-import com.facebook.buck_project_builder.targets.BuildTargetsBuilder;
 import com.facebook.buck_project_builder.targets.BuildTargetsCollector;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
@@ -33,16 +32,14 @@ public final class BuckProjectBuilder {
     String buckRoot = command.getBuckRoot();
     String outputDirectory = command.getOutputDirectory();
     ImmutableList<String> targets = command.getTargets();
-    BuildTargetsBuilder builder =
-        new BuildTargetsBuilder(start, buckRoot, command.getOutputDirectory(), targets);
 
     try {
       CacheLock.synchronize(
           () -> {
-            new BuildTargetsCollector(buckRoot, outputDirectory)
-                .collectBuckTargets(targets)
-                .forEach(target -> target.addToBuilder(builder));
-            DebugOutput debugOutput = builder.buildTargets();
+            DebugOutput debugOutput =
+                new BuildTargetsCollector(buckRoot, outputDirectory)
+                    .getBuilder(start, targets)
+                    .buildTargets();
             if (command.isDebug()) {
               System.out.println(new Gson().toJson(debugOutput));
             }

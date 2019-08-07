@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
-public final class ThriftLibraryTarget implements BuildTarget {
+public final class ThriftLibraryTarget {
 
   private static final Pattern BASE_MODULE_PATH_PATTERN =
       Pattern.compile("(?<=/gen-py(.?)/).*(?=/(t?)types\\.py(.?) ];)");
@@ -102,11 +102,6 @@ public final class ThriftLibraryTarget implements BuildTarget {
 
   public List<String> getSources() {
     return sources;
-  }
-
-  @Override
-  public void addToBuilder(BuildTargetsBuilder builder) {
-    builder.addThriftLibraryTarget(this);
   }
 
   private boolean canUseCachedBuild(String buckRoot, BuilderCache cache) {
