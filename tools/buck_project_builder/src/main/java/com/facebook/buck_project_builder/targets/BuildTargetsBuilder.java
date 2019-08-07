@@ -227,30 +227,13 @@ public final class BuildTargetsBuilder {
     }
     SimpleLogger.info(
         "Building " + this.antlr4LibraryBuildCommands.size() + " ANTLR4 libraries...");
-    String builderExecutable;
-    try {
-      builderExecutable =
-          GeneratedBuildRuleRunner.getBuiltTargetExecutable("//tools/antlr4:antlr4", this.buckRoot);
-    } catch (IOException exception) {
-      logCodeGenerationIOException(exception);
-      return;
-    }
-    if (builderExecutable == null) {
-      SimpleLogger.error("Unable to build any ANTLR4 libraries because its builder is not found.");
-      return;
-    }
-    // Avoid `buck build` to build the wrapper for performance.
-    String builderPrefix =
-        String.format(
-            "python3 tools/antlr4/antlr4_wrapper.py --antlr4_command=\"%s\"", builderExecutable);
     long start = System.currentTimeMillis();
     runBuildCommands(
         this.antlr4LibraryBuildCommands,
         "antlr4_library",
         command -> {
           try {
-            return GeneratedBuildRuleRunner.runBuilderCommand(
-                builderPrefix + command, this.buckRoot);
+            return GeneratedBuildRuleRunner.runBuilderCommand(command, this.buckRoot);
           } catch (IOException exception) {
             logCodeGenerationIOException(exception);
             return false;
