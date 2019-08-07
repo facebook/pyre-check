@@ -44,6 +44,7 @@ type t = {
   hash: int;
   metadata: Metadata.t;
   relative: string;
+  is_external: bool;
   is_stub: bool;
   is_init: bool;
   qualifier: Reference.t;
@@ -65,6 +66,7 @@ val create
   :  ?docstring:string option ->
   ?metadata:Metadata.t ->
   ?relative:string ->
+  ?is_external:bool ->
   ?hash:int ->
   Statement.t list ->
   t

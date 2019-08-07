@@ -204,6 +204,7 @@ type t = {
   hash: int;
   metadata: Metadata.t;
   relative: string;
+  is_external: bool;
   is_stub: bool;
   is_init: bool;
   qualifier: Reference.t;
@@ -235,23 +236,24 @@ let create_from_source_path
     ~docstring
     ~metadata
     ~hash
-    ~source_path:{ SourcePath.relative; qualifier; is_init; is_stub; _ }
+    ~source_path:{ SourcePath.relative; qualifier; is_external; is_init; is_stub; _ }
     statements
   =
-  { docstring; hash; metadata; is_stub; is_init; relative; qualifier; statements }
+  { docstring; hash; metadata; is_external; is_stub; is_init; relative; qualifier; statements }
 
 
 let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())
     ?(relative = "")
+    ?(is_external = false)
     ?(hash = -1)
     statements
   =
   let is_stub = Path.is_path_python_stub relative in
   let is_init = Path.is_path_python_init relative in
   let qualifier = SourcePath.qualifier_of_relative relative in
-  { docstring; hash; metadata; is_stub; is_init; relative; qualifier; statements }
+  { docstring; hash; metadata; is_external; is_stub; is_init; relative; qualifier; statements }
 
 
 let hash { hash; _ } = hash
