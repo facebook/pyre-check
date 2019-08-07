@@ -7,7 +7,7 @@ import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
 
-public final class Antlr4LibraryTarget {
+final class Antlr4LibraryTarget {
 
   static @Nullable String parseCommand(
       @Nullable String cellPath,

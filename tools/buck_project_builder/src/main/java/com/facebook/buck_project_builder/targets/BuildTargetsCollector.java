@@ -49,14 +49,6 @@ public final class BuildTargetsCollector {
     this.rewriter = rewriter;
   }
 
-  public String getBuckRoot() {
-    return buckRoot;
-  }
-
-  public String getOutputDirectory() {
-    return outputDirectory;
-  }
-
   @VisibleForTesting
   Map<Path, Path> getSources() {
     return sources;
@@ -91,18 +83,32 @@ public final class BuildTargetsCollector {
     return conflictingFiles;
   }
 
-  void addSourceMapping(Path outputPath, Path sourcePath) {
-    Path existingSourcePath = this.sources.get(outputPath);
-    if (existingSourcePath != null && !existingSourcePath.equals(sourcePath)) {
-      this.conflictingFiles.add(
-          Paths.get(this.outputDirectory).relativize(outputPath).normalize().toString());
-      return;
-    }
-    this.sources.put(outputPath, sourcePath);
-  }
-
-  void addUnsupportedGeneratedSource(String generatedSourcePath) {
-    unsupportedGeneratedSources.add(generatedSourcePath);
+  /** @return a builder that contains all the target information necessary for building. */
+  public BuildTargetsBuilder getBuilder(long startTime, ImmutableList<String> targets)
+      throws BuilderException {
+    collectBuildTargets(BuckCells.getCellMappings(), BuckQuery.getBuildTargetJson(targets));
+    // Filter thrift libraries
+    this.thriftLibraryTargets.removeIf(
+        target -> {
+          String commandString = target.getCommand();
+          return commandString.contains("py:")
+              && this.thriftLibraryTargets.contains(
+                  new ThriftLibraryTarget(
+                      commandString.replace("py:", "mstch_pyi:"),
+                      target.getBaseModulePath(),
+                      target.getSources()));
+        });
+    return new BuildTargetsBuilder(
+        startTime,
+        this.buckRoot,
+        this.outputDirectory,
+        targets,
+        ImmutableMap.copyOf(this.sources),
+        ImmutableSet.copyOf(this.unsupportedGeneratedSources),
+        ImmutableSet.copyOf(this.pythonWheelUrls),
+        ImmutableSet.copyOf(this.thriftLibraryTargets),
+        ImmutableSet.copyOf(this.swigLibraryBuildCommands),
+        ImmutableSet.copyOf(this.antlr4LibraryBuildCommands));
   }
 
   @VisibleForTesting
@@ -172,32 +178,18 @@ public final class BuildTargetsCollector {
     }
   }
 
-  /** @return a builder that contains all the target information necessary for building. */
-  public BuildTargetsBuilder getBuilder(long startTime, ImmutableList<String> targets)
-      throws BuilderException {
-    collectBuildTargets(BuckCells.getCellMappings(), BuckQuery.getBuildTargetJson(targets));
-    // Filter thrift libraries
-    this.thriftLibraryTargets.removeIf(
-        target -> {
-          String commandString = target.getCommand();
-          return commandString.contains("py:")
-              && this.thriftLibraryTargets.contains(
-                  new ThriftLibraryTarget(
-                      commandString.replace("py:", "mstch_pyi:"),
-                      target.getBaseModulePath(),
-                      target.getSources()));
-        });
-    return new BuildTargetsBuilder(
-        startTime,
-        this.buckRoot,
-        this.outputDirectory,
-        targets,
-        ImmutableMap.copyOf(this.sources),
-        ImmutableSet.copyOf(this.unsupportedGeneratedSources),
-        ImmutableSet.copyOf(this.pythonWheelUrls),
-        ImmutableSet.copyOf(this.thriftLibraryTargets),
-        ImmutableSet.copyOf(this.swigLibraryBuildCommands),
-        ImmutableSet.copyOf(this.antlr4LibraryBuildCommands));
+  private void addSourceMapping(Path outputPath, Path sourcePath) {
+    Path existingSourcePath = this.sources.get(outputPath);
+    if (existingSourcePath != null && !existingSourcePath.equals(sourcePath)) {
+      this.conflictingFiles.add(
+          Paths.get(this.outputDirectory).relativize(outputPath).normalize().toString());
+      return;
+    }
+    this.sources.put(outputPath, sourcePath);
+  }
+
+  private void addUnsupportedGeneratedSource(String generatedSourcePath) {
+    unsupportedGeneratedSources.add(generatedSourcePath);
   }
 
   private void addRemotePythonFiles(JsonObject targetJsonObject, JsonObject targetJsonMap) {

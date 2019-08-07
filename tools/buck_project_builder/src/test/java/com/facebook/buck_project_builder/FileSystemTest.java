@@ -2,7 +2,6 @@
 
 package com.facebook.buck_project_builder;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -19,7 +18,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -28,16 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class FileSystemTest {
-
-  private static final String COMMON_SOURCE_DIRECTORY = "/project";
-  private static final String COMMON_OUT_DIRECTORY = "/out";
-
-  private static void testResolveSourceMapping(
-      Map<String, String> sources, Map<String, String> expectedMapping) {
-    Map<String, String> actualMapping =
-        FileSystem.resolveSourceMapping(COMMON_SOURCE_DIRECTORY, COMMON_OUT_DIRECTORY, sources);
-    assertEquals(expectedMapping, actualMapping);
-  }
 
   private static void writeContent(File file, String content) throws IOException {
     file.getParentFile().mkdirs();
@@ -59,27 +47,6 @@ public class FileSystemTest {
         "after symbolic link creation, symbolicLinkPath should actually be a symbolic link",
         Files.isSymbolicLink(symbolicLinkPath));
     assertContent(symbolicLinkPath.toFile(), expectedContent);
-  }
-
-  @Test
-  public void resolveSourceMappingTest() {
-    // simple identity mapping case
-    testResolveSourceMapping(
-        ImmutableMap.of(
-            "a.py", "a.py",
-            "b.py", "b.py"),
-        ImmutableMap.of(
-            "/project/a.py", "/out/a.py",
-            "/project/b.py", "/out/b.py"));
-
-    // non-identity source mappings
-    testResolveSourceMapping(
-        ImmutableMap.of(
-            "a.py", "foo/bar/a.py",
-            "b.py", "foo/bar/baz/b.py"),
-        ImmutableMap.of(
-            "/project/a.py", "/out/foo/bar/a.py",
-            "/project/b.py", "/out/foo/bar/baz/b.py"));
   }
 
   @Test

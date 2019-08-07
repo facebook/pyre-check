@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
 
-public final class SwigLibraryTarget {
+final class SwigLibraryTarget {
 
   static @Nullable String parseCommand(
       String cellPath,
