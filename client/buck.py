@@ -31,6 +31,7 @@ class FastBuckBuilder(BuckBuilder):
         buck_root: str,
         output_directory: Optional[str] = None,
         buck_builder_binary: Optional[str] = None,
+        buck_builder_target: Optional[str] = None,
         debug_mode=False,
     ) -> None:
         self._buck_root = buck_root
@@ -38,14 +39,26 @@ class FastBuckBuilder(BuckBuilder):
             prefix="pyre_tmp_"
         )
         self._buck_builder_binary = buck_builder_binary
+        self._buck_builder_target = buck_builder_target
         self._debug_mode = debug_mode
         self.conflicting_files = []
         self.unsupported_files = []
 
     def _get_builder_executable(self) -> str:
         builder_binary = self._buck_builder_binary
-        if not self._debug_mode and builder_binary is not None:
+        if not self._debug_mode:
+            if builder_binary is None:
+                raise BuckException(
+                    "--buck-builder-binary must be provided "
+                    "if --buck-builder-debug is not enabled."
+                )
             return builder_binary
+        target = self._buck_builder_target
+        if target is None:
+            raise BuckException(
+                "--buck-builder-target must be provided "
+                "if --buck-builder-debug is enabled."
+            )
         binary_relative_path = (
             subprocess.check_output(
                 [

@@ -204,6 +204,7 @@ def main() -> int:
         default=None,
         help="Location of the buck builder binary",
     )
+    parser.add_argument("--buck-builder-target", default=None, help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--exclude",
