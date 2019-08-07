@@ -228,15 +228,14 @@ let test_check_undefined_type context =
     ["Undefined type [11]: Type `Derp` is not defined."];
   assert_type_errors
     {|
-      Derp: typing.Any
+      Derp = typing.Any
       Herp = typing.List[typing.Any]
       def foo() -> None:
         x: int = 1
         typing.cast(Derp, x)
         typing.cast(Herp, x)
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `Derp` "
-      ^ "must be specified as type other than `Any`.";
+    [ "Prohibited any [33]: Explicit annotation for `Derp` cannot be `Any`.";
       "Prohibited any [33]: Explicit annotation for `Herp` cannot contain `Any`." ];
   assert_type_errors
     {|
@@ -295,14 +294,20 @@ let test_check_invalid_type context =
       x: MyType = 1
     |}
     [ "Missing global annotation [5]: Globally accessible variable `MyType` "
-      ^ "must be specified as type other than `Any`." ];
+      ^ "must be specified as type other than `Any`.";
+      "Invalid type [31]: Expression `MyType` is not a valid type." ];
   assert_type_errors
     {|
-      MyType: typing.Any
+      MyType = typing.Any
+      x: MyType = 1
+    |}
+    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+  assert_type_errors
+    {|
+      MyType = typing.Any
       x: typing.List[MyType] = [1]
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `MyType` "
-      ^ "must be specified as type other than `Any`." ];
+    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
 
   (* Un-parseable expressions *)
   assert_type_errors

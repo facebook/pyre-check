@@ -451,23 +451,6 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
               { UnresolvedAlias.qualifier; target; value } :: aliases
             else
               aliases
-        | ( _,
-            Some
-              ( {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base = { Node.value = Name (Name.Identifier "typing"); _ };
-                          attribute = "Any";
-                          _;
-                        });
-                  _;
-                } as value ) ) ->
-            if not (Type.is_top target_annotation) then
-              { UnresolvedAlias.qualifier; target; value } :: aliases
-            else
-              aliases
         | ( Call _,
             Some
               {

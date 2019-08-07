@@ -219,8 +219,7 @@ module State (Context : Context) = struct
     let check_and_correct_annotation ~resolution ~location ~annotation ~resolved errors =
       let untracked_annotation_error annotation =
         match resolved with
-        | Type.Any -> None
-        | Top ->
+        | Type.Top ->
             Some
               (Error.create
                  ~location

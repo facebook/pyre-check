@@ -49,12 +49,11 @@ let test_check_missing_parameter context =
       ^ "that does not contain `Any`." ];
   assert_strict_type_errors
     {|
-      MyType: typing.Any
+      MyType = typing.Any
       def foo(x: MyType) -> int:
         return 1
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `MyType` must be specified "
-      ^ "as type other than `Any`." ];
+    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
   assert_strict_type_errors
     {|
       def foo(x: typing.Any = unknown) -> int:
@@ -125,12 +124,11 @@ let test_check_missing_return context =
       ^ "that does not contain `Any`." ];
   assert_type_errors
     {|
-      MyType: typing.Any
+      MyType = typing.Any
       def foo() -> MyType:
         return 1
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `MyType` "
-      ^ "must be specified as type other than `Any`." ];
+    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
   assert_type_errors
     ~update_environment_with:[{ handle = "export.py"; source = "MyType = typing.List[typing.Any]" }]
     {|

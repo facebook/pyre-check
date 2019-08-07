@@ -298,7 +298,12 @@ let test_check_annotation context =
     "x"
     ["Invalid type [31]: Expression `x` is not a valid type."];
   assert_check_annotation "x = int" "x" [];
-  assert_check_annotation "x: typing.Any" "x" [];
+  assert_check_annotation
+    "x: typing.Any"
+    "x"
+    ["Invalid type [31]: Expression `x` is not a valid type."];
+  assert_check_annotation "x = typing.Any" "x" [];
+  assert_check_annotation "x: typing.TypeAlias = typing.Any" "x" [];
   assert_check_annotation {|
       class Foo: ...
       x = Foo

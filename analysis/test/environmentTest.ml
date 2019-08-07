@@ -370,12 +370,13 @@ let test_register_aliases context =
           B: typing.Type[int] = int
           C: typing.Type[int]
           D: typing.Any
-          E = ...
-          F = A
-          G = 1
+          E = typing.Any
+          F = ...
+          G = A
+          H = 1
         |}
       ) ]
-    ["A", "int"; "B", "B"; "C", "C"; "D", "typing.Any"; "E", "E"; "F", "int"; "G", "G"];
+    ["A", "int"; "B", "B"; "C", "C"; "D", "D"; "E", "typing.Any"; "F", "F"; "G", "int"; "H", "H"];
   assert_resolved
     ["a.py", {|
           class Foo: ...

@@ -203,7 +203,7 @@ let test_check_attributes context =
      are thrown in debug that are filtered away in strict. *)
   assert_strict_type_errors
     {|
-      MyType: typing.Any
+      MyType = typing.Any
       class Foo:
         bar: MyType
         def foo(self) -> int:
@@ -211,8 +211,7 @@ let test_check_attributes context =
           self.bar = 1
           return self.bar
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `MyType` must be specified "
-      ^ "as type other than `Any`." ];
+    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
   assert_type_errors
     {|
       class Foo:
