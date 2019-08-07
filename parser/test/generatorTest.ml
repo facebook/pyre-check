@@ -884,6 +884,25 @@ let test_define _ =
            body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }];
          } ];
   assert_parsed_equal
+    (trim_extra_indentation {|
+        def foo(): # type:   ()-> str
+          return 4
+      |})
+    [ +Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = Some (+String (StringLiteral.create "str"));
+               async = false;
+               parent = None;
+             };
+           body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }];
+         } ];
+  assert_parsed_equal
     (trim_extra_indentation
        {|
       def foo(a):

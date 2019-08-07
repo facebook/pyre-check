@@ -133,7 +133,7 @@ let newline = ("\r\n" | '\n')
 let whitespace = [' ' '\t']
 let comment = '#' [^ '\n' '\r']*
 
-let signature = '#' whitespace* "type: ("
+let signature = '#' whitespace* "type:" whitespace* "("
   (['a'-'z' 'A'-'Z' ' ' ',' '_' '[' ']' '.' '0'-'9']+)*
   ")" whitespace* "->" whitespace* [^ '\n' '\r']+
 
