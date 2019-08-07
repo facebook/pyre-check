@@ -184,7 +184,7 @@ setup(
     ],
     keywords='typechecker development',
 
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages(exclude=['tests', 'pyre-check']),
     data_files=[('bin', ['bin/pyre.bin'])] + find_typeshed_files("${BUILD_ROOT}/"),
     python_requires='>=3.5',
     install_requires=[${RUNTIME_DEPENDENCIES}],
@@ -197,36 +197,42 @@ setup(
 )
 HEREDOC
 
-# Create setup.cfg file.
-cat > "${BUILD_ROOT}/setup.cfg" <<HEREDOC
-[metadata]
-license_file = LICENSE
-HEREDOC
-
 # Test descriptions before building:
 # https://github.com/pypa/readme_renderer
 if [[ "${HAS_PIP_GREATER_THAN_1_5}" == 'yes' ]]; then
   python3 setup.py check -r -s
 fi
 
+
+python3 setup.py sdist
+mkdir -p "${SCRIPTS_DIRECTORY}/dist"
+
+source_distribution_file="$(find "${BUILD_ROOT}/dist/" -type f | grep pyre-check)"
+source_distribution_destination="$(basename "${source_distribution_file}")"
+source_distribution_destination="${source_distribution_destination/%.tar.gz/.tar.gz}"
+
+
+# Create setup.cfg file.
+cat > "${BUILD_ROOT}/setup.cfg" <<HEREDOC
+[metadata]
+license_file = LICENSE
+HEREDOC
+
+
 # Build.
 python3 setup.py bdist_wheel
-python3 setup.py sdist
+
 
 # Move artifact outside the build directory.
-mkdir -p "${SCRIPTS_DIRECTORY}/dist"
 files_count="$(find "${BUILD_ROOT}/dist/" -type f | wc -l | tr -d ' ')"
 [[ "${files_count}" == '2' ]] || \
-  die "${files_count} files created in ${BUILD_ROOT}/dist, but only two were expected"
+  die "${files_count} files created in ${BUILD_ROOT}/dist, but two were expected"
 wheel_source_file="$(find "${BUILD_ROOT}/dist/" -type f | grep any)"
 wheel_destination="$(basename "${wheel_source_file}")"
 wheel_destination="${wheel_destination/%-any.whl/-${WHEEL_DISTRIBUTION_PLATFORM}.whl}"
 mv "${wheel_source_file}" "${SCRIPTS_DIRECTORY}/dist/${wheel_destination}"
-
-source_distribution_file="$(find "${BUILD_ROOT}/dist/" -type f | grep pyre-check)"
-source_distribution_destination="$(basename "${source_distribution_file}")"
-source_distribution_destination="${source_distribution_destination/%.tar.gz/-${WHEEL_DISTRIBUTION_PLATFORM}.tar.gz}"
 mv "${source_distribution_file}" "${SCRIPTS_DIRECTORY}/dist/${source_distribution_destination}"
+
 
 # Cleanup.
 cd "${SCRIPTS_DIRECTORY}"
