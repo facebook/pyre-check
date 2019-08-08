@@ -1185,8 +1185,8 @@ let test_incremental_lookups context =
     |> Lookup.create_of_source global_resolution
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
-           Format.asprintf "%a/%a" Location.Instantiated.pp key Type.pp data
-           |> String.chop_prefix_exn ~prefix:handle)
+           Format.asprintf "%a/%a" Location.Reference.pp key Type.pp data
+           |> String.chop_prefix_exn ~prefix:(Reference.show qualifier))
     |> List.sort ~compare:String.compare
   in
   assert_equal

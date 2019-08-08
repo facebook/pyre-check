@@ -240,23 +240,13 @@ let get_best_location lookup_table ~position =
 
 
 let get_annotation { annotations_lookup; _ } ~position =
-  let instantiate_location (location, annotation) =
-    Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location, annotation
-  in
-  get_best_location annotations_lookup ~position >>| instantiate_location
+  get_best_location annotations_lookup ~position
 
 
 let get_definition { definitions_lookup; _ } ~position =
-  get_best_location definitions_lookup ~position
-  >>| snd
-  >>| Location.instantiate ~lookup:Ast.SharedMemory.Handles.get
+  get_best_location definitions_lookup ~position >>| snd
 
 
-let get_all_annotations { annotations_lookup; _ } =
-  let instantiate_location (location, annotation) =
-    Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location, annotation
-  in
-  Hashtbl.to_alist annotations_lookup |> List.map ~f:instantiate_location
-
+let get_all_annotations { annotations_lookup; _ } = Hashtbl.to_alist annotations_lookup
 
 let get_all_definitions { definitions_lookup; _ } = Hashtbl.to_alist definitions_lookup
