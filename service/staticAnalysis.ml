@@ -214,6 +214,7 @@ let analyze
     | exn ->
         Interprocedural.Analysis.save_results
           ~configuration:analysis_configuration
+          ~environment
           ~analyses
           all_callables;
         raise exn
@@ -221,6 +222,7 @@ let analyze
   let () =
     Interprocedural.Analysis.save_results
       ~configuration:analysis_configuration
+      ~environment
       ~analyses
       all_callables
   in

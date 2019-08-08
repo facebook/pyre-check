@@ -476,7 +476,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }
@@ -495,7 +495,7 @@
         "port": "result",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
           }
@@ -546,7 +546,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }
@@ -566,7 +566,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }
@@ -585,7 +585,7 @@
         "port": "result",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
           }
@@ -636,7 +636,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }

@@ -62,7 +62,7 @@
         "port": "formal(argument)",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }

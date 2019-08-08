@@ -28,7 +28,11 @@ val compute_fixpoint
   Fixpoint.Epoch.t ->
   int
 
-val externalize : AnalysisKind.abstract -> Callable.t -> Yojson.Safe.json list
+val externalize
+  :  environment:Analysis.Environment.t ->
+  AnalysisKind.abstract ->
+  Callable.t ->
+  Yojson.Safe.json list
 
 val extract_errors
   :  Scheduler.t ->
@@ -38,6 +42,7 @@ val extract_errors
 
 val save_results
   :  configuration:Configuration.StaticAnalysis.t ->
+  environment:Analysis.Environment.t ->
   analyses:AnalysisKind.abstract list ->
   Callable.t list ->
   unit

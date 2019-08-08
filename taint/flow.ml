@@ -182,19 +182,21 @@ let generate_error ({ code; issue_location; define; _ } as issue) =
       Interprocedural.Error.create ~location:issue_location ~define ~kind
 
 
-let to_json callable issue =
+let to_json ~environment callable issue =
   let callable_name = Interprocedural.Callable.external_target_name callable in
   let name, detail = get_name_and_detailed_message issue in
   let message = Format.sprintf "%s %s" name detail in
-  let source_traces = Domains.ForwardTaint.to_json issue.flow.source_taint in
-  let sink_traces = Domains.BackwardTaint.to_json issue.flow.sink_taint in
+  let source_traces = Domains.ForwardTaint.to_external_json ~environment issue.flow.source_taint in
+  let sink_traces = Domains.BackwardTaint.to_external_json ~environment issue.flow.sink_taint in
   let traces =
     `List
       [ `Assoc ["name", `String "forward"; "roots", source_traces];
         `Assoc ["name", `String "backward"; "roots", sink_traces] ]
   in
   let issue_location =
-    issue.issue_location |> Location.instantiate ~lookup:SharedMemory.Handles.get
+    let ast_environment = Analysis.Environment.ast_environment environment in
+    issue.issue_location
+    |> Location.instantiate ~lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
   in
   let callable_line = Ast.(Location.line issue.define.location) in
   `Assoc

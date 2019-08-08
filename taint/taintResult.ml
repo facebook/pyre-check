@@ -49,7 +49,8 @@ module Forward = struct
     ForwardState.less_or_equal ~left:next ~right:previous
 
 
-  let to_json { source_taint } = ForwardState.to_json source_taint
+  let to_json ~environment { source_taint } =
+    ForwardState.to_external_json ~environment source_taint
 end
 
 module Backward = struct
@@ -110,9 +111,12 @@ module Backward = struct
     && BackwardState.less_or_equal ~left:tito_next ~right:tito_previous
 
 
-  let to_json_sinks { sink_taint; _ } = BackwardState.to_json sink_taint
+  let to_json_sinks ~environment { sink_taint; _ } =
+    BackwardState.to_external_json ~environment sink_taint
 
-  let to_json_tito { taint_in_taint_out; _ } = BackwardState.to_json taint_in_taint_out
+
+  let to_json_tito ~environment { taint_in_taint_out; _ } =
+    BackwardState.to_external_json ~environment taint_in_taint_out
 end
 
 type mode =
@@ -190,25 +194,25 @@ module ResultArgument = struct
 
   let get_errors result = List.map ~f:Flow.generate_error result
 
-  let issues_to_json callable result =
+  let issues_to_json ~environment callable result =
     match result with
     | None -> []
     | Some issues ->
         let issue_to_json issue =
-          let json = Flow.to_json callable issue in
+          let json = Flow.to_json ~environment callable issue in
           `Assoc ["kind", `String "issue"; "data", json]
         in
         List.map ~f:issue_to_json issues
 
 
-  let model_to_json callable model =
+  let model_to_json ~environment callable model =
     let callable_name = Interprocedural.Callable.external_target_name callable in
     let model_json =
       `Assoc
         [ "callable", `String callable_name;
-          "sources", Forward.to_json model.forward;
-          "sinks", Backward.to_json_sinks model.backward;
-          "tito", Backward.to_json_tito model.backward ]
+          "sources", Forward.to_json ~environment model.forward;
+          "sinks", Backward.to_json_sinks ~environment model.backward;
+          "tito", Backward.to_json_tito ~environment model.backward ]
     in
     `Assoc ["kind", `String "model"; "data", model_json]
 
@@ -219,12 +223,12 @@ module ResultArgument = struct
 
 
   (* Emit both issues and models for external processing *)
-  let externalize callable result model =
-    let issues = issues_to_json callable result in
+  let externalize ~environment callable result model =
+    let issues = issues_to_json ~environment callable result in
     if is_empty model then
       issues
     else
-      model_to_json callable model :: issues
+      model_to_json ~environment callable model :: issues
 
 
   let metadata () =

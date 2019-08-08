@@ -51,16 +51,16 @@ module Set (Element : SET_ARG) : TAINT_SET with type element = Element.t = struc
     elements set |> List.map ~f:element_to_json
 end
 
-let location_to_json ?(include_filename = true) location : Yojson.Safe.json =
+let location_to_json ?filename_lookup location : Yojson.Safe.json =
   let line = Location.line location in
   let column = Location.column location in
   let end_column = Location.stop_column location (* Note: not correct for multiple line span *) in
   let optionally_add_filename fields =
-    if include_filename then
-      let path = Location.path location in
-      ("filename", `String path) :: fields
-    else
-      fields
+    match filename_lookup with
+    | Some lookup ->
+        let path = Location.instantiate ~lookup location |> Location.path in
+        ("filename", `String path) :: fields
+    | None -> fields
   in
   let fields =
     ["line", `Int line; "start", `Int column; "end", `Int end_column] |> optionally_add_filename
@@ -85,14 +85,11 @@ module TraceInfo = struct
 
   let show = function
     | Declaration -> "declaration"
-    | Origin location ->
-        let instantiated = Location.instantiate ~lookup:SharedMemory.Handles.get location in
-        Format.sprintf "@%s" (Location.Instantiated.show instantiated)
+    | Origin location -> Format.sprintf "@%s" (Location.Reference.show location)
     | CallSite { location; callees; _ } ->
-        let instantiated = Location.instantiate ~lookup:SharedMemory.Handles.get location in
         Format.sprintf
           "via call@%s[%s]"
-          (Location.Instantiated.show instantiated)
+          (Location.Reference.show location)
           (String.concat
              ~sep:" "
              (List.map ~f:Interprocedural.Callable.external_target_name callees))
@@ -126,14 +123,11 @@ module TraceInfo = struct
     | _ -> trace
 
 
-  (* Returns the (dictionary key * json) to emit *)
-  let to_json trace : (string * Yojson.Safe.json) option =
+  let create_json ~location_to_json trace : (string * Yojson.Safe.json) option =
     match trace with
     | Declaration -> Some ("decl", `Null)
     | Origin location ->
-        let location_json =
-          Location.instantiate ~lookup:SharedMemory.Handles.get location |> location_to_json
-        in
+        let location_json = location_to_json location in
         Some ("root", location_json)
     | CallSite { location; callees; port; path; trace_length } ->
         let callee_json =
@@ -143,9 +137,7 @@ module TraceInfo = struct
                  `String (Interprocedural.Callable.external_target_name callable))
         in
         if not (List.is_empty callee_json) then
-          let location_json =
-            Location.instantiate ~lookup:SharedMemory.Handles.get location |> location_to_json
-          in
+          let location_json = location_to_json location in
           let port_json = AccessPath.create port path |> AccessPath.to_json in
           let call_json =
             `Assoc
@@ -157,6 +149,16 @@ module TraceInfo = struct
           Some ("call", call_json)
         else
           None
+
+
+  (* Returns the (dictionary key * json) to emit *)
+  let to_json = create_json ~location_to_json
+
+  let to_external_json ~environment =
+    let ast_environment = Environment.ast_environment environment in
+    create_json
+      ~location_to_json:
+        (location_to_json ~filename_lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
 
 
   let less_or_equal ~left ~right =
@@ -269,6 +271,8 @@ module type TAINT_DOMAIN = sig
     t
 
   val to_json : t -> Yojson.Safe.json
+
+  val to_external_json : environment:Analysis.Environment.t -> t -> Yojson.Safe.json
 end
 
 module MakeTaint (Leaf : SET_ARG) : sig
@@ -313,7 +317,7 @@ end = struct
 
   let leaves map = Map.fold leaf ~init:[] ~f:(Fn.flip List.cons) map
 
-  let to_json taint =
+  let create_json ~trace_info_to_json taint =
     let element_to_json (leaf, features) =
       let trace_info =
         FlowDetails.(
@@ -330,10 +334,7 @@ end = struct
           | Features.Simple.LeafName name ->
               breadcrumbs, tito, `Assoc ["kind", leaf_kind_json; "name", `String name] :: leaves
           | TitoPosition location ->
-              let tito_location_json =
-                Location.instantiate ~lookup:(fun _ -> Some "") location
-                |> location_to_json ~include_filename:false
-              in
+              let tito_location_json = location_to_json location in
               breadcrumbs, tito_location_json :: tito, leaves
           | ViaValueOf _ ->
               (* The taint analysis creates breadcrumbs for ViaValueOf features dynamically.*)
@@ -354,7 +355,7 @@ end = struct
           tito_positions,
           FlowDetails.(fold complex_feature ~f:gather_return_access_path ~init:leaves features) )
       in
-      let trace_json = List.filter_map ~f:TraceInfo.to_json trace_info in
+      let trace_json = List.filter_map ~f:trace_info_to_json trace_info in
       let leaf_json =
         if leaf_json = [] then
           [`Assoc ["kind", leaf_kind_json]]
@@ -380,6 +381,12 @@ end = struct
     in
     let elements = Map.to_alist taint |> List.concat_map ~f:element_to_json in
     `List elements
+
+
+  let to_json = create_json ~trace_info_to_json:TraceInfo.to_json
+
+  let to_external_json ~environment =
+    create_json ~trace_info_to_json:(TraceInfo.to_external_json ~environment)
 
 
   let apply_call location ~callees ~port ~path ~element:taint =
@@ -478,7 +485,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
             end)
             (Tree)
 
-  let to_json environment =
+  let create_json ~taint_to_json environment =
     let element_to_json json_list (root, tree) =
       let path_to_json json_list { Tree.path; ancestors; tip } =
         let tip =
@@ -494,12 +501,18 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
           Taint.transform FlowDetails.simple_feature_set tip ~f:join_ancestor_leaf_names
         in
         let port = AccessPath.create root path |> AccessPath.to_json in
-        `Assoc ["port", port; "taint", Taint.to_json tip] :: json_list
+        `Assoc ["port", port; "taint", taint_to_json tip] :: json_list
       in
       Tree.fold Tree.RawPath ~f:path_to_json tree ~init:json_list
     in
     let paths = to_alist environment |> List.fold ~f:element_to_json ~init:[] in
     `List paths
+
+
+  let to_json = create_json ~taint_to_json:Taint.to_json
+
+  let to_external_json ~environment =
+    create_json ~taint_to_json:(Taint.to_external_json ~environment)
 
 
   let assign ?(weak = false) ~root ~path subtree environment =

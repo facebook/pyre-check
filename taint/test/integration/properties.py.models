@@ -8,7 +8,7 @@
         "port": "result",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
           }
@@ -40,7 +40,7 @@
           {
             "call": {
               "position": {
-                "filename": "",
+                "filename": "*",
                 "line": -1,
                 "start": -1,
                 "end": -1
@@ -79,14 +79,14 @@
         "port": "result",
         "taint": [
           {
-            "root": { "filename": "", "line": -1, "start": -1, "end": -1 },
+            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "tito" }, { "via": "special_source" } ]
           },
           {
             "call": {
               "position": {
-                "filename": "",
+                "filename": "*",
                 "line": -1,
                 "start": -1,
                 "end": -1

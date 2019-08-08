@@ -106,7 +106,7 @@ let test_integration context =
       |> ignore;
       let serialized_model callable : string =
         let externalization =
-          Interprocedural.Analysis.externalize Taint.Analysis.abstract_kind callable
+          Interprocedural.Analysis.externalize ~environment Taint.Analysis.abstract_kind callable
           |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
           |> String.concat ~sep:""
         in

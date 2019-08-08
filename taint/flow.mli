@@ -50,7 +50,11 @@ val generate_source_sink_matches
 
 val generate_issues : define:Define.t Node.t -> candidate -> issue list
 
-val to_json : Interprocedural.Callable.t -> issue -> Yojson.Safe.json
+val to_json
+  :  environment:Analysis.Environment.t ->
+  Interprocedural.Callable.t ->
+  issue ->
+  Yojson.Safe.json
 
 val generate_error : issue -> Interprocedural.Error.t
 
