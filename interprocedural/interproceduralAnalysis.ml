@@ -751,6 +751,7 @@ let save_results ~configuration ~environment ~analyses all_callables =
           `Assoc
             [ "filename_spec", `String filename_spec;
               "root", `String root;
+              "tool", `String "pysa";
               "version", `String (Version.version ()) ]
         in
         let analysis_metadata = Analysis.metadata () in
