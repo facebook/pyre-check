@@ -1,6 +1,6 @@
 # @nolint
 
-from typing import Type, Optional
+from typing import Optional, Type
 
 
 class C:
@@ -42,7 +42,9 @@ def tainted_class_attribute_through_double_underscore_class_issue(c: C) -> None:
     c.__class__.tainted_class_attribute = __test_source()
 
 
-def tainted_class_attribute_through_optional_class_issue(class_object: Optional[Type[C]]) -> None:
+def tainted_class_attribute_through_optional_class_issue(
+    class_object: Optional[Type[C]]
+) -> None:
     if class_object is not None:
         class_object.tainted_class_attribute = __test_source()
 

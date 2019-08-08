@@ -147,5 +147,6 @@ def testMakeD():
     o = D()
     x = o.methodB()
 
+
 def constructorTest(cls: typing.Type[D]) -> D:
     return cls(__test_source())
