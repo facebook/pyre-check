@@ -625,8 +625,14 @@ let create ~resolution ?path ~configuration source =
                         let signature =
                           let parameters =
                             let sink_parameter parameter =
-                              let update_annotation parameter =
-                                { parameter with Parameter.annotation = sink_annotation }
+                              let update_annotation { Parameter.name; value; _ } =
+                                let value =
+                                  match value with
+                                  | None -> None
+                                  | Some _ ->
+                                      Some (Node.create_with_default_location Expression.Ellipsis)
+                                in
+                                { Parameter.name; annotation = sink_annotation; value }
                               in
                               Node.map parameter ~f:update_annotation
                             in

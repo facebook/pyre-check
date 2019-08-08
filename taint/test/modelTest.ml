@@ -213,6 +213,19 @@ let test_class_models context =
       |}
     ~model_source:"class AnnotatedSource(TaintSource[UserControlled]): ..."
     ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "AnnotatedSource.method"]
+    ();
+  assert_model
+    ~source:
+      {|
+         class SourceWithDefault:
+          def SourceWithDefault.method(parameter: int = 1) -> None: ...
+      |}
+    ~model_source:"class SourceWithDefault(TaintSink[Test]): ..."
+    ~expect:
+      [ outcome
+          ~kind:`Method
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Test] }]
+          "SourceWithDefault.method" ]
     ()
 
 
