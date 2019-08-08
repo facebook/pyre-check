@@ -158,7 +158,6 @@ let parse
     ?(coerce_special_methods = false)
     source
   =
-  Ast.SharedMemory.Handles.add (Ast.SourcePath.qualifier_of_relative handle) ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
     |> parse_untrimmed ~handle ~debug ~version ~docstring ~coerce_special_methods

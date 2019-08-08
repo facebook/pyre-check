@@ -30,21 +30,4 @@ module Modules : sig
   val compute_hashes_to_keys : keys:Reference.t list -> string String.Map.t
 end
 
-module Handles : sig
-  module PathValue : Memory.ValueType with type t = string
-
-  module Paths : module type of Memory.WithCache (Reference.Key) (PathValue)
-
-  val get : Reference.t -> string option
-
-  val add : Reference.t -> handle:string -> unit
-
-  (* Exposed for testing. *)
-  val hash_of_key : Reference.t -> string
-
-  val serialize_key : Reference.t -> string
-
-  val compute_hashes_to_keys : keys:Reference.t list -> string String.Map.t
-end
-
 val heap_size : unit -> int

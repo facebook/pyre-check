@@ -58,10 +58,7 @@ module FixpointResult = struct
 end
 
 let parse_sources_job ~configuration ~preprocessing_state ~ast_environment ~force source_paths =
-  let parse
-      ({ FixpointResult.parsed; not_parsed } as result)
-      ({ SourcePath.relative; qualifier; _ } as source_path)
-    =
+  let parse ({ FixpointResult.parsed; not_parsed } as result) source_path =
     let use_parsed_source source =
       let source =
         match preprocessing_state with
@@ -76,9 +73,6 @@ let parse_sources_job ~configuration ~preprocessing_state ~ast_environment ~forc
           Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
         add_module_from_source preprocessed;
-
-        (* TODO (T47860888): Deprecate Ast.SharedMemory.Handles *)
-        Ast.SharedMemory.Handles.add qualifier ~handle:relative;
 
         let stored = Plugin.apply_to_ast preprocessed in
         AstEnvironment.add_source ast_environment stored;

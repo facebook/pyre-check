@@ -19,31 +19,6 @@ module IntKey = struct
   let from_string = Int.of_string
 end
 
-module Handles = struct
-  module PathValue = struct
-    type t = string
-
-    let prefix = Prefix.make ()
-
-    let description = "Path"
-
-    (* Strings are not marshalled in shared memory *)
-    let unmarshall value = value
-  end
-
-  module Paths = SharedMemory.WithCache (Reference.Key) (PathValue)
-
-  let get = Paths.get
-
-  let add qualifier ~handle = Paths.write_through qualifier handle
-
-  let hash_of_key = Paths.hash_of_key
-
-  let serialize_key = Paths.serialize_key
-
-  let compute_hashes_to_keys = Paths.compute_hashes_to_keys
-end
-
 module Modules = struct
   module ModuleValue = struct
     type t = Module.t

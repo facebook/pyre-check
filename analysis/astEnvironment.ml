@@ -49,20 +49,12 @@ let store _ = ()
 
 let load = create
 
-let shared_memory_hash_to_key_map qualifiers =
-  let extend_map map ~new_map =
-    Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
-  in
-  Sources.compute_hashes_to_keys ~keys:qualifiers
-  |> extend_map ~new_map:(Ast.SharedMemory.Handles.compute_hashes_to_keys ~keys:qualifiers)
-
+let shared_memory_hash_to_key_map qualifiers = Sources.compute_hashes_to_keys ~keys:qualifiers
 
 let serialize_decoded decoded =
   match decoded with
   | Sources.Decoded (key, value) ->
       Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
-  | Ast.SharedMemory.Handles.Paths.Decoded (key, value) ->
-      Some (Ast.SharedMemory.Handles.PathValue.description, Reference.show key, value)
   | _ -> None
 
 
@@ -70,9 +62,6 @@ let decoded_equal first second =
   match first, second with
   | Sources.Decoded (_, first), Sources.Decoded (_, second) ->
       Some (Option.equal Source.equal first second)
-  | ( Ast.SharedMemory.Handles.Paths.Decoded (_, first),
-      Ast.SharedMemory.Handles.Paths.Decoded (_, second) ) ->
-      Some (Option.equal String.equal first second)
   | _ -> None
 
 
