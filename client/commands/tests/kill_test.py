@@ -10,11 +10,14 @@ import subprocess
 import unittest
 from unittest.mock import MagicMock, call, patch
 
+import psutil  # noqa
+
 from ... import commands  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
 class KillTest(unittest.TestCase):
+    @patch("psutil.process_iter")
     @patch("os.getpgid", side_effect=lambda id: id)
     @patch("os.kill")
     @patch("os.remove")
@@ -33,8 +36,27 @@ class KillTest(unittest.TestCase):
     @patch("os.path.realpath")
     @patch("subprocess.run")
     def test_kill(
-        self, run, realpath, readlink, unlink, remove, kill, _get_process_group_id
+        self,
+        run,
+        realpath,
+        readlink,
+        unlink,
+        remove,
+        kill,
+        _get_process_group_id,
+        process_iter,
     ) -> None:
+        processA = MagicMock()
+        processA.info = {"name": "pyre-client"}
+        processA.pid = 1234
+        processB = MagicMock()
+        processB.info = {"name": "pyre-client"}
+        processB.pid = 5678
+        processC = MagicMock()
+        processC.info = {"name": "not-pyre-client"}
+        processC.pid = 4321
+        process_iter.return_value = [processA, processB, processC]
+        process_iter.return_value
         with patch("os.getenv", return_value=None), patch(
             "os.getpid", return_value=1234
         ):
@@ -42,20 +64,9 @@ class KillTest(unittest.TestCase):
             arguments = mock_arguments()
             configuration = mock_configuration()
             analysis_directory = MagicMock()
-            run.return_value = MagicMock()
-            run.return_value.stdout = "\n".join(["1234", "5678", "9101112"]).encode(
-                "utf-8"
-            )
             commands.Kill(arguments, configuration, analysis_directory).run()
-            run.assert_has_calls(
-                [
-                    call(["pkill", "pyre.bin"]),
-                    call(["pgrep", "pyre-client"], stdout=subprocess.PIPE),
-                ]
-            )
-            kill.assert_has_calls(
-                [call(5678, signal.SIGKILL), call(9101112, signal.SIGKILL)]
-            )
+            run.assert_has_calls([call(["pkill", "pyre.bin"])])
+            kill.assert_has_calls([call(5678, signal.SIGKILL)])
             remove.assert_has_calls(
                 [call("/tmp/actual_socket"), call("/tmp/json_socket")]
             )
@@ -74,12 +85,7 @@ class KillTest(unittest.TestCase):
             configuration = mock_configuration()
             analysis_directory = MagicMock()
             commands.Kill(arguments, configuration, analysis_directory).run()
-            run.assert_has_calls(
-                [
-                    call(["pkill", "main.exe"]),
-                    call(["pgrep", "my_client"], stdout=subprocess.PIPE),
-                ]
-            )
+            run.assert_has_calls([call(["pkill", "main.exe"])])
 
         with patch("os.getcwd", return_value="/root"), patch(
             "shutil.rmtree"

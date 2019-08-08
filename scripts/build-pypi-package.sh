@@ -19,7 +19,7 @@ DOWNLOAD_URL='https://github.com/facebook/pyre-check'
 # https://www.python.org/dev/peps/pep-0008/#package-and-module-names
 MODULE_NAME="pyre_check"
 
-RUNTIME_DEPENDENCIES="'typeshed', 'pywatchman'"
+RUNTIME_DEPENDENCIES="'typeshed', 'pywatchman', 'psutil'"
 
 # helpers
 die() {
@@ -52,7 +52,7 @@ while [[ $# -gt 0 ]]; do
       if [[ -n "$1" && -d "$1" ]]; then
         echo "Selected typeshed location for bundling: ${1}"
         BUNDLE_TYPESHED="${1}"
-        RUNTIME_DEPENDENCIES="'pywatchman'"
+        RUNTIME_DEPENDENCIES="'pywatchman' 'psutil'"
 
         # Attempt a basic validation of the provided directory.
         if [[ ! -d "${BUNDLE_TYPESHED}/stdlib" ]]; then

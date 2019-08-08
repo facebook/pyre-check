@@ -12,6 +12,8 @@ import signal
 import subprocess
 from typing import Iterable  # noqa
 
+import psutil
+
 from .. import BINARY_NAME, CLIENT_NAME
 from ..configuration import Configuration
 from ..filesystem import AnalysisDirectory
@@ -62,21 +64,15 @@ class Kill(Command):
             except OSError:
                 pass
 
-        # We need to be careful about how we kill the client here, as otherwise we might
-        # cause a race where we attempt to kill the `pyre kill` command.
-        process_ids = (
-            subprocess.run(
-                ["pgrep", _get_process_name("PYRE_CLIENT", CLIENT_NAME)],
-                stdout=subprocess.PIPE,
-            )
-            .stdout.decode("utf-8")
-            .split()
-        )
-        for process_id in process_ids:
-            id = int(process_id)
-            if id == os.getpid():
+        client_name = _get_process_name("PYRE_CLIENT", CLIENT_NAME)
+        for process in psutil.process_iter(attrs=["name"]):
+            if client_name != process.info["name"]:
                 continue
-            os.kill(os.getpgid(id), signal.SIGKILL)
+            # We need to be careful about how we kill the client here, as otherwise we
+            # might cause a race where we attempt to kill the `pyre kill` command.
+            if process.pid == os.getpid():
+                continue
+            os.kill(os.getpgid(process.pid), signal.SIGKILL)
 
 
 def _get_process_name(environment_variable_name: str, default: str) -> str:
