@@ -16,8 +16,10 @@
               "start": 16,
               "end": 25
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "via": "special_sink" } ]
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
@@ -41,8 +43,14 @@
               "start": 24,
               "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -69,7 +77,8 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name"
+                "name": "via_value_of.return_via_parameter_name",
+                "on_all_flows": true
               }
             ]
           }
@@ -97,7 +106,11 @@
               "end": 31
             },
             "leaves": [
-              { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
+              {
+                "kind": "Test",
+                "name": "via_value_of.sink_via_value_of",
+                "on_all_flows": true
+              }
             ]
           }
         ]
@@ -155,10 +168,12 @@
               "port": "formal(parameter)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
             "features": [
-              { "via-value": "attached to sink" },
-              { "via": "special_sink" }
+              { "always-via-value": "attached to sink" },
+              { "always-via": "special_sink" }
             ]
           }
         ]
@@ -187,10 +202,16 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
             "features": [
-              { "via-value": "attached to source" },
-              { "via": "special_source" }
+              { "always-via-value": "attached to source" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -215,8 +236,8 @@
             "tito": [ { "line": 52, "start": 16, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
-              { "via": "tito" },
-              { "via-value": "by_backwards" }
+              { "always-via": "tito" },
+              { "always-via-value": "by_backwards" }
             ]
           }
         ]
@@ -242,10 +263,11 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name"
+                "name": "via_value_of.return_via_parameter_name",
+                "on_all_flows": true
               }
             ],
-            "features": [ { "via-value": "FOO" } ]
+            "features": [ { "always-via-value": "FOO" } ]
           }
         ]
       }
@@ -272,10 +294,11 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name"
+                "name": "via_value_of.return_via_parameter_name",
+                "on_all_flows": true
               }
             ],
-            "features": [ { "via-value": "1" } ]
+            "features": [ { "always-via-value": "1" } ]
           }
         ]
       }
@@ -301,9 +324,13 @@
               "end": 36
             },
             "leaves": [
-              { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
+              {
+                "kind": "Test",
+                "name": "via_value_of.sink_via_value_of",
+                "on_all_flows": true
+              }
             ],
-            "features": [ { "via-value": "second" } ]
+            "features": [ { "always-via-value": "second" } ]
           }
         ]
       }
@@ -333,7 +360,11 @@
               "length": 1
             },
             "leaves": [
-              { "kind": "Test", "name": "via_value_of.sink_via_value_of" }
+              {
+                "kind": "Test",
+                "name": "via_value_of.sink_via_value_of",
+                "on_all_flows": true
+              }
             ]
           }
         ]
@@ -360,10 +391,11 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name"
+                "name": "via_value_of.return_via_parameter_name",
+                "on_all_flows": true
               }
             ],
-            "features": [ { "via-value": "A" } ]
+            "features": [ { "always-via-value": "A" } ]
           }
         ]
       }
@@ -388,11 +420,17 @@
               "end": 28
             },
             "tito": [ { "line": 39, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
             "features": [
-              { "via": "tito" },
-              { "via-value": "second" },
-              { "via": "special_source" }
+              { "always-via": "tito" },
+              { "always-via-value": "second" },
+              { "always-via": "special_source" }
             ]
           }
         ]
@@ -425,7 +463,8 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "via_value_of.return_via_parameter_name"
+                "name": "via_value_of.return_via_parameter_name",
+                "on_all_flows": true
               }
             ]
           }

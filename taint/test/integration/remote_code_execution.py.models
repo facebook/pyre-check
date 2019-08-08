@@ -23,7 +23,11 @@
               "end": 27
             },
             "leaves": [
-              { "kind": "UserControlled", "name": "__user_controlled" }
+              {
+                "kind": "UserControlled",
+                "name": "__user_controlled",
+                "on_all_flows": true
+              }
             ]
           }
         ]
@@ -38,7 +42,13 @@
               "start": 9,
               "end": 10
             },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            "leaves": [
+              {
+                "kind": "RemoteCodeExecution",
+                "name": "eval",
+                "on_all_flows": true
+              }
+            ]
           }
         ]
       }

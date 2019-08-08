@@ -93,7 +93,13 @@
               "start": 13,
               "end": 34
             },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            "leaves": [
+              {
+                "kind": "RemoteCodeExecution",
+                "name": "eval",
+                "on_all_flows": true
+              }
+            ]
           }
         ]
       }
@@ -117,7 +123,7 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
             ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       },
@@ -128,7 +134,7 @@
             "decl": null,
             "tito": [ { "line": 14, "start": 19, "end": 30 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       },
@@ -139,7 +145,7 @@
             "decl": null,
             "tito": [ { "line": 14, "start": 15, "end": 18 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -162,7 +168,7 @@
             "leaves": [
               { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
             ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       },
@@ -173,7 +179,7 @@
             "decl": null,
             "tito": [ { "line": 22, "start": 41, "end": 50 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }

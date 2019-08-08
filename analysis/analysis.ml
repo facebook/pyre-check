@@ -4,6 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 module AbstractDomain = AbstractDomain
+module AbstractOverUnderSetDomain = AbstractOverUnderSetDomain
 module AbstractSetDomain = AbstractSetDomain
 module AbstractElementSetDomain = AbstractElementSetDomain
 module AbstractMapDomain = AbstractMapDomain

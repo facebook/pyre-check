@@ -15,10 +15,12 @@
               "start": 16,
               "end": 24
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
             "features": [
-              { "via": "special_sink" },
-              { "via": "format-string" }
+              { "always-via": "special_sink" },
+              { "always-via": "format-string" }
             ]
           }
         ]
@@ -42,10 +44,16 @@
               "start": 25,
               "end": 27
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
             "features": [
-              { "via": "special_source" },
-              { "via": "format-string" }
+              { "always-via": "special_source" },
+              { "always-via": "format-string" }
             ]
           }
         ]
@@ -68,7 +76,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "format-string" } ]
+            "features": [ { "always-via": "format-string" } ]
           }
         ]
       },
@@ -78,7 +86,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "format-string" } ]
+            "features": [ { "always-via": "format-string" } ]
           }
         ]
       }

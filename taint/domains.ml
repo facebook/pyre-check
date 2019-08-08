@@ -221,20 +221,24 @@ module FlowDetails = struct
 
   include AbstractProductDomain.Make (Slots)
 
-  let initial = product [Element (Slots.TraceInfo, TraceInfoSet.singleton TraceInfo.Declaration)]
+  let initial =
+    product
+      [ Element (Slots.TraceInfo, TraceInfoSet.singleton TraceInfo.Declaration);
+        Element (Slots.SimpleFeature, Features.SimpleSet.empty) ]
+
 
   let trace_info = ProductSlot (Slots.TraceInfo, TraceInfoSet.Element)
 
   let simple_feature = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.Element)
 
-  let simple_feature_set = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.Set)
+  let simple_feature_element = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.ElementAndUnder)
 
-  let gather_leaf_names accumulator = function
-    | Features.Simple.LeafName name -> name :: accumulator
-    | Breadcrumb _
-    | ViaValueOf _
-    | TitoPosition _ ->
-        accumulator
+  let simple_feature_set = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.SetAndUnder)
+
+  let gather_leaf_names accumulator element =
+    match element.Features.SimpleSet.element with
+    | Features.Simple.LeafName _ -> element :: accumulator
+    | _ -> accumulator
 
 
   let complex_feature = ProductSlot (Slots.ComplexFeature, Features.ComplexSet.Element)
@@ -255,7 +259,9 @@ module type TAINT_DOMAIN = sig
 
   val simple_feature : Features.Simple.t AbstractDomain.part
 
-  val simple_feature_set : Features.Simple.t list AbstractDomain.part
+  val simple_feature_element : Features.SimpleSet.element AbstractDomain.part
+
+  val simple_feature_set : Features.SimpleSet.element list AbstractDomain.part
 
   val complex_feature : Features.Complex.t AbstractDomain.part
 
@@ -309,6 +315,8 @@ end = struct
 
   let simple_feature = FlowDetails.simple_feature
 
+  let simple_feature_element = FlowDetails.simple_feature_element
+
   let complex_feature = FlowDetails.complex_feature
 
   let simple_feature_set = FlowDetails.simple_feature_set
@@ -330,9 +338,14 @@ end = struct
       in
       let leaf_kind_json = `String (Leaf.show leaf) in
       let breadcrumbs, tito_positions, leaf_json =
-        let gather_json (breadcrumbs, tito, leaves) = function
+        let gather_json (breadcrumbs, tito, leaves) { Features.SimpleSet.element; in_under } =
+          match element with
           | Features.Simple.LeafName name ->
-              breadcrumbs, tito, `Assoc ["kind", leaf_kind_json; "name", `String name] :: leaves
+              ( breadcrumbs,
+                tito,
+                `Assoc
+                  ["kind", leaf_kind_json; "name", `String name; "on_all_flows", `Bool in_under]
+                :: leaves )
           | TitoPosition location ->
               let tito_location_json = location_to_json location in
               breadcrumbs, tito_location_json :: tito, leaves
@@ -340,7 +353,9 @@ end = struct
               (* The taint analysis creates breadcrumbs for ViaValueOf features dynamically.*)
               breadcrumbs, tito, leaves
           | Breadcrumb breadcrumb ->
-              let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb in
+              let breadcrumb_json =
+                Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under
+              in
               breadcrumb_json :: breadcrumbs, tito, leaves
         in
         let gather_return_access_path leaves = function
@@ -349,7 +364,7 @@ end = struct
               `Assoc ["kind", leaf_kind_json; "name", `String path_name] :: leaves
         in
         let breadcrumbs, tito_positions, leaves =
-          FlowDetails.(fold simple_feature ~f:gather_json ~init:([], [], []) features)
+          FlowDetails.(fold simple_feature_element ~f:gather_json ~init:([], [], []) features)
         in
         ( breadcrumbs,
           tito_positions,
@@ -408,16 +423,22 @@ end = struct
     let taint = Map.transform FlowDetails.trace_info ~f:translate taint in
     let strip_tito_positions features =
       List.filter
-        ~f:(function
+        ~f:(fun { Features.SimpleSet.element; _ } ->
+          match element with
           | Features.Simple.TitoPosition _ -> false
           | _ -> true)
         features
     in
     let taint = Map.transform FlowDetails.simple_feature_set ~f:strip_tito_positions taint in
     if needs_leaf_name then
+      let open Features in
       let add_leaf_names info_set =
         let add_leaf_name info_set callee =
-          Features.Simple.LeafName (Interprocedural.Callable.external_target_name callee)
+          {
+            SimpleSet.element =
+              Simple.LeafName (Interprocedural.Callable.external_target_name callee);
+            in_under = true;
+          }
           :: info_set
         in
         List.fold callees ~f:add_leaf_name ~init:info_set
@@ -491,11 +512,10 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
         let tip =
           let ancestor_leaf_names =
             Taint.fold
-              FlowDetails.simple_feature
+              FlowDetails.simple_feature_element
               ancestors
               ~f:FlowDetails.gather_leaf_names
               ~init:[]
-            |> List.map ~f:(fun name -> Features.Simple.LeafName name)
           in
           let join_ancestor_leaf_names leaves = leaves @ ancestor_leaf_names in
           Taint.transform FlowDetails.simple_feature_set tip ~f:join_ancestor_leaf_names
@@ -548,8 +568,9 @@ let local_return_taint =
   BackwardTaint.create
     [ Part (BackwardTaint.leaf, Sinks.LocalReturn);
       Part (BackwardTaint.trace_info, TraceInfo.Declaration);
-      Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath []) ]
+      Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath []);
+      Part (BackwardTaint.simple_feature_set, []) ]
 
 
 let add_format_string_feature set =
-  Features.Simple.Breadcrumb Features.Breadcrumb.FormatString :: set
+  Features.SimpleSet.element (Features.Simple.Breadcrumb Features.Breadcrumb.FormatString) :: set

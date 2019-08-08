@@ -101,16 +101,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     let add_first kind name set =
-      let already_has_first = function
-        | Features.Simple.Breadcrumb (Features.Breadcrumb.First { kind = has_kind; _ }) ->
-            has_kind = kind
+      let open Features in
+      let already_has_first feature =
+        match feature.SimpleSet.element with
+        | Simple.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) -> has_kind = kind
         | _ -> false
       in
       if List.exists set ~f:already_has_first then
         set
       else
-        Features.Simple.Breadcrumb (Features.Breadcrumb.HasFirst kind)
-        :: Features.Simple.Breadcrumb (Features.Breadcrumb.First { kind; name })
+        SimpleSet.element (Simple.Breadcrumb (Breadcrumb.HasFirst kind))
+        :: SimpleSet.element (Simple.Breadcrumb (Breadcrumb.First { kind; name }))
         :: set
 
 
@@ -203,18 +204,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   { BackwardState.Tree.path; tip = return_taint; _ }
                 =
                 let breadcrumbs =
-                  let gather_breadcrumbs breadcrumbs feature =
-                    match feature with
-                    | Features.Simple.Breadcrumb _ as breadcrumb -> breadcrumb :: breadcrumbs
-                    | _ -> breadcrumbs
-                  in
                   BackwardTaint.fold
-                    BackwardTaint.simple_feature
+                    BackwardTaint.simple_feature_element
                     return_taint
-                    ~f:gather_breadcrumbs
+                    ~f:Features.gather_breadcrumbs
                     ~init:
-                      [ Features.Simple.Breadcrumb Features.Breadcrumb.Tito;
-                        Features.Simple.TitoPosition location ]
+                      Features.
+                        [ SimpleSet.element (Simple.Breadcrumb Breadcrumb.Tito);
+                          SimpleSet.element (Simple.TitoPosition location) ]
                 in
                 let add_features features = List.rev_append breadcrumbs features in
                 let taint_to_propagate =
@@ -707,14 +704,16 @@ let extract_features_to_attach existing_taint =
   |> (fun map -> Map.Poly.find map true)
   |> function
   | Some taint ->
-      let gather_features features = function
-        | Features.Simple.Breadcrumb _ as feature -> feature :: features
+      let gather_features features feature =
+        let open Features in
+        match feature.SimpleSet.element with
+        | Simple.Breadcrumb _ -> feature :: features
         (* The ViaValueOf models will be converted to breadcrumbs at the call site via
            `get_callsite_model`. *)
-        | Features.Simple.ViaValueOf _ as feature -> feature :: features
+        | Simple.ViaValueOf _ -> feature :: features
         | _ -> features
       in
-      ForwardTaint.fold ForwardTaint.simple_feature ~f:gather_features ~init:[] taint
+      ForwardTaint.fold ForwardTaint.simple_feature_element ~f:gather_features ~init:[] taint
   | None -> []
 
 

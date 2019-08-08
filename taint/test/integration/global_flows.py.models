@@ -23,8 +23,17 @@
               "end": 28
             },
             "tito": [ { "line": 60, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -38,7 +47,13 @@
               "start": 4,
               "end": 5
             },
-            "leaves": [ { "kind": "Test", "name": "global_flows.l" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.l",
+                "on_all_flows": true
+              }
+            ]
           }
         ]
       }
@@ -68,8 +83,14 @@
               "start": 33,
               "end": 35
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -88,8 +109,14 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "global_flows.l" } ],
-            "features": [ { "via": "tito" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.l",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -120,8 +147,17 @@
               "end": 34
             },
             "tito": [ { "line": 16, "start": 19, "end": 34 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -135,7 +171,13 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.x",
+                "on_all_flows": true
+              }
+            ]
           }
         ]
       }
@@ -166,8 +208,17 @@
               "end": 31
             },
             "tito": [ { "line": 24, "start": 16, "end": 31 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -181,7 +232,13 @@
               "start": 33,
               "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.x",
+                "on_all_flows": true
+              }
+            ]
           }
         ]
       }
@@ -211,8 +268,14 @@
               "start": 42,
               "end": 44
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -231,8 +294,14 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
-            "features": [ { "via": "tito" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.x",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -262,8 +331,14 @@
               "start": 42,
               "end": 44
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -282,8 +357,14 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
-            "features": [ { "via": "tito" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.x",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -323,8 +404,14 @@
               "end": 5
             },
             "tito": [ { "line": 64, "start": 13, "end": 16 } ],
-            "leaves": [ { "kind": "Test", "name": "global_flows.l" } ],
-            "features": [ { "via": "tito" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.l",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -349,8 +436,14 @@
               "end": 17
             },
             "tito": [ { "line": 32, "start": 19, "end": 22 } ],
-            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
-            "features": [ { "via": "tito" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.x",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -375,8 +468,14 @@
               "end": 22
             },
             "tito": [ { "line": 44, "start": 16, "end": 19 } ],
-            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
-            "features": [ { "via": "tito" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "global_flows.x",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }

@@ -63,8 +63,17 @@
               "end": 31
             },
             "tito": [ { "line": 12, "start": 16, "end": 31 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }
@@ -89,8 +98,17 @@
               "end": 34
             },
             "tito": [ { "line": 6, "start": 19, "end": 34 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }
@@ -115,12 +133,18 @@
               "end": 38
             },
             "tito": [ { "line": 18, "start": 23, "end": 38 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
             "features": [
-              { "via": "tito" },
-              { "via": "special_source" },
-              { "has": "first-field" },
-              { "first-field": "foo" }
+              { "always-via": "tito" },
+              { "always-via": "special_source" },
+              { "always-has": "first-field" },
+              { "always-first-field": "foo" }
             ]
           }
         ]
@@ -146,8 +170,17 @@
               "end": 28
             },
             "tito": [ { "line": 30, "start": 13, "end": 28 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }
@@ -173,8 +206,13 @@
               "end": 17
             },
             "tito": [ { "line": 44, "start": 19, "end": 20 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "via": "tito" }, { "via": "special_sink" } ]
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_sink" }
+            ]
           }
         ]
       }

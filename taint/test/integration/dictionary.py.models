@@ -22,8 +22,14 @@
               "start": 52,
               "end": 54
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -43,9 +49,13 @@
               "length": 1
             },
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "dictionary.tainted_dictionary",
+                "on_all_flows": true
+              }
             ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -76,8 +86,17 @@
               "end": 51
             },
             "tito": [ { "line": 59, "start": 30, "end": 52 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       },
@@ -92,7 +111,11 @@
               "end": 22
             },
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "dictionary.tainted_dictionary",
+                "on_all_flows": true
+              }
             ]
           }
         ]
@@ -115,8 +138,14 @@
               "start": 26,
               "end": 28
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -140,11 +169,17 @@
               "start": 26,
               "end": 28
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
             "features": [
-              { "via": "special_source" },
-              { "has": "first-index" },
-              { "first-index": "a" }
+              { "always-via": "special_source" },
+              { "always-has": "first-index" },
+              { "always-first-index": "a" }
             ]
           }
         ]
@@ -170,8 +205,10 @@
               "start": 31,
               "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "via": "special_sink" } ]
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }
@@ -194,11 +231,17 @@
               "start": 31,
               "end": 33
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
             "features": [
-              { "via": "special_source" },
-              { "has": "first-index" },
-              { "first-index": "a" }
+              { "always-via": "special_source" },
+              { "always-has": "first-index" },
+              { "always-first-index": "a" }
             ]
           }
         ]
@@ -223,11 +266,17 @@
               "start": 31,
               "end": 33
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
             "features": [
-              { "via": "special_source" },
-              { "has": "first-index" },
-              { "first-index": "a" }
+              { "always-via": "special_source" },
+              { "always-has": "first-index" },
+              { "always-first-index": "a" }
             ]
           }
         ]
@@ -252,8 +301,14 @@
               "start": 32,
               "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -299,9 +354,13 @@
             },
             "tito": [ { "line": 63, "start": 30, "end": 33 } ],
             "leaves": [
-              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+              {
+                "kind": "Test",
+                "name": "dictionary.tainted_dictionary",
+                "on_all_flows": true
+              }
             ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }

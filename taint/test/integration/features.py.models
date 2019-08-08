@@ -12,7 +12,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "type": "scalar" } ]
+            "features": [ { "always-type": "scalar" } ]
           }
         ]
       }
@@ -41,7 +41,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "type": "scalar" } ]
+            "features": [ { "always-type": "scalar" } ]
           }
         ]
       }
@@ -61,7 +61,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "type": "scalar" } ]
+            "features": [ { "always-type": "scalar" } ]
           }
         ]
       }
@@ -82,7 +82,10 @@
             "decl": null,
             "tito": [ { "line": 19, "start": 15, "end": 16 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "type": "scalar" }, { "via": "tito" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       }
@@ -102,6 +105,30 @@
           {
             "decl": null,
             "tito": [ { "line": 23, "start": 15, "end": 16 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.tito_via_min_or_not",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 36, "start": 19, "end": 20 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "type": "scalar" }, { "via": "tito" } ]
           }
@@ -124,7 +151,7 @@
             "decl": null,
             "tito": [ { "line": 27, "start": 18, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -145,7 +172,10 @@
             "decl": null,
             "tito": [ { "line": 31, "start": 33, "end": 34 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "type": "scalar" }, { "via": "tito" } ]
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ]
           }
         ]
       }

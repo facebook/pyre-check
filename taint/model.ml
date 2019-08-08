@@ -351,14 +351,17 @@ let taint_parameter
   let add_to_model model annotation =
     match annotation with
     | Sink { sink; breadcrumbs } ->
-        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        List.map ~f:Features.SimpleSet.element breadcrumbs
+        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_sink_taint ~root model sink
     | Source { source; breadcrumbs } ->
-        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        List.map ~f:Features.SimpleSet.element breadcrumbs
+        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_source_taint ~root model source
     | Tito { tito; breadcrumbs } ->
         (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
-        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        List.map ~f:Features.SimpleSet.element breadcrumbs
+        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> add_signature_based_breadcrumbs
              ~resolution
              AccessPath.Root.LocalResult
@@ -376,10 +379,12 @@ let taint_return ~configuration ~resolution ~parameters model expression ~callab
     let root = AccessPath.Root.LocalResult in
     match annotation with
     | Sink { sink; breadcrumbs } ->
-        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        List.map ~f:Features.SimpleSet.element breadcrumbs
+        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_sink_taint ~root model sink
     | Source { source; breadcrumbs } ->
-        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        List.map ~f:Features.SimpleSet.element breadcrumbs
+        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_source_taint ~root model source
     | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
     | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
@@ -809,11 +814,13 @@ let get_callsite_model ~call_target ~arguments =
           { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }
         =
         let expand features =
-          let transform = function
-            | Features.Simple.ViaValueOf { position } ->
+          let transform feature =
+            let open Features in
+            match feature.SimpleSet.element with
+            | Simple.ViaValueOf { position } ->
                 List.nth arguments position
-                >>= fun argument -> Features.Simple.via_value_of_breadcrumb ~argument
-            | feature -> Some feature
+                >>= fun argument -> Simple.via_value_of_breadcrumb ~argument >>| SimpleSet.element
+            | _ -> Some feature
           in
           List.filter_map features ~f:transform
         in

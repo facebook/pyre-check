@@ -15,8 +15,13 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "type": "scalar" }, { "via": "special_sink" } ]
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
           }
         ]
       }
@@ -39,8 +44,17 @@
               "start": 24,
               "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "type": "scalar" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }
@@ -65,8 +79,13 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "type": "scalar" }, { "via": "special_sink" } ]
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
           }
         ]
       }
@@ -89,8 +108,17 @@
               "start": 24,
               "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "type": "scalar" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }
@@ -115,8 +143,13 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "type": "scalar" }, { "via": "special_sink" } ]
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_sink" }
+            ]
           }
         ]
       }
@@ -139,8 +172,17 @@
               "start": 24,
               "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "type": "scalar" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }

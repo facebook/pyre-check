@@ -23,8 +23,14 @@
               "start": 55,
               "end": 57
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -41,7 +47,8 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "class_flows.C.__class__.tainted_class_attribute"
+                "name": "class_flows.C.__class__.tainted_class_attribute",
+                "on_all_flows": true
               }
             ]
           }
@@ -74,8 +81,14 @@
               "start": 60,
               "end": 62
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -92,7 +105,8 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "class_flows.C.__class__.tainted_class_attribute"
+                "name": "class_flows.C.__class__.tainted_class_attribute",
+                "on_all_flows": true
               }
             ]
           }
@@ -124,8 +138,14 @@
               "start": 45,
               "end": 47
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -142,7 +162,8 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "class_flows.C.__class__.tainted_class_attribute"
+                "name": "class_flows.C.__class__.tainted_class_attribute",
+                "on_all_flows": true
               }
             ]
           }
@@ -174,8 +195,14 @@
               "start": 39,
               "end": 41
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -190,7 +217,11 @@
               "end": 23
             },
             "leaves": [
-              { "kind": "Test", "name": "class_flows.C.tainted_attribute" }
+              {
+                "kind": "Test",
+                "name": "class_flows.C.tainted_attribute",
+                "on_all_flows": true
+              }
             ]
           }
         ]
@@ -221,8 +252,14 @@
               "start": 56,
               "end": 58
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       },
@@ -239,7 +276,8 @@
             "leaves": [
               {
                 "kind": "Test",
-                "name": "class_flows.C.__class__.tainted_class_attribute"
+                "name": "class_flows.C.__class__.tainted_class_attribute",
+                "on_all_flows": true
               }
             ]
           }

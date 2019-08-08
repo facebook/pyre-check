@@ -9,8 +9,14 @@
         "taint": [
           {
             "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -49,8 +55,14 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -63,7 +75,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -80,8 +92,17 @@
         "taint": [
           {
             "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "always-via": "special_source" }
+            ]
           },
           {
             "call": {
@@ -95,8 +116,17 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }
@@ -109,7 +139,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -151,8 +181,17 @@
               "end": 38
             },
             "tito": [ { "line": 15, "start": 15, "end": 19 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "always-via": "special_source" }
+            ]
           },
           {
             "call": {
@@ -167,8 +206,17 @@
               "length": 1
             },
             "tito": [ { "line": 15, "start": 15, "end": 19 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }
@@ -182,7 +230,7 @@
             "decl": null,
             "tito": [ { "line": 15, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -209,8 +257,14 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -224,7 +278,7 @@
             "decl": null,
             "tito": [ { "line": 19, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -247,8 +301,17 @@
               "end": 38
             },
             "tito": [ { "line": 25, "start": 15, "end": 19 } ],
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "special_source" }
+            ]
           }
         ]
       }
@@ -262,7 +325,7 @@
             "decl": null,
             "tito": [ { "line": 25, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -283,7 +346,7 @@
             "decl": null,
             "tito": [ { "line": 29, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
@@ -305,8 +368,14 @@
               "start": 28,
               "end": 30
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }
@@ -335,8 +404,14 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
-            "features": [ { "via": "special_source" } ]
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
           }
         ]
       }

@@ -28,9 +28,18 @@ module type FUNCTION_CONTEXT = sig
   val is_constructor : unit -> bool
 
   val environment : Environment.t
+
+  val debug : bool
 end
 
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
+  let log format =
+    if FunctionContext.debug then
+      Log.dump format
+    else
+      Log.log ~section:`Taint format
+
+
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
      paths for more precise tito. *)
   let initial_taint =
@@ -141,8 +150,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
             let add_tito_location features =
-              Features.Simple.Breadcrumb Features.Breadcrumb.Tito
-              :: Features.Simple.TitoPosition location
+              Features.SimpleSet.element (Features.Simple.Breadcrumb Features.Breadcrumb.Tito)
+              :: Features.SimpleSet.element (Features.Simple.TitoPosition location)
               :: features
             in
             let translate_tito
@@ -166,15 +175,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                       [[]]
                 in
                 let breadcrumbs =
-                  let gather_breadcrumbs breadcrumbs feature =
-                    match feature with
-                    | Features.Simple.Breadcrumb _ as breadcrumb -> breadcrumb :: breadcrumbs
-                    | _ -> breadcrumbs
-                  in
                   BackwardTaint.fold
-                    BackwardTaint.simple_feature
+                    BackwardTaint.simple_feature_element
                     element
-                    ~f:gather_breadcrumbs
+                    ~f:Features.gather_breadcrumbs
                     ~init:[]
                 in
                 let add_features features = List.rev_append breadcrumbs features in
@@ -355,7 +359,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         ~state
         ~expression:{ Node.location; value = expression }
       =
-      Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
+      log "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
       | Await expression -> analyze_expression ~resolution ~taint ~state ~expression
       | BooleanOperator { left; operator = _; right }
@@ -515,7 +519,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     let analyze_statement ~resolution state statement =
-      Log.log ~section:`Taint "State: %a\nStmt: %a" pp state Statement.pp_statement statement;
+      log "State: %a\nStmt: %a" pp state Statement.pp_statement statement;
       match statement with
       | Assign { target; value; _ } ->
           let taint, _ = compute_assignment_taint ~resolution target state in
@@ -685,16 +689,20 @@ let run ~environment ~define ~existing_model =
       match define.value.Define.signature.parameters with
       | { Node.value = { Parameter.name; _ }; _ } :: _ -> Some (Root.Variable name)
       | _ -> None
+
+
+    let debug = Define.dump define.value
   end)
   in
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in
+  let () = log "Backward analysis of callable: %a" Reference.pp name in
   let entry_state = Analyzer.backward ~cfg ~initial |> Analyzer.entry in
   let () =
     match entry_state with
-    | Some entry_state -> Log.log ~section:`Taint "Final state: %a" FixpointState.pp entry_state
-    | None -> Log.log ~section:`Taint "No final state found"
+    | Some entry_state -> log "Final state: %a" FixpointState.pp entry_state
+    | None -> log "No final state found"
   in
   let resolution = Environment.resolution environment () in
   let extract_model FixpointState.{ taint; _ } =
@@ -705,15 +713,7 @@ let run ~environment ~define ~existing_model =
         ~existing_backward:existing_model.TaintResult.backward
         taint
     in
-    let () =
-      Log.log
-        ~section:`Taint
-        "Callable: %a Models: %a"
-        Reference.pp
-        name
-        TaintResult.Backward.pp_model
-        model
-    in
+    let () = log "Callable: %a Models: %a" Reference.pp name TaintResult.Backward.pp_model model in
     model
   in
   entry_state >>| extract_model |> Option.value ~default:TaintResult.Backward.empty

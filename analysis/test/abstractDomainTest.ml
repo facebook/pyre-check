@@ -106,12 +106,14 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
   let test_subtract_conformance v1 v2 =
     let check_difference ~title value ~from ~removed =
       let reconstituted = Domain.join value removed in
-      assert_bool
-        (Format.sprintf "%s: difference is less or equal to original" title)
-        (Domain.less_or_equal ~left:value ~right:from);
-      assert_bool
-        "original is less or equal to reconstitued"
-        (Domain.less_or_equal ~left:from ~right:reconstituted)
+      if not (Domain.less_or_equal ~left:value ~right:from) then
+        assert_bool
+          (Format.asprintf "%s: difference %a is less or equal to original" title Domain.pp value)
+          (Domain.less_or_equal ~left:value ~right:from);
+      if not (Domain.less_or_equal ~left:from ~right:reconstituted) then
+        assert_bool
+          (Format.asprintf "%s: original is less or equal to reconstitued %a" title Domain.pp value)
+          (Domain.less_or_equal ~left:from ~right:reconstituted)
     in
     let v1_minus_v2 = Domain.subtract v2 ~from:v1 in
     check_difference ~title:"v1_minus_v2" v1_minus_v2 ~from:v1 ~removed:v2;
@@ -1323,6 +1325,198 @@ end
 
 module TestTreeDomain = TestAbstractDomain (TreeOfStringSets)
 
+module OverUnderStringSet = struct
+  include AbstractOverUnderSetDomain.Make (String)
+
+  let top = None
+
+  let unrelated =
+    [ of_list [{ element = "a"; in_under = true }; { element = "b"; in_under = true }];
+      of_list [{ element = "a"; in_under = true }; { element = "c"; in_under = true }];
+      of_list [{ element = "b"; in_under = true }; { element = "c"; in_under = true }] ]
+
+
+  let values = List.cartesian_product unrelated unrelated |> List.map ~f:(Tuple2.uncurry join)
+
+  let show_element { element; in_under } =
+    if in_under then
+      element
+    else
+      element ^ "-"
+
+
+  let gather_result_elements set =
+    fold ElementAndUnder ~init:[] ~f:(fun result element -> show_element element :: result) set
+    |> List.sort ~compare:String.compare
+
+
+  let gather_results set =
+    fold Element ~init:[] ~f:(fun result element -> element :: result) set
+    |> List.sort ~compare:String.compare
+
+
+  let test_fold _ =
+    let test_elements expected =
+      let element_set = List.fold ~init:bottom ~f:add expected in
+      let actual = gather_result_elements element_set in
+      assert_equal expected actual ~printer:(fun elements ->
+          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+    in
+    let test expected =
+      let element_set = List.fold ~init:bottom ~f:add expected in
+      let actual = gather_results element_set in
+      assert_equal expected actual ~printer:(fun elements ->
+          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+    in
+    test ["a"];
+    test ["a"; "b"];
+    test ["a"; "b"; "c"];
+    test_elements ["a"];
+    test_elements ["a"; "b"];
+    test_elements ["a"; "b"; "c"]
+
+
+  let test_transform _ =
+    let test_elements ~initial ~by ~f ~expected =
+      let element_set = List.fold ~init:bottom ~f:add initial in
+      let actual = transform by ~f element_set |> gather_result_elements in
+      assert_equal expected actual ~printer:(fun elements ->
+          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+    in
+    let test ~initial ~by ~f ~expected =
+      let element_set = List.fold ~init:bottom ~f:add initial in
+      let actual = transform by ~f element_set |> gather_result_elements in
+      assert_equal expected actual ~printer:(fun elements ->
+          Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
+    in
+    test ~initial:["a"; "b"] ~by:Element ~f:(fun element -> "t." ^ element) ~expected:["t.a"; "t.b"];
+    test ~initial:["a"; "b"] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["a"; "b"; "c"];
+    test ~initial:[] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["c"];
+    test_elements
+      ~initial:["a"; "b"]
+      ~by:ElementAndUnder
+      ~f:(fun { element; in_under } -> { element = "t." ^ element; in_under })
+      ~expected:["t.a"; "t.b"];
+    test_elements
+      ~initial:["a"; "b"]
+      ~by:SetAndUnder
+      ~f:(fun set -> { element = "c"; in_under = false } :: set)
+      ~expected:["a"; "b"; "c-"];
+    test_elements
+      ~initial:[]
+      ~by:SetAndUnder
+      ~f:(fun set -> { element = "c"; in_under = false } :: set)
+      ~expected:["c-"]
+
+
+  let test_partition _ =
+    let test_elements ~initial ~f ~expected =
+      let element_set = List.fold ~init:bottom ~f:add initial in
+      let actual =
+        partition ElementAndUnder ~f element_set
+        |> Map.Poly.fold ~init:[] ~f:(fun ~key ~data result ->
+               let elements = gather_result_elements data in
+               (key, elements) :: result)
+        |> List.sort ~compare:Pervasives.compare
+      in
+      assert_equal expected actual ~printer:(fun elements ->
+          Format.asprintf "%a" Sexp.pp [%message (elements : (int * string list) list)])
+    in
+    let test ~initial ~f ~expected =
+      let element_set = List.fold ~init:bottom ~f:add initial in
+      let actual =
+        partition Element ~f element_set
+        |> Map.Poly.fold ~init:[] ~f:(fun ~key ~data result ->
+               let elements = gather_result_elements data in
+               (key, elements) :: result)
+        |> List.sort ~compare:Pervasives.compare
+      in
+      assert_equal expected actual ~printer:(fun elements ->
+          Format.asprintf "%a" Sexp.pp [%message (elements : (int * string list) list)])
+    in
+    test
+      ~initial:["abc"; "bef"; "g"]
+      ~f:(fun element -> String.length element)
+      ~expected:[1, ["g"]; 3, ["abc"; "bef"]];
+    test_elements
+      ~initial:["abc"; "bef"; "g"]
+      ~f:(fun { element; _ } -> String.length element)
+      ~expected:[1, ["g"]; 3, ["abc"; "bef"]]
+
+
+  let from elements = List.fold ~init:bottom ~f:add elements
+
+  let test_create _ =
+    assert_equal
+      (of_list
+         [ { element = "a"; in_under = true };
+           { element = "b"; in_under = true };
+           { element = "c"; in_under = false } ])
+      (create
+         [ Part
+             ( SetAndUnder,
+               [ { element = "a"; in_under = true };
+                 { element = "b"; in_under = true };
+                 { element = "c"; in_under = false } ] ) ])
+      ~printer:show;
+    assert_equal
+      (of_list
+         [ { element = "a"; in_under = true };
+           { element = "b"; in_under = true };
+           { element = "c"; in_under = false } ])
+      (create
+         [ Part (ElementAndUnder, { element = "a"; in_under = true });
+           Part (ElementAndUnder, { element = "b"; in_under = true });
+           Part (ElementAndUnder, { element = "c"; in_under = false }) ])
+      ~printer:show;
+    assert_equal (from ["a"; "b"; "c"]) (create [Part (Set, ["a"; "b"; "c"])]) ~printer:show;
+    assert_equal
+      (from ["a"; "b"; "c"])
+      (create [Part (Element, "a"); Part (Element, "b"); Part (Element, "c")])
+      ~printer:show
+
+
+  let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
+
+  let test_additional _ =
+    let set_a =
+      of_list
+        [ { element = "a"; in_under = true };
+          { element = "b"; in_under = true };
+          { element = "c"; in_under = true } ]
+    in
+    let set_b = of_list [{ element = "a"; in_under = true }; { element = "b"; in_under = true }] in
+    let set_c = join set_a set_b in
+    let set_d = join empty set_a in
+    let set_e = join set_a empty in
+    assert_equal
+      (of_list
+         [ { element = "a"; in_under = true };
+           { element = "b"; in_under = true };
+           { element = "c"; in_under = false } ])
+      set_c
+      ~printer:show
+      ~cmp:compare;
+    assert_equal
+      (of_list
+         [ { element = "a"; in_under = false };
+           { element = "b"; in_under = false };
+           { element = "c"; in_under = false } ])
+      set_d
+      ~printer:show
+      ~cmp:compare;
+    assert_equal
+      (of_list
+         [ { element = "a"; in_under = false };
+           { element = "b"; in_under = false };
+           { element = "c"; in_under = false } ])
+      set_e
+      ~printer:show
+      ~cmp:compare
+end
+
+module TestOverUnderStringSet = TestAbstractDomain (OverUnderStringSet)
+
 let () =
   "abstractDomainTest"
   >::: [ "string_set" >::: TestStringSet.suite ();
@@ -1332,5 +1526,6 @@ let () =
          "dual_string" >::: TestPairStringString.suite ();
          "abstract_element" >::: TestAbstractElement.suite ();
          "product" >::: TestProductDomain.suite ();
-         "tree" >::: TestTreeDomain.suite () ]
+         "tree" >::: TestTreeDomain.suite ();
+         "string_biset" >::: TestOverUnderStringSet.suite () ]
   |> Test.run

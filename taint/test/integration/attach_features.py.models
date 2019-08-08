@@ -12,7 +12,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
       }
@@ -40,9 +40,13 @@
               "length": 1
             },
             "leaves": [
-              { "kind": "Test", "name": "attach_features.source" }
+              {
+                "kind": "Test",
+                "name": "attach_features.source",
+                "on_all_flows": true
+              }
             ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
       }
@@ -67,8 +71,10 @@
               "start": 16,
               "end": 37
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
-            "features": [ { "via": "special_sink" } ]
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
           }
         ]
       },
@@ -78,7 +84,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "via": "string_concat_rhs" } ]
+            "features": [ { "always-via": "string_concat_rhs" } ]
           },
           {
             "root": {
@@ -87,10 +93,12 @@
               "start": 16,
               "end": 27
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
             "features": [
-              { "via": "string_concat_rhs" },
-              { "via": "special_sink" }
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "special_sink" }
             ]
           }
         ]
@@ -101,7 +109,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           },
           {
             "root": {
@@ -110,10 +118,12 @@
               "start": 16,
               "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
             "features": [
-              { "via": "string_concat_lhs" },
-              { "via": "special_sink" }
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "special_sink" }
             ]
           }
         ]
@@ -143,10 +153,12 @@
               "port": "formal(taint_left)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
             "features": [
-              { "via": "string_concat_lhs" },
-              { "via": "special_sink" }
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "special_sink" }
             ]
           }
         ]
@@ -180,7 +192,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           },
           {
             "root": {
@@ -190,9 +202,13 @@
               "end": 16
             },
             "leaves": [
-              { "kind": "Test", "name": "attach_features.source" }
+              {
+                "kind": "Test",
+                "name": "attach_features.source",
+                "on_all_flows": true
+              }
             ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
       }
@@ -214,12 +230,12 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           },
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
       }
@@ -238,7 +254,7 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "via": "string_concat_rhs" } ]
+            "features": [ { "always-via": "string_concat_rhs" } ]
           },
           {
             "root": {
@@ -247,10 +263,12 @@
               "start": 16,
               "end": 19
             },
-            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
             "features": [
-              { "via": "string_concat_rhs" },
-              { "via": "special_sink" }
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "special_sink" }
             ]
           }
         ]
@@ -263,12 +281,12 @@
           {
             "decl": null,
             "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           },
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "string_concat_lhs" } ]
+            "features": [ { "always-via": "string_concat_lhs" } ]
           }
         ]
       }
@@ -289,7 +307,10 @@
             "decl": null,
             "tito": [ { "line": 37, "start": 30, "end": 33 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" }, { "via": "string_concat_lhs" } ]
+            "features": [
+              { "always-via": "tito" },
+              { "always-via": "string_concat_lhs" }
+            ]
           }
         ]
       }

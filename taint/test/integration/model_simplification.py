@@ -32,7 +32,6 @@ def asdict(obj: RecordSchema, *, dict_factory: Any = dict) -> Dict[str, Any]:
 
 def _asdict_inner(obj: Any, dict_factory: Any) -> Any:
     meta = getattr(obj, RecordSchema._META_PROP, {})
-
     if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):

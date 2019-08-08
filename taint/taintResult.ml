@@ -244,21 +244,21 @@ module ResultArgument = struct
       source_taint
       |> ForwardState.transform
            ForwardTaint.simple_feature_set
-           ~f:Features.Simple.strip_for_callsite
+           ~f:Features.strip_simple_feature_for_callsite
       |> ForwardState.transform ForwardTaint.trace_info ~f:Domains.TraceInfo.strip_for_callsite
     in
     let sink_taint =
       sink_taint
       |> BackwardState.transform
            BackwardTaint.simple_feature_set
-           ~f:Features.Simple.strip_for_callsite
+           ~f:Features.strip_simple_feature_for_callsite
       |> BackwardState.transform BackwardTaint.trace_info ~f:Domains.TraceInfo.strip_for_callsite
     in
     let taint_in_taint_out =
       taint_in_taint_out
       |> BackwardState.transform
            BackwardTaint.simple_feature_set
-           ~f:Features.Simple.strip_for_callsite
+           ~f:Features.strip_simple_feature_for_callsite
       |> BackwardState.transform BackwardTaint.trace_info ~f:Domains.TraceInfo.strip_for_callsite
     in
     { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; mode }

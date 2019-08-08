@@ -29,3 +29,10 @@ def tito_via_min_right(o: Any):
 
 def tito_via_named(o: Any):
     return named(named_parameter=o)
+
+
+def tito_via_min_or_not(o: Any, b: bool):
+    if b:
+        return min(o, 5)
+    else:
+        return o

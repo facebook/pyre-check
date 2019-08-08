@@ -29,17 +29,19 @@ module Breadcrumb = struct
     | Type of string (* Type constraint *)
   [@@deriving show, sexp, compare]
 
-  let to_json = function
-    | First { name; kind = FirstField } -> `Assoc ["first-field", `String name]
-    | First { name; kind = FirstIndex } -> `Assoc ["first-index", `String name]
-    | FormatString -> `Assoc ["via", `String "format-string"]
-    | HasFirst FirstField -> `Assoc ["has", `String "first-field"]
-    | HasFirst FirstIndex -> `Assoc ["has", `String "first-index"]
-    | Obscure -> `Assoc ["via", `String "obscure"]
-    | SimpleVia name -> `Assoc ["via", `String name]
-    | ViaValue name -> `Assoc ["via-value", `String name]
-    | Tito -> `Assoc ["via", `String "tito"]
-    | Type name -> `Assoc ["type", `String name]
+  let to_json ~on_all_paths breadcrumb =
+    let prefix = if on_all_paths then "always-" else "" in
+    match breadcrumb with
+    | First { name; kind = FirstField } -> `Assoc [prefix ^ "first-field", `String name]
+    | First { name; kind = FirstIndex } -> `Assoc [prefix ^ "first-index", `String name]
+    | FormatString -> `Assoc [prefix ^ "via", `String "format-string"]
+    | HasFirst FirstField -> `Assoc [prefix ^ "has", `String "first-field"]
+    | HasFirst FirstIndex -> `Assoc [prefix ^ "has", `String "first-index"]
+    | Obscure -> `Assoc [prefix ^ "via", `String "obscure"]
+    | SimpleVia name -> `Assoc [prefix ^ "via", `String name]
+    | ViaValue name -> `Assoc [prefix ^ "via-value", `String name]
+    | Tito -> `Assoc [prefix ^ "via", `String "tito"]
+    | Type name -> `Assoc [prefix ^ "type", `String name]
 
 
   let simple_via ~allowed name =
@@ -61,17 +63,18 @@ module Simple = struct
   let via_value_of_breadcrumb ~argument:{ Expression.Call.Argument.value; _ } =
     Interprocedural.CallResolution.extract_constant_name value
     >>| fun feature -> Breadcrumb (Breadcrumb.ViaValue feature)
-
-
-  let strip_for_callsite features =
-    let strip = function
-      | TitoPosition _ -> None
-      | feature -> Some feature
-    in
-    List.filter_map ~f:strip features
 end
 
-module SimpleSet = AbstractSetDomain.Make (Simple)
+module SimpleSet = AbstractOverUnderSetDomain.Make (Simple)
+
+let strip_simple_feature_for_callsite features =
+  let strip feature =
+    match feature.SimpleSet.element with
+    | TitoPosition _ -> None
+    | _ -> Some feature
+  in
+  List.filter_map ~f:strip features
+
 
 (* Set of complex features, where element can be abstracted and joins are expensive. Should only be
    used for elements that need this kind of joining. *)
@@ -93,7 +96,7 @@ end
 
 module ComplexSet = AbstractElementSetDomain.Make (Complex)
 
-let add_obscure set = Simple.Breadcrumb Breadcrumb.Obscure :: set
+let add_obscure set = SimpleSet.element (Simple.Breadcrumb Breadcrumb.Obscure) :: set
 
 let add_type_breadcrumb ~resolution annotation =
   let is_scalar =
@@ -108,9 +111,14 @@ let add_type_breadcrumb ~resolution annotation =
     if not is_scalar then
       feature_set
     else
-      Simple.Breadcrumb (Breadcrumb.Type "scalar") :: feature_set
+      SimpleSet.element (Simple.Breadcrumb (Breadcrumb.Type "scalar")) :: feature_set
   in
   add
 
 
 let simple_via ~allowed name = Simple.Breadcrumb (Breadcrumb.simple_via ~allowed name)
+
+let gather_breadcrumbs breadcrumbs feature =
+  match feature.SimpleSet.element with
+  | Simple.Breadcrumb _ -> feature :: breadcrumbs
+  | _ -> breadcrumbs
