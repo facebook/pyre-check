@@ -79,10 +79,13 @@ module TextDocumentDefinitionResponse : sig
   type t [@@deriving to_yojson]
 
   val create
-    :  configuration:Configuration.Analysis.t ->
-    id:Types.RequestId.t ->
-    location:Ast.Location.Instantiated.t option ->
+    :  id:Types.RequestId.t ->
+    start:Ast.Location.position ->
+    stop:Ast.Location.position ->
+    path:Path.t ->
     t
+
+  val create_empty : id:Types.RequestId.t -> t
 end
 
 module HoverResponse : sig

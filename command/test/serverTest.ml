@@ -1268,10 +1268,7 @@ let test_language_scheduler_definition context =
       path
   in
   let expected_response =
-    LanguageServer.Protocol.TextDocumentDefinitionResponse.create
-      ~configuration
-      ~id:(int_request_id 3)
-      ~location:None
+    LanguageServer.Protocol.TextDocumentDefinitionResponse.create_empty ~id:(int_request_id 3)
     |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.to_string
   in

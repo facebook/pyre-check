@@ -173,12 +173,12 @@ let find_all_annotations_batch ~state ~configuration ~paths =
 let find_definition ~state ~configuration path position =
   let timer = Timer.start () in
   let { lookup; source_path; _ } = get_lookups ~configuration ~state [path] |> List.hd_exn in
-  let definition = lookup >>= Lookup.get_definition ~position >>| instantiate_location ~state in
+  let definition = lookup >>= Lookup.get_definition ~position in
   let _ =
     match source_path with
     | Some { SourcePath.relative = handle; _ } ->
         let normals =
-          definition >>| fun location -> ["resolved location", Location.Instantiated.show location]
+          definition >>| fun location -> ["resolved location", Location.Reference.show location]
         in
         log_lookup ~handle ~position ~timer ~name:"find definition" ?normals ()
     | _ -> ()

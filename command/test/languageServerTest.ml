@@ -634,10 +634,14 @@ let test_language_server_definition_response context =
   let local_root = bracket_tmpdir context |> Path.create_absolute in
   let assert_response ~id ~location ~expected =
     let message =
-      let configuration = Configuration.Analysis.create ~local_root () in
-      TextDocumentDefinitionResponse.create ~configuration ~id ~location
-      |> TextDocumentDefinitionResponse.to_yojson
-      |> Yojson.Safe.sort
+      let response =
+        match location with
+        | Some { start; stop; path } ->
+            let path = Path.create_relative ~root:local_root ~relative:path in
+            TextDocumentDefinitionResponse.create ~id ~start ~stop ~path
+        | None -> TextDocumentDefinitionResponse.create_empty ~id
+      in
+      TextDocumentDefinitionResponse.to_yojson response |> Yojson.Safe.sort
     in
     let expected = Yojson.Safe.sort expected in
     assert_equal ~printer:Yojson.Safe.pretty_to_string expected message

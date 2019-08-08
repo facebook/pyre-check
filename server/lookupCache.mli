@@ -39,4 +39,4 @@ val find_definition
   configuration:Configuration.Analysis.t ->
   PyrePath.t ->
   Location.position ->
-  Location.Instantiated.t option
+  Location.Reference.t option

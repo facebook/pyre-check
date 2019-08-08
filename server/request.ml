@@ -928,15 +928,24 @@ let process_display_type_errors_request ~state ~configuration paths =
 
 
 let process_get_definition_request
-    ~state
+    ~state:({ State.environment; _ } as state)
     ~configuration
     ~request:{ DefinitionRequest.id; path; position }
   =
   let response =
+    let ast_environment = Environment.ast_environment environment in
     let open LanguageServer.Protocol in
-    let definition = LookupCache.find_definition ~state ~configuration path position in
-    TextDocumentDefinitionResponse.create ~configuration ~id ~location:definition
-    |> TextDocumentDefinitionResponse.to_yojson
+    let response =
+      match LookupCache.find_definition ~state ~configuration path position with
+      | None -> TextDocumentDefinitionResponse.create_empty ~id
+      | Some { Location.start; stop; path } -> (
+        match AstEnvironment.ReadOnly.get_source_path ast_environment path with
+        | None -> TextDocumentDefinitionResponse.create_empty ~id
+        | Some source_path ->
+            let path = SourcePath.full_path ~configuration source_path in
+            TextDocumentDefinitionResponse.create ~id ~start ~stop ~path )
+    in
+    TextDocumentDefinitionResponse.to_yojson response
     |> Yojson.Safe.to_string
     |> (fun response -> LanguageServerProtocolResponse response)
     |> Option.some

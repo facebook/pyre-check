@@ -212,24 +212,21 @@ end
 module TextDocumentDefinitionResponse = struct
   include Types.TextDocumentDefinitionResponse
 
-  let create ~configuration ~id ~location =
+  let create_with_result ~id result = { jsonrpc = "2.0"; id; result = Some result; error = None }
+
+  let create_empty ~id = create_with_result ~id []
+
+  let create ~id ~start ~stop ~path =
     let uri ~path =
-      File.Handle.create_for_testing path
-      |> File.Handle.to_path ~configuration
-      >>| Path.real_path
-      >>| Path.uri
+      try Some (Path.real_path path |> Path.uri) with
+      | Unix.Unix_error _ -> None
     in
-    {
-      jsonrpc = "2.0";
-      id;
-      result =
-        Some
-          ( location
-          >>= (fun { Ast.Location.start; stop; path } ->
-                uri ~path >>| fun uri -> { Location.uri; range = Range.create ~start ~stop })
-          |> Option.to_list );
-      error = None;
-    }
+    let result =
+      uri ~path
+      >>| (fun uri -> { Location.uri; range = Range.create ~start ~stop })
+      |> Option.to_list
+    in
+    create_with_result ~id result
 end
 
 module HoverResponse = struct
