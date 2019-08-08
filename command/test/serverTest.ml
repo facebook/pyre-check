@@ -50,9 +50,9 @@ let test_language_server_protocol_json_format context =
     |> String.concat
     |> String.filter ~f:(fun character -> not (Char.is_whitespace character))
   in
+  let path = Path.create_relative ~root:local_root ~relative:handle in
   let json_error =
-    LanguageServer.Protocol.PublishDiagnostics.of_errors ~configuration handle [type_error]
-    |> Or_error.ok_exn
+    LanguageServer.Protocol.PublishDiagnostics.of_errors path [type_error]
     |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
     |> Yojson.Safe.sort
     |> Yojson.Safe.to_string
@@ -86,14 +86,7 @@ let test_language_server_protocol_json_format context =
     |> Test.trim_extra_indentation
     |> normalize
   in
-  assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error;
-  let malformed_response =
-    LanguageServer.Protocol.PublishDiagnostics.of_errors
-      ~configuration
-      "nonexistent_file"
-      [type_error]
-  in
-  assert_true (Or_error.is_error malformed_response)
+  assert_equal ~printer:ident ~cmp:String.equal json_error_expect json_error
 
 
 let test_server_stops context =

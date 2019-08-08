@@ -35,7 +35,7 @@ module PublishDiagnostics = struct
     | false -> Some DiagnosticSeverity.Error
 
 
-  let of_errors ~configuration relative errors =
+  let of_errors path errors =
     let diagnostic_of_error error =
       let { Ast.Location.start; stop; _ } = TypeCheck.Error.Instantiated.location error in
       Diagnostic.
@@ -48,28 +48,16 @@ module PublishDiagnostics = struct
             TypeCheck.Error.Instantiated.description error ~show_error_traces:true ~separator:"\n";
         }
     in
-    let failed_response =
-      Format.asprintf "Valid path does not exist for %s." relative |> Or_error.error_string
-    in
-    (* TODO (T46153421): Do not rely on File.Handle *)
-    try
-      let path = File.Handle.create_for_testing relative |> File.Handle.to_path ~configuration in
-      match path with
-      | Some path ->
-          Ok
-            {
-              jsonrpc = "2.0";
-              method_ = "textDocument/publishDiagnostics";
-              parameters =
-                Some
-                  {
-                    PublishDiagnosticsParameters.uri = path |> Path.real_path |> Path.uri;
-                    diagnostics = List.map ~f:diagnostic_of_error errors;
-                  };
-            }
-      | None -> failed_response
-    with
-    | Unix.Unix_error _ -> failed_response
+    {
+      jsonrpc = "2.0";
+      method_ = "textDocument/publishDiagnostics";
+      parameters =
+        Some
+          {
+            PublishDiagnosticsParameters.uri = path |> Path.real_path |> Path.uri;
+            diagnostics = List.map ~f:diagnostic_of_error errors;
+          };
+    }
 
 
   let clear_diagnostics_for_uri ~uri =

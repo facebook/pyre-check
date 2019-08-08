@@ -15,11 +15,7 @@ module TextDocumentDefinitionRequest : module type of Types.TextDocumentDefiniti
 module PublishDiagnostics : sig
   type t [@@deriving yojson]
 
-  val of_errors
-    :  configuration:Configuration.Analysis.t ->
-    string ->
-    TypeCheck.Error.Instantiated.t list ->
-    t Or_error.t
+  val of_errors : Path.t -> TypeCheck.Error.Instantiated.t list -> t
   (** Turn a type check error into a PublishDiagnostics notification *)
 
   val clear_diagnostics_for_uri : uri:string -> t
