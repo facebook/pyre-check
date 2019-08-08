@@ -192,20 +192,19 @@ module Record = struct
       }
       [@@deriving compare, eq, sexp, show, hash]
 
-      type 'annotation t = {
-        middle: 'annotation Middle.t;
+      type ('middle, 'annotation) t = {
+        middle: 'middle;
         wrapping: 'annotation wrapping;
       }
       [@@deriving compare, eq, sexp, show, hash]
 
-      let empty_wrap middle = { middle; wrapping = { head = []; tail = [] } }
+      let empty_wrap (middle : 'a Middle.t) = { middle; wrapping = { head = []; tail = [] } }
 
-      let pp_concatenation format ?(womp = false) { middle; wrapping } ~pp_type =
+      let pp_concatenation format { middle; wrapping } ~pp_type =
         match wrapping with
         | { head = []; tail = [] } -> (
           match middle with
-          | Variable { name; _ } when womp -> Format.fprintf format "ListVariadic[%s]" name
-          | Variable { name; _ } -> Format.fprintf format "%s" name
+          | Middle.Variable { name; _ } -> Format.fprintf format "%s" name
           | Map map -> Format.fprintf format "%a" RecordMap.pp_concise map )
         | { head; tail = [] } ->
             Format.fprintf
@@ -231,7 +230,7 @@ module Record = struct
     type 'annotation record =
       | Concrete of 'annotation list
       | Any
-      | Concatenation of 'annotation RecordConcatenate.t
+      | Concatenation of ('annotation RecordConcatenate.Middle.t, 'annotation) RecordConcatenate.t
     [@@deriving compare, eq, sexp, show, hash]
 
     let pp_concise format variable ~pp_type =
@@ -239,11 +238,7 @@ module Record = struct
       | Concrete types -> Format.fprintf format "%s" (show_type_list types ~pp_type)
       | Any -> Format.fprintf format "..."
       | Concatenation concatenation ->
-          Format.fprintf
-            format
-            "%a"
-            (RecordConcatenate.pp_concatenation ~pp_type ~womp:false)
-            concatenation
+          Format.fprintf format "%a" (RecordConcatenate.pp_concatenation ~pp_type) concatenation
   end
 
   module Callable = struct
@@ -257,7 +252,10 @@ module Record = struct
 
       type 'annotation variable =
         | Concrete of 'annotation
-        | Concatenation of 'annotation OrderedTypes.RecordConcatenate.t
+        | Concatenation of
+            ( 'annotation OrderedTypes.RecordConcatenate.Middle.t,
+              'annotation )
+            OrderedTypes.RecordConcatenate.t
       [@@deriving compare, eq, sexp, show, hash]
 
       type 'annotation t =
@@ -301,7 +299,7 @@ module Record = struct
         | Variable (Concatenation concatenation) ->
             Format.asprintf
               "Variable(%a)"
-              (OrderedTypes.RecordConcatenate.pp_concatenation ~pp_type ~womp:false)
+              (OrderedTypes.RecordConcatenate.pp_concatenation ~pp_type)
               concatenation
         | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
 
@@ -786,9 +784,7 @@ let rec pp_concise format annotation =
                 | Parameter.Variable (Concatenation concatenation) ->
                     Format.asprintf
                       "*(%a)"
-                      (Record.OrderedTypes.RecordConcatenate.pp_concatenation
-                         ~pp_type:pp_concise
-                         ~womp:false)
+                      (Record.OrderedTypes.RecordConcatenate.pp_concatenation ~pp_type:pp_concise)
                       concatenation
                 | Parameter.Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
               in
@@ -1670,11 +1666,15 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
       | _ -> None )
   | Parametric _ ->
       create_map_operator_from_annotation annotation ~variable_aliases
-      >>| fun map -> Record.OrderedTypes.RecordConcatenate.empty_wrap (Map map)
+      >>| fun map ->
+      Record.OrderedTypes.RecordConcatenate.empty_wrap
+        (Record.OrderedTypes.RecordConcatenate.Middle.Map map)
   | Primitive name -> (
     match variable_aliases name with
     | Some (Record.Variable.ListVariadic variable) ->
-        Some (Record.OrderedTypes.RecordConcatenate.empty_wrap (Variable variable))
+        Some
+          (Record.OrderedTypes.RecordConcatenate.empty_wrap
+             (Record.OrderedTypes.RecordConcatenate.Middle.Variable variable))
     | _ -> None )
   | _ -> None
 
@@ -2488,6 +2488,8 @@ module OrderedTypes = struct
       { middle; wrapping }
 
 
+    let map_middle { middle; wrapping } ~f = { middle = f middle; wrapping }
+
     let replace_variable { middle; wrapping } ~replacement =
       let replace_variable_in_middle = function
         | Record.OrderedTypes.RecordConcatenate.Middle.Variable variable -> replacement variable
@@ -2511,15 +2513,40 @@ module OrderedTypes = struct
 
     let tail { wrapping = { tail; _ }; _ } = tail
 
+    let unwrap_if_only_middle concatenation =
+      Option.some_if
+        (List.is_empty (head concatenation) && List.is_empty (tail concatenation))
+        (middle concatenation)
+
+
     let variable { middle; _ } =
       match middle with
-      | Map map -> Map.variable map
+      | Middle.Map map -> Map.variable map
       | Variable variable -> variable
 
 
     let expression = concatenation_expression
 
     let create ?(head = []) ?(tail = []) middle = { wrapping = { head; tail }; middle }
+
+    let zip concatenation ~against =
+      let head = head concatenation in
+      let tail = tail concatenation in
+      let head_length = List.length head in
+      let tail_length = List.length tail in
+      let middle_length = List.length against - head_length - tail_length in
+      if middle_length >= 0 then
+        let middle = middle concatenation in
+        let concretes_head = List.sub against ~pos:0 ~len:head_length in
+        let concretes_middle = List.sub against ~pos:head_length ~len:middle_length in
+        let concretes_tail =
+          List.sub against ~pos:(head_length + middle_length) ~len:tail_length
+        in
+        let head = List.zip_exn head concretes_head in
+        let tail = List.zip_exn tail concretes_tail in
+        Some (create ~head ~tail (middle, concretes_middle))
+      else
+        None
   end
 
   let union_upper_bound ordered =

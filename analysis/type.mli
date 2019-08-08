@@ -74,13 +74,13 @@ module Record : sig
         [@@deriving compare, eq, sexp, show, hash]
       end
 
-      type 'annotation t [@@deriving compare, eq, sexp, show, hash]
+      type ('middle, 'outer) t [@@deriving compare, eq, sexp, show, hash]
     end
 
     type 'annotation record =
       | Concrete of 'annotation list
       | Any
-      | Concatenation of 'annotation RecordConcatenate.t
+      | Concatenation of ('annotation RecordConcatenate.Middle.t, 'annotation) RecordConcatenate.t
     [@@deriving compare, eq, sexp, show, hash]
 
     val pp_concise
@@ -100,7 +100,10 @@ module Record : sig
 
       and 'annotation variable =
         | Concrete of 'annotation
-        | Concatenation of 'annotation OrderedTypes.RecordConcatenate.t
+        | Concatenation of
+            ( 'annotation OrderedTypes.RecordConcatenate.Middle.t,
+              'annotation )
+            OrderedTypes.RecordConcatenate.t
 
       and 'annotation t =
         | Anonymous of {
@@ -519,28 +522,41 @@ module OrderedTypes : sig
       include Record.OrderedTypes.RecordConcatenate
     end
 
-    val map_head_and_tail : type_t t -> f:(type_t -> type_t) -> type_t t
+    val map_head_and_tail
+      :  ('middle, 'outer_a) t ->
+      f:('outer_a -> 'outer_b) ->
+      ('middle, 'outer_b) t
+
+    val map_middle : ('middle_a, 'outer) t -> f:('middle_a -> 'middle_b) -> ('middle_b, 'outer) t
 
     val replace_variable
-      :  type_t t ->
+      :  (type_t Middle.t, type_t) t ->
       replacement:
         (type_t Record.Variable.RecordVariadic.RecordList.record -> ordered_types_t option) ->
       ordered_types_t option
 
-    val head : type_t t -> type_t list
+    val head : ('middle, 'outer) t -> 'outer list
 
-    val middle : type_t t -> type_t Middle.t
+    val middle : ('middle, 'outer) t -> 'middle
 
-    val tail : type_t t -> type_t list
+    val tail : ('middle, 'outer) t -> 'outer list
 
-    val variable : type_t t -> type_t Record.Variable.RecordVariadic.RecordList.record
+    val unwrap_if_only_middle : ('middle, 'outer) t -> 'middle option
 
-    val expression : type_t t -> Expression.t
+    val variable
+      :  (type_t Middle.t, 'outer) t ->
+      type_t Record.Variable.RecordVariadic.RecordList.record
 
-    val parse : Expression.t -> aliases:(Primitive.t -> alias option) -> type_t t option
+    val expression : (type_t Middle.t, type_t) t -> Expression.t
 
-    (* Only for testing *)
-    val create : ?head:type_t list -> ?tail:type_t list -> type_t Middle.t -> type_t t
+    val parse
+      :  Expression.t ->
+      aliases:(Primitive.t -> alias option) ->
+      (type_t Middle.t, type_t) t option
+
+    val create : ?head:'outer list -> ?tail:'outer list -> 'middle -> ('middle, 'outer) t
+
+    val zip : ('middle, 'outer) t -> against:'a list -> ('middle * 'a list, 'outer * 'a) t option
   end
 
   val union_upper_bound : t -> type_t

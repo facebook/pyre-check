@@ -1294,6 +1294,29 @@ let test_concatenation_operator context =
       "Incompatible parameter type [6]: Expected `typing.Tuple[Map[list, Ts]]` for 1st anonymous \
        parameter to call `unmap_tuple` but got `typing.Tuple[Concatenate[List[int], Map[list, \
        Ts], List[bool]]]`." ];
+  assert_type_errors
+    {|
+    from typing import Generic, Tuple, List, TypeVar
+    from typing_extensions import Literal
+    from pyre_extensions.type_variable_operators import Concatenate
+    Ts = pyre_extensions.ListVariadic("Ts")
+    T = TypeVar("T")
+    class Tensor(typing.Generic[Concatenate[T, Ts]]):
+      def el(self) -> T: ...
+      def dims(self) -> Tuple[Ts]: ...
+    One = Literal[1]
+    Two = Literal[2]
+    Three = Literal[3]
+    def bar(t: Tensor[int, One, Two, Three]) -> None:
+      el = t.el()
+      reveal_type(el)
+      dims = t.dims()
+      reveal_type(dims)
+    |}
+    [ "Revealed type [-1]: Revealed type for `el` is `int`.";
+      "Revealed type [-1]: Revealed type for `dims` is \
+       `typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2], \
+       typing_extensions.Literal[3]]`." ];
   ()
 
 

@@ -1140,12 +1140,14 @@ module State (Context : Context) = struct
                             List.map variables ~f:(fun variable -> Type.Variable variable)
                           in
                           Type.Parametric { name = parent_name; parameters = Concrete variables }
-                      | Some (ListVariadic variable) ->
+                      | Some (Concatenation concatenation) ->
+                          let concatenation =
+                            let open Type.OrderedTypes.Concatenation in
+                            map_middle concatenation ~f:(fun variadic -> Middle.Variable variadic)
+                            |> map_head_and_tail ~f:(fun variable -> Type.Variable variable)
+                          in
                           Type.Parametric
-                            {
-                              name = parent_name;
-                              parameters = Type.Variable.Variadic.List.self_reference variable;
-                            }
+                            { name = parent_name; parameters = Concatenation concatenation }
                       | exception _ -> parent_type
                     in
                     if Define.is_class_method define || Define.is_class_property define then
@@ -4615,10 +4617,14 @@ module State (Context : Context) = struct
         match Node.value statement with
         | Class { Class.name; body; _ } ->
             let variables =
+              let unarize = List.map ~f:(fun unary -> Type.Variable.Unary unary) in
               let extract = function
-                | ClassHierarchy.Unaries unaries ->
-                    List.map unaries ~f:(fun unary -> Type.Variable.Unary unary)
-                | ClassHierarchy.ListVariadic variable -> [Type.Variable.ListVariadic variable]
+                | ClassHierarchy.Unaries unaries -> unarize unaries
+                | ClassHierarchy.Concatenation concatenation ->
+                    unarize (Type.OrderedTypes.Concatenation.head concatenation)
+                    @ [ Type.Variable.ListVariadic
+                          (Type.OrderedTypes.Concatenation.middle concatenation) ]
+                    @ unarize (Type.OrderedTypes.Concatenation.tail concatenation)
               in
               Reference.show name
               |> GlobalResolution.variables global_resolution

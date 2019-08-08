@@ -360,25 +360,29 @@ let successors ((module Handler : Handler) as order) annotation =
 
 type variables =
   | Unaries of Type.Variable.Unary.t list
-  | ListVariadic of Type.Variable.Variadic.List.t
+  | Concatenation of
+      (Type.Variable.Variadic.List.t, Type.Variable.Unary.t) Type.OrderedTypes.Concatenation.t
 [@@deriving compare, eq, sexp, show]
 
-let clean = function
+let clean not_clean =
+  let clarify_into_variables parameters =
+    List.map parameters ~f:(function
+        | Type.Variable variable -> Some variable
+        | _ -> None)
+    |> Option.all
+  in
+  match not_clean with
   | Type.OrderedTypes.Concrete parameters ->
-      List.map parameters ~f:(function
-          | Type.Variable variable -> Some variable
-          | _ -> None)
-      |> Option.all
-      >>| fun unaries -> Unaries unaries
-  | Concatenation concatenation ->
-      let head = Type.OrderedTypes.Concatenation.head concatenation in
-      let tail = Type.OrderedTypes.Concatenation.tail concatenation in
-      if List.is_empty head && List.is_empty tail then
-        match Type.OrderedTypes.Concatenation.middle concatenation with
-        | Variable variable -> Some (ListVariadic variable)
-        | Map _ -> None
-      else (* TODO(T48185332) allow for this, and add it to type variables *)
-        None
+      clarify_into_variables parameters >>| fun unaries -> Unaries unaries
+  | Concatenation concatenation -> (
+      let open Type.OrderedTypes.Concatenation in
+      match
+        ( clarify_into_variables (head concatenation),
+          middle concatenation,
+          clarify_into_variables (tail concatenation) )
+      with
+      | Some head, Variable middle, Some tail -> Some (Concatenation (create ~head ~tail middle))
+      | _ -> None )
   | Any -> None
 
 
@@ -620,8 +624,40 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                                this behavior seems reasonable *)
                             List.map variables ~f:(fun variable ->
                                 Type.Variable.UnaryPair (variable, Type.Any)) )
-                    | ListVariadic variable ->
-                        [Type.Variable.ListVariadicPair (variable, parameters)]
+                    | Concatenation concatenation -> (
+                        let zipped =
+                          let handle_paired paired =
+                            let unary_pairs =
+                              List.map ~f:(fun (variable, bound) ->
+                                  Type.Variable.UnaryPair (variable, bound))
+                            in
+                            let middle, middle_bound =
+                              Type.OrderedTypes.Concatenation.middle paired
+                            in
+                            unary_pairs (Type.OrderedTypes.Concatenation.head paired)
+                            @ [Type.Variable.ListVariadicPair (middle, Concrete middle_bound)]
+                            @ unary_pairs (Type.OrderedTypes.Concatenation.tail paired)
+                          in
+                          match parameters with
+                          | Type.OrderedTypes.Concrete parameters ->
+                              Type.OrderedTypes.Concatenation.zip concatenation ~against:parameters
+                              >>| handle_paired
+                          | non_concrete ->
+                              Type.OrderedTypes.Concatenation.unwrap_if_only_middle concatenation
+                              >>| fun variable ->
+                              [Type.Variable.ListVariadicPair (variable, non_concrete)]
+                        in
+                        match zipped with
+                        | Some pairs -> pairs
+                        | None ->
+                            let pair_all_with_any =
+                              List.map ~f:(fun variable -> Type.Variable.UnaryPair (variable, Any))
+                            in
+                            pair_all_with_any (Type.OrderedTypes.Concatenation.head concatenation)
+                            @ [ Type.Variable.ListVariadicPair
+                                  (Type.OrderedTypes.Concatenation.middle concatenation, Any) ]
+                            @ pair_all_with_any
+                                (Type.OrderedTypes.Concatenation.tail concatenation) )
                   in
                   let replacement = TypeConstraints.Solution.create replacement in
                   let instantiate_parameters { Target.target; parameters } =

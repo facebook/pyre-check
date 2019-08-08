@@ -506,7 +506,8 @@ module OrderImplementation = struct
                   (* These should be impossible, since we shouldn't be able to have a not variadic
                      primitive paired with a variadic in a parametric *)
                   None
-              | ListVariadic _, left_parameters, right_parameters ->
+              | Concatenation _, left_parameters, right_parameters ->
+                  (* TODO the concatenated variables should lend their variances... *)
                   (* TODO(T47346673): currently all variadics are invariant, revisit this when we
                      add variance *)
                   solve_ordered_types_less_or_equal
@@ -667,16 +668,7 @@ module OrderImplementation = struct
       let solve_concrete_against_concatenation ~is_lower_bound ~bound ~concatenation =
         let variable = Type.OrderedTypes.Concatenation.variable concatenation in
         if Type.Variable.Variadic.List.is_free variable then
-          let head = Type.OrderedTypes.Concatenation.head concatenation in
-          let tail = Type.OrderedTypes.Concatenation.tail concatenation in
-          let head_length = List.length head in
-          let tail_length = List.length tail in
-          let middle_length = List.length bound - head_length - tail_length in
-          if middle_length >= 0 then
-            let middle = Type.OrderedTypes.Concatenation.middle concatenation in
-            let head_bound = List.sub bound ~pos:0 ~len:head_length in
-            let middle_bound = List.sub bound ~pos:head_length ~len:middle_length in
-            let tail_bound = List.sub bound ~pos:(head_length + middle_length) ~len:tail_length in
+          let handle_paired paired =
             let left_and_right ~bound ~concatenated =
               if is_lower_bound then bound, concatenated else concatenated, bound
             in
@@ -766,15 +758,23 @@ module OrderImplementation = struct
               in
               List.concat_map constraints ~f:solve
             in
-            let concrete_vs_concretes ~bound ~concatenated constraints =
-              let lefts, rights = left_and_right ~bound ~concatenated in
-              List.concat_map constraints ~f:(solve_concrete_against_concrete ~lefts ~rights)
+            let concrete_vs_concretes constraints ~pairs =
+              let solve_pair constraints (concatenated, bound) =
+                let left, right = left_and_right ~bound ~concatenated in
+                constraints
+                |> List.concat_map ~f:(fun constraints ->
+                       solve_less_or_equal order ~constraints ~left ~right)
+              in
+              List.fold ~init:constraints ~f:solve_pair pairs
             in
-            concrete_vs_concretes ~bound:head_bound ~concatenated:head [constraints]
+            let middle, middle_bound = Type.OrderedTypes.Concatenation.middle paired in
+            concrete_vs_concretes ~pairs:(Type.OrderedTypes.Concatenation.head paired) [constraints]
             |> middle_vs_concrete ~concrete:middle_bound ~middle
-            |> concrete_vs_concretes ~bound:tail_bound ~concatenated:tail
-          else
-            []
+            |> concrete_vs_concretes ~pairs:(Type.OrderedTypes.Concatenation.tail paired)
+          in
+          Type.OrderedTypes.Concatenation.zip concatenation ~against:bound
+          >>| handle_paired
+          |> Option.value ~default:[]
         else
           []
       in
@@ -792,42 +792,39 @@ module OrderImplementation = struct
       | Concrete lefts, Concrete rights ->
           solve_concrete_against_concrete ~lefts ~rights constraints
       | Concatenation left, Concatenation right -> (
-          let unwrap_if_only_middle concatenation =
-            Option.some_if
-              ( List.is_empty (Type.OrderedTypes.Concatenation.head concatenation)
-              && List.is_empty (Type.OrderedTypes.Concatenation.tail concatenation) )
-              (Type.OrderedTypes.Concatenation.middle concatenation)
-          in
-          match unwrap_if_only_middle left, unwrap_if_only_middle right with
-          | Some (Variable left_variable), Some (Variable right_variable)
-            when is_free left_variable && is_free right_variable ->
-              (* Just as with unaries, we need to consider both possibilities *)
-              let right_greater_than_left, left_less_than_right =
-                ( OrderedConstraints.add_lower_bound
-                    constraints
-                    ~order
-                    ~pair:(Type.Variable.ListVariadicPair (right_variable, Concatenation left))
-                  |> Option.to_list,
-                  OrderedConstraints.add_upper_bound
-                    constraints
-                    ~order
-                    ~pair:(Type.Variable.ListVariadicPair (left_variable, Concatenation right))
-                  |> Option.to_list )
-              in
-              right_greater_than_left @ left_less_than_right
-          | Some (Variable variable), _ when is_free variable ->
-              OrderedConstraints.add_upper_bound
-                constraints
-                ~order
-                ~pair:(Type.Variable.ListVariadicPair (variable, Concatenation right))
-              |> Option.to_list
-          | _, Some (Variable variable) when is_free variable ->
-              OrderedConstraints.add_lower_bound
-                constraints
-                ~order
-                ~pair:(Type.Variable.ListVariadicPair (variable, Concatenation left))
-              |> Option.to_list
-          | _ -> [] )
+        match
+          ( Type.OrderedTypes.Concatenation.unwrap_if_only_middle left,
+            Type.OrderedTypes.Concatenation.unwrap_if_only_middle right )
+        with
+        | Some (Variable left_variable), Some (Variable right_variable)
+          when is_free left_variable && is_free right_variable ->
+            (* Just as with unaries, we need to consider both possibilities *)
+            let right_greater_than_left, left_less_than_right =
+              ( OrderedConstraints.add_lower_bound
+                  constraints
+                  ~order
+                  ~pair:(Type.Variable.ListVariadicPair (right_variable, Concatenation left))
+                |> Option.to_list,
+                OrderedConstraints.add_upper_bound
+                  constraints
+                  ~order
+                  ~pair:(Type.Variable.ListVariadicPair (left_variable, Concatenation right))
+                |> Option.to_list )
+            in
+            right_greater_than_left @ left_less_than_right
+        | Some (Variable variable), _ when is_free variable ->
+            OrderedConstraints.add_upper_bound
+              constraints
+              ~order
+              ~pair:(Type.Variable.ListVariadicPair (variable, Concatenation right))
+            |> Option.to_list
+        | _, Some (Variable variable) when is_free variable ->
+            OrderedConstraints.add_lower_bound
+              constraints
+              ~order
+              ~pair:(Type.Variable.ListVariadicPair (variable, Concatenation left))
+            |> Option.to_list
+        | _ -> [] )
 
 
     and join_implementations ~parameter_join ~return_join order left right =
@@ -1430,8 +1427,11 @@ module OrderImplementation = struct
                   | Some (Unaries variables) ->
                       List.map variables ~f:(fun variable -> Type.Variable variable)
                       |> fun variables -> Type.OrderedTypes.Concrete variables
-                  | Some (ListVariadic variable) ->
-                      Type.Variable.Variadic.List.self_reference variable
+                  | Some (Concatenation concatenation) ->
+                      let open Type.OrderedTypes.Concatenation in
+                      map_middle concatenation ~f:(fun variadic -> Middle.Variable variadic)
+                      |> map_head_and_tail ~f:(fun variable -> Type.Variable variable)
+                      |> fun concatenation -> Type.OrderedTypes.Concatenation concatenation
                   | None -> Concrete []
                 in
                 ProtocolAssumptions.add
@@ -1552,12 +1552,12 @@ module OrderImplementation = struct
                           List.map variables ~f:(fun variable -> Type.Variable variable)
                           |> List.map ~f:(TypeConstraints.Solution.instantiate solution)
                           |> fun instantiated -> Type.OrderedTypes.Concrete instantiated
-                      | ListVariadic variable ->
-                          TypeConstraints.Solution.instantiate_single_list_variadic_variable
-                            solution
-                            variable
-                          |> Option.value
-                               ~default:(Type.Variable.Variadic.List.self_reference variable)
+                      | Concatenation concatenation ->
+                          let open Type.OrderedTypes.Concatenation in
+                          map_middle concatenation ~f:(fun variadic -> Middle.Variable variadic)
+                          |> map_head_and_tail ~f:(fun variable -> Type.Variable variable)
+                          |> (fun concatenation -> Type.OrderedTypes.Concatenation concatenation)
+                          |> TypeConstraints.Solution.instantiate_ordered_types solution
                     in
                     protocol_generics
                     >>| instantiate

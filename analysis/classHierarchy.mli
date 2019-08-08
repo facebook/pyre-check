@@ -125,7 +125,8 @@ val successors : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
 type variables =
   | Unaries of Type.Variable.Unary.t list
-  | ListVariadic of Type.Variable.Variadic.List.t
+  | Concatenation of
+      (Type.Variable.Variadic.List.t, Type.Variable.Unary.t) Type.OrderedTypes.Concatenation.t
 [@@deriving compare, eq, sexp, show]
 
 val variables

@@ -196,15 +196,15 @@ let check_invalid_type_parameters resolution annotation =
                 in
                 ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),
                   mismatch :: sofar ) )
-          | ListVariadic _, Any -> Type.parametric name given, sofar
+          | Concatenation _, Any -> Type.parametric name given, sofar
           | Unaries generics, Concatenation _
           | Unaries generics, Any ->
               let mismatch =
                 { name; kind = UnexpectedVariadic { expected = generics; actual = given } }
               in
               Type.parametric name given, mismatch :: sofar
-          | ListVariadic _, Concatenation _
-          | ListVariadic _, Concrete _ ->
+          | Concatenation _, Concatenation _
+          | Concatenation _, Concrete _ ->
               (* TODO(T47346673): accept w/ new kind of validation *)
               Type.parametric name given, sofar
         in
@@ -511,7 +511,7 @@ let is_invariance_mismatch ({ class_hierarchy; _ } as resolution) ~left ~right =
             |> function
             | List.Or_unequal_lengths.Ok list -> Some list
             | _ -> None )
-        | Some (ListVariadic _), _, _ ->
+        | Some (Concatenation _), _, _ ->
             (* TODO(T47346673): Do this check when list variadics have variance *)
             None
         | _ -> None
