@@ -29,8 +29,6 @@ module type Handler = sig
 
   val register_alias : qualifier:Reference.t -> key:Identifier.t -> data:Type.alias -> unit
 
-  val purge : ?debug:bool -> Reference.t list -> unit
-
   val ast_environment : AstEnvironment.ReadOnly.t
 
   val class_definition : Identifier.t -> Class.t Node.t option
@@ -1542,8 +1540,80 @@ let fill_shared_memory_with_default_typeorder () =
     ~successor:typing_mapping
 
 
-let purge (module Handler : Handler) ?debug x =
-  Handler.purge ?debug x;
+let purge (module Handler : Handler) ?(debug = false) (qualifiers : Reference.t list) =
+  let open SharedMemory in
+  let purge_dependents keys =
+    let new_dependents = Reference.Table.create () in
+    let recompute_dependents key dependents =
+      let qualifiers = Reference.Set.Tree.of_list qualifiers in
+      Hashtbl.set new_dependents ~key ~data:(Reference.Set.Tree.diff dependents qualifiers)
+    in
+    List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
+    Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
+    Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
+    DependentKeys.remove_batch (Dependents.KeySet.of_list qualifiers)
+  in
+  List.concat_map
+    ~f:(fun qualifier -> Handler.DependencyHandler.get_function_keys ~qualifier)
+    qualifiers
+  |> fun keys ->
+  (* We add a global name for each function definition as well. *)
+  Globals.remove_batch (Globals.KeySet.of_list keys);
+
+  (* Remove the connection to the parent (if any) for all classes defined in the updated handles. *)
+  let dead_classes =
+    List.concat_map
+      ~f:(fun qualifier -> Handler.DependencyHandler.get_class_keys ~qualifier)
+      qualifiers
+  in
+  let dead_indices =
+    List.filter_map
+      dead_classes
+      ~f:(SharedMemoryClassHierarchyHandler.find (SharedMemoryClassHierarchyHandler.indices ()))
+  in
+  dead_classes |> SharedMemoryClassHierarchyHandler.disconnect_successors;
+  OrderIndices.remove_batch (OrderIndices.KeySet.of_list dead_classes);
+  OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list dead_indices);
+  let remove_keys removed =
+    match OrderKeys.get Memory.SingletonKey.key with
+    | None -> ()
+    | Some keys ->
+        OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
+        let remaining = Set.diff (Int.Set.of_list keys) removed in
+        OrderKeys.add Memory.SingletonKey.key (Int.Set.to_list remaining)
+  in
+  remove_keys (Int.Set.of_list dead_indices);
+
+  let class_keys =
+    List.concat_map
+      ~f:(fun qualifier -> Handler.DependencyHandler.get_class_keys ~qualifier)
+      qualifiers
+    |> ClassDefinitions.KeySet.of_list
+  in
+  ClassDefinitions.remove_batch class_keys;
+  ClassMetadata.remove_batch class_keys;
+  List.concat_map
+    ~f:(fun qualifier -> Handler.DependencyHandler.get_alias_keys ~qualifier)
+    qualifiers
+  |> fun keys ->
+  Aliases.remove_batch (Aliases.KeySet.of_list keys);
+  let global_keys =
+    List.concat_map
+      ~f:(fun qualifier -> Handler.DependencyHandler.get_global_keys ~qualifier)
+      qualifiers
+    |> Globals.KeySet.of_list
+  in
+  Globals.remove_batch global_keys;
+  UndecoratedFunctions.remove_batch global_keys;
+  List.concat_map
+    ~f:(fun qualifier -> Handler.DependencyHandler.get_dependent_keys ~qualifier)
+    qualifiers
+  |> List.dedup_and_sort ~compare:Reference.compare
+  |> purge_dependents;
+  Handler.DependencyHandler.clear_keys_batch qualifiers;
+  Modules.remove_batch (Modules.KeySet.of_list qualifiers);
+  if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
+    ClassHierarchy.check_integrity (module Handler.TypeOrderHandler);
   fill_shared_memory_with_default_typeorder ();
   add_special_classes (module Handler);
   add_dummy_modules (module Handler);
@@ -1756,71 +1826,6 @@ module SharedMemoryPartialHandler = struct
     ClassMetadata.add
       class_name
       { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
-
-
-  let purge ?(debug = false) (qualifiers : Reference.t list) =
-    let purge_dependents keys =
-      let new_dependents = Reference.Table.create () in
-      let recompute_dependents key dependents =
-        let qualifiers = Reference.Set.Tree.of_list qualifiers in
-        Hashtbl.set new_dependents ~key ~data:(Reference.Set.Tree.diff dependents qualifiers)
-      in
-      List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
-      Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
-      Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
-      DependentKeys.remove_batch (Dependents.KeySet.of_list qualifiers)
-    in
-    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_function_keys ~qualifier) qualifiers
-    |> fun keys ->
-    (* We add a global name for each function definition as well. *)
-    Globals.remove_batch (Globals.KeySet.of_list keys);
-
-    (* Remove the connection to the parent (if any) for all classes defined in the updated handles. *)
-    let dead_classes =
-      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
-    in
-    let dead_indices =
-      List.filter_map
-        dead_classes
-        ~f:(SharedMemoryClassHierarchyHandler.find (SharedMemoryClassHierarchyHandler.indices ()))
-    in
-    dead_classes |> SharedMemoryClassHierarchyHandler.disconnect_successors;
-    OrderIndices.remove_batch (OrderIndices.KeySet.of_list dead_classes);
-    OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list dead_indices);
-    let remove_keys removed =
-      match OrderKeys.get Memory.SingletonKey.key with
-      | None -> ()
-      | Some keys ->
-          OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
-          let remaining = Set.diff (Int.Set.of_list keys) removed in
-          OrderKeys.add Memory.SingletonKey.key (Int.Set.to_list remaining)
-    in
-    remove_keys (Int.Set.of_list dead_indices);
-
-    let class_keys =
-      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
-      |> ClassDefinitions.KeySet.of_list
-    in
-    ClassDefinitions.remove_batch class_keys;
-    ClassMetadata.remove_batch class_keys;
-    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_alias_keys ~qualifier) qualifiers
-    |> fun keys ->
-    Aliases.remove_batch (Aliases.KeySet.of_list keys);
-    let global_keys =
-      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_global_keys ~qualifier) qualifiers
-      |> Globals.KeySet.of_list
-    in
-    Globals.remove_batch global_keys;
-    UndecoratedFunctions.remove_batch global_keys;
-    List.concat_map
-      ~f:(fun qualifier -> DependencyHandler.get_dependent_keys ~qualifier)
-      qualifiers
-    |> List.dedup_and_sort ~compare:Reference.compare
-    |> purge_dependents;
-    DependencyHandler.clear_keys_batch qualifiers;
-    Modules.remove_batch (Modules.KeySet.of_list qualifiers);
-    if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
-      ClassHierarchy.check_integrity (module SharedMemoryClassHierarchyHandler)
 end
 
 let shared_memory_handler ast_environment =
