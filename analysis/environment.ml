@@ -23,8 +23,6 @@ module type Handler = sig
     annotation:Type.t Type.Callable.overload ->
     unit
 
-  val set_class_definition : name:Identifier.t -> definition:Class.t Node.t -> unit
-
   val register_alias : qualifier:Reference.t -> key:Identifier.t -> data:Type.alias -> unit
 
   val ast_environment : AstEnvironment.ReadOnly.t
@@ -694,6 +692,20 @@ let register_class_metadata (module Handler : Handler) class_name =
     { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
 
 
+let set_class_definition (module Handler : Handler) ~name ~definition =
+  let open SharedMemory in
+  let definition =
+    match ClassDefinitions.get name with
+    | Some { Node.location; value = preexisting } ->
+        {
+          Node.location;
+          value = Statement.Class.update preexisting ~definition:(Node.value definition);
+        }
+    | _ -> definition
+  in
+  ClassDefinitions.add name definition
+
+
 let add_special_classes (module Handler : Handler) =
   (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
      the stubs. *)
@@ -716,7 +728,10 @@ let add_special_classes (module Handler : Handler) =
         docstring = None;
       }
     in
-    Handler.set_class_definition ~name ~definition:(Node.create_with_default_location definition);
+    set_class_definition
+      (module Handler)
+      ~name
+      ~definition:(Node.create_with_default_location definition);
     SharedMemoryClassHierarchyHandler.insert name;
     register_class_metadata (module Handler) name
   in
@@ -815,7 +830,10 @@ let register_class_definitions (module Handler : Handler) source =
           let name = Reference.show name in
           let primitive = name in
           Handler.DependencyHandler.add_class_key ~qualifier name;
-          Handler.set_class_definition ~name ~definition:{ Node.location; value = definition };
+          set_class_definition
+            (module Handler)
+            ~name
+            ~definition:{ Node.location; value = definition };
           if not (ClassHierarchy.contains order primitive) then
             SharedMemoryClassHierarchyHandler.insert primitive;
           Set.add new_annotations primitive
@@ -1428,8 +1446,6 @@ let dependency_handler (module Handler : Handler) =
   (module Handler.DependencyHandler : Dependencies.Handler)
 
 
-let set_class_definition (module Handler : Handler) = Handler.set_class_definition
-
 let transaction _ ?(only_global_keys = false) ~f () =
   let open SharedMemory in
   if only_global_keys then
@@ -1807,19 +1823,6 @@ module SharedMemoryPartialHandler = struct
     Option.iter qualifier ~f:(fun qualifier ->
         DependencyHandler.add_global_key ~qualifier reference);
     Globals.add reference global
-
-
-  let set_class_definition ~name ~definition =
-    let definition =
-      match ClassDefinitions.get name with
-      | Some { Node.location; value = preexisting } ->
-          {
-            Node.location;
-            value = Statement.Class.update preexisting ~definition:(Node.value definition);
-          }
-      | _ -> definition
-    in
-    ClassDefinitions.add name definition
 
 
   let register_alias ~qualifier ~key ~data =
