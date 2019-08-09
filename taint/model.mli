@@ -21,7 +21,7 @@ val demangle_class_attribute : string -> string
 
 val get_callsite_model
   :  call_target:[< Callable.t ] ->
-  arguments:Expression.t Expression.Call.Argument.t list ->
+  arguments:Expression.Call.Argument.t list ->
   t
 
 val get_global_sink_model

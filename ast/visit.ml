@@ -395,7 +395,7 @@ let collect_locations source =
 let collect_calls statement =
   let open Expression in
   let module Collector = ExpressionCollector (struct
-    type t = Expression.t Call.t Node.t
+    type t = Call.t Node.t
 
     let predicate expression =
       match expression with

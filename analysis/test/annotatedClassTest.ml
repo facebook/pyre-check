@@ -1155,7 +1155,7 @@ let test_inferred_generic_base context =
     in
     let resolution = Environment.resolution environment () in
     assert_equal
-      ~cmp:(List.equal (Argument.equal Expression.equal))
+      ~cmp:(List.equal Argument.equal)
       expected
       (Annotated.Class.inferred_generic_base target ~resolution)
   in

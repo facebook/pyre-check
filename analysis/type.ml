@@ -1147,7 +1147,7 @@ let rec expression annotation =
                              special = true;
                            });
                   };
-                arguments = [{ Call.Argument.name = None; value = overloads }];
+                arguments = [{ Expression.Call.Argument.name = None; value = overloads }];
               }
         | None -> base_callable )
     | Any -> create_name "typing.Any"

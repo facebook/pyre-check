@@ -63,6 +63,6 @@ type t =
 
 val select
   :  resolution:Resolution.t ->
-  arguments:Expression.t Call.Argument.t list ->
+  arguments:Call.Argument.t list ->
   callable:Type.Callable.t ->
   t

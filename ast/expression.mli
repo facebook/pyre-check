@@ -54,6 +54,22 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
+  module Call : sig
+    module RecordArgument : sig
+      type 'expression record = {
+        name: Identifier.t Node.t option;
+        value: 'expression;
+      }
+      [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    end
+
+    type 'expression record = {
+      callee: 'expression;
+      arguments: 'expression RecordArgument.record list;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
 end
 
 module Name : sig
@@ -69,22 +85,6 @@ module Name : sig
   type 'expression t =
     | Attribute of 'expression Attribute.t
     | Identifier of Identifier.t
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
-module Call : sig
-  module Argument : sig
-    type 'expression t = {
-      name: Identifier.t Node.t option;
-      value: 'expression;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-  end
-
-  type 'expression t = {
-    callee: 'expression;
-    arguments: 'expression Argument.t list;
-  }
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -176,7 +176,7 @@ end
 type expression =
   | Await of t
   | BooleanOperator of t BooleanOperator.t
-  | Call of t Call.t
+  | Call of t Record.Call.record
   | ComparisonOperator of t Record.ComparisonOperator.record
   | Complex of float
   | Dictionary of t Dictionary.t
@@ -224,6 +224,24 @@ module UnaryOperator : sig
   val override : t -> expression_t option
 end
 
+module Call : sig
+  module Argument : sig
+    include module type of struct
+      include Record.Call.RecordArgument
+    end
+
+    type t = expression_t record [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  include module type of struct
+    include Record.Call
+  end
+
+  type t = expression_t record [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val redirect_special_functions : location:Location.t -> t -> t
+end
+
 val negate : t -> t
 
 val normalize : t -> t
@@ -258,7 +276,7 @@ val delocalize_qualified : t -> t
 
 val exists_in_list : ?match_prefix:bool -> expression_list:t list -> string -> bool
 
-val arguments_location : expression_t Call.t -> Location.t
+val arguments_location : Call.t -> Location.t
 
 val show_sanitized : t -> string
 
@@ -266,6 +284,6 @@ val pp_sanitized : Format.formatter -> t -> unit
 
 val pp_expression_list : Format.formatter -> t list -> unit
 
-val pp_expression_argument_list : Format.formatter -> t Call.Argument.t list -> unit
+val pp_expression_argument_list : Format.formatter -> Call.Argument.t list -> unit
 
 val pp_expression_parameter_list : Format.formatter -> expression Node.t Parameter.t list -> unit

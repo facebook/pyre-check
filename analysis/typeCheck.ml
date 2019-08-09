@@ -2373,26 +2373,6 @@ module State (Context : Context) = struct
         { state; resolved; resolved_annotation = None; base = None }
     | Call
         {
-          callee = { Node.value = Name (Name.Identifier (("abs" | "repr" | "str") as name)); _ };
-          arguments = [{ Call.Argument.value; _ }];
-        } ->
-        (* Resolve function redirects. *)
-        Call
-          {
-            callee =
-              {
-                Node.location;
-                value =
-                  Name
-                    (Name.Attribute
-                       { base = value; attribute = "__" ^ name ^ "__"; special = true });
-              };
-            arguments = [];
-          }
-        |> Node.create ~location
-        |> fun expression -> forward_expression ~state ~expression
-    | Call
-        {
           callee = { Node.location; value = Name (Name.Identifier "reveal_type") };
           arguments = [{ Call.Argument.value; _ }];
         } ->
@@ -2573,7 +2553,10 @@ module State (Context : Context) = struct
           ~callee
           ~resolved:resolved_callee
           ~arguments
-    | Call { callee; arguments } ->
+    | Call call ->
+        let { Call.callee; arguments } =
+          Expression.Call.redirect_special_functions ~location call
+        in
         let { state = { errors = callee_errors; _ }; resolved = resolved_callee; base; _ } =
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
         in

@@ -101,7 +101,7 @@ end
 
 val collect_locations : Source.t -> Location.t list
 
-val collect_calls : Statement.t -> Expression.t Expression.Call.t Node.t list
+val collect_calls : Statement.t -> Expression.Call.t Node.t list
 
 val collect_names : ?only_simple:bool -> Statement.t -> Expression.t Expression.Name.t Node.t list
 

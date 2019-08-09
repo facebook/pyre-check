@@ -31,13 +31,10 @@ val resolve_property_targets
   (Callable.t * Type.Callable.implicit option) list option
 
 (* Returns a normalized path and optional addition parameter prefix, e.g. for constructor calls *)
-val normalize_global
-  :  resolution:Resolution.t ->
-  Reference.t ->
-  Reference.t * Expression.t Call.Argument.t list
+val normalize_global : resolution:Resolution.t -> Reference.t -> Reference.t * Call.Argument.t list
 
 (* Returns all call targets from Call expressions in the given access *)
 val resolve_call_targets
   :  resolution:Resolution.t ->
-  Expression.t Expression.Call.t ->
+  Expression.Call.t ->
   (Callable.t * Type.Callable.implicit option) list

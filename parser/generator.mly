@@ -14,7 +14,7 @@
   type parser_expression =
     | Await of parser_expression_node
     | BooleanOperator of parser_expression_node BooleanOperator.t
-    | Call of parser_expression_node Call.t
+    | Call of parser_expression_node Expression.Record.Call.record
     | ComparisonOperator of parser_expression_node Expression.Record.ComparisonOperator.record
     | Complex of float
     | Dictionary of parser_expression_node Dictionary.t

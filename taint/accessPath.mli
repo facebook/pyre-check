@@ -54,6 +54,6 @@ type argument_match = {
 [@@deriving show]
 
 val match_actuals_to_formals
-  :  Expression.t Call.Argument.t list ->
+  :  Call.Argument.t list ->
   Root.t list ->
   (Expression.t * argument_match list) list

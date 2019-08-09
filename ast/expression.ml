@@ -110,6 +110,22 @@ module Record = struct
         | Not -> "not"
         | Positive -> "+" )
   end
+
+  module Call = struct
+    module RecordArgument = struct
+      type 'expression record = {
+        name: Identifier.t Node.t option;
+        value: 'expression;
+      }
+      [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    end
+
+    type 'expression record = {
+      callee: 'expression;
+      arguments: 'expression RecordArgument.record list;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
 end
 
 module Name = struct
@@ -125,22 +141,6 @@ module Name = struct
   type 'expression t =
     | Attribute of 'expression Attribute.t
     | Identifier of Identifier.t
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
-
-module Call = struct
-  module Argument = struct
-    type 'expression t = {
-      name: Identifier.t Node.t option;
-      value: 'expression;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-  end
-
-  type 'expression t = {
-    callee: 'expression;
-    arguments: 'expression Argument.t list;
-  }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
@@ -259,7 +259,7 @@ end
 type expression =
   | Await of t
   | BooleanOperator of t BooleanOperator.t
-  | Call of t Call.t
+  | Call of t Record.Call.record
   | ComparisonOperator of t Record.ComparisonOperator.record
   | Complex of float
   | Dictionary of t Dictionary.t
@@ -288,6 +288,36 @@ and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 let _ = show (* shadowed below *)
 
 type expression_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+module Call = struct
+  module Argument = struct
+    include Record.Call.RecordArgument
+
+    type t = expression_t record [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  include Record.Call
+
+  type t = expression_t record [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let redirect_special_functions ~location = function
+    | {
+        callee = { Node.value = Name (Name.Identifier (("abs" | "repr" | "str") as name)); _ };
+        arguments = [{ value; _ }];
+      } ->
+        (* Resolve function redirects. *)
+        {
+          callee =
+            {
+              Node.location;
+              value =
+                Name
+                  (Name.Attribute { base = value; attribute = "__" ^ name ^ "__"; special = true });
+            };
+          arguments = [];
+        }
+    | { callee; arguments } -> { callee; arguments }
+end
 
 module ComparisonOperator = struct
   include Record.ComparisonOperator

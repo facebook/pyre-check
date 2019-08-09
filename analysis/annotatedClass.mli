@@ -11,7 +11,7 @@ type t [@@deriving compare, eq, sexp, show, hash]
 
 type decorator = {
   name: string;
-  arguments: Expression.t Expression.Call.Argument.t list option;
+  arguments: Expression.Call.Argument.t list option;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -27,7 +27,7 @@ val create : Class.t Node.t -> t
 
 val name : t -> Reference.t
 
-val bases : t -> Expression.t Expression.Call.Argument.t list
+val bases : t -> Expression.Call.Argument.t list
 
 val get_decorator : t -> resolution:GlobalResolution.t -> decorator:string -> decorator list
 
@@ -71,10 +71,7 @@ val generics : t -> resolution:GlobalResolution.t -> Type.OrderedTypes.t
 (* Find free variables in the parametric type. E.g. for generic class `class A(typing.Generic[_T],
    typing.Generic[_S]): ...` and instantiated type `A[int, Bottom]` we consider `_S` to be free. *)
 
-val inferred_generic_base
-  :  t ->
-  resolution:GlobalResolution.t ->
-  Expression.t Expression.Call.Argument.t list
+val inferred_generic_base : t -> resolution:GlobalResolution.t -> Expression.Call.Argument.t list
 
 val constraints
   :  ?target:t ->
