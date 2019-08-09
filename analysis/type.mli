@@ -60,18 +60,9 @@ module Record : sig
   end
 
   module OrderedTypes : sig
-    module RecordMap : sig
-      type 'annotation mappee [@@deriving compare, eq, sexp, show, hash]
-
-      type 'annotation record [@@deriving compare, eq, sexp, show, hash]
-    end
-
     module RecordConcatenate : sig
       module Middle : sig
-        type 'annotation t =
-          | Variable of 'annotation Variable.RecordVariadic.RecordList.record
-          | Map of 'annotation RecordMap.record
-        [@@deriving compare, eq, sexp, show, hash]
+        type 'annotation t [@@deriving compare, eq, sexp, show, hash]
       end
 
       type ('middle, 'outer) t [@@deriving compare, eq, sexp, show, hash]
@@ -489,37 +480,28 @@ module OrderedTypes : sig
 
   val pp_concise : Format.formatter -> t -> unit
 
-  module Map : sig
-    include module type of struct
-      include Record.OrderedTypes.RecordMap
-    end
-
-    type t = type_t record [@@deriving compare, eq, sexp, show, hash]
-
-    (* For testing only *)
-    val create
-      :  mappers:string list ->
-      variable:'annotation Record.Variable.RecordVariadic.RecordList.record ->
-      'annotation record
-
-    val variable
-      :  'annotation record ->
-      'annotation Record.Variable.RecordVariadic.RecordList.record
-
-    val singleton_replace_variable : t -> replacement:type_t -> type_t
-
-    val replace_variable
-      :  'annotation record ->
-      replacement:
-        ('annotation Record.Variable.RecordVariadic.RecordList.record -> ordered_types_t option) ->
-      ordered_types_t option
-
-    val expression : t -> Expression.t
-  end
-
   module Concatenation : sig
     include module type of struct
       include Record.OrderedTypes.RecordConcatenate
+    end
+
+    module Middle : sig
+      include module type of struct
+        include Record.OrderedTypes.RecordConcatenate.Middle
+      end
+
+      val unwrap_if_bare
+        :  type_t t ->
+        type_t Record.Variable.RecordVariadic.RecordList.record option
+
+      val create_bare : type_t Record.Variable.RecordVariadic.RecordList.record -> type_t t
+
+      val create
+        :  variable:type_t Record.Variable.RecordVariadic.RecordList.record ->
+        mappers:Identifier.t list ->
+        type_t t
+
+      val singleton_replace_variable : type_t t -> replacement:type_t -> type_t
     end
 
     val map_head_and_tail

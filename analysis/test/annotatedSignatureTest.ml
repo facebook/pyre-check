@@ -635,7 +635,7 @@ let test_select context =
           (MismatchWithListVariadicTypeVariable
              ( Concatenation
                  (Type.OrderedTypes.Concatenation.create
-                    (Type.OrderedTypes.Concatenation.Middle.Variable
+                    (Type.OrderedTypes.Concatenation.Middle.create_bare
                        (Type.Variable.Variadic.List.create "Ts"))),
                NotDefiniteTuple
                  {
@@ -651,7 +651,7 @@ let test_select context =
           (MismatchWithListVariadicTypeVariable
              ( Concatenation
                  (Type.OrderedTypes.Concatenation.create
-                    (Type.OrderedTypes.Concatenation.Middle.Variable
+                    (Type.OrderedTypes.Concatenation.Middle.create_bare
                        (Type.Variable.Variadic.List.create "Ts"))),
                ConstraintFailure (Concrete [Type.float]) )) ));
   assert_select

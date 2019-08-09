@@ -378,10 +378,10 @@ let clean not_clean =
       let open Type.OrderedTypes.Concatenation in
       match
         ( clarify_into_variables (head concatenation),
-          middle concatenation,
+          Type.OrderedTypes.Concatenation.Middle.unwrap_if_bare (middle concatenation),
           clarify_into_variables (tail concatenation) )
       with
-      | Some head, Variable middle, Some tail -> Some (Concatenation (create ~head ~tail middle))
+      | Some head, Some middle, Some tail -> Some (Concatenation (create ~head ~tail middle))
       | _ -> None )
   | Any -> None
 

@@ -1143,7 +1143,7 @@ module State (Context : Context) = struct
                       | Some (Concatenation concatenation) ->
                           let concatenation =
                             let open Type.OrderedTypes.Concatenation in
-                            map_middle concatenation ~f:(fun variadic -> Middle.Variable variadic)
+                            map_middle concatenation ~f:Middle.create_bare
                             |> map_head_and_tail ~f:(fun variable -> Type.Variable variable)
                           in
                           Type.Parametric

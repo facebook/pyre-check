@@ -144,26 +144,7 @@ module Record = struct
   end
 
   module OrderedTypes = struct
-    module RecordMap = struct
-      type 'annotation mappee =
-        | Variable of 'annotation Variable.RecordVariadic.RecordList.record
-        | SubMap of 'annotation record
-
-      and 'annotation record = {
-        mappee: 'annotation mappee;
-        mapper: Identifier.t;
-      }
-      [@@deriving compare, eq, sexp, show, hash]
-
-      let rec pp_concise format = function
-        | { mappee = Variable { name; _ }; mapper } ->
-            Format.fprintf format "Map[%s, %s]" mapper name
-        | { mappee = SubMap submap; mapper } ->
-            Format.fprintf format "Map[%s, %a]" mapper pp_concise submap
-
-
-      let public_name = "pyre_extensions.type_variable_operators.Map"
-    end
+    let map_public_name = "pyre_extensions.type_variable_operators.Map"
 
     let show_type_list types ~pp_type =
       Format.asprintf
@@ -176,14 +157,17 @@ module Record = struct
       let public_name = "pyre_extensions.type_variable_operators.Concatenate"
 
       module Middle = struct
-        type 'annotation t =
-          | Variable of 'annotation Variable.RecordVariadic.RecordList.record
-          | Map of 'annotation RecordMap.record
+        type 'annotation t = {
+          variable: 'annotation Variable.RecordVariadic.RecordList.record;
+          mappers: Identifier.t list;
+        }
         [@@deriving compare, eq, sexp, show, hash]
 
-        let show_concise = function
-          | Variable { name; _ } -> name
-          | Map map -> Format.asprintf "%a" RecordMap.pp_concise map
+        let rec show_concise = function
+          | { variable = { name; _ }; mappers = [] } -> name
+          | { mappers = head_mapper :: tail_mappers; _ } as mapped ->
+              let inner = { mapped with mappers = tail_mappers } in
+              Format.asprintf "Map[%s, %s]" head_mapper (show_concise inner)
       end
 
       type 'annotation wrapping = {
@@ -202,10 +186,7 @@ module Record = struct
 
       let pp_concatenation format { middle; wrapping } ~pp_type =
         match wrapping with
-        | { head = []; tail = [] } -> (
-          match middle with
-          | Middle.Variable { name; _ } -> Format.fprintf format "%s" name
-          | Map map -> Format.fprintf format "%a" RecordMap.pp_concise map )
+        | { head = []; tail = [] } -> Format.fprintf format "%s" (Middle.show_concise middle)
         | { head; tail = [] } ->
             Format.fprintf
               format
@@ -1225,29 +1206,25 @@ let rec expression annotation =
   Node.create_with_default_location value
 
 
-and map_annotation map =
+and middle_annotation middle =
   let single_wrap ~mapper ~inner =
     Parametric
       {
-        name = Record.OrderedTypes.RecordMap.public_name;
+        name = Record.OrderedTypes.map_public_name;
         parameters = Concrete [Primitive mapper; inner];
       }
   in
-  match map with
-  | { Record.OrderedTypes.RecordMap.mappee = Variable { name; _ }; mapper } ->
-      single_wrap ~mapper ~inner:(Primitive name)
-  | { mappee = SubMap submap; mapper } -> single_wrap ~mapper ~inner:(map_annotation submap)
+  match middle with
+  | { Record.OrderedTypes.RecordConcatenate.Middle.variable = { name; _ }; mappers = [] } ->
+      Primitive name
+  | { mappers = head_mapper :: tail_mappers; _ } ->
+      let inner = { middle with mappers = tail_mappers } in
+      single_wrap ~mapper:head_mapper ~inner:(middle_annotation inner)
 
-
-and map_expression map = map_annotation map |> expression
 
 and concatenation_expression { middle; wrapping } =
   let concatenation_annotation =
-    let middle_annotation =
-      match middle with
-      | Record.OrderedTypes.RecordConcatenate.Middle.Variable { name; _ } -> Primitive name
-      | Map map -> map_annotation map
-    in
+    let middle_annotation = middle_annotation middle in
     match wrapping with
     | { head = []; tail = [] } -> middle_annotation
     | { head; tail } ->
@@ -1627,11 +1604,11 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
     match annotation with
     | Parametric
         { name; parameters = Concrete [Primitive left_parameter; Primitive right_parameter] }
-      when Identifier.equal name Record.OrderedTypes.RecordMap.public_name -> (
+      when Identifier.equal name Record.OrderedTypes.map_public_name -> (
       match variable_aliases right_parameter with
       | Some (Record.Variable.ListVariadic variable) ->
           Some
-            { Record.OrderedTypes.RecordMap.mappee = Variable variable; mapper = left_parameter }
+            { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [left_parameter] }
       | _ -> None )
     | _ -> None
   in
@@ -1642,11 +1619,9 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
         | Primitive potential_middle -> (
           match variable_aliases potential_middle with
           | Some (Record.Variable.ListVariadic variable) ->
-              Some (Record.OrderedTypes.RecordConcatenate.Middle.Variable variable)
+              Some { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [] }
           | _ -> None )
-        | non_primitive ->
-            create_map_operator_from_annotation non_primitive ~variable_aliases
-            >>| fun map -> Record.OrderedTypes.RecordConcatenate.Middle.Map map
+        | non_primitive -> create_map_operator_from_annotation non_primitive ~variable_aliases
       in
       let parameter_to_parsed =
         List.map parameters ~f:(fun parameter -> parameter, parse_as_middle parameter)
@@ -1666,15 +1641,13 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
       | _ -> None )
   | Parametric _ ->
       create_map_operator_from_annotation annotation ~variable_aliases
-      >>| fun map ->
-      Record.OrderedTypes.RecordConcatenate.empty_wrap
-        (Record.OrderedTypes.RecordConcatenate.Middle.Map map)
+      >>| fun map -> Record.OrderedTypes.RecordConcatenate.empty_wrap map
   | Primitive name -> (
     match variable_aliases name with
     | Some (Record.Variable.ListVariadic variable) ->
         Some
           (Record.OrderedTypes.RecordConcatenate.empty_wrap
-             (Record.OrderedTypes.RecordConcatenate.Middle.Variable variable))
+             { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [] })
     | _ -> None )
   | _ -> None
 
@@ -2410,69 +2383,49 @@ module OrderedTypes = struct
 
   let pp_concise = pp_concise ~pp_type
 
-  module Map = struct
-    include Record.OrderedTypes.RecordMap
-
-    type t = type_t record [@@deriving compare, eq, sexp, show, hash]
-
-    let create ~mappers ~variable =
-      match List.rev mappers with
-      | mapper :: tail ->
-          let wrap sofar mapper = { mappee = SubMap sofar; mapper } in
-          List.fold tail ~f:wrap ~init:{ mappee = Variable variable; mapper }
-      | _ -> failwith "expected at least one mapper"
-
-
-    let rec replace_variable map ~replacement =
-      let petit ~inner ~mapper =
-        let apply concrete = Parametric { name = mapper; parameters = Concrete [concrete] } in
-        let replace_in_concatenation
-            { Record.OrderedTypes.RecordConcatenate.middle; wrapping = { head; tail } }
-          =
-          let apply_to_middle = function
-            | Record.OrderedTypes.RecordConcatenate.Middle.Variable variable ->
-                Record.OrderedTypes.RecordConcatenate.Middle.Map
-                  { mappee = Variable variable; mapper }
-            | Map submap -> Map { mappee = SubMap submap; mapper }
-          in
-          let wrapping =
-            {
-              Record.OrderedTypes.RecordConcatenate.head = List.map head ~f:apply;
-              tail = List.map tail ~f:apply;
-            }
-          in
-          { Record.OrderedTypes.RecordConcatenate.middle = apply_to_middle middle; wrapping }
-        in
-        match inner with
-        | Concrete concretes -> Concrete (List.map concretes ~f:apply)
-        | Any -> Any
-        | Concatenation concatenation -> Concatenation (replace_in_concatenation concatenation)
-      in
-      match map with
-      | { mappee = Variable variable; mapper } ->
-          replacement variable >>| fun inner -> petit ~inner ~mapper
-      | { mappee = SubMap submap; mapper } ->
-          replace_variable submap ~replacement >>| fun inner -> petit ~inner ~mapper
-
-
-    let singleton_replace_variable map ~replacement =
-      let extract = function
-        | Some (Concrete [extracted]) -> extracted
-        | _ -> failwith "this was a singleton replace"
-      in
-      replace_variable map ~replacement:(fun _ -> Some (Concrete [replacement])) |> extract
-
-
-    let rec variable = function
-      | { mappee = Variable variable; _ } -> variable
-      | { mappee = SubMap submap; _ } -> variable submap
-
-
-    let expression = map_expression
-  end
-
   module Concatenation = struct
     include Record.OrderedTypes.RecordConcatenate
+
+    module Middle = struct
+      include Record.OrderedTypes.RecordConcatenate.Middle
+
+      let unwrap_if_bare = function
+        | { variable; mappers = [] } -> Some variable
+        | _ -> None
+
+
+      let create_bare variable = { variable; mappers = [] }
+
+      let create ~variable ~mappers = { variable; mappers }
+
+      let rec replace_variable middle ~replacement =
+        match middle with
+        | { Middle.mappers = []; variable } -> replacement variable
+        | { Middle.mappers = head_mapper :: tail_mapper; _ } ->
+            let inner = { middle with mappers = tail_mapper } in
+            let apply concrete =
+              Parametric { name = head_mapper; parameters = Concrete [concrete] }
+            in
+            let handle_replaced = function
+              | Any -> Any
+              | Concrete concretes -> Concrete (List.map concretes ~f:apply)
+              | Concatenation { middle; wrapping = { head; tail } } ->
+                  let wrapping =
+                    { head = List.map head ~f:apply; tail = List.map tail ~f:apply }
+                  in
+                  let middle = { middle with mappers = head_mapper :: middle.mappers } in
+                  Concatenation { middle; wrapping }
+            in
+            replace_variable inner ~replacement >>| handle_replaced
+
+
+      let singleton_replace_variable middle ~replacement =
+        let extract = function
+          | Some (Concrete [extracted]) -> extracted
+          | _ -> failwith "this was a singleton replace"
+        in
+        replace_variable middle ~replacement:(fun _ -> Some (Concrete [replacement])) |> extract
+    end
 
     let parse expression ~aliases =
       let variable_aliases name =
@@ -2491,15 +2444,11 @@ module OrderedTypes = struct
     let map_middle { middle; wrapping } ~f = { middle = f middle; wrapping }
 
     let replace_variable { middle; wrapping } ~replacement =
-      let replace_variable_in_middle = function
-        | Record.OrderedTypes.RecordConcatenate.Middle.Variable variable -> replacement variable
-        | Map map -> Map.replace_variable map ~replacement
-      in
       let merge ~inner:{ head; tail } ~outer:{ head = outer_head; tail = outer_tail } =
         { head = outer_head @ head; tail = tail @ outer_tail }
       in
       let actualize ~inner { head; tail } = head @ inner @ tail in
-      match replace_variable_in_middle middle with
+      match Middle.replace_variable middle ~replacement with
       | None -> None
       | Some Any -> Some Any
       | Some (Concrete inner) -> Some (Concrete (actualize ~inner wrapping))
@@ -2519,11 +2468,7 @@ module OrderedTypes = struct
         (middle concatenation)
 
 
-    let variable { middle; _ } =
-      match middle with
-      | Middle.Map map -> Map.variable map
-      | Variable variable -> variable
-
+    let variable { middle = { Middle.variable; _ }; _ } = variable
 
     let expression = concatenation_expression
 
@@ -3158,7 +3103,9 @@ end = struct
       let any = OrderedTypes.Any
 
       let self_reference variable =
-        OrderedTypes.Concatenation (OrderedTypes.Concatenation.empty_wrap (Variable variable))
+        OrderedTypes.Concatenation
+          (OrderedTypes.Concatenation.empty_wrap
+             { OrderedTypes.Concatenation.Middle.variable; mappers = [] })
 
 
       let pair variable value = ListVariadicPair (variable, value)
