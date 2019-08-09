@@ -72,7 +72,10 @@ class Kill(Command):
             # might cause a race where we attempt to kill the `pyre kill` command.
             if process.pid == os.getpid():
                 continue
-            os.kill(os.getpgid(process.pid), signal.SIGKILL)
+            try:
+                os.kill(os.getpgid(process.pid), signal.SIGKILL)
+            except ProcessLookupError:
+                continue
 
 
 def _get_process_name(environment_variable_name: str, default: str) -> str:

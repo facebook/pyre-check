@@ -31,6 +31,8 @@ class KillTest(unittest.TestCase):
             "/tmp/json_socket",
             "/tmp/actual_socket",
             "/tmp/json_socket",
+            "/tmp/actual_socket",
+            "/tmp/json_socket",
         ],
     )
     @patch("os.path.realpath")
@@ -96,3 +98,12 @@ class KillTest(unittest.TestCase):
             arguments.with_fire = True
             commands.Kill(arguments, configuration, analysis_directory).run()
             remove_tree.assert_called_once_with("/root/.pyre/resource_cache")
+        # Ensure that we don't crash even if os.kill fails to find a process.
+        with patch("os.getenv", return_value=None), patch(
+            "os.getpid", return_value=1234
+        ), patch("os.kill", side_effect=ProcessLookupError):
+            realpath.return_value = "/test-binary"
+            arguments = mock_arguments()
+            configuration = mock_configuration()
+            analysis_directory = MagicMock()
+            commands.Kill(arguments, configuration, analysis_directory).run()
