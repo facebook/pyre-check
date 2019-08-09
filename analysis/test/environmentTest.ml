@@ -149,10 +149,9 @@ let test_register_class_metadata context =
   let all_annotations = Environment.register_class_definitions environment source |> Set.to_list in
   let resolution = Environment.resolution environment () in
   Environment.connect_type_order environment resolution source;
-  let order = Environment.class_hierarchy environment in
-  ClassHierarchy.deduplicate order ~annotations:all_annotations;
-  ClassHierarchy.connect_annotations_to_object order all_annotations;
-  ClassHierarchy.remove_extra_edges_to_object order all_annotations;
+  Environment.deduplicate_class_hierarchy ~annotations:all_annotations;
+  Environment.connect_annotations_to_object all_annotations;
+  Environment.remove_extra_edges_to_object all_annotations;
   Environment.register_class_metadata environment "A";
   Environment.register_class_metadata environment "B";
   Environment.register_class_metadata environment "C";
@@ -458,11 +457,15 @@ let test_connect_definition context =
   let (module TypeOrderHandler : ClassHierarchy.Handler) =
     Environment.class_hierarchy environment
   in
-  let (module DependencyHandler) = Environment.dependency_handler environment in
-  DependencyHandler.add_class_key ~qualifier:(Reference.create "") "C";
-  ClassHierarchy.insert (module TypeOrderHandler) "C";
-  DependencyHandler.add_class_key ~qualifier:(Reference.create "") "D";
-  ClassHierarchy.insert (module TypeOrderHandler) "D";
+  Environment.register_class_definitions
+    environment
+    (parse {|
+       class C:
+         pass
+       class D:
+         pass
+      |})
+  |> ignore;
   let assert_edge ~predecessor ~successor =
     let predecessor_index =
       TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) predecessor
@@ -603,7 +606,7 @@ let test_connect_type_order context =
   (* Classes get connected to object via `connect_annotations_to_top`. *)
   assert_successors "C" [];
   assert_successors "D" ["C"];
-  ClassHierarchy.connect_annotations_to_object order all_annotations;
+  Environment.connect_annotations_to_object all_annotations;
   assert_successors "C" ["object"];
   assert_successors "D" ["C"; "object"];
   assert_successors "CallMe" ["typing.Callable"; "object"]
@@ -1245,6 +1248,87 @@ let test_purge context =
   ()
 
 
+let test_purge_hierarchy context =
+  let order () =
+    let one_source = {|
+      from Two import Two
+      class One(Two):
+        pass
+    |} in
+    let two_source = {|
+      class Two:
+        pass
+    |} in
+    let a_source = {|
+      from One import One
+      class a(One):
+        pass
+    |} in
+    let b_source = {|
+      from One import One
+      class b(One):
+        pass
+    |} in
+    populate
+      ~include_typeshed_stubs:false
+      ~include_helpers:false
+      ~context
+      ["A.py", a_source; "B.py", b_source; "One.py", one_source; "Two.py", two_source]
+  in
+  let assert_backedges_equal wrapped_left unwrapped_right =
+    assert_equal
+      ~cmp:ClassHierarchy.Target.Set.equal
+      wrapped_left
+      (ClassHierarchy.Target.Set.of_list unwrapped_right)
+  in
+  let () =
+    let handler = order () in
+    let (module Handler) = Environment.class_hierarchy handler in
+    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    let one_index = index "One.One" in
+    Environment.purge handler [Reference.create "One"];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) one_index) [];
+    assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "Two.Two")) [];
+    assert_equal
+      (Handler.find_unsafe (Handler.edges ()) (index "A.a"))
+      [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }]
+  in
+  let () =
+    let handler = order () in
+    let (module Handler) = Environment.class_hierarchy handler in
+    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    let a_index = index "A.a" in
+    Environment.purge handler [Reference.create "A"];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) a_index) [];
+    assert_backedges_equal
+      (Handler.find_unsafe (Handler.backedges ()) (index "One.One"))
+      [{ ClassHierarchy.Target.target = index "B.b"; parameters = Concrete [] }]
+  in
+  let () =
+    let handler = order () in
+    let (module Handler) = Environment.class_hierarchy handler in
+    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    let b_index = index "B.b" in
+    Environment.purge handler [Reference.create "B"];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) b_index) [];
+    assert_backedges_equal
+      (Handler.find_unsafe (Handler.backedges ()) (index "One.One"))
+      [{ ClassHierarchy.Target.target = index "A.a"; parameters = Concrete [] }]
+  in
+  let () =
+    let handler = order () in
+    let (module Handler) = Environment.class_hierarchy handler in
+    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    let a_index = index "A.a" in
+    let b_index = index "B.b" in
+    Environment.purge handler [Reference.create "A"; Reference.create "B"];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) a_index) [];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) b_index) [];
+    assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "One.One")) []
+  in
+  ()
+
+
 let test_propagate_nested_classes context =
   let test_propagate sources aliases =
     Type.Cache.disable ();
@@ -1391,6 +1475,119 @@ let test_default_class_hierarchy context =
   assert_type_equal (meet order Type.float Type.complex) Type.float
 
 
+let test_connect_annotations_to_top context =
+  (* Partial partial order:*)
+  (*  0 - 2                *)
+  (*  |                    *)
+  (*  1   object           *)
+  let environment = create_environment ~context () in
+  let source =
+    parse
+      {|
+       class One:
+         pass
+       class Two:
+         pass
+       class Zero(Two, One):
+         pass
+    |}
+  in
+  Environment.register_class_definitions environment source |> ignore;
+  let resolution = Environment.resolution environment () in
+  Environment.connect_type_order environment resolution source;
+  let order = Environment.class_hierarchy environment in
+  assert_false (ClassHierarchy.least_upper_bound order "One" "Two" = ["object"]);
+  assert_false (ClassHierarchy.greatest_lower_bound order "One" "object" = ["One"]);
+
+  Environment.connect_annotations_to_object ["One"; "Two"; "Zero"; "object"];
+
+  assert_equal (ClassHierarchy.least_upper_bound order "One" "Two") ["object"];
+
+  (* Ensure that the backedge gets added as well *)
+  assert_equal (ClassHierarchy.greatest_lower_bound order "One" "object") ["One"]
+
+
+let test_deduplicate context =
+  let environment = create_environment ~context () in
+  let source =
+    parse
+      {|
+       class One:
+         pass
+       class Zero(One[int, int]):
+         pass
+       class Zero(One[int]):
+         pass
+    |}
+  in
+  Environment.register_class_definitions environment source |> ignore;
+  let resolution = Environment.resolution environment () in
+  Environment.connect_type_order environment resolution source;
+  Environment.deduplicate_class_hierarchy ~annotations:["One"; "Zero"];
+  let (module Handler) = Environment.class_hierarchy environment in
+  let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
+  let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
+    let assert_targets edges from target parameters create =
+      assert_equal
+        ~cmp:ListOrSet.equal
+        ~printer:(ListOrSet.to_string ~f:ClassHierarchy.Target.show)
+        (Handler.find_unsafe edges (index_of from))
+        (create
+           { ClassHierarchy.Target.target = index_of target; parameters = Concrete parameters })
+  end
+  in
+  let module ForwardAsserter = TargetAsserter (ClassHierarchy.Target.List) in
+  let module BackwardsAsserter = TargetAsserter (ClassHierarchy.Target.Set) in
+  ForwardAsserter.assert_targets (Handler.edges ()) "Zero" "One" [Type.integer] (fun target ->
+      [target]);
+  BackwardsAsserter.assert_targets
+    (Handler.backedges ())
+    "One"
+    "Zero"
+    [Type.integer]
+    (fun target -> ClassHierarchy.Target.Set.of_list [target])
+
+
+let test_remove_extra_edges_to_object context =
+  (*0 -> 1 -> 2 -> object*)
+  (*|----^         ^     *)
+  (*|--------------^     *)
+  let environment = create_environment ~context () in
+  let source =
+    parse
+      {|
+       class Two(object):
+         pass
+       class One(Two):
+         pass
+       class Zero(One, object):
+         pass
+    |}
+  in
+  Environment.register_class_definitions environment source |> ignore;
+  let resolution = Environment.resolution environment () in
+  Environment.connect_type_order environment resolution source;
+  Environment.remove_extra_edges_to_object ["Zero"; "One"; "Two"; "object"];
+  let (module Handler) = Environment.class_hierarchy environment in
+  let zero_index = Handler.find_unsafe (Handler.indices ()) "Zero" in
+  let one_index = Handler.find_unsafe (Handler.indices ()) "One" in
+  let two_index = Handler.find_unsafe (Handler.indices ()) "Two" in
+  let object_index = Handler.find_unsafe (Handler.indices ()) "object" in
+  assert_equal
+    (Handler.find_unsafe (Handler.edges ()) zero_index)
+    [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }];
+  let filter_only_relevant_targets =
+    Set.filter ~f:(fun { ClassHierarchy.Target.target; _ } ->
+        List.mem [zero_index; one_index; two_index; object_index] target ~equal:Int.equal)
+  in
+  assert_equal
+    ~cmp:ClassHierarchy.Target.Set.equal
+    (Handler.find_unsafe (Handler.backedges ()) object_index |> filter_only_relevant_targets)
+    (ClassHierarchy.Target.Set.of_list
+       [{ ClassHierarchy.Target.target = two_index; parameters = Concrete [] }]);
+  ()
+
+
 let () =
   "environment"
   >::: [ "connect_type_order" >:: test_connect_type_order;
@@ -1411,5 +1608,9 @@ let () =
          "register_globals" >:: test_register_globals;
          "register_implicit_submodules" >:: test_register_implicit_submodules;
          "propagate_nested_classes" >:: test_propagate_nested_classes;
-         "default_class_hierarchy" >:: test_default_class_hierarchy ]
+         "default_class_hierarchy" >:: test_default_class_hierarchy;
+         "connect_to_top" >:: test_connect_annotations_to_top;
+         "deduplicate" >:: test_deduplicate;
+         "remove_extra" >:: test_remove_extra_edges_to_object;
+         "purge_hierarchy" >:: test_purge_hierarchy ]
   |> Test.run

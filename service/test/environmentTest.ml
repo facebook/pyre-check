@@ -61,20 +61,36 @@ let test_normalize_dependencies _ =
     ["A_Alias"; "B_Alias"; "C_Alias"]
 
 
-let test_normalize _ =
-  let environment = empty_environment () in
+let test_normalize context =
+  let _, _, environment =
+    ScratchProject.setup
+      ~context
+      [ ( "x.py",
+          {|
+            class D: pass
+            class C(D): pass
+            class E: pass
+            class F: pass
+          |}
+        ) ]
+    |> ScratchProject.build_environment
+  in
+  Analysis.Environment.fill_shared_memory_with_default_typeorder ();
   let order = Analysis.Environment.class_hierarchy environment in
   let (module TypeOrderHandler) = order in
-  ClassHierarchy.insert order "int";
-  ClassHierarchy.insert order "str";
-  let indices =
-    let index_of annotation =
-      TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) annotation
-    in
-    [index_of "int"; index_of "str"] |> List.sort ~compare:Int.compare
+  let index_of annotation =
+    TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) annotation
   in
+  let unsorted_indices = [index_of "x.D"; index_of "x.C"; index_of "x.E"; index_of "x.F"] in
+  let sorted_indices = unsorted_indices |> List.sort ~compare:Int.compare in
+  let filtered () =
+    List.filter (TypeOrderHandler.keys ()) ~f:(List.mem unsorted_indices ~equal:Int.equal)
+  in
+  assert_false (filtered () = sorted_indices);
   Analysis.Environment.normalize_shared_memory [];
-  assert_equal (TypeOrderHandler.keys ()) indices
+
+  assert_equal (filtered ()) sorted_indices;
+  ()
 
 
 let test_populate context =

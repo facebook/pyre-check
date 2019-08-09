@@ -49,6 +49,12 @@ val purge : t -> ?debug:bool -> Reference.t list -> unit
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
+val deduplicate_class_hierarchy : annotations:Type.Primitive.t list -> unit
+
+val remove_extra_edges_to_object : Type.Primitive.t list -> unit
+
+val connect_annotations_to_object : Type.Primitive.t list -> unit
+
 val dependency_handler : t -> (module Dependencies.Handler)
 
 val set_class_definition : t -> name:Identifier.t -> definition:Class.t Node.t -> unit

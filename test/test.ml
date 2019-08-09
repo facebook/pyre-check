@@ -1385,6 +1385,8 @@ module MockClassHierarchyHandler = struct
 
   let show order = Format.asprintf "%a" pp order
 
+  let set table ~key ~data = Hashtbl.set table ~key ~data
+
   let handler order =
     ( module struct
       type ('key, 'value) lookup = ('key, 'value) Hashtbl.t
@@ -1403,14 +1405,52 @@ module MockClassHierarchyHandler = struct
 
       let contains table key = Hashtbl.mem table key
 
-      let set table ~key ~data = Hashtbl.set table ~key ~data
-
-      let add_key _ = ()
-
       let keys () = Hashtbl.keys order.annotations
 
       let length table = Hashtbl.length table
 
       let show () = show order
     end : ClassHierarchy.Handler )
+
+
+  let connect ?(parameters = Type.OrderedTypes.Concrete []) order ~predecessor ~successor =
+    let index_of annotation = Hashtbl.find_exn order.indices annotation in
+    let predecessor = index_of predecessor in
+    let successor = index_of successor in
+    let edges = order.edges in
+    let backedges = order.backedges in
+    (* Add edges. *)
+    let successors = Hashtbl.find edges predecessor |> Option.value ~default:[] in
+    Hashtbl.set
+      edges
+      ~key:predecessor
+      ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors);
+
+    (* Add backedges. *)
+    let predecessors =
+      Hashtbl.find backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
+    in
+    Hashtbl.set
+      backedges
+      ~key:successor
+      ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
+
+
+  let insert order annotation =
+    if not (Hashtbl.mem order.indices annotation) then (
+      let annotations = order.annotations in
+      let index =
+        let initial = Type.Primitive.hash annotation in
+        let rec pick_index index =
+          if Hashtbl.mem annotations index then
+            pick_index (index + 1)
+          else
+            index
+        in
+        pick_index initial
+      in
+      Hashtbl.set order.indices ~key:annotation ~data:index;
+      Hashtbl.set annotations ~key:index ~data:annotation;
+      Hashtbl.set order.edges ~key:index ~data:[];
+      Hashtbl.set order.backedges ~key:index ~data:ClassHierarchy.Target.Set.empty )
 end

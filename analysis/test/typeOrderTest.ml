@@ -29,7 +29,7 @@ let resolution ?source context =
 
 let concrete_connect ?parameters =
   let parameters = parameters >>| fun parameters -> Type.OrderedTypes.Concrete parameters in
-  ClassHierarchy.connect ?parameters
+  MockClassHierarchyHandler.connect ?parameters
 
 
 let parse_attributes ~parse_annotation ~class_name =
@@ -111,9 +111,9 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
  *          |  \       /
  *          4 -- 2 --- *)
 let order =
-  let open ClassHierarchy in
   let bottom = "bottom" in
-  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
   insert order bottom;
   insert order "0";
   insert order "1";
@@ -128,7 +128,7 @@ let order =
   connect order ~predecessor:bottom ~successor:"1";
   connect order ~predecessor:bottom ~successor:"2";
   connect order ~predecessor:bottom ~successor:"4";
-  order
+  handler order
 
 
 (*
@@ -143,16 +143,16 @@ let order =
  * BOTTOM
  *)
 let disconnected_order =
-  let open ClassHierarchy in
-  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
   insert order "A";
   insert order "B";
-  order
+  handler order
 
 
 let variance_order =
-  let open ClassHierarchy in
-  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
   insert order "object";
   insert order "bool";
   insert order "str";
@@ -199,7 +199,7 @@ let variance_order =
     ~predecessor:"Derived"
     ~successor:"typing.Generic"
     ~parameters:[variable_t_co];
-  order
+  handler order
 
 
 (* A much more complicated set of rules, to explore the full combination of generic types.
@@ -229,8 +229,8 @@ let variance_order =
  * class D(B[float, float])
  *)
 let multiplane_variance_order =
-  let open ClassHierarchy in
-  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
   insert order "str";
   insert order "int";
   insert order "float";
@@ -261,7 +261,7 @@ let multiplane_variance_order =
     ~parameters:[variable_t_contra; variable_t_co];
   concrete_connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
   concrete_connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
-  order
+  handler order
 
 
 (* A type order where types A and B have parallel planes.
@@ -291,8 +291,8 @@ let multiplane_variance_order =
  * class D(B[float, float])
  *)
 let parallel_planes_variance_order =
-  let open ClassHierarchy in
-  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
   insert order "str";
   insert order "int";
   insert order "float";
@@ -322,12 +322,12 @@ let parallel_planes_variance_order =
     ~parameters:[variable_t_co; variable_t_contra];
   concrete_connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
   concrete_connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
-  order
+  handler order
 
 
 let default =
-  let open ClassHierarchy in
-  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+  let order = MockClassHierarchyHandler.create () in
+  let open MockClassHierarchyHandler in
   insert order "typing.Generic";
   insert order "int";
   insert order "str";
@@ -495,7 +495,7 @@ let default =
     ~predecessor:"CommonNonGenericChild"
     ~successor:"DifferentGenericContainer"
     ~parameters:[Primitive "int"; Primitive "str"];
-  order
+  handler order
 
 
 let ( !! ) name = Type.Primitive name
@@ -630,8 +630,8 @@ let test_less_or_equal context =
        ~left:(Type.Tuple (Bounded Any))
        ~right:(Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))));
   let order =
-    let open ClassHierarchy in
-    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+    let order = MockClassHierarchyHandler.create () in
+    let open MockClassHierarchyHandler in
     insert order "object";
 
     insert order "str";
@@ -716,7 +716,7 @@ let test_less_or_equal context =
     insert order "dict";
     insert order "MatchesProtocol";
     insert order "DoesNotMatchProtocol";
-    order
+    handler order
   in
   assert_true
     (less_or_equal
@@ -1720,8 +1720,8 @@ let test_join context =
     "typing.Tuple[int, int, str]"
     "typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, str]]";
   let order =
-    let open ClassHierarchy in
-    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+    let order = MockClassHierarchyHandler.create () in
+    let open MockClassHierarchyHandler in
     insert order "object";
 
     insert order "str";
@@ -1785,7 +1785,7 @@ let test_join context =
       ~parameters:[Type.variable "_T"]
       ~predecessor:"ParametricCallableToStr"
       ~successor:"typing.Generic";
-    order
+    handler order
   in
   let aliases =
     Identifier.Table.of_alist_exn
@@ -2330,8 +2330,8 @@ let test_meet _ =
      * class X(B[T, str]): pass
      * class Y(B[int, str]): pass
      * class M(A[T], X[T], Y[T]): pass *)
-    let open ClassHierarchy in
-    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+    let order = MockClassHierarchyHandler.create () in
+    let open MockClassHierarchyHandler in
     insert order "A";
     insert order "B";
     insert order "X";
@@ -2360,7 +2360,7 @@ let test_meet _ =
       ~predecessor:"B"
       ~successor:"typing.Generic"
       ~parameters:[variable; variable2];
-    order
+    handler order
   in
   assert_meet
     ~order:(make_potentially_inconsistent_order ~x_before_y:true)

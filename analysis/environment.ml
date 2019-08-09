@@ -85,6 +85,508 @@ module ResolvedAlias = struct
     Handler.register_alias ~qualifier ~key:name ~data:annotation
 end
 
+module SharedMemory = struct
+  (** Keys *)
+  module StringKey = struct
+    type t = string
+
+    let to_string = ident
+
+    let compare = String.compare
+
+    type out = string
+
+    let from_string x = x
+  end
+
+  (** Values *)
+  module FunctionKeyValue = struct
+    type t = Reference.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Function keys"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module GlobalKeyValue = struct
+    type t = Reference.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Global keys"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module AliasKeyValue = struct
+    type t = Identifier.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Alias keys"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module ClassKeyValue = struct
+    type t = Identifier.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Class keys"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module DependentKeyValue = struct
+    type t = Reference.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Dependent keys"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module ClassValue = struct
+    type t = Statement.Class.t Node.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Class"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module ClassMetadataValue = struct
+    type t = GlobalResolution.class_metadata
+
+    let prefix = Prefix.make ()
+
+    let description = "Class metadata"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module AliasValue = struct
+    type t = Type.alias
+
+    let prefix = Prefix.make ()
+
+    let description = "Alias"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module GlobalValue = struct
+    type t = GlobalResolution.global
+
+    let prefix = Prefix.make ()
+
+    let description = "Global"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module DependentValue = struct
+    type t = Reference.Set.Tree.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Dependent"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module OrderIndexValue = struct
+    type t = int
+
+    let prefix = Prefix.make ()
+
+    let description = "Order indices"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module OrderAnnotationValue = struct
+    type t = string
+
+    let prefix = Prefix.make ()
+
+    let description = "Order annotations"
+
+    (* Strings are not marshalled by shared memory *)
+    let unmarshall value = value
+  end
+
+  module EdgeValue = struct
+    type t = ClassHierarchy.Target.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Edges"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module BackedgeValue = struct
+    type t = ClassHierarchy.Target.Set.Tree.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Backedges"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module OrderKeyValue = struct
+    type t = int list
+
+    let prefix = Prefix.make ()
+
+    let description = "Order keys"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module IntValue = struct
+    type t = int
+
+    let prefix = Prefix.make ()
+
+    let description = "Refcount of implicit submodules"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module ModuleValue = struct
+    type t = Module.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Module"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module UndecoratedFunctionValue = struct
+    type t = Type.t Type.Callable.overload
+
+    let prefix = Prefix.make ()
+
+    let description = "Undecorated functions"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
+  (** Shared memory maps *)
+
+  module Modules = Memory.WithCache (Reference.Key) (ModuleValue)
+  module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
+  module ImplicitSubmodules = Memory.NoCache (Reference.Key) (IntValue)
+  module Aliases = Memory.NoCache (StringKey) (AliasValue)
+  module Globals = Memory.WithCache (Reference.Key) (GlobalValue)
+  module Dependents = Memory.WithCache (Reference.Key) (DependentValue)
+  module UndecoratedFunctions = Memory.WithCache (Reference.Key) (UndecoratedFunctionValue)
+
+  module FunctionKeys = Memory.WithCache (Reference.Key) (FunctionKeyValue)
+  (** Keys *)
+
+  module ClassKeys = Memory.WithCache (Reference.Key) (ClassKeyValue)
+  module GlobalKeys = Memory.WithCache (Reference.Key) (GlobalKeyValue)
+  module AliasKeys = Memory.WithCache (Reference.Key) (AliasKeyValue)
+  module DependentKeys = Memory.WithCache (Reference.Key) (DependentKeyValue)
+
+  module OrderIndices = Memory.WithCache (StringKey) (OrderIndexValue)
+  (** Type order maps *)
+
+  module OrderAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (OrderAnnotationValue)
+  module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
+  module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
+  module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
+end
+
+module SharedMemoryClassHierarchyHandler = struct
+  type ('key, 'value) lookup = {
+    get: 'key -> 'value option;
+    set: 'key -> 'value -> unit;
+  }
+
+  open SharedMemory
+
+  let edges () =
+    {
+      get = OrderEdges.get;
+      set =
+        (fun key value ->
+          OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
+          OrderEdges.add key value);
+    }
+
+
+  let backedges () =
+    {
+      get = (fun key -> OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree);
+      set =
+        (fun key value ->
+          let value = ClassHierarchy.Target.Set.to_tree value in
+          OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
+          OrderBackedges.add key value);
+    }
+
+
+  let indices () =
+    {
+      get = OrderIndices.get;
+      set =
+        (fun key value ->
+          OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
+          OrderIndices.add key value);
+    }
+
+
+  let annotations () =
+    {
+      get = OrderAnnotations.get;
+      set =
+        (fun key value ->
+          OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
+          OrderAnnotations.add key value);
+    }
+
+
+  let find { get; _ } key = get key
+
+  let find_unsafe { get; _ } key = Option.value_exn (get key)
+
+  let contains { get; _ } key = Option.is_some (get key)
+
+  let set { set; _ } ~key ~data = set key data
+
+  let length _ = OrderKeys.get Memory.SingletonKey.key >>| List.length |> Option.value ~default:0
+
+  let add_key key =
+    match OrderKeys.get Memory.SingletonKey.key with
+    | None -> OrderKeys.add Memory.SingletonKey.key [key]
+    | Some keys ->
+        OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
+        OrderKeys.add Memory.SingletonKey.key (key :: keys)
+
+
+  let keys () = Option.value ~default:[] (OrderKeys.get Memory.SingletonKey.key)
+
+  let show () =
+    let keys = keys () |> List.sort ~compare:Int.compare in
+    let serialized_keys = List.to_string ~f:Int.to_string keys in
+    let serialized_annotations =
+      let serialize_annotation key =
+        find (annotations ()) key >>| fun annotation -> Format.asprintf "%d->%s\n" key annotation
+      in
+      List.filter_map ~f:serialize_annotation keys |> String.concat
+    in
+    let module EdgeSerializer (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
+      let serialize edges =
+        let edges_of_key key =
+          let show_successor { ClassHierarchy.Target.target = successor; _ } =
+            Option.value_exn (find (annotations ()) successor)
+          in
+          find edges key >>| ListOrSet.to_string ~f:show_successor |> Option.value ~default:""
+        in
+        List.to_string ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
+    end
+    in
+    let module ForwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.List) in
+    let module BackwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.Set) in
+    Format.asprintf
+      "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
+      serialized_keys
+      serialized_annotations
+      (ForwardEdgeSerializer.serialize (edges ()))
+      (BackwardEdgeSerializer.serialize (backedges ()))
+
+
+  let insert annotation =
+    if not (contains (indices ()) annotation) then (
+      let annotations = annotations () in
+      let index =
+        let initial = Type.Primitive.hash annotation in
+        let rec pick_index index =
+          if contains annotations index then
+            pick_index (index + 1)
+          else
+            index
+        in
+        pick_index initial
+      in
+      add_key index;
+      set (indices ()) ~key:annotation ~data:index;
+      set annotations ~key:index ~data:annotation;
+      set (edges ()) ~key:index ~data:[];
+      set (backedges ()) ~key:index ~data:ClassHierarchy.Target.Set.empty )
+
+
+  let connect ?(parameters = Type.OrderedTypes.Concrete []) ~predecessor ~successor =
+    if (not (contains (indices ()) predecessor)) || not (contains (indices ()) successor) then
+      Statistics.event
+        ~name:"invalid type order connection"
+        ~integers:[]
+        ~normals:["Predecessor", predecessor; "Successor", successor]
+        ()
+    else
+      let index_of annotation = find_unsafe (indices ()) annotation in
+      let predecessor = index_of predecessor in
+      let successor = index_of successor in
+      let edges = edges () in
+      let backedges = backedges () in
+      (* Add edges. *)
+      let successors = find edges predecessor |> Option.value ~default:[] in
+      set
+        edges
+        ~key:predecessor
+        ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors);
+
+      (* Add backedges. *)
+      let predecessors =
+        find backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
+      in
+      set
+        backedges
+        ~key:successor
+        ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
+
+
+  let disconnect_successors purged_annotations =
+    let edges = edges () in
+    let backedges = backedges () in
+    let keys_to_remove =
+      List.filter_map purged_annotations ~f:(find (indices ())) |> Int.Hash_set.of_list
+    in
+    let all_successors =
+      let all_successors = Int.Hash_set.create () in
+      let add_successors key =
+        match find edges key with
+        | Some successors ->
+            List.iter successors ~f:(fun { ClassHierarchy.Target.target; _ } ->
+                Hash_set.add all_successors target)
+        | None -> ()
+      in
+      Hash_set.iter keys_to_remove ~f:add_successors;
+      all_successors
+    in
+    let remove_backedges successor =
+      find backedges successor
+      >>| (fun current_predecessors ->
+            let new_predecessors =
+              Set.filter
+                ~f:(fun { ClassHierarchy.Target.target; _ } ->
+                  not (Hash_set.mem keys_to_remove target))
+                current_predecessors
+            in
+            set backedges ~key:successor ~data:new_predecessors)
+      |> ignore
+    in
+    Hash_set.iter all_successors ~f:remove_backedges;
+    let clear_edges key =
+      match find edges key with
+      | Some _ -> set edges ~key ~data:[]
+      | None -> ()
+    in
+    Hash_set.iter keys_to_remove ~f:clear_edges
+
+
+  let deduplicate ~annotations =
+    let edges = edges () in
+    let backedges = backedges () in
+    let deduplicate_annotation index =
+      let module Deduplicator (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
+        let deduplicate edges =
+          let keep_first (visited, edges) ({ ClassHierarchy.Target.target; _ } as edge) =
+            if Set.mem visited target then
+              visited, edges
+            else
+              Set.add visited target, ListOrSet.add edges edge
+          in
+          let deduplicate found =
+            ListOrSet.fold found ~f:keep_first ~init:(Int.Set.empty, ListOrSet.empty) |> snd
+          in
+          match find edges index with
+          | Some found -> set edges ~key:index ~data:(deduplicate found)
+          | None -> ()
+      end
+      in
+      let module EdgeDeduplicator = Deduplicator (ClassHierarchy.Target.List) in
+      let module BackedgeDeduplicator = Deduplicator (ClassHierarchy.Target.Set) in
+      EdgeDeduplicator.deduplicate edges;
+      BackedgeDeduplicator.deduplicate backedges
+    in
+    annotations |> List.map ~f:(find_unsafe (indices ())) |> List.iter ~f:deduplicate_annotation
+
+
+  let remove_extra_edges_to_object annotations =
+    let edges = edges () in
+    let index_of annotation = find_unsafe (indices ()) annotation in
+    let keys = List.map annotations ~f:index_of in
+    let backedges = backedges () in
+    let object_index = index_of "object" in
+    let remove_extra_references key =
+      find edges key
+      >>| (fun connected ->
+            let disconnected =
+              ClassHierarchy.Target.List.filter
+                connected
+                ~f:(fun { ClassHierarchy.Target.target; _ } -> target <> object_index)
+            in
+            if ClassHierarchy.Target.List.is_empty disconnected then
+              []
+            else (
+              set edges ~key ~data:disconnected;
+              [key] ))
+      |> Option.value ~default:[]
+    in
+    let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
+    find backedges object_index
+    >>| (fun edges ->
+          let edges =
+            ClassHierarchy.Target.Set.filter edges ~f:(fun { ClassHierarchy.Target.target; _ } ->
+                not (Set.mem removed_indices target))
+          in
+          set backedges ~key:object_index ~data:edges)
+    |> Option.value ~default:()
+end
+
+let connect_annotations_to_object annotations =
+  let indices = SharedMemoryClassHierarchyHandler.indices () in
+  let connect_to_top annotation =
+    let index = SharedMemoryClassHierarchyHandler.find_unsafe indices annotation in
+    let annotation =
+      SharedMemoryClassHierarchyHandler.find_unsafe
+        (SharedMemoryClassHierarchyHandler.annotations ())
+        index
+    in
+    let object_primitive = "object" in
+    if
+      not
+        (ClassHierarchy.is_transitive_successor
+           (module SharedMemoryClassHierarchyHandler)
+           ~source:object_primitive
+           ~target:annotation)
+    then
+      match
+        SharedMemoryClassHierarchyHandler.find (SharedMemoryClassHierarchyHandler.edges ()) index
+      with
+      | Some targets when List.length targets > 0 -> ()
+      | _ ->
+          SharedMemoryClassHierarchyHandler.connect
+            ?parameters:None
+            ~predecessor:annotation
+            ~successor:object_primitive
+  in
+  List.iter ~f:connect_to_top annotations
+
+
 let resolution (module Handler : Handler) () =
   let aliases = Handler.aliases in
   let class_hierarchy = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
@@ -176,7 +678,7 @@ let connect_definition
       String.equal predecessor successor
     in
     if annotations_tracked && not primitive_cycle then
-      ClassHierarchy.connect (module Handler) ~predecessor ~successor ~parameters
+      SharedMemoryClassHierarchyHandler.connect ~predecessor ~successor ~parameters
   in
   let primitive = Reference.show name in
   ( match Annotated.Class.inferred_callable_type annotated ~resolution with
@@ -246,9 +748,8 @@ let add_special_classes (module Handler : Handler) =
         docstring = None;
       }
     in
-    let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
     Handler.set_class_definition ~name ~definition:(Node.create_with_default_location definition);
-    ClassHierarchy.insert order name;
+    SharedMemoryClassHierarchyHandler.insert name;
     Handler.register_class_metadata name
   in
   let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
@@ -348,7 +849,7 @@ let register_class_definitions (module Handler : Handler) source =
           Handler.DependencyHandler.add_class_key ~qualifier name;
           Handler.set_class_definition ~name ~definition:{ Node.location; value = definition };
           if not (ClassHierarchy.contains order primitive) then
-            ClassHierarchy.insert order primitive;
+            SharedMemoryClassHierarchyHandler.insert primitive;
           Set.add new_annotations primitive
       | _ -> new_annotations
   end)
@@ -951,6 +1452,10 @@ let class_hierarchy (module Handler : Handler) =
   (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
 
 
+let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate
+
+let remove_extra_edges_to_object = SharedMemoryClassHierarchyHandler.remove_extra_edges_to_object
+
 let dependency_handler (module Handler : Handler) =
   (module Handler.DependencyHandler : Dependencies.Handler)
 
@@ -960,329 +1465,6 @@ let set_class_definition (module Handler : Handler) = Handler.set_class_definiti
 let register_class_metadata (module Handler : Handler) = Handler.register_class_metadata
 
 let transaction (module Handler : Handler) = Handler.transaction
-
-module SharedMemory = struct
-  (** Keys *)
-  module StringKey = struct
-    type t = string
-
-    let to_string = ident
-
-    let compare = String.compare
-
-    type out = string
-
-    let from_string x = x
-  end
-
-  (** Values *)
-  module FunctionKeyValue = struct
-    type t = Reference.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Function keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module GlobalKeyValue = struct
-    type t = Reference.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Global keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module AliasKeyValue = struct
-    type t = Identifier.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Alias keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module ClassKeyValue = struct
-    type t = Identifier.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Class keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module DependentKeyValue = struct
-    type t = Reference.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Dependent keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module ClassValue = struct
-    type t = Statement.Class.t Node.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Class"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module ClassMetadataValue = struct
-    type t = GlobalResolution.class_metadata
-
-    let prefix = Prefix.make ()
-
-    let description = "Class metadata"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module AliasValue = struct
-    type t = Type.alias
-
-    let prefix = Prefix.make ()
-
-    let description = "Alias"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module GlobalValue = struct
-    type t = GlobalResolution.global
-
-    let prefix = Prefix.make ()
-
-    let description = "Global"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module DependentValue = struct
-    type t = Reference.Set.Tree.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Dependent"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module OrderIndexValue = struct
-    type t = int
-
-    let prefix = Prefix.make ()
-
-    let description = "Order indices"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module OrderAnnotationValue = struct
-    type t = string
-
-    let prefix = Prefix.make ()
-
-    let description = "Order annotations"
-
-    (* Strings are not marshalled by shared memory *)
-    let unmarshall value = value
-  end
-
-  module EdgeValue = struct
-    type t = ClassHierarchy.Target.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Edges"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module BackedgeValue = struct
-    type t = ClassHierarchy.Target.Set.Tree.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Backedges"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module OrderKeyValue = struct
-    type t = int list
-
-    let prefix = Prefix.make ()
-
-    let description = "Order keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module IntValue = struct
-    type t = int
-
-    let prefix = Prefix.make ()
-
-    let description = "Refcount of implicit submodules"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module ModuleValue = struct
-    type t = Module.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Module"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module UndecoratedFunctionValue = struct
-    type t = Type.t Type.Callable.overload
-
-    let prefix = Prefix.make ()
-
-    let description = "Undecorated functions"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
-  (** Shared memory maps *)
-
-  module Modules = Memory.WithCache (Reference.Key) (ModuleValue)
-  module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
-  module ImplicitSubmodules = Memory.NoCache (Reference.Key) (IntValue)
-  module Aliases = Memory.NoCache (StringKey) (AliasValue)
-  module Globals = Memory.WithCache (Reference.Key) (GlobalValue)
-  module Dependents = Memory.WithCache (Reference.Key) (DependentValue)
-  module UndecoratedFunctions = Memory.WithCache (Reference.Key) (UndecoratedFunctionValue)
-
-  module FunctionKeys = Memory.WithCache (Reference.Key) (FunctionKeyValue)
-  (** Keys *)
-
-  module ClassKeys = Memory.WithCache (Reference.Key) (ClassKeyValue)
-  module GlobalKeys = Memory.WithCache (Reference.Key) (GlobalKeyValue)
-  module AliasKeys = Memory.WithCache (Reference.Key) (AliasKeyValue)
-  module DependentKeys = Memory.WithCache (Reference.Key) (DependentKeyValue)
-
-  module OrderIndices = Memory.WithCache (StringKey) (OrderIndexValue)
-  (** Type order maps *)
-
-  module OrderAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (OrderAnnotationValue)
-  module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
-  module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
-  module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
-end
-
-module SharedMemoryClassHierarchyHandler = struct
-  type ('key, 'value) lookup = {
-    get: 'key -> 'value option;
-    set: 'key -> 'value -> unit;
-  }
-
-  open SharedMemory
-
-  let edges () =
-    {
-      get = OrderEdges.get;
-      set =
-        (fun key value ->
-          OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
-          OrderEdges.add key value);
-    }
-
-
-  let backedges () =
-    {
-      get = (fun key -> OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree);
-      set =
-        (fun key value ->
-          let value = ClassHierarchy.Target.Set.to_tree value in
-          OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
-          OrderBackedges.add key value);
-    }
-
-
-  let indices () =
-    {
-      get = OrderIndices.get;
-      set =
-        (fun key value ->
-          OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
-          OrderIndices.add key value);
-    }
-
-
-  let annotations () =
-    {
-      get = OrderAnnotations.get;
-      set =
-        (fun key value ->
-          OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
-          OrderAnnotations.add key value);
-    }
-
-
-  let find { get; _ } key = get key
-
-  let find_unsafe { get; _ } key = Option.value_exn (get key)
-
-  let contains { get; _ } key = Option.is_some (get key)
-
-  let set { set; _ } ~key ~data = set key data
-
-  let length _ = OrderKeys.get Memory.SingletonKey.key >>| List.length |> Option.value ~default:0
-
-  let add_key key =
-    match OrderKeys.get Memory.SingletonKey.key with
-    | None -> OrderKeys.add Memory.SingletonKey.key [key]
-    | Some keys ->
-        OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
-        OrderKeys.add Memory.SingletonKey.key (key :: keys)
-
-
-  let keys () = Option.value ~default:[] (OrderKeys.get Memory.SingletonKey.key)
-
-  let show () =
-    let keys = keys () |> List.sort ~compare:Int.compare in
-    let serialized_keys = List.to_string ~f:Int.to_string keys in
-    let serialized_annotations =
-      let serialize_annotation key =
-        find (annotations ()) key >>| fun annotation -> Format.asprintf "%d->%s\n" key annotation
-      in
-      List.filter_map ~f:serialize_annotation keys |> String.concat
-    in
-    let module EdgeSerializer (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
-      let serialize edges =
-        let edges_of_key key =
-          let show_successor { ClassHierarchy.Target.target = successor; _ } =
-            Option.value_exn (find (annotations ()) successor)
-          in
-          find edges key >>| ListOrSet.to_string ~f:show_successor |> Option.value ~default:""
-        in
-        List.to_string ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
-    end
-    in
-    let module ForwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.List) in
-    let module BackwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.Set) in
-    Format.asprintf
-      "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
-      serialized_keys
-      serialized_annotations
-      (ForwardEdgeSerializer.serialize (edges ()))
-      (BackwardEdgeSerializer.serialize (backedges ()))
-end
 
 let fill_shared_memory_with_default_typeorder () =
   let object_primitive = "object" in
@@ -1323,14 +1505,13 @@ let fill_shared_memory_with_default_typeorder () =
       [float; "numbers.Real"; object_primitive] ]
   in
   let builtin_types = List.concat default_annotations |> Type.Primitive.Set.of_list in
-  let handler = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
-  let insert = ClassHierarchy.insert in
-  let connect = ClassHierarchy.connect in
-  Set.iter builtin_types ~f:(ClassHierarchy.insert handler);
+  let insert = SharedMemoryClassHierarchyHandler.insert in
+  let connect = SharedMemoryClassHierarchyHandler.connect in
+  Set.iter builtin_types ~f:insert;
   let rec connect_primitive_chain annotations =
     match annotations with
     | predecessor :: successor :: rest ->
-        connect handler ~predecessor ~successor;
+        connect ?parameters:None ~predecessor ~successor;
         connect_primitive_chain (successor :: rest)
     | _ -> ()
   in
@@ -1339,21 +1520,19 @@ let fill_shared_memory_with_default_typeorder () =
   (* Since the builtin type hierarchy is not primitive, it's special cased. *)
   let type_builtin = "type" in
   let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
-  insert handler type_builtin;
+  insert type_builtin;
   connect
-    handler
     ~predecessor:type_builtin
     ~parameters:(Concrete [type_variable])
     ~successor:generic_primitive;
   let typed_dictionary = "TypedDictionary" in
   let non_total_typed_dictionary = "NonTotalTypedDictionary" in
   let typing_mapping = "typing.Mapping" in
-  insert handler non_total_typed_dictionary;
-  insert handler typed_dictionary;
-  insert handler typing_mapping;
-  connect handler ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
+  insert non_total_typed_dictionary;
+  insert typed_dictionary;
+  insert typing_mapping;
+  connect ?parameters:None ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
   connect
-    handler
     ~predecessor:typed_dictionary
     ~parameters:(Concrete [Type.string; Type.Any])
     ~successor:typing_mapping
@@ -1663,7 +1842,7 @@ module SharedMemoryPartialHandler = struct
         dead_classes
         ~f:(SharedMemoryClassHierarchyHandler.find (SharedMemoryClassHierarchyHandler.indices ()))
     in
-    dead_classes |> ClassHierarchy.disconnect_successors (module SharedMemoryClassHierarchyHandler);
+    dead_classes |> SharedMemoryClassHierarchyHandler.disconnect_successors;
     OrderIndices.remove_batch (OrderIndices.KeySet.of_list dead_classes);
     OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list dead_indices);
     let remove_keys removed =

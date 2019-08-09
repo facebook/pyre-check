@@ -70,29 +70,12 @@ module type Handler = sig
 
   val contains : ('key, 'value) lookup -> 'key -> bool
 
-  val set : ('key, 'value) lookup -> key:'key -> data:'value -> unit
-
-  val add_key : int -> unit
-
   val keys : unit -> int list
 
   val length : ('key, 'value) lookup -> int
 
   val show : unit -> string
 end
-
-val insert : (module Handler) -> Type.Primitive.t -> unit
-
-val connect
-  :  ?parameters:Type.OrderedTypes.t ->
-  (module Handler) ->
-  predecessor:Type.Primitive.t ->
-  successor:Type.Primitive.t ->
-  unit
-
-(* Disconnect the annotations from all of its successors, including any backedges. It does not
-   remove the annotations from the ClassHierarchy. *)
-val disconnect_successors : (module Handler) -> Type.Primitive.t list -> unit
 
 (* Returns true if the class hierarchy contains the given class. *)
 val contains : (module Handler) -> Type.Primitive.t -> bool
@@ -135,12 +118,6 @@ val greatest_lower_bound
   Type.Primitive.t ->
   Type.Primitive.t ->
   Type.Primitive.t list
-
-val deduplicate : (module Handler) -> annotations:Type.Primitive.t list -> unit
-
-val remove_extra_edges_to_object : (module Handler) -> Type.Primitive.t list -> unit
-
-val connect_annotations_to_object : (module Handler) -> Type.Primitive.t list -> unit
 
 val check_integrity : (module Handler) -> unit
 

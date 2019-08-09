@@ -33,14 +33,13 @@ let populate
 
     (* Build type order. *)
     List.iter ~f:(Environment.connect_type_order environment resolution) sources;
-    let order = Environment.class_hierarchy environment in
-    ClassHierarchy.deduplicate order ~annotations:all_annotations;
+    Environment.deduplicate_class_hierarchy ~annotations:all_annotations;
     if debug then
       (* Validate integrity of the type order built so far before moving forward. Further
          transformations might be incorrect or not terminate otherwise. *)
-      ClassHierarchy.check_integrity order;
-    ClassHierarchy.connect_annotations_to_object order all_annotations;
-    ClassHierarchy.remove_extra_edges_to_object order all_annotations;
+      Environment.class_hierarchy environment |> ClassHierarchy.check_integrity;
+    Environment.connect_annotations_to_object all_annotations;
+    Environment.remove_extra_edges_to_object all_annotations;
     List.iter all_annotations ~f:(Environment.register_class_metadata environment);
     List.iter ~f:(Environment.propagate_nested_classes environment) sources
   in
