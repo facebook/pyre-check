@@ -9,11 +9,7 @@ open Expression
 open Pyre
 open Statement
 
-module type Handler = sig
-  val ast_environment : AstEnvironment.ReadOnly.t
-end
-
-type t = (module Handler)
+type t = { ast_environment: AstEnvironment.ReadOnly.t }
 
 module UnresolvedAlias = struct
   type t = {
@@ -338,7 +334,7 @@ module SharedMemoryDependencyHandler : Dependencies.Handler = struct
     |> List.iter ~f:normalize_dependents
 end
 
-let register_alias (module Handler : Handler) ~qualifier ~key ~data =
+let register_alias _ ~qualifier ~key ~data =
   SharedMemoryDependencyHandler.add_alias_key ~qualifier key;
   SharedMemory.Aliases.add key data
 
@@ -351,8 +347,8 @@ module ResolvedAlias = struct
   }
   [@@deriving sexp, compare, hash]
 
-  let register (module Handler : Handler) { qualifier; name; annotation } =
-    register_alias (module Handler) ~qualifier ~key:name ~data:annotation
+  let register environment { qualifier; name; annotation } =
+    register_alias environment ~qualifier ~key:name ~data:annotation
 end
 
 module SharedMemoryClassHierarchyHandler = struct
@@ -633,10 +629,10 @@ let connect_annotations_to_object annotations =
   List.iter ~f:connect_to_top annotations
 
 
-let resolution (module Handler : Handler) () =
+let resolution { ast_environment } () =
   let class_hierarchy = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
   GlobalResolution.create
-    ~ast_environment:Handler.ast_environment
+    ~ast_environment
     ~class_hierarchy
     ~aliases:SharedMemory.Aliases.get
     ~module_definition:SharedMemory.Modules.get
@@ -647,10 +643,10 @@ let resolution (module Handler : Handler) () =
     (module Annotated.Class)
 
 
-let ast_environment (module Handler : Handler) = Handler.ast_environment
+let ast_environment { ast_environment } = ast_environment
 
 let connect_definition
-    (module Handler : Handler)
+    _
     ~(resolution : GlobalResolution.t)
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
@@ -716,7 +712,7 @@ let connect_definition
   |> List.iter ~f:register_supertype
 
 
-let register_class_metadata (module Handler : Handler) class_name =
+let register_class_metadata _ class_name =
   let open SharedMemory in
   let open Statement in
   let successors =
@@ -745,7 +741,7 @@ let register_class_metadata (module Handler : Handler) class_name =
     { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
 
 
-let set_class_definition (module Handler : Handler) ~name ~definition =
+let set_class_definition _ ~name ~definition =
   let open SharedMemory in
   let definition =
     match ClassDefinitions.get name with
@@ -759,7 +755,7 @@ let set_class_definition (module Handler : Handler) ~name ~definition =
   ClassDefinitions.add name definition
 
 
-let add_special_classes (module Handler : Handler) =
+let add_special_classes environment =
   (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
      the stubs. *)
   let add_special_class ~name ~bases ~metaclasses ~body =
@@ -782,11 +778,11 @@ let add_special_classes (module Handler : Handler) =
       }
     in
     set_class_definition
-      (module Handler)
+      ast_environment
       ~name
       ~definition:(Node.create_with_default_location definition);
     SharedMemoryClassHierarchyHandler.insert name;
-    register_class_metadata (module Handler) name
+    register_class_metadata environment name
   in
   let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
   List.iter
@@ -832,7 +828,7 @@ let add_special_classes (module Handler : Handler) =
         Type.TypedDictionary.defines ~t_self_expression ~total:false ) ]
 
 
-let add_dummy_modules (module Handler : Handler) =
+let add_dummy_modules _ =
   (* Register dummy module for `builtins` and `future.builtins`. *)
   let builtins = Reference.create "builtins" in
   SharedMemory.Modules.add builtins (Ast.Module.create_implicit ~empty_stub:true ());
@@ -840,36 +836,36 @@ let add_dummy_modules (module Handler : Handler) =
   SharedMemory.Modules.add future_builtins (Ast.Module.create_implicit ~empty_stub:true ())
 
 
-let register_global (module Handler : Handler) ?qualifier ~reference ~global =
+let register_global _ ?qualifier ~reference ~global =
   Option.iter qualifier ~f:(fun qualifier ->
       SharedMemoryDependencyHandler.add_global_key ~qualifier reference);
   SharedMemory.Globals.add reference global
 
 
-let add_special_globals (module Handler : Handler) =
+let add_special_globals environment =
   (* Add `None` constant to globals. *)
   let annotation annotation =
     Annotation.create_immutable ~global:true annotation |> Node.create_with_default_location
   in
   register_global
-    (module Handler)
+    environment
     ?qualifier:None
     ~reference:(Reference.create "None")
     ~global:(annotation Type.none);
   register_global
-    (module Handler)
+    environment
     ?qualifier:None
     ~reference:(Reference.create "...")
     ~global:(annotation Type.Any)
 
 
-let dependencies (module Handler : Handler) = SharedMemory.Dependents.get
+let dependencies _ = SharedMemory.Dependents.get
 
-let register_module (module Handler : Handler) ({ Source.qualifier; _ } as source) =
+let register_module _ ({ Source.qualifier; _ } as source) =
   SharedMemory.Modules.add qualifier (Module.create source)
 
 
-let register_implicit_submodules (module Handler : Handler) qualifier =
+let register_implicit_submodules _ qualifier =
   let rec register_submodules = function
     | None -> ()
     | Some qualifier ->
@@ -885,7 +881,7 @@ let register_implicit_submodules (module Handler : Handler) qualifier =
   register_submodules (Reference.prefix qualifier)
 
 
-let register_class_definitions (module Handler : Handler) source =
+let register_class_definitions environment source =
   let order = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = Type.Primitive.Set.t
@@ -897,10 +893,7 @@ let register_class_definitions (module Handler : Handler) source =
           let name = Reference.show name in
           let primitive = name in
           SharedMemoryDependencyHandler.add_class_key ~qualifier name;
-          set_class_definition
-            (module Handler)
-            ~name
-            ~definition:{ Node.location; value = definition };
+          set_class_definition environment ~name ~definition:{ Node.location; value = definition };
           if not (ClassHierarchy.contains order primitive) then
             SharedMemoryClassHierarchyHandler.insert primitive;
           Set.add new_annotations primitive
@@ -910,7 +903,7 @@ let register_class_definitions (module Handler : Handler) source =
   Visit.visit Type.Primitive.Set.empty source
 
 
-let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _ } =
+let collect_aliases environment { Source.statements; qualifier; _ } =
   let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
     match value with
     | Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
@@ -1037,7 +1030,7 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
             match Type.Variable.parse_declaration value with
             | Some variable ->
                 register_alias
-                  (module Handler)
+                  environment
                   ~qualifier
                   ~key:(Reference.show target)
                   ~data:(Type.VariableAlias variable);
@@ -1104,7 +1097,7 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
   List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
 
 
-let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target; value } =
+let resolve_alias _ { UnresolvedAlias.qualifier; target; value } =
   let order = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
   let target_primitive_name = Reference.show target in
   let value_annotation =
@@ -1166,7 +1159,7 @@ let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target
     Result.Error (Hash_set.to_list dependencies)
 
 
-let register_aliases (module Handler : Handler) sources =
+let register_aliases environment sources =
   Type.Cache.disable ();
   let register_aliases unresolved =
     let resolution_dependency = String.Table.create () in
@@ -1177,7 +1170,7 @@ let register_aliases (module Handler : Handler) sources =
       | None -> ()
       | Some unresolved ->
           let _ =
-            match resolve_alias (module Handler) unresolved with
+            match resolve_alias environment unresolved with
             | Result.Error dependencies ->
                 let add_dependency =
                   let update_dependency = function
@@ -1188,7 +1181,7 @@ let register_aliases (module Handler : Handler) sources =
                 in
                 List.iter dependencies ~f:add_dependency
             | Result.Ok ({ ResolvedAlias.name; _ } as resolved) -> (
-                ResolvedAlias.register (module Handler) resolved;
+                ResolvedAlias.register environment resolved;
                 match Hashtbl.find resolution_dependency name with
                 | Some entries ->
                     Queue.enqueue_all worklist entries;
@@ -1199,15 +1192,11 @@ let register_aliases (module Handler : Handler) sources =
     in
     fixpoint ()
   in
-  List.concat_map ~f:(collect_aliases (module Handler)) sources |> register_aliases;
+  List.concat_map ~f:(collect_aliases environment) sources |> register_aliases;
   Type.Cache.enable ()
 
 
-let register_undecorated_functions
-    (module Handler : Handler)
-    (resolution : GlobalResolution.t)
-    source
-  =
+let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
@@ -1246,7 +1235,7 @@ let register_undecorated_functions
 
 
 let register_values
-    (module Handler : Handler)
+    environment
     (resolution : GlobalResolution.t)
     ({ Source.statements; qualifier; _ } as source)
   =
@@ -1310,7 +1299,7 @@ let register_values
     >>| (fun callable -> Type.Callable callable)
     >>| Annotation.create_immutable ~global:true
     >>| Node.create ~location
-    >>| (fun global -> register_global (module Handler) ~qualifier ~reference:key ~global)
+    >>| (fun global -> register_global environment ~qualifier ~reference:key ~global)
     |> ignore
   in
   CollectCallables.visit Reference.Map.empty source |> Map.iteri ~f:register_callables;
@@ -1332,7 +1321,7 @@ let register_values
               (Type.meta primitive)
             |> Node.create ~location
           in
-          register_global (module Handler) ~qualifier ~reference:(qualified_reference name) ~global
+          register_global environment ~qualifier ~reference:(qualified_reference name) ~global
       | _ -> ()
   end)
   in
@@ -1360,7 +1349,7 @@ let register_values
             if Reference.length (Reference.drop_prefix ~prefix:qualifier reference) = 1 then
               let register_global global =
                 Node.create ~location global
-                |> fun global -> register_global (module Handler) ~qualifier ~reference ~global
+                |> fun global -> register_global environment ~qualifier ~reference ~global
               in
               let exists = Option.is_some (SharedMemory.Globals.get reference) in
               if explicit then
@@ -1401,7 +1390,7 @@ let register_values
   List.iter ~f:visit statements
 
 
-let connect_type_order (module Handler : Handler) resolution source =
+let connect_type_order environment resolution source =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
@@ -1409,17 +1398,14 @@ let connect_type_order (module Handler : Handler) resolution source =
 
     let statement _ _ = function
       | { Node.location; value = Class definition } ->
-          connect_definition
-            (module Handler)
-            ~resolution
-            ~definition:(Node.create ~location definition)
+          connect_definition environment ~resolution ~definition:(Node.create ~location definition)
       | _ -> ()
   end)
   in
   Visit.visit () source |> ignore
 
 
-let register_dependencies (module Handler : Handler) source =
+let register_dependencies _ source =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
@@ -1459,7 +1445,7 @@ let register_dependencies (module Handler : Handler) source =
   Visit.visit () source
 
 
-let propagate_nested_classes (module Handler : Handler) source =
+let propagate_nested_classes environment source =
   let propagate ~qualifier ({ Statement.Class.name; _ } as definition) successors =
     let nested_class_names { Statement.Class.name; body; _ } =
       let extract_classes = function
@@ -1476,7 +1462,7 @@ let propagate_nested_classes (module Handler : Handler) source =
       else
         let primitive name = Type.Primitive (Reference.show name) in
         register_alias
-          (module Handler)
+          environment
           ~qualifier
           ~key:(Reference.show alias)
           ~data:(Type.TypeAlias (primitive full_name));
@@ -1510,19 +1496,15 @@ let built_in_annotations =
   ["TypedDictionary"; "NonTotalTypedDictionary"] |> Type.Primitive.Set.of_list
 
 
-let is_module (module Handler : Handler) = SharedMemory.Modules.mem
+let is_module _ = SharedMemory.Modules.mem
 
-let class_hierarchy (module Handler : Handler) =
-  (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler)
-
+let class_hierarchy _ = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler)
 
 let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate
 
 let remove_extra_edges_to_object = SharedMemoryClassHierarchyHandler.remove_extra_edges_to_object
 
-let dependency_handler (module Handler : Handler) =
-  (module SharedMemoryDependencyHandler : Dependencies.Handler)
-
+let dependency_handler _ = (module SharedMemoryDependencyHandler : Dependencies.Handler)
 
 let transaction _ ?(only_global_keys = false) ~f () =
   let open SharedMemory in
@@ -1659,7 +1641,7 @@ let fill_shared_memory_with_default_typeorder () =
     ~successor:typing_mapping
 
 
-let purge (module Handler : Handler) ?(debug = false) (qualifiers : Reference.t list) =
+let purge environment ?(debug = false) (qualifiers : Reference.t list) =
   let open SharedMemory in
   let purge_dependents keys =
     let new_dependents = Reference.Table.create () in
@@ -1734,16 +1716,12 @@ let purge (module Handler : Handler) ?(debug = false) (qualifiers : Reference.t 
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
     ClassHierarchy.check_integrity (module SharedMemoryClassHierarchyHandler);
   fill_shared_memory_with_default_typeorder ();
-  add_special_classes (module Handler);
-  add_dummy_modules (module Handler);
-  add_special_globals (module Handler)
+  add_special_classes environment;
+  add_dummy_modules environment;
+  add_special_globals environment
 
 
-let shared_memory_handler ast_environment =
-  ( module struct
-    let ast_environment = ast_environment
-  end : Handler )
-
+let shared_memory_handler ast_environment = { ast_environment }
 
 let normalize_shared_memory qualifiers =
   (* Since we don't provide an API to the raw order keys in the type order handler, handle it
