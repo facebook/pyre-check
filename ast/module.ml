@@ -8,11 +8,13 @@ open Pyre
 open Expression
 open Statement
 
-type t = {
-  aliased_exports: Reference.t Reference.Map.Tree.t;
-  empty_stub: bool;
-  wildcard_exports: Reference.t list;
-}
+type t =
+  | Explicit of {
+      aliased_exports: Reference.t Reference.Map.Tree.t;
+      empty_stub: bool;
+      wildcard_exports: Reference.t list;
+    }
+  | Implicit of { empty_stub: bool }
 [@@deriving eq, sexp]
 
 (* We cache results of `from_empty_stub` here since module definition lookup requires shared memory
@@ -23,9 +25,15 @@ module Cache = struct
   let clear () = Reference.Table.clear cache
 end
 
-let pp format { aliased_exports; empty_stub; wildcard_exports } =
+let pp format printed_module =
+  let aliased_exports, empty_stub, wildcard_exports =
+    match printed_module with
+    | Explicit { aliased_exports; empty_stub; wildcard_exports } ->
+        Map.Tree.to_alist aliased_exports, empty_stub, wildcard_exports
+    | Implicit { empty_stub } -> [], empty_stub, []
+  in
   let aliased_exports =
-    Map.Tree.to_alist aliased_exports
+    aliased_exports
     |> List.map ~f:(fun (source, target) ->
            Format.asprintf "%a -> %a" Reference.pp source Reference.pp target)
     |> String.concat ~sep:", "
@@ -43,7 +51,11 @@ let pp format { aliased_exports; empty_stub; wildcard_exports } =
 
 let show = Format.asprintf "%a" pp
 
-let empty_stub { empty_stub; _ } = empty_stub
+let empty_stub = function
+  | Implicit { empty_stub }
+  | Explicit { empty_stub; _ } ->
+      empty_stub
+
 
 let from_empty_stub ~reference ~module_definition =
   let rec is_empty_stub ~lead ~tail =
@@ -61,14 +73,18 @@ let from_empty_stub ~reference ~module_definition =
       is_empty_stub ~lead:[] ~tail:(Reference.as_list reference))
 
 
-let wildcard_exports { wildcard_exports; _ } = wildcard_exports
+let wildcard_exports = function
+  | Explicit { wildcard_exports; _ } -> wildcard_exports
+  | Implicit _ -> []
+
 
 let create_for_testing ~local_mode ~stub =
-  {
-    aliased_exports = Reference.Map.empty |> Map.to_tree;
-    empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
-    wildcard_exports = [];
-  }
+  Explicit
+    {
+      aliased_exports = Reference.Map.empty |> Map.to_tree;
+      empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
+      wildcard_exports = [];
+    }
 
 
 let create
@@ -158,17 +174,19 @@ let create
     in
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
-  {
-    aliased_exports;
-    empty_stub = is_stub && Source.equal_mode local_mode Source.PlaceholderStub;
-    wildcard_exports = Option.value dunder_all ~default:toplevel_public;
-  }
+  Explicit
+    {
+      aliased_exports;
+      empty_stub = is_stub && Source.equal_mode local_mode Source.PlaceholderStub;
+      wildcard_exports = Option.value dunder_all ~default:toplevel_public;
+    }
 
 
-let create_implicit ?(empty_stub = false) () =
-  { aliased_exports = Reference.Map.empty |> Map.to_tree; empty_stub; wildcard_exports = [] }
+let create_implicit ?(empty_stub = false) () = Implicit { empty_stub }
 
-
-let aliased_export { aliased_exports; _ } reference =
-  let aliased_exports = Reference.Map.of_tree aliased_exports in
-  Map.find aliased_exports reference
+let aliased_export considered_module reference =
+  match considered_module with
+  | Explicit { aliased_exports; _ } ->
+      let aliased_exports = Reference.Map.of_tree aliased_exports in
+      Map.find aliased_exports reference
+  | Implicit _ -> None

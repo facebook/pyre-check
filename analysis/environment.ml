@@ -12,10 +12,6 @@ open Statement
 module type Handler = sig
   val ast_environment : AstEnvironment.ReadOnly.t
 
-  val is_module : Reference.t -> bool
-
-  val module_definition : Reference.t -> Module.t option
-
   module DependencyHandler : Dependencies.Handler
 
   module TypeOrderHandler : ClassHierarchy.Handler
@@ -198,16 +194,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module IntValue = struct
-    type t = int
-
-    let prefix = Prefix.make ()
-
-    let description = "Refcount of implicit submodules"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
   module ModuleValue = struct
     type t = Module.t
 
@@ -233,7 +219,6 @@ module SharedMemory = struct
 
   module Modules = Memory.WithCache (Reference.Key) (ModuleValue)
   module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
-  module ImplicitSubmodules = Memory.NoCache (Reference.Key) (IntValue)
   module Aliases = Memory.NoCache (StringKey) (AliasValue)
   module Globals = Memory.WithCache (Reference.Key) (GlobalValue)
   module Dependents = Memory.WithCache (Reference.Key) (DependentValue)
@@ -557,7 +542,7 @@ let resolution (module Handler : Handler) () =
     ~ast_environment:Handler.ast_environment
     ~class_hierarchy
     ~aliases:SharedMemory.Aliases.get
-    ~module_definition:Handler.module_definition
+    ~module_definition:SharedMemory.Modules.get
     ~class_definition:SharedMemory.ClassDefinitions.get
     ~class_metadata:SharedMemory.ClassMetadata.get
     ~undecorated_signature:SharedMemory.UndecoratedFunctions.get
@@ -655,7 +640,7 @@ let register_class_metadata (module Handler : Handler) class_name =
     >>| Annotated.Class.create
     >>| Annotated.Class.extends_placeholder_stub_class
           ~aliases:SharedMemory.Aliases.get
-          ~module_definition:Handler.module_definition
+          ~module_definition:SharedMemory.Modules.get
     |> Option.value ~default:false
   in
   ClassMetadata.add
@@ -795,13 +780,7 @@ let register_implicit_submodules (module Handler : Handler) qualifier =
           let open SharedMemory in
           match Modules.get qualifier with
           | Some _ -> ()
-          | None -> (
-            match ImplicitSubmodules.get qualifier with
-            | None -> ImplicitSubmodules.add qualifier 1
-            | Some count ->
-                let count = count + 1 in
-                ImplicitSubmodules.remove_batch (ImplicitSubmodules.KeySet.of_list [qualifier]);
-                ImplicitSubmodules.add qualifier count )
+          | None -> Modules.add qualifier (Module.create_implicit ())
         in
         register ();
         register_submodules (Reference.prefix qualifier)
@@ -1062,12 +1041,12 @@ let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target
                   Expression.name_to_reference_exn name
               | _ -> Reference.create "typing.Any"
             in
-            let module_definition = Handler.module_definition in
+            let module_definition = SharedMemory.Modules.get in
             if Module.from_empty_stub ~reference ~module_definition then
               (), Type.Any
             else if
               ClassHierarchy.contains order primitive
-              || Handler.is_module (Reference.create primitive)
+              || SharedMemory.Modules.mem (Reference.create primitive)
             then
               (), annotation
             else
@@ -1434,7 +1413,7 @@ let built_in_annotations =
   ["TypedDictionary"; "NonTotalTypedDictionary"] |> Type.Primitive.Set.of_list
 
 
-let is_module (module Handler : Handler) = Handler.is_module
+let is_module (module Handler : Handler) = SharedMemory.Modules.mem
 
 let class_hierarchy (module Handler : Handler) =
   (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
@@ -1766,16 +1745,6 @@ module SharedMemoryPartialHandler = struct
       |> List.dedup_and_sort ~compare:Reference.compare
       |> List.iter ~f:normalize_dependents
   end
-
-  let is_module qualifier = Modules.mem qualifier || ImplicitSubmodules.mem qualifier
-
-  let module_definition qualifier =
-    match Modules.get qualifier with
-    | Some _ as result -> result
-    | None -> (
-      match ImplicitSubmodules.get qualifier with
-      | Some _ -> Some (Module.create_implicit ())
-      | None -> None )
 end
 
 let shared_memory_handler ast_environment =
