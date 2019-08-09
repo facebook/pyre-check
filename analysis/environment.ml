@@ -12,25 +12,9 @@ open Statement
 module type Handler = sig
   val ast_environment : AstEnvironment.ReadOnly.t
 
-  val class_definition : Identifier.t -> Class.t Node.t option
-
-  val class_metadata : Identifier.t -> GlobalResolution.class_metadata option
-
-  val register_module : Reference.t -> Module.t -> unit
-
   val is_module : Reference.t -> bool
 
   val module_definition : Reference.t -> Module.t option
-
-  val in_class_definition_keys : Identifier.t -> bool
-
-  val aliases : Identifier.t -> Type.alias option
-
-  val globals : Reference.t -> GlobalResolution.global option
-
-  val undecorated_signature : Reference.t -> Type.t Type.Callable.overload option
-
-  val dependencies : Reference.t -> Reference.Set.Tree.t option
 
   module DependencyHandler : Dependencies.Handler
 
@@ -568,17 +552,16 @@ let connect_annotations_to_object annotations =
 
 
 let resolution (module Handler : Handler) () =
-  let aliases = Handler.aliases in
   let class_hierarchy = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
   GlobalResolution.create
     ~ast_environment:Handler.ast_environment
     ~class_hierarchy
-    ~aliases
+    ~aliases:SharedMemory.Aliases.get
     ~module_definition:Handler.module_definition
-    ~class_definition:Handler.class_definition
-    ~class_metadata:Handler.class_metadata
-    ~undecorated_signature:Handler.undecorated_signature
-    ~global:Handler.globals
+    ~class_definition:SharedMemory.ClassDefinitions.get
+    ~class_metadata:SharedMemory.ClassMetadata.get
+    ~undecorated_signature:SharedMemory.UndecoratedFunctions.get
+    ~global:SharedMemory.Globals.get
     (module Annotated.Class)
 
 
@@ -671,7 +654,7 @@ let register_class_metadata (module Handler : Handler) class_name =
     ClassDefinitions.get class_name
     >>| Annotated.Class.create
     >>| Annotated.Class.extends_placeholder_stub_class
-          ~aliases:Handler.aliases
+          ~aliases:SharedMemory.Aliases.get
           ~module_definition:Handler.module_definition
     |> Option.value ~default:false
   in
@@ -770,9 +753,9 @@ let add_special_classes (module Handler : Handler) =
 let add_dummy_modules (module Handler : Handler) =
   (* Register dummy module for `builtins` and `future.builtins`. *)
   let builtins = Reference.create "builtins" in
-  Handler.register_module builtins (Ast.Module.create_implicit ~empty_stub:true ());
+  SharedMemory.Modules.add builtins (Ast.Module.create_implicit ~empty_stub:true ());
   let future_builtins = Reference.create "future.builtins" in
-  Handler.register_module future_builtins (Ast.Module.create_implicit ~empty_stub:true ())
+  SharedMemory.Modules.add future_builtins (Ast.Module.create_implicit ~empty_stub:true ())
 
 
 let register_global (module Handler : Handler) ?qualifier ~reference ~global =
@@ -798,10 +781,10 @@ let add_special_globals (module Handler : Handler) =
     ~global:(annotation Type.Any)
 
 
-let dependencies (module Handler : Handler) = Handler.dependencies
+let dependencies (module Handler : Handler) = SharedMemory.Dependents.get
 
 let register_module (module Handler : Handler) ({ Source.qualifier; _ } as source) =
-  Handler.register_module qualifier (Module.create source)
+  SharedMemory.Modules.add qualifier (Module.create source)
 
 
 let register_implicit_submodules (module Handler : Handler) qualifier =
@@ -862,7 +845,7 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
         in
         let target_annotation =
           Type.create
-            ~aliases:Handler.aliases
+            ~aliases:SharedMemory.Aliases.get
             (Expression.from_reference ~location:Location.Reference.any target)
         in
         match Node.value value, annotation with
@@ -984,7 +967,7 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
                   ~data:(Type.VariableAlias variable);
                 aliases
             | None ->
-                let value_annotation = Type.create ~aliases:Handler.aliases value in
+                let value_annotation = Type.create ~aliases:SharedMemory.Aliases.get value in
                 if
                   not
                     ( Type.is_top target_annotation
@@ -1049,7 +1032,7 @@ let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target
   let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
   let target_primitive_name = Reference.show target in
   let value_annotation =
-    match Type.create ~aliases:Handler.aliases value with
+    match Type.create ~aliases:SharedMemory.Aliases.get value with
     | Type.Variable variable ->
         if Type.Variable.Unary.contains_subvariable variable then
           Type.Any
@@ -1290,7 +1273,7 @@ let register_values
         let annotation =
           annotation
           >>| Expression.delocalize
-          >>| Type.create ~aliases:Handler.aliases
+          >>| Type.create ~aliases:SharedMemory.Aliases.get
           >>= (fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation)
           |> Option.value ~default:literal_annotation
         in
@@ -1303,7 +1286,7 @@ let register_values
                 Node.create ~location global
                 |> fun global -> register_global (module Handler) ~qualifier ~reference ~global
               in
-              let exists = Option.is_some (Handler.globals reference) in
+              let exists = Option.is_some (SharedMemory.Globals.get reference) in
               if explicit then
                 Annotation.create_immutable ~global:true annotation |> register_global
               else if not exists then
@@ -1425,7 +1408,7 @@ let propagate_nested_classes (module Handler : Handler) source =
     in
     let own_nested_classes = nested_class_names definition |> List.map ~f:snd in
     successors
-    |> List.filter_map ~f:Handler.class_definition
+    |> List.filter_map ~f:SharedMemory.ClassDefinitions.get
     |> List.map ~f:Node.value
     |> List.concat_map ~f:nested_class_names
     |> List.fold ~f:create_alias ~init:own_nested_classes
@@ -1438,7 +1421,7 @@ let propagate_nested_classes (module Handler : Handler) source =
 
     let statement { Source.qualifier; _ } _ = function
       | { Node.value = Class ({ Class.name; _ } as definition); _ } ->
-          Handler.class_metadata (Reference.show name)
+          SharedMemory.ClassMetadata.get (Reference.show name)
           |> Option.iter ~f:(fun { GlobalResolution.successors; _ } ->
                  propagate ~qualifier definition successors)
       | _ -> ()
@@ -1784,12 +1767,6 @@ module SharedMemoryPartialHandler = struct
       |> List.iter ~f:normalize_dependents
   end
 
-  let class_definition annotation = ClassDefinitions.get annotation
-
-  let class_metadata = ClassMetadata.get
-
-  let register_module qualifier registered_module = Modules.add qualifier registered_module
-
   let is_module qualifier = Modules.mem qualifier || ImplicitSubmodules.mem qualifier
 
   let module_definition qualifier =
@@ -1799,17 +1776,6 @@ module SharedMemoryPartialHandler = struct
       match ImplicitSubmodules.get qualifier with
       | Some _ -> Some (Module.create_implicit ())
       | None -> None )
-
-
-  let in_class_definition_keys annotation = ClassDefinitions.mem annotation
-
-  let aliases = Aliases.get
-
-  let globals = Globals.get
-
-  let dependencies = Dependents.get
-
-  let undecorated_signature = UndecoratedFunctions.get
 end
 
 let shared_memory_handler ast_environment =
