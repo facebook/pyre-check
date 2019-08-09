@@ -13,8 +13,6 @@ module type Handler = sig
   val ast_environment : AstEnvironment.ReadOnly.t
 
   module DependencyHandler : Dependencies.Handler
-
-  module TypeOrderHandler : ClassHierarchy.Handler
 end
 
 type t = (module Handler)
@@ -537,7 +535,7 @@ let connect_annotations_to_object annotations =
 
 
 let resolution (module Handler : Handler) () =
-  let class_hierarchy = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+  let class_hierarchy = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
   GlobalResolution.create
     ~ast_environment:Handler.ast_environment
     ~class_hierarchy
@@ -557,7 +555,7 @@ let connect_definition
     ~(resolution : GlobalResolution.t)
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
-  let (module Handler : ClassHierarchy.Handler) = (module Handler.TypeOrderHandler) in
+  let (module Handler : ClassHierarchy.Handler) = (module SharedMemoryClassHierarchyHandler) in
   let annotated = Annotated.Class.create definition in
   (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
      classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
@@ -789,7 +787,7 @@ let register_implicit_submodules (module Handler : Handler) qualifier =
 
 
 let register_class_definitions (module Handler : Handler) source =
-  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+  let order = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = Type.Primitive.Set.t
 
@@ -983,7 +981,7 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
              to create the alias. *)
           if
             ClassHierarchy.contains
-              (module Handler.TypeOrderHandler)
+              (module SharedMemoryClassHierarchyHandler)
               (Reference.show qualified_name)
           then
             []
@@ -1008,7 +1006,7 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
 
 
 let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target; value } =
-  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+  let order = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
   let target_primitive_name = Reference.show target in
   let value_annotation =
     match Type.create ~aliases:SharedMemory.Aliases.get value with
@@ -1416,7 +1414,7 @@ let built_in_annotations =
 let is_module (module Handler : Handler) = SharedMemory.Modules.mem
 
 let class_hierarchy (module Handler : Handler) =
-  (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
+  (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler)
 
 
 let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate
@@ -1635,7 +1633,7 @@ let purge (module Handler : Handler) ?(debug = false) (qualifiers : Reference.t 
   Handler.DependencyHandler.clear_keys_batch qualifiers;
   Modules.remove_batch (Modules.KeySet.of_list qualifiers);
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
-    ClassHierarchy.check_integrity (module Handler.TypeOrderHandler);
+    ClassHierarchy.check_integrity (module SharedMemoryClassHierarchyHandler);
   fill_shared_memory_with_default_typeorder ();
   add_special_classes (module Handler);
   add_dummy_modules (module Handler);
@@ -1644,7 +1642,6 @@ let purge (module Handler : Handler) ?(debug = false) (qualifiers : Reference.t 
 
 module SharedMemoryPartialHandler = struct
   open SharedMemory
-  module TypeOrderHandler = SharedMemoryClassHierarchyHandler
 
   module DependencyHandler : Dependencies.Handler = struct
     let add_new_key ~get ~add ~qualifier ~key =
