@@ -10,19 +10,6 @@ open Pyre
 open Statement
 
 module type Handler = sig
-  val register_dependency : qualifier:Reference.t -> dependency:Reference.t -> unit
-
-  val register_global
-    :  ?qualifier:Reference.t ->
-    reference:Reference.t ->
-    global:GlobalResolution.global ->
-    unit
-
-  val register_undecorated_function
-    :  reference:Reference.t ->
-    annotation:Type.t Type.Callable.overload ->
-    unit
-
   val register_alias : qualifier:Reference.t -> key:Identifier.t -> data:Type.alias -> unit
 
   val ast_environment : AstEnvironment.ReadOnly.t
@@ -32,8 +19,6 @@ module type Handler = sig
   val class_metadata : Identifier.t -> GlobalResolution.class_metadata option
 
   val register_module : Reference.t -> Module.t -> unit
-
-  val register_implicit_submodule : Reference.t -> unit
 
   val is_module : Reference.t -> bool
 
@@ -787,16 +772,24 @@ let add_dummy_modules (module Handler : Handler) =
   Handler.register_module future_builtins (Ast.Module.create_implicit ~empty_stub:true ())
 
 
+let register_global (module Handler : Handler) ?qualifier ~reference ~global =
+  Option.iter qualifier ~f:(fun qualifier ->
+      Handler.DependencyHandler.add_global_key ~qualifier reference);
+  SharedMemory.Globals.add reference global
+
+
 let add_special_globals (module Handler : Handler) =
   (* Add `None` constant to globals. *)
   let annotation annotation =
     Annotation.create_immutable ~global:true annotation |> Node.create_with_default_location
   in
-  Handler.register_global
+  register_global
+    (module Handler)
     ?qualifier:None
     ~reference:(Reference.create "None")
     ~global:(annotation Type.none);
-  Handler.register_global
+  register_global
+    (module Handler)
     ?qualifier:None
     ~reference:(Reference.create "...")
     ~global:(annotation Type.Any)
@@ -812,7 +805,19 @@ let register_implicit_submodules (module Handler : Handler) qualifier =
   let rec register_submodules = function
     | None -> ()
     | Some qualifier ->
-        Handler.register_implicit_submodule qualifier;
+        let register () =
+          let open SharedMemory in
+          match Modules.get qualifier with
+          | Some _ -> ()
+          | None -> (
+            match ImplicitSubmodules.get qualifier with
+            | None -> ImplicitSubmodules.add qualifier 1
+            | Some count ->
+                let count = count + 1 in
+                ImplicitSubmodules.remove_batch (ImplicitSubmodules.KeySet.of_list [qualifier]);
+                ImplicitSubmodules.add qualifier count )
+        in
+        register ();
         register_submodules (Reference.prefix qualifier)
   in
   register_submodules (Reference.prefix qualifier)
@@ -1151,6 +1156,9 @@ let register_undecorated_functions
 
 
     let statement _ _ { Node.value; location } =
+      let register ~reference ~annotation =
+        SharedMemory.UndecoratedFunctions.add reference annotation
+      in
       match value with
       | Class definition -> (
           let annotation =
@@ -1159,15 +1167,13 @@ let register_undecorated_functions
           in
           match annotation with
           | Some { Type.Callable.implementation; overloads = []; _ } ->
-              Handler.register_undecorated_function
-                ~reference:definition.Class.name
-                ~annotation:implementation
+              register ~reference:definition.Class.name ~annotation:implementation
           | _ -> () )
       | Define ({ Define.signature = { Statement.Define.name; _ }; _ } as define) ->
           if Define.is_overloaded_method define then
             ()
           else
-            Handler.register_undecorated_function
+            register
               ~reference:name
               ~annotation:(Annotated.Callable.create_overload ~resolution define)
       | _ -> ()
@@ -1241,7 +1247,7 @@ let register_values
     >>| (fun callable -> Type.Callable callable)
     >>| Annotation.create_immutable ~global:true
     >>| Node.create ~location
-    >>| (fun global -> Handler.register_global ~qualifier ~reference:key ~global)
+    >>| (fun global -> register_global (module Handler) ~qualifier ~reference:key ~global)
     |> ignore
   in
   CollectCallables.visit Reference.Map.empty source |> Map.iteri ~f:register_callables;
@@ -1263,7 +1269,7 @@ let register_values
               (Type.meta primitive)
             |> Node.create ~location
           in
-          Handler.register_global ~qualifier ~reference:(qualified_reference name) ~global
+          register_global (module Handler) ~qualifier ~reference:(qualified_reference name) ~global
       | _ -> ()
   end)
   in
@@ -1291,7 +1297,7 @@ let register_values
             if Reference.length (Reference.drop_prefix ~prefix:qualifier reference) = 1 then
               let register_global global =
                 Node.create ~location global
-                |> fun global -> Handler.register_global ~qualifier ~reference ~global
+                |> fun global -> register_global (module Handler) ~qualifier ~reference ~global
               in
               let exists = Option.is_some (Handler.globals reference) in
               if explicit then
@@ -1373,9 +1379,17 @@ let register_dependencies (module Handler : Handler) source =
             in
             List.map imports ~f:qualify_builtins
           in
-          List.iter
-            ~f:(fun dependency -> Handler.register_dependency ~qualifier ~dependency)
-            imports
+          let register dependency =
+            Log.log
+              ~section:`Dependencies
+              "Adding dependency from %a to %a"
+              Reference.pp
+              dependency
+              Reference.pp
+              qualifier;
+            Handler.DependencyHandler.add_dependent ~qualifier dependency
+          in
+          List.iter ~f:register imports
       | _ -> ()
   end)
   in
@@ -1771,22 +1785,6 @@ module SharedMemoryPartialHandler = struct
 
   let register_module qualifier registered_module = Modules.add qualifier registered_module
 
-  let register_implicit_submodule qualifier =
-    match Modules.get qualifier with
-    | Some _ -> ()
-    | None -> (
-      match ImplicitSubmodules.get qualifier with
-      | None -> ImplicitSubmodules.add qualifier 1
-      | Some count ->
-          let count = count + 1 in
-          ImplicitSubmodules.remove_batch (ImplicitSubmodules.KeySet.of_list [qualifier]);
-          ImplicitSubmodules.add qualifier count )
-
-
-  let register_undecorated_function ~reference ~annotation =
-    UndecoratedFunctions.add reference annotation
-
-
   let is_module qualifier = Modules.mem qualifier || ImplicitSubmodules.mem qualifier
 
   let module_definition qualifier =
@@ -1807,23 +1805,6 @@ module SharedMemoryPartialHandler = struct
   let dependencies = Dependents.get
 
   let undecorated_signature = UndecoratedFunctions.get
-
-  let register_dependency ~qualifier ~dependency =
-    Log.log
-      ~section:`Dependencies
-      "Adding dependency from %a to %a"
-      Reference.pp
-      dependency
-      Reference.pp
-      qualifier;
-    DependencyHandler.add_dependent ~qualifier dependency
-
-
-  let register_global ?qualifier ~reference ~global =
-    Option.iter qualifier ~f:(fun qualifier ->
-        DependencyHandler.add_global_key ~qualifier reference);
-    Globals.add reference global
-
 
   let register_alias ~qualifier ~key ~data =
     DependencyHandler.add_alias_key ~qualifier key;
