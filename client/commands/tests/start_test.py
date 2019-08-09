@@ -159,6 +159,7 @@ class StartTest(unittest.TestCase):
         # Shared analysis directories are prepared when starting.
         shared_analysis_directory = MagicMock()
         shared_analysis_directory.get_root = lambda: "."
+        shared_analysis_directory.get_pyre_server_directory = lambda: "./.pyre/server"
         with patch.object(
             commands.Command, "_call_client"
         ) as call_client, patch.object(

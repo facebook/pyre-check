@@ -26,6 +26,14 @@ class StopTest(unittest.TestCase):
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
 
+        def mark_processes_as_completed(process_id, signal):
+            if signal == 0:
+                raise ProcessLookupError()
+            else:
+                return
+
+        os_kill.side_effect = mark_processes_as_completed
+
         # Check start without watchman.
         commands_Command_state.return_value = commands.command.State.RUNNING
         with patch.object(commands.Command, "_call_client") as call_client:
@@ -39,7 +47,7 @@ class StopTest(unittest.TestCase):
             commands.Stop(arguments, configuration, analysis_directory).run()
             call_client.assert_not_called()
             kill_run.assert_has_calls([call()])
-            os_kill.assert_has_calls([call(42, 2), call(42, 2)])
+            os_kill.assert_has_calls([call(42, 0), call(42, 2), call(42, 2)])
 
         commands_Command_state.return_value = commands.command.State.RUNNING
         with patch.object(commands.Command, "_call_client") as call_client:
@@ -54,7 +62,9 @@ class StopTest(unittest.TestCase):
             commands.Stop(arguments, configuration, analysis_directory).run()
             call_client.assert_has_calls([call(command=commands.Stop.NAME)])
             kill_run.assert_has_calls([call(), call()])
-            os_kill.assert_has_calls([call(42, 2), call(42, 2), call(42, 2)])
+            os_kill.assert_has_calls(
+                [call(42, 0), call(42, 2), call(42, 2), call(42, 2)]
+            )
 
         # Stop ignores irrelevant flags.
         arguments.debug = True

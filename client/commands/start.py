@@ -68,9 +68,7 @@ class Start(Reporting):
                     try:
                         with filesystem.acquire_lock(
                             os.path.join(
-                                self._analysis_directory.get_root(),
-                                ".pyre",
-                                "server",
+                                self._analysis_directory.get_pyre_server_directory(),
                                 "server.lock",
                             ),
                             blocking=False,

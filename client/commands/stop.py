@@ -5,6 +5,7 @@
 
 import logging
 import os
+import time
 from typing import List
 
 from ..project_files_monitor import Monitor
@@ -35,11 +36,40 @@ class Stop(Command):
             _kill()
         else:
             try:
+                with open(
+                    os.path.join(
+                        self._analysis_directory.get_pyre_server_directory(),
+                        "server.pid",
+                    )
+                ) as pid_file:
+                    pid_to_poll = int(pid_file.read())
+            except (OSError, ValueError):
+                pid_to_poll = None
+            try:
+                stopped = False
+                # If this call fails, check() will throw a ClientException.
                 self._call_client(command=self.NAME).check()
-                LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
+                # Poll for a second to ensure that the server has a chance to exit.
+                if pid_to_poll is not None:
+                    stop_time = time.time() + 1.0
+                    LOG.info("Polling for server's process to stop...")
+                    while time.time() < stop_time:
+                        # send a null signal to validate the process's existence. If the
+                        # process has terminated, a ProcessLookupError will be thrown.
+                        os.kill(pid_to_poll, 0)
+                        time.sleep(0.1)
             except ClientException:
+                # An error was encountered when running `pyre stop`.
+                stopped = False
+            except ProcessLookupError:
+                LOG.info("The server process has stopped.")
+                stopped = True
+
+            if not stopped:
                 LOG.warning("Could not stop server, attempting to kill.")
                 _kill()
+            else:
+                LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
 
         try:
             pid_path = Monitor.pid_path(self._analysis_directory.get_root())
