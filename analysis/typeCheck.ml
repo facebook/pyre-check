@@ -2546,11 +2546,9 @@ module State (Context : Context) = struct
             } as callee;
           arguments = [{ Call.Argument.value = expression; _ }] as arguments;
         } ->
-        let { resolution; _ } =
-          forward_statement ~state ~statement:(Statement.assume expression)
-        in
+        let state = forward_statement ~state ~statement:(Statement.assume expression) in
         let { state; resolved = resolved_callee; _ } =
-          forward_expression ~state:{ state with resolution } ~expression:callee
+          forward_expression ~state ~expression:callee
         in
         forward_callable
           ~state
@@ -2565,11 +2563,11 @@ module State (Context : Context) = struct
             { Node.value = Name (Name.Attribute { attribute = "assertFalse"; _ }); _ } as callee;
           arguments = [{ Call.Argument.value = expression; _ }] as arguments;
         } ->
-        let { resolution; _ } =
+        let state =
           forward_statement ~state ~statement:(Statement.assume (Expression.negate expression))
         in
         let { state; resolved = resolved_callee; _ } =
-          forward_expression ~state:{ state with resolution } ~expression:callee
+          forward_expression ~state ~expression:callee
         in
         forward_callable
           ~state

@@ -31,6 +31,21 @@ let test_assert_is_none context =
     ["Revealed type [-1]: Revealed type for `x` is `int`."];
   assert_type_errors
     {|
+      class A:
+        def __init__(self, x: typing.Optional[int]) -> None:
+          self.x = x
+
+      class FakeTest(unittest.TestCase):
+        def foo(self, iter: typing.List[A]) -> None:
+          a = None
+          for i in iter:
+            a = i
+          self.assertIsNotNone(a)
+          attribute = a.x
+    |}
+    [];
+  assert_type_errors
+    {|
       class Foo:
         def __init__(self) -> None:
           self.x = 1
