@@ -590,39 +590,6 @@ let connect_annotations_to_object annotations =
 let resolution (module Handler : Handler) () =
   let aliases = Handler.aliases in
   let class_hierarchy = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
-  let constructor ~resolution class_name =
-    let instantiated = Type.Primitive class_name in
-    Handler.class_definition class_name
-    >>| AnnotatedClass.create
-    >>| AnnotatedClass.constructor ~instantiated ~resolution
-  in
-  let is_protocol annotation =
-    Type.split annotation
-    |> fst
-    |> Type.primitive_name
-    >>= Handler.class_definition
-    >>| AnnotatedClass.create
-    >>| AnnotatedClass.is_protocol
-    |> Option.value ~default:false
-  in
-  let attributes ~resolution annotation =
-    match Annotated.Class.resolve_class ~resolution annotation with
-    | None -> None
-    | Some [] -> None
-    | Some [{ instantiated; class_attributes; class_definition }] ->
-        AnnotatedClass.attributes
-          class_definition
-          ~resolution
-          ~transitive:true
-          ~instantiated
-          ~class_attributes
-        |> Option.some
-    | Some (_ :: _) ->
-        (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
-           indirectly by breaking apart the union before doing the instantiate_protocol_parameters.
-           Therefore, there is no reason to deal with joining the attributes together here *)
-        None
-  in
   GlobalResolution.create
     ~ast_environment:Handler.ast_environment
     ~class_hierarchy
@@ -630,12 +597,9 @@ let resolution (module Handler : Handler) () =
     ~module_definition:Handler.module_definition
     ~class_definition:Handler.class_definition
     ~class_metadata:Handler.class_metadata
-    ~constructor
     ~undecorated_signature:Handler.undecorated_signature
-    ~attributes
-    ~is_protocol
     ~global:Handler.globals
-    ()
+    (module Annotated.Class)
 
 
 let ast_environment (module Handler : Handler) = Handler.ast_environment

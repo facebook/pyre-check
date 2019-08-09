@@ -54,6 +54,35 @@ type t = {
   global: Reference.t -> global option;
 }
 
+type global_resolution_t = t
+
+module type AnnotatedClass = sig
+  type t
+
+  type class_data = {
+    instantiated: Type.t;
+    class_attributes: bool;
+    class_definition: t;
+  }
+
+  val create : Class.t Node.t -> t
+
+  val constructor : t -> instantiated:Type.t -> resolution:global_resolution_t -> Type.t
+
+  val is_protocol : t -> bool
+
+  val resolve_class : resolution:global_resolution_t -> Type.t -> class_data list option
+
+  val attributes
+    :  ?transitive:bool ->
+    ?class_attributes:bool ->
+    ?include_generated_attributes:bool ->
+    ?instantiated:Type.t ->
+    t ->
+    resolution:global_resolution_t ->
+    AnnotatedAttribute.t list
+end
+
 let create
     ~ast_environment
     ~class_hierarchy
@@ -61,13 +90,43 @@ let create
     ~module_definition
     ~class_definition
     ~class_metadata
-    ~constructor
     ~undecorated_signature
-    ~attributes
-    ~is_protocol
     ~global
-    ()
+    (module AnnotatedClass : AnnotatedClass)
   =
+  let constructor ~resolution class_name =
+    let instantiated = Type.Primitive class_name in
+    class_definition class_name
+    >>| AnnotatedClass.create
+    >>| AnnotatedClass.constructor ~instantiated ~resolution
+  in
+  let is_protocol annotation =
+    Type.split annotation
+    |> fst
+    |> Type.primitive_name
+    >>= class_definition
+    >>| AnnotatedClass.create
+    >>| AnnotatedClass.is_protocol
+    |> Option.value ~default:false
+  in
+  let attributes ~resolution annotation =
+    match AnnotatedClass.resolve_class ~resolution annotation with
+    | None -> None
+    | Some [] -> None
+    | Some [{ instantiated; class_attributes; class_definition }] ->
+        AnnotatedClass.attributes
+          class_definition
+          ~resolution
+          ~transitive:true
+          ~instantiated
+          ~class_attributes
+        |> Option.some
+    | Some (_ :: _) ->
+        (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
+           indirectly by breaking apart the union before doing the instantiate_protocol_parameters.
+           Therefore, there is no reason to deal with joining the attributes together here *)
+        None
+  in
   {
     ast_environment;
     class_hierarchy;

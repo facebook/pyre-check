@@ -39,6 +39,35 @@ type global = Annotation.t Node.t [@@deriving eq, show]
 
 type t
 
+type global_resolution_t = t
+
+module type AnnotatedClass = sig
+  type t
+
+  type class_data = {
+    instantiated: Type.t;
+    class_attributes: bool;
+    class_definition: t;
+  }
+
+  val create : Class.t Node.t -> t
+
+  val constructor : t -> instantiated:Type.t -> resolution:global_resolution_t -> Type.t
+
+  val is_protocol : t -> bool
+
+  val resolve_class : resolution:global_resolution_t -> Type.t -> class_data list option
+
+  val attributes
+    :  ?transitive:bool ->
+    ?class_attributes:bool ->
+    ?include_generated_attributes:bool ->
+    ?instantiated:Type.t ->
+    t ->
+    resolution:global_resolution_t ->
+    AnnotatedAttribute.t list
+end
+
 val create
   :  ast_environment:AstEnvironment.ReadOnly.t ->
   class_hierarchy:(module ClassHierarchy.Handler) ->
@@ -46,12 +75,9 @@ val create
   module_definition:(Reference.t -> Module.t option) ->
   class_definition:(Type.Primitive.t -> Class.t Node.t option) ->
   class_metadata:(Type.Primitive.t -> class_metadata option) ->
-  constructor:(resolution:t -> Type.Primitive.t -> Type.t option) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
-  attributes:(resolution:t -> Type.t -> AnnotatedAttribute.t list option) ->
-  is_protocol:(Type.t -> bool) ->
   global:(Reference.t -> global option) ->
-  unit ->
+  (module AnnotatedClass) ->
   t
 
 val resolve_literal : t -> Expression.t -> Type.t
