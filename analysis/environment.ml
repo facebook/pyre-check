@@ -10,8 +10,6 @@ open Pyre
 open Statement
 
 module type Handler = sig
-  val register_alias : qualifier:Reference.t -> key:Identifier.t -> data:Type.alias -> unit
-
   val ast_environment : AstEnvironment.ReadOnly.t
 
   val class_definition : Identifier.t -> Class.t Node.t option
@@ -48,18 +46,6 @@ module UnresolvedAlias = struct
     value: Expression.expression_t;
   }
   [@@deriving sexp, compare, hash]
-end
-
-module ResolvedAlias = struct
-  type t = {
-    qualifier: Reference.t;
-    name: Type.Primitive.t;
-    annotation: Type.alias;
-  }
-  [@@deriving sexp, compare, hash]
-
-  let register (module Handler : Handler) { qualifier; name; annotation } =
-    Handler.register_alias ~qualifier ~key:name ~data:annotation
 end
 
 module SharedMemory = struct
@@ -284,6 +270,23 @@ module SharedMemory = struct
   module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
   module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
   module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
+end
+
+let register_alias (module Handler : Handler) ~qualifier ~key ~data =
+  Handler.DependencyHandler.add_alias_key ~qualifier key;
+  SharedMemory.Aliases.add key data
+
+
+module ResolvedAlias = struct
+  type t = {
+    qualifier: Reference.t;
+    name: Type.Primitive.t;
+    annotation: Type.alias;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let register (module Handler : Handler) { qualifier; name; annotation } =
+    register_alias (module Handler) ~qualifier ~key:name ~data:annotation
 end
 
 module SharedMemoryClassHierarchyHandler = struct
@@ -974,7 +977,8 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
             let value = Expression.delocalize value in
             match Type.Variable.parse_declaration value with
             | Some variable ->
-                Handler.register_alias
+                register_alias
+                  (module Handler)
                   ~qualifier
                   ~key:(Reference.show target)
                   ~data:(Type.VariableAlias variable);
@@ -1412,7 +1416,8 @@ let propagate_nested_classes (module Handler : Handler) source =
         added_sofar
       else
         let primitive name = Type.Primitive (Reference.show name) in
-        Handler.register_alias
+        register_alias
+          (module Handler)
           ~qualifier
           ~key:(Reference.show alias)
           ~data:(Type.TypeAlias (primitive full_name));
@@ -1805,10 +1810,6 @@ module SharedMemoryPartialHandler = struct
   let dependencies = Dependents.get
 
   let undecorated_signature = UndecoratedFunctions.get
-
-  let register_alias ~qualifier ~key ~data =
-    DependencyHandler.add_alias_key ~qualifier key;
-    Aliases.add key data
 end
 
 let shared_memory_handler ast_environment =
