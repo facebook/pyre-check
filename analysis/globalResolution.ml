@@ -596,4 +596,21 @@ let class_extends_placeholder_stub_class
   List.exists bases ~f:is_from_placeholder_stub
 
 
-let global { global; _ } = global
+let global { global; _ } reference =
+  (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic
+     for module and for class *)
+  match Reference.last reference with
+  | "__file__"
+  | "__name__" ->
+      let annotation =
+        Annotation.create_immutable ~global:true Type.string |> Node.create_with_default_location
+      in
+      Some annotation
+  | "__dict__" ->
+      let annotation =
+        Type.dictionary ~key:Type.string ~value:Type.Any
+        |> Annotation.create_immutable ~global:true
+        |> Node.create_with_default_location
+      in
+      Some annotation
+  | _ -> global reference

@@ -623,25 +623,6 @@ let resolution (module Handler : Handler) () =
            Therefore, there is no reason to deal with joining the attributes together here *)
         None
   in
-  let global reference =
-    (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic
-       for module and for class *)
-    match Reference.last reference with
-    | "__file__"
-    | "__name__" ->
-        let annotation =
-          Annotation.create_immutable ~global:true Type.string |> Node.create_with_default_location
-        in
-        Some annotation
-    | "__dict__" ->
-        let annotation =
-          Type.dictionary ~key:Type.string ~value:Type.Any
-          |> Annotation.create_immutable ~global:true
-          |> Node.create_with_default_location
-        in
-        Some annotation
-    | _ -> Handler.globals reference
-  in
   GlobalResolution.create
     ~ast_environment:Handler.ast_environment
     ~class_hierarchy
@@ -653,7 +634,7 @@ let resolution (module Handler : Handler) () =
     ~undecorated_signature:Handler.undecorated_signature
     ~attributes
     ~is_protocol
-    ~global
+    ~global:Handler.globals
     ()
 
 
