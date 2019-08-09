@@ -902,6 +902,12 @@ let test_check_incomplete_annotations context =
         x: typing.Dict[str, typing.Any] = {}
     |}
     [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.List[typing.Dict[str, typing.Any]] = []
+    |}
+    [];
   assert_default_type_errors
     {|
       def foo() -> None:

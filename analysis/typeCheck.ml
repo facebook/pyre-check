@@ -1204,10 +1204,7 @@ module State (Context : Context) = struct
                       annotation >>| Type.expression_contains_any |> Option.value ~default:false
                     in
                     contains_literal_any
-                    && not
-                         (GlobalResolution.is_string_to_any_mapping
-                            global_resolution
-                            parsed_annotation)
+                    && GlobalResolution.contains_prohibited_any global_resolution parsed_annotation
                   in
                   match annotation_and_state, value with
                   | Some (_, annotation), Some value when Type.contains_final annotation ->
@@ -3243,7 +3240,7 @@ module State (Context : Context) = struct
         if
           (not (Define.has_return_annotation define))
           || contains_literal_any
-             && not (GlobalResolution.is_string_to_any_mapping global_resolution return_annotation)
+             && GlobalResolution.contains_prohibited_any global_resolution return_annotation
         then
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
@@ -3661,9 +3658,8 @@ module State (Context : Context) = struct
                   match annotation with
                   | Some annotation when Type.expression_contains_any annotation ->
                       original_annotation
-                      >>| GlobalResolution.is_string_to_any_mapping global_resolution
+                      >>| GlobalResolution.contains_prohibited_any global_resolution
                       |> Option.value ~default:false
-                      |> not
                       |> fun insufficient -> insufficient, true
                   | None when is_immutable && not is_reassignment ->
                       let is_toplevel =
@@ -3671,14 +3667,9 @@ module State (Context : Context) = struct
                         || Define.is_class_toplevel define
                         || Define.is_constructor define
                       in
-                      let contains_any annotation =
-                        if GlobalResolution.is_string_to_any_mapping global_resolution annotation
-                        then
-                          false
-                        else
-                          Type.contains_any annotation
-                      in
-                      Type.equal expected Type.Top || contains_any expected, is_toplevel
+                      ( Type.equal expected Type.Top
+                        || GlobalResolution.contains_prohibited_any global_resolution expected,
+                        is_toplevel )
                   | _ -> false, false
                 in
                 let actual_annotation, evidence_locations =
@@ -3732,9 +3723,6 @@ module State (Context : Context) = struct
                         ~define:Context.define
                       |> Option.some
                     else if explicit && insufficiently_annotated then
-                      let value_annotation =
-                        GlobalResolution.parse_annotation global_resolution value
-                      in
                       Error.create
                         ~location
                         ~kind:
@@ -3751,11 +3739,7 @@ module State (Context : Context) = struct
                                is_type_alias = false;
                              })
                         ~define:Context.define
-                      |> Option.some_if
-                           (not
-                              (GlobalResolution.is_string_to_any_mapping
-                                 global_resolution
-                                 value_annotation))
+                      |> Option.some
                     else if is_type_alias && Type.expression_contains_any value then
                       let value_annotation =
                         GlobalResolution.parse_annotation global_resolution value
@@ -3777,10 +3761,9 @@ module State (Context : Context) = struct
                              })
                         ~define:Context.define
                       |> Option.some_if
-                           (not
-                              (GlobalResolution.is_string_to_any_mapping
-                                 global_resolution
-                                 value_annotation))
+                           (GlobalResolution.contains_prohibited_any
+                              global_resolution
+                              value_annotation)
                     else
                       None
                 | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ }, None
