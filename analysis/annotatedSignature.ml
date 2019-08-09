@@ -346,22 +346,7 @@ let select
             | [] -> Some (Type.OrderedTypes.Concrete [])
             | head :: tail ->
                 let concatenate sofar next =
-                  let concatenate sofar =
-                    match sofar, next with
-                    | Type.OrderedTypes.Concrete sofar, Type.OrderedTypes.Concrete next ->
-                        Some (Type.OrderedTypes.Concrete (sofar @ next))
-                    (* Any can masquerade as the empty list *)
-                    | other, Any
-                    | Any, other
-                    | other, Concrete []
-                    | Concrete [], other ->
-                        Some other
-                    | _, Concatenation _
-                    | Concatenation _, _ ->
-                        (* TODO(T45636537): support these when we have support for concatenation *)
-                        None
-                  in
-                  sofar >>= concatenate
+                  sofar >>= fun left -> Type.OrderedTypes.concatenate ~left ~right:next
                 in
                 List.fold tail ~f:concatenate ~init:(Some head)
           in

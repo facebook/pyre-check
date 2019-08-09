@@ -542,6 +542,9 @@ module OrderedTypes : sig
   end
 
   val union_upper_bound : t -> type_t
+
+  (* Concatenation is only defined for certain members *)
+  val concatenate : left:t -> right:t -> t option
 end
 
 val split : t -> t * OrderedTypes.t

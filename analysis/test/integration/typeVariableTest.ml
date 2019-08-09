@@ -996,6 +996,30 @@ let test_list_variadics context =
     ["Revealed type [-1]: Revealed type for `loop(x, y, z)` is `typing.Tuple[int, str, bool]`."];
   assert_type_errors
     {|
+    from typing import Tuple, Optional, Callable
+    Ts = pyre_extensions.ListVariadic("Ts")
+    def loop( *args: Ts) -> Tuple[Ts]:
+      return args
+    def foo(x: int, y: str, z: bool, t: Tuple[Ts]) -> None:
+      l = loop(x, y, *t, z)
+      reveal_type(l)
+    |}
+    [ "Revealed type [-1]: Revealed type for `l` is `typing.Tuple[Concatenate[int, str, Ts, bool]]`."
+    ];
+  assert_type_errors
+    {|
+    from typing import Tuple, Optional, Callable
+    Ts = pyre_extensions.ListVariadic("Ts")
+    TsB = pyre_extensions.ListVariadic("TsB")
+    def loop( *args: Ts) -> Tuple[Ts]:
+      return args
+    def foo(tA: Tuple[Ts], tB: Tuple[TsB]) -> None:
+      loop( *tA, *tB)
+    |}
+    [ "Invalid argument [32]: Variadic type variable `Ts` cannot be made to contain `Ts, TsB`, \
+       concatenation of multiple variadic type variables is not yet implemented." ];
+  assert_type_errors
+    {|
     from typing import Tuple, Optional, Callable, TypeVar
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
@@ -1042,8 +1066,8 @@ let test_list_variadics context =
       call_with_args(bar, *x, *y)
     |}
     [ "Revealed type [-1]: Revealed type for `call_with_args(foo, *$parameter$x, True)` is `str`.";
-      "Invalid argument [32]: Variadic type variable `Ts` cannot be made to contain `int, str, \
-       Ts`, concatenation of variadic type variables is not yet implemented." ];
+      "Invalid argument [32]: Types `Concatenate[int, str, Ts]` conflict with existing \
+       constraints on `Ts`." ];
   assert_type_errors
     {|
     from typing import Tuple, List, Generic, TypeVar

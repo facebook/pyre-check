@@ -220,6 +220,22 @@ module Record = struct
       | Any -> Format.fprintf format "..."
       | Concatenation concatenation ->
           Format.fprintf format "%a" (RecordConcatenate.pp_concatenation ~pp_type) concatenation
+
+
+    let concatenate ~left ~right =
+      match left, right with
+      | Concrete left, Concrete right -> Some (Concrete (left @ right))
+      (* Any can masquerade as the empty list *)
+      | other, Any
+      | Any, other
+      | other, Concrete []
+      | Concrete [], other ->
+          Some other
+      | Concrete left, Concatenation ({ wrapping = { head; tail }; _ } as concatenation) ->
+          Some (Concatenation { concatenation with wrapping = { head = left @ head; tail } })
+      | Concatenation ({ wrapping = { head; tail }; _ } as concatenation), Concrete right ->
+          Some (Concatenation { concatenation with wrapping = { head; tail = tail @ right } })
+      | Concatenation _, Concatenation _ -> None
   end
 
   module Callable = struct

@@ -764,7 +764,7 @@ let messages ~concise ~signature location kind =
             variable ]
     | ListVariadicVariable { variable; mismatch = CantConcatenate _ } ->
         [ Format.asprintf
-            "Concatenating ListVariadics for variable `%a` is not yet supported."
+            "Concatenating multiple ListVariadics for variable `%a` is not yet supported."
             Type.OrderedTypes.pp_concise
             variable ] )
   | InvalidArgument argument -> (
@@ -806,7 +806,7 @@ let messages ~concise ~signature location kind =
         in
         [ Format.asprintf
             "Variadic type variable `%a` cannot be made to contain `%s`, concatenation of \
-             variadic type variables is not yet implemented."
+             multiple variadic type variables is not yet implemented."
             (Type.Record.OrderedTypes.pp_concise ~pp_type)
             variable
             unconcatenatable ] )
