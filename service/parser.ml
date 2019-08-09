@@ -39,10 +39,72 @@ let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source
       SystemError message
 
 
+module SourceValue = struct
+  type t = Source.t
+
+  let prefix = Prefix.make ()
+
+  let description = "Unprocessed source"
+
+  let unmarshall value = Marshal.from_string value 0
+end
+
+module RawSources = Memory.WithCache (Reference.Key) (SourceValue)
+
+module RawParseResult = struct
+  type t = {
+    parsed: Reference.t list;
+    syntax_error: SourcePath.t list;
+    system_error: SourcePath.t list;
+  }
+
+  let empty = { parsed = []; syntax_error = []; system_error = [] }
+
+  let merge
+      { parsed = left_parsed; syntax_error = left_syntax_error; system_error = left_system_error }
+      {
+        parsed = right_parsed;
+        syntax_error = right_syntax_error;
+        system_error = right_system_error;
+      }
+    =
+    {
+      parsed = left_parsed @ right_parsed;
+      syntax_error = left_syntax_error @ right_syntax_error;
+      system_error = left_system_error @ right_system_error;
+    }
+end
+
+let parse_raw_sources ~configuration ~scheduler source_paths =
+  let parse_and_categorize
+      ({ RawParseResult.parsed; syntax_error; system_error } as result)
+      source_path
+    =
+    match parse_source ~configuration source_path with
+    | Success ({ Source.qualifier; _ } as source) ->
+        RawSources.add qualifier source;
+        { result with parsed = qualifier :: parsed }
+    | SyntaxError message ->
+        Log.log ~section:`Parser "%s" message;
+        { result with syntax_error = source_path :: syntax_error }
+    | SystemError message ->
+        Log.error "%s" message;
+        { result with system_error = source_path :: system_error }
+  in
+  Scheduler.map_reduce
+    scheduler
+    ~configuration
+    ~initial:RawParseResult.empty
+    ~map:(fun _ -> List.fold ~init:RawParseResult.empty ~f:parse_and_categorize)
+    ~reduce:RawParseResult.merge
+    ~inputs:source_paths
+    ()
+
+
 module FixpointResult = struct
   type t = {
-    processed: Source.t list;
-    not_processed: Source.t list;
+    processed: Reference.t list;
+    not_processed: Reference.t list;
   }
 
   let merge
@@ -55,9 +117,10 @@ module FixpointResult = struct
     }
 end
 
-let process_sources_job ~preprocessing_state ~ast_environment ~force sources =
-  let process ({ FixpointResult.processed; not_processed } as result) source =
+let process_sources_job ~preprocessing_state ~ast_environment ~force qualifiers =
+  let process ({ FixpointResult.processed; not_processed } as result) qualifier =
     let source =
+      let source = Option.value_exn (RawSources.get qualifier) in
       match preprocessing_state with
       | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
       | None -> source
@@ -72,21 +135,49 @@ let process_sources_job ~preprocessing_state ~ast_environment ~force sources =
       add_module_from_source preprocessed;
 
       let stored = Plugin.apply_to_ast preprocessed in
-      AstEnvironment.add_source ast_environment stored;
-      stored
+      AstEnvironment.add_source ast_environment stored
     in
     match force with
     | true ->
-        let source = store_result (Preprocessing.preprocess source) in
-        { result with processed = source :: processed }
+        store_result (Preprocessing.preprocess source);
+        { result with processed = qualifier :: processed }
     | false -> (
       match Preprocessing.try_preprocess source with
       | Some preprocessed ->
-          let source = store_result preprocessed in
-          { result with processed = source :: processed }
-      | None -> { result with not_processed = source :: not_processed } )
+          store_result preprocessed;
+          { result with processed = qualifier :: processed }
+      | None -> { result with not_processed = qualifier :: not_processed } )
   in
-  List.fold ~init:{ FixpointResult.processed = []; not_processed = [] } ~f:process sources
+  List.fold ~init:{ FixpointResult.processed = []; not_processed = [] } ~f:process qualifiers
+
+
+let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment qualifiers =
+  let rec fixpoint ~force not_processed =
+    let { FixpointResult.processed = new_processed; not_processed = new_not_processed } =
+      Scheduler.map_reduce
+        scheduler
+        ~configuration
+        ~initial:{ FixpointResult.processed = []; not_processed = [] }
+        ~map:(fun _ -> process_sources_job ~preprocessing_state ~ast_environment ~force)
+        ~reduce:FixpointResult.merge
+        ~inputs:not_processed
+        ()
+    in
+    if List.is_empty new_not_processed then (* All done. *)
+      ()
+    else if List.is_empty new_processed then
+      (* No progress was made, force the parse ignoring all temporary errors. *)
+      fixpoint ~force:true not_processed
+    else (* We made some progress, continue with the fixpoint. *)
+      fixpoint ~force:false new_not_processed
+  in
+  fixpoint ~force:false qualifiers;
+  ()
+
+
+let clean_shared_memory qualifiers =
+  Ast.SharedMemory.Modules.remove ~qualifiers;
+  RawSources.remove_batch (RawSources.KeySet.of_list qualifiers)
 
 
 type parse_sources_result = {
@@ -95,70 +186,14 @@ type parse_sources_result = {
   system_error: SourcePath.t list;
 }
 
-let parse_raw_sources ~configuration ~scheduler source_paths =
-  let results =
-    Scheduler.map_reduce
-      scheduler
-      ~configuration
-      ~initial:[]
-      ~map:(fun _ source_paths -> List.map source_paths ~f:(parse_source ~configuration))
-      ~reduce:List.append
-      ~inputs:source_paths
-      ()
-  in
-  let categorize ({ parsed; syntax_error; system_error } as result) (source_path, parse_result) =
-    match parse_result with
-    | Success source -> { result with parsed = source :: parsed }
-    | SyntaxError message ->
-        Log.log ~section:`Parser "%s" message;
-        { result with syntax_error = source_path :: syntax_error }
-    | SystemError message ->
-        Log.error "%s" message;
-        { result with system_error = source_path :: system_error }
-  in
-  List.zip_exn source_paths results
-  |> List.fold ~init:{ parsed = []; syntax_error = []; system_error = [] } ~f:categorize
-
-
-let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment sources =
-  let rec fixpoint ~force ({ FixpointResult.processed; not_processed } as input_state) =
-    let { FixpointResult.processed = new_processed; not_processed = new_not_processed } =
-      Scheduler.map_reduce
-        scheduler
-        ~configuration
-        ~initial:{ FixpointResult.processed = []; not_processed = [] }
-        ~map:(fun _ sources ->
-          process_sources_job ~preprocessing_state ~ast_environment ~force sources)
-        ~reduce:FixpointResult.merge
-        ~inputs:not_processed
-        ()
-    in
-    if List.is_empty new_not_processed then (* All done. *)
-      processed @ new_processed
-    else if List.is_empty new_processed then
-      (* No progress was made, force the parse ignoring all temporary errors. *)
-      fixpoint ~force:true input_state
-    else (* We made some progress, continue with the fixpoint. *)
-      fixpoint
-        ~force:false
-        { processed = processed @ new_processed; not_processed = new_not_processed }
-  in
-  let result = fixpoint ~force:false { FixpointResult.processed = []; not_processed = sources } in
-  let () =
-    List.map result ~f:(fun { Source.qualifier; _ } -> qualifier)
-    |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers
-  in
-  result
-
-
 let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment source_paths =
-  let { parsed; syntax_error; system_error } =
+  let { RawParseResult.parsed; syntax_error; system_error } =
     parse_raw_sources ~configuration ~scheduler source_paths
   in
-  let processed =
-    process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment parsed
-  in
-  { parsed = processed; syntax_error; system_error }
+  process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment parsed;
+  clean_shared_memory parsed;
+  let parsed = List.filter_map parsed ~f:(AstEnvironment.get_source ast_environment) in
+  { parsed; syntax_error; system_error }
 
 
 let log_parse_errors ~syntax_error ~system_error =
