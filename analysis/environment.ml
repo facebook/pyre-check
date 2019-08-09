@@ -25,8 +25,6 @@ module type Handler = sig
 
   val set_class_definition : name:Identifier.t -> definition:Class.t Node.t -> unit
 
-  val register_class_metadata : Identifier.t -> unit
-
   val register_alias : qualifier:Reference.t -> key:Identifier.t -> data:Type.alias -> unit
 
   val ast_environment : AstEnvironment.ReadOnly.t
@@ -667,6 +665,35 @@ let connect_definition
   |> List.iter ~f:register_supertype
 
 
+let register_class_metadata (module Handler : Handler) class_name =
+  let open SharedMemory in
+  let open Statement in
+  let successors =
+    ClassHierarchy.successors (module SharedMemoryClassHierarchyHandler) class_name
+  in
+  let is_final =
+    ClassDefinitions.get class_name
+    >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
+    |> Option.value ~default:false
+  in
+  let in_test =
+    let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
+    let successor_classes = List.filter_map ~f:ClassDefinitions.get successors in
+    List.exists ~f:is_unit_test successor_classes
+  in
+  let extends_placeholder_stub_class =
+    ClassDefinitions.get class_name
+    >>| Annotated.Class.create
+    >>| Annotated.Class.extends_placeholder_stub_class
+          ~aliases:Handler.aliases
+          ~module_definition:Handler.module_definition
+    |> Option.value ~default:false
+  in
+  ClassMetadata.add
+    class_name
+    { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+
+
 let add_special_classes (module Handler : Handler) =
   (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
      the stubs. *)
@@ -691,7 +718,7 @@ let add_special_classes (module Handler : Handler) =
     in
     Handler.set_class_definition ~name ~definition:(Node.create_with_default_location definition);
     SharedMemoryClassHierarchyHandler.insert name;
-    Handler.register_class_metadata name
+    register_class_metadata (module Handler) name
   in
   let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
   List.iter
@@ -1403,8 +1430,6 @@ let dependency_handler (module Handler : Handler) =
 
 let set_class_definition (module Handler : Handler) = Handler.set_class_definition
 
-let register_class_metadata (module Handler : Handler) = Handler.register_class_metadata
-
 let transaction _ ?(only_global_keys = false) ~f () =
   let open SharedMemory in
   if only_global_keys then
@@ -1800,32 +1825,6 @@ module SharedMemoryPartialHandler = struct
   let register_alias ~qualifier ~key ~data =
     DependencyHandler.add_alias_key ~qualifier key;
     Aliases.add key data
-
-
-  let register_class_metadata class_name =
-    let open Statement in
-    let successors =
-      ClassHierarchy.successors (module SharedMemoryClassHierarchyHandler) class_name
-    in
-    let is_final =
-      ClassDefinitions.get class_name
-      >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
-      |> Option.value ~default:false
-    in
-    let in_test =
-      let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
-      let successor_classes = List.filter_map ~f:ClassDefinitions.get successors in
-      List.exists ~f:is_unit_test successor_classes
-    in
-    let extends_placeholder_stub_class =
-      ClassDefinitions.get class_name
-      >>| Annotated.Class.create
-      >>| Annotated.Class.extends_placeholder_stub_class ~aliases ~module_definition
-      |> Option.value ~default:false
-    in
-    ClassMetadata.add
-      class_name
-      { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
 end
 
 let shared_memory_handler ast_environment =
