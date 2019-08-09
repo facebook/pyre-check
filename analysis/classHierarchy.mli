@@ -51,14 +51,6 @@ module Target : sig
   module List : ListOrSet with type record = t list
 end
 
-type t = {
-  edges: Target.t list Int.Table.t;
-  backedges: Target.Set.t Int.Table.t;
-  indices: int Type.Primitive.Table.t;
-  annotations: Type.Primitive.t Int.Table.t;
-}
-[@@deriving show]
-
 (** The handler module for interfacing with ClassHierarchy lookups. See [Environment_handler] for
     more. *)
 module type Handler = sig
@@ -88,9 +80,6 @@ module type Handler = sig
 
   val show : unit -> string
 end
-
-val handler : t -> (module Handler)
-(** Provides a default in-process environment handler constructed from a [ClassHierarchy.t]. *)
 
 val insert : (module Handler) -> Type.Primitive.t -> unit
 
@@ -178,15 +167,3 @@ val instantiate_predecessors_parameters
     parameters:Type.OrderedTypes.t ->
     TypeConstraints.Solution.t option) ->
   Type.OrderedTypes.t Option.t
-
-module Builder : sig
-  val create : unit -> t
-
-  val copy : t -> t
-
-  val builtin_types : Type.Primitive.Set.t
-
-  val add_default_order : (module Handler) -> unit
-
-  val default : unit -> t
-end

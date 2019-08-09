@@ -1324,6 +1324,73 @@ let test_propagate_nested_classes context =
   ()
 
 
+let test_default_class_hierarchy context =
+  let order, _ = order_and_environment ~context [] in
+  Environment.fill_shared_memory_with_default_typeorder ();
+  let open TypeOrder in
+  let less_or_equal = always_less_or_equal in
+  assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Bottom);
+  assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
+  assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
+  assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
+  assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
+
+  (* Test special forms. *)
+  let assert_has_special_form primitive_name =
+    assert_true (ClassHierarchy.contains order.handler primitive_name)
+  in
+  assert_has_special_form "typing.Tuple";
+  assert_has_special_form "typing.Generic";
+  assert_has_special_form "typing.Protocol";
+  assert_has_special_form "typing.Callable";
+  assert_has_special_form "typing.ClassVar";
+  assert_has_special_form "typing.Final";
+
+  (* Object *)
+  assert_true (less_or_equal order ~left:(Type.optional Type.integer) ~right:Type.object_primitive);
+  assert_true (less_or_equal order ~left:(Type.list Type.integer) ~right:Type.object_primitive);
+  assert_false
+    (less_or_equal order ~left:Type.object_primitive ~right:(Type.optional Type.integer));
+
+  (* Mock. *)
+  assert_true (less_or_equal order ~left:(Type.Primitive "unittest.mock.Base") ~right:Type.Top);
+  assert_true
+    (less_or_equal order ~left:(Type.Primitive "unittest.mock.NonCallableMock") ~right:Type.Top);
+
+  (* Numerical types. *)
+  assert_true (less_or_equal order ~left:Type.integer ~right:Type.integer);
+  assert_false (less_or_equal order ~left:Type.float ~right:Type.integer);
+  assert_true (less_or_equal order ~left:Type.integer ~right:Type.float);
+  assert_true (less_or_equal order ~left:Type.integer ~right:Type.complex);
+  assert_false (less_or_equal order ~left:Type.complex ~right:Type.integer);
+  assert_true (less_or_equal order ~left:Type.float ~right:Type.complex);
+  assert_false (less_or_equal order ~left:Type.complex ~right:Type.float);
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Integral"));
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Rational"));
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Number"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Real"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Rational"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Complex"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Number"));
+  assert_false (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Integral"));
+  assert_true (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Complex"));
+  assert_false (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Real"));
+
+  (* Test join. *)
+  assert_type_equal (join order Type.integer Type.integer) Type.integer;
+  assert_type_equal (join order Type.float Type.integer) Type.float;
+  assert_type_equal (join order Type.integer Type.float) Type.float;
+  assert_type_equal (join order Type.integer Type.complex) Type.complex;
+  assert_type_equal (join order Type.float Type.complex) Type.complex;
+
+  (* Test meet. *)
+  assert_type_equal (meet order Type.integer Type.integer) Type.integer;
+  assert_type_equal (meet order Type.float Type.integer) Type.integer;
+  assert_type_equal (meet order Type.integer Type.float) Type.integer;
+  assert_type_equal (meet order Type.integer Type.complex) Type.integer;
+  assert_type_equal (meet order Type.float Type.complex) Type.float
+
+
 let () =
   "environment"
   >::: [ "connect_type_order" >:: test_connect_type_order;
@@ -1343,5 +1410,6 @@ let () =
          "register_dependencies" >:: test_register_dependencies;
          "register_globals" >:: test_register_globals;
          "register_implicit_submodules" >:: test_register_implicit_submodules;
-         "propagate_nested_classes" >:: test_propagate_nested_classes ]
+         "propagate_nested_classes" >:: test_propagate_nested_classes;
+         "default_class_hierarchy" >:: test_default_class_hierarchy ]
   |> Test.run

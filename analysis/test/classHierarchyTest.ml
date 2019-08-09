@@ -16,7 +16,7 @@ let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
  *    X
  *  1 - 3 *)
 let butterfly =
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order "0";
   insert order "1";
   insert order "2";
@@ -35,7 +35,7 @@ let butterfly =
  *          4 -- 2 --- *)
 let order =
   let bottom = "bottom" in
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order bottom;
   insert order "0";
   insert order "1";
@@ -54,7 +54,7 @@ let order =
 
 
 let diamond_order =
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order "A";
   insert order "B";
   insert order "C";
@@ -78,7 +78,7 @@ let diamond_order =
  * BOTTOM
  *)
 let triangle_order =
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order "A";
   insert order "B";
   insert order "C";
@@ -148,7 +148,7 @@ let test_greatest_lower_bound _ =
 
 let test_deduplicate _ =
   let (module Handler : Handler) =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "0";
     insert order "1";
     connect order ~parameters:![Type.Top; Type.Top] ~predecessor:"0" ~successor:"1";
@@ -183,7 +183,7 @@ let test_remove_extra_edges_to_object _ =
    *  |--------------^
    *)
   let (module Handler : Handler) =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "0";
     insert order "1";
     insert order "2";
@@ -214,7 +214,7 @@ let test_connect_annotations_to_top _ =
    *  |
    *  1   object *)
   let order =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "0";
     insert order "1";
     insert order "2";
@@ -236,7 +236,7 @@ let test_check_integrity _ =
 
   (* 0 <-> 1 *)
   let order =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "0";
     insert order "1";
     connect order ~predecessor:"0" ~successor:"1";
@@ -250,7 +250,7 @@ let test_check_integrity _ =
    *  \   v
    * .  - 2 -> 3 *)
   let order =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "0";
     insert order "1";
     insert order "2";
@@ -266,7 +266,7 @@ let test_check_integrity _ =
 
 let test_to_dot _ =
   let order =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "0";
     insert order "1";
     insert order "2";
@@ -297,7 +297,7 @@ let test_to_dot _ =
 
 let test_variables _ =
   let order =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "typing.Generic";
     insert order "A";
     insert order "B";
@@ -313,7 +313,7 @@ let test_variables _ =
 
 let test_is_instantiated _ =
   let order =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "typing.Generic";
     insert order "A";
     insert order "B";
@@ -334,7 +334,7 @@ let test_is_instantiated _ =
 
 let test_disconnect_successors _ =
   let order () =
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "a";
     insert order "b";
     insert order "1";
@@ -387,10 +387,14 @@ let test_disconnect_successors _ =
 
 
 let parametric_order =
-  let order = Builder.default () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   let variable = Type.variable "_T" in
   let other_variable = Type.variable "_T2" in
   let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
+  insert order "typing.Generic";
+  insert order "int";
+  insert order "str";
+  insert order "bool";
   insert order "list";
   connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:![variable];
 

@@ -1338,3 +1338,79 @@ let assert_errors
     ~printer:(String.concat ~sep:"\n")
     errors
     descriptions
+
+
+module MockClassHierarchyHandler = struct
+  type t = {
+    edges: ClassHierarchy.Target.t list Int.Table.t;
+    backedges: ClassHierarchy.Target.Set.t Int.Table.t;
+    indices: int Type.Primitive.Table.t;
+    annotations: Type.Primitive.t Int.Table.t;
+  }
+
+  let create () =
+    {
+      edges = Int.Table.create ();
+      backedges = Int.Table.create ();
+      indices = Type.Primitive.Table.create ();
+      annotations = Int.Table.create ();
+    }
+
+
+  let copy { edges; backedges; indices; annotations } =
+    {
+      edges = Hashtbl.copy edges;
+      backedges = Hashtbl.copy backedges;
+      indices = Hashtbl.copy indices;
+      annotations = Hashtbl.copy annotations;
+    }
+
+
+  let pp format { edges; backedges; annotations; _ } =
+    let print_edge (source, targets) =
+      let annotation index = Hashtbl.find_exn annotations index in
+      let targets =
+        let target { ClassHierarchy.Target.target; parameters } =
+          Format.asprintf "%s [%a]" (annotation target) Type.OrderedTypes.pp_concise parameters
+        in
+        targets |> List.map ~f:target |> String.concat ~sep:", "
+      in
+      Format.fprintf format "  %s -> %s\n" (annotation source) targets
+    in
+    Format.fprintf format "Edges:\n";
+    List.iter ~f:print_edge (Hashtbl.to_alist edges);
+    Format.fprintf format "Back-edges:\n";
+    Hashtbl.to_alist backedges |> List.Assoc.map ~f:Set.to_list |> List.iter ~f:print_edge
+
+
+  let show order = Format.asprintf "%a" pp order
+
+  let handler order =
+    ( module struct
+      type ('key, 'value) lookup = ('key, 'value) Hashtbl.t
+
+      let edges () = order.edges
+
+      let backedges () = order.backedges
+
+      let indices () = order.indices
+
+      let annotations () = order.annotations
+
+      let find table key = Hashtbl.find table key
+
+      let find_unsafe table key = Hashtbl.find_exn table key
+
+      let contains table key = Hashtbl.mem table key
+
+      let set table ~key ~data = Hashtbl.set table ~key ~data
+
+      let add_key _ = ()
+
+      let keys () = Hashtbl.keys order.annotations
+
+      let length table = Hashtbl.length table
+
+      let show () = show order
+    end : ClassHierarchy.Handler )
+end

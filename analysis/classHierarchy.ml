@@ -88,19 +88,6 @@ let generic_primitive = "typing.Generic"
 
 let object_primitive = "object"
 
-let integer = "int"
-
-let float = "float"
-
-let complex = "complex"
-
-type t = {
-  edges: Target.t list Int.Table.t;
-  backedges: Target.Set.t Int.Table.t;
-  indices: int Type.Primitive.Table.t;
-  annotations: Type.Primitive.t Int.Table.t;
-}
-
 module type Handler = sig
   type ('key, 'table) lookup
 
@@ -128,55 +115,6 @@ module type Handler = sig
 
   val show : unit -> string
 end
-
-let pp format { edges; backedges; annotations; _ } =
-  let print_edge (source, targets) =
-    let annotation index = Hashtbl.find_exn annotations index in
-    let targets =
-      let target { Target.target; parameters } =
-        Format.asprintf "%s [%a]" (annotation target) Type.OrderedTypes.pp_concise parameters
-      in
-      targets |> List.map ~f:target |> String.concat ~sep:", "
-    in
-    Format.fprintf format "  %s -> %s\n" (annotation source) targets
-  in
-  Format.fprintf format "Edges:\n";
-  List.iter ~f:print_edge (Hashtbl.to_alist edges);
-  Format.fprintf format "Back-edges:\n";
-  Hashtbl.to_alist backedges |> List.Assoc.map ~f:Set.to_list |> List.iter ~f:print_edge
-
-
-let show order = Format.asprintf "%a" pp order
-
-let handler order =
-  ( module struct
-    type ('key, 'value) lookup = ('key, 'value) Hashtbl.t
-
-    let edges () = order.edges
-
-    let backedges () = order.backedges
-
-    let indices () = order.indices
-
-    let annotations () = order.annotations
-
-    let find table key = Hashtbl.find table key
-
-    let find_unsafe table key = Hashtbl.find_exn table key
-
-    let contains table key = Hashtbl.mem table key
-
-    let set table ~key ~data = Hashtbl.set table ~key ~data
-
-    let add_key _ = ()
-
-    let keys () = Hashtbl.keys order.annotations
-
-    let length table = Hashtbl.length table
-
-    let show () = show order
-  end : Handler )
-
 
 let index_of (module Handler : Handler) annotation =
   Handler.find_unsafe (Handler.indices ()) annotation
@@ -868,99 +806,3 @@ let to_dot (module Handler : Handler) =
   List.iter ~f:add_edges indices;
   Buffer.add_string buffer "}";
   Buffer.contents buffer
-
-
-module Builder = struct
-  let create () =
-    {
-      edges = Int.Table.create ();
-      backedges = Int.Table.create ();
-      indices = Type.Primitive.Table.create ();
-      annotations = Int.Table.create ();
-    }
-
-
-  let copy { edges; backedges; indices; annotations } =
-    {
-      edges = Hashtbl.copy edges;
-      backedges = Hashtbl.copy backedges;
-      indices = Hashtbl.copy indices;
-      annotations = Hashtbl.copy annotations;
-    }
-
-
-  let default_annotations =
-    let singleton annotation = [annotation; object_primitive] in
-    [ [object_primitive];
-      (* Special forms *)
-      singleton "typing.Annotated";
-      singleton "typing.Tuple";
-      singleton "typing.NamedTuple";
-      singleton generic_primitive;
-      singleton "typing.GenericMeta";
-      singleton "typing.Protocol";
-      singleton "typing.Callable";
-      singleton "typing.FrozenSet";
-      singleton "typing.Optional";
-      singleton "typing.TypeVar";
-      singleton "typing.Undeclared";
-      singleton "typing.Union";
-      singleton "typing.NoReturn";
-      (* Ensure unittest.mock.Base is there because we check against it. *)
-      singleton "unittest.mock.Base";
-      singleton "unittest.mock.NonCallableMock";
-      singleton "typing.ClassVar";
-      singleton "typing.Final";
-      singleton "typing_extensions.Final";
-      singleton "typing_extensions.Literal";
-      ["dict"; "typing.Dict"; object_primitive];
-      singleton "None";
-      (* Numerical hierarchy. *)
-      [integer; float; complex; "numbers.Complex"; "numbers.Number"; object_primitive];
-      [integer; "numbers.Integral"; object_primitive];
-      [float; "numbers.Rational"; object_primitive];
-      [float; "numbers.Real"; object_primitive] ]
-
-
-  let builtin_types = List.concat default_annotations |> Type.Primitive.Set.of_list
-
-  let add_default_order handler =
-    Set.iter builtin_types ~f:(insert handler);
-    let rec connect_primitive_chain annotations =
-      match annotations with
-      | predecessor :: successor :: rest ->
-          connect handler ~predecessor ~successor;
-          connect_primitive_chain (successor :: rest)
-      | _ -> ()
-    in
-    List.iter ~f:connect_primitive_chain default_annotations;
-
-    (* Since the builtin type hierarchy is not primitive, it's special cased. *)
-    let type_builtin = "type" in
-    let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
-    insert handler type_builtin;
-    connect
-      handler
-      ~predecessor:type_builtin
-      ~parameters:(Concrete [type_variable])
-      ~successor:generic_primitive;
-    let typed_dictionary = "TypedDictionary" in
-    let non_total_typed_dictionary = "NonTotalTypedDictionary" in
-    let typing_mapping = "typing.Mapping" in
-    insert handler non_total_typed_dictionary;
-    insert handler typed_dictionary;
-    insert handler typing_mapping;
-    connect handler ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
-    connect
-      handler
-      ~predecessor:typed_dictionary
-      ~parameters:(Concrete [Type.string; Type.Any])
-      ~successor:typing_mapping
-
-
-  let default () =
-    let order = create () in
-    let handler = handler order in
-    add_default_order handler;
-    order
-end

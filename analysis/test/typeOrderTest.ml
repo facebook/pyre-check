@@ -113,7 +113,7 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
 let order =
   let open ClassHierarchy in
   let bottom = "bottom" in
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order bottom;
   insert order "0";
   insert order "1";
@@ -144,7 +144,7 @@ let order =
  *)
 let disconnected_order =
   let open ClassHierarchy in
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order "A";
   insert order "B";
   order
@@ -152,7 +152,7 @@ let disconnected_order =
 
 let variance_order =
   let open ClassHierarchy in
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order "object";
   insert order "bool";
   insert order "str";
@@ -230,7 +230,7 @@ let variance_order =
  *)
 let multiplane_variance_order =
   let open ClassHierarchy in
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order "str";
   insert order "int";
   insert order "float";
@@ -292,7 +292,7 @@ let multiplane_variance_order =
  *)
 let parallel_planes_variance_order =
   let open ClassHierarchy in
-  let order = Builder.create () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
   insert order "str";
   insert order "int";
   insert order "float";
@@ -327,7 +327,35 @@ let parallel_planes_variance_order =
 
 let default =
   let open ClassHierarchy in
-  let order = Builder.default () |> handler in
+  let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
+  insert order "typing.Generic";
+  insert order "int";
+  insert order "str";
+  insert order "bool";
+  insert order "float";
+  insert order "object";
+  connect order ~predecessor:"int" ~successor:"float";
+  connect order ~predecessor:"float" ~successor:"object";
+  let type_builtin = "type" in
+  let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
+  insert order type_builtin;
+  connect
+    order
+    ~predecessor:type_builtin
+    ~parameters:(Concrete [type_variable])
+    ~successor:"typing.Generic";
+  let typed_dictionary = "TypedDictionary" in
+  let non_total_typed_dictionary = "NonTotalTypedDictionary" in
+  let typing_mapping = "typing.Mapping" in
+  insert order non_total_typed_dictionary;
+  insert order typed_dictionary;
+  insert order typing_mapping;
+  connect order ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
+  connect
+    order
+    ~predecessor:typed_dictionary
+    ~parameters:(Concrete [Type.string; Type.Any])
+    ~successor:typing_mapping;
   let variable = Type.variable "_T" in
   let other_variable = Type.variable "_T2" in
   let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
@@ -470,70 +498,6 @@ let default =
   order
 
 
-let test_default _ =
-  let order = ClassHierarchy.Builder.default () |> ClassHierarchy.handler in
-  assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Bottom);
-  assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
-  assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
-  assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
-  assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
-
-  (* Test special forms. *)
-  let assert_has_special_form primitive_name =
-    assert_true (ClassHierarchy.contains order primitive_name)
-  in
-  assert_has_special_form "typing.Tuple";
-  assert_has_special_form "typing.Generic";
-  assert_has_special_form "typing.Protocol";
-  assert_has_special_form "typing.Callable";
-  assert_has_special_form "typing.ClassVar";
-  assert_has_special_form "typing.Final";
-
-  (* Object *)
-  assert_true (less_or_equal order ~left:(Type.optional Type.integer) ~right:Type.object_primitive);
-  assert_true (less_or_equal order ~left:(Type.list Type.integer) ~right:Type.object_primitive);
-  assert_false
-    (less_or_equal order ~left:Type.object_primitive ~right:(Type.optional Type.integer));
-
-  (* Mock. *)
-  assert_true (less_or_equal order ~left:(Type.Primitive "unittest.mock.Base") ~right:Type.Top);
-  assert_true
-    (less_or_equal order ~left:(Type.Primitive "unittest.mock.NonCallableMock") ~right:Type.Top);
-
-  (* Numerical types. *)
-  assert_true (less_or_equal order ~left:Type.integer ~right:Type.integer);
-  assert_false (less_or_equal order ~left:Type.float ~right:Type.integer);
-  assert_true (less_or_equal order ~left:Type.integer ~right:Type.float);
-  assert_true (less_or_equal order ~left:Type.integer ~right:Type.complex);
-  assert_false (less_or_equal order ~left:Type.complex ~right:Type.integer);
-  assert_true (less_or_equal order ~left:Type.float ~right:Type.complex);
-  assert_false (less_or_equal order ~left:Type.complex ~right:Type.float);
-  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Integral"));
-  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Rational"));
-  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Number"));
-  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Real"));
-  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Rational"));
-  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Complex"));
-  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Number"));
-  assert_false (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Integral"));
-  assert_true (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Complex"));
-  assert_false (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Real"));
-
-  (* Test join. *)
-  assert_type_equal (join order Type.integer Type.integer) Type.integer;
-  assert_type_equal (join order Type.float Type.integer) Type.float;
-  assert_type_equal (join order Type.integer Type.float) Type.float;
-  assert_type_equal (join order Type.integer Type.complex) Type.complex;
-  assert_type_equal (join order Type.float Type.complex) Type.complex;
-
-  (* Test meet. *)
-  assert_type_equal (meet order Type.integer Type.integer) Type.integer;
-  assert_type_equal (meet order Type.float Type.integer) Type.integer;
-  assert_type_equal (meet order Type.integer Type.float) Type.integer;
-  assert_type_equal (meet order Type.integer Type.complex) Type.integer;
-  assert_type_equal (meet order Type.float Type.complex) Type.float
-
-
 let ( !! ) name = Type.Primitive name
 
 let test_less_or_equal context =
@@ -667,7 +631,7 @@ let test_less_or_equal context =
        ~right:(Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))));
   let order =
     let open ClassHierarchy in
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "object";
 
     insert order "str";
@@ -1757,7 +1721,7 @@ let test_join context =
     "typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, str]]";
   let order =
     let open ClassHierarchy in
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "object";
 
     insert order "str";
@@ -2367,7 +2331,7 @@ let test_meet _ =
      * class Y(B[int, str]): pass
      * class M(A[T], X[T], Y[T]): pass *)
     let open ClassHierarchy in
-    let order = Builder.create () |> handler in
+    let order = MockClassHierarchyHandler.create () |> MockClassHierarchyHandler.handler in
     insert order "A";
     insert order "B";
     insert order "X";
@@ -3447,8 +3411,7 @@ let test_mark_escaped_as_escaped context =
 
 let () =
   "order"
-  >::: [ "default" >:: test_default;
-         "join" >:: test_join;
+  >::: [ "join" >:: test_join;
          "less_or_equal" >:: test_less_or_equal;
          "less_or_equal_variance" >:: test_less_or_equal_variance;
          "is_compatible_with" >:: test_is_compatible_with;

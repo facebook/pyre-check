@@ -1285,7 +1285,78 @@ module SharedMemoryClassHierarchyHandler = struct
 end
 
 let fill_shared_memory_with_default_typeorder () =
-  ClassHierarchy.Builder.add_default_order (module SharedMemoryClassHierarchyHandler)
+  let object_primitive = "object" in
+  let generic_primitive = "typing.Generic" in
+  let integer = "int" in
+  let float = "float" in
+  let complex = "complex" in
+  let default_annotations =
+    let singleton annotation = [annotation; object_primitive] in
+    [ [object_primitive];
+      (* Special forms *)
+      singleton "typing.Annotated";
+      singleton "typing.Tuple";
+      singleton "typing.NamedTuple";
+      singleton generic_primitive;
+      singleton "typing.GenericMeta";
+      singleton "typing.Protocol";
+      singleton "typing.Callable";
+      singleton "typing.FrozenSet";
+      singleton "typing.Optional";
+      singleton "typing.TypeVar";
+      singleton "typing.Undeclared";
+      singleton "typing.Union";
+      singleton "typing.NoReturn";
+      (* Ensure unittest.mock.Base is there because we check against it. *)
+      singleton "unittest.mock.Base";
+      singleton "unittest.mock.NonCallableMock";
+      singleton "typing.ClassVar";
+      singleton "typing.Final";
+      singleton "typing_extensions.Final";
+      singleton "typing_extensions.Literal";
+      ["dict"; "typing.Dict"; object_primitive];
+      singleton "None";
+      (* Numerical hierarchy. *)
+      [integer; float; complex; "numbers.Complex"; "numbers.Number"; object_primitive];
+      [integer; "numbers.Integral"; object_primitive];
+      [float; "numbers.Rational"; object_primitive];
+      [float; "numbers.Real"; object_primitive] ]
+  in
+  let builtin_types = List.concat default_annotations |> Type.Primitive.Set.of_list in
+  let handler = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
+  let insert = ClassHierarchy.insert in
+  let connect = ClassHierarchy.connect in
+  Set.iter builtin_types ~f:(ClassHierarchy.insert handler);
+  let rec connect_primitive_chain annotations =
+    match annotations with
+    | predecessor :: successor :: rest ->
+        connect handler ~predecessor ~successor;
+        connect_primitive_chain (successor :: rest)
+    | _ -> ()
+  in
+  List.iter ~f:connect_primitive_chain default_annotations;
+
+  (* Since the builtin type hierarchy is not primitive, it's special cased. *)
+  let type_builtin = "type" in
+  let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
+  insert handler type_builtin;
+  connect
+    handler
+    ~predecessor:type_builtin
+    ~parameters:(Concrete [type_variable])
+    ~successor:generic_primitive;
+  let typed_dictionary = "TypedDictionary" in
+  let non_total_typed_dictionary = "NonTotalTypedDictionary" in
+  let typing_mapping = "typing.Mapping" in
+  insert handler non_total_typed_dictionary;
+  insert handler typed_dictionary;
+  insert handler typing_mapping;
+  connect handler ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
+  connect
+    handler
+    ~predecessor:typed_dictionary
+    ~parameters:(Concrete [Type.string; Type.Any])
+    ~successor:typing_mapping
 
 
 let purge (module Handler : Handler) ?debug x =
