@@ -243,7 +243,11 @@ module State (Context : Context) = struct
           | Name (Name.Attribute { base; _ }) -> (
             match find_aliases base with
             | Some locations ->
-                { unawaited; locals = Map.set locals ~key:(Location location) ~data:locations; need_to_await }
+                {
+                  unawaited;
+                  locals = Map.set locals ~key:(Location location) ~data:locations;
+                  need_to_await;
+                }
             | None -> state )
           | _ -> state )
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
@@ -335,18 +339,18 @@ module State (Context : Context) = struct
       | _ ->
           (* The expression must be analyzed before we call `forward_assign` on it, as that's where
              unawaitables are introduced. *)
-          if Map.mem unawaited (Node.location expression) then
-            {
-              unawaited;
-              locals =
-                Map.set
+          let locals =
+            let location = Node.location expression in
+            let key = Reference (Expression.name_to_reference_exn target) in
+            match Map.find locals (Location location) with
+            | Some locations -> Map.set locals ~key ~data:locations
+            | None ->
+                if Map.mem unawaited location then
+                  Map.set locals ~key ~data:(Location.Reference.Set.singleton location)
+                else
                   locals
-                  ~key:(Reference (Expression.name_to_reference_exn target))
-                  ~data:(Location.Reference.Set.singleton (Node.location expression));
-              need_to_await;
-            }
-          else
-            state )
+          in
+          { unawaited; locals; need_to_await } )
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (

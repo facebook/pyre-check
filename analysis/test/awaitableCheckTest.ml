@@ -556,6 +556,20 @@ let test_attribute_access context =
         await unawaited.method().other()
     |}
     [];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      class C(typing.Awaitable[int]):
+        def method(self) -> C: ...
+        async def other(self) -> int: ...
+      def awaitable() -> C: ...
+
+      async def foo() -> None:
+        unawaited = awaitable().method()
+        await unawaited.other()
+    |}
+    [];
 
   (* If we can't resolve the type of the method as being an awaitable, be unsound and assume the
      method awaits the awaitable. *)
