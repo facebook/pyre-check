@@ -2440,7 +2440,7 @@ let test_solve_less_or_equal context =
         >>| Class.create
         >>| Class.constructor ~instantiated ~resolution
       in
-      let handler = Environment.class_hierarchy environment in
+      let handler = Environment.resolution environment () |> GlobalResolution.class_hierarchy in
       {
         handler;
         constructor;
@@ -3203,7 +3203,7 @@ let test_instantiate_protocol_parameters context =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      let handler = Environment.class_hierarchy environment in
+      let handler = Environment.resolution environment () |> GlobalResolution.class_hierarchy in
       {
         handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
@@ -3381,7 +3381,7 @@ let test_mark_escaped_as_escaped context =
     Type.Callable.create ~annotation:variable ~parameters:(Type.Callable.Defined []) ()
   in
   let result =
-    let handler = Environment.class_hierarchy environment in
+    let handler = Environment.resolution environment () |> GlobalResolution.class_hierarchy in
     let handler =
       {
         handler;

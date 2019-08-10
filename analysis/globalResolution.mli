@@ -70,13 +70,17 @@ end
 
 val create
   :  ast_environment:AstEnvironment.ReadOnly.t ->
-  class_hierarchy:(module ClassHierarchy.Handler) ->
   aliases:(Type.Primitive.t -> Type.alias option) ->
   module_definition:(Reference.t -> Module.t option) ->
   class_definition:(Type.Primitive.t -> Class.t Node.t option) ->
   class_metadata:(Type.Primitive.t -> class_metadata option) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   global:(Reference.t -> global option) ->
+  edges:(int -> ClassHierarchy.Target.t list option) ->
+  backedges:(int -> ClassHierarchy.Target.Set.Tree.t option) ->
+  indices:(string -> int option) ->
+  annotations:(int -> string option) ->
+  class_hierarchy_keys:(Memory.SingletonKey.t -> int list option) ->
   (module AnnotatedClass) ->
   t
 
@@ -204,3 +208,5 @@ val parse_as_parameter_specification_instance_annotation
 val consistent_solution_exists : t -> Type.t -> Type.t -> bool
 
 val global : t -> Reference.t -> global option
+
+val class_hierarchy : t -> (module ClassHierarchy.Handler)

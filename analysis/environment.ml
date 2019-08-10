@@ -562,16 +562,19 @@ let connect_annotations_to_object annotations =
 
 
 let resolution { ast_environment } () =
-  let class_hierarchy = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
   GlobalResolution.create
     ~ast_environment
-    ~class_hierarchy
     ~aliases:SharedMemory.Aliases.get
     ~module_definition:SharedMemory.Modules.get
     ~class_definition:SharedMemory.ClassDefinitions.get
     ~class_metadata:SharedMemory.ClassMetadata.get
     ~undecorated_signature:SharedMemory.UndecoratedFunctions.get
     ~global:SharedMemory.Globals.get
+    ~edges:SharedMemory.OrderEdges.get
+    ~backedges:SharedMemory.OrderBackedges.get
+    ~indices:SharedMemory.OrderIndices.get
+    ~annotations:SharedMemory.OrderAnnotations.get
+    ~class_hierarchy_keys:SharedMemory.OrderKeys.get
     (module Annotated.Class)
 
 
@@ -1434,8 +1437,6 @@ let built_in_annotations =
 
 
 let is_module _ = SharedMemory.Modules.mem
-
-let class_hierarchy _ = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler)
 
 let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate
 

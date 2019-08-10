@@ -13,6 +13,10 @@ open Test
 
 let value option = Option.value_exn option
 
+let class_hierarchy environment =
+  Environment.resolution environment () |> GlobalResolution.class_hierarchy
+
+
 let find_unsafe getter value = getter value |> fun optional -> Option.value_exn optional
 
 let create_environment
@@ -55,8 +59,9 @@ let populate ?include_typeshed_stubs ?include_helpers sources =
 
 let order_and_environment ~context source =
   let environment = populate ~context source in
+  let global_resolution = Environment.resolution environment () in
   ( {
-      TypeOrder.handler = Environment.class_hierarchy environment;
+      TypeOrder.handler = GlobalResolution.class_hierarchy global_resolution;
       constructor = (fun _ ~protocol_assumptions:_ -> None);
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
@@ -101,7 +106,7 @@ let test_register_class_definitions context =
   assert_equal (parse_annotation environment !"D") (Type.Primitive "D");
   assert_equal (parse_annotation environment !"B") (Type.Primitive "B");
   assert_equal (parse_annotation environment !"A") (Type.Primitive "A");
-  let order = Environment.class_hierarchy environment in
+  let order = class_hierarchy environment in
   assert_equal (ClassHierarchy.successors order "C") [];
 
   (* Annotations for classes are returned even if they already exist in the handler. *)
@@ -456,9 +461,7 @@ let test_register_implicit_submodules context =
 let test_connect_definition context =
   let environment = create_environment ~context () in
   let resolution = Environment.resolution environment () in
-  let (module TypeOrderHandler : ClassHierarchy.Handler) =
-    Environment.class_hierarchy environment
-  in
+  let (module TypeOrderHandler : ClassHierarchy.Handler) = class_hierarchy environment in
   Environment.register_class_definitions
     environment
     (parse {|
@@ -593,7 +596,7 @@ let test_connect_type_order context =
          return D()
     |}
   in
-  let order = Environment.class_hierarchy environment in
+  let order = class_hierarchy environment in
   let all_annotations = Environment.register_class_definitions environment source |> Set.to_list in
   Environment.register_aliases environment [source];
   Environment.connect_type_order environment resolution source;
@@ -656,7 +659,7 @@ let test_populate context =
       base
       ~superclasses
     =
-    let (module TypeOrderHandler) = Environment.class_hierarchy environment in
+    let (module TypeOrderHandler) = class_hierarchy environment in
     let index annotation = find_unsafe TypeOrderHandler.indices annotation in
     let targets = TypeOrderHandler.edges (index base) in
     let to_target annotation =
@@ -1130,7 +1133,7 @@ let test_supertypes_type_order context =
       class bar(foo): pass
     |}]
   in
-  let order = Environment.class_hierarchy environment in
+  let order = class_hierarchy environment in
   assert_equal ["object"] (ClassHierarchy.successors order "test.foo");
   assert_equal ["test.foo"; "object"] (ClassHierarchy.successors order "test.bar")
 
@@ -1235,7 +1238,7 @@ let test_purge context =
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_true (GlobalResolution.is_tracked global_resolution "test.P");
-  let class_hierarchy = Environment.class_hierarchy handler in
+  let class_hierarchy = class_hierarchy handler in
   ClassHierarchy.check_integrity class_hierarchy;
   Environment.purge handler [Reference.create "test"];
   assert_is_none (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
@@ -1283,7 +1286,7 @@ let test_purge_hierarchy context =
   in
   let () =
     let handler = order () in
-    let (module Handler) = Environment.class_hierarchy handler in
+    let (module Handler) = class_hierarchy handler in
     let index key = find_unsafe Handler.indices key in
     let one_index = index "One.One" in
     Environment.purge handler [Reference.create "One"];
@@ -1295,7 +1298,7 @@ let test_purge_hierarchy context =
   in
   let () =
     let handler = order () in
-    let (module Handler) = Environment.class_hierarchy handler in
+    let (module Handler) = class_hierarchy handler in
     let index key = find_unsafe Handler.indices key in
     let a_index = index "A.a" in
     Environment.purge handler [Reference.create "A"];
@@ -1306,7 +1309,7 @@ let test_purge_hierarchy context =
   in
   let () =
     let handler = order () in
-    let (module Handler) = Environment.class_hierarchy handler in
+    let (module Handler) = class_hierarchy handler in
     let index key = find_unsafe Handler.indices key in
     let b_index = index "B.b" in
     Environment.purge handler [Reference.create "B"];
@@ -1317,7 +1320,7 @@ let test_purge_hierarchy context =
   in
   let () =
     let handler = order () in
-    let (module Handler) = Environment.class_hierarchy handler in
+    let (module Handler) = class_hierarchy handler in
     let index key = find_unsafe Handler.indices key in
     let a_index = index "A.a" in
     let b_index = index "B.b" in
@@ -1495,7 +1498,7 @@ let test_connect_annotations_to_top context =
   Environment.register_class_definitions environment source |> ignore;
   let resolution = Environment.resolution environment () in
   Environment.connect_type_order environment resolution source;
-  let order = Environment.class_hierarchy environment in
+  let order = class_hierarchy environment in
   assert_false (ClassHierarchy.least_upper_bound order "One" "Two" = ["object"]);
   assert_false (ClassHierarchy.greatest_lower_bound order "One" "object" = ["One"]);
 
@@ -1524,7 +1527,7 @@ let test_deduplicate context =
   let resolution = Environment.resolution environment () in
   Environment.connect_type_order environment resolution source;
   Environment.deduplicate_class_hierarchy ~annotations:["One"; "Zero"];
-  let (module Handler) = Environment.class_hierarchy environment in
+  let (module Handler) = class_hierarchy environment in
   let index_of annotation = find_unsafe Handler.indices annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
     let assert_targets edges from target parameters create =
@@ -1563,7 +1566,7 @@ let test_remove_extra_edges_to_object context =
   let resolution = Environment.resolution environment () in
   Environment.connect_type_order environment resolution source;
   Environment.remove_extra_edges_to_object ["Zero"; "One"; "Two"; "object"];
-  let (module Handler) = Environment.class_hierarchy environment in
+  let (module Handler) = class_hierarchy environment in
   let zero_index = find_unsafe Handler.indices "Zero" in
   let one_index = find_unsafe Handler.indices "One" in
   let two_index = find_unsafe Handler.indices "Two" in

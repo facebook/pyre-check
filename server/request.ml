@@ -411,8 +411,8 @@ let process_type_query_request
     ~request
   =
   let process_request () =
-    let order = Environment.class_hierarchy environment in
     let global_resolution = Environment.resolution environment () in
+    let order = GlobalResolution.class_hierarchy global_resolution in
     let resolution = TypeCheck.resolution global_resolution () in
     let parse_and_validate ?(unknown_is_top = false) expression =
       let annotation =

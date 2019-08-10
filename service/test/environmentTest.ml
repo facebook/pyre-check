@@ -76,7 +76,7 @@ let test_normalize context =
     |> ScratchProject.build_environment
   in
   Analysis.Environment.fill_shared_memory_with_default_typeorder ();
-  let order = Analysis.Environment.class_hierarchy environment in
+  let order = Environment.resolution environment () |> GlobalResolution.class_hierarchy in
   let (module TypeOrderHandler) = order in
   let index_of annotation =
     TypeOrderHandler.indices annotation |> fun optional -> Option.value_exn optional

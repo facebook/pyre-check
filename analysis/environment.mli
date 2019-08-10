@@ -47,8 +47,6 @@ val is_module : t -> Reference.t -> bool
 
 val purge : t -> ?debug:bool -> Reference.t list -> unit
 
-val class_hierarchy : t -> (module ClassHierarchy.Handler)
-
 val deduplicate_class_hierarchy : annotations:Type.Primitive.t list -> unit
 
 val remove_extra_edges_to_object : Type.Primitive.t list -> unit

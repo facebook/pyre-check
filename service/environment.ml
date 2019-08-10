@@ -37,7 +37,7 @@ let populate
     if debug then
       (* Validate integrity of the type order built so far before moving forward. Further
          transformations might be incorrect or not terminate otherwise. *)
-      Environment.class_hierarchy environment |> ClassHierarchy.check_integrity;
+      GlobalResolution.class_hierarchy resolution |> ClassHierarchy.check_integrity;
     Environment.connect_annotations_to_object all_annotations;
     Environment.remove_extra_edges_to_object all_annotations;
     List.iter all_annotations ~f:(Environment.register_class_metadata environment);
@@ -85,7 +85,7 @@ let build environment ~configuration ~scheduler sources =
         ~relative:"type_order.dot"
     in
     Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
-    let hierarchy = Environment.class_hierarchy environment in
+    let hierarchy = Environment.resolution environment () |> GlobalResolution.class_hierarchy in
     File.create ~content:(ClassHierarchy.to_dot hierarchy) type_order_file |> File.write )
 
 
@@ -106,7 +106,7 @@ let populate_shared_memory
   Statistics.performance ~name:"added environment to shared memory" ~timer ();
   build shared_handler ~configuration ~scheduler sources;
   if debug then (
-    let order = Environment.class_hierarchy shared_handler in
+    let order = Environment.resolution shared_handler () |> GlobalResolution.class_hierarchy in
     ClassHierarchy.check_integrity order;
     Statistics.event
       ~section:`Memory

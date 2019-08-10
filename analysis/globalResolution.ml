@@ -85,13 +85,17 @@ end
 
 let create
     ~ast_environment
-    ~class_hierarchy
     ~aliases
     ~module_definition
     ~class_definition
     ~class_metadata
     ~undecorated_signature
     ~global
+    ~edges
+    ~backedges
+    ~indices
+    ~annotations
+    ~class_hierarchy_keys
     (module AnnotatedClass : AnnotatedClass)
   =
   let constructor ~resolution class_name =
@@ -126,6 +130,19 @@ let create
            indirectly by breaking apart the union before doing the instantiate_protocol_parameters.
            Therefore, there is no reason to deal with joining the attributes together here *)
         None
+  in
+  let class_hierarchy =
+    ( module struct
+      let edges = edges
+
+      let backedges key = backedges key >>| ClassHierarchy.Target.Set.of_tree
+
+      let indices = indices
+
+      let annotations = annotations
+
+      let keys () = Option.value ~default:[] (class_hierarchy_keys Memory.SingletonKey.key)
+    end : ClassHierarchy.Handler )
   in
   {
     ast_environment;
@@ -690,3 +707,6 @@ let global { global; _ } reference =
       in
       Some annotation
   | _ -> global reference
+
+
+let class_hierarchy { class_hierarchy; _ } = class_hierarchy
