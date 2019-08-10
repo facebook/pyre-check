@@ -352,63 +352,40 @@ module ResolvedAlias = struct
 end
 
 module SharedMemoryClassHierarchyHandler = struct
-  type ('key, 'value) lookup = {
-    get: 'key -> 'value option;
-    set: 'key -> 'value -> unit;
-  }
-
   open SharedMemory
 
-  let edges () =
-    {
-      get = OrderEdges.get;
-      set =
-        (fun key value ->
-          OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
-          OrderEdges.add key value);
-    }
+  let edges = OrderEdges.get
+
+  let set_edges ~key ~data =
+    OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
+    OrderEdges.add key data
 
 
-  let backedges () =
-    {
-      get = (fun key -> OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree);
-      set =
-        (fun key value ->
-          let value = ClassHierarchy.Target.Set.to_tree value in
-          OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
-          OrderBackedges.add key value);
-    }
+  let backedges key = OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree
+
+  let set_backedges ~key ~data =
+    let value = ClassHierarchy.Target.Set.to_tree data in
+    OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
+    OrderBackedges.add key value
 
 
-  let indices () =
-    {
-      get = OrderIndices.get;
-      set =
-        (fun key value ->
-          OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
-          OrderIndices.add key value);
-    }
+  let indices = OrderIndices.get
+
+  let set_indices ~key ~data =
+    OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
+    OrderIndices.add key data
 
 
-  let annotations () =
-    {
-      get = OrderAnnotations.get;
-      set =
-        (fun key value ->
-          OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
-          OrderAnnotations.add key value);
-    }
+  let annotations = OrderAnnotations.get
+
+  let set_annotations ~key ~data =
+    OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
+    OrderAnnotations.add key data
 
 
-  let find { get; _ } key = get key
+  let find_unsafe get key = Option.value_exn (get key)
 
-  let find_unsafe { get; _ } key = Option.value_exn (get key)
-
-  let contains { get; _ } key = Option.is_some (get key)
-
-  let set { set; _ } ~key ~data = set key data
-
-  let length _ = OrderKeys.get Memory.SingletonKey.key >>| List.length |> Option.value ~default:0
+  let contains get key = Option.is_some (get key)
 
   let add_key key =
     match OrderKeys.get Memory.SingletonKey.key with
@@ -420,39 +397,8 @@ module SharedMemoryClassHierarchyHandler = struct
 
   let keys () = Option.value ~default:[] (OrderKeys.get Memory.SingletonKey.key)
 
-  let show () =
-    let keys = keys () |> List.sort ~compare:Int.compare in
-    let serialized_keys = List.to_string ~f:Int.to_string keys in
-    let serialized_annotations =
-      let serialize_annotation key =
-        find (annotations ()) key >>| fun annotation -> Format.asprintf "%d->%s\n" key annotation
-      in
-      List.filter_map ~f:serialize_annotation keys |> String.concat
-    in
-    let module EdgeSerializer (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
-      let serialize edges =
-        let edges_of_key key =
-          let show_successor { ClassHierarchy.Target.target = successor; _ } =
-            Option.value_exn (find (annotations ()) successor)
-          in
-          find edges key >>| ListOrSet.to_string ~f:show_successor |> Option.value ~default:""
-        in
-        List.to_string ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
-    end
-    in
-    let module ForwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.List) in
-    let module BackwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.Set) in
-    Format.asprintf
-      "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
-      serialized_keys
-      serialized_annotations
-      (ForwardEdgeSerializer.serialize (edges ()))
-      (BackwardEdgeSerializer.serialize (backedges ()))
-
-
   let insert annotation =
-    if not (contains (indices ()) annotation) then (
-      let annotations = annotations () in
+    if not (contains indices annotation) then (
       let index =
         let initial = Type.Primitive.hash annotation in
         let rec pick_index index =
@@ -464,52 +410,44 @@ module SharedMemoryClassHierarchyHandler = struct
         pick_index initial
       in
       add_key index;
-      set (indices ()) ~key:annotation ~data:index;
-      set annotations ~key:index ~data:annotation;
-      set (edges ()) ~key:index ~data:[];
-      set (backedges ()) ~key:index ~data:ClassHierarchy.Target.Set.empty )
+      set_indices ~key:annotation ~data:index;
+      set_annotations ~key:index ~data:annotation;
+      set_edges ~key:index ~data:[];
+      set_backedges ~key:index ~data:ClassHierarchy.Target.Set.empty )
 
 
   let connect ?(parameters = Type.OrderedTypes.Concrete []) ~predecessor ~successor =
-    if (not (contains (indices ()) predecessor)) || not (contains (indices ()) successor) then
+    if (not (contains indices predecessor)) || not (contains indices successor) then
       Statistics.event
         ~name:"invalid type order connection"
         ~integers:[]
         ~normals:["Predecessor", predecessor; "Successor", successor]
         ()
     else
-      let index_of annotation = find_unsafe (indices ()) annotation in
+      let index_of annotation = find_unsafe indices annotation in
       let predecessor = index_of predecessor in
       let successor = index_of successor in
-      let edges = edges () in
-      let backedges = backedges () in
       (* Add edges. *)
-      let successors = find edges predecessor |> Option.value ~default:[] in
-      set
-        edges
+      let successors = edges predecessor |> Option.value ~default:[] in
+      set_edges
         ~key:predecessor
         ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors);
 
       (* Add backedges. *)
       let predecessors =
-        find backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
+        backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
       in
-      set
-        backedges
+      set_backedges
         ~key:successor
         ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
 
 
   let disconnect_successors purged_annotations =
-    let edges = edges () in
-    let backedges = backedges () in
-    let keys_to_remove =
-      List.filter_map purged_annotations ~f:(find (indices ())) |> Int.Hash_set.of_list
-    in
+    let keys_to_remove = List.filter_map purged_annotations ~f:indices |> Int.Hash_set.of_list in
     let all_successors =
       let all_successors = Int.Hash_set.create () in
       let add_successors key =
-        match find edges key with
+        match edges key with
         | Some successors ->
             List.iter successors ~f:(fun { ClassHierarchy.Target.target; _ } ->
                 Hash_set.add all_successors target)
@@ -519,7 +457,7 @@ module SharedMemoryClassHierarchyHandler = struct
       all_successors
     in
     let remove_backedges successor =
-      find backedges successor
+      backedges successor
       >>| (fun current_predecessors ->
             let new_predecessors =
               Set.filter
@@ -527,24 +465,22 @@ module SharedMemoryClassHierarchyHandler = struct
                   not (Hash_set.mem keys_to_remove target))
                 current_predecessors
             in
-            set backedges ~key:successor ~data:new_predecessors)
+            set_backedges ~key:successor ~data:new_predecessors)
       |> ignore
     in
     Hash_set.iter all_successors ~f:remove_backedges;
     let clear_edges key =
-      match find edges key with
-      | Some _ -> set edges ~key ~data:[]
+      match edges key with
+      | Some _ -> set_edges ~key ~data:[]
       | None -> ()
     in
     Hash_set.iter keys_to_remove ~f:clear_edges
 
 
   let deduplicate ~annotations =
-    let edges = edges () in
-    let backedges = backedges () in
     let deduplicate_annotation index =
       let module Deduplicator (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
-        let deduplicate edges =
+        let deduplicate edges set_edges =
           let keep_first (visited, edges) ({ ClassHierarchy.Target.target; _ } as edge) =
             if Set.mem visited target then
               visited, edges
@@ -554,27 +490,25 @@ module SharedMemoryClassHierarchyHandler = struct
           let deduplicate found =
             ListOrSet.fold found ~f:keep_first ~init:(Int.Set.empty, ListOrSet.empty) |> snd
           in
-          match find edges index with
-          | Some found -> set edges ~key:index ~data:(deduplicate found)
+          match edges index with
+          | Some found -> set_edges ~key:index ~data:(deduplicate found)
           | None -> ()
       end
       in
       let module EdgeDeduplicator = Deduplicator (ClassHierarchy.Target.List) in
       let module BackedgeDeduplicator = Deduplicator (ClassHierarchy.Target.Set) in
-      EdgeDeduplicator.deduplicate edges;
-      BackedgeDeduplicator.deduplicate backedges
+      EdgeDeduplicator.deduplicate edges set_edges;
+      BackedgeDeduplicator.deduplicate backedges set_backedges
     in
-    annotations |> List.map ~f:(find_unsafe (indices ())) |> List.iter ~f:deduplicate_annotation
+    annotations |> List.map ~f:(find_unsafe indices) |> List.iter ~f:deduplicate_annotation
 
 
   let remove_extra_edges_to_object annotations =
-    let edges = edges () in
-    let index_of annotation = find_unsafe (indices ()) annotation in
+    let index_of annotation = find_unsafe indices annotation in
     let keys = List.map annotations ~f:index_of in
-    let backedges = backedges () in
     let object_index = index_of "object" in
     let remove_extra_references key =
-      find edges key
+      edges key
       >>| (fun connected ->
             let disconnected =
               ClassHierarchy.Target.List.filter
@@ -584,28 +518,28 @@ module SharedMemoryClassHierarchyHandler = struct
             if ClassHierarchy.Target.List.is_empty disconnected then
               []
             else (
-              set edges ~key ~data:disconnected;
+              set_edges ~key ~data:disconnected;
               [key] ))
       |> Option.value ~default:[]
     in
     let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
-    find backedges object_index
+    backedges object_index
     >>| (fun edges ->
           let edges =
             ClassHierarchy.Target.Set.filter edges ~f:(fun { ClassHierarchy.Target.target; _ } ->
                 not (Set.mem removed_indices target))
           in
-          set backedges ~key:object_index ~data:edges)
+          set_backedges ~key:object_index ~data:edges)
     |> Option.value ~default:()
 end
 
 let connect_annotations_to_object annotations =
-  let indices = SharedMemoryClassHierarchyHandler.indices () in
+  let indices = SharedMemoryClassHierarchyHandler.indices in
   let connect_to_top annotation =
     let index = SharedMemoryClassHierarchyHandler.find_unsafe indices annotation in
     let annotation =
       SharedMemoryClassHierarchyHandler.find_unsafe
-        (SharedMemoryClassHierarchyHandler.annotations ())
+        SharedMemoryClassHierarchyHandler.annotations
         index
     in
     let object_primitive = "object" in
@@ -616,9 +550,7 @@ let connect_annotations_to_object annotations =
            ~source:object_primitive
            ~target:annotation)
     then
-      match
-        SharedMemoryClassHierarchyHandler.find (SharedMemoryClassHierarchyHandler.edges ()) index
-      with
+      match SharedMemoryClassHierarchyHandler.edges index with
       | Some targets when List.length targets > 0 -> ()
       | _ ->
           SharedMemoryClassHierarchyHandler.connect
@@ -650,14 +582,17 @@ let connect_definition
     ~(resolution : GlobalResolution.t)
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
-  let (module Handler : ClassHierarchy.Handler) = (module SharedMemoryClassHierarchyHandler) in
   let annotated = Annotated.Class.create definition in
   (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
      classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
   let connect ~predecessor ~successor ~parameters =
     let annotations_tracked =
-      Handler.contains (Handler.indices ()) predecessor
-      && Handler.contains (Handler.indices ()) successor
+      SharedMemoryClassHierarchyHandler.contains
+        SharedMemoryClassHierarchyHandler.indices
+        predecessor
+      && SharedMemoryClassHierarchyHandler.contains
+           SharedMemoryClassHierarchyHandler.indices
+           successor
     in
     let primitive_cycle =
       (* Primitive cycles can be introduced by meta-programming. *)
@@ -697,7 +632,9 @@ let connect_definition
               ~section:`Environment
               ~normals:["unresolved name", Expression.show value]
               ()
-        | Type.Primitive primitive when not (ClassHierarchy.contains (module Handler) primitive) ->
+        | Type.Primitive primitive
+          when not (ClassHierarchy.contains (module SharedMemoryClassHierarchyHandler) primitive)
+          ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
         | Type.Primitive supertype ->
             connect ~predecessor:primitive ~successor:supertype ~parameters
@@ -1667,11 +1604,7 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) =
       ~f:(fun qualifier -> SharedMemoryDependencyHandler.get_class_keys ~qualifier)
       qualifiers
   in
-  let dead_indices =
-    List.filter_map
-      dead_classes
-      ~f:(SharedMemoryClassHierarchyHandler.find (SharedMemoryClassHierarchyHandler.indices ()))
-  in
+  let dead_indices = List.filter_map dead_classes ~f:SharedMemoryClassHierarchyHandler.indices in
   dead_classes |> SharedMemoryClassHierarchyHandler.disconnect_successors;
   OrderIndices.remove_batch (OrderIndices.KeySet.of_list dead_classes);
   OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list dead_indices);
@@ -1810,11 +1743,7 @@ let shared_memory_hash_to_key_map ~qualifiers () =
 
 let serialize_decoded decoded =
   let decode index =
-    let annotation =
-      SharedMemoryClassHierarchyHandler.find
-        (SharedMemoryClassHierarchyHandler.annotations ())
-        index
-    in
+    let annotation = SharedMemoryClassHierarchyHandler.annotations index in
     match annotation with
     | None -> Format.sprintf "Undecodable(%d)" index
     | Some annotation -> annotation

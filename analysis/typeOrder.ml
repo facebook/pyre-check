@@ -982,7 +982,7 @@ module OrderImplementation = struct
                 | ClassHierarchy.Untracked _ -> None
               in
               let handle_target target =
-                if Handler.contains (Handler.indices ()) target then
+                if Option.is_some (Handler.indices target) then
                   let left_parameters =
                     ClassHierarchy.instantiate_successors_parameters handler ~source:left ~target
                   in
@@ -1224,7 +1224,7 @@ module OrderImplementation = struct
             else
               let target = meet order (Primitive left_primitive) (Primitive right_primitive) in
               match target with
-              | Primitive target when Handler.contains (Handler.indices ()) target -> (
+              | Primitive target when Option.is_some (Handler.indices target) -> (
                   let step ~predecessor_variables ~parameters =
                     solve_ordered_types_less_or_equal
                       order

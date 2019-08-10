@@ -97,10 +97,7 @@ let test_method_resolution_order_linearize _ =
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
       expected
-      (method_resolution_order_linearize
-         order
-         annotation
-         ~get_successors:(Handler.find (Handler.edges ())))
+      (method_resolution_order_linearize order annotation ~get_successors:Handler.edges)
   in
   assert_method_resolution_order butterfly "3" ["3"];
   assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];

@@ -54,27 +54,15 @@ end
 (** The handler module for interfacing with ClassHierarchy lookups. See [Environment_handler] for
     more. *)
 module type Handler = sig
-  type ('key, 'table) lookup
+  val edges : int -> Target.t list option
 
-  val edges : unit -> (int, Target.t list) lookup
+  val backedges : int -> Target.Set.t option
 
-  val backedges : unit -> (int, Target.Set.t) lookup
+  val indices : Type.Primitive.t -> int option
 
-  val indices : unit -> (Type.Primitive.t, int) lookup
-
-  val annotations : unit -> (int, Type.Primitive.t) lookup
-
-  val find : ('key, 'value) lookup -> 'key -> 'value option
-
-  val find_unsafe : ('key, 'value) lookup -> 'key -> 'value
-
-  val contains : ('key, 'value) lookup -> 'key -> bool
+  val annotations : int -> Type.Primitive.t option
 
   val keys : unit -> int list
-
-  val length : ('key, 'value) lookup -> int
-
-  val show : unit -> string
 end
 
 (* Returns true if the class hierarchy contains the given class. *)

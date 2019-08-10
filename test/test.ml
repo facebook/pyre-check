@@ -1389,27 +1389,15 @@ module MockClassHierarchyHandler = struct
 
   let handler order =
     ( module struct
-      type ('key, 'value) lookup = ('key, 'value) Hashtbl.t
+      let edges = Hashtbl.find order.edges
 
-      let edges () = order.edges
+      let backedges = Hashtbl.find order.backedges
 
-      let backedges () = order.backedges
+      let indices = Hashtbl.find order.indices
 
-      let indices () = order.indices
-
-      let annotations () = order.annotations
-
-      let find table key = Hashtbl.find table key
-
-      let find_unsafe table key = Hashtbl.find_exn table key
-
-      let contains table key = Hashtbl.mem table key
+      let annotations = Hashtbl.find order.annotations
 
       let keys () = Hashtbl.keys order.annotations
-
-      let length table = Hashtbl.length table
-
-      let show () = show order
     end : ClassHierarchy.Handler )
 
 

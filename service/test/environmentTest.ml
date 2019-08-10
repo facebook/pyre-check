@@ -79,7 +79,7 @@ let test_normalize context =
   let order = Analysis.Environment.class_hierarchy environment in
   let (module TypeOrderHandler) = order in
   let index_of annotation =
-    TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) annotation
+    TypeOrderHandler.indices annotation |> fun optional -> Option.value_exn optional
   in
   let unsorted_indices = [index_of "x.D"; index_of "x.C"; index_of "x.E"; index_of "x.F"] in
   let sorted_indices = unsorted_indices |> List.sort ~compare:Int.compare in

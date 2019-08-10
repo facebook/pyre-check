@@ -13,6 +13,8 @@ open Test
 
 let value option = Option.value_exn option
 
+let find_unsafe getter value = getter value |> fun optional -> Option.value_exn optional
+
 let create_environment
     ~context
     ?(include_typeshed_stubs = true)
@@ -467,18 +469,16 @@ let test_connect_definition context =
       |})
   |> ignore;
   let assert_edge ~predecessor ~successor =
-    let predecessor_index =
-      TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) predecessor
-    in
-    let successor_index = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) successor in
+    let predecessor_index = find_unsafe TypeOrderHandler.indices predecessor in
+    let successor_index = find_unsafe TypeOrderHandler.indices successor in
     assert_true
       (List.mem
          ~equal:ClassHierarchy.Target.equal
-         (TypeOrderHandler.find_unsafe (TypeOrderHandler.edges ()) predecessor_index)
+         (find_unsafe TypeOrderHandler.edges predecessor_index)
          { ClassHierarchy.Target.target = successor_index; parameters = Concrete [] });
     assert_true
       (ClassHierarchy.Target.Set.mem
-         (TypeOrderHandler.find_unsafe (TypeOrderHandler.backedges ()) successor_index)
+         (find_unsafe TypeOrderHandler.backedges successor_index)
          { ClassHierarchy.Target.target = predecessor_index; parameters = Concrete [] })
   in
   let class_definition =
@@ -657,8 +657,8 @@ let test_populate context =
       ~superclasses
     =
     let (module TypeOrderHandler) = Environment.class_hierarchy environment in
-    let index annotation = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) annotation in
-    let targets = TypeOrderHandler.find (TypeOrderHandler.edges ()) (index base) in
+    let index annotation = find_unsafe TypeOrderHandler.indices annotation in
+    let targets = TypeOrderHandler.edges (index base) in
     let to_target annotation =
       {
         ClassHierarchy.Target.target = index annotation;
@@ -670,7 +670,7 @@ let test_populate context =
       | Some targets ->
           let show_target { ClassHierarchy.Target.target; parameters } =
             let index = Int.to_string target in
-            let target = TypeOrderHandler.find_unsafe (TypeOrderHandler.annotations ()) target in
+            let target = find_unsafe TypeOrderHandler.annotations target in
             Format.asprintf "%s: %s%a" index target Type.OrderedTypes.pp_concise parameters
           in
           List.to_string targets ~f:show_target
@@ -1284,47 +1284,47 @@ let test_purge_hierarchy context =
   let () =
     let handler = order () in
     let (module Handler) = Environment.class_hierarchy handler in
-    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    let index key = find_unsafe Handler.indices key in
     let one_index = index "One.One" in
     Environment.purge handler [Reference.create "One"];
-    assert_equal (Handler.find_unsafe (Handler.edges ()) one_index) [];
-    assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "Two.Two")) [];
+    assert_equal (find_unsafe Handler.edges one_index) [];
+    assert_backedges_equal (find_unsafe Handler.backedges (index "Two.Two")) [];
     assert_equal
-      (Handler.find_unsafe (Handler.edges ()) (index "A.a"))
+      (find_unsafe Handler.edges (index "A.a"))
       [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }]
   in
   let () =
     let handler = order () in
     let (module Handler) = Environment.class_hierarchy handler in
-    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    let index key = find_unsafe Handler.indices key in
     let a_index = index "A.a" in
     Environment.purge handler [Reference.create "A"];
-    assert_equal (Handler.find_unsafe (Handler.edges ()) a_index) [];
+    assert_equal (find_unsafe Handler.edges a_index) [];
     assert_backedges_equal
-      (Handler.find_unsafe (Handler.backedges ()) (index "One.One"))
+      (find_unsafe Handler.backedges (index "One.One"))
       [{ ClassHierarchy.Target.target = index "B.b"; parameters = Concrete [] }]
   in
   let () =
     let handler = order () in
     let (module Handler) = Environment.class_hierarchy handler in
-    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    let index key = find_unsafe Handler.indices key in
     let b_index = index "B.b" in
     Environment.purge handler [Reference.create "B"];
-    assert_equal (Handler.find_unsafe (Handler.edges ()) b_index) [];
+    assert_equal (find_unsafe Handler.edges b_index) [];
     assert_backedges_equal
-      (Handler.find_unsafe (Handler.backedges ()) (index "One.One"))
+      (find_unsafe Handler.backedges (index "One.One"))
       [{ ClassHierarchy.Target.target = index "A.a"; parameters = Concrete [] }]
   in
   let () =
     let handler = order () in
     let (module Handler) = Environment.class_hierarchy handler in
-    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    let index key = find_unsafe Handler.indices key in
     let a_index = index "A.a" in
     let b_index = index "B.b" in
     Environment.purge handler [Reference.create "A"; Reference.create "B"];
-    assert_equal (Handler.find_unsafe (Handler.edges ()) a_index) [];
-    assert_equal (Handler.find_unsafe (Handler.edges ()) b_index) [];
-    assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "One.One")) []
+    assert_equal (find_unsafe Handler.edges a_index) [];
+    assert_equal (find_unsafe Handler.edges b_index) [];
+    assert_backedges_equal (find_unsafe Handler.backedges (index "One.One")) []
   in
   ()
 
@@ -1525,27 +1525,22 @@ let test_deduplicate context =
   Environment.connect_type_order environment resolution source;
   Environment.deduplicate_class_hierarchy ~annotations:["One"; "Zero"];
   let (module Handler) = Environment.class_hierarchy environment in
-  let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
+  let index_of annotation = find_unsafe Handler.indices annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
     let assert_targets edges from target parameters create =
       assert_equal
         ~cmp:ListOrSet.equal
         ~printer:(ListOrSet.to_string ~f:ClassHierarchy.Target.show)
-        (Handler.find_unsafe edges (index_of from))
+        (find_unsafe edges (index_of from))
         (create
            { ClassHierarchy.Target.target = index_of target; parameters = Concrete parameters })
   end
   in
   let module ForwardAsserter = TargetAsserter (ClassHierarchy.Target.List) in
   let module BackwardsAsserter = TargetAsserter (ClassHierarchy.Target.Set) in
-  ForwardAsserter.assert_targets (Handler.edges ()) "Zero" "One" [Type.integer] (fun target ->
-      [target]);
-  BackwardsAsserter.assert_targets
-    (Handler.backedges ())
-    "One"
-    "Zero"
-    [Type.integer]
-    (fun target -> ClassHierarchy.Target.Set.of_list [target])
+  ForwardAsserter.assert_targets Handler.edges "Zero" "One" [Type.integer] (fun target -> [target]);
+  BackwardsAsserter.assert_targets Handler.backedges "One" "Zero" [Type.integer] (fun target ->
+      ClassHierarchy.Target.Set.of_list [target])
 
 
 let test_remove_extra_edges_to_object context =
@@ -1569,12 +1564,12 @@ let test_remove_extra_edges_to_object context =
   Environment.connect_type_order environment resolution source;
   Environment.remove_extra_edges_to_object ["Zero"; "One"; "Two"; "object"];
   let (module Handler) = Environment.class_hierarchy environment in
-  let zero_index = Handler.find_unsafe (Handler.indices ()) "Zero" in
-  let one_index = Handler.find_unsafe (Handler.indices ()) "One" in
-  let two_index = Handler.find_unsafe (Handler.indices ()) "Two" in
-  let object_index = Handler.find_unsafe (Handler.indices ()) "object" in
+  let zero_index = find_unsafe Handler.indices "Zero" in
+  let one_index = find_unsafe Handler.indices "One" in
+  let two_index = find_unsafe Handler.indices "Two" in
+  let object_index = find_unsafe Handler.indices "object" in
   assert_equal
-    (Handler.find_unsafe (Handler.edges ()) zero_index)
+    (find_unsafe Handler.edges zero_index)
     [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }];
   let filter_only_relevant_targets =
     Set.filter ~f:(fun { ClassHierarchy.Target.target; _ } ->
@@ -1582,7 +1577,7 @@ let test_remove_extra_edges_to_object context =
   in
   assert_equal
     ~cmp:ClassHierarchy.Target.Set.equal
-    (Handler.find_unsafe (Handler.backedges ()) object_index |> filter_only_relevant_targets)
+    (find_unsafe Handler.backedges object_index |> filter_only_relevant_targets)
     (ClassHierarchy.Target.Set.of_list
        [{ ClassHierarchy.Target.target = two_index; parameters = Concrete [] }]);
   ()
