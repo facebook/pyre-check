@@ -1,0 +1,5 @@
+@generated
+Call dependencies
+attributes.test_attribute (fun) -> []
+attributes.test_via_non_optional (fun) -> []
+attributes.test_via_optional (fun) -> []

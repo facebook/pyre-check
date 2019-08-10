@@ -38,3 +38,5 @@ val resolve_call_targets
   :  resolution:Resolution.t ->
   Expression.Call.t ->
   (Callable.t * Type.Callable.implicit option) list
+
+val resolve_ignoring_optional : resolution:Resolution.t -> Expression.t -> Type.t

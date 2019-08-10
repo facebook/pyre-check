@@ -1,5 +1,6 @@
 # @nolint
 
+from typing import Optional
 
 class Class:
     def __init__():
@@ -17,6 +18,9 @@ class Class:
     def uses_property_but_no_tito_taint(self):
         self.untainted = __test_source()
         return self.my_property
+
+    def uses_other(self, other: Optional[Class]):
+        return other.my_property
 
 
 class Derived(Class):

@@ -40,11 +40,26 @@ let defining_attribute ~resolution parent_type attribute =
   >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
 
 
+let strip_optional t = if Type.is_optional t then Type.optional_value t else t
+
+let rec resolve_ignoring_optional ~resolution expression =
+  match Node.value expression with
+  | Name (Name.Attribute { base; attribute; _ }) -> (
+      let base_type = resolve_ignoring_optional ~resolution base |> strip_optional in
+      match defining_attribute ~resolution base_type attribute with
+      | Some attribute ->
+          Annotated.Attribute.annotation attribute |> Annotation.annotation |> strip_optional
+      | None -> Resolution.resolve resolution expression |> strip_optional )
+  (* Lookup the base_type for the attribute you were interested in *)
+  | _ -> Resolution.resolve resolution expression |> strip_optional
+
+
+let strip_optional_and_meta t =
+  t |> (fun t -> if Type.is_meta t then Type.single_parameter t else t) |> strip_optional
+
+
 let get_property_defining_parent ~resolution ~base ~attribute =
-  let annotation = Resolution.resolve resolution base in
-  let annotation =
-    if Type.is_meta annotation then Type.single_parameter annotation else annotation
-  in
+  let annotation = Resolution.resolve resolution base |> strip_optional_and_meta in
   match defining_attribute ~resolution annotation attribute with
   | Some property when Option.is_some (Annotated.Attribute.property property) ->
       Annotated.Attribute.parent property |> Type.primitive_name >>| Reference.create
@@ -52,7 +67,6 @@ let get_property_defining_parent ~resolution ~base ~attribute =
 
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
-
 
 let extract_constant_name { Node.value = expression; _ } =
   match expression with
@@ -92,14 +106,7 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
     else
       Callable.create_method method_name
   in
-  let receiver_type =
-    let strip_optional_and_meta t =
-      t
-      |> (fun t -> if Type.is_meta t then Type.single_parameter t else t)
-      |> fun t -> if Type.is_optional t then Type.optional_value t else t
-    in
-    strip_optional_and_meta receiver_type
-  in
+  let receiver_type = strip_optional_and_meta receiver_type in
   let declaring_type = Reference.prefix implementation_target >>| get_class_type in
   if declaring_type >>| Type.equal receiver_type |> Option.value ~default:false then (* case a *)
     [get_actual_target implementation_target]

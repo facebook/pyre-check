@@ -1,0 +1,121 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_attribute",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 22,
+              "start": 11,
+              "end": 18
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "Obj{attributes.Token.token}",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(t)[token]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_via_non_optional",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 19,
+              "start": 12,
+              "end": 51
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "Obj{attributes.Token.token}",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(request)[non_optional][access_token][token]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_via_optional",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "attributes.py",
+              "line": 16,
+              "start": 12,
+              "end": 47
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "Obj{attributes.Token.token}",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(request)[optional][access_token][token]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
