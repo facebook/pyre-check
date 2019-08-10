@@ -23,9 +23,18 @@ module State (Context : Context) = struct
 
   let _ = show_state (* unused *)
 
+  type alias =
+    | Reference of Reference.t
+    | Location of Location.Reference.t
+  [@@deriving compare, sexp, show]
+
+  module AliasMap = Map.Make (struct
+    type t = alias [@@deriving sexp, compare]
+  end)
+
   type t = {
     unawaited: state Location.Reference.Map.t;
-    locals: Location.Reference.Set.t Reference.Map.t;
+    locals: Location.Reference.Set.t AliasMap.t;
   }
 
   let show { unawaited; locals } =
@@ -40,8 +49,8 @@ module State (Context : Context) = struct
         Set.to_list locations |> List.map ~f:Location.show |> String.concat ~sep:", "
       in
       Map.to_alist locals
-      |> List.map ~f:(fun (reference, locations) ->
-             Format.asprintf "%a -> {%s}" Reference.pp reference (show_locations locations))
+      |> List.map ~f:(fun (alias, locations) ->
+             Format.asprintf "%a -> {%s}" pp_alias alias (show_locations locations))
       |> String.concat ~sep:", "
     in
     Format.sprintf "Unawaited expressions: %s\nLocals: %s\n" unawaited locals
@@ -49,7 +58,7 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial = { unawaited = Location.Reference.Map.empty; locals = Reference.Map.empty }
+  let initial = { unawaited = Location.Reference.Map.empty; locals = AliasMap.empty }
 
   let errors { unawaited; locals } =
     let errors =
@@ -59,14 +68,17 @@ module State (Context : Context) = struct
       in
       Map.filter_map unawaited ~f:keep_unawaited
     in
-    let add_reference ~key:name ~data:locations errors =
-      let add_reference errors location =
-        match Map.find errors location with
-        | Some { Error.references; expression } ->
-            Map.set errors ~key:location ~data:{ references = name :: references; expression }
-        | None -> errors
-      in
-      Location.Reference.Set.fold locations ~init:errors ~f:add_reference
+    let add_reference ~key:alias ~data:locations errors =
+      match alias with
+      | Reference name ->
+          let add_reference errors location =
+            match Map.find errors location with
+            | Some { Error.references; expression } ->
+                Map.set errors ~key:location ~data:{ references = name :: references; expression }
+            | None -> errors
+          in
+          Location.Reference.Set.fold locations ~init:errors ~f:add_reference
+      | Location _ -> errors
     in
     let error (location, unawaited_awaitable) =
       Error.create
@@ -114,7 +126,7 @@ module State (Context : Context) = struct
     if Expression.is_simple_name name then
       let unawaited =
         let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
-        Map.find locals (Expression.name_to_reference_exn name)
+        Map.find locals (Reference (Expression.name_to_reference_exn name))
         >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
         |> Option.value ~default:unawaited
       in
@@ -127,7 +139,14 @@ module State (Context : Context) = struct
     if Map.mem unawaited location then
       { unawaited = Map.set unawaited ~key:location ~data:Awaited; locals }
     else
-      { unawaited; locals }
+      match Map.find locals (Location location) with
+      | Some locations ->
+          let unawaited =
+            Set.fold locations ~init:unawaited ~f:(fun unawaited location ->
+                Map.set unawaited ~key:location ~data:Awaited)
+          in
+          { unawaited; locals }
+      | None -> { unawaited; locals }
 
 
   let rec forward_generator
@@ -156,7 +175,7 @@ module State (Context : Context) = struct
     | BooleanOperator { BooleanOperator.left; right; _ } ->
         let state = forward_expression ~resolution ~state ~expression:left in
         forward_expression ~resolution ~state ~expression:right
-    | Call { Call.callee; arguments } ->
+    | Call { Call.callee; arguments } -> (
         let state = forward_expression ~resolution ~state ~expression:callee in
         let forward_argument state { Call.Argument.value; _ } =
           match value with
@@ -164,18 +183,47 @@ module State (Context : Context) = struct
           | _ -> forward_expression ~resolution ~state ~expression:value
         in
         let state = List.fold arguments ~init:state ~f:forward_argument in
+        let annotation = Resolution.resolve resolution { Node.value; location } in
         let is_awaitable =
           GlobalResolution.less_or_equal
             (Resolution.global_resolution resolution)
-            ~left:(Resolution.resolve resolution { Node.value; location })
+            ~left:annotation
             ~right:(Type.awaitable Type.Top)
         in
-        if is_awaitable then (* We're introduced an awaitable. *)
-          let { unawaited; locals } = state in
-          let unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression) in
-          { unawaited; locals }
+        let { unawaited; locals } = state in
+        let find_aliases { Node.value; location } =
+          if Map.mem unawaited location then
+            Some (Location.Reference.Set.singleton location)
+          else
+            match value with
+            | Name name when Expression.is_simple_name name ->
+                Map.find locals (Reference (Expression.name_to_reference_exn name))
+            | _ -> Map.find locals (Location location)
+        in
+        if is_awaitable then
+          (* We're introduced an awaitable. *)
+          (* If the callee is a method on an awaitable, make the assumption that the returned value
+             is the same awaitable. *)
+          match Node.value callee with
+          | Name (Name.Attribute { base; _ }) -> (
+            match find_aliases base with
+            | Some locations ->
+                { unawaited; locals = Map.set locals ~key:(Location location) ~data:locations }
+            | None ->
+                {
+                  unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression);
+                  locals;
+                } )
+          | _ ->
+              { unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression); locals }
         else
-          state
+          match Node.value callee with
+          | Name (Name.Attribute { base; _ }) -> (
+            match find_aliases base with
+            | Some locations ->
+                { unawaited; locals = Map.set locals ~key:(Location location) ~data:locations }
+            | None -> state )
+          | _ -> state )
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let state = forward_expression ~resolution ~state ~expression:left in
         forward_expression ~resolution ~state ~expression:right
@@ -214,16 +262,7 @@ module State (Context : Context) = struct
         let state = List.fold generators ~init:state ~f:(forward_generator ~resolution) in
         let state = forward_expression ~resolution ~state ~expression:key in
         forward_expression ~resolution ~state ~expression:value
-    | Name (Name.Attribute { base = { Node.value = Name base; location } as base_expression; _ })
-      ->
-        (* Attribute access on an awaitable should mark it as being awaited, as we might be facing
-           classes that subclass coroutines and have methods. *)
-        let state = forward_expression ~resolution ~state ~expression:base_expression in
-        let state = mark_location_as_awaited state ~location in
-        if Expression.is_simple_name base then
-          mark_name_as_awaited state ~name:base
-        else
-          state
+    | Name (Name.Attribute { base; _ }) -> forward_expression ~resolution ~state ~expression:base
     (* Base cases. *)
     | Complex _
     | False
@@ -262,9 +301,12 @@ module State (Context : Context) = struct
       | { Node.value = Expression.Name value; _ } when Expression.is_simple_name value ->
           (* Aliasing. *)
           let locals =
-            Map.find locals (Expression.name_to_reference_exn value)
+            Map.find locals (Reference (Expression.name_to_reference_exn value))
             >>| (fun locations ->
-                  Map.set locals ~key:(Expression.name_to_reference_exn target) ~data:locations)
+                  Map.set
+                    locals
+                    ~key:(Reference (Expression.name_to_reference_exn target))
+                    ~data:locations)
             |> Option.value ~default:locals
           in
           { unawaited; locals }
@@ -277,7 +319,7 @@ module State (Context : Context) = struct
               locals =
                 Map.set
                   locals
-                  ~key:(Expression.name_to_reference_exn target)
+                  ~key:(Reference (Expression.name_to_reference_exn target))
                   ~data:(Location.Reference.Set.singleton (Node.location expression));
             }
           else

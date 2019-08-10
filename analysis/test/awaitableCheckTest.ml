@@ -102,7 +102,6 @@ let test_forward context =
     |}
     [];
 
-  (* We aren't handling (await awaited).__iter__() correctly at the moment, causing this issue. *)
   assert_awaitable_errors
     {|
       async def awaitable() -> typing.Awaitable[int]: ...
@@ -110,7 +109,7 @@ let test_forward context =
         awaited = awaitable()
         yield from (await awaited)
     |}
-    ["Unawaited awaitable [101]: Awaitable assigned to `awaited` is never awaited."];
+    [];
 
   (* Tuples. *)
   assert_awaitable_errors
@@ -493,9 +492,21 @@ let test_attribute_access context =
     ~context
     {|
       import typing
-      class C:
-        async def method() -> typing.Awaitable[int]: ...
-      async def awaitable() -> typing.Awaitable[C]: ...
+      class C(typing.Awaitable[int]):
+        async def method(self) -> int: ...
+      def awaitable() -> C: ...
+
+      async def foo() -> None:
+        await awaitable().method()
+    |}
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      class C(typing.Awaitable[int]):
+        async def method(self) -> int: ...
+      def awaitable() -> C: ...
 
       async def foo() -> None:
         unawaited = awaitable()
@@ -506,20 +517,39 @@ let test_attribute_access context =
     ~context
     {|
       import typing
-      async def awaitable() -> typing.Awaitable[int]: ...
+      class C(typing.Awaitable[int]):
+        async def method(self) -> int: ...
+      def awaitable() -> C: ...
+
       async def foo() -> None:
-        await awaitable().method()
+        unawaited = awaitable()
+        unawaited.method()
+    |}
+    ["Unawaited awaitable [101]: Awaitable assigned to `unawaited` is never awaited."];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      class C(typing.Awaitable[int]):
+        def method(self) -> C: ...
+        async def other(self) -> int: ...
+      def awaitable() -> C: ...
+
+      async def foo() -> None:
+        unawaited = awaitable()
+        await unawaited.method().other()
     |}
     [];
 
-  (* Even unnamed awaitables don't have to be awaited. *)
+  (* If we can't resolve the type of the method as being an awaitable, be unsound and assume the
+     method awaits the awaitable. *)
   assert_awaitable_errors
     ~context
     {|
       import typing
       async def awaitable() -> typing.Awaitable[int]: ...
       async def foo() -> None:
-        awaitable().attribute
+        await awaitable().method()
     |}
     []
 
