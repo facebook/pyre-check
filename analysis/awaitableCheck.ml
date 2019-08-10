@@ -35,9 +35,10 @@ module State (Context : Context) = struct
   type t = {
     unawaited: state Location.Reference.Map.t;
     locals: Location.Reference.Set.t AliasMap.t;
+    need_to_await: bool;
   }
 
-  let show { unawaited; locals } =
+  let show { unawaited; locals; need_to_await } =
     let unawaited =
       Map.to_alist unawaited
       |> List.map ~f:(fun (location, state) ->
@@ -53,14 +54,20 @@ module State (Context : Context) = struct
              Format.asprintf "%a -> {%s}" pp_alias alias (show_locations locations))
       |> String.concat ~sep:", "
     in
-    Format.sprintf "Unawaited expressions: %s\nLocals: %s\n" unawaited locals
+    Format.sprintf
+      "Unawaited expressions: %s\nLocals: %s\nNeed to await: %b"
+      unawaited
+      locals
+      need_to_await
 
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial = { unawaited = Location.Reference.Map.empty; locals = AliasMap.empty }
+  let initial =
+    { unawaited = Location.Reference.Map.empty; locals = AliasMap.empty; need_to_await = true }
 
-  let errors { unawaited; locals } =
+
+  let errors { unawaited; locals; _ } =
     let errors =
       let keep_unawaited = function
         | Unawaited expression -> Some { Error.references = []; expression }
@@ -117,12 +124,13 @@ module State (Context : Context) = struct
     {
       unawaited = Map.merge_skewed left.unawaited right.unawaited ~combine:merge_unawaited;
       locals = Map.merge_skewed left.locals right.locals ~combine:merge_locals;
+      need_to_await = left.need_to_await || right.need_to_await;
     }
 
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let mark_name_as_awaited { unawaited; locals } ~name =
+  let mark_name_as_awaited { unawaited; locals; need_to_await } ~name =
     if Expression.is_simple_name name then
       let unawaited =
         let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
@@ -130,14 +138,14 @@ module State (Context : Context) = struct
         >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
         |> Option.value ~default:unawaited
       in
-      { unawaited; locals }
+      { unawaited; locals; need_to_await }
     else (* Non-simple names cannot store awaitables. *)
-      { unawaited; locals }
+      { unawaited; locals; need_to_await }
 
 
-  let mark_location_as_awaited { unawaited; locals } ~location =
+  let mark_location_as_awaited { unawaited; locals; need_to_await } ~location =
     if Map.mem unawaited location then
-      { unawaited = Map.set unawaited ~key:location ~data:Awaited; locals }
+      { unawaited = Map.set unawaited ~key:location ~data:Awaited; locals; need_to_await }
     else
       match Map.find locals (Location location) with
       | Some locations ->
@@ -145,8 +153,8 @@ module State (Context : Context) = struct
             Set.fold locations ~init:unawaited ~f:(fun unawaited location ->
                 Map.set unawaited ~key:location ~data:Awaited)
           in
-          { unawaited; locals }
-      | None -> { unawaited; locals }
+          { unawaited; locals; need_to_await }
+      | None -> { unawaited; locals; need_to_await }
 
 
   let rec forward_generator
@@ -182,15 +190,21 @@ module State (Context : Context) = struct
           | { Node.value = Name name; _ } -> mark_name_as_awaited state ~name
           | _ -> forward_expression ~resolution ~state ~expression:value
         in
-        let state = List.fold arguments ~init:state ~f:forward_argument in
-        let annotation = Resolution.resolve resolution { Node.value; location } in
+        let need_to_await = state.need_to_await in
+        (* Don't introduce awaitables for the arguments of a call, as they will be consumed by the
+           call anyway. *)
+        let state =
+          List.fold arguments ~init:{ state with need_to_await = false } ~f:forward_argument
+        in
+        let state = { state with need_to_await } in
+        let annotation = Resolution.resolve resolution expression in
         let is_awaitable =
           GlobalResolution.less_or_equal
             (Resolution.global_resolution resolution)
             ~left:annotation
             ~right:(Type.awaitable Type.Top)
         in
-        let { unawaited; locals } = state in
+        let { unawaited; locals; need_to_await } = state in
         let find_aliases { Node.value; location } =
           if Map.mem unawaited location then
             Some (Location.Reference.Set.singleton location)
@@ -200,28 +214,36 @@ module State (Context : Context) = struct
                 Map.find locals (Reference (Expression.name_to_reference_exn name))
             | _ -> Map.find locals (Location location)
         in
-        if is_awaitable then
-          (* We're introduced an awaitable. *)
+        if need_to_await && is_awaitable then
           (* If the callee is a method on an awaitable, make the assumption that the returned value
              is the same awaitable. *)
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) -> (
             match find_aliases base with
             | Some locations ->
-                { unawaited; locals = Map.set locals ~key:(Location location) ~data:locations }
+                {
+                  unawaited;
+                  locals = Map.set locals ~key:(Location location) ~data:locations;
+                  need_to_await;
+                }
             | None ->
                 {
                   unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression);
                   locals;
+                  need_to_await;
                 } )
           | _ ->
-              { unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression); locals }
+              {
+                unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression);
+                locals;
+                need_to_await;
+              }
         else
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) -> (
             match find_aliases base with
             | Some locations ->
-                { unawaited; locals = Map.set locals ~key:(Location location) ~data:locations }
+                { unawaited; locals = Map.set locals ~key:(Location location) ~data:locations; need_to_await }
             | None -> state )
           | _ -> state )
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
@@ -277,7 +299,7 @@ module State (Context : Context) = struct
 
   let rec forward_assign
       ~resolution
-      ~state:({ unawaited; locals } as state)
+      ~state:({ unawaited; locals; need_to_await } as state)
       ~annotation
       ~expression
       ~target
@@ -309,7 +331,7 @@ module State (Context : Context) = struct
                     ~data:locations)
             |> Option.value ~default:locals
           in
-          { unawaited; locals }
+          { unawaited; locals; need_to_await }
       | _ ->
           (* The expression must be analyzed before we call `forward_assign` on it, as that's where
              unawaitables are introduced. *)
@@ -321,6 +343,7 @@ module State (Context : Context) = struct
                   locals
                   ~key:(Reference (Expression.name_to_reference_exn target))
                   ~data:(Location.Reference.Set.singleton (Node.location expression));
+              need_to_await;
             }
           else
             state )
@@ -382,11 +405,11 @@ module State (Context : Context) = struct
       TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
     in
     let global_resolution = Resolution.global_resolution resolution in
-    let forward_return ~state:{ unawaited; locals } ~expression =
+    let forward_return ~state:{ unawaited; locals; need_to_await } ~expression =
       match Node.value expression with
       | Expression.Name name when Expression.is_simple_name name ->
           mark_name_as_awaited state ~name
-      | _ -> { unawaited; locals }
+      | _ -> { unawaited; locals; need_to_await }
     in
     match value with
     | Assert { Assert.test; _ } -> forward_expression ~resolution ~state ~expression:test

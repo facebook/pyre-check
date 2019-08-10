@@ -149,6 +149,22 @@ let test_forward context =
         await takes_awaitable(awaited)
     |}
     [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def takes_awaitable(x: typing.Awaitable[int]): ...
+      def meta_awaitable():
+        await takes_awaitable(awaitable())
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def takes_awaitable(x: typing.Awaitable[int]): ...
+      def meta_awaitable():
+        await takes_awaitable({ "a": awaitable(), "b": awaitable()})
+    |}
+    [];
 
   (* Comparison operators. *)
   assert_awaitable_errors
