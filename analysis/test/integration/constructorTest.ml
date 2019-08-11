@@ -413,6 +413,19 @@ let test_check_init context =
         foo: int
 
     |}
+    [];
+  assert_type_errors
+    {|
+      from abc import ABC
+
+      class A(ABC):
+          x: int
+          def __init__(self) -> None:
+              self.x = 1
+
+      class B(A):
+          pass
+    |}
     []
 
 

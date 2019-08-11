@@ -94,6 +94,8 @@ val has_abstract_methods : t -> bool
 
 val is_protocol : t -> bool
 
+val implicit_attributes : t -> Statement.Attribute.t Identifier.SerializableMap.t
+
 val create_attribute
   :  resolution:GlobalResolution.t ->
   parent:t ->

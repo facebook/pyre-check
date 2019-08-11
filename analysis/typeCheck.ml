@@ -531,9 +531,17 @@ module State (Context : Context) = struct
                 | `Duplicate -> sofar
               in
               if is_class_type definition then
-                List.filter attributes ~f:(fun attribute ->
-                    not (AnnotatedAttribute.initialized attribute))
-                |> List.fold ~init:sofar ~f:add_to_map
+                let implicitly_initialized name =
+                  Identifier.SerializableMap.mem
+                    name
+                    (AnnotatedClass.implicit_attributes definition)
+                in
+                let is_not_initialized
+                    { Node.value = { AnnotatedAttribute.name; initialized; _ }; _ }
+                  =
+                  (not initialized) && not (implicitly_initialized name)
+                in
+                List.filter attributes ~f:is_not_initialized |> List.fold ~init:sofar ~f:add_to_map
               else
                 List.filter attributes ~f:AnnotatedAttribute.initialized
                 |> List.map ~f:AnnotatedAttribute.name

@@ -1412,6 +1412,38 @@ let test_unimplemented_abstract_methods context =
     ~class_name:"Bar"
 
 
+let test_implicit_attributes context =
+  let assert_unimplemented_attributes_equal ~source ~class_name ~expected =
+    let _, _, environment =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    in
+    let resolution = Environment.resolution environment () in
+    let definition =
+      let definition =
+        GlobalResolution.class_definition resolution (Type.Primitive class_name) >>| Class.create
+      in
+      Option.value_exn ~message:"Missing definition." definition
+    in
+    let attributes =
+      Class.implicit_attributes definition
+      |> Identifier.SerializableMap.bindings
+      |> List.map ~f:snd
+      |> List.map ~f:(fun { Node.value = { Statement.Attribute.name; _ }; _ } -> name)
+    in
+    assert_equal attributes expected
+  in
+  assert_unimplemented_attributes_equal
+    ~expected:["__init__"; "x"; "y"]
+    ~source:
+      {|
+      class Foo:
+        def __init__(self):
+            self.x = 1
+            self.y = ""
+    |}
+    ~class_name:"Foo"
+
+
 let () =
   "class"
   >::: [ "attributes" >:: test_class_attributes;
@@ -1426,5 +1458,6 @@ let () =
          "methods" >:: test_methods;
          "overrides" >:: test_overrides;
          "superclasses" >:: test_superclasses;
-         "unimplemented_abstract_methods" >:: test_unimplemented_abstract_methods ]
+         "unimplemented_abstract_methods" >:: test_unimplemented_abstract_methods;
+         "implicit_attributes" >:: test_implicit_attributes ]
   |> Test.run

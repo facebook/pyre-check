@@ -710,6 +710,8 @@ let extends_placeholder_stub_class
   List.exists bases ~f:is_from_placeholder_stub
 
 
+let implicit_attributes { Node.value; _ } = Statement.Class.implicit_attributes value
+
 let attribute_table
     ~transitive
     ~class_attributes
