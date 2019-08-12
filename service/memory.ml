@@ -256,3 +256,93 @@ module Serializer (Value : SerializableValueType) = struct
     Table.remove_batch (Table.KeySet.singleton SingletonKey.key);
     table
 end
+
+open Core
+
+module Dependency = struct
+  type t = int
+
+  let compare = compare_int
+
+  let sexp_of_t = sexp_of_int
+
+  let t_of_sexp = int_of_sexp
+
+  let make v =
+    let mask = (1 lsl 31) - 1 in
+    Hashtbl.hash v land mask
+end
+
+module DependencySet = Core.Set.Make (Dependency)
+
+module DependencyGraph = struct
+  external hh_add_dep : int -> unit = "hh_add_dep"
+
+  external hh_get_dep : int -> int list = "hh_get_dep"
+
+  external hh_get_dep_sqlite : int -> int list = "hh_get_dep_sqlite"
+
+  external hh_allow_dependency_table_reads : bool -> bool = "hh_allow_dependency_table_reads"
+
+  external hh_assert_allow_dependency_table_reads
+    :  unit ->
+    unit
+    = "hh_assert_allow_dependency_table_reads"
+
+  let hh_add_dep x = WorkerCancel.with_worker_exit (fun () -> hh_add_dep x)
+
+  let hh_get_dep x = WorkerCancel.with_worker_exit (fun () -> hh_get_dep x)
+
+  let add x y = hh_add_dep ((x lsl 31) lor y)
+
+  let get x =
+    hh_assert_allow_dependency_table_reads ();
+    let deps = DependencySet.empty in
+    let deps = List.fold_left ~init:deps ~f:DependencySet.add (hh_get_dep x) in
+    let deps = List.fold_left ~init:deps ~f:DependencySet.add (hh_get_dep_sqlite x) in
+    deps
+end
+
+(* This is not currently used, but I'd like to keep it in the module for
+   documentation/discoverability purposes *)
+let _ = DependencyGraph.hh_allow_dependency_table_reads
+
+module DependencyDecoder = struct
+  module IntegerKey = struct
+    type t = int
+
+    let to_string = Int.to_string
+
+    let compare = Int.compare
+
+    type out = int
+
+    let from_string = Int.of_string
+  end
+
+  module StringValue = struct
+    type t = string
+
+    let prefix = Prefix.make ()
+
+    let description = "Dependency Decoder"
+
+    (* Strings are not marshalled by shared memory *)
+    let unmarshall value = value
+  end
+
+  include WithCache (IntegerKey) (StringValue)
+
+  let get_unsafe hash = get hash |> fun optional -> Option.value_exn optional
+end
+
+let add_dependency ~table ~key file =
+  let file_hash = Dependency.make file in
+  DependencyDecoder.add file_hash file;
+  DependencyGraph.add (Dependency.make (table, key)) file_hash
+
+
+let get_dependents ~table ~key =
+  DependencyGraph.get (Dependency.make (table, key))
+  |> DependencySet.to_list
+  |> List.map ~f:DependencyDecoder.get_unsafe

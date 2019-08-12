@@ -109,3 +109,7 @@ module Serializer (Value : SerializableValueType) : sig
 
   val store : Value.t -> unit
 end
+
+val add_dependency : table:string -> key:string -> string -> unit
+
+val get_dependents : table:string -> key:string -> string list

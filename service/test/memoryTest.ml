@@ -127,10 +127,21 @@ let test_hash_of_key _ =
        |> Int64.to_string ))
 
 
+let test_dependency_table _ =
+  Memory.add_dependency ~table:"TestTable" ~key:"Foo" "fun1";
+  Memory.add_dependency ~table:"TestTable" ~key:"Bar" "fun1";
+  Memory.add_dependency ~table:"TestTable" ~key:"Foo" "fun2";
+  Memory.add_dependency ~table:"TestTable" ~key:"Foo" "fun3";
+  assert_equal (Memory.get_dependents ~table:"TestTable" ~key:"Foo") ["fun1"; "fun2"; "fun3"];
+  assert_equal (Memory.get_dependents ~table:"TestTable" ~key:"Bar") ["fun1"];
+  ()
+
+
 let () =
   "memory"
   >::: [ "little_endian_representation" >:: test_little_endian_representation;
          "decodable" >:: test_decodable;
          "serialize_key" >:: test_serialize_key;
-         "hash_of_key" >:: test_hash_of_key ]
+         "hash_of_key" >:: test_hash_of_key;
+         "dependencies" >:: test_dependency_table ]
   |> Test.run
