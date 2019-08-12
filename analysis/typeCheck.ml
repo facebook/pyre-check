@@ -428,7 +428,7 @@ module State (Context : Context) = struct
       in
       let check_bases () =
         let open Annotated in
-        let is_final { Call.Argument.name; value } =
+        let is_final { Expression.Call.Argument.name; value } =
           let add_error { GlobalResolution.is_final; _ } =
             if is_final then
               let error =
@@ -1410,7 +1410,7 @@ module State (Context : Context) = struct
     let check_base_annotations state =
       if Define.is_class_toplevel define then
         let open Annotated in
-        let check_base state { Call.Argument.value; _ } =
+        let check_base state { Expression.Call.Argument.value; _ } =
           let state_with_errors, parsed = parse_and_check_annotation ~state value in
           let is_actual_any () =
             match
@@ -2562,9 +2562,7 @@ module State (Context : Context) = struct
           ~resolved:resolved_callee
           ~arguments
     | Call call ->
-        let { Call.callee; arguments } =
-          Expression.Call.redirect_special_functions ~location call
-        in
+        let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
         let { state = { errors = callee_errors; _ }; resolved = resolved_callee; base; _ } =
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
         in

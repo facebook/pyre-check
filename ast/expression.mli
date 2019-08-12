@@ -238,8 +238,6 @@ module Call : sig
   end
 
   type t = expression_t record [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val redirect_special_functions : location:Location.t -> t -> t
 end
 
 val negate : t -> t

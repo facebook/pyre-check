@@ -299,24 +299,6 @@ module Call = struct
   include Record.Call
 
   type t = expression_t record [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let redirect_special_functions ~location = function
-    | {
-        callee = { Node.value = Name (Name.Identifier (("abs" | "repr" | "str") as name)); _ };
-        arguments = [{ value; _ }];
-      } ->
-        (* Resolve function redirects. *)
-        {
-          callee =
-            {
-              Node.location;
-              value =
-                Name
-                  (Name.Attribute { base = value; attribute = "__" ^ name ^ "__"; special = true });
-            };
-          arguments = [];
-        }
-    | { callee; arguments } -> { callee; arguments }
 end
 
 module ComparisonOperator = struct

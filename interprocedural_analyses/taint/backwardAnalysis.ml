@@ -294,6 +294,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_call ~resolution location ~taint ~state callee arguments =
+      let { Call.callee; arguments } =
+        Annotated.Call.redirect_special_calls ~resolution { Call.callee; arguments }
+      in
       match AccessPath.get_global ~resolution callee, Node.value callee with
       | _, Name (Name.Identifier "super") -> (
         match arguments with

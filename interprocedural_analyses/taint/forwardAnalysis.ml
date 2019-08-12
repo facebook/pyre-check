@@ -381,8 +381,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> analyze_expression ~resolution ~state ~expression
 
 
-    and analyze_call ~resolution ~state callee arguments =
-      let location = Expression.arguments_location { callee; arguments } in
+    and analyze_call ~resolution ~location ~state callee arguments =
+      let call = { Expression.Call.callee; arguments } in
+      let { Expression.Call.callee; arguments } =
+        Annotated.Call.redirect_special_calls ~resolution call
+      in
       match AccessPath.get_global ~resolution callee, Node.value callee with
       | Some global, _ ->
           let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
@@ -503,7 +506,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               state
           in
           ForwardState.Tree.empty, state
-      | Call { callee; arguments } -> analyze_call ~resolution ~state callee arguments
+      | Call { callee; arguments } -> analyze_call ~resolution ~location ~state callee arguments
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary dictionary ->
           List.fold

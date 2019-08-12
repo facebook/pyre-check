@@ -240,7 +240,10 @@ let get_global_targets ~resolution ~global =
   |> resolve_target ~resolution
 
 
-let resolve_call_targets ~resolution { Call.callee; _ } =
+let resolve_call_targets ~resolution call =
+  let { Expression.Call.callee; _ } =
+    Analysis.Annotated.Call.redirect_special_calls ~resolution call
+  in
   match Node.value callee with
   | Name (Name.Attribute { base; _ }) ->
       let receiver_type = Resolution.resolve resolution base in

@@ -1,0 +1,4 @@
+@generated
+Overrides
+object::__repr__ (override) -> [string_conversion.ReprIsTainted::__repr__ (override)]
+object::__str__ (override) -> [string_conversion.StrIsTainted::__str__ (override)]

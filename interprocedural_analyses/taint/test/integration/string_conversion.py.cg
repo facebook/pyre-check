@@ -1,0 +1,7 @@
+@generated
+Call dependencies
+string_conversion.ReprIsTainted::__repr__ (method) -> [dict::__getitem__ (method)]
+string_conversion.StrIsTainted::__str__ (method) -> [dict::__getitem__ (method)]
+string_conversion.repr_is_tainted (fun) -> [eval (fun) object::__init__ (method) string_conversion.ReprIsTainted::__repr__ (method)]
+string_conversion.str_falls_back_to_repr (fun) -> [eval (fun) object::__init__ (method) string_conversion.ReprIsTainted::__repr__ (method)]
+string_conversion.str_is_tainted (fun) -> [eval (fun) object::__init__ (method) string_conversion.StrIsTainted::__str__ (method)]
