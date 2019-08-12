@@ -22,6 +22,7 @@
   pyrelib.path
   pyrelib.plugin
   pyrelib.taint
+  pyrelib.deadStore
   pyrelib.scheduler
   pyrelib.languageServer
   pyrelib.memory))

@@ -301,6 +301,7 @@
   pyrelib.configuration
   pyrelib.pyre
   pyrelib.taint
+  pyrelib.deadStore
   pyrelib.timer
   pyrelib.path
   pyrelib.file

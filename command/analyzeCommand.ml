@@ -8,6 +8,7 @@ open Pyre
 
 let get_analysis_kind = function
   | "taint" -> Taint.Analysis.abstract_kind
+  | "liveness" -> DeadStore.Analysis.abstract_kind
   | _ ->
       Log.error "Invalid analysis kind specified.";
       failwith "bad argument"
