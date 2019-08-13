@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterable, List, Tuple
 import ujson as json
 
 from . import errors
-from .analysis_output import AnalysisOutput
+from .analysis_output import AnalysisOutput, Metadata
 from .base_parser import BaseParser, ParseType, log_trace_keyerror_in_generator
 
 
@@ -219,3 +219,7 @@ class Parser(BaseParser):
     def _parse_leaves(self, leaves) -> List[Tuple[str, str, int]]:
         """Returns a list of pairs (leaf_name, leaf_kind, distance)"""
         return [(self._leaf_name(leaf), leaf["kind"], 0) for leaf in leaves]
+
+    @staticmethod
+    def is_supported(metadata: Metadata):
+        return metadata.tool == "pysa"

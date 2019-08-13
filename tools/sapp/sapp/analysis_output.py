@@ -19,7 +19,7 @@ METADATA_GLOB = "*metadata.json"
 class Metadata(NamedTuple):
     analysis_root: str
     repo_root: Optional[str] = None
-
+    tool: Optional[str] = None
     analysis_tool_version: Optional[str] = None
     commit_hash: Optional[str] = None
     job_instance: Optional[int] = None
@@ -47,11 +47,13 @@ class AnalysisOutput(object):
         filename_spec: Optional[str] = None,
         file_handle: Optional[IO[str]] = None,
         metadata: Optional[Metadata] = None,
+        tool: Optional[str] = None,
     ) -> None:
         self.directory = directory
         self.filename_spec = filename_spec
         self.file_handle = file_handle
         self.metadata = metadata
+        self.tool = tool
 
         if not filename_spec and file_handle and hasattr(file_handle, "name"):
             self.filename_spec = file_handle.name
@@ -103,6 +105,7 @@ class AnalysisOutput(object):
                 analysis_root=analysis_root,
                 repo_root=repo_root,
                 job_instance=metadata.get("job_instance"),
+                tool=metadata.get("tool"),
             ),
         )
 

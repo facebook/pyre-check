@@ -14,7 +14,7 @@ from typing import Any, Dict, Iterable, List, Set, TextIO, Tuple
 
 import xxhash
 
-from .analysis_output import AnalysisOutput
+from .analysis_output import AnalysisOutput, Metadata
 from .pipeline import DictEntries, InputFiles, Optional, PipelineStep, Summary
 
 
@@ -239,3 +239,7 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
         hash_gen.update(key)
         hash_ = hash_gen.hexdigest()
         return key[: 255 - len(hash_) - 1] + ":" + hash_
+
+    @staticmethod
+    def is_supported(metadata: Metadata):
+        raise NotImplementedError("Subclasses should implement this!")
