@@ -210,6 +210,32 @@ module State (Context : Context) = struct
     List.fold mismatches ~f:add_error ~init:errors, annotation
 
 
+  let add_untracked_annotation_errors ~resolution ~resolved ~location ~errors annotation =
+    let untracked_annotation_error annotation =
+      match resolved with
+      | Type.Top ->
+          Some
+            (Error.create
+               ~location
+               ~kind:(Error.UndefinedType (Primitive annotation))
+               ~define:Context.define)
+      | _ ->
+          Some
+            (Error.create
+               ~location
+               ~kind:(Error.InvalidType (InvalidType (Primitive annotation)))
+               ~define:Context.define)
+    in
+    let untracked =
+      List.filter (Type.elements annotation) ~f:(Fn.non (GlobalResolution.is_tracked resolution))
+    in
+    let errors =
+      List.filter_map ~f:untracked_annotation_error untracked
+      |> List.fold ~init:errors ~f:(fun errors error -> ErrorMap.add ~errors error)
+    in
+    errors, List.is_empty untracked
+
+
   let parse_and_check_annotation
       ?(bind_variables = true)
       ~state:({ errors; resolution; _ } as state)
@@ -217,21 +243,6 @@ module State (Context : Context) = struct
     =
     let global_resolution = Resolution.global_resolution resolution in
     let check_and_correct_annotation ~resolution ~location ~annotation ~resolved errors =
-      let untracked_annotation_error annotation =
-        match resolved with
-        | Type.Top ->
-            Some
-              (Error.create
-                 ~location
-                 ~kind:(Error.UndefinedType (Primitive annotation))
-                 ~define:Context.define)
-        | _ ->
-            Some
-              (Error.create
-                 ~location
-                 ~kind:(Error.InvalidType (InvalidType (Primitive annotation)))
-                 ~define:Context.define)
-      in
       let check_invalid_variables resolution variable =
         if not (Resolution.type_variable_exists resolution ~variable) then
           let origin =
@@ -264,13 +275,13 @@ module State (Context : Context) = struct
         | _ -> resolution
       in
       let all_primitives_and_variables_are_valid, errors =
-        let untracked =
-          List.filter
-            (Type.elements annotation)
-            ~f:(Fn.non (GlobalResolution.is_tracked global_resolution))
-        in
-        let untracked_annotation_errors =
-          List.filter_map untracked ~f:untracked_annotation_error
+        let errors, no_untracked =
+          add_untracked_annotation_errors
+            ~resolution:global_resolution
+            ~resolved
+            ~location
+            ~errors
+            annotation
         in
         let invalid_variables_errors =
           Type.Variable.all_free_variables annotation
@@ -279,11 +290,8 @@ module State (Context : Context) = struct
         let add_errors errors ~add =
           List.fold ~init:errors ~f:(fun errors error -> ErrorMap.add ~errors error) add
         in
-        let errors =
-          add_errors errors ~add:untracked_annotation_errors
-          |> add_errors ~add:invalid_variables_errors
-        in
-        List.is_empty untracked && List.is_empty invalid_variables_errors, errors
+        ( no_untracked && List.is_empty invalid_variables_errors,
+          add_errors errors ~add:invalid_variables_errors )
       in
       if all_primitives_and_variables_are_valid then
         add_invalid_type_parameters_errors
@@ -3271,6 +3279,7 @@ module State (Context : Context) = struct
         in
         let parsed =
           GlobalResolution.parse_annotation
+            ~allow_untracked:true
             ~allow_invalid_type_parameters:true
             global_resolution
             value
@@ -3297,12 +3306,21 @@ module State (Context : Context) = struct
           let resolved = Type.remove_undeclared resolved in
           (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
           if is_type_alias then
-            let errors, _ =
+            let errors =
               add_invalid_type_parameters_errors
                 ~resolution:global_resolution
                 ~location
                 ~errors:state.errors
                 parsed
+              |> fst
+              |> fun errors ->
+              add_untracked_annotation_errors
+                ~resolution:global_resolution
+                ~resolved
+                ~location
+                ~errors
+                parsed
+              |> fst
             in
             let errors =
               match parsed with
