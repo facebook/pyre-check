@@ -3,6 +3,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
+module Set = Caml.Set
+
 module SharedMemory = Hack_parallel.Std.SharedMem
 (** Infrastructure for decoding values from SharedHeap Heap tables registered with this module
     stores enough information such that an arbitrary (key, value) pair can be decoded back to an
@@ -41,7 +44,7 @@ module NoCache (Key : KeyType) (Value : ValueType) : sig
 
   val hash_of_key : Key.t -> string
 
-  val compute_hashes_to_keys : keys:Key.t list -> string Core.String.Map.t
+  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
 
   include
     SharedMemory.NoCache
@@ -58,7 +61,7 @@ module WithCache (Key : KeyType) (Value : ValueType) : sig
 
   val hash_of_key : Key.t -> string
 
-  val compute_hashes_to_keys : keys:Key.t list -> string Core.String.Map.t
+  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
 
   include
     SharedMemory.WithCache
@@ -70,7 +73,7 @@ end
 
 val get_heap_handle : Configuration.Analysis.t -> SharedMemory.handle
 
-val worker_garbage_control : Gc.control
+val worker_garbage_control : Caml.Gc.control
 
 val report_statistics : unit -> unit
 
@@ -78,7 +81,7 @@ val save_shared_memory : path:string -> unit
 
 val load_shared_memory : path:string -> unit
 
-val unsafe_little_endian_representation : key:Digest.t -> Int64.t
+val unsafe_little_endian_representation : key:Caml.Digest.t -> Int64.t
 
 module SingletonKey : sig
   type t

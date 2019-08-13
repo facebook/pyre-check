@@ -3,6 +3,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
+module Hashtbl = Caml.Hashtbl
+module Gc = Caml.Gc
+module Digest = Caml.Digest
+module Set = Caml.Set
 module SharedMemory = Hack_parallel.Std.SharedMem
 
 let unsafe_little_endian_representation ~key =
@@ -16,7 +21,8 @@ let unsafe_little_endian_representation ~key =
      code is not portable by any means. *)
   let rec compute_little_endian accumulator index =
     let accumulator =
-      Int64.mul accumulator (Int64.of_int 256) |> Int64.add (Int64.of_int (Char.code key.[index]))
+      Caml.Int64.mul accumulator (Int64.of_int 256)
+      |> Caml.Int64.add (Int64.of_int (Char.to_int key.[index]))
     in
     if index = 0 then
       accumulator
@@ -44,15 +50,15 @@ let register prefix decoder =
 
 
 let decode ~key ~value =
-  match String.index key '$' with
+  match String.index_exn key '$' with
   | exception Not_found -> Result.Error `Malformed_key
   | dollar -> (
       let prefix_size = dollar + 1 in
-      let prefix = String.sub key 0 prefix_size in
+      let prefix = String.sub key ~pos:0 ~len:prefix_size in
       match Hashtbl.find registry prefix with
       | exception Not_found -> Result.Error `Unknown_type
       | decoder -> (
-          let key = String.sub key prefix_size (String.length key - prefix_size) in
+          let key = String.sub key ~pos:prefix_size ~len:(String.length key - prefix_size) in
           match decoder key value with
           | result -> Result.Ok result
           | exception exn -> Result.Error (`Decoder_failure exn) ) )
@@ -79,7 +85,7 @@ module Register (Key : KeyType) (Value : ValueType) () : sig
 
   val hash_of_key : Key.t -> string
 
-  val compute_hashes_to_keys : keys:Key.t list -> string Core.String.Map.t
+  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
 end = struct
   (* Register decoder *)
   type decodable += Decoded of Key.out * Value.t option
@@ -107,8 +113,8 @@ end = struct
 
 
   let compute_hashes_to_keys ~keys =
-    let add map key = Core.Map.set map ~key:(hash_of_key key) ~data:(serialize_key key) in
-    Core.List.fold keys ~init:Core.String.Map.empty ~f:add
+    let add map key = Map.set map ~key:(hash_of_key key) ~data:(serialize_key key) in
+    List.fold keys ~init:String.Map.empty ~f:add
 end
 
 module NoCache (Key : KeyType) (Value : ValueType) : sig
@@ -118,7 +124,7 @@ module NoCache (Key : KeyType) (Value : ValueType) : sig
 
   val hash_of_key : Key.t -> string
 
-  val compute_hashes_to_keys : keys:Key.t list -> string Core.String.Map.t
+  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
 
   include
     SharedMemory.NoCache
@@ -139,7 +145,7 @@ module WithCache (Key : KeyType) (Value : ValueType) : sig
 
   val hash_of_key : Key.t -> string
 
-  val compute_hashes_to_keys : keys:Key.t list -> string Core.String.Map.t
+  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
 
   include
     SharedMemory.WithCache
@@ -222,13 +228,13 @@ let load_shared_memory ~path = SharedMem.load_table path
 module SingletonKey = struct
   type t = int
 
-  let to_string = Core.Int.to_string
+  let to_string = Int.to_string
 
-  let compare = Core.Int.compare
+  let compare = Int.compare
 
   type out = int
 
-  let from_string = Core.Int.of_string
+  let from_string = Int.of_string
 
   let key = 0
 end
@@ -256,8 +262,6 @@ module Serializer (Value : SerializableValueType) = struct
     Table.remove_batch (Table.KeySet.singleton SingletonKey.key);
     table
 end
-
-open Core
 
 module Dependency = struct
   type t = int
