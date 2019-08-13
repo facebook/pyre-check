@@ -329,9 +329,9 @@ let code = function
   | InvalidMethodSignature _ -> 47
   | InvalidException _ -> 48
   (* Additional errors. *)
-  | UnawaitedAwaitable _ -> 101
-  | Deobfuscation _ -> 102
-  | UnsafeCast _ -> 103
+  | UnawaitedAwaitable _ -> 1001
+  | Deobfuscation _ -> 1002
+  | UnsafeCast _ -> 1003
 
 
 let name = function

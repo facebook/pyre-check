@@ -22,8 +22,8 @@ let test_annotated context =
       def foo(input: float) -> int:
         return pyre_extensions.safe_cast(int, input)
     |}
-    [ "Unsafe cast [103]: `safe_cast` is only permitted to loosen the type of `input`. `float` is \
-       not a super type of `input`." ];
+    [ "Unsafe cast [1003]: `safe_cast` is only permitted to loosen the type of `input`. `float` \
+       is not a super type of `input`." ];
   assert_type_errors
     ~context
     {|
