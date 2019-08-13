@@ -351,7 +351,11 @@ let _ = DependencyGraph.hh_allow_dependency_table_reads
 
 type dependency_value = TypeCheckFunction of string [@@deriving compare, eq, sexp, show, hash]
 
-module DependencyDecoder = struct
+module DependencyEncoder : sig
+  val encode : dependency_value -> int
+
+  val decode : int -> dependency_value
+end = struct
   module IntegerKey = struct
     type t = int
 
@@ -374,9 +378,54 @@ module DependencyDecoder = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  include WithCache.Make (IntegerKey) (DependencyValue)
+  module DependencyKey = struct
+    type t = dependency_value
 
-  let get_unsafe hash = get hash |> fun optional -> Option.value_exn optional
+    let to_string key = sexp_of_dependency_value key |> Sexp.to_string
+
+    let compare = compare_dependency_value
+
+    type out = dependency_value
+
+    let from_string serialized = Sexp.of_string serialized |> dependency_value_of_sexp
+  end
+
+  module IntegerValue = struct
+    type t = int
+
+    let prefix = Prefix.make ()
+
+    let description = "Dependency Encoder"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  module DecodeTable = WithCache.Make (IntegerKey) (DependencyValue)
+  module EncodeTable = WithCache.Make (DependencyKey) (IntegerValue)
+
+  let encode dependency =
+    match EncodeTable.get dependency with
+    | Some encoded -> encoded
+    | None ->
+        let rec claim_free_id current =
+          DecodeTable.write_through current dependency;
+          match DecodeTable.get_no_cache current with
+          (* Successfully claimed the id *)
+          | Some decoded when equal_dependency_value decoded dependency -> current
+          (* Someone else claimed the id first *)
+          | Some _non_equal_decoded_dependency -> claim_free_id (current + 1)
+          | None -> failwith "read-your-own-write consistency was violated"
+        in
+        let encoded = claim_free_id (Dependency.make dependency) in
+        (* Theoretically someone else racing this should be benign since having a different
+           dependency <-> id pair in the tables is perfectly fine, as long as it's a unique id,
+           which is ensured by claim_free_id. However, this should not matter, since we should only
+           be working on a dependency in a single worker *)
+        EncodeTable.add dependency encoded;
+        encoded
+
+
+  let decode encoded = DecodeTable.find_unsafe encoded
 end
 
 module type DependencyTrackedTable = sig
@@ -393,15 +442,13 @@ end = struct
   type key = Key.t
 
   let add_dependency key value =
-    let value_hash = Dependency.make value in
-    DependencyDecoder.add value_hash value;
-    DependencyGraph.add (Dependency.make (Value.prefix, key)) value_hash
+    DependencyEncoder.encode value |> DependencyGraph.add (Dependency.make (Value.prefix, key))
 
 
   let get_dependents key =
     DependencyGraph.get (Dependency.make (Value.prefix, key))
     |> DependencySet.to_list
-    |> List.map ~f:DependencyDecoder.get_unsafe
+    |> List.map ~f:DependencyEncoder.decode
 end
 
 module DependencyTrackedTableWithCache (Key : KeyType) (Value : ValueType) : sig
