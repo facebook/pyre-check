@@ -478,6 +478,47 @@ let test_forward context =
       def foo(c: C):
        await c.foo()
     |}
+    [];
+  assert_awaitable_errors
+    {|
+      import typing
+      async def awaitable() -> int: ...
+      async def foo() -> None:
+        d = {
+          awaitable(): 2,
+          3: awaitable(),
+        }
+    |}
+    [ "Unawaited awaitable [101]: Awaitable assigned to `d` is never awaited.";
+      "Unawaited awaitable [101]: Awaitable assigned to `d` is never awaited." ];
+  assert_awaitable_errors
+    {|
+      import typing
+      async def awaitable() -> int: ...
+      async def foo() -> None:
+        d = {
+          awaitable(): 2,
+          3: awaitable(),
+        }
+        await d
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      import typing
+      async def awaitable() -> int: ...
+      async def foo() -> None:
+        l = [1, {2: awaitable()}]
+    |}
+    ["Unawaited awaitable [101]: Awaitable assigned to `l` is never awaited."];
+  assert_awaitable_errors
+    {|
+      import typing
+      async def awaitable() -> int: ...
+      async def foo() -> None:
+        l = [1, {2: awaitable()}]
+        await l
+    |}
     []
 
 
