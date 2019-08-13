@@ -196,6 +196,8 @@ module State (Context : Context) = struct
         let forward_argument (awaitables, state) { Call.Argument.value; _ } =
           match value with
           | { Node.value = Name name; _ } -> awaitables, mark_name_as_awaited state ~name
+          | { Node.value = Starred (Starred.Once { Node.value = Name name; _ }); _ } ->
+              awaitables, mark_name_as_awaited state ~name
           | _ ->
               let new_awaitables, state =
                 forward_expression ~resolution ~state ~expression:value

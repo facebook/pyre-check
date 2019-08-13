@@ -519,6 +519,24 @@ let test_forward context =
         l = [1, {2: awaitable()}]
         await l
     |}
+    [];
+  assert_awaitable_errors
+    {|
+      import typing
+      async def awaitable() -> int: ...
+      async def foo() -> None:
+        l = [awaitable(), awaitable()]
+        await asyncio.gather( *l)
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      import typing
+      async def awaitable() -> int: ...
+      async def foo() -> None:
+        l = [awaitable(), awaitable()]
+        await asyncio.gather(awaitable(), *l)
+    |}
     []
 
 
