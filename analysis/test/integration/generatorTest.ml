@@ -10,30 +10,35 @@ let test_check_comprehensions context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.List[str]) -> typing.List[str]:
         return [a for a in input]
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.List[str]) -> typing.List[str]:
         return [a for a in input if len(a) < 5]
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(input: str) -> typing.List[int]:
         return [a for a in input]
     |}
     ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[str]`."];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.List[str]:
         return [x for x in [4,3,None, 1] if x]
     |}
     ["Incompatible return type [7]: Expected `typing.List[str]` but got `typing.List[int]`."];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int]) -> None:
         a = [x > 0 and x < 0 for x in l]
     |}
@@ -46,18 +51,21 @@ let test_check_comprehensions context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Dict[int, str]) -> None:
         [x if y else 0 for x, y in l.items()]
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Dict[int, int]:
         return { 0: x for x in [4,3,2] }
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(d: typing.Dict[int, str]) -> typing.Dict[int, str]:
         return { k: v for k, v in d }
     |}
@@ -65,42 +73,49 @@ let test_check_comprehensions context =
       "Unable to unpack [23]: Unable to unpack `int` into 2 values." ];
   assert_type_errors
     {|
+      import typing
       def foo(d: typing.Dict[int, str]) -> typing.Dict[int, str]:
         return { k: v for k, v in d.items() }
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.List[str]) -> typing.List[str]:
         return [a.lower() for a in input]
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.List[str]) -> typing.List[int]:
         return [str_to_int(a) for a in input]
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.Set[str]) -> typing.Set[str]:
         return {a for a in input}
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.Set[str]) -> typing.Set[str]:
         return {a.lower() for a in input}
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.List[str], b: typing.List[str]) -> int:
         return {x + y for x in a for y in b}
     |}
     ["Incompatible return type [7]: Expected `int` but got `typing.Set[str]`."];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Dict[str, int]) -> typing.List[int]:
         return [x for x in a]
     |}
@@ -116,12 +131,14 @@ let test_check_comprehensions context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Dict[str, int]) -> typing.Dict[str, str]:
         return { x:x for x, y in a.items() }
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Dict[str, int]) -> typing.Dict[str, int]:
         return { y:x for x, y in a.items() }
     |}
@@ -137,12 +154,14 @@ let test_check_comprehensions context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
         return { x: y for (x, y) in a.items() if y }
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
         return { x: y for (x, y) in a.items() }
     |}
@@ -150,12 +169,14 @@ let test_check_comprehensions context =
        typing.Optional[int]]`." ];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
         return { x: int_to_int(y) for (x, y) in a.items() if y }
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(d: typing.Dict[str, int]) -> None:
         { k: v for k, v in d }
     |}
@@ -166,6 +187,7 @@ let test_check_generators context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       x: typing.Generator[typing.Any, typing.Any, typing.Any]
       def foo() -> typing.Generator:
         return x
@@ -175,6 +197,7 @@ let test_check_generators context =
       "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters." ];
   assert_type_errors
     {|
+      import typing
       x: typing.Generator[int, int, int]
       def foo() -> typing.Generator:
         return x
@@ -184,18 +207,21 @@ let test_check_generators context =
       ^ "typing.Any]` but got `typing.Generator[int, int, int]`." ];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[int])->typing.Generator[int, None, None]:
         return (x for x in l)
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[typing.Optional[int]])->typing.Generator[int, None, None]:
         return (x for x in l if x)
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.List[typing.Optional[int]])->typing.Generator[str, None, None]:
         return (x for x in l if x is not None)
     |}
@@ -203,6 +229,7 @@ let test_check_generators context =
       ^ "but got `typing.Generator[int, None, None]`." ];
   assert_type_errors
     {|
+      import typing
       def foo(l: typing.Iterable[typing.Any])->typing.Generator[typing.Any, None, None]:
         return (x for x in l)
     |}
@@ -212,12 +239,14 @@ let test_check_generators context =
       ^ "that does not contain `Any`." ];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Generator[int, None, None]:
         yield 1
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(i: int) -> typing.Iterable[int]:
         if i > 2:
           return
@@ -227,6 +256,7 @@ let test_check_generators context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Generator[int, None, None]:
         yield 1.0
     |}
@@ -234,12 +264,14 @@ let test_check_generators context =
       ^ "but got `typing.Generator[float, None, None]`." ];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Generator[int, None, None]:
         yield from [1]
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Generator[int, None, None]:
         yield from [""]
     |}
@@ -247,6 +279,7 @@ let test_check_generators context =
       ^ "but got `typing.Generator[str, None, None]`." ];
   assert_type_errors
     {|
+      import typing
       def generator() -> typing.Generator[int, None, None]:
         yield 1
       def wrapper() -> typing.Generator[int, None, None]:
@@ -255,22 +288,28 @@ let test_check_generators context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Generator[None, None, None]:
         yield
     |}
     [];
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      import typing
       def foo() -> typing.Iterable[None]:
         yield
-    |} [];
+    |}
+    [];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Generator[None, None, None]:
         yield
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(flag: bool) -> typing.Generator[int, None, None]:
         if flag:
           return
@@ -279,6 +318,7 @@ let test_check_generators context =
     [];
   assert_type_errors
     {|
+      import typing
       async def foo(flag: bool) -> typing.AsyncGenerator[int, None]:
         if flag:
           return
@@ -287,6 +327,9 @@ let test_check_generators context =
     [];
   assert_type_errors
     {|
+      import typing
+      import asyncio.coroutines
+
       @asyncio.coroutines.coroutine
       def get() -> typing.Generator[typing.Any, None, int]: ...
       async def foo() -> int:
@@ -296,12 +339,14 @@ let test_check_generators context =
     [];
   assert_type_errors
     {|
+      import typing
       async def foo() -> typing.AsyncGenerator[int, None]:
         yield 1
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def takes_int(x: int) -> int:
         return x
       async def loop(g: typing.AsyncGenerator[str, None]) -> typing.AsyncGenerator[int, None]:

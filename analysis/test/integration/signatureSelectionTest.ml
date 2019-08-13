@@ -12,6 +12,7 @@ let test_check_callables context =
   (* Callable parameter checks. *)
   assert_type_errors
     {|
+      import typing
       def foo(callable: typing.Callable[[str], None]) -> None:
         callable(1)
     |}
@@ -21,6 +22,7 @@ let test_check_callables context =
   (* Type variables & callables. *)
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(x: str) -> int:
         return 0
@@ -36,6 +38,7 @@ let test_check_callables context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(f: typing.Callable[[int], int]) -> None:
         ...
       def i2i(x: int) -> int:
@@ -45,6 +48,7 @@ let test_check_callables context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(f: typing.Callable[[int], int]) -> None:
         ...
       def i2s(x: int) -> str:
@@ -58,6 +62,7 @@ let test_check_callables context =
   (* Classes with __call__ are callables. *)
   assert_type_errors
     {|
+      import typing
       class CallMe:
         def __call__(self, x:int) -> str:
           ...
@@ -73,6 +78,7 @@ let test_check_callables context =
     [];
   assert_type_errors
     {|
+      import typing
       class CallMe:
         def __call__(self, x: str) -> str:
           ...
@@ -97,6 +103,7 @@ let test_check_callables context =
   (* Sanity check: Callables do not subclass classes. *)
   assert_type_errors
     {|
+      import typing
       class CallMe:
         def __call__(self, x: int) -> str:
           ...
@@ -112,6 +119,7 @@ let test_check_callables context =
   (* The annotation for callable gets expanded automatically. *)
   assert_type_errors
     {|
+      import typing
       def i2i(x: int) -> int:
         return 0
       def hof(c: typing.Callable[[int], int]) -> None:
@@ -124,6 +132,7 @@ let test_check_callables context =
       ^ "`int`." ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def foo(x: typing.Callable[[], T]) -> T:
         ...
@@ -136,6 +145,7 @@ let test_check_callables context =
   (* Lambdas. *)
   assert_type_errors
     {|
+      import typing
       def takes_callable(f: typing.Callable[[Named(x, typing.Any)], int]) -> int:
         return 0
       takes_callable(lambda y: 0)
@@ -147,6 +157,7 @@ let test_check_callables context =
       ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], int]`." ];
   assert_type_errors
     {|
+      import typing
       def takes_callable(f: typing.Callable[[Named(x, typing.Any)], int]) -> int:
         return 0
       takes_callable(lambda y: "")
@@ -158,6 +169,7 @@ let test_check_callables context =
       ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`." ];
   assert_default_type_errors
     {|
+      import typing
       def exec(f: typing.Callable[[], int]) -> int:
         return f()
       def with_default(x: int = 0) -> int:
@@ -235,7 +247,7 @@ let test_check_function_parameters context =
 
   (* Type aliases in signatures are resolved. *)
   assert_type_errors
-    "hashlib.md5(1.0)"
+    "import hashlib; hashlib.md5(1.0)"
     [ "Incompatible parameter type [6]: "
       ^ "Expected `typing.Union[int, str]` for 1st anonymous parameter to call `hashlib.md5` "
       ^ "but got `float`." ];
@@ -273,12 +285,14 @@ let test_check_function_parameters context =
        path that doesn't define `x`." ];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Union[str, None]) -> None: pass
       foo(None)
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Union[str, None, typing.Tuple[int, str]]) -> None:
         pass
       foo(None)
@@ -286,12 +300,14 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Optional[int]) -> int:
         return to_int(a and int_to_str(a))
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: typing.Optional[int]) -> int:
         return to_int(a or int_to_str(a))
     |}
@@ -300,6 +316,7 @@ let test_check_function_parameters context =
       ^ "`typing.Optional[int]`." ];
   assert_type_errors
     {|
+      import typing
       def expect_type_float(meta: typing.Type[float]) -> None:
         pass
       expect_type_float(int)
@@ -307,6 +324,7 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a: int) -> int:
         return a
       x: typing.Optional[int]
@@ -315,6 +333,7 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       def bar(x: typing.Optional[Attributes]) -> None:
           baz(x.int_attribute if x is not None else None)
 
@@ -324,6 +343,7 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       def bar(x: typing.Optional[Attributes]) -> None:
           baz(x.int_attribute if x else None)
 
@@ -341,6 +361,7 @@ let test_check_function_parameters context =
       ^ "for 1st anonymous parameter to call `takes_iterable` but got `typing.Any`." ];
   assert_type_errors
     {|
+      import typing
       def foo(a):  # type: (typing.Optional[int]) -> None
         pass
       foo(None)
@@ -348,6 +369,7 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a):  # type: (typing.Optional[int]) -> None
         pass
       foo("hello")
@@ -357,6 +379,7 @@ let test_check_function_parameters context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(a):
         # type: (typing.Optional[int]) -> None
         pass
@@ -367,6 +390,7 @@ let test_check_function_parameters context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(a, b):
         # type: (typing.Optional[int], str) -> None
         pass
@@ -375,6 +399,7 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(a, b):
         # type: (typing.Optional[int], str) -> None
         pass
@@ -384,18 +409,21 @@ let test_check_function_parameters context =
       ^ "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`." ];
   assert_default_type_errors
     {|
+      import typing
       def f(d: typing.Dict[int, int], x) -> None:
         d.update({ 1: x })
     |}
     [];
   assert_default_type_errors
     {|
+      import typing
       def f(d: typing.Dict[int, str], x) -> str:
         return d.get(x, "")
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         a = {"key": set()}
         b = a.get("key", set())
@@ -404,6 +432,7 @@ let test_check_function_parameters context =
       ^ "`a` is incomplete, add an explicit annotation." ];
   assert_type_errors
     {|
+      import typing
       def foo() -> None:
         a: typing.Dict[str, typing.Set[int]] = {"key": set()}
         b = a.get("key", set())
@@ -428,6 +457,7 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       x: typing.List[int]
       def foo() -> int:
         return x.__getitem__(0)
@@ -435,6 +465,7 @@ let test_check_function_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       x: typing.List[int]
       def foo() -> typing.List[int]:
         return x.__getitem__(slice(0, 1, None))
@@ -512,6 +543,7 @@ let test_check_function_parameters context =
     ["Too many arguments [19]: Call `foo` expects 0 positional arguments, 4 were provided."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", bound=int)
       S = typing.Callable[[], T]
 
@@ -547,6 +579,7 @@ let test_check_function_parameter_errors context =
       "Undefined attribute [16]: `Foo` has no attribute `undefined`." ];
   assert_type_errors
     {|
+      import typing
       class Foo:
         attribute: int = 1
       def foo(input: typing.Optional[Foo]) -> None:
@@ -557,6 +590,7 @@ let test_check_function_parameter_errors context =
       ^ "but got `typing.Optional[int]`." ];
   assert_type_errors
     {|
+      import typing
       class Foo:
         attribute: int = 1
       def foo(input: typing.Optional[Foo]) -> None:
@@ -578,6 +612,7 @@ let test_check_function_parameter_errors context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar("_T")
       def meta(x: typing.Type[_T]) -> None: ...
       meta(typing.Dict)
@@ -591,7 +626,7 @@ let test_check_function_overloads context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
-      from typing import overload
+      from typing import overload, Union
 
       class Foo:
         @overload
@@ -600,7 +635,7 @@ let test_check_function_overloads context =
         @overload
         def derp(self, x: str) -> str:
           pass
-        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
+        def derp(self, x: Union[int, str]) -> Union[int, str]:
           if isinstance(x, int):
             return 0
           else:
@@ -653,6 +688,7 @@ let test_check_function_overloads context =
       "Missing argument [20]: Call `Foo.derp` expects argument `y`." ];
   assert_type_errors
     {|
+      import typing
       def herp(x: int) -> int:
         return typing.cast(x)
     |}
@@ -661,13 +697,13 @@ let test_check_function_overloads context =
   (* Technically invalid; @overload stubs must comprehensively cover implementation *)
   assert_type_errors
     {|
-      from typing import overload
+      from typing import overload, Union
 
       class Foo:
         @overload
         def derp(self, x: int) -> int:
           pass
-        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
+        def derp(self, x: Union[int, str]) -> Union[int, str]:
           if isinstance(x, int):
             return 0
           else:
@@ -679,6 +715,7 @@ let test_check_function_overloads context =
     [];
   assert_type_errors
     {|
+      import typing
       @typing.overload
       def derp(x: int) -> int: ...
       @typing.overload
@@ -711,7 +748,7 @@ let test_check_function_overloads context =
   (* The overloaded stub will override the implementation *)
   assert_type_errors
     {|
-      from typing import overload
+      import typing
 
       @typing.overload
       def derp(x: int) -> int: ...
@@ -727,6 +764,7 @@ let test_check_function_overloads context =
       ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`." ];
   assert_type_errors
     {|
+      import typing
       @typing.overload
       def derp(x: int) -> int: ...
       def derp(x: str) -> str: ...
@@ -742,7 +780,7 @@ let test_check_constructor_overloads context =
   assert_type_errors
     ~context
     {|
-      from typing import overload
+      import typing
 
       class Class:
         @typing.overload
@@ -764,6 +802,7 @@ let test_check_variable_arguments context =
   let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       class C(typing.Iterable[int]):
         ...
       def f(a: int, b: int) -> None:
@@ -774,6 +813,7 @@ let test_check_variable_arguments context =
     [];
   assert_type_errors
     {|
+      import typing
       def f(a: int, b: int) -> None:
        pass
       def g(collection: typing.Collection[str]) -> None:
@@ -794,6 +834,7 @@ let test_check_variable_arguments context =
       ^ "but must be an iterable." ];
   assert_type_errors
     {|
+      import typing
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.Any) -> int:
@@ -804,6 +845,7 @@ let test_check_variable_arguments context =
     ];
   assert_type_errors
     {|
+      import typing
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.List[typing.Any]) -> int:
@@ -815,6 +857,7 @@ let test_check_variable_arguments context =
       ^ "but got `typing.Any`." ];
   assert_strict_type_errors
     {|
+      import typing
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.Any) -> int:
@@ -823,6 +866,7 @@ let test_check_variable_arguments context =
     ["Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`."];
   assert_type_errors
     {|
+      import typing
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.List[str]) -> int:
@@ -832,6 +876,7 @@ let test_check_variable_arguments context =
       ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`." ];
   assert_type_errors
     {|
+      import typing
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.List[str]) -> None:
@@ -841,6 +886,7 @@ let test_check_variable_arguments context =
       ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`." ];
   assert_type_errors
     {|
+      import typing
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.List[str]) -> None:
@@ -849,6 +895,7 @@ let test_check_variable_arguments context =
     ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided."];
   assert_type_errors
     {|
+      import typing
       def foo(a: int, b: str) -> int:
         return 1
       def bar(b: typing.List[str]) -> None:
@@ -857,6 +904,7 @@ let test_check_variable_arguments context =
     ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 4 were provided."];
   assert_type_errors
     {|
+      import typing
       def foo(a: int, b: str) -> int:
         return 1
       def bar(b: typing.List[int]) -> None:
@@ -865,6 +913,7 @@ let test_check_variable_arguments context =
     ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided."];
   assert_type_errors
     {|
+      import typing
       def durp(a: int, b: str) -> int:
         return 1
       def bar(b: typing.List[int]) -> None:
@@ -873,6 +922,7 @@ let test_check_variable_arguments context =
     ["Too many arguments [19]: Call `durp` expects 2 positional arguments, 3 were provided."];
   assert_type_errors
     {|
+      import typing
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b: typing.List[str]) -> int:
@@ -882,6 +932,7 @@ let test_check_variable_arguments context =
       ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`." ];
   assert_type_errors
     {|
+     import typing
      def foo(a: int, b: int) -> int:
        return 1
      def bar(b: typing.Tuple[int, int]) -> int:
@@ -890,6 +941,7 @@ let test_check_variable_arguments context =
     [];
   assert_type_errors
     {|
+     import typing
      def foo(a: typing.Tuple[int, str]) -> typing.Set[int]:
        return set(a)
    |}
@@ -920,6 +972,7 @@ let test_check_variable_restrictions context =
       ^ "for 1st anonymous parameter to call `variable_restricted_identity` but got `float`." ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', int, str)
       def foo(t: T) -> None: ...
       def bar(t: T) -> None:
@@ -928,6 +981,7 @@ let test_check_variable_restrictions context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', 'C', 'X')
       class C():
         def baz(self) -> int:
@@ -946,6 +1000,8 @@ let test_check_keyword_arguments context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
+      import typing
+
       def foo(x: int, y: str) -> None:
         pass
 
@@ -956,6 +1012,8 @@ let test_check_keyword_arguments context =
       ^ "to call `foo` but got `str`." ];
   assert_type_errors
     {|
+      import typing
+
       def foo(x: int, y: str) -> None:
         pass
 
@@ -976,6 +1034,8 @@ let test_check_keyword_arguments context =
       ^ "but must be a mapping with string keys." ];
   assert_default_type_errors
     {|
+      import typing
+
       def foo(x: int, y: str) -> None:
         pass
 
@@ -985,6 +1045,8 @@ let test_check_keyword_arguments context =
     [];
   assert_type_errors
     {|
+      import typing
+
       def foo(x: int, y: int) -> None:
         pass
 
@@ -995,6 +1057,8 @@ let test_check_keyword_arguments context =
       ^ "to call `foo` but got `typing.Union[int, str]`." ];
   assert_type_errors
     {|
+      import typing
+
       def foo(x: float, y: float) -> None:
         pass
 
@@ -1004,6 +1068,8 @@ let test_check_keyword_arguments context =
     [];
   assert_type_errors
     {|
+      import typing
+
       def foo(x: float, y: int) -> None:
         pass
 
@@ -1064,6 +1130,7 @@ let test_check_literals context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       from typing import overload
       from typing_extensions import Literal
       import typing_extensions

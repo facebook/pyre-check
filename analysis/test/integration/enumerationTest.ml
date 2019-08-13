@@ -10,6 +10,7 @@ let test_enumeration_methods context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import enum
       class C(enum.Enum):
         A = 1
       reveal_type(C.A)
@@ -20,6 +21,7 @@ let test_enumeration_methods context =
        `typing.Callable(enum.EnumMeta.__members__)[[], unknown]`." ];
   assert_type_errors
     {|
+      import enum
       class C(enum.IntEnum):
         A = 1
       reveal_type(C.A)
@@ -30,6 +32,7 @@ let test_enumeration_methods context =
        `typing.Callable(enum.EnumMeta.__members__)[[], unknown]`." ];
   assert_type_errors
     {|
+      import enum
       class Foo(enum.IntEnum):
         A: int = 1
       class Bar:
@@ -39,6 +42,7 @@ let test_enumeration_methods context =
        is specified." ];
   assert_type_errors
     {|
+      import enum
       class C(enum.Enum):
         ...
       def f() -> None:
@@ -48,6 +52,7 @@ let test_enumeration_methods context =
     ["Revealed type [-1]: Revealed type for `all_cases` is `typing.List[C]`."];
   assert_type_errors
     {|
+      import enum
       class Foo(enum.IntEnum):
         A: int = 1
       def f() -> None:
@@ -60,16 +65,24 @@ let test_enumeration_methods context =
 
 let test_check_enumeration_attributes context =
   let assert_type_errors = assert_type_errors ~context in
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      import enum
+
       class C(enum.IntEnum):
         a: int = 1
-    |} [];
+    |}
+    [];
   assert_type_errors {|
+      import enum
+
       class C(enum.IntEnum):
         a = 1
     |} [];
   assert_type_errors
     {|
+      import enum
+
       class C(enum.IntEnum):
         a: int
     |}
@@ -77,17 +90,22 @@ let test_check_enumeration_attributes context =
        is never initialized." ];
   assert_type_errors
     {|
+      import enum
       class C(enum.IntEnum):
         a: str = 1
     |}
     [ "Incompatible attribute type [8]: Attribute `a` declared in class `C` has type `str` but is \
        used as type `int`." ];
-  assert_type_errors {|
-      class C(enum.Enum):
-        a = enum.auto()
-    |} [];
   assert_type_errors
     {|
+      import enum
+      class C(enum.Enum):
+        a = enum.auto()
+    |}
+    [];
+  assert_type_errors
+    {|
+      import enum
       class Color(enum.Enum):
         RED = "red"
         BLUE = "blue"
@@ -101,6 +119,7 @@ let test_check_enumeration_attributes context =
     ["Incompatible return type [7]: Expected `str` but got `Color`."];
   assert_type_errors
     {|
+      import enum
       class Color(enum.Enum):
         RED = "red"
         BLUE = "blue"
@@ -111,6 +130,7 @@ let test_check_enumeration_attributes context =
     ["Undefined attribute [16]: `Color` has no attribute `PURPLE`."];
   assert_type_errors
     {|
+      import enum
       from typing import List
       class A(enum.Enum):
         ONE = ("un", ["ein"])
@@ -124,6 +144,7 @@ let test_check_enumeration_attributes context =
     ["Revealed type [-1]: Revealed type for `A.ONE.example` is `List[str]`."];
   assert_type_errors
     {|
+      import enum
       class A(enum.Enum):
           x = ""
           def __init__(self, _) -> None:

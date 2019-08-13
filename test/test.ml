@@ -904,6 +904,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def coroutine(f: typing.Any) -> typing.Any: ...
       |}
     |> Preprocessing.preprocess;
+    parse ~handle:"asyncio/__init__.pyi" "import asyncio.coroutines" |> Preprocessing.preprocess;
     parse
       ~handle:"abc.pyi"
       {|
@@ -933,6 +934,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           POST: typing.Dict[str, typing.Any] = ...
       |}
     |> Preprocessing.preprocess;
+    parse ~handle:"django/__init__.pyi" "import django.http" |> Preprocessing.preprocess;
     parse
       ~handle:"dataclasses.pyi"
       {|
@@ -1090,8 +1092,29 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         __global_sink: Any = ...
       |}
     |> Preprocessing.preprocess;
-    parse ~handle:"unittest.pyi" {|
+    parse
+      ~handle:"unittest.pyi"
+      {|
+        from unittest import case
+        from unittest import mock
         from unittest.case import TestCase
+      |}
+    |> Preprocessing.preprocess;
+    parse ~handle:"os/__init__.pyi" "from . import path as path" |> Preprocessing.preprocess;
+    parse
+      ~handle:"os/path.pyi"
+      {|
+        curdir: str
+        pardir: str
+        sep: str
+      |}
+    |> Preprocessing.preprocess;
+    parse
+      ~handle:"unittest.pyi"
+      {|
+        curdir: str
+        pardir: str
+        sep: str
       |}
     |> Preprocessing.preprocess;
     parse

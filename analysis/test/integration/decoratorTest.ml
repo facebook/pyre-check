@@ -11,6 +11,8 @@ let test_check_contextmanager context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
+      import contextlib
       @contextlib.contextmanager
       def f()->typing.Iterator[int]:
         yield 1
@@ -22,6 +24,8 @@ let test_check_contextmanager context =
     [];
   assert_type_errors
     {|
+      import typing
+      import contextlib
       @contextlib.contextmanager
       def f()->typing.Iterator[int]:
         yield 1
@@ -33,6 +37,8 @@ let test_check_contextmanager context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
+      import typing
+      import contextlib
       @contextlib.contextmanager
       def f() -> typing.Iterable[int]:
         yield 1
@@ -46,6 +52,8 @@ let test_check_contextmanager context =
       "Incompatible return type [7]: Expected `int` but got `unknown`." ];
   assert_type_errors
     {|
+      import typing
+      import contextlib
       @contextlib.contextmanager
       def f() -> typing.Generator[int, None, None]:
         yield 1
@@ -59,6 +67,9 @@ let test_check_contextmanager context =
   (* Decorators are chained properly. *)
   assert_type_errors
     {|
+      import typing
+      import contextlib
+
       @click.command
       @contextlib.contextmanager
       def f() -> typing.Generator[int, None, None]:
@@ -70,6 +81,8 @@ let test_check_contextmanager context =
        Keywords(typing.Any)], contextlib._GeneratorContextManager[int]]`." ];
   assert_type_errors
     {|
+      import typing
+      import contextlib
       class C:
         @contextlib.contextmanager
         def f(self) -> typing.Iterator[int]:
@@ -86,6 +99,8 @@ let test_check_asynccontextmanager context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
+      import contextlib
       @contextlib.asynccontextmanager
       async def f() -> typing.AsyncIterator[int]:
         yield 1
@@ -97,6 +112,8 @@ let test_check_asynccontextmanager context =
     [];
   assert_type_errors
     {|
+      import typing
+      import contextlib
       @contextlib.asynccontextmanager
       async def f() -> typing.AsyncIterator[int]:
         yield 1
@@ -108,6 +125,8 @@ let test_check_asynccontextmanager context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
+      import typing
+      import contextlib
       @contextlib.asynccontextmanager
       async def f() -> typing.AsyncIterable[int]:
         yield 1
@@ -122,6 +141,8 @@ let test_check_asynccontextmanager context =
       "Incompatible return type [7]: Expected `int` but got `unknown`." ];
   assert_type_errors
     {|
+      import typing
+      import contextlib
       @contextlib.asynccontextmanager
       async def f() -> typing.AsyncGenerator[int, None]:
         yield 1
@@ -133,6 +154,8 @@ let test_check_asynccontextmanager context =
     [];
   assert_type_errors
     {|
+      import typing
+      import contextlib
       class C:
         @contextlib.asynccontextmanager
         async def f(self) -> typing.AsyncIterator[int]:
@@ -170,6 +193,7 @@ let test_check_click_command context =
   in
   assert_type_errors
     {|
+      import click
       @click.command()
       @click.option('--flag', is_flag=True, help='Test flag')
       def main(flag: bool) -> bool:
@@ -180,6 +204,7 @@ let test_check_click_command context =
     [];
   assert_type_errors
     {|
+      import click
       @click.command()
       @click.argument('filename')
       def main(filename: str) -> str:
@@ -190,6 +215,8 @@ let test_check_click_command context =
     [];
   assert_type_errors
     {|
+      import typing
+      import click
       def common_params(
         func: typing.Callable[[bool, int], int]
       ) -> typing.Callable[[bool, bool], int]:
@@ -210,6 +237,8 @@ let test_check_click_command context =
     [];
   assert_type_errors
     {|
+      import click
+
       @click.group()
       @click.pass_context
       def main(ctx: click.Context) -> None:
@@ -254,6 +283,7 @@ let test_decorators context =
     [];
   assert_type_errors
     {|
+      import typing
       @typing.overload
       def overloaded() -> int:
         pass
@@ -324,6 +354,7 @@ let test_check_user_decorators context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def decorate(f: typing.Callable[[int], str]) -> typing.Callable[[str], int]:
         ...
       @decorate
@@ -336,6 +367,7 @@ let test_check_user_decorators context =
   (* We currently ignore decorating decorators. *)
   assert_type_errors
     {|
+      import typing
       meta_type = typing.Callable[[typing.Callable[[int], int]], typing.Callable[[str], str]]
       def meta_decorate(f: typing.Any) -> meta_type:
         ...
@@ -352,6 +384,7 @@ let test_check_user_decorators context =
       "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`." ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
 
       # lets AstLintRule ignore these no_op implementations
@@ -375,6 +408,7 @@ let test_check_user_decorators context =
        unknown), Named(y, int)], None]`." ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def synchronize(
         coroutine: typing.Callable[..., typing.Coroutine[typing.Any, typing.Any, T]]
@@ -396,6 +430,7 @@ let test_check_callable_class_decorators context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class synchronize:
         def __call__(
@@ -416,6 +451,7 @@ let test_check_callable_class_decorators context =
   (* We don't support overloaded callable classes. *)
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class synchronize:
         @typing.overload

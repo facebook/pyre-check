@@ -546,12 +546,16 @@ let test_unbound_variables context =
        annotation." ];
   assert_type_errors
     {|
+      import typing
+      import collections
       def foo() -> None:
         x: typing.Dict[int, typing.Dict[int, str]] = collections.defaultdict(dict)
     |}
     [];
   assert_type_errors
     {|
+      import typing
+      import collections
       def foo() -> None:
         x: typing.Dict[int, str] = collections.defaultdict(dict)
     |}
@@ -560,6 +564,7 @@ let test_unbound_variables context =
       ^ "typing.Dict[Variable[_T], Variable[_S]]]`." ];
   assert_type_errors
     {|
+      import typing
       def foo() -> typing.Tuple[typing.List[int], typing.List[str]]:
         return [], []
     |}
@@ -578,6 +583,7 @@ let test_unbound_variables context =
       ^ "but got `typing.List[Variable[_T]]`." ];
   assert_type_errors
     {|
+      import typing
       def bar(
           a: typing.Optional[typing.List[int]], b: typing.Optional[typing.List[str]]
       ) -> typing.Tuple[typing.List[int], typing.List[str]]:
@@ -591,6 +597,7 @@ let test_distinguish context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       _T1 = typing.TypeVar("_T1")
       _T2 = typing.TypeVar("_T2")
       class C(typing.Generic[_T1]):
@@ -604,6 +611,7 @@ let test_distinguish context =
     ["Revealed type [-1]: Revealed type for `A` is `typing.Tuple[Variable[_T2], Variable[_T1]]`."];
   assert_type_errors
     {|
+      import typing
       _T1 = typing.TypeVar("_T1")
       _T2 = typing.TypeVar("_T2")
       def foo(f: typing.Callable[[_T1], _T2], p: _T1) -> _T2:
@@ -614,6 +622,7 @@ let test_distinguish context =
     ["Revealed type [-1]: Revealed type for `v` is `Variable[_T2]`."];
   assert_type_errors
     {|
+      import typing
       _T1 = typing.TypeVar("_T1")
       _T2 = typing.TypeVar("_T2")
       def foo(f: typing.Callable[[_T1], _T2], p: _T1) -> _T2:
@@ -623,6 +632,7 @@ let test_distinguish context =
       ^ "anoynmous call but got `int`." ];
   assert_type_errors
     {|
+      import typing
       _T1 = typing.TypeVar("_T1")
       _T2 = typing.TypeVar("_T2")
       class B: pass
@@ -635,6 +645,7 @@ let test_distinguish context =
     ["Revealed type [-1]: Revealed type for `v` is `Variable[_T2]`."];
   assert_type_errors
     {|
+      import typing
       class C():
         def __init__(self, x: int) -> None:
           pass
@@ -646,6 +657,7 @@ let test_distinguish context =
     ["Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C]`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class C(typing.Generic[T]):
         def __init__(self, x: T) -> None:
@@ -658,6 +670,7 @@ let test_distinguish context =
     ["Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C[int]]`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       class C(typing.Generic[T]):
         def __init__(self, x: T) -> None:
@@ -670,6 +683,7 @@ let test_distinguish context =
     ["Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C[Variable[T]]]`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def foo(x: T) -> typing.List[T]:
         return [x]
@@ -683,6 +697,7 @@ let test_distinguish context =
       ^ "led to infinite recursion." ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def foo(x: T) -> T:
         return x
@@ -697,6 +712,7 @@ let test_distinguish context =
       ^ "` is incomplete, add an explicit annotation." ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T")
       def identity(x: T) -> T:
         return x
@@ -711,6 +727,7 @@ let test_integer_variables context =
   assert_type_errors
     ~context
     {|
+      import typing_extensions
       T = typing_extensions.IntVar("T")
       X = typing_extensions.IntVar("X")
       def baz(x: X) -> X:
@@ -730,6 +747,7 @@ let test_integer_variables context =
   assert_type_errors
     ~context
     {|
+      import typing_extensions
       X = typing_extensions.IntVar("X")
       def baz(x: X) -> X:
         return x
@@ -745,6 +763,7 @@ let test_nested_variable_error context =
   assert_type_errors
     ~context
     {|
+      import typing
       T1 = typing.TypeVar("T1")
       T2 = typing.TypeVar("T2", typing.List[T1], typing.Dict[str, T1])
     |}

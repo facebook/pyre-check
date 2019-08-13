@@ -115,6 +115,7 @@ let test_check_method_parameters context =
     [];
   assert_strict_type_errors
     {|
+      import typing
       # adding `or` to avoid triggering type alias validation
       x = typing.Mapping[int] or None
     |}
@@ -124,6 +125,7 @@ let test_check_method_parameters context =
        `typing.GenericMeta.__getitem__` but got `typing.Type[int]`." ];
   assert_strict_type_errors
     {|
+      import typing
       x = typing.Mapping[int, str]
       reveal_type(x)
     |}
@@ -158,6 +160,7 @@ let test_check_method_parameters context =
       "Revealed type [-1]: Revealed type for `Foo().__getitem__(1)` is `str`." ];
   assert_strict_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
 
       class EnumMeta:
@@ -254,6 +257,7 @@ let test_check_method_parameters context =
   (* TODO(T45029821): Eliminate special casing so that calls to Foo() error here. *)
   assert_type_errors
     {|
+    import typing
     class Foo:
       @staticmethod
       def __new__() -> typing.Type[Foo]: ...
@@ -262,6 +266,7 @@ let test_check_method_parameters context =
     [];
   assert_type_errors
     {|
+      import typing
       class Foo:
         def foo(self, x: typing.Optional[typing.Set[int]] = ...) -> None:
           self.x = x
@@ -286,6 +291,7 @@ let test_check_abstract_methods context =
     ~context
     ~update_environment_with
     {|
+      import abc
       @abc.abstractmethod
       def abstract()->int:
         pass
@@ -295,6 +301,7 @@ let test_check_abstract_methods context =
     ~context
     ~update_environment_with
     {|
+      import abc
       @abc.abstractproperty
       def abstract()->int:
         pass
@@ -334,6 +341,7 @@ let test_check_behavioral_subtyping context =
       ^ "Returned type `None` is not a subtype of the overridden return `int`." ];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         def foo(self) -> _T: ...
@@ -344,6 +352,7 @@ let test_check_behavioral_subtyping context =
       ^ "Returned type `str` is not a subtype of the overridden return `float`." ];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         def foo(self) -> _T: ...
@@ -353,6 +362,7 @@ let test_check_behavioral_subtyping context =
     [];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         def foo(self) -> _T: ...
@@ -364,6 +374,7 @@ let test_check_behavioral_subtyping context =
       ^ "Returned type `str` is not a subtype of the overridden return `float`." ];
   assert_type_errors
     {|
+      import typing
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
         def foo(self) -> _T: ...
@@ -413,6 +424,7 @@ let test_check_behavioral_subtyping context =
     ["Missing parameter annotation [2]: Parameter `input` has no type specified."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar("T", bound=int)
       class Foo():
         def foo(self, x: T) -> str:
@@ -427,6 +439,7 @@ let test_check_behavioral_subtyping context =
       ^ "`Variable[T (bound to int)]`." ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       class Foo(typing.Generic[T]):
         def foo(self) -> T: ...
@@ -455,6 +468,8 @@ let test_check_behavioral_subtyping context =
   (* Decorators are applied. *)
   assert_type_errors
     {|
+      import typing
+      import contextlib
       class Foo():
         @contextlib.contextmanager
         def foo(self) -> typing.Generator[int, None, None]: ...
@@ -952,6 +967,8 @@ let test_check_callable_protocols context =
     ["Call error [29]: `Call` is not a function."];
   assert_type_errors
     {|
+      import unittest.mock
+
       class patch:
         def __call__(self) -> int: ...
 
@@ -1035,6 +1052,7 @@ let test_check_self context =
     ["Invalid method signature [47]: `Other` cannot be the type of `self`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       class C:
         def f(self: T, x: int) -> T:
@@ -1055,6 +1073,7 @@ let test_check_self context =
   (* Make sure the SelfType pattern works *)
   assert_type_errors
     {|
+      import typing
       TSelf = typing.TypeVar('TSelf', bound="C")
       class C:
         def inner(self, x: int) -> None:
@@ -1081,6 +1100,7 @@ let test_check_self context =
   (* Make sure the SelfType pattern works for generics *)
   assert_type_errors
     {|
+      import typing
       TSelf = typing.TypeVar('TSelf', bound="C")
       TG = typing.TypeVar('TG')
       class C:
@@ -1096,6 +1116,7 @@ let test_check_self context =
     [];
   assert_type_errors
     {|
+      import typing
       TG = typing.TypeVar('TG')
       TSelf = typing.TypeVar('TSelf', bound="G")
       class G(typing.Generic[TG]):
@@ -1119,6 +1140,7 @@ let test_check_meta_self context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_default_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       S = typing.TypeVar('S')
       class C(typing.Generic[T]): pass
@@ -1131,6 +1153,7 @@ let test_check_meta_self context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       class C:
         @classmethod
@@ -1146,6 +1169,7 @@ let test_check_meta_self context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       class C:
         @classmethod
@@ -1159,6 +1183,7 @@ let test_check_meta_self context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       class C:
         @classmethod
@@ -1172,6 +1197,7 @@ let test_check_meta_self context =
     ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       class C:
         def f(self: T) -> T:
@@ -1185,6 +1211,7 @@ let test_check_meta_self context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       class C:
         def f(self: T) -> T:
@@ -1198,6 +1225,7 @@ let test_check_meta_self context =
     ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
   assert_type_errors
     {|
+      import typing
       class Foo:
         def foo(self) -> typing.Type[Foo]:
           return type(self)
@@ -1207,6 +1235,7 @@ let test_check_meta_self context =
     [];
   assert_type_errors
     {|
+      import typing
       class Foo:
         ATTRIBUTE: typing.ClassVar[int] = 1
         def foo(self) -> int:
@@ -1215,6 +1244,7 @@ let test_check_meta_self context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(t: T) -> str:
         return type(t).__name__
@@ -1297,6 +1327,7 @@ let test_check_static context =
        `Foo.foo` but got `str`." ];
   assert_type_errors
     {|
+      import typing
       class Foo:
         @classmethod
         def foo(cls) -> typing.Type[Foo]:
@@ -1339,6 +1370,7 @@ let test_check_static context =
   (* Special classmethods are treated properly without a decorator. *)
   assert_type_errors
     {|
+      import typing
       class Foo:
         def __init_subclass__(cls) -> typing.Type[Foo]:
           return cls
@@ -1354,6 +1386,7 @@ let test_check_setitem context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Dict[str, int]) -> None:
         x["foo"] = "bar"
     |}
@@ -1361,6 +1394,7 @@ let test_check_setitem context =
       ^ "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`." ];
   assert_type_errors
     {|
+      import typing
       class A:
         pass
       def foo(x: typing.Dict[str, int], y: A) -> None:
@@ -1371,6 +1405,7 @@ let test_check_setitem context =
       ^ "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`." ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Dict[str, typing.Dict[str, int]]) -> None:
         x["foo"]["bar"] = "baz"
     |}
@@ -1378,6 +1413,7 @@ let test_check_setitem context =
       ^ "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`." ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Dict[str, int]) -> None:
         x[7] = 7
     |}

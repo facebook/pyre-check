@@ -24,8 +24,14 @@ let test_check_typed_dictionaries context =
       {
         handle = "mypy_extensions.pyi";
         source =
-          "def TypedDict(typename: str, fields: typing.Dict[str, typing.Type[_T]], total: bool = \
-           ...) -> typing.Type[dict]: ...";
+          {|
+            import typing
+            def TypedDict(
+                typename: str,
+                fields: typing.Dict[str, typing.Type[_T]],
+                total: bool = ...,
+            ) -> typing.Type[dict]: ...
+          |};
       }
     in
     let typed_dictionary_for_import =
@@ -59,6 +65,7 @@ let test_check_typed_dictionaries context =
   in
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
@@ -69,6 +76,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
@@ -80,6 +88,7 @@ let test_check_typed_dictionaries context =
       ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
@@ -92,6 +101,7 @@ let test_check_typed_dictionaries context =
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
@@ -103,6 +113,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
@@ -116,6 +127,7 @@ let test_check_typed_dictionaries context =
       ^ "Expected one of ('name', 'year')." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       Film = mypy_extensions.TypedDict('Film', {'name': str, 'year': 'int', 'director': str})
       def foo(movie: Movie) -> str:
@@ -127,6 +139,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       Actor = mypy_extensions.TypedDict('Actor', {'name': str, 'birthyear': 'int'})
       def foo(movie: Movie) -> str:
@@ -170,6 +183,7 @@ let test_check_typed_dictionaries context =
       "TypedDict accessed with a missing key [27]: TypedDict has no key `year`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       from typing import Mapping
       Baz = mypy_extensions.TypedDict('Baz', {'foo': int, 'bar': str})
       def foo(dictionary: Mapping[str, typing.Any]) -> None:
@@ -181,6 +195,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       from typing import Mapping
       class A:
         pass
@@ -198,6 +213,7 @@ let test_check_typed_dictionaries context =
       ^ "`TypedDict `Baz` with fields (foo: A, bar: B)`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       from typing import Mapping
       class A:
         pass
@@ -216,6 +232,7 @@ let test_check_typed_dictionaries context =
     ["Incompatible return type [7]: Expected `Mapping[str, A]` but got `Mapping[str, typing.Any]`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Baz = mypy_extensions.TypedDict('Baz', {'foo': int, 'bar': int})
       def foo(x: int, a: Baz) -> int:
         if x == 7:
@@ -227,6 +244,7 @@ let test_check_typed_dictionaries context =
     ["TypedDict accessed with a missing key [27]: TypedDict `Baz` has no key `fou`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Baz = mypy_extensions.TypedDict('Baz', {'foo': int, 'bar': int})
       def foo(x: int, a: Baz) -> int:
         if x == 7:
@@ -239,6 +257,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Baz = mypy_extensions.TypedDict(
         'Baz',
         {
@@ -259,6 +278,7 @@ let test_check_typed_dictionaries context =
     ["TypedDict accessed with a missing key [27]: TypedDict `Baz` has no key `foo`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Baz = mypy_extensions.TypedDict(
         'Baz',
         {
@@ -277,6 +297,7 @@ let test_check_typed_dictionaries context =
        call `foo` but got `typing.Dict[str, int]`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie(name='Blade Runner', year=1982)
@@ -285,6 +306,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie(year=1982, name='Blade Runner')
@@ -293,6 +315,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie(name=1982, year='Blade Runner')
@@ -302,6 +325,7 @@ let test_check_typed_dictionaries context =
       ^ "to call `__init__` but got `int`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie('Blade Runner', 1982)
@@ -310,6 +334,7 @@ let test_check_typed_dictionaries context =
     ["Too many arguments [19]: Call `__init__` expects 0 positional arguments, 2 were provided."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie('Blade Runner')
@@ -319,6 +344,7 @@ let test_check_typed_dictionaries context =
        int)` for 1st anonymous parameter to call `__init__` but got `str`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie({ "name": "Blade Runner", "year": 1982 })
@@ -327,6 +353,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie({ "name": 1982, "year": "Blade Runner" })
@@ -337,6 +364,7 @@ let test_check_typed_dictionaries context =
        int, year: str)`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie(name='Blade Runner', year=1982, extra=42)
@@ -345,6 +373,7 @@ let test_check_typed_dictionaries context =
     ["Unexpected keyword [28]: Unexpected keyword argument `extra` to call `__init__`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie(year=1982)
@@ -353,6 +382,7 @@ let test_check_typed_dictionaries context =
     ["Missing argument [20]: Call `__init__` expects argument `name`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int}, total=False)
       def foo() -> int:
         movie = Movie(year=1982)
@@ -361,6 +391,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -369,6 +400,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -379,6 +411,7 @@ let test_check_typed_dictionaries context =
       ^ "`int`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -387,6 +420,7 @@ let test_check_typed_dictionaries context =
     ["TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       class A():
         pass
       class B(A):
@@ -413,6 +447,7 @@ let test_check_typed_dictionaries context =
          `A`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -421,6 +456,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -429,6 +465,7 @@ let test_check_typed_dictionaries context =
     ["Revealed type [-1]: Revealed type for `len(movie)` is `int`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -438,6 +475,7 @@ let test_check_typed_dictionaries context =
     ["Revealed type [-1]: Revealed type for `k` is `str`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -447,6 +485,7 @@ let test_check_typed_dictionaries context =
     ["Revealed type [-1]: Revealed type for `b` is `bool`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -465,6 +504,7 @@ let test_check_typed_dictionaries context =
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -481,6 +521,7 @@ let test_check_typed_dictionaries context =
       ^ "`typing.AbstractSet[typing.Tuple[str, typing.Any]]`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -491,6 +532,7 @@ let test_check_typed_dictionaries context =
       ^ "`TypedDict `Movie` with fields (name: str, year: int)`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -505,6 +547,7 @@ let test_check_typed_dictionaries context =
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -516,6 +559,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -528,6 +572,7 @@ let test_check_typed_dictionaries context =
       ^ "`TypedDictionary.update`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       MovieNonTotal = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'}, total=False)
       def f() -> None:
         movieNonTotal: MovieNonTotal
@@ -545,6 +590,7 @@ let test_check_typed_dictionaries context =
   (* You can't pop an item from a total typeddict *)
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -555,6 +601,7 @@ let test_check_typed_dictionaries context =
   (* TODO(T41338881) the del operator is not currently supported *)
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       MovieNonTotal = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'}, total=False)
       def f() -> None:
         movieNonTotal: MovieNonTotal
@@ -566,6 +613,7 @@ let test_check_typed_dictionaries context =
   (* You can't delete an item from a total typeddict *)
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -574,6 +622,7 @@ let test_check_typed_dictionaries context =
     ["Undefined attribute [16]: `TypedDictionary` has no attribute `__delitem__`."];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       MovieNonTotal = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'}, total=False)
       MoviePlus = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int', 'director': str})
       def f() -> None:
@@ -592,6 +641,7 @@ let test_check_typed_dictionaries context =
       "Revealed type [-1]: Revealed type for `v` is `str`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -603,6 +653,7 @@ let test_check_typed_dictionaries context =
       ^ "to call `TypedDictionary.__setitem__` but got `int`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       ReversedMovie = mypy_extensions.TypedDict('Movie', {'year': 'int', 'name': str})
       def f() -> None:
@@ -651,6 +702,7 @@ let test_check_typed_dictionaries context =
   (* TODO T37629490 Better error messages for typeddict declaration errors *)
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       NamelessTypedDict = mypy_extensions.TypedDict({'name': str, 'year': int})
       def foo(x: int) -> str:
         return ""
@@ -666,6 +718,7 @@ let test_check_typed_dictionaries context =
       ^ "but got `unknown`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: Movie) -> str:
         return x["name"]
@@ -675,6 +728,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: Movie) -> str:
         return x["name"]
@@ -684,6 +738,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: Movie) -> str:
         return x["name"]
@@ -695,6 +750,7 @@ let test_check_typed_dictionaries context =
       ^ "`TypedDict with fields (name: str, year: str)`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: Movie) -> str:
         return x["name"]
@@ -706,6 +762,7 @@ let test_check_typed_dictionaries context =
       ^ "`typing.Dict[str, typing.Union[int, str]]`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: Movie) -> str:
         return x["name"]
@@ -715,6 +772,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> str:
         movie: Movie = {'name' : "Blade Runner", 'year' : 1982}
@@ -723,6 +781,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f(x: bool) -> str:
         movie: Movie = {'name' : "Blade Runner", 'year' : 1982, 'bonus' : x}
@@ -734,6 +793,7 @@ let test_check_typed_dictionaries context =
     ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> str:
         movie: Movie = {'name' : "Blade Runner", 'year' : '1982'}
@@ -744,6 +804,7 @@ let test_check_typed_dictionaries context =
       ^ "`TypedDict with fields (name: str, year: str)`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       class Movie(mypy_extensions.TypedDict, total=False):
         name: str
         year: int
@@ -756,6 +817,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       class Movie(mypy_extensions.TypedDict, total=False):
         name: str
         year: int
@@ -768,6 +830,7 @@ let test_check_typed_dictionaries context =
        with fields (name: int, year: int)`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> Movie:
         return {'name' : "Blade Runner", 'year' : 1982}
@@ -775,6 +838,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> Movie:
         return {'name' : "Blade Runner", 'year' : '1982'}
@@ -784,6 +848,7 @@ let test_check_typed_dictionaries context =
       ^ "`TypedDict with fields (name: str, year: str)`." ];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       class Base(): pass
       class Child(Base): pass
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'something' : Base})
@@ -793,6 +858,7 @@ let test_check_typed_dictionaries context =
     [];
   assert_test_typed_dictionary
     {|
+      import mypy_extensions
       class BaseTypedDict(mypy_extensions.TypedDict):
         required: int
       class ChildTypedDict(BaseTypedDict, total=False):

@@ -23,15 +23,32 @@ let test_check_return context =
     "def foo() -> str: return"
     ["Incompatible return type [7]: Expected `str` but got `None`."];
   assert_type_errors
-    "def foo() -> typing.List[str]: return 1"
+    {|
+      import typing
+      def foo() -> typing.List[str]:
+          return 1
+    |}
     ["Incompatible return type [7]: Expected `typing.List[str]` but got `int`."];
   assert_default_type_errors
     "def foo() -> int: return"
     ["Incompatible return type [7]: Expected `int` but got `None`."];
-  assert_type_errors "def foo() -> typing.List[str]: return []" [];
-  assert_type_errors "def foo() -> typing.Dict[str, int]: return {}" [];
   assert_type_errors
     {|
+      import typing
+      def foo() -> typing.List[str]:
+          return []
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      def foo() -> typing.Dict[str, int]:
+          return {}
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
@@ -41,6 +58,7 @@ let test_check_return context =
       ^ "that does not contain `Any`." ];
   assert_type_errors
     {|
+      import typing
       def f() -> dict:
         return {}
       def foo() -> typing.Dict[typing.Any]:
@@ -54,6 +72,7 @@ let test_check_return context =
        use `typing.Dict` to avoid runtime subscripting errors." ];
   assert_type_errors
     {|
+      import typing
       x: typing.Type
       def foo() -> typing.Type[typing.Any]:
         return x
@@ -62,10 +81,13 @@ let test_check_return context =
        `typing.Type` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`." ];
-  assert_type_errors {|
+  assert_type_errors
+    {|
+      import typing
       def derp()->typing.Union[str, None]:
           return None
-    |} [];
+    |}
+    [];
   assert_type_errors
     "def foo() -> str: return 1.0\ndef bar() -> int: return ''"
     [ "Incompatible return type [7]: Expected `str` but got `float`.";
@@ -84,12 +106,16 @@ let test_check_return context =
         return None
     |}
     ["Incompatible return type [7]: Expected `int` but got `None`."];
-  assert_type_errors {|
-      def derp()->typing.Set[int]:
-        return {1}
-    |} [];
   assert_type_errors
     {|
+      import typing
+      def derp()->typing.Set[int]:
+        return {1}
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
       def derp()->typing.Set[int]:
         return {""}
     |}
@@ -106,6 +132,7 @@ let test_check_return context =
       "Incompatible return type [7]: Expected `str` but got `int`." ];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(x: list[T])-> T:
         return x
@@ -116,6 +143,7 @@ let test_check_return context =
     ["Incompatible return type [7]: Expected `Variable[T]` but got `typing.List[Variable[T]]`."];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T')
       def foo(x: list[T])-> T:
         return x[0]
@@ -125,6 +153,7 @@ let test_check_return context =
     [];
   assert_type_errors
     {|
+      import typing
       T = typing.TypeVar('T', int, str)
       def foo(x: T)-> T:
         return "a"
@@ -134,6 +163,7 @@ let test_check_return context =
     ["Incompatible return type [7]: Expected `Variable[T <: [int, str]]` but got `str`."];
   assert_type_errors
     {|
+      import typing
       class C:
         pass
       def foo() -> typing.Callable[[], C]:
@@ -142,6 +172,7 @@ let test_check_return context =
     [];
   assert_type_errors
     {|
+      import typing
       class C:
         pass
       def foo(x: typing.Optional[C]) -> C:
@@ -149,24 +180,30 @@ let test_check_return context =
         return x
     |}
     ["Incompatible return type [7]: Expected `C` but got `typing.Optional[C]`."];
-  assert_default_type_errors {|
-      def bar(x: typing.Any) -> int:
-          return x
-    |} [];
   assert_default_type_errors
     {|
+      import typing
+      def bar(x: typing.Any) -> int:
+          return x
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      import typing
       def bar(x: typing.Union[int, typing.Any]) -> int:
           return x
     |}
     [];
   assert_default_type_errors
     {|
+      import typing
       def bar(x: typing.Optional[typing.Any]) -> int:
           return x
     |}
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[typing.Any]`."];
   assert_default_type_errors
     {|
+      import typing
       def bar(x: typing.Union[int, typing.Any, None]) -> int:
           return x
     |}
@@ -200,6 +237,7 @@ let test_check_return_control_flow context =
       "Incompatible return type [7]: Expected `int` but got implicit return value of `None`." ];
   assert_type_errors
     {|
+      import typing
       x: typing.List[int]
       def foo() -> list:
         return x
@@ -210,6 +248,7 @@ let test_check_return_control_flow context =
     ];
   assert_type_errors
     {|
+      import typing
       x: typing.List[typing.Any]
       def foo() -> list:
         return x
@@ -220,6 +259,7 @@ let test_check_return_control_flow context =
        `typing.List` to avoid runtime subscripting errors." ];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Union[int, str]) -> int:
         if isinstance(x, str):
           return 1
@@ -228,6 +268,7 @@ let test_check_return_control_flow context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> int:
         if x is None:
           return 1
@@ -236,6 +277,7 @@ let test_check_return_control_flow context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> int:
         if x is None:
           raise
@@ -244,6 +286,7 @@ let test_check_return_control_flow context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> int:
         if x is None:
           x = 1
@@ -252,6 +295,7 @@ let test_check_return_control_flow context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[int]) -> int:
         if x is None:
           continue
@@ -260,6 +304,7 @@ let test_check_return_control_flow context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo(x: typing.Optional[float]) -> typing.Optional[int]:
         if x is not None:
           return int(x)
@@ -271,6 +316,7 @@ let test_check_return_control_flow context =
      indirection in typeshed. *)
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.Sequence[int]) -> typing.Iterable[int]:
         return input
     |}
@@ -282,6 +328,7 @@ let test_check_return_control_flow context =
   assert_type_errors "def foo() -> typing.Optional[int]: return 1" [];
   assert_type_errors
     {|
+      import typing
       def foo(flag: bool) -> typing.Optional[float]:
           a = 1.0
           if flag:
@@ -290,10 +337,15 @@ let test_check_return_control_flow context =
     |}
     [];
   assert_type_errors
-    "def foo() -> typing.Optional[int]: return 1.0"
+    {|
+      import typing;
+      def foo() -> typing.Optional[int]:
+          return 1.0
+    |}
     ["Incompatible return type [7]: Expected `typing.Optional[int]` but got `float`."];
   assert_type_errors
     {|
+      import typing
       def foo(optional: typing.Optional[int]) -> int:
           if optional:
             return optional
@@ -303,6 +355,7 @@ let test_check_return_control_flow context =
     [];
   assert_type_errors
     {|
+      import typing
       def foo( **kwargs: int) -> None:
         return kwargs
     |}
@@ -325,6 +378,7 @@ let test_check_return_control_flow context =
   (* Builtins. *)
   assert_default_type_errors
     {|
+      import typing
       def f() -> str:
         return __name__
       def g() -> str:
@@ -339,6 +393,7 @@ let test_check_return_control_flow context =
     [];
   assert_type_errors
     {|
+      import builtins
       def f() -> int:
         return builtins.__name__
     |}
@@ -347,18 +402,21 @@ let test_check_return_control_flow context =
   (* Meta. *)
   assert_type_errors
     {|
+      import typing
       def f(meta: typing.Type[int]) -> type[int]:
         return meta
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def f(meta: type[int]) -> typing.Type[int]:
         return meta
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def f(meta: type) -> typing.Type[int]:
         return meta
     |}
@@ -394,24 +452,28 @@ let test_check_collections context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def f(x: typing.List[int]) -> typing.Set[str]:
         return {1, *x}
     |}
     ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."];
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.Optional[typing.List[int]]) -> typing.List[int]:
         return input or []
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.Optional[typing.Set[int]]) -> typing.Set[int]:
         return input or set()
     |}
     [];
   assert_type_errors
     {|
+      import typing
       def foo(input: typing.Optional[typing.Dict[int, str]]) -> typing.Dict[int, str]:
         return input or {}
     |}
@@ -422,6 +484,7 @@ let test_check_meta_annotations context =
   assert_type_errors
     ~context
     {|
+      import typing
       class Class:
         pass
       def foo() -> typing.Type[Class]:
@@ -434,12 +497,14 @@ let test_check_noreturn context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
+      import typing
       def no_return() -> typing.NoReturn:
         return 0
     |}
     ["Incompatible return type [7]: Expected `typing.NoReturn` but got `int`."];
   assert_type_errors
     {|
+      import typing
       def no_return() -> typing.NoReturn:
         # We implicitly return None, so have to accept this.
         return None
@@ -447,6 +512,7 @@ let test_check_noreturn context =
     [];
   assert_type_errors
     {|
+      import typing
       def no_return(input: typing.Optional[int]) -> int:
         if input is None:
           sys.exit(-1)
@@ -455,6 +521,7 @@ let test_check_noreturn context =
     [];
   assert_type_errors
     {|
+      import sys
       def no_return() -> str:
         sys.exit(0)  # once control flow terminates, we know input won't be returned.
     |}
