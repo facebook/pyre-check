@@ -58,7 +58,6 @@ class KillTest(unittest.TestCase):
         processC.info = {"name": "not-pyre-client"}
         processC.pid = 4321
         process_iter.return_value = [processA, processB, processC]
-        process_iter.return_value
         with patch("os.getenv", return_value=None), patch(
             "os.getpid", return_value=1234
         ):
@@ -82,12 +81,14 @@ class KillTest(unittest.TestCase):
             "os.getenv",
             side_effect=["/tmp/pyre_directory/main.exe", "/tmp/pyre/my_client"],
         ):
+            kill.reset_mock()
             realpath.return_value = "/test-binary"
             arguments = mock_arguments()
             configuration = mock_configuration()
             analysis_directory = MagicMock()
             commands.Kill(arguments, configuration, analysis_directory).run()
             run.assert_has_calls([call(["pkill", "main.exe"])])
+            kill.assert_has_calls([call(5678, signal.SIGKILL)])
 
         with patch("os.getcwd", return_value="/root"), patch(
             "shutil.rmtree"

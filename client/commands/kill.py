@@ -64,16 +64,16 @@ class Kill(Command):
             except OSError:
                 pass
 
-        client_name = _get_process_name("PYRE_CLIENT", CLIENT_NAME)
         for process in psutil.process_iter(attrs=["name"]):
-            if client_name != process.info["name"]:
+            if process.info["name"] != CLIENT_NAME:
                 continue
             # We need to be careful about how we kill the client here, as otherwise we
             # might cause a race where we attempt to kill the `pyre kill` command.
-            if process.pid == os.getpid():
+            pid_to_kill = process.pid
+            if pid_to_kill == os.getpgid(os.getpid()):
                 continue
             try:
-                os.kill(os.getpgid(process.pid), signal.SIGKILL)
+                os.kill(pid_to_kill, signal.SIGKILL)
             except ProcessLookupError:
                 continue
 
