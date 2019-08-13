@@ -119,6 +119,7 @@ let test_integration context =
     in
     check_expectation ~suffix:".models" ("@" ^ "generated\n" ^ serialized_models)
   in
+  assert_bool "No test paths to check." (not (List.is_empty test_paths));
   List.iter test_paths ~f:run_test
 
 
