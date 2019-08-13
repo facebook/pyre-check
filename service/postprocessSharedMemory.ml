@@ -51,5 +51,5 @@ module LocationListValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module IgnoreLines = SharedMemory.NoCache (LocationKey) (IgnoreValue)
-module IgnoreKeys = SharedMemory.NoCache (StringKey) (LocationListValue)
+module IgnoreLines = SharedMemory.NoCache.Make (LocationKey) (IgnoreValue)
+module IgnoreKeys = SharedMemory.NoCache.Make (StringKey) (LocationListValue)

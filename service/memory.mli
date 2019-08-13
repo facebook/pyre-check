@@ -37,38 +37,56 @@ module type ValueType = sig
   val unmarshall : string -> t
 end
 
-module NoCache (Key : KeyType) (Value : ValueType) : sig
-  type decodable += Decoded of Key.out * Value.t option
+module NoCache : sig
+  module type S = sig
+    include SharedMemory.NoCache
 
-  val serialize_key : Key.t -> string
+    type key_out
 
-  val hash_of_key : Key.t -> string
+    type decodable += Decoded of key_out * t option
 
-  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
+    val serialize_key : key -> string
 
-  include
-    SharedMemory.NoCache
-      with type t = Value.t
-       and type key = Key.t
-       and module KeySet = Set.Make(Key)
-       and module KeyMap = MyMap.Make(Key)
+    val hash_of_key : key -> string
+
+    val compute_hashes_to_keys : keys:key list -> string String.Map.t
+  end
+
+  module Make (Key : KeyType) (Value : ValueType) : sig
+    include
+      S
+        with type t = Value.t
+         and type key = Key.t
+         and type key_out = Key.out
+         and module KeySet = Set.Make(Key)
+         and module KeyMap = MyMap.Make(Key)
+  end
 end
 
-module WithCache (Key : KeyType) (Value : ValueType) : sig
-  type decodable += Decoded of Key.out * Value.t option
+module WithCache : sig
+  module type S = sig
+    include SharedMemory.WithCache
 
-  val serialize_key : Key.t -> string
+    type key_out
 
-  val hash_of_key : Key.t -> string
+    type decodable += Decoded of key_out * t option
 
-  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
+    val serialize_key : key -> string
 
-  include
-    SharedMemory.WithCache
-      with type t = Value.t
-       and type key = Key.t
-       and module KeySet = Set.Make(Key)
-       and module KeyMap = MyMap.Make(Key)
+    val hash_of_key : key -> string
+
+    val compute_hashes_to_keys : keys:key list -> string String.Map.t
+  end
+
+  module Make (Key : KeyType) (Value : ValueType) : sig
+    include
+      S
+        with type t = Value.t
+         and type key = Key.t
+         and type key_out = Key.out
+         and module KeySet = Set.Make(Key)
+         and module KeyMap = MyMap.Make(Key)
+  end
 end
 
 val get_heap_handle : Configuration.Analysis.t -> SharedMemory.handle
@@ -117,6 +135,32 @@ module Serializer (Value : SerializableValueType) : sig
   val store : Value.t -> unit
 end
 
-val add_dependency : table:string -> key:string -> string -> unit
+type dependency_value = TypeCheckFunction of string [@@deriving compare, eq, sexp, show, hash]
 
-val get_dependents : table:string -> key:string -> string list
+module DependencyTrackedTableWithCache (Key : KeyType) (Value : ValueType) : sig
+  include
+    WithCache.S
+      with type t = Value.t
+       and type key = Key.t
+       and type key_out = Key.out
+       and module KeySet = Set.Make(Key)
+       and module KeyMap = MyMap.Make(Key)
+
+  val get : key -> dependency:dependency_value -> t option
+
+  val get_dependents : key -> dependency_value list
+end
+
+module DependencyTrackedTableNoCache (Key : KeyType) (Value : ValueType) : sig
+  include
+    NoCache.S
+      with type t = Value.t
+       and type key = Key.t
+       and type key_out = Key.out
+       and module KeySet = Set.Make(Key)
+       and module KeyMap = MyMap.Make(Key)
+
+  val get : key -> dependency:dependency_value -> t option
+
+  val get_dependents : key -> dependency_value list
+end

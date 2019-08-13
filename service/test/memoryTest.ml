@@ -33,7 +33,7 @@ module MockEdgeValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module MockEdges = Memory.WithCache (Memory.IntKey) (MockEdgeValue)
+module MockEdges = Memory.WithCache.Make (Memory.IntKey) (MockEdgeValue)
 
 module MockBackedgeValue = struct
   type t = Analysis.ClassHierarchy.Target.Set.Tree.t
@@ -45,7 +45,7 @@ module MockBackedgeValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module MockBackedges = Memory.WithCache (Memory.IntKey) (MockBackedgeValue)
+module MockBackedges = Memory.WithCache.Make (Memory.IntKey) (MockBackedgeValue)
 
 module MockAnnotationValue = struct
   type t = string
@@ -58,7 +58,7 @@ module MockAnnotationValue = struct
   let unmarshall value = value
 end
 
-module MockAnnotations = Memory.WithCache (Memory.IntKey) (MockAnnotationValue)
+module MockAnnotations = Memory.WithCache.Make (Memory.IntKey) (MockAnnotationValue)
 
 let test_decodable _ =
   let assert_decode prefix key value expected =
@@ -127,13 +127,57 @@ let test_hash_of_key _ =
        |> Int64.to_string ))
 
 
+module StringKey = struct
+  type t = string
+
+  let to_string x = x
+
+  let compare = String.compare
+
+  type out = string
+
+  let from_string x = x
+end
+
+module StringValue = struct
+  type t = string
+
+  let prefix = Prefix.make ()
+
+  let description = "Test1"
+
+  (* Strings are not marshalled by shared memory *)
+  let unmarshall value = value
+end
+
+module OtherStringValue = struct
+  type t = string
+
+  let prefix = Prefix.make ()
+
+  let description = "Test2"
+
+  (* Strings are not marshalled by shared memory *)
+  let unmarshall value = value
+end
+
 let test_dependency_table _ =
-  Memory.add_dependency ~table:"TestTable" ~key:"Foo" "fun1";
-  Memory.add_dependency ~table:"TestTable" ~key:"Bar" "fun1";
-  Memory.add_dependency ~table:"TestTable" ~key:"Foo" "fun2";
-  Memory.add_dependency ~table:"TestTable" ~key:"Foo" "fun3";
-  assert_equal (Memory.get_dependents ~table:"TestTable" ~key:"Foo") ["fun1"; "fun2"; "fun3"];
-  assert_equal (Memory.get_dependents ~table:"TestTable" ~key:"Bar") ["fun1"];
+  let module TableA = Memory.DependencyTrackedTableWithCache (StringKey) (StringValue) in
+  let function_1 = Memory.TypeCheckFunction "function_1" in
+  let function_2 = Memory.TypeCheckFunction "function_2" in
+  let function_3 = Memory.TypeCheckFunction "function_3" in
+  let function_4 = Memory.TypeCheckFunction "function_4" in
+  TableA.get "Foo" ~dependency:function_1 |> ignore;
+  TableA.get "Bar" ~dependency:function_1 |> ignore;
+  TableA.get "Foo" ~dependency:function_2 |> ignore;
+  TableA.get "Foo" ~dependency:function_3 |> ignore;
+  assert_equal (TableA.get_dependents "Foo") [function_3; function_2; function_1];
+  assert_equal (TableA.get_dependents "Bar") [function_1];
+  let module TableB = Memory.DependencyTrackedTableWithCache (StringKey) (OtherStringValue) in
+  TableB.get "Foo" ~dependency:function_4 |> ignore;
+
+  (* Ensure that different tables' same keys are encoded differently *)
+  assert_equal (TableB.get_dependents "Foo") [function_4];
   ()
 
 

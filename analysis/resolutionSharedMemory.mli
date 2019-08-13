@@ -26,7 +26,13 @@ module TypeAnnotationsValue : sig
   val unmarshall : string -> t
 end
 
-include module type of Memory.WithCache (Reference.Key) (TypeAnnotationsValue)
+include
+  Memory.WithCache.S
+    with type t = TypeAnnotationsValue.t
+     and type key = Reference.Key.t
+     and type key_out = Reference.Key.out
+     and module KeySet = Caml.Set.Make(Reference.Key)
+     and module KeyMap = MyMap.Make(Reference.Key)
 
 module AnnotationsKeyValue : sig
   type t = Reference.t list
@@ -38,7 +44,13 @@ module AnnotationsKeyValue : sig
   val unmarshall : string -> t
 end
 
-module Keys : module type of Memory.NoCache (Reference.Key) (AnnotationsKeyValue)
+module Keys :
+  Memory.NoCache.S
+    with type t = AnnotationsKeyValue.t
+     and type key = Reference.Key.t
+     and type key_out = Reference.Key.out
+     and module KeySet = Caml.Set.Make(Reference.Key)
+     and module KeyMap = MyMap.Make(Reference.Key)
 
 val add : qualifier:Reference.t -> Reference.t -> annotations -> unit
 

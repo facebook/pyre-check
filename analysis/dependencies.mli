@@ -87,7 +87,13 @@ module Callgraph : sig
 
   module CalleeValue : SharedMemory.ValueType with type t = callee list
 
-  module SharedMemory : module type of SharedMemory.WithCache (Reference.Key) (CalleeValue)
+  module SharedMemory :
+    Memory.WithCache.S
+      with type t = CalleeValue.t
+       and type key = Reference.Key.t
+       and type key_out = Reference.Key.out
+       and module KeySet = Caml.Set.Make(Reference.Key)
+       and module KeyMap = MyMap.Make(Reference.Key)
 
   val set : caller:Reference.t -> callees:callee list -> unit
 

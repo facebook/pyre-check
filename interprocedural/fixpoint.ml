@@ -30,7 +30,7 @@ type state = {
 }
 
 module SharedModels =
-  SharedMemory.WithCache
+  SharedMemory.WithCache.Make
     (Callable.Key)
     (struct
       type t = Result.model_t
@@ -43,7 +43,7 @@ module SharedModels =
     end)
 
 module SharedResults =
-  SharedMemory.WithCache
+  SharedMemory.WithCache.Make
     (Callable.Key)
     (struct
       type t = Result.result_t
@@ -62,7 +62,7 @@ type meta_data = {
 
 (* Caches the fixpoint state (is_partial) of a call model. *)
 module SharedFixpoint =
-  SharedMemory.WithCache
+  SharedMemory.WithCache.Make
     (Callable.Key)
     (struct
       type t = meta_data

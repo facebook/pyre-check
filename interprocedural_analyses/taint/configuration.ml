@@ -27,7 +27,7 @@ type t = {
 let key = "root"
 
 module SharedConfig =
-  SharedMemory.WithCache
+  SharedMemory.WithCache.Make
     (struct
       include String
 

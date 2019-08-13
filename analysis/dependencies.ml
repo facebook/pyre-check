@@ -303,7 +303,7 @@ module Callgraph = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module SharedMemory = SharedMemory.WithCache (Reference.Key) (CalleeValue)
+  module SharedMemory = SharedMemory.WithCache.Make (Reference.Key) (CalleeValue)
 
   let set ~caller ~callees = SharedMemory.add caller callees
 

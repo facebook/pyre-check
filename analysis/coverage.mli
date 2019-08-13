@@ -44,7 +44,13 @@ module CoverageValue : sig
   val unmarshall : string -> t
 end
 
-module SharedMemory : module type of Memory.WithCache (Reference.Key) (CoverageValue)
+module SharedMemory :
+  Memory.WithCache.S
+    with type t = CoverageValue.t
+     and type key = Reference.Key.t
+     and type key_out = Reference.Key.out
+     and module KeySet = Caml.Set.Make(Reference.Key)
+     and module KeyMap = MyMap.Make(Reference.Key)
 
 val add : t -> qualifier:Reference.t -> unit
 

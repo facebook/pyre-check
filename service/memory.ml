@@ -117,46 +117,68 @@ end = struct
     List.fold keys ~init:String.Map.empty ~f:add
 end
 
-module NoCache (Key : KeyType) (Value : ValueType) : sig
-  type decodable += Decoded of Key.out * Value.t option
+module NoCache = struct
+  module type S = sig
+    include SharedMemory.NoCache
 
-  val serialize_key : Key.t -> string
+    type key_out
 
-  val hash_of_key : Key.t -> string
+    type decodable += Decoded of key_out * t option
 
-  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
+    val serialize_key : key -> string
 
-  include
-    SharedMemory.NoCache
-      with type t = Value.t
-       and type key = Key.t
-       and module KeySet = Set.Make(Key)
-       and module KeyMap = MyMap.Make(Key)
-end = struct
-  include Register (Key) (Value) ()
+    val hash_of_key : key -> string
 
-  include SharedMemory.NoCache (Key) (Value)
+    val compute_hashes_to_keys : keys:key list -> string String.Map.t
+  end
+
+  module Make (Key : KeyType) (Value : ValueType) : sig
+    include
+      S
+        with type t = Value.t
+         and type key = Key.t
+         and type key_out = Key.out
+         and module KeySet = Set.Make(Key)
+         and module KeyMap = MyMap.Make(Key)
+  end = struct
+    type key_out = Key.out
+
+    include Register (Key) (Value) ()
+
+    include SharedMemory.NoCache (Key) (Value)
+  end
 end
 
-module WithCache (Key : KeyType) (Value : ValueType) : sig
-  type decodable += Decoded of Key.out * Value.t option
+module WithCache = struct
+  module type S = sig
+    include SharedMemory.WithCache
 
-  val serialize_key : Key.t -> string
+    type key_out
 
-  val hash_of_key : Key.t -> string
+    type decodable += Decoded of key_out * t option
 
-  val compute_hashes_to_keys : keys:Key.t list -> string String.Map.t
+    val serialize_key : key -> string
 
-  include
-    SharedMemory.WithCache
-      with type t = Value.t
-       and type key = Key.t
-       and module KeySet = Set.Make(Key)
-       and module KeyMap = MyMap.Make(Key)
-end = struct
-  include Register (Key) (Value) ()
+    val hash_of_key : key -> string
 
-  include SharedMemory.WithCache (Key) (Value)
+    val compute_hashes_to_keys : keys:key list -> string String.Map.t
+  end
+
+  module Make (Key : KeyType) (Value : ValueType) : sig
+    include
+      S
+        with type t = Value.t
+         and type key = Key.t
+         and type key_out = Key.out
+         and module KeySet = Set.Make(Key)
+         and module KeyMap = MyMap.Make(Key)
+  end = struct
+    type key_out = Key.out
+
+    include Register (Key) (Value) ()
+
+    include SharedMemory.WithCache (Key) (Value)
+  end
 end
 
 type bytes = int
@@ -266,7 +288,7 @@ module type SerializableValueType = sig
 end
 
 module Serializer (Value : SerializableValueType) = struct
-  module Table = NoCache (SingletonKey) (Value.Serialized)
+  module Table = NoCache.Make (SingletonKey) (Value.Serialized)
 
   let store table =
     let data = Value.serialize table in
@@ -327,6 +349,8 @@ end
    documentation/discoverability purposes *)
 let _ = DependencyGraph.hh_allow_dependency_table_reads
 
+type dependency_value = TypeCheckFunction of string [@@deriving compare, eq, sexp, show, hash]
+
 module DependencyDecoder = struct
   module IntegerKey = struct
     type t = int
@@ -340,29 +364,88 @@ module DependencyDecoder = struct
     let from_string = Int.of_string
   end
 
-  module StringValue = struct
-    type t = string
+  module DependencyValue = struct
+    type t = dependency_value
 
     let prefix = Prefix.make ()
 
     let description = "Dependency Decoder"
 
-    (* Strings are not marshalled by shared memory *)
-    let unmarshall value = value
+    let unmarshall value = Marshal.from_string value 0
   end
 
-  include WithCache (IntegerKey) (StringValue)
+  include WithCache.Make (IntegerKey) (DependencyValue)
 
   let get_unsafe hash = get hash |> fun optional -> Option.value_exn optional
 end
 
-let add_dependency ~table ~key file =
-  let file_hash = Dependency.make file in
-  DependencyDecoder.add file_hash file;
-  DependencyGraph.add (Dependency.make (table, key)) file_hash
+module type DependencyTrackedTable = sig
+  type key
+
+  val add_dependency : key -> dependency_value -> unit
+
+  val get_dependents : key -> dependency_value list
+end
+
+module RegisterDependencyTrackedTable (Key : KeyType) (Value : ValueType) : sig
+  include DependencyTrackedTable with type key = Key.t
+end = struct
+  type key = Key.t
+
+  let add_dependency key value =
+    let value_hash = Dependency.make value in
+    DependencyDecoder.add value_hash value;
+    DependencyGraph.add (Dependency.make (Value.prefix, key)) value_hash
 
 
-let get_dependents ~table ~key =
-  DependencyGraph.get (Dependency.make (table, key))
-  |> DependencySet.to_list
-  |> List.map ~f:DependencyDecoder.get_unsafe
+  let get_dependents key =
+    DependencyGraph.get (Dependency.make (Value.prefix, key))
+    |> DependencySet.to_list
+    |> List.map ~f:DependencyDecoder.get_unsafe
+end
+
+module DependencyTrackedTableWithCache (Key : KeyType) (Value : ValueType) : sig
+  include DependencyTrackedTable with type key = Key.t
+
+  include
+    WithCache.S
+      with type t = Value.t
+       and type key = Key.t
+       and type key_out = Key.out
+       and module KeySet = Set.Make(Key)
+       and module KeyMap = MyMap.Make(Key)
+
+  val get : key -> dependency:dependency_value -> t option
+
+  val get_dependents : key -> dependency_value list
+end = struct
+  include RegisterDependencyTrackedTable (Key) (Value)
+  include WithCache.Make (Key) (Value)
+
+  let get key ~dependency =
+    add_dependency key dependency;
+    get key
+end
+
+module DependencyTrackedTableNoCache (Key : KeyType) (Value : ValueType) : sig
+  include DependencyTrackedTable with type key = Key.t
+
+  include
+    NoCache.S
+      with type t = Value.t
+       and type key = Key.t
+       and type key_out = Key.out
+       and module KeySet = Set.Make(Key)
+       and module KeyMap = MyMap.Make(Key)
+
+  val get : key -> dependency:dependency_value -> t option
+
+  val get_dependents : key -> dependency_value list
+end = struct
+  include RegisterDependencyTrackedTable (Key) (Value)
+  include NoCache.Make (Key) (Value)
+
+  let get key ~dependency =
+    add_dependency key dependency;
+    get key
+end
