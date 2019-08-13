@@ -165,26 +165,28 @@ let test_parse_sources context =
 
 let test_register_modules context =
   let assert_module_exports raw_source expected_exports =
-    let global_resolution =
-      let _, _, environment =
+    let ast_environment =
+      let _, ast_environment =
         ScratchProject.setup
           ~context
           ["testing.py", raw_source; "canary.py", "from .testing import *"]
-        |> ScratchProject.build_environment
+        |> ScratchProject.parse_sources
       in
-      Analysis.Environment.resolution environment ()
+      Analysis.AstEnvironment.read_only ast_environment
     in
     let assert_exports ~qualifier =
-      let module_definition =
-        let module_get = Analysis.GlobalResolution.module_definition global_resolution in
-        Option.value_exn (module_get qualifier)
+      let actual_exports =
+        let exports =
+          Analysis.AstEnvironment.ReadOnly.get_wildcard_exports ast_environment qualifier
+        in
+        Option.value_exn exports
       in
       assert_equal
         ~cmp:(List.equal Reference.equal)
         ~printer:(fun expression_list ->
           List.map ~f:Reference.show expression_list |> String.concat ~sep:", ")
         (List.map ~f:Reference.create expected_exports)
-        (Module.wildcard_exports module_definition)
+        actual_exports
     in
     assert_exports ~qualifier:!&"testing";
     assert_exports ~qualifier:!&"canary"

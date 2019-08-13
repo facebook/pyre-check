@@ -106,11 +106,7 @@ let get_class_attributes_list
   class_data_list |> List.map ~f:get_attributes_name_and_type |> List.concat
 
 
-let get_module_members_list
-    ~resolution
-    ~cursor_position:{ Location.line; column }
-    ~module_reference
-    module_definition
+let get_module_members_list ~resolution ~cursor_position:{ Location.line; column } module_reference
   =
   let open LanguageServer.Types in
   let position = Position.from_pyre_position ~line ~column in
@@ -131,7 +127,8 @@ let get_module_members_list
         ~item_name:(Reference.last member_reference)
         ~item_type:(Resolution.resolve_reference resolution fully_qualified_member_reference)
   in
-  List.filter_map (Module.wildcard_exports module_definition) ~f:get_member_name_and_type
+  AstEnvironment.ReadOnly.get_wildcard_exports ast_environment module_reference
+  >>= fun wildcard_exports -> Some (List.filter_map wildcard_exports ~f:get_member_name_and_type)
 
 
 let get_completion_items ~state ~configuration ~path ~cursor_position =
@@ -210,10 +207,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             (* Find module members only if class attribute completion fails *)
             File.content file
             >>= find_module_reference ~cursor_position
-            >>= (fun module_reference ->
-                  module_reference
-                  |> GlobalResolution.module_definition global_resolution
-                  >>| get_module_members_list ~resolution ~cursor_position ~module_reference)
+            >>= get_module_members_list ~resolution ~cursor_position
             |> Option.value ~default:[]
           else
             class_attributes_list
