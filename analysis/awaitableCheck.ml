@@ -193,25 +193,16 @@ module State (Context : Context) = struct
         List.rev_append awaitables new_awaitables, state
     | Call { Call.callee; arguments } -> (
         let awaitables, state = forward_expression ~resolution ~state ~expression:callee in
-        let forward_argument (awaitables, state) { Call.Argument.value; _ } =
-          match value with
-          | { Node.value = Name name; _ } -> awaitables, mark_name_as_awaited state ~name
-          | { Node.value = Starred (Starred.Once { Node.value = Name name; _ }); _ } ->
-              awaitables, mark_name_as_awaited state ~name
-          | _ ->
-              let new_awaitables, state =
-                forward_expression ~resolution ~state ~expression:value
-              in
-              List.rev_append new_awaitables awaitables, state
+        let forward_argument state { Call.Argument.value; _ } =
+          let names = Visit.collect_names { Node.location; value = Statement.Expression value } in
+          let mark state name = mark_name_as_awaited state ~name:(Node.value name) in
+          List.fold names ~init:state ~f:mark
         in
         let need_to_await = state.need_to_await in
         (* Don't introduce awaitables for the arguments of a call, as they will be consumed by the
            call anyway. *)
-        let awaitables, state =
-          List.fold
-            arguments
-            ~init:(awaitables, { state with need_to_await = false })
-            ~f:forward_argument
+        let state =
+          List.fold arguments ~init:{ state with need_to_await = false } ~f:forward_argument
         in
         let state = { state with need_to_await } in
         let annotation = Resolution.resolve resolution expression in
