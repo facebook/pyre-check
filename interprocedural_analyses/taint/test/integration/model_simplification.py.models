@@ -273,7 +273,7 @@
             "root": {
               "filename": "model_simplification.py",
               "line": 75,
-              "start": 34,
+              "start": 21,
               "end": 36
             },
             "leaves": [

@@ -225,7 +225,7 @@
             "root": {
               "filename": "properties.py",
               "line": 15,
-              "start": 36,
+              "start": 23,
               "end": 38
             },
             "tito": [ { "line": 16, "start": 15, "end": 19 } ],
@@ -345,7 +345,7 @@
             "root": {
               "filename": "properties.py",
               "line": 28,
-              "start": 36,
+              "start": 23,
               "end": 38
             },
             "tito": [ { "line": 29, "start": 15, "end": 19 } ],
@@ -413,7 +413,7 @@
             "root": {
               "filename": "properties.py",
               "line": 39,
-              "start": 28,
+              "start": 15,
               "end": 30
             },
             "leaves": [

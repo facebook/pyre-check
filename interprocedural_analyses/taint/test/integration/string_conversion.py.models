@@ -20,7 +20,7 @@
               "position": {
                 "filename": "string_conversion.py",
                 "line": 26,
-                "start": 13,
+                "start": 9,
                 "end": 16
               },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
@@ -85,7 +85,7 @@
               "position": {
                 "filename": "string_conversion.py",
                 "line": 31,
-                "start": 12,
+                "start": 9,
                 "end": 15
               },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
@@ -150,7 +150,7 @@
               "position": {
                 "filename": "string_conversion.py",
                 "line": 21,
-                "start": 12,
+                "start": 9,
                 "end": 15
               },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],

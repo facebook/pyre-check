@@ -20,7 +20,7 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 104,
-                "start": 17,
+                "start": 8,
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
@@ -84,7 +84,7 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 104,
-                "start": 17,
+                "start": 8,
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
@@ -148,7 +148,7 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 72,
-                "start": 17,
+                "start": 8,
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
@@ -212,7 +212,7 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 72,
-                "start": 17,
+                "start": 8,
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
@@ -276,7 +276,7 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 120,
-                "start": 17,
+                "start": 8,
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB" ],
@@ -297,7 +297,7 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 120,
-                "start": 17,
+                "start": 8,
                 "end": 19
               },
               "resolves_to": [ "overrides.D.methodB" ],
@@ -361,7 +361,7 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 136,
-                "start": 17,
+                "start": 8,
                 "end": 19
               },
               "resolves_to": [ "overrides.D.methodB" ],
@@ -425,7 +425,7 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 110,
-                "start": 17,
+                "start": 8,
                 "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
@@ -858,7 +858,7 @@
             "root": {
               "filename": "overrides.py",
               "line": 39,
-              "start": 28,
+              "start": 15,
               "end": 30
             },
             "leaves": [
@@ -1008,7 +1008,7 @@
             "root": {
               "filename": "overrides.py",
               "line": 68,
-              "start": 28,
+              "start": 15,
               "end": 30
             },
             "leaves": [
@@ -1039,7 +1039,7 @@
             "root": {
               "filename": "overrides.py",
               "line": 152,
-              "start": 28,
+              "start": 15,
               "end": 30
             },
             "tito": [ { "line": 152, "start": 15, "end": 30 } ],

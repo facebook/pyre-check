@@ -20,7 +20,7 @@
               "position": {
                 "filename": "port.py",
                 "line": 15,
-                "start": 20,
+                "start": 8,
                 "end": 22
               },
               "resolves_to": [ "port.source_field" ],
@@ -84,7 +84,7 @@
               "position": {
                 "filename": "port.py",
                 "line": 33,
-                "start": 43,
+                "start": 31,
                 "end": 45
               },
               "resolves_to": [ "port.source_field" ],
@@ -148,7 +148,7 @@
               "position": {
                 "filename": "port.py",
                 "line": 28,
-                "start": 27,
+                "start": 15,
                 "end": 29
               },
               "resolves_to": [ "port.source_field" ],
@@ -212,7 +212,7 @@
               "position": {
                 "filename": "port.py",
                 "line": 50,
-                "start": 52,
+                "start": 40,
                 "end": 54
               },
               "resolves_to": [ "port.source_field" ],
@@ -276,7 +276,7 @@
               "position": {
                 "filename": "port.py",
                 "line": 45,
-                "start": 39,
+                "start": 27,
                 "end": 41
               },
               "resolves_to": [ "port.source_field" ],
@@ -331,7 +331,7 @@
             "root": {
               "filename": "port.py",
               "line": 56,
-              "start": 28,
+              "start": 15,
               "end": 30
             },
             "leaves": [
@@ -475,7 +475,7 @@
             "root": {
               "filename": "port.py",
               "line": 6,
-              "start": 28,
+              "start": 15,
               "end": 30
             },
             "leaves": [

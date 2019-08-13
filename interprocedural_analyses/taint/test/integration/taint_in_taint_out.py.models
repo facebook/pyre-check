@@ -163,7 +163,7 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 37,
-              "start": 45,
+              "start": 32,
               "end": 47
             },
             "tito": [ { "line": 37, "start": 32, "end": 47 } ],

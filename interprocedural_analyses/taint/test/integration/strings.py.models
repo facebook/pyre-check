@@ -19,7 +19,7 @@
             "root": {
               "filename": "strings.py",
               "line": 11,
-              "start": 37,
+              "start": 24,
               "end": 39
             },
             "tito": [ { "line": 11, "start": 24, "end": 39 } ],
@@ -78,7 +78,7 @@
             "root": {
               "filename": "strings.py",
               "line": 16,
-              "start": 37,
+              "start": 24,
               "end": 39
             },
             "tito": [ { "line": 16, "start": 24, "end": 39 } ],
@@ -137,7 +137,7 @@
             "root": {
               "filename": "strings.py",
               "line": 22,
-              "start": 41,
+              "start": 28,
               "end": 43
             },
             "tito": [
@@ -162,7 +162,7 @@
             "root": {
               "filename": "strings.py",
               "line": 24,
-              "start": 41,
+              "start": 28,
               "end": 43
             },
             "tito": [
@@ -225,7 +225,7 @@
             "root": {
               "filename": "strings.py",
               "line": 30,
-              "start": 41,
+              "start": 28,
               "end": 43
             },
             "tito": [ { "line": 30, "start": 28, "end": 43 } ],
@@ -246,7 +246,7 @@
             "root": {
               "filename": "strings.py",
               "line": 32,
-              "start": 25,
+              "start": 12,
               "end": 27
             },
             "tito": [ { "line": 30, "start": 28, "end": 43 } ],
@@ -305,7 +305,7 @@
             "root": {
               "filename": "strings.py",
               "line": 38,
-              "start": 25,
+              "start": 12,
               "end": 27
             },
             "tito": [ { "line": 40, "start": 28, "end": 43 } ],
@@ -326,7 +326,7 @@
             "root": {
               "filename": "strings.py",
               "line": 40,
-              "start": 41,
+              "start": 28,
               "end": 43
             },
             "tito": [ { "line": 40, "start": 28, "end": 43 } ],

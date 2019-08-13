@@ -19,7 +19,7 @@
             "root": {
               "filename": "dictionary.py",
               "line": 67,
-              "start": 52,
+              "start": 39,
               "end": 54
             },
             "leaves": [
@@ -82,7 +82,7 @@
             "root": {
               "filename": "dictionary.py",
               "line": 59,
-              "start": 49,
+              "start": 36,
               "end": 51
             },
             "tito": [ { "line": 59, "start": 30, "end": 52 } ],
@@ -135,7 +135,7 @@
             "root": {
               "filename": "dictionary.py",
               "line": 33,
-              "start": 26,
+              "start": 13,
               "end": 28
             },
             "leaves": [
@@ -166,7 +166,7 @@
             "root": {
               "filename": "dictionary.py",
               "line": 21,
-              "start": 26,
+              "start": 13,
               "end": 28
             },
             "leaves": [
@@ -228,7 +228,7 @@
             "root": {
               "filename": "dictionary.py",
               "line": 39,
-              "start": 31,
+              "start": 18,
               "end": 33
             },
             "leaves": [
@@ -263,7 +263,7 @@
             "root": {
               "filename": "dictionary.py",
               "line": 45,
-              "start": 31,
+              "start": 18,
               "end": 33
             },
             "leaves": [
@@ -298,7 +298,7 @@
             "root": {
               "filename": "dictionary.py",
               "line": 6,
-              "start": 32,
+              "start": 19,
               "end": 34
             },
             "leaves": [

@@ -59,7 +59,7 @@
             "root": {
               "filename": "side_effects.py",
               "line": 12,
-              "start": 29,
+              "start": 16,
               "end": 31
             },
             "tito": [ { "line": 12, "start": 16, "end": 31 } ],
@@ -94,7 +94,7 @@
             "root": {
               "filename": "side_effects.py",
               "line": 6,
-              "start": 32,
+              "start": 19,
               "end": 34
             },
             "tito": [ { "line": 6, "start": 19, "end": 34 } ],
@@ -129,7 +129,7 @@
             "root": {
               "filename": "side_effects.py",
               "line": 18,
-              "start": 36,
+              "start": 23,
               "end": 38
             },
             "tito": [ { "line": 18, "start": 23, "end": 38 } ],
@@ -166,7 +166,7 @@
             "root": {
               "filename": "side_effects.py",
               "line": 30,
-              "start": 26,
+              "start": 13,
               "end": 28
             },
             "tito": [ { "line": 30, "start": 13, "end": 28 } ],
