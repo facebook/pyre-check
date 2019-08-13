@@ -111,6 +111,6 @@ let populate_shared_memory
     Statistics.event
       ~section:`Memory
       ~name:"shared memory size"
-      ~integers:["size", Ast.SharedMemory.heap_size ()]
+      ~integers:["size", Memory.heap_size ()]
       () );
   shared_handler

@@ -73,6 +73,8 @@ end
 
 val get_heap_handle : Configuration.Analysis.t -> SharedMemory.handle
 
+val heap_size : unit -> int
+
 val worker_garbage_control : Caml.Gc.control
 
 val report_statistics : unit -> unit
@@ -96,6 +98,8 @@ module SingletonKey : sig
 
   val key : t
 end
+
+module IntKey : KeyType with type t = int and type out = int
 
 module type SerializableValueType = sig
   type t

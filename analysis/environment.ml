@@ -227,9 +227,9 @@ module SharedMemory = struct
   module OrderIndices = Memory.WithCache (StringKey) (OrderIndexValue)
   (** Type order maps *)
 
-  module OrderAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (OrderAnnotationValue)
-  module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
-  module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
+  module OrderAnnotations = Memory.WithCache (Memory.IntKey) (OrderAnnotationValue)
+  module OrderEdges = Memory.WithCache (Memory.IntKey) (EdgeValue)
+  module OrderBackedges = Memory.WithCache (Memory.IntKey) (BackedgeValue)
   module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
 end
 

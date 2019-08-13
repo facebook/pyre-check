@@ -70,7 +70,7 @@ let analyze_sources ?open_documents ~scheduler ~configuration ~environment sourc
       Statistics.event
         ~section:`Memory
         ~name:"shared memory size post-typecheck"
-        ~integers:["size", SharedMemory.heap_size ()]
+        ~integers:["size", Memory.heap_size ()]
         ();
       errors
     in

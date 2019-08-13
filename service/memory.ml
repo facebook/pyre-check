@@ -213,6 +213,10 @@ let get_heap_handle { Configuration.Analysis.debug; _ } =
   heap_handle
 
 
+let heap_size () =
+  SharedMemory.heap_size () |> Float.of_int |> (fun size -> size /. 1.0e6) |> Int.of_float
+
+
 let report_statistics () =
   Measure.print_stats ();
   Measure.print_distributions ()
@@ -237,6 +241,18 @@ module SingletonKey = struct
   let from_string = Int.of_string
 
   let key = 0
+end
+
+module IntKey = struct
+  type t = int
+
+  let to_string = Int.to_string
+
+  let compare = Int.compare
+
+  type out = int
+
+  let from_string = Core.Int.of_string
 end
 
 module type SerializableValueType = sig

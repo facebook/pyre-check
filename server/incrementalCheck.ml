@@ -108,7 +108,7 @@ let recheck
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
-    ~integers:["size", Ast.SharedMemory.heap_size ()]
+    ~integers:["size", Memory.heap_size ()]
     ();
   Service.Postprocess.register_ignores ~configuration scheduler recheck_sources;
 

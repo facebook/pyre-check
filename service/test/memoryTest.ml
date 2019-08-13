@@ -33,7 +33,7 @@ module MockEdgeValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module MockEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (MockEdgeValue)
+module MockEdges = Memory.WithCache (Memory.IntKey) (MockEdgeValue)
 
 module MockBackedgeValue = struct
   type t = Analysis.ClassHierarchy.Target.Set.Tree.t
@@ -45,7 +45,7 @@ module MockBackedgeValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module MockBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (MockBackedgeValue)
+module MockBackedges = Memory.WithCache (Memory.IntKey) (MockBackedgeValue)
 
 module MockAnnotationValue = struct
   type t = string
@@ -58,7 +58,7 @@ module MockAnnotationValue = struct
   let unmarshall value = value
 end
 
-module MockAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (MockAnnotationValue)
+module MockAnnotations = Memory.WithCache (Memory.IntKey) (MockAnnotationValue)
 
 let test_decodable _ =
   let assert_decode prefix key value expected =
@@ -67,22 +67,22 @@ let test_decodable _ =
   in
   assert_decode
     MockEdgeValue.prefix
-    (Ast.SharedMemory.IntKey.to_string 1234)
+    (Memory.IntKey.to_string 1234)
     (Marshal.to_string [] [Marshal.Closures])
     (MockEdges.Decoded (1234, Some []));
   assert_decode
     MockBackedgeValue.prefix
-    (Ast.SharedMemory.IntKey.to_string 1234)
+    (Memory.IntKey.to_string 1234)
     (Marshal.to_string [] [Marshal.Closures])
     (MockBackedges.Decoded (1234, Some Analysis.ClassHierarchy.Target.Set.Tree.empty));
   assert_decode
     MockEdgeValue.prefix
-    (Ast.SharedMemory.IntKey.to_string 1234)
+    (Memory.IntKey.to_string 1234)
     "can't decode this"
     (MockEdges.Decoded (1234, None));
   assert_decode
     MockAnnotationValue.prefix
-    (Ast.SharedMemory.IntKey.to_string 1234)
+    (Memory.IntKey.to_string 1234)
     "can decode this"
     (MockAnnotations.Decoded (1234, Some "can decode this"));
   assert_equal
