@@ -9,7 +9,6 @@ open Ast
 open Analysis
 open Expression
 open Statement
-open Pyre
 open Test
 
 let test_expand_relative_imports _ =
@@ -2166,27 +2165,6 @@ let test_expand_typed_dictionaries _ =
   ()
 
 
-let test_try_preprocess _ =
-  let assert_try_preprocess source expected =
-    let parse source = parse ~handle:"test.py" source in
-    let parsed = source |> parse in
-    let expected = expected >>| parse in
-    let printer source =
-      source >>| Format.asprintf "%a" Source.pp |> Option.value ~default:"(none)"
-    in
-    let source_equal left right =
-      Source.equal { left with Source.hash = -1 } { right with Source.hash = -1 }
-    in
-    assert_equal
-      ~cmp:(Option.equal source_equal)
-      ~printer
-      expected
-      (Preprocessing.try_preprocess parsed)
-  in
-  assert_try_preprocess "from foo import *" None;
-  assert_try_preprocess "a = 3" (Some "$local_test$a = 3")
-
-
 let () =
   "preprocessing"
   >::: [ "expand_string_annotations" >:: test_expand_string_annotations;
@@ -2200,6 +2178,5 @@ let () =
          "defines" >:: test_defines;
          "classes" >:: test_classes;
          "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
-         "typed_dictionaries" >:: test_expand_typed_dictionaries;
-         "try_preprocess" >:: test_try_preprocess ]
+         "typed_dictionaries" >:: test_expand_typed_dictionaries ]
   |> Test.run

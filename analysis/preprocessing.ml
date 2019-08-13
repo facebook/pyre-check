@@ -10,8 +10,6 @@ open Pyre
 open PyreParser
 open Statement
 
-exception MissingWildcardImport
-
 let expand_relative_imports ({ Source.qualifier; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer (struct
     type t = Reference.t
@@ -1290,37 +1288,6 @@ let expand_type_checking_imports source =
   Transform.transform () source |> Transform.source
 
 
-let expand_wildcard_imports ~force source =
-  let module Transform = Transform.MakeStatementTransformer (struct
-    include Transform.Identity
-
-    type t = unit
-
-    let statement state ({ Node.value; _ } as statement) =
-      match value with
-      | Import { Import.from = Some from; imports }
-        when List.exists imports ~f:(fun { Import.name; _ } ->
-                 String.equal (Reference.show name) "*") ->
-          let expanded_import =
-            match Ast.SharedMemory.WildcardExports.get ~qualifier:from with
-            | Some exports ->
-                exports
-                |> List.map ~f:(fun name -> { Import.name; alias = None })
-                |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
-                |> fun value -> { statement with Node.value }
-            | None ->
-                if force then
-                  statement
-                else
-                  raise MissingWildcardImport
-          in
-          state, [expanded_import]
-      | _ -> state, [statement]
-  end)
-  in
-  Transform.transform () source |> Transform.source
-
-
 let expand_implicit_returns source =
   let module ExpandingTransform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
@@ -1748,13 +1715,16 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
   { source with Source.statements = List.map ~f:expand_typed_dictionaries statements }
 
 
-let preprocess_steps ~force source =
+let preprocess_phase0 source =
   source
   |> expand_relative_imports
   |> replace_platform_specific_code
   |> replace_version_specific_code
   |> expand_type_checking_imports
-  |> expand_wildcard_imports ~force
+
+
+let preprocess_phase1 source =
+  source
   |> expand_string_annotations
   |> expand_format_string
   |> qualify
@@ -1763,9 +1733,4 @@ let preprocess_steps ~force source =
   |> expand_typed_dictionary_declarations
 
 
-let preprocess source = preprocess_steps ~force:true source
-
-let try_preprocess source =
-  match preprocess_steps ~force:false source with
-  | source -> Some source
-  | exception MissingWildcardImport -> None
+let preprocess source = preprocess_phase0 source |> preprocess_phase1

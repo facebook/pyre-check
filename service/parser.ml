@@ -82,6 +82,7 @@ let parse_raw_sources ~configuration ~scheduler source_paths =
     =
     match parse_source ~configuration source_path with
     | Success ({ Source.qualifier; _ } as source) ->
+        let source = Preprocessing.preprocess_phase0 source in
         RawSources.add qualifier source;
         { result with parsed = qualifier :: parsed }
     | SyntaxError message ->
@@ -117,13 +118,45 @@ module FixpointResult = struct
     }
 end
 
+exception MissingWildcardImport
+
+let expand_wildcard_imports ~force source =
+  let open Statement in
+  let module Transform = Transform.MakeStatementTransformer (struct
+    include Transform.Identity
+
+    type t = unit
+
+    let statement state ({ Node.value; _ } as statement) =
+      match value with
+      | Import { Import.from = Some from; imports }
+        when List.exists imports ~f:(fun { Import.name; _ } ->
+                 String.equal (Reference.show name) "*") ->
+          let expanded_import =
+            match Ast.SharedMemory.WildcardExports.get ~qualifier:from with
+            | Some exports ->
+                exports
+                |> List.map ~f:(fun name -> { Import.name; alias = None })
+                |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
+                |> fun value -> { statement with Node.value }
+            | None ->
+                if force then
+                  statement
+                else
+                  raise MissingWildcardImport
+          in
+          state, [expanded_import]
+      | _ -> state, [statement]
+  end)
+  in
+  try Some (Transform.transform () source |> Transform.source) with
+  | MissingWildcardImport -> None
+
+
 let process_sources_job ~preprocessing_state ~ast_environment ~force qualifiers =
   let process ({ FixpointResult.processed; not_processed } as result) qualifier =
-    let source =
-      let source = Option.value_exn (RawSources.get qualifier) in
-      match preprocessing_state with
-      | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
-      | None -> source
+    let try_preprocess_phase1 ~force source =
+      expand_wildcard_imports ~force source >>| Preprocessing.preprocess_phase1
     in
     let store_result preprocessed =
       let add_module_from_source source =
@@ -135,16 +168,17 @@ let process_sources_job ~preprocessing_state ~ast_environment ~force qualifiers 
       let stored = Plugin.apply_to_ast preprocessed in
       AstEnvironment.add_source ast_environment stored
     in
-    match force with
-    | true ->
-        store_result (Preprocessing.preprocess source);
+    let source =
+      let source = Option.value_exn (RawSources.get qualifier) in
+      match preprocessing_state with
+      | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
+      | None -> source
+    in
+    match try_preprocess_phase1 ~force source with
+    | Some preprocessed ->
+        store_result preprocessed;
         { result with processed = qualifier :: processed }
-    | false -> (
-      match Preprocessing.try_preprocess source with
-      | Some preprocessed ->
-          store_result preprocessed;
-          { result with processed = qualifier :: processed }
-      | None -> { result with not_processed = qualifier :: not_processed } )
+    | None -> { result with not_processed = qualifier :: not_processed }
   in
   List.fold ~init:{ FixpointResult.processed = []; not_processed = [] } ~f:process qualifiers
 
