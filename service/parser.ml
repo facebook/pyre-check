@@ -126,11 +126,9 @@ let process_sources_job ~preprocessing_state ~ast_environment ~force qualifiers 
       | None -> source
     in
     let store_result preprocessed =
-      let add_module_from_source ({ Source.qualifier; _ } as source) =
-        Module.create source
-        |> fun ast_module ->
-        (* TODO (T47860871): Deprecate Ast.SharedMemory.Modules *)
-        Ast.SharedMemory.Modules.add ~qualifier ~ast_module
+      let add_module_from_source source =
+        (* TODO (T47860871): Deprecate Ast.SharedMemory.WildcardExports *)
+        Ast.SharedMemory.WildcardExports.add source
       in
       add_module_from_source preprocessed;
 
@@ -176,7 +174,7 @@ let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environm
 
 
 let clean_shared_memory qualifiers =
-  Ast.SharedMemory.Modules.remove ~qualifiers;
+  Ast.SharedMemory.WildcardExports.remove ~qualifiers;
   RawSources.remove_batch (RawSources.KeySet.of_list qualifiers)
 
 

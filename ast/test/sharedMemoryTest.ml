@@ -16,10 +16,10 @@ let test_compute_hashes_to_keys _ =
       actual
   in
   assert_mapping_equal
-    [ Modules.hash_of_key !&"foo", Modules.serialize_key !&"foo";
-      Modules.hash_of_key !&"bar", Modules.serialize_key !&"bar";
-      Modules.hash_of_key !&"foo.b", Modules.serialize_key !&"foo.b" ]
-    (Modules.compute_hashes_to_keys ~keys:[!&"foo"; !&"bar"; !&"foo.b"])
+    [ WildcardExports.hash_of_key !&"foo", WildcardExports.serialize_key !&"foo";
+      WildcardExports.hash_of_key !&"bar", WildcardExports.serialize_key !&"bar";
+      WildcardExports.hash_of_key !&"foo.b", WildcardExports.serialize_key !&"foo.b" ]
+    (WildcardExports.compute_hashes_to_keys ~keys:[!&"foo"; !&"bar"; !&"foo.b"])
 
 
 let () =

@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Pyre
 module SharedMemory = Memory
 
 module IntKey = struct
@@ -19,37 +18,36 @@ module IntKey = struct
   let from_string = Int.of_string
 end
 
-module Modules = struct
-  module ModuleValue = struct
-    type t = Module.t
+module WildcardExports = struct
+  module WildcardExportsValue = struct
+    type t = Reference.t list
 
     let prefix = Prefix.make ()
 
-    let description = "Module"
+    let description = "Wildcard exports"
 
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module Modules = SharedMemory.WithCache (Reference.Key) (ModuleValue)
+  module Exports = SharedMemory.WithCache (Reference.Key) (WildcardExportsValue)
 
-  let add ~qualifier ~ast_module = Modules.write_through qualifier ast_module
+  let add ({ Source.qualifier; _ } as source) =
+    let wildcard_exports = Module.wildcard_exports_from_source source in
+    Exports.write_through qualifier wildcard_exports
+
 
   let remove ~qualifiers =
-    let references = List.filter ~f:Modules.mem qualifiers in
-    Modules.remove_batch (Modules.KeySet.of_list references)
+    let references = List.filter ~f:Exports.mem qualifiers in
+    Exports.remove_batch (Exports.KeySet.of_list references)
 
 
-  let get ~qualifier = Modules.get qualifier
+  let get ~qualifier = Exports.get qualifier
 
-  let get_exports ~qualifier = get ~qualifier >>| Module.wildcard_exports
+  let hash_of_key = Exports.hash_of_key
 
-  let exists ~qualifier = Modules.mem qualifier
+  let serialize_key = Exports.serialize_key
 
-  let hash_of_key = Modules.hash_of_key
-
-  let serialize_key = Modules.serialize_key
-
-  let compute_hashes_to_keys = Modules.compute_hashes_to_keys
+  let compute_hashes_to_keys = Exports.compute_hashes_to_keys
 end
 
 let heap_size () =

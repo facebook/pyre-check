@@ -78,6 +78,54 @@ let wildcard_exports = function
   | Implicit _ -> []
 
 
+let wildcard_exports_from_source { Source.qualifier; statements; _ } =
+  let toplevel_public, dunder_all =
+    let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
+      let filter_private =
+        let is_public name =
+          let dequalified =
+            Reference.drop_prefix ~prefix:qualifier name |> Reference.sanitize_qualified
+          in
+          if not (String.is_prefix ~prefix:"_" (Reference.show dequalified)) then
+            Some dequalified
+          else
+            None
+        in
+        List.filter_map ~f:is_public
+      in
+      match value with
+      | Assign
+          {
+            Assign.target = { Node.value = Name (Name.Identifier target); _ };
+            value = { Node.value = Expression.List names; _ };
+            _;
+          }
+        when String.equal (Identifier.sanitized target) "__all__" ->
+          let to_reference = function
+            | { Node.value = Expression.String { value = name; _ }; _ } ->
+                Reference.create name
+                |> Reference.last
+                |> (fun last -> if String.is_empty last then None else Some last)
+                >>| Reference.create
+            | _ -> None
+          in
+          public_values, Some (List.filter_map ~f:to_reference names)
+      | Assign { Assign.target = { Node.value = Name target; _ }; _ }
+        when Expression.is_simple_name target ->
+          public_values @ filter_private [target |> Expression.name_to_reference_exn], dunder_all
+      | Class { Record.Class.name; _ } -> public_values @ filter_private [name], dunder_all
+      | Define { Define.signature = { name; _ }; _ } ->
+          public_values @ filter_private [name], dunder_all
+      | Import { Import.imports; _ } ->
+          let get_import_name { Import.alias; name } = Option.value alias ~default:name in
+          public_values @ filter_private (List.map imports ~f:get_import_name), dunder_all
+      | _ -> public_values, dunder_all
+    in
+    List.fold ~f:gather_toplevel ~init:([], None) statements
+  in
+  Option.value dunder_all ~default:toplevel_public
+
+
 let create_for_testing ~local_mode ~stub =
   Explicit
     {
@@ -130,55 +178,11 @@ let create
     in
     List.fold statements ~f:aliased_exports ~init:Reference.Map.empty |> Map.to_tree
   in
-  let toplevel_public, dunder_all =
-    let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
-      let filter_private =
-        let is_public name =
-          let dequalified =
-            Reference.drop_prefix ~prefix:qualifier name |> Reference.sanitize_qualified
-          in
-          if not (String.is_prefix ~prefix:"_" (Reference.show dequalified)) then
-            Some dequalified
-          else
-            None
-        in
-        List.filter_map ~f:is_public
-      in
-      match value with
-      | Assign
-          {
-            Assign.target = { Node.value = Name (Name.Identifier target); _ };
-            value = { Node.value = Expression.List names; _ };
-            _;
-          }
-        when String.equal (Identifier.sanitized target) "__all__" ->
-          let to_reference = function
-            | { Node.value = Expression.String { value = name; _ }; _ } ->
-                Reference.create name
-                |> Reference.last
-                |> (fun last -> if String.is_empty last then None else Some last)
-                >>| Reference.create
-            | _ -> None
-          in
-          public_values, Some (List.filter_map ~f:to_reference names)
-      | Assign { Assign.target = { Node.value = Name target; _ }; _ }
-        when Expression.is_simple_name target ->
-          public_values @ filter_private [target |> Expression.name_to_reference_exn], dunder_all
-      | Class { Record.Class.name; _ } -> public_values @ filter_private [name], dunder_all
-      | Define { Define.signature = { name; _ }; _ } ->
-          public_values @ filter_private [name], dunder_all
-      | Import { Import.imports; _ } ->
-          let get_import_name { Import.alias; name } = Option.value alias ~default:name in
-          public_values @ filter_private (List.map imports ~f:get_import_name), dunder_all
-      | _ -> public_values, dunder_all
-    in
-    List.fold ~f:gather_toplevel ~init:([], None) statements
-  in
   Explicit
     {
       aliased_exports;
       empty_stub = is_stub && Source.equal_mode local_mode Source.PlaceholderStub;
-      wildcard_exports = Option.value dunder_all ~default:toplevel_public;
+      wildcard_exports = wildcard_exports_from_source source;
     }
 
 

@@ -13,6 +13,8 @@ val wildcard_exports : t -> Reference.t list
 
 val aliased_export : t -> Reference.t -> Reference.t option
 
+val wildcard_exports_from_source : Source.t -> Reference.t list
+
 module Cache : sig
   val clear : unit -> unit
 end

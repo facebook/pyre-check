@@ -1302,7 +1302,7 @@ let expand_wildcard_imports ~force source =
         when List.exists imports ~f:(fun { Import.name; _ } ->
                  String.equal (Reference.show name) "*") ->
           let expanded_import =
-            match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
+            match Ast.SharedMemory.WildcardExports.get ~qualifier:from with
             | Some exports ->
                 exports
                 |> List.map ~f:(fun name -> { Import.name; alias = None })
