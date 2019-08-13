@@ -10,6 +10,7 @@ type t = {
   add_source: Source.t -> unit;
   remove_sources: Reference.t list -> unit;
   get_source: Reference.t -> Source.t option;
+  get_wildcard_exports: Reference.t -> Reference.t list option;
   get_source_path: Reference.t -> SourcePath.t option;
 }
 
@@ -25,11 +26,36 @@ end
 
 module Sources = Memory.NoCache (Reference.Key) (SourceValue)
 
+module WildcardExportsValue = struct
+  type t = Reference.t list
+
+  let prefix = Prefix.make ()
+
+  let description = "Wildcard exports"
+
+  let unmarshall value = Marshal.from_string value 0
+end
+
+module WildcardExports = Memory.WithCache (Reference.Key) (WildcardExportsValue)
+
+let add_wildcard_export ({ Source.qualifier; _ } as source) =
+  let wildcard_exports = Module.wildcard_exports_from_source source in
+  WildcardExports.write_through qualifier wildcard_exports
+
+
 let create module_tracker =
   {
-    add_source = (fun ({ Source.qualifier; _ } as source) -> Sources.add qualifier source);
-    remove_sources = (fun qualifiers -> Sources.KeySet.of_list qualifiers |> Sources.remove_batch);
+    add_source =
+      (fun ({ Source.qualifier; _ } as source) ->
+        Sources.add qualifier source;
+        add_wildcard_export source);
+    remove_sources =
+      (fun qualifiers ->
+        let keys = Sources.KeySet.of_list qualifiers in
+        Sources.remove_batch keys;
+        WildcardExports.remove_batch keys);
     get_source = Sources.get;
+    get_wildcard_exports = (fun qualifier -> WildcardExports.get qualifier);
     get_source_path = ModuleTracker.lookup module_tracker;
   }
 
@@ -40,21 +66,34 @@ let remove_sources { remove_sources; _ } = remove_sources
 
 let get_source { get_source; _ } = get_source
 
+let get_wildcard_exports { get_wildcard_exports; _ } = get_wildcard_exports
+
 let get_source_path { get_source_path; _ } = get_source_path
 
-(* Both `load` and `store` are no-ops here since `Ast.SharedMemory.Sources` is in shared memory,
-   and `Memory.load_shared_memory`/`Memory.save_shared_memory` will take care of the
+(* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared
+   memory, and `Memory.load_shared_memory`/`Memory.save_shared_memory` will take care of the
    (de-)serialization for us. *)
 let store _ = ()
 
 let load = create
 
-let shared_memory_hash_to_key_map qualifiers = Sources.compute_hashes_to_keys ~keys:qualifiers
+let shared_memory_hash_to_key_map qualifiers =
+  let extend_map map ~new_map =
+    Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
+  in
+  Sources.compute_hashes_to_keys ~keys:qualifiers
+  |> extend_map ~new_map:(WildcardExports.compute_hashes_to_keys ~keys:qualifiers)
+
 
 let serialize_decoded decoded =
   match decoded with
   | Sources.Decoded (key, value) ->
       Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
+  | WildcardExports.Decoded (key, value) ->
+      Some
+        ( WildcardExportsValue.description,
+          Reference.show key,
+          Option.map value ~f:(List.to_string ~f:Reference.show) )
   | _ -> None
 
 
@@ -62,6 +101,8 @@ let decoded_equal first second =
   match first, second with
   | Sources.Decoded (_, first), Sources.Decoded (_, second) ->
       Some (Option.equal Source.equal first second)
+  | WildcardExports.Decoded (_, first), WildcardExports.Decoded (_, second) ->
+      Some (Option.equal (List.equal Reference.equal) first second)
   | _ -> None
 
 
@@ -70,20 +111,29 @@ type environment_t = t
 module ReadOnly = struct
   type t = {
     get_source: Reference.t -> Source.t option;
+    get_wildcard_exports: Reference.t -> Reference.t list option;
     get_source_path: Reference.t -> SourcePath.t option;
   }
 
-  let create ?(get_source = fun _ -> None) ?(get_source_path = fun _ -> None) () =
-    { get_source; get_source_path }
+  let create
+      ?(get_source = fun _ -> None)
+      ?(get_wildcard_exports = fun _ -> None)
+      ?(get_source_path = fun _ -> None)
+      ()
+    =
+    { get_source; get_wildcard_exports; get_source_path }
 
 
   let get_source { get_source; _ } = get_source
 
   let get_source_path { get_source_path; _ } = get_source_path
 
+  let get_wildcard_exports { get_wildcard_exports; _ } = get_wildcard_exports
+
   let get_relative read_only qualifier =
     let open Option in
     get_source_path read_only qualifier >>| fun { SourcePath.relative; _ } -> relative
 end
 
-let read_only { get_source; get_source_path; _ } = { ReadOnly.get_source; get_source_path }
+let read_only { get_source; get_wildcard_exports; get_source_path; _ } =
+  { ReadOnly.get_source; get_wildcard_exports; get_source_path }

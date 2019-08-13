@@ -11,6 +11,8 @@ val create : ModuleTracker.t -> t
 
 val get_source : t -> Reference.t -> Source.t option
 
+val get_wildcard_exports : t -> Reference.t -> Reference.t list option
+
 val add_source : t -> Source.t -> unit
 
 val remove_sources : t -> Reference.t list -> unit
@@ -37,11 +39,14 @@ module ReadOnly : sig
 
   val create
     :  ?get_source:(Reference.t -> Source.t option) ->
+    ?get_wildcard_exports:(Reference.t -> Reference.t list option) ->
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
     unit ->
     t
 
   val get_source : t -> Reference.t -> Source.t option
+
+  val get_wildcard_exports : t -> Reference.t -> Reference.t list option
 
   val get_source_path : t -> Reference.t -> SourcePath.t option
 

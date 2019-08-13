@@ -120,7 +120,7 @@ end
 
 exception MissingWildcardImport
 
-let expand_wildcard_imports ~force source =
+let expand_wildcard_imports ~force ~ast_environment source =
   let open Statement in
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
@@ -133,7 +133,7 @@ let expand_wildcard_imports ~force source =
         when List.exists imports ~f:(fun { Import.name; _ } ->
                  String.equal (Reference.show name) "*") ->
           let expanded_import =
-            match Ast.SharedMemory.WildcardExports.get ~qualifier:from with
+            match AstEnvironment.get_wildcard_exports ast_environment from with
             | Some exports ->
                 exports
                 |> List.map ~f:(fun name -> { Import.name; alias = None })
@@ -156,15 +156,9 @@ let expand_wildcard_imports ~force source =
 let process_sources_job ~preprocessing_state ~ast_environment ~force qualifiers =
   let process ({ FixpointResult.processed; not_processed } as result) qualifier =
     let try_preprocess_phase1 ~force source =
-      expand_wildcard_imports ~force source >>| Preprocessing.preprocess_phase1
+      expand_wildcard_imports ~force ~ast_environment source >>| Preprocessing.preprocess_phase1
     in
     let store_result preprocessed =
-      let add_module_from_source source =
-        (* TODO (T47860871): Deprecate Ast.SharedMemory.WildcardExports *)
-        Ast.SharedMemory.WildcardExports.add source
-      in
-      add_module_from_source preprocessed;
-
       let stored = Plugin.apply_to_ast preprocessed in
       AstEnvironment.add_source ast_environment stored
     in
@@ -207,10 +201,7 @@ let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environm
   ()
 
 
-let clean_shared_memory qualifiers =
-  Ast.SharedMemory.WildcardExports.remove ~qualifiers;
-  RawSources.remove_batch (RawSources.KeySet.of_list qualifiers)
-
+let clean_shared_memory qualifiers = RawSources.remove_batch (RawSources.KeySet.of_list qualifiers)
 
 type parse_sources_result = {
   parsed: Source.t list;

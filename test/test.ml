@@ -1169,8 +1169,7 @@ module ScratchProject = struct
       ModuleTracker.source_paths module_tracker
       |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
     in
-    AstEnvironment.remove_sources ast_environment qualifiers;
-    Ast.SharedMemory.WildcardExports.remove ~qualifiers
+    AstEnvironment.remove_sources ast_environment qualifiers
 
 
   let setup ~context ?(external_sources = []) sources =

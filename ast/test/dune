@@ -5,7 +5,6 @@
   moduleTest
   nodeTest
   referenceTest
-  sharedMemoryTest
   sourceTest
   statementTest
   transformTest
