@@ -14,6 +14,9 @@ value hh_check_heap_overflow(void);
 /* Must be called by every worker before any operation is performed. */
 value hh_connect(value connector);
 
+/* Reset the shared memory to its initial state */
+void pyre_reset(void);
+
 /*****************************************************************************/
 /* Heap diagnostics. */
 /*****************************************************************************/

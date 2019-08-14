@@ -101,6 +101,8 @@ val save_shared_memory : path:string -> unit
 
 val load_shared_memory : path:string -> unit
 
+val reset_shared_memory : unit -> unit
+
 val unsafe_little_endian_representation : key:Caml.Digest.t -> Int64.t
 
 module SingletonKey : sig

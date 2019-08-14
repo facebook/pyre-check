@@ -1053,6 +1053,29 @@ value hh_connect(value connector) {
   CAMLreturn(Val_unit);
 }
 
+void pyre_reset() {
+  // Reset global storage
+  global_storage[0] = 0;
+
+  // Reset the number of element in the table
+  *hcounter = 0;
+  *dcounter = 0;
+  *wasted_heap_size = 0;
+
+  // Reset top heap pointers
+  *heap = heap_init;
+
+  // Zero out this shared memory for a string
+  size_t page_size = getpagesize();
+  memset(db_filename, 0, page_size);
+  memset(hashtable_db_filename, 0, page_size);
+
+  // Zero out the tables
+  memset(deptbl, 0, dep_size_b);
+  memset(hashtbl, 0, hashtbl_size_b);
+}
+
+
 /*****************************************************************************/
 /* Counter
  *

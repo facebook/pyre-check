@@ -181,11 +181,29 @@ let test_dependency_table _ =
   ()
 
 
+let test_reset _ =
+  Memory.reset_shared_memory ();
+
+  let heap_size = SharedMem.heap_size () in
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 heap_size;
+
+  let { SharedMem.nonempty_slots; used_slots; _ } = SharedMem.dep_stats () in
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 nonempty_slots;
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 used_slots;
+
+  let { SharedMem.nonempty_slots; used_slots; _ } = SharedMem.hash_stats () in
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 nonempty_slots;
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 used_slots;
+  ()
+
+
 let () =
   "memory"
-  >::: [ "little_endian_representation" >:: test_little_endian_representation;
+  >::: [ "test_reset_before" >:: test_reset;
+         "little_endian_representation" >:: test_little_endian_representation;
          "decodable" >:: test_decodable;
          "serialize_key" >:: test_serialize_key;
          "hash_of_key" >:: test_hash_of_key;
-         "dependencies" >:: test_dependency_table ]
+         "dependencies" >:: test_dependency_table;
+         "test_reset_after" >:: test_reset ]
   |> Test.run
