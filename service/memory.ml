@@ -351,124 +351,100 @@ end
    documentation/discoverability purposes *)
 let _ = DependencyGraph.hh_allow_dependency_table_reads
 
-type dependency_value = TypeCheckFunction of string [@@deriving compare, eq, sexp, show, hash]
+module DependencyKey = struct
+  module type S = sig
+    include KeyType
 
-module DependencyEncoder : sig
-  val encode : dependency_value -> int
+    val encode : t -> int
 
-  val decode : int -> dependency_value
-end = struct
-  module IntegerKey = struct
-    type t = int
-
-    let to_string = Int.to_string
-
-    let compare = Int.compare
-
-    type out = int
-
-    let from_string = Int.of_string
+    val decode : int -> t
   end
 
-  module DependencyValue = struct
-    type t = dependency_value
+  module Make (Key : KeyType) = struct
+    include Key
 
-    let prefix = Prefix.make ()
+    module IntegerKey = struct
+      type t = int
 
-    let description = "Dependency Decoder"
+      let to_string = Int.to_string
 
-    let unmarshall value = Marshal.from_string value 0
+      let compare = Int.compare
+
+      type out = int
+
+      let from_string = Int.of_string
+    end
+
+    module DependencyValue = struct
+      type t = Key.t
+
+      let prefix = Prefix.make ()
+
+      let description = "Dependency Decoder"
+
+      let unmarshall value = Marshal.from_string value 0
+    end
+
+    module IntegerValue = struct
+      type t = int
+
+      let prefix = Prefix.make ()
+
+      let description = "Dependency Encoder"
+
+      let unmarshall value = Marshal.from_string value 0
+    end
+
+    module DecodeTable = WithCache.Make (IntegerKey) (DependencyValue)
+    module EncodeTable = WithCache.Make (Key) (IntegerValue)
+
+    let encode dependency =
+      match EncodeTable.get dependency with
+      | Some encoded -> encoded
+      | None ->
+          let rec claim_free_id current =
+            DecodeTable.write_through current dependency;
+            match DecodeTable.get_no_cache current with
+            (* Successfully claimed the id *)
+            | Some decoded when Int.equal 0 (Key.compare decoded dependency) -> current
+            (* Someone else claimed the id first *)
+            | Some _non_equal_decoded_dependency -> claim_free_id (current + 1)
+            | None -> failwith "read-your-own-write consistency was violated"
+          in
+          let encoded = claim_free_id (Dependency.make dependency) in
+          (* Theoretically someone else racing this should be benign since having a different
+             dependency <-> id pair in the tables is perfectly fine, as long as it's a unique id,
+             which is ensured by claim_free_id. However, this should not matter, since we should
+             only be working on a dependency in a single worker *)
+          EncodeTable.add dependency encoded;
+          encoded
+
+
+    let decode encoded = DecodeTable.find_unsafe encoded
   end
-
-  module DependencyKey = struct
-    type t = dependency_value
-
-    let to_string key = sexp_of_dependency_value key |> Sexp.to_string
-
-    let compare = compare_dependency_value
-
-    type out = dependency_value
-
-    let from_string serialized = Sexp.of_string serialized |> dependency_value_of_sexp
-  end
-
-  module IntegerValue = struct
-    type t = int
-
-    let prefix = Prefix.make ()
-
-    let description = "Dependency Encoder"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module DecodeTable = WithCache.Make (IntegerKey) (DependencyValue)
-  module EncodeTable = WithCache.Make (DependencyKey) (IntegerValue)
-
-  let encode dependency =
-    match EncodeTable.get dependency with
-    | Some encoded -> encoded
-    | None ->
-        let rec claim_free_id current =
-          DecodeTable.write_through current dependency;
-          match DecodeTable.get_no_cache current with
-          (* Successfully claimed the id *)
-          | Some decoded when equal_dependency_value decoded dependency -> current
-          (* Someone else claimed the id first *)
-          | Some _non_equal_decoded_dependency -> claim_free_id (current + 1)
-          | None -> failwith "read-your-own-write consistency was violated"
-        in
-        let encoded = claim_free_id (Dependency.make dependency) in
-        (* Theoretically someone else racing this should be benign since having a different
-           dependency <-> id pair in the tables is perfectly fine, as long as it's a unique id,
-           which is ensured by claim_free_id. However, this should not matter, since we should only
-           be working on a dependency in a single worker *)
-        EncodeTable.add dependency encoded;
-        encoded
-
-
-  let decode encoded = DecodeTable.find_unsafe encoded
 end
 
-module type DependencyTrackedTable = sig
-  type key
-
-  val add_dependency : key -> dependency_value -> unit
-
-  val get_dependents : key -> dependency_value list
-end
-
-module RegisterDependencyTrackedTable (Key : KeyType) (Value : ValueType) : sig
-  include DependencyTrackedTable with type key = Key.t
-end = struct
-  type key = Key.t
-
+module RegisterDependencyTrackedTable
+    (Key : KeyType)
+    (DependencyKey : DependencyKey.S)
+    (Value : ValueType) =
+struct
   let add_dependency key value =
-    DependencyEncoder.encode value |> DependencyGraph.add (Dependency.make (Value.prefix, key))
+    DependencyKey.encode value |> DependencyGraph.add (Dependency.make (Value.prefix, key))
 
 
   let get_dependents key =
     DependencyGraph.get (Dependency.make (Value.prefix, key))
     |> DependencySet.to_list
-    |> List.map ~f:DependencyEncoder.decode
+    |> List.map ~f:DependencyKey.decode
 end
 
-module DependencyTrackedTableWithCache (Key : KeyType) (Value : ValueType) : sig
-  include DependencyTrackedTable with type key = Key.t
-
-  include
-    WithCache.S
-      with type t = Value.t
-       and type key = Key.t
-       and type key_out = Key.out
-       and module KeySet = Set.Make(Key)
-       and module KeyMap = MyMap.Make(Key)
-
-  val get : key -> dependency:dependency_value -> t option
-
-  val get_dependents : key -> dependency_value list
-end = struct
-  include RegisterDependencyTrackedTable (Key) (Value)
+module DependencyTrackedTableWithCache
+    (Key : KeyType)
+    (DependencyKey : DependencyKey.S)
+    (Value : ValueType) =
+struct
+  include RegisterDependencyTrackedTable (Key) (DependencyKey) (Value)
   include WithCache.Make (Key) (Value)
 
   let get key ~dependency =
@@ -476,22 +452,12 @@ end = struct
     get key
 end
 
-module DependencyTrackedTableNoCache (Key : KeyType) (Value : ValueType) : sig
-  include DependencyTrackedTable with type key = Key.t
-
-  include
-    NoCache.S
-      with type t = Value.t
-       and type key = Key.t
-       and type key_out = Key.out
-       and module KeySet = Set.Make(Key)
-       and module KeyMap = MyMap.Make(Key)
-
-  val get : key -> dependency:dependency_value -> t option
-
-  val get_dependents : key -> dependency_value list
-end = struct
-  include RegisterDependencyTrackedTable (Key) (Value)
+module DependencyTrackedTableNoCache
+    (Key : KeyType)
+    (DependencyKey : DependencyKey.S)
+    (Value : ValueType) =
+struct
+  include RegisterDependencyTrackedTable (Key) (DependencyKey) (Value)
   include NoCache.Make (Key) (Value)
 
   let get key ~dependency =

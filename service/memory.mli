@@ -137,9 +137,22 @@ module Serializer (Value : SerializableValueType) : sig
   val store : Value.t -> unit
 end
 
-type dependency_value = TypeCheckFunction of string [@@deriving compare, eq, sexp, show, hash]
+module DependencyKey : sig
+  module type S = sig
+    include KeyType
 
-module DependencyTrackedTableWithCache (Key : KeyType) (Value : ValueType) : sig
+    val encode : t -> int
+
+    val decode : int -> t
+  end
+
+  module Make (Key : KeyType) : S with type t = Key.t
+end
+
+module DependencyTrackedTableWithCache
+    (Key : KeyType)
+    (DependencyKey : DependencyKey.S)
+    (Value : ValueType) : sig
   include
     WithCache.S
       with type t = Value.t
@@ -148,12 +161,15 @@ module DependencyTrackedTableWithCache (Key : KeyType) (Value : ValueType) : sig
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : key -> dependency:dependency_value -> t option
+  val get : key -> dependency:DependencyKey.t -> t option
 
-  val get_dependents : key -> dependency_value list
+  val get_dependents : key -> DependencyKey.t list
 end
 
-module DependencyTrackedTableNoCache (Key : KeyType) (Value : ValueType) : sig
+module DependencyTrackedTableNoCache
+    (Key : KeyType)
+    (DependencyKey : DependencyKey.S)
+    (Value : ValueType) : sig
   include
     NoCache.S
       with type t = Value.t
@@ -162,7 +178,7 @@ module DependencyTrackedTableNoCache (Key : KeyType) (Value : ValueType) : sig
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : key -> dependency:dependency_value -> t option
+  val get : key -> dependency:DependencyKey.t -> t option
 
-  val get_dependents : key -> dependency_value list
+  val get_dependents : key -> DependencyKey.t list
 end

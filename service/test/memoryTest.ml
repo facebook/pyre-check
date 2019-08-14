@@ -139,6 +139,8 @@ module StringKey = struct
   let from_string x = x
 end
 
+module StringDependencyKey = Memory.DependencyKey.Make (StringKey)
+
 module StringValue = struct
   type t = string
 
@@ -162,22 +164,35 @@ module OtherStringValue = struct
 end
 
 let test_dependency_table _ =
-  let module TableA = Memory.DependencyTrackedTableWithCache (StringKey) (StringValue) in
-  let function_1 = Memory.TypeCheckFunction "function_1" in
-  let function_2 = Memory.TypeCheckFunction "function_2" in
-  let function_3 = Memory.TypeCheckFunction "function_3" in
-  let function_4 = Memory.TypeCheckFunction "function_4" in
+  let open Core in
+  let assert_dependency ~expected actual =
+    let expected_set = String.Set.of_list expected in
+    let actual_set = String.Set.of_list actual in
+    assert_bool
+      "Check if the actual dependency overapproximate the expected one"
+      (String.Set.is_subset expected_set ~of_:actual_set)
+  in
+  let module TableA =
+    Memory.DependencyTrackedTableWithCache (StringKey) (StringDependencyKey) (StringValue)
+  in
+  let function_1 = "function_1" in
+  let function_2 = "function_2" in
+  let function_3 = "function_3" in
+  let function_4 = "function_4" in
   TableA.get "Foo" ~dependency:function_1 |> ignore;
   TableA.get "Bar" ~dependency:function_1 |> ignore;
   TableA.get "Foo" ~dependency:function_2 |> ignore;
   TableA.get "Foo" ~dependency:function_3 |> ignore;
-  assert_equal (TableA.get_dependents "Foo") [function_3; function_2; function_1];
-  assert_equal (TableA.get_dependents "Bar") [function_1];
-  let module TableB = Memory.DependencyTrackedTableWithCache (StringKey) (OtherStringValue) in
+
+  assert_dependency ~expected:[function_3; function_2; function_1] (TableA.get_dependents "Foo");
+  assert_dependency ~expected:[function_1] (TableA.get_dependents "Bar");
+  let module TableB =
+    Memory.DependencyTrackedTableWithCache (StringKey) (StringDependencyKey) (OtherStringValue)
+  in
   TableB.get "Foo" ~dependency:function_4 |> ignore;
 
   (* Ensure that different tables' same keys are encoded differently *)
-  assert_equal (TableB.get_dependents "Foo") [function_4];
+  assert_dependency ~expected:[function_4] (TableB.get_dependents "Foo");
   ()
 
 
