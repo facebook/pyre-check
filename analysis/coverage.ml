@@ -78,7 +78,7 @@ module CoverageValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module SharedMemory = Memory.WithCache.Make (Reference.Key) (CoverageValue)
+module SharedMemory = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (CoverageValue)
 
 let add coverage ~qualifier = SharedMemory.add qualifier coverage
 

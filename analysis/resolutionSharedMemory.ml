@@ -60,10 +60,10 @@ module AnnotationsKeyValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-include SharedMemory.WithCache.Make (Reference.Key) (TypeAnnotationsValue)
+include SharedMemory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (TypeAnnotationsValue)
 (** A map of function definitions (indexed by Reference.t key) to to annotations for each statement *)
 
-module Keys = SharedMemory.NoCache.Make (Reference.Key) (AnnotationsKeyValue)
+module Keys = SharedMemory.NoCache.Make (SharedMemoryKeys.ReferenceKey) (AnnotationsKeyValue)
 
 let remove qualifiers =
   let accesses =

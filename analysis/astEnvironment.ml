@@ -25,7 +25,7 @@ module SourceValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module Sources = Memory.NoCache.Make (Reference.Key) (SourceValue)
+module Sources = Memory.NoCache.Make (SharedMemoryKeys.ReferenceKey) (SourceValue)
 
 module WildcardExportsValue = struct
   type t = Reference.t list
@@ -37,7 +37,8 @@ module WildcardExportsValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module WildcardExports = Memory.WithCache.Make (Reference.Key) (WildcardExportsValue)
+module WildcardExports =
+  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (WildcardExportsValue)
 
 let add_wildcard_export { Source.qualifier; statements; _ } =
   let open Statement in

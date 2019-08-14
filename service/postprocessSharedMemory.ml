@@ -3,21 +3,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-open Core
 open Ast
 module SharedMemory = Memory
-
-module LocationKey = struct
-  type t = Location.t
-
-  let to_string = Location.Reference.show
-
-  let compare = Location.Reference.compare
-
-  type out = string
-
-  let from_string = ident
-end
 
 module IgnoreValue = struct
   type t = Ast.Ignore.t list
@@ -39,5 +26,7 @@ module LocationListValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module IgnoreLines = SharedMemory.NoCache.Make (LocationKey) (IgnoreValue)
-module IgnoreKeys = SharedMemory.NoCache.Make (SharedMemory.StringKey) (LocationListValue)
+module IgnoreLines =
+  SharedMemory.NoCache.Make (Analysis.SharedMemoryKeys.LocationKey) (IgnoreValue)
+module IgnoreKeys =
+  SharedMemory.NoCache.Make (Analysis.SharedMemoryKeys.StringKey) (LocationListValue)

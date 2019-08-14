@@ -47,10 +47,10 @@ end
 module SharedMemory :
   Memory.WithCache.S
     with type t = CoverageValue.t
-     and type key = Reference.Key.t
-     and type key_out = Reference.Key.out
-     and module KeySet = Caml.Set.Make(Reference.Key)
-     and module KeyMap = MyMap.Make(Reference.Key)
+     and type key = SharedMemoryKeys.ReferenceKey.t
+     and type key_out = SharedMemoryKeys.ReferenceKey.out
+     and module KeySet = Caml.Set.Make(SharedMemoryKeys.ReferenceKey)
+     and module KeyMap = MyMap.Make(SharedMemoryKeys.ReferenceKey)
 
 val add : t -> qualifier:Reference.t -> unit
 

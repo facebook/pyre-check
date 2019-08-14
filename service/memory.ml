@@ -267,30 +267,6 @@ module SingletonKey = struct
   let key = 0
 end
 
-module IntKey = struct
-  type t = int
-
-  let to_string = Int.to_string
-
-  let compare = Int.compare
-
-  type out = int
-
-  let from_string = Core.Int.of_string
-end
-
-module StringKey = struct
-  type t = string
-
-  let to_string = ident
-
-  let compare = String.compare
-
-  type out = string
-
-  let from_string x = x
-end
-
 module type SerializableValueType = sig
   type t
 

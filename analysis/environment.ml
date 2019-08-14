@@ -193,30 +193,31 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module ClassDefinitions = Memory.WithCache.Make (Memory.StringKey) (ClassValue)
+  module ClassDefinitions = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (ClassValue)
   (** Shared memory maps *)
 
-  module Modules = Memory.WithCache.Make (Reference.Key) (ModuleValue)
-  module ClassMetadata = Memory.WithCache.Make (Memory.StringKey) (ClassMetadataValue)
-  module Aliases = Memory.NoCache.Make (Memory.StringKey) (AliasValue)
-  module Globals = Memory.WithCache.Make (Reference.Key) (GlobalValue)
-  module Dependents = Memory.WithCache.Make (Reference.Key) (DependentValue)
-  module UndecoratedFunctions = Memory.WithCache.Make (Reference.Key) (UndecoratedFunctionValue)
+  module Modules = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ModuleValue)
+  module ClassMetadata = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (ClassMetadataValue)
+  module Aliases = Memory.NoCache.Make (SharedMemoryKeys.StringKey) (AliasValue)
+  module Globals = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (GlobalValue)
+  module Dependents = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentValue)
+  module UndecoratedFunctions =
+    Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UndecoratedFunctionValue)
 
-  module FunctionKeys = Memory.WithCache.Make (Reference.Key) (FunctionKeyValue)
+  module FunctionKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (FunctionKeyValue)
   (** Keys *)
 
-  module ClassKeys = Memory.WithCache.Make (Reference.Key) (ClassKeyValue)
-  module GlobalKeys = Memory.WithCache.Make (Reference.Key) (GlobalKeyValue)
-  module AliasKeys = Memory.WithCache.Make (Reference.Key) (AliasKeyValue)
-  module DependentKeys = Memory.WithCache.Make (Reference.Key) (DependentKeyValue)
+  module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
+  module GlobalKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (GlobalKeyValue)
+  module AliasKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (AliasKeyValue)
+  module DependentKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentKeyValue)
 
-  module OrderIndices = Memory.WithCache.Make (Memory.StringKey) (OrderIndexValue)
+  module OrderIndices = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (OrderIndexValue)
   (** Type order maps *)
 
-  module OrderAnnotations = Memory.WithCache.Make (Memory.IntKey) (OrderAnnotationValue)
-  module OrderEdges = Memory.WithCache.Make (Memory.IntKey) (EdgeValue)
-  module OrderBackedges = Memory.WithCache.Make (Memory.IntKey) (BackedgeValue)
+  module OrderAnnotations = Memory.WithCache.Make (SharedMemoryKeys.IntKey) (OrderAnnotationValue)
+  module OrderEdges = Memory.WithCache.Make (SharedMemoryKeys.IntKey) (EdgeValue)
+  module OrderBackedges = Memory.WithCache.Make (SharedMemoryKeys.IntKey) (BackedgeValue)
   module OrderKeys = Memory.WithCache.Make (Memory.SingletonKey) (OrderKeyValue)
 end
 

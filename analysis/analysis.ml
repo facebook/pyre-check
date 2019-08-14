@@ -32,6 +32,7 @@ module ModuleTracker = ModuleTracker
 module Preprocessing = Preprocessing
 module Refinement = Refinement
 module Resolution = Resolution
+module SharedMemoryKeys = SharedMemoryKeys
 module Type = Type
 module TypeCheck = TypeCheck
 module TypeOrder = TypeOrder

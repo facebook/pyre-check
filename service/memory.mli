@@ -106,22 +106,10 @@ val reset_shared_memory : unit -> unit
 val unsafe_little_endian_representation : key:Caml.Digest.t -> Int64.t
 
 module SingletonKey : sig
-  type t
-
-  val to_string : t -> string
-
-  val compare : t -> t -> int
-
-  type out = int
-
-  val from_string : string -> int
+  include KeyType with type out = int
 
   val key : t
 end
-
-module IntKey : KeyType with type t = int and type out = int
-
-module StringKey : KeyType with type t = string and type out = string
 
 module type SerializableValueType = sig
   type t

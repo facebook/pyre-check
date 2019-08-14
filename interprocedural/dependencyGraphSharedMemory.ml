@@ -17,7 +17,8 @@ module OverrideTypes = struct
 end
 
 (* Maps the method access to the next subtypes that override that method *)
-module Overrides = SharedMemory.WithCache.Make (Reference.Key) (OverrideTypes)
+module Overrides =
+  SharedMemory.WithCache.Make (Analysis.SharedMemoryKeys.ReferenceKey) (OverrideTypes)
 
 let add_overriding_types ~member ~subtypes = Overrides.add member subtypes
 

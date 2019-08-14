@@ -17,8 +17,6 @@ module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t
 
-module Key : Memory.KeyType with type t = t and type out = t
-
 val empty : t
 
 val create_from_list : Identifier.t list -> t

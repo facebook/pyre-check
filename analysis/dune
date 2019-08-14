@@ -69,6 +69,7 @@
   ppx_deriving_yojson
   ppx_deriving
   pyrelib.ast
+  pyrelib.memory
   pyrelib.pyreParser
   pyrelib.recognized
   pyrelib.statistics

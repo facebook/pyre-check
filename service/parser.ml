@@ -49,7 +49,7 @@ module SourceValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module RawSources = Memory.WithCache.Make (Reference.Key) (SourceValue)
+module RawSources = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (SourceValue)
 
 module RawParseResult = struct
   type t = {

@@ -69,18 +69,6 @@ include Hashable.Make (struct
   let t_of_sexp = t_of_sexp
 end)
 
-module Key = struct
-  type nonrec t = t
-
-  let to_string = show
-
-  let compare = compare
-
-  type out = t
-
-  let from_string name = create name
-end
-
 let empty = []
 
 let create_from_list names = names
