@@ -239,14 +239,29 @@ typedef enum {
   KIND_SERIALIZED = !KIND_STRING
 } storage_kind;
 
-typedef struct {
-  // Size of data in the heap
-  uint32_t size : 31;
-  storage_kind kind : 1;
-  // Size of the data stored in the heap after decompression.
-  // If the data was not compressed this will be 0
-  uint32_t uncompressed_size;
-} hh_header_t;
+// Every heap entry starts with a 64-bit header with the following layout:
+//
+//  6                                3 3  3                                0 0
+//  3                                3 2  1                                1 0
+// +----------------------------------+-+-----------------------------------+-+
+// |11111111 11111111 11111111 1111111|0| 11111111 11111111 11111111 1111111|1|
+// +----------------------------------+-+-----------------------------------+-+
+// |                                  | |                                   |
+// |                                  | |                                   * 0 tag
+// |                                  | |
+// |                                  | * 31-1 uncompressed size (0 if uncompressed)
+// |                                  |
+// |                                  * 32 kind (0 = serialized, 1 = string)
+// |
+// * 63-33 size of heap entry
+//
+// The tag bit is always 1 and is used to differentiate headers from pointers
+// during garbage collection (see hh_collect).
+typedef uint64_t hh_header_t;
+
+#define Entry_size(x) ((x) >> 33)
+#define Entry_kind(x) (((x) >> 32) & 1)
+#define Entry_uncompressed_size(x) (((x) >> 1) & 0x7FFFFFFF)
 
 typedef struct {
   // Size of the BLOB in bytes.
@@ -256,10 +271,6 @@ typedef struct {
   // statement.
   void * blob;
 } query_result_t;
-
-/* Size of where we allocate shared objects. */
-#define Get_buf_size(x) (((hh_header_t*)(x))[-1].size + sizeof(hh_header_t))
-#define Get_buf(x)      ((x) - sizeof(hh_header_t))
 
 /* Too lazy to use getconf */
 #define CACHE_LINE_SIZE (1 << 6)
@@ -1457,54 +1468,6 @@ CAMLprim value hh_get_dep(value ocaml_key) {
 }
 
 /*****************************************************************************/
-/* Garbage collector */
-/*****************************************************************************/
-
-/** Wrappers around mmap/munmap */
-
-#ifdef _WIN32
-
-static char *temp_memory_map(void) {
-  char *tmp_heap = NULL;
-  tmp_heap = VirtualAlloc(NULL, heap_size, MEM_RESERVE, PAGE_READWRITE);
-  if (!tmp_heap) {
-    win32_maperr(GetLastError());
-    uerror("VirtualAlloc2", Nothing);
-  }
-  return tmp_heap;
-}
-
-static void temp_memory_unmap(char * tmp_heap) {
-  if(!VirtualFree(tmp_heap, 0, MEM_RELEASE)) {
-    win32_maperr(GetLastError());
-    uerror("VirtualFree", Nothing);
-  }
-}
-
-#else
-
-static char *temp_memory_map(void) {
-  char *tmp_heap = NULL;
-  int flags       = MAP_PRIVATE | MAP_ANON | MAP_NORESERVE;
-  int prot        = PROT_READ | PROT_WRITE;
-  tmp_heap = (char*)mmap(NULL, heap_size, prot, flags, 0, 0);
-  if(tmp_heap == MAP_FAILED) {
-    printf("Error while collecting: %s\n", strerror(errno));
-    exit(2);
-  }
-  return tmp_heap;
-}
-
-static void temp_memory_unmap(char * tmp_heap) {
-  if(munmap(tmp_heap, heap_size) == -1) {
-    printf("Error while collecting: %s\n", strerror(errno));
-    exit(2);
-  }
-}
-
-#endif
-
-/*****************************************************************************/
 /* Must be called after the hack server is done initializing.
  * We keep the original size of the heap to estimate how often we should
  * garbage collect.
@@ -1555,50 +1518,93 @@ CAMLprim value hh_collect(value aggressive_val) {
   int aggressive  = Bool_val(aggressive_val);
   assert_master();
   assert_allow_removes();
-  char* tmp_heap = NULL;
-  char* dest = NULL;
-  size_t mem_size = 0;
 
   if (!should_collect(aggressive)) {
     return Val_unit;
   }
 
-  tmp_heap = temp_memory_map();
-  dest = tmp_heap;
+  // Step 1: Walk the hashtbl entries, which are the roots of our marking pass.
 
-  // Walking the table
-  for(size_t i = 0; i < hashtbl_size; i++) {
-    if (hashtbl[i].addr == NULL) {
-      continue;
-    }
-    else {
-      // Found a non empty slot
-      // No workers should be writing at the moment. If a worker died in the
-      // middle of a write, that is also very bad
-      assert(hashtbl[i].addr != HASHTBL_WRITE_IN_PROGRESS);
+  for (size_t i = 0; i < hashtbl_size; i++) {
+    // Skip empty slots
+    if (hashtbl[i].addr == NULL) { continue; }
 
-      size_t bl_size      = Get_buf_size(hashtbl[i].addr);
-      size_t aligned_size = ALIGNED(bl_size);
-      char* addr          = Get_buf(hashtbl[i].addr);
+    // No workers should be writing at the moment. If a worker died in the
+    // middle of a write, that is also very bad
+    assert(hashtbl[i].addr != HASHTBL_WRITE_IN_PROGRESS);
 
-#ifdef _WIN32
-      win_reserve(dest, bl_size);
-#endif
-      memcpy(dest, addr, bl_size);
-      // This is where the data ends up after the copy
-      hashtbl[i].addr = heap_init + mem_size + sizeof(hh_header_t);
-      dest     += aligned_size;
-      mem_size += aligned_size;
-    }
+    // The hashtbl addr will be wrong after we relocate the heap entry, but we
+    // don't know where the heap entry will relocate to yet. We need to first
+    // move the heap entry, then fix up the hashtbl addr.
+    //
+    // We accomplish this by storing the heap header in the now useless addr
+    // field and storing a pointer to the addr field where the header used to
+    // be. Then, after moving the heap entry, we can follow the pointer to
+    // restore our original header and update the addr field to our relocated
+    // address.
+
+    // Location of the addr field (8 bytes) in the hashtable
+    char **hashtbl_addr = &hashtbl[i].addr;
+
+    // Location of the header (8 bytes) in the heap
+    char *heap_addr = hashtbl[i].addr - sizeof(hh_header_t);
+
+    // Swap
+    hh_header_t header = *(hh_header_t *)heap_addr;
+    *(hh_header_t *)hashtbl_addr = header;
+    *(uintptr_t *)heap_addr = (uintptr_t)hashtbl_addr;
   }
 
-  // Copying the result back into shared memory
-  memcpy(heap_init, tmp_heap, mem_size);
-  *heap = heap_init + mem_size;
+  // Step 2: Walk the heap and relocate entries, updating the hashtbl to point
+  // to relocated addresses.
 
-  temp_memory_unmap(tmp_heap);
-  // we removed all garbage - entire heap size should be used
+  // Pointer to free space in the heap where moved values will move to.
+  char *dest = heap_init;
+
+  // Pointer that walks the heap from bottom to top.
+  char *src = heap_init;
+
+  size_t aligned_size;
+  hh_header_t header;
+  while (src < *heap) {
+    if (*(uint64_t *)src & 1) {
+      // If the lsb is set, this is a header. If it's a header, that means the
+      // entry was not marked in the first pass and should be collected. Don't
+      // move dest pointer, but advance src pointer to next heap entry.
+      header = *(hh_header_t *)src;
+      aligned_size = ALIGNED(Entry_size(header) + sizeof(hh_header_t));
+    } else {
+      // If the lsb is 0, this is a pointer to the addr field of the hashtable
+      // element, which holds the header bytes. This entry is live.
+      char *hashtbl_addr = *(char **)src;
+      header = *(hh_header_t *)hashtbl_addr;
+      aligned_size = ALIGNED(Entry_size(header) + sizeof(hh_header_t));
+
+      // Fix the hashtbl addr field to point to our new location and restore the
+      // heap header data temporarily stored in the addr field bits.
+      char *new_addr = dest + sizeof(hh_header_t);
+      *(uintptr_t *)hashtbl_addr = (uintptr_t)new_addr;
+      *(hh_header_t *)src = header;
+
+      // Move the entry as far to the left as possible.
+      memmove(dest, src, aligned_size);
+      dest += aligned_size;
+    }
+
+    src += aligned_size;
+  }
+
+  // TODO: Space between dest and *heap is unused, but will almost certainly
+  // become used again soon. Currently we will never decommit, which may cause
+  // issues when there is memory pressure.
+  //
+  // If the kernel supports it, we might consider using madvise(MADV_FREE),
+  // which allows the kernel to reclaim the memory lazily under pressure, but
+  // would not force page faults under healthy operation.
+
+  *heap = dest;
   *wasted_heap_size = 0;
+
   return Val_unit;
 }
 
@@ -1613,14 +1619,14 @@ static void raise_heap_full(void) {
  * The chunks are cache aligned.
  * The word before the chunk address contains the size of the chunk in bytes.
  * The function returns a pointer to the data (the size can be accessed by
- * looking at the address: chunk - sizeof(size_t)).
+ * looking at the address: chunk - sizeof(hh_header_t)).
  */
 /*****************************************************************************/
 
 static char* hh_alloc(hh_header_t header) {
   // the size of this allocation needs to be kept in sync with wasted_heap_size
   // modification in hh_remove
-  size_t slot_size  = ALIGNED(header.size + sizeof(hh_header_t));
+  size_t slot_size  = ALIGNED(Entry_size(header) + sizeof(hh_header_t));
   char* chunk       = __sync_fetch_and_add(heap, (char*)slot_size);
   if (chunk + slot_size > heap_max) {
     raise_heap_full();
@@ -1643,6 +1649,7 @@ static char* hh_store_ocaml(
 ) {
   char* value = NULL;
   size_t size = 0;
+  size_t uncompressed_size = 0;
   storage_kind kind = 0;
 
   // If the data is an Ocaml string it is more efficient to copy its contents
@@ -1666,34 +1673,43 @@ static char* hh_store_ocaml(
 
   // We limit the size of elements we will allocate to our heap to ~2GB
   assert(size < 0x80000000);
-  hh_header_t header = { size, kind, 0 };
+  *orig_size = size;
 
-  size_t max_compression_size = LZ4_compressBound(header.size);
+  size_t max_compression_size = LZ4_compressBound(size);
   char* compressed_data = malloc(max_compression_size);
   size_t compressed_size = LZ4_compress_default(
     value,
     compressed_data,
-    header.size,
+    size,
     max_compression_size);
 
-  if (compressed_size != 0 && compressed_size < header.size) {
-    header.uncompressed_size = header.size;
-    header.size = compressed_size;
+  if (compressed_size != 0 && compressed_size < size) {
+    uncompressed_size = size;
+    size = compressed_size;
   }
+
+  *alloc_size = size;
+
+  // Both size and uncompressed_size will certainly fit in 31 bits, as the
+  // original size fits per the assert above and we check that the compressed
+  // size is less than the original size.
+  hh_header_t header
+    = size << 33
+    | (uint64_t)kind << 32
+    | uncompressed_size << 1
+    | 1;
 
   char* addr = hh_alloc(header);
   memcpy(addr,
-         header.uncompressed_size ? compressed_data : value,
-         header.size);
+         uncompressed_size ? compressed_data : value,
+         size);
 
   free(compressed_data);
   // We temporarily allocate memory using malloc to serialize the Ocaml object.
   // When we have finished copying the serialized data into our heap we need
   // to free the memory we allocated to avoid a leak.
-  if (header.kind == KIND_SERIALIZED) free(value);
+  if (kind == KIND_SERIALIZED) free(value);
 
-  *alloc_size = header.size;
-  *orig_size = size;
   return addr;
 }
 
@@ -1913,27 +1929,28 @@ CAMLprim value hh_deserialize(char *src) {
   CAMLlocal1(result);
   hh_header_t header =
     *(hh_header_t*)(src - sizeof(hh_header_t));
-  size_t size = header.size;
+  size_t size = Entry_size(header);
+  size_t uncompressed_size_exp = Entry_uncompressed_size(header);
   char *data = src;
-  if (header.uncompressed_size) {
-    data = malloc(header.uncompressed_size);
+  if (uncompressed_size_exp) {
+    data = malloc(uncompressed_size_exp);
     size_t uncompressed_size = LZ4_decompress_safe(
       src,
       data,
-      header.size,
-      header.uncompressed_size);
-    assert(uncompressed_size == header.uncompressed_size);
+      size,
+      uncompressed_size_exp);
+    assert(uncompressed_size == uncompressed_size_exp);
     size = uncompressed_size;
   }
 
-  if (header.kind == KIND_STRING) {
+  if (Entry_kind(header) == KIND_STRING) {
     result = caml_alloc_string(size);
     memcpy(String_val(result), data, size);
   } else {
     result = caml_input_value_from_block(data, size);
   }
 
-  if (header.uncompressed_size) {
+  if (uncompressed_size_exp) {
     free(data);
   }
   CAMLreturn(result);
@@ -1954,31 +1971,6 @@ CAMLprim value hh_get_and_deserialize(value key) {
   CAMLreturn(result);
 }
 
-CAMLprim value hh_get_and_deserialize_sqlite(
-    value ml_use_fileinfo_sqlite,
-    value ml_key
-) {
-  CAMLparam2(ml_use_fileinfo_sqlite, ml_key);
-  CAMLlocal1(ml_out);
-  int64_t hash = (int64_t) get_hash(ml_key);
-  int use_sqlite_fallback = Bool_val(ml_use_fileinfo_sqlite);
-  check_should_exit();
-  if (use_sqlite_fallback) {
-      // TODO: almost certainly wrong,
-      // we're getting back a stringified Relative_path.t
-      char *fs = hhfi_get_filespec(hhfi_get_db(), hash);
-      assert(fs);
-      ml_out = caml_copy_string(fs);
-      free(fs);
-      CAMLreturn(ml_out);
-  } else {
-      CAMLlocal1(ml_res);
-      ml_res = hh_get_and_deserialize(ml_key);
-      CAMLreturn(ml_res);
-  }
-  return 0; // impossible
-}
-
 /*****************************************************************************/
 /* Returns the size of the value associated to a given key. */
 /* The key MUST be present. */
@@ -1991,7 +1983,7 @@ CAMLprim value hh_get_size(value key) {
   hh_header_t header =
     *(hh_header_t*)(hashtbl[slot].addr - sizeof(hh_header_t));
 
-  CAMLreturn(Long_val(header.size));
+  CAMLreturn(Long_val(Entry_size(header)));
 }
 
 /*****************************************************************************/
@@ -2030,7 +2022,8 @@ void hh_remove(value key) {
   assert_allow_removes();
   assert(hashtbl[slot].hash == get_hash(key));
   // see hh_alloc for the source of this size
-  size_t slot_size = ALIGNED(Get_buf_size(hashtbl[slot].addr));
+  hh_header_t *header = (hh_header_t *)hashtbl[slot].addr - 1;
+  size_t slot_size = ALIGNED(Entry_size(*header) + sizeof(hh_header_t));
   __sync_fetch_and_add(wasted_heap_size, slot_size);
   hashtbl[slot].addr = NULL;
   removed_count += 1;
@@ -2840,7 +2833,7 @@ CAMLprim value hh_save_table_sqlite(value out_filename) {
     }
     char *value = hashtbl[slot].addr - sizeof(hh_header_t);
     hh_header_t *header = (hh_header_t *) value;
-    size_t value_size = header->size + sizeof(hh_header_t);
+    size_t value_size = Entry_size(*header) + sizeof(hh_header_t);
 
     assert_sql(sqlite3_bind_int64(insert_stmt, 1, slot_hash), SQLITE_OK);
     assert_sql(
@@ -2906,7 +2899,7 @@ CAMLprim value hh_save_table_keys_sqlite(value out_filename, value keys) {
     }
     char *value = hashtbl[slot].addr - sizeof(hh_header_t);
     hh_header_t *header = (hh_header_t *) value;
-    size_t value_size = header->size + sizeof(hh_header_t);
+    size_t value_size = Entry_size(*header) + sizeof(hh_header_t);
 
     assert_sql(sqlite3_bind_int64(insert_stmt, 1, slot_hash), SQLITE_OK);
     assert_sql(
@@ -3014,7 +3007,7 @@ CAMLprim value hh_get_sqlite(value ocaml_key) {
     char *value = (char *) sqlite3_column_blob(get_select_stmt, 0);
     size_t value_size = (size_t) sqlite3_column_bytes(get_select_stmt, 0);
     hh_header_t header = *(hh_header_t*)value;
-    assert(value_size == header.size + sizeof(hh_header_t));
+    assert(value_size == Entry_size(header) + sizeof(hh_header_t));
     result = Val_some(hh_deserialize(value + sizeof(hh_header_t)));
   } else if (err_num != SQLITE_DONE) {
     // Something went wrong in sqlite3_step, lets crash
