@@ -21,19 +21,6 @@ module UnresolvedAlias = struct
 end
 
 module SharedMemory = struct
-  (** Keys *)
-  module StringKey = struct
-    type t = string
-
-    let to_string = ident
-
-    let compare = String.compare
-
-    type out = string
-
-    let from_string x = x
-  end
-
   (** Values *)
   module FunctionKeyValue = struct
     type t = Reference.t list
@@ -206,12 +193,12 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module ClassDefinitions = Memory.WithCache.Make (StringKey) (ClassValue)
+  module ClassDefinitions = Memory.WithCache.Make (Memory.StringKey) (ClassValue)
   (** Shared memory maps *)
 
   module Modules = Memory.WithCache.Make (Reference.Key) (ModuleValue)
-  module ClassMetadata = Memory.WithCache.Make (StringKey) (ClassMetadataValue)
-  module Aliases = Memory.NoCache.Make (StringKey) (AliasValue)
+  module ClassMetadata = Memory.WithCache.Make (Memory.StringKey) (ClassMetadataValue)
+  module Aliases = Memory.NoCache.Make (Memory.StringKey) (AliasValue)
   module Globals = Memory.WithCache.Make (Reference.Key) (GlobalValue)
   module Dependents = Memory.WithCache.Make (Reference.Key) (DependentValue)
   module UndecoratedFunctions = Memory.WithCache.Make (Reference.Key) (UndecoratedFunctionValue)
@@ -224,7 +211,7 @@ module SharedMemory = struct
   module AliasKeys = Memory.WithCache.Make (Reference.Key) (AliasKeyValue)
   module DependentKeys = Memory.WithCache.Make (Reference.Key) (DependentKeyValue)
 
-  module OrderIndices = Memory.WithCache.Make (StringKey) (OrderIndexValue)
+  module OrderIndices = Memory.WithCache.Make (Memory.StringKey) (OrderIndexValue)
   (** Type order maps *)
 
   module OrderAnnotations = Memory.WithCache.Make (Memory.IntKey) (OrderAnnotationValue)

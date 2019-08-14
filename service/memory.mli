@@ -121,6 +121,8 @@ end
 
 module IntKey : KeyType with type t = int and type out = int
 
+module StringKey : KeyType with type t = string and type out = string
+
 module type SerializableValueType = sig
   type t
 

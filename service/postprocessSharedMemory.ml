@@ -7,18 +7,6 @@ open Core
 open Ast
 module SharedMemory = Memory
 
-module StringKey = struct
-  type t = string
-
-  let to_string = ident
-
-  let compare = String.compare
-
-  type out = t
-
-  let from_string = ident
-end
-
 module LocationKey = struct
   type t = Location.t
 
@@ -52,4 +40,4 @@ module LocationListValue = struct
 end
 
 module IgnoreLines = SharedMemory.NoCache.Make (LocationKey) (IgnoreValue)
-module IgnoreKeys = SharedMemory.NoCache.Make (StringKey) (LocationListValue)
+module IgnoreKeys = SharedMemory.NoCache.Make (SharedMemory.StringKey) (LocationListValue)

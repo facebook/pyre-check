@@ -279,6 +279,18 @@ module IntKey = struct
   let from_string = Core.Int.of_string
 end
 
+module StringKey = struct
+  type t = string
+
+  let to_string = ident
+
+  let compare = String.compare
+
+  type out = string
+
+  let from_string x = x
+end
+
 module type SerializableValueType = sig
   type t
 
