@@ -64,10 +64,17 @@ let test_process_type_query_request context =
   let { ScratchServer.configuration; state; _ } =
     ScratchServer.start
       ~context
-      ["test.py", {|
+      [ "test.py", {|
         def foo(a: int) -> int:
           return a
-      |}]
+      |};
+        ( "await.py",
+          {|
+        async def await_me() -> int: ...
+        async def bar():
+          await_me()
+       |}
+        ) ]
   in
   let assert_response request expected_response =
     let actual_response =
@@ -83,9 +90,9 @@ let test_process_type_query_request context =
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let test_path = Path.create_relative ~root:local_root ~relative:"test.py" in
+  let path relative = Path.create_relative ~root:local_root ~relative in
   assert_response
-    (Protocol.TypeQuery.CoverageInFile test_path)
+    (Protocol.TypeQuery.CoverageInFile (path "test.py"))
     {| {
          "response": {
             "types": [
@@ -161,7 +168,37 @@ let test_process_type_query_request context =
     {|{"response":{"type":"float"}}|};
   assert_response
     (Protocol.TypeQuery.NormalizeType (parse_single_expression "yerp"))
-    {|{"error":"Type `yerp` was not found in the type order."}|}
+    {|{"error":"Type `yerp` was not found in the type order."}|};
+  assert_response
+    (Protocol.TypeQuery.RunCheck { check_name = "awaitable"; paths = [path "test.py"] })
+    {|
+    {
+        "response": {"errors": []}
+    }
+    |};
+
+  assert_response
+    (Protocol.TypeQuery.RunCheck { check_name = "awaitable"; paths = [path "await.py"] })
+    {|
+    {
+        "response": {
+            "errors": [
+                {
+                    "line": 4,
+                    "column": 2,
+                    "path": "await.py",
+                    "code": 1001,
+                    "name": "Unawaited awaitable",
+                    "description": "Unawaited awaitable [1001]: `await.await_me()` is never awaited. `await.await_me()` is defined on line 4",
+                    "long_description": "Unawaited awaitable [1001]: `await.await_me()` is never awaited.\n`await.await_me()` is defined on line 4",
+                    "concise_description": "Unawaited awaitable [1001]: `await.await_me()` is never awaited.\n`await.await_me()` is defined on line 4",
+                    "inference": {},
+                    "define": "await.bar"
+                }
+            ]
+        }
+    }
+    |}
 
 
 let assert_errors_equal ~actual_errors ~expected_errors =

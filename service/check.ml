@@ -20,65 +20,71 @@ type analyze_source_results = {
 }
 (** Internal result type; not exposed. *)
 
+let run_check
+    ?open_documents
+    ~scheduler
+    ~configuration
+    ~environment
+    checked_sources
+    (module Check : Analysis.Check.Signature)
+  =
+  let empty_result = { errors = []; number_files = 0 } in
+  let number_of_sources = List.length checked_sources in
+  Log.info "Running check `%s`..." Check.name;
+  let timer = Timer.start () in
+  let map _ sources =
+    Analysis.Annotated.Class.AttributeCache.clear ();
+    Module.Cache.clear ();
+    let analyze_source { errors; number_files } ({ Source.qualifier; _ } as source) =
+      let configuration =
+        match open_documents with
+        | Some predicate when predicate qualifier ->
+            { configuration with Configuration.Analysis.store_type_check_resolution = true }
+        | _ -> configuration
+      in
+      let global_resolution = Analysis.Environment.resolution environment () in
+      let new_errors = Check.run ~configuration ~global_resolution ~source in
+      { errors = List.append new_errors errors; number_files = number_files + 1 }
+    in
+    List.fold sources ~init:empty_result ~f:analyze_source
+  in
+  let reduce left right =
+    let number_files = left.number_files + right.number_files in
+    Log.log ~section:`Progress "Processed %d of %d sources" number_files number_of_sources;
+    { errors = List.append left.errors right.errors; number_files }
+  in
+  let { errors; _ } =
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~bucket_size:75
+      ~initial:empty_result
+      ~map
+      ~reduce
+      ~inputs:checked_sources
+      ()
+  in
+  Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
+  Statistics.event
+    ~section:`Memory
+    ~name:"shared memory size post-typecheck"
+    ~integers:["size", Memory.heap_size ()]
+    ();
+  errors
+
+
 let analyze_sources ?open_documents ~scheduler ~configuration ~environment sources =
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
   let checked_sources =
     List.filter sources ~f:(fun { Source.is_external; _ } -> not is_external)
   in
-  let errors =
-    let timer = Timer.start () in
-    let empty_result = { errors = []; number_files = 0 } in
-    let number_of_sources = List.length checked_sources in
-    Log.info "Checking %d sources..." number_of_sources;
-    let run (module Check : Analysis.Check.Signature) =
-      Log.info "Running check `%s`..." Check.name;
-      let timer = Timer.start () in
-      let map _ sources =
-        Annotated.Class.AttributeCache.clear ();
-        Module.Cache.clear ();
-        let analyze_source { errors; number_files } ({ Source.qualifier; _ } as source) =
-          let configuration =
-            match open_documents with
-            | Some predicate when predicate qualifier ->
-                { configuration with Configuration.Analysis.store_type_check_resolution = true }
-            | _ -> configuration
-          in
-          let global_resolution = Environment.resolution environment () in
-          let new_errors = Check.run ~configuration ~global_resolution ~source in
-          { errors = List.append new_errors errors; number_files = number_files + 1 }
-        in
-        List.fold sources ~init:empty_result ~f:analyze_source
-      in
-      let reduce left right =
-        let number_files = left.number_files + right.number_files in
-        Log.log ~section:`Progress "Processed %d of %d sources" number_files number_of_sources;
-        { errors = List.append left.errors right.errors; number_files }
-      in
-      let { errors; _ } =
-        Scheduler.map_reduce
-          scheduler
-          ~configuration
-          ~bucket_size:75
-          ~initial:empty_result
-          ~map
-          ~reduce
-          ~inputs:checked_sources
-          ()
-      in
-      Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
-      Statistics.event
-        ~section:`Memory
-        ~name:"shared memory size post-typecheck"
-        ~integers:["size", Memory.heap_size ()]
-        ();
-      errors
-    in
-    let errors = List.map (Analysis.Check.checks ~configuration) ~f:run |> List.concat in
-    Statistics.performance ~name:"analyzed sources" ~timer ();
-    errors
-  in
+  let number_of_sources = List.length checked_sources in
+  Log.info "Checking %d sources..." number_of_sources;
   let timer = Timer.start () in
+  let run = run_check ?open_documents ~scheduler ~configuration ~environment checked_sources in
+  let errors = List.map (Analysis.Check.checks ~configuration) ~f:run |> List.concat in
+  Statistics.performance ~name:"analyzed sources" ~timer ();
   let errors = Postprocess.ignore ~configuration scheduler sources errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
   errors

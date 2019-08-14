@@ -45,6 +45,10 @@ module TypeQuery = struct
   [@@deriving eq, show, to_yojson]
 
   type request =
+    | RunCheck of {
+        check_name: string;
+        paths: Path.t list;
+      }
     | Attributes of Reference.t
     | Callees of Reference.t
     | ComputeHashesToKeys
@@ -165,6 +169,7 @@ module TypeQuery = struct
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
+    | Errors of Analysis.Error.Instantiated.t list
     | FoundAttributes of attribute list
     | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
@@ -226,6 +231,14 @@ module TypeQuery = struct
         `Assoc
           [ "decoded", `List (List.map decoded ~f:to_json);
             "undecodable_keys", `List (List.map undecodable_keys ~f:(fun key -> `String key)) ]
+    | Errors errors ->
+        `Assoc
+          [ ( "errors",
+              `List
+                (List.map
+                   ~f:(fun error ->
+                     Analysis.Error.Instantiated.to_json ~show_error_traces:true error)
+                   errors) ) ]
     | Path path -> `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]

@@ -56,9 +56,13 @@ let test_parse_query context =
   assert_fails_to_parse "superclasses(int, bool)";
   assert_parses "normalize_type(int)" (NormalizeType !"int");
   assert_fails_to_parse "normalizeType(int, str)";
-  assert_equal
-    (Query.parse_query ~configuration "type_check('derp/fiddle.py')")
-    (Request.TypeCheckRequest [Path.create_relative ~root:local_root ~relative:"derp/fiddle.py"]);
+  assert_parses
+    "type_check('derp/fiddle.py')"
+    (RunCheck
+       {
+         check_name = "typeCheck";
+         paths = [Path.create_relative ~root:local_root ~relative:"derp/fiddle.py"];
+       });
   assert_parses "type(C)" (Type !"C");
   assert_parses "type((C,B))" (Type (+Ast.Expression.Tuple [!"C"; !"B"]));
   assert_fails_to_parse "type(a.b, c.d)";
@@ -170,7 +174,10 @@ let test_parse_query context =
   assert_parses "validate_taint_models()" (ValidateTaintModels None);
   assert_parses
     (Format.sprintf "validate_taint_models('%s')" (Path.absolute path))
-    (ValidateTaintModels (Some path))
+    (ValidateTaintModels (Some path));
+  assert_parses
+    (Format.sprintf "run_check('cool_static_analysis', '%s')" (Path.absolute path))
+    (RunCheck { check_name = "cool_static_analysis"; paths = [path] })
 
 
 let test_to_yojson _ =

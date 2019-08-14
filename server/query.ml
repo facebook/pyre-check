@@ -14,6 +14,10 @@ exception InvalidQuery of string
 
 let help () =
   let help = function
+    | RunCheck _ ->
+        Some
+          "run_check('check_name', 'path1.py', 'path2.py'): Runs the `check_name` static analysis \
+           on the provided list of paths."
     | Attributes _ ->
         Some
           "attributes(class_name): Returns a list of attributes, including functions, for a class."
@@ -60,7 +64,8 @@ let help () =
   let empty = Name (Name.Identifier "") |> Node.create_with_default_location in
   List.filter_map
     ~f:help
-    [ Attributes (Reference.create "");
+    [ RunCheck { check_name = ""; paths = [] };
+      Attributes (Reference.create "");
       Callees (Reference.create "");
       ComputeHashesToKeys;
       CoverageInFile path;
@@ -209,6 +214,13 @@ let parse_query
       | "normalize_type", [name] -> Request.TypeQueryRequest (NormalizeType (access name))
       | "path_of_module", [module_access] ->
           Request.TypeQueryRequest (PathOfModule (reference module_access))
+      | "run_check", check_name :: paths ->
+          let check_name = string check_name in
+          let paths =
+            List.map paths ~f:(fun path ->
+                Path.create_absolute ~follow_symbolic_links:true (string path))
+          in
+          Request.TypeQueryRequest (RunCheck { check_name; paths })
       | "save_server_state", [path] ->
           Request.TypeQueryRequest
             (SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path)))
@@ -233,7 +245,7 @@ let parse_query
             |> List.map ~f:string
             |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
           in
-          Request.TypeCheckRequest paths
+          Request.TypeQueryRequest (RunCheck { check_name = "typeCheck"; paths })
       | "validate_taint_models", [] -> Request.TypeQueryRequest (ValidateTaintModels None)
       | "validate_taint_models", [argument] ->
           let path =

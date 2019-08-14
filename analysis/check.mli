@@ -16,4 +16,6 @@ module type Signature = sig
     Error.t list
 end
 
+val get_check_to_run : check_name:string -> (module Signature) option
+
 val checks : configuration:Configuration.Analysis.t -> (module Signature) list

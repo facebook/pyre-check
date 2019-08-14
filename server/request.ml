@@ -445,6 +445,21 @@ let process_type_query_request
         raise (ClassHierarchy.Untracked annotation)
     in
     match request with
+    | TypeQuery.RunCheck { check_name; paths } ->
+        let source_paths =
+          List.filter_map
+            paths
+            ~f:(Analysis.ModuleTracker.lookup_path ~configuration module_tracker)
+        in
+        let errors =
+          IncrementalStaticAnalysis.run_additional_check
+            ~configuration
+            ~scheduler:state.scheduler
+            ~environment
+            ~source_paths
+            ~check:check_name
+        in
+        TypeQuery.Response (TypeQuery.Errors errors)
     | TypeQuery.Attributes annotation ->
         let to_attribute { Node.value = { Annotated.Class.Attribute.name; annotation; _ }; _ } =
           let annotation = Annotation.annotation annotation in

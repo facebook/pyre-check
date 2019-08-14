@@ -3,6 +3,7 @@
   autoCompleteTest
   connectionsTest
   lookupLocationTest
+  incrementalStaticAnalysisTest
   queryTest
   requestTest
   operationsTest
