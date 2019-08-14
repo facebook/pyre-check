@@ -177,7 +177,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 23,
+                "line": 24,
                 "start": 15,
                 "end": 32
               },
@@ -204,7 +204,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 23, "start": 15, "end": 20 } ],
+            "tito": [ { "line": 24, "start": 15, "end": 20 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -224,11 +224,11 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 15,
+              "line": 16,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 16, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 17, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -245,7 +245,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 16,
+                "line": 17,
                 "start": 15,
                 "end": 31
               },
@@ -253,7 +253,7 @@
               "port": "result",
               "length": 1
             },
-            "tito": [ { "line": 16, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 17, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -276,7 +276,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 16, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 17, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -297,7 +297,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 20,
+                "line": 21,
                 "start": 15,
                 "end": 31
               },
@@ -324,7 +324,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 20, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 21, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -344,11 +344,11 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 28,
+              "line": 29,
               "start": 23,
               "end": 38
             },
-            "tito": [ { "line": 29, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 30, "start": 15, "end": 19 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -371,7 +371,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 29, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 30, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -392,7 +392,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 33, "start": 15, "end": 19 } ],
+            "tito": [ { "line": 34, "start": 15, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -412,7 +412,7 @@
           {
             "root": {
               "filename": "properties.py",
-              "line": 39,
+              "line": 40,
               "start": 15,
               "end": 30
             },
@@ -444,7 +444,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 43,
+                "line": 44,
                 "start": 15,
                 "end": 31
               },

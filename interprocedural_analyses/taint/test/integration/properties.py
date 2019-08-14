@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+
 class Class:
     def __init__():
         self.tainted = ""

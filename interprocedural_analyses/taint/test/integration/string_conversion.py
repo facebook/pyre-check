@@ -2,7 +2,6 @@
 from django.http import Request
 
 
-
 request: Request
 
 
