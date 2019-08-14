@@ -152,10 +152,11 @@ class TimedStreamHandler(logging.StreamHandler):
 
     def _thread(self) -> None:
         while not self._terminate:
-            if self._record:
+            record = self._record
+            if record:
                 age = time.time() - self._last_update
                 if age > self.THRESHOLD:
-                    self.emit(self._record, age)
+                    self.emit(record, age)
             time.sleep(0.1)
 
     def terminate(self) -> None:

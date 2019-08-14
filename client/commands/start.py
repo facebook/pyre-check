@@ -125,22 +125,27 @@ class Start(Reporting):
             flags.append("-terminal")
         if self._store_type_check_resolution:
             flags.append("-store-type-check-resolution")
-        if self._save_initial_state_to and os.path.isdir(
-            os.path.dirname(self._save_initial_state_to)
+        save_initial_state_to = self._save_initial_state_to
+        if save_initial_state_to and os.path.isdir(
+            os.path.dirname(save_initial_state_to)
         ):
-            flags.extend(["-save-initial-state-to", self._save_initial_state_to])
-        if self._saved_state_project:
-            flags.extend(["-saved-state-project", self._saved_state_project])
+            flags.extend(["-save-initial-state-to", save_initial_state_to])
+        saved_state_project = self._saved_state_project
+        if saved_state_project:
+            flags.extend(["-saved-state-project", saved_state_project])
             local_configuration_root = self._configuration.local_configuration_root
             if local_configuration_root is not None:
                 relative = os.path.relpath(local_configuration_root)
                 flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
-        if self._configuration_file_hash:
-            flags.extend(["-configuration-file-hash", self._configuration_file_hash])
-        if self._load_initial_state_from is not None:
-            flags.extend(["-load-state-from", self._load_initial_state_from])
-            if self._changed_files_path is not None:
-                flags.extend(["-changed-files-path", self._changed_files_path])
+        configuration_file_hash = self._configuration_file_hash
+        if configuration_file_hash:
+            flags.extend(["-configuration-file-hash", configuration_file_hash])
+        load_initial_state_from = self._load_initial_state_from
+        if load_initial_state_from is not None:
+            flags.extend(["-load-state-from", load_initial_state_from])
+            changed_files_path = self._changed_files_path
+            if changed_files_path is not None:
+                flags.extend(["-changed-files-path", changed_files_path])
         elif self._changed_files_path is not None:
             LOG.error(
                 "--load-initial-state-from must be set if --changed-files-path is set."

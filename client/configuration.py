@@ -319,15 +319,17 @@ class Configuration:
 
     @property
     def binary(self) -> str:
-        if not self._binary:
+        binary = self._binary
+        if not binary:
             raise InvalidConfiguration("Configuration was not validated")
-        return self._binary
+        return binary
 
     @property
     def typeshed(self) -> str:
-        if not self._typeshed:
+        typeshed = self._typeshed
+        if not typeshed:
             raise InvalidConfiguration("Configuration invalid: no typeshed specified")
-        return self._typeshed
+        return typeshed
 
     @property
     def use_buck_builder(self) -> bool:
@@ -341,11 +343,12 @@ class Configuration:
 
     @property
     def local_configuration_root(self) -> Optional[str]:
-        if self.local_configuration:
-            if os.path.isdir(self.local_configuration):
-                return self.local_configuration
+        local_configuration = self.local_configuration
+        if local_configuration:
+            if os.path.isdir(local_configuration):
+                return local_configuration
             else:
-                return os.path.dirname(self.local_configuration)
+                return os.path.dirname(local_configuration)
 
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):

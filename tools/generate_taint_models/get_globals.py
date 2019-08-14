@@ -132,8 +132,10 @@ class GlobalModelGenerator(ModelGenerator):
             elif isinstance(statement, ast.AugAssign):
                 visitor.visit(statement.target)
             # Don't attempt to register statements of the form `x: int`.
-            elif isinstance(statement, ast.AnnAssign) and statement.value is not None:
-                visit_assignment(statement.target, statement.value)
+            elif isinstance(statement, ast.AnnAssign):
+                value = statement.value
+                if value is not None:
+                    visit_assignment(statement.target, value)
             elif isinstance(statement, ast.ClassDef) and should_visit_class(statement):
                 visitor.parent = statement.name
                 visitor.blacklist = all_attributes(statement)

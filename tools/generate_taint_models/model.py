@@ -98,11 +98,13 @@ class FunctionDefinitionModel(NamedTuple):
         for ast_arg in self.definition.args.args:
             annotated_params.append(_annotate(ast_arg.arg, self.arg))
 
-        if isinstance(parameters.vararg, ast.arg):
-            annotated_params.append(_annotate(f"*{parameters.vararg.arg}", self.vararg))
+        vararg_parameters = parameters.vararg
+        if isinstance(vararg_parameters, ast.arg):
+            annotated_params.append(_annotate(f"*{vararg_parameters.arg}", self.vararg))
 
-        if isinstance(parameters.kwarg, ast.arg):
-            annotated_params.append(_annotate(f"**{parameters.kwarg.arg}", self.kwarg))
+        kwarg_parameters = parameters.kwarg
+        if isinstance(kwarg_parameters, ast.arg):
+            annotated_params.append(_annotate(f"**{kwarg_parameters.arg}", self.kwarg))
 
         combined_params = ", ".join(annotated_params) if annotated_params else ""
 

@@ -40,7 +40,7 @@ def parse_content_length(line: bytes) -> Optional[int]:
 
 
 def validate_payload(payload: JSON) -> bool:
-    return payload.get("jsonrpc") == "2.0" and payload.get("method")
+    return payload.get("jsonrpc") == "2.0" and payload.get("method") is not None
 
 
 def read_message(file: BinaryIO) -> Optional[LanguageServerProtocolMessage]:
@@ -84,18 +84,20 @@ def perform_handshake(
     input_file: BinaryIO, output_file: BinaryIO, client_version: str
 ) -> None:
     server_handshake = read_message(input_file)
-    if (
-        server_handshake
-        and server_handshake.method == "handshake/server"
-        and server_handshake.parameters
-    ):
-        server_version = server_handshake.parameters.get("version")
-        if server_version != client_version:
-            raise ValueError(
-                "Version mismatch. Server has version `{}`, "
-                "while client has version `{}`.".format(server_version, client_version)
-            )
-        client_handshake = LanguageServerProtocolMessage(method="handshake/client")
-        write_message(output_file, client_handshake)
+    if server_handshake and server_handshake.method == "handshake/server":
+        server_handshake_parameters = server_handshake.parameters
+        if server_handshake_parameters:
+            server_version = server_handshake_parameters.get("version")
+            if server_version != client_version:
+                raise ValueError(
+                    "Version mismatch. Server has version `{}`, "
+                    "while client has version `{}`.".format(
+                        server_version, client_version
+                    )
+                )
+            client_handshake = LanguageServerProtocolMessage(method="handshake/client")
+            write_message(output_file, client_handshake)
+        else:
+            raise ValueError("Handshake parameters from server is not found.")
     else:
         raise ValueError("Handshake from server was malformed.")
