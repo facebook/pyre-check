@@ -9,11 +9,11 @@ open Pyre
 
 type t = SourcePath.t list Reference.Table.t
 
-let insert_source_path ~inserted existing_files =
+let insert_source_path ~configuration ~inserted existing_files =
   let rec insert sofar = function
     | [] -> List.rev_append sofar [inserted]
     | current_file :: rest as existing -> (
-      match SourcePath.same_module_compare inserted current_file with
+      match SourcePath.same_module_compare ~configuration inserted current_file with
       | 0 ->
           (* We have the following precondition for files that are in the same module: *)
           (* `same_module_compare a b = 0` implies `equal a b` *)
@@ -27,11 +27,11 @@ let insert_source_path ~inserted existing_files =
   insert [] existing_files
 
 
-let remove_source_path ~removed existing_files =
+let remove_source_path ~configuration ~removed existing_files =
   let rec remove sofar = function
     | [] -> existing_files
     | current_file :: rest -> (
-      match SourcePath.same_module_compare removed current_file with
+      match SourcePath.same_module_compare ~configuration removed current_file with
       | 0 ->
           (* We have the following precondition for files that are in the same module: *)
           (* `same_module_compare a b = 0` implies `equal a b` *)
@@ -79,7 +79,8 @@ let create configuration =
     | Some ({ SourcePath.qualifier; _ } as source_path) ->
         let update_table = function
           | None -> [source_path]
-          | Some source_paths -> insert_source_path ~inserted:source_path source_paths
+          | Some source_paths ->
+              insert_source_path ~configuration ~inserted:source_path source_paths
         in
         Hashtbl.update tracker qualifier ~f:update_table
   in
@@ -150,7 +151,9 @@ let update ~configuration ~paths tracker =
             Hashtbl.set tracker ~key:qualifier ~data:[source_path];
             Some (IncrementalUpdate.New source_path)
         | Some source_paths ->
-            let new_source_paths = insert_source_path ~inserted:source_path source_paths in
+            let new_source_paths =
+              insert_source_path ~configuration ~inserted:source_path source_paths
+            in
             let new_source_path = List.hd_exn new_source_paths in
             Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
             if SourcePath.equal new_source_path source_path then
@@ -172,7 +175,7 @@ let update ~configuration ~paths tracker =
               Hashtbl.remove tracker qualifier;
               None
           | old_source_path :: _ -> (
-            match remove_source_path ~removed:source_path source_paths with
+            match remove_source_path ~configuration ~removed:source_path source_paths with
             | [] ->
                 (* Last remaining file for the module gets removed. *)
                 Hashtbl.remove tracker qualifier;

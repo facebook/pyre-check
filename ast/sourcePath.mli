@@ -24,4 +24,4 @@ val qualifier_of_relative : string -> Reference.t
 val full_path : configuration:Configuration.Analysis.t -> t -> Path.t
 
 (* Expose for testing *)
-val same_module_compare : t -> t -> int
+val same_module_compare : configuration:Configuration.Analysis.t -> t -> t -> int

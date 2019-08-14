@@ -83,11 +83,12 @@ let test_creation context =
         assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_init actual_is_init)
   in
   let assert_same_module_greater
+      ~configuration
       ({ SourcePath.qualifier = left_qualifier; _ } as left)
       ({ SourcePath.qualifier = right_qualifier; _ } as right)
     =
     assert_equal ~cmp:Reference.equal ~printer:Reference.show left_qualifier right_qualifier;
-    let compare_result = SourcePath.same_module_compare left right in
+    let compare_result = SourcePath.same_module_compare ~configuration left right in
     let message =
       Format.asprintf
         "\'%a\' is supposed to be greater than \'%a\'"
@@ -135,10 +136,12 @@ let test_creation context =
         ~excludes:[".*/thereisnospoon.py"]
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
+        ~extensions:[".first"; ".second"; ".third"]
         ()
     in
     let create_exn = create_source_path_exn ~configuration in
     let assert_source_path = assert_source_path ~configuration in
+    let assert_same_module_greater = assert_same_module_greater ~configuration in
     let assert_create_fail = assert_create_fail ~configuration in
     (* Creation test *)
     let local_a = create_exn local_root "a.py" in
@@ -239,7 +242,10 @@ let test_creation context =
       ~is_init:false;
     assert_create_fail external_root "thereisnospoon.py";
     assert_create_fail external_root "foo/thereisnospoon.py";
-
+    let extension_first = create_exn local_root "dir/a.first" in
+    let extension_second = create_exn local_root "dir/a.second" in
+    let extension_third = create_exn local_root "dir/a.third" in
+    let extension_py = create_exn local_root "dir/a.py" in
     (* Comparison test *)
     assert_same_module_greater external_a local_a;
     assert_same_module_greater external_bstub local_b;
@@ -252,6 +258,9 @@ let test_creation context =
     assert_same_module_greater local_cstub external_c;
     assert_same_module_greater external_c local_c;
     assert_same_module_greater local_dinit local_d;
+    assert_same_module_greater extension_first extension_second;
+    assert_same_module_greater extension_first extension_third;
+    assert_same_module_greater extension_py extension_first;
 
     (* ModuleTracker initialization test *)
     let tracker = ModuleTracker.create configuration in
@@ -498,7 +507,7 @@ let test_creation context =
       ~is_external:true
   in
   let test_directory_filter2 () =
-    (* SETUP: 
+    (* SETUP:
      * - local_root is the local root
      * - search_root is the root of other search paths
      * We want to test the case when `ignore_all_errors` contains nonexistent directories. *)
@@ -700,6 +709,7 @@ let test_creation context =
     in
     let create_exn = create_source_path_exn ~configuration in
     let assert_source_path = assert_source_path ~configuration in
+    let assert_same_module_greater = assert_same_module_greater ~configuration in
     assert_source_path
       (create_exn local_root "a.py")
       ~search_root:local_root

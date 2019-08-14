@@ -110,9 +110,44 @@ let full_path ~configuration { relative; priority; _ } =
 (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module
    only. Do NOT use it on aribitrary SourceFiles. *)
 let same_module_compare
-    { priority = left_priority; is_stub = left_is_stub; is_init = left_is_init; _ }
-    { priority = right_priority; is_stub = right_is_stub; is_init = right_is_init; _ }
+    ~configuration:{ Configuration.Analysis.extensions; _ }
+    {
+      priority = left_priority;
+      is_stub = left_is_stub;
+      is_init = left_is_init;
+      relative = left_path;
+      _;
+    }
+    {
+      priority = right_priority;
+      is_stub = right_is_stub;
+      is_init = right_is_init;
+      relative = right_path;
+      _;
+    }
   =
+  let extension_priority _ =
+    (* If all else, equal, prioritize extensions in the order listed in the configuration. *)
+    let find_extension_index path =
+      let extensions =
+        if Option.is_some (List.find extensions ~f:(String.equal ".py")) then
+          extensions
+        else
+          ".py" :: extensions
+      in
+      let get_extension path =
+        Filename.split_extension path
+        |> snd
+        >>| (fun extension -> "." ^ extension)
+        |> Option.value ~default:""
+      in
+      List.findi extensions ~f:(fun _ extension -> String.equal (get_extension path) extension)
+      >>| fst
+    in
+    match find_extension_index left_path, find_extension_index right_path with
+    | Some left, Some right -> right - left
+    | _ -> 0
+  in
   (* Stub file always takes precedence *)
   match left_is_stub, right_is_stub with
   | true, false -> 1
@@ -125,5 +160,5 @@ let same_module_compare
       match left_is_init, right_is_init with
       | true, false -> 1
       | false, true -> -1
-      | _, _ -> 0 )
+      | _, _ -> extension_priority () )
     | _ as result -> result )
