@@ -1177,6 +1177,7 @@ let test_check_aliases context =
   assert_type_errors
     ~context
     {|
+      import typing
       MyAlias = typing.Union[int, UndefinedName]
     |}
     [ "Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified.";
@@ -1184,12 +1185,14 @@ let test_check_aliases context =
   assert_type_errors
     ~context
     {|
+      import typing
       MyAlias: typing.TypeAlias = typing.Union[int, UndefinedName]
     |}
     ["Undefined type [11]: Type `UndefinedName` is not defined."];
   assert_type_errors
     ~context
     {|
+      import typing
       MyAlias: typing.TypeAlias = typing.Union[int, "UndefinedName"]
     |}
     ["Undefined type [11]: Type `UndefinedName` is not defined."];
@@ -1198,13 +1201,18 @@ let test_check_aliases context =
   assert_type_errors
     ~context
     {|
+      import typing
       MyAlias = typing.Union[int, 3]
     |}
     [ "Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified.";
       "Undefined attribute [16]: Module `typing` has no attribute `Union`." ];
-  assert_type_errors ~context {|
+  assert_type_errors
+    ~context
+    {|
+      import typing
       MyAlias: typing.TypeAlias = typing.Union[int, 3]
-    |} []
+    |}
+    []
 
 
 let test_final_type context =
