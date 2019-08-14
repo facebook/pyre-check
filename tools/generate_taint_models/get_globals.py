@@ -80,6 +80,10 @@ class GlobalModelGenerator(ModelGenerator):
                 # Omit pure aliases of the form `x = alias`.
                 if isinstance(value, ast.Name) or isinstance(value, ast.Attribute):
                     return
+                # x = lambda: _ can safely be avoided, as the models confuse our taint
+                # analysis.
+                if isinstance(value, ast.Lambda):
+                    return
             visitor.visit(target)
 
         def should_visit_class(class_definition: ast.ClassDef) -> bool:

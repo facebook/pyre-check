@@ -255,3 +255,10 @@ class GetGlobalsTest(unittest.TestCase):
             """,
             {},
         )
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              x = lambda x: y
+            """,
+            {},
+        )
