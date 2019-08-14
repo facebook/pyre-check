@@ -159,6 +159,15 @@ module State (Context : Context) = struct
 
   let ( |>> ) (new_awaitables, state) awaitables = List.rev_append new_awaitables awaitables, state
 
+  let await_all_subexpressions ~state ~expression =
+    let names =
+      Visit.collect_names
+        { Node.location = Node.location expression; value = Expression expression }
+    in
+    let mark state name = mark_name_as_awaited state ~name:(Node.value name) in
+    List.fold names ~init:state ~f:mark
+
+
   let rec forward_generator
       ~resolution
       (awaitables, state)
@@ -204,11 +213,8 @@ module State (Context : Context) = struct
           if is_special_function then
             forward_expression ~resolution ~state ~expression:value |>> awaitables
           else
-            let names =
-              Visit.collect_names { Node.location; value = Statement.Expression value }
-            in
-            let mark state name = mark_name_as_awaited state ~name:(Node.value name) in
-            awaitables, List.fold names ~init:state ~f:mark
+            let state = await_all_subexpressions ~state ~expression:value in
+            awaitables, state
         in
         let need_to_await = state.need_to_await in
         (* Don't introduce awaitables for the arguments of a call, as they will be consumed by the
@@ -466,12 +472,6 @@ module State (Context : Context) = struct
       TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
     in
     let global_resolution = Resolution.global_resolution resolution in
-    let forward_return ~state:{ unawaited; locals; need_to_await } ~expression =
-      match Node.value expression with
-      | Expression.Name name when Expression.is_simple_name name ->
-          mark_name_as_awaited state ~name
-      | _ -> { unawaited; locals; need_to_await }
-    in
     match value with
     | Assert { Assert.test; _ } -> forward_expression ~resolution ~state ~expression:test |> snd
     | Assign { value; target; _ } ->
@@ -491,12 +491,16 @@ module State (Context : Context) = struct
     | Raise { Raise.expression = Some expression; _ } ->
         forward_expression ~resolution ~state ~expression |> snd
     | Return { expression = Some expression; _ } ->
-        let _, state = forward_expression ~resolution ~state ~expression in
-        forward_return ~state ~expression
+        let need_to_await = state.need_to_await in
+        let _, state =
+          forward_expression ~resolution ~state:{ state with need_to_await = false } ~expression
+        in
+        let state = { state with need_to_await } in
+        await_all_subexpressions ~state ~expression
     | Return { expression = None; _ } -> state
     | Yield { Node.value = Expression.Yield (Some expression); _ } ->
         let _, state = forward_expression ~resolution ~state ~expression in
-        forward_return ~state ~expression
+        await_all_subexpressions ~state ~expression
     | Yield _ -> state
     | YieldFrom { Node.value = Expression.Yield (Some expression); _ } ->
         forward_expression ~resolution ~state ~expression |> snd

@@ -452,7 +452,6 @@ let test_forward context =
     |}
     ["Unawaited awaitable [1001]: `awaitable()` is never awaited."];
 
-  (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|
       async def awaitable() -> typing.Awaitable[int]: ...
@@ -460,7 +459,7 @@ let test_forward context =
         awaited = awaitable()
         return awaited, 1
     |}
-    ["Unawaited awaitable [1001]: Awaitable assigned to `awaited` is never awaited."];
+    [];
   assert_awaitable_errors
     {|
       async def awaitable() -> typing.Awaitable[int]: ...
@@ -698,10 +697,34 @@ let test_aliases context =
     []
 
 
+let test_return context =
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def foo() -> typing.Awaitable[int]:
+        return awaitable()
+    |}
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def foo() -> typing.Awaitable[int]:
+        x = [awaitable()]
+        y = [awaitable()]
+        return (x + y)
+    |}
+    []
+
+
 let () =
   "awaitableCheck"
-  >::: [ "forward" >:: test_forward;
-         "state" >:: test_state;
+  >::: [ "return" >:: test_return;
+         "aliases" >:: test_aliases;
          "attribute_access" >:: test_attribute_access;
-         "aliases" >:: test_aliases ]
+         "forward" >:: test_forward;
+         "state" >:: test_state ]
   |> Test.run
