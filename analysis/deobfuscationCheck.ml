@@ -75,6 +75,8 @@ module ConstantPropagationState (Context : Context) = struct
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
+  let update_transformations _ = ()
+
   let forward
       ?key
       ( { constants; define = { Define.signature = { name; parent; _ }; _ }; nested_defines } as
@@ -210,74 +212,17 @@ module ConstantPropagationState (Context : Context) = struct
 end
 
 module UnusedStoreState (Context : Context) = struct
-  type t = {
-    unused: Location.Reference.Set.t Identifier.Map.t;
-    define: Define.t;
-    nested_defines: t NestedDefines.t;
-  }
+  include LivenessCheck.State (Context)
 
-  let show { unused; _ } = Map.keys unused |> String.concat ~sep:", "
-
-  let pp format state = Format.fprintf format "%s" (show state)
-
-  let initial ~state:_ ~define =
-    { unused = Identifier.Map.empty; define; nested_defines = NestedDefines.initial }
-
+  let initial ~state:_ ~define = initial ~define
 
   let nested_defines { nested_defines; _ } = nested_defines
 
-  let less_or_equal ~left:{ unused = left; _ } ~right:{ unused = right; _ } =
-    let less_or_equal (reference, location) =
-      match location, Map.find right reference with
-      | left, Some right -> Set.is_subset left ~of_:right
-      | _ -> false
+  let update_transformations { unused; _ } =
+    let add_transformation locations =
+      Set.iter locations ~f:(fun key -> Hashtbl.set Context.transformations ~key ~data:[])
     in
-    Map.to_alist left |> List.for_all ~f:less_or_equal
-
-
-  let join left right =
-    let merge ~key:_ = function
-      | `Both (left, right) -> Some (Set.union left right)
-      | `Left left -> Some left
-      | `Right right -> Some right
-    in
-    { left with unused = Map.merge left.unused right.unused ~f:merge }
-
-
-  let widen ~previous ~next ~iteration:_ = join previous next
-
-  let forward
-      ?key:_
-      ({ unused; nested_defines; _ } as state)
-      ~statement:({ Node.location; value } as statement)
-    =
-    (* Remove used accesses from transformation map. *)
-    let unused =
-      let used_names = Visit.collect_base_identifiers statement |> List.map ~f:Node.value in
-      let used_locations =
-        used_names
-        |> List.filter_map ~f:(Map.find unused)
-        |> List.fold ~f:Set.union ~init:Location.Reference.Set.empty
-        |> Set.to_list
-      in
-      List.iter used_locations ~f:(Hashtbl.remove Context.transformations);
-      List.fold used_names ~f:Map.remove ~init:unused
-    in
-    (* Add assignments to transformation map. *)
-    let unused =
-      match value with
-      | Assign { target = { Node.value = Name (Name.Identifier identifier); _ }; _ } ->
-          let update = function
-            | Some existing -> Set.add existing location
-            | None -> Location.Reference.Set.of_list [location]
-          in
-          Hashtbl.set Context.transformations ~key:location ~data:[];
-          Map.update unused identifier ~f:update
-      | _ -> unused
-    in
-    let state = { state with unused } in
-    let nested_defines = NestedDefines.update_nested_defines nested_defines ~statement ~state in
-    { state with nested_defines }
+    Map.iter ~f:add_transformation unused
 
 
   let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
@@ -291,6 +236,8 @@ module type State = sig
   val initial : state:t option -> define:Define.t -> t
 
   val nested_defines : t -> t NestedDefines.t
+
+  val update_transformations : t -> unit
 end
 
 (* Lol functors... *)
@@ -302,6 +249,7 @@ module Scheduler (State : State) (Context : Context) = struct
       Fixpoint.forward ~cfg:(Cfg.create define) ~initial:(State.initial ~state ~define)
       |> Fixpoint.exit
       >>| (fun state ->
+            State.update_transformations state;
             State.nested_defines state
             |> Map.data
             |> List.iter ~f:(fun { NestedDefines.nested_define; state } ->

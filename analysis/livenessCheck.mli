@@ -4,7 +4,33 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Ast
+open Statement
+open CustomAnalysis
 module Error = AnalysisError
+
+module type Context = sig end
+
+module State (Context : Context) : sig
+  type t = {
+    unused: Location.Reference.Set.t Identifier.Map.t;
+    define: Define.t;
+    nested_defines: t NestedDefines.t;
+  }
+
+  val show : t -> string
+
+  val pp : Format.formatter -> t -> unit
+
+  val initial : define:Define.t -> t
+
+  val less_or_equal : left:t -> right:t -> bool
+
+  val join : t -> t -> t
+
+  val widen : previous:t -> next:t -> iteration:'a -> t
+
+  val forward : ?key:int -> t -> statement:Statement.t -> t
+end
 
 val name : string
 
