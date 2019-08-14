@@ -8,26 +8,10 @@ open Ast
 open Expression
 open Pyre
 open Statement
+open CustomAnalysis
 module Error = AnalysisError
 
 let name = "Deobfuscation"
-
-module NestedDefines = struct
-  type 'state nested = {
-    nested_define: Define.t;
-    state: 'state;
-  }
-
-  and 'state t = 'state nested Location.Reference.Map.t
-
-  let initial = Location.Reference.Map.empty
-
-  let update_nested_defines nested_defines ~statement ~state =
-    match statement with
-    | { Node.location; value = Define nested_define } ->
-        Map.set nested_defines ~key:location ~data:{ nested_define; state }
-    | _ -> nested_defines
-end
 
 module type Context = sig
   val global_resolution : GlobalResolution.t
