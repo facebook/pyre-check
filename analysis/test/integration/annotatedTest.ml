@@ -15,22 +15,7 @@ let test_annotated context =
         reveal_type(annotated)
         return annotated
     |}
-    ["Revealed type [-1]: Revealed type for `annotated` is `typing.Annotated[int]`."];
-  assert_type_errors
-    ~context
-    {|
-      def foo(input: float) -> int:
-        return pyre_extensions.safe_cast(int, input)
-    |}
-    [ "Unsafe cast [1003]: `safe_cast` is only permitted to loosen the type of `input`. `float` \
-       is not a super type of `input`." ];
-  assert_type_errors
-    ~context
-    {|
-        def foo(input: int) -> float:
-          return pyre_extensions.safe_cast(float, input)
-    |}
-    []
+    ["Revealed type [-1]: Revealed type for `annotated` is `typing.Annotated[int]`."]
 
 
 let () = "annotated" >::: ["annotated" >:: test_annotated] |> Test.run

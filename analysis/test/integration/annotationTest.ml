@@ -1249,6 +1249,24 @@ let test_check_invalid_inheritance context =
   ()
 
 
+let test_check_safe_cast context =
+  assert_type_errors
+    ~context
+    {|
+      def foo(input: float) -> int:
+        return pyre_extensions.safe_cast(int, input)
+    |}
+    [ "Unsafe cast [49]: `safe_cast` is only permitted to loosen the type of `input`. `float` is \
+       not a super type of `input`." ];
+  assert_type_errors
+    ~context
+    {|
+        def foo(input: int) -> float:
+          return pyre_extensions.safe_cast(float, input)
+    |}
+    []
+
+
 let () =
   "annotation"
   >::: [ "check_undefined_type" >:: test_check_undefined_type;
@@ -1262,5 +1280,6 @@ let () =
          "check_refinement" >:: test_check_refinement;
          "check_aliases" >:: test_check_aliases;
          "check_final_type" >:: test_final_type;
-         "check_invalid_inheritance" >:: test_check_invalid_inheritance ]
+         "check_invalid_inheritance" >:: test_check_invalid_inheritance;
+         "check_safe_cast" >:: test_check_safe_cast ]
   |> Test.run

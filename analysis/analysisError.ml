@@ -329,11 +329,11 @@ let code = function
   | InvalidTypeVariance _ -> 46
   | InvalidMethodSignature _ -> 47
   | InvalidException _ -> 48
+  | UnsafeCast _ -> 49
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
-  | UnsafeCast _ -> 1003
-  | DeadStore _ -> 1004
+  | DeadStore _ -> 1003
 
 
 let name = function
