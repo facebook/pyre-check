@@ -1158,6 +1158,21 @@ let test_check_aliases context =
     [ "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `BAR` has no attribute `x`." ];
 
+  (* Locals are not aliases *)
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> None:
+        x = int
+        y: x = 1
+    |}
+    ["Invalid type [31]: Expression `foo.x` is not a valid type."];
+
+  assert_type_errors ~context {|
+      def foo(type: int) -> None:
+        x = type
+    |} [];
+
   (* Aliases to undefined types *)
   assert_type_errors
     ~context
