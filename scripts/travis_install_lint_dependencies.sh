@@ -3,6 +3,6 @@
 set -x
 set -e
 
-pip install pyre-check black pywatchman ipython
+pip install pyre-check black pywatchman psutil ipython
 pyre --version
 black --version
