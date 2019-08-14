@@ -16,7 +16,7 @@ module type Context = sig end
 module State (Context : Context) = struct
   type t = {
     unused: Location.Reference.Set.t Identifier.Map.t;
-    define: Define.t;
+    define: Define.t Node.t;
     nested_defines: t NestedDefines.t;
   }
 
@@ -48,7 +48,13 @@ module State (Context : Context) = struct
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let errors _ = []
+  let errors { unused; define; _ } =
+    let add_errors ~key ~data errors =
+      let create_error location = Error.create ~location ~kind:(Error.DeadStore key) ~define in
+      Set.to_list data |> List.map ~f:create_error |> fun new_errors -> new_errors @ errors
+    in
+    Map.fold unused ~init:[] ~f:add_errors
+
 
   let forward
       ?key:_
@@ -85,9 +91,7 @@ let run ~configuration:_ ~global_resolution:_ ~source =
     let module Context = struct end in
     let module State = State (Context) in
     let module Fixpoint = Fixpoint.Make (State) in
-    Fixpoint.forward
-      ~cfg:(Cfg.create (Node.value define))
-      ~initial:(State.initial ~define:define.Node.value)
+    Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:(State.initial ~define)
     |> Fixpoint.exit
     >>| State.errors
     |> Option.value ~default:[]

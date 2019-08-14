@@ -262,6 +262,7 @@ type kind =
     }
   | UnusedIgnore of int list
   (* Additional errors. *)
+  | DeadStore of Identifier.t
   | Deobfuscation of Source.t
   | UnawaitedAwaitable of unawaited_awaitable
 [@@deriving compare, eq, sexp, show, hash]

@@ -272,6 +272,7 @@ type kind =
   | UnusedIgnore of int list
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
+  | DeadStore of Identifier.t
   | Deobfuscation of Source.t
   | UnawaitedAwaitable of unawaited_awaitable
 [@@deriving compare, eq, sexp, show, hash]
@@ -332,11 +333,13 @@ let code = function
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
   | UnsafeCast _ -> 1003
+  | DeadStore _ -> 1004
 
 
 let name = function
   | AbstractClass _ -> "Abstract class"
   | AnalysisFailure _ -> "Analysis failure"
+  | DeadStore _ -> "Dead store"
   | Deobfuscation _ -> "Deobfuscation"
   | IllegalAnnotationTarget _ -> "Illegal annotation target"
   | ImpossibleAssertion _ -> "Impossible assertion"
@@ -492,6 +495,7 @@ let messages ~concise ~signature location kind =
       [Format.asprintf "Terminating analysis - type `%a` not defined." pp_type annotation]
   | AnalysisFailure annotation ->
       [Format.asprintf "Terminating analysis because type `%a` is not defined." pp_type annotation]
+  | DeadStore name -> [Format.asprintf "Value assigned to `%a` is never used." pp_identifier name]
   | Deobfuscation source -> [Format.asprintf "\n%a" Source.pp source]
   | IllegalAnnotationTarget _ when concise -> ["Target cannot be annotated."]
   | IllegalAnnotationTarget expression ->
@@ -1761,6 +1765,7 @@ let due_to_analysis_limitations { kind; _ } =
   | Top -> true
   | UndefinedAttribute { origin = Class { annotation; _ }; _ } -> Type.is_unknown annotation
   | AnalysisFailure _
+  | DeadStore _
   | Deobfuscation _
   | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
@@ -1860,6 +1865,7 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | InvalidException { annotation = actual; _ } ->
       Type.is_any actual || (Type.is_union actual && Type.contains_any actual)
   | AnalysisFailure _
+  | DeadStore _
   | Deobfuscation _
   | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
@@ -1913,6 +1919,7 @@ let less_or_equal ~resolution left right =
   &&
   match left.kind, right.kind with
   | AnalysisFailure left, AnalysisFailure right -> Type.equal left right
+  | DeadStore left, DeadStore right -> Identifier.equal left right
   | Deobfuscation left, Deobfuscation right -> Source.equal left right
   | IllegalAnnotationTarget left, IllegalAnnotationTarget right -> Expression.equal left right
   | ImpossibleAssertion left, ImpossibleAssertion right
@@ -2085,6 +2092,7 @@ let less_or_equal ~resolution left right =
       Reference.equal_sanitized left.class_name right.class_name
   | _, Top -> true
   | AnalysisFailure _, _
+  | DeadStore _, _
   | Deobfuscation _, _
   | IllegalAnnotationTarget _, _
   | ImpossibleAssertion _, _
@@ -2171,6 +2179,7 @@ let join ~resolution left right =
   let kind =
     match left.kind, right.kind with
     | AnalysisFailure left, AnalysisFailure right -> AnalysisFailure (Type.union [left; right])
+    | DeadStore left, DeadStore right when Identifier.equal left right -> DeadStore left
     | Deobfuscation left, Deobfuscation right when Source.equal left right -> Deobfuscation left
     | IllegalAnnotationTarget left, IllegalAnnotationTarget right when Expression.equal left right
       ->
@@ -2416,6 +2425,7 @@ let join ~resolution left right =
     | _, Top ->
         Top
     | AnalysisFailure _, _
+    | DeadStore _, _
     | Deobfuscation _, _
     | IllegalAnnotationTarget _, _
     | ImpossibleAssertion _, _
@@ -2757,6 +2767,7 @@ let dequalify
   let kind =
     match kind with
     | AnalysisFailure annotation -> AnalysisFailure (dequalify annotation)
+    | DeadStore name -> DeadStore name
     | Deobfuscation left -> Deobfuscation left
     | IllegalAnnotationTarget left -> IllegalAnnotationTarget left
     | ImpossibleAssertion ({ annotation; _ } as assertion) ->

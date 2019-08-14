@@ -49,7 +49,7 @@ module ConstantPropagationState (Context : Context) = struct
       | Some { constants; _ } -> constants
       | _ -> Reference.Map.empty
     in
-    { constants; define; nested_defines = NestedDefines.initial }
+    { constants; define = define.Node.value; nested_defines = NestedDefines.initial }
 
 
   let nested_defines { nested_defines; _ } = nested_defines
@@ -233,7 +233,7 @@ module type State = sig
 
   include Fixpoint.State with type t := t
 
-  val initial : state:t option -> define:Define.t -> t
+  val initial : state:t option -> define:Define.t Node.t -> t
 
   val nested_defines : t -> t NestedDefines.t
 
@@ -246,17 +246,16 @@ module Scheduler (State : State) (Context : Context) = struct
     Hashtbl.clear Context.transformations;
     let module Fixpoint = Fixpoint.Make (State) in
     let rec run ~state ~define =
-      Fixpoint.forward ~cfg:(Cfg.create define) ~initial:(State.initial ~state ~define)
+      Fixpoint.forward ~cfg:(Cfg.create define.Node.value) ~initial:(State.initial ~state ~define)
       |> Fixpoint.exit
       >>| (fun state ->
             State.update_transformations state;
             State.nested_defines state
-            |> Map.data
-            |> List.iter ~f:(fun { NestedDefines.nested_define; state } ->
-                   run ~state:(Some state) ~define:nested_define))
+            |> Map.iteri ~f:(fun ~key ~data:{ NestedDefines.nested_define; state } ->
+                   run ~state:(Some state) ~define:{ Node.location = key; value = nested_define }))
       |> ignore
     in
-    let define = Source.top_level_define source in
+    let define = Source.top_level_define_node source in
     run ~state:None ~define;
     let module Transform = Transform.MakeStatementTransformer (struct
       type t = unit

@@ -13,7 +13,7 @@ module type Context = sig end
 module State (Context : Context) : sig
   type t = {
     unused: Location.Reference.Set.t Identifier.Map.t;
-    define: Define.t;
+    define: Define.t Node.t;
     nested_defines: t NestedDefines.t;
   }
 
@@ -21,7 +21,7 @@ module State (Context : Context) : sig
 
   val pp : Format.formatter -> t -> unit
 
-  val initial : define:Define.t -> t
+  val initial : define:Define.t Node.t -> t
 
   val less_or_equal : left:t -> right:t -> bool
 
