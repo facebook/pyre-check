@@ -10,17 +10,15 @@
 /* Initializes the shared heap. */
 /* Must be called by the master BEFORE forking the workers! */
 CAMLprim value hh_shared_init( value config_val, value shm_dir_val);
-/* Must be called after the program is done initializing. We keep the original
- * size of the heap to estimate how often we should garbage collect.
- */
-void hh_call_after_init(void);
 value hh_check_heap_overflow(void);
 /* Must be called by every worker before any operation is performed. */
-value hh_connect(value connector, value is_master);
+value hh_connect(value connector);
 
 /*****************************************************************************/
 /* Heap diagnostics. */
 /*****************************************************************************/
+CAMLprim value hh_used_heap_size(void);
+CAMLprim value hh_wasted_heap_size(void);
 CAMLprim value hh_heap_size(void);
 CAMLprim value hh_log_level(void);
 CAMLprim value hh_hash_used_slots(void);
@@ -52,14 +50,11 @@ void hh_shared_clear(void);
 /*****************************************************************************/
 /* Garbage collection. */
 /*****************************************************************************/
-CAMLprim value hh_should_collect(value aggressive_val);
-CAMLprim value hh_collect(value aggressive_val);
+CAMLprim value hh_collect(void);
 
 /*****************************************************************************/
 /* Deserialization. */
 /*****************************************************************************/
-/* Deserializes the value pointed by src. */
-CAMLprim value hh_deserialize(char *src);
 /* Returns the value associated to a given key, and deserialize it. */
 /* The key MUST be present. */
 CAMLprim value hh_get_and_deserialize(value key);

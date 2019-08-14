@@ -50,7 +50,7 @@ val init: config -> handle
 (* Connect a slave to the shared heap *)
 (*****************************************************************************)
 
-val connect: handle -> is_master:bool -> unit
+val connect: handle -> unit
 
 (*****************************************************************************)
 (* The shared memory garbage collector. It must be called every time we
@@ -58,7 +58,7 @@ val connect: handle -> is_master:bool -> unit
 *)
 (*****************************************************************************)
 
-val collect: [ `gentle | `aggressive ] -> unit
+val collect: [ `gentle | `aggressive | `always_TEST ] -> unit
 
 (*****************************************************************************)
 (* Must be called after the initialization of the hack server is over.

@@ -145,7 +145,7 @@ let init config =
     then Hh_logger.log "Failed to use anonymous memfd init";
     shm_dir_init config config.shm_dirs
 
-external connect : handle -> is_master:bool -> unit = "hh_connect"
+external connect : handle -> unit = "hh_connect"
 
 (*****************************************************************************)
 (* The shared memory garbage collector. It must be called every time we
@@ -153,7 +153,7 @@ external connect : handle -> is_master:bool -> unit = "hh_connect"
 *)
 (*****************************************************************************)
 
-external hh_collect: bool -> unit = "hh_collect" [@@noalloc]
+external hh_collect: unit -> unit = "hh_collect" [@@noalloc]
 
 (*****************************************************************************)
 (* Serializes the dependency table and writes it to a file *)
@@ -220,14 +220,19 @@ external cleanup_sqlite: unit -> unit = "hh_cleanup_sqlite"
 (*****************************************************************************)
 (* The size of the dynamically allocated shared memory section *)
 (*****************************************************************************)
-external heap_size: unit -> int = "hh_heap_size"
+external heap_size: unit -> int = "hh_used_heap_size" [@@noalloc]
+
+(*****************************************************************************)
+(* Part of the heap not reachable from hashtable entries. *)
+(*****************************************************************************)
+external wasted_heap_size: unit -> int = "hh_wasted_heap_size" [@@noalloc]
 
 (*****************************************************************************)
 (* The logging level for shared memory statistics *)
 (* 0 = nothing *)
 (* 1 = log totals, averages, min, max bytes marshalled and unmarshalled *)
 (*****************************************************************************)
-external hh_log_level : unit -> int = "hh_log_level"
+external hh_log_level : unit -> int = "hh_log_level" [@@noalloc]
 
 (*****************************************************************************)
 (* The number of used slots in our hashtable *)
@@ -254,12 +259,9 @@ external dep_slots : unit -> int = "hh_dep_slots"
  * (cf serverInit.ml). *)
 (*****************************************************************************)
 
-external hh_init_done: unit -> unit = "hh_call_after_init"
-
 external hh_check_heap_overflow: unit -> bool  = "hh_check_heap_overflow"
 
 let init_done () =
-  hh_init_done ();
   EventLogger.sharedmem_init_done (heap_size ())
 
 type table_stats = {
@@ -284,12 +286,23 @@ let hash_stats () =
     slots = hash_slots ();
   }
 
-let collect (effort : [ `gentle | `aggressive ]) =
+let should_collect (effort : [ `gentle | `aggressive | `always_TEST ]) =
+  let overhead = match effort with
+  | `always_TEST -> 1.0
+  | `aggressive -> 1.2
+  | `gentle -> 2.0
+  in
+  let used = heap_size () in
+  let wasted = wasted_heap_size () in
+  let reachable = used - wasted in
+  used >= truncate ((float reachable) *. overhead)
+
+let collect (effort : [ `gentle | `aggressive | `always_TEST ]) =
   let old_size = heap_size () in
   Stats.update_max_heap_size old_size;
   let start_t = Unix.gettimeofday () in
   (* The wrapper is used to run the function in a worker instead of master. *)
-  hh_collect (effort = `aggressive);
+  if should_collect effort then hh_collect ();
   let new_size = heap_size () in
   let time_taken = Unix.gettimeofday () -. start_t in
   if old_size <> new_size then begin
@@ -445,24 +458,27 @@ end = struct
     let saved = original -. compressed in
     let ratio = compressed /. original in
     Measure.sample (Value.description
-                    ^ " (bytes serialized into shared heap)") compressed;
+      ^ " (bytes serialized into shared heap)") compressed;
     Measure.sample ("ALL bytes serialized into shared heap") compressed;
     Measure.sample (Value.description
-                    ^ " (bytes saved in shared heap due to compression)") saved;
+      ^ " (bytes saved in shared heap due to compression)") saved;
     Measure.sample ("ALL bytes saved in shared heap due to compression") saved;
     Measure.sample (Value.description
-                    ^ " (shared heap compression ratio)") ratio;
+      ^ " (shared heap compression ratio)") ratio;
     Measure.sample ("ALL bytes shared heap compression ratio") ratio
 
   let log_deserialize l r =
     let sharedheap = float l in
-    let localheap = float (value_size r) in
-    begin
-      Measure.sample (Value.description
-                      ^ " (bytes deserialized from shared heap)") sharedheap;
-      Measure.sample ("ALL bytes deserialized from shared heap") sharedheap;
-      Measure.sample (Value.description
-                      ^ " (bytes allocated for deserialized value)") localheap;
+
+    Measure.sample (Value.description ^ " (bytes deserialized from shared heap)") sharedheap;
+    Measure.sample ("ALL bytes deserialized from shared heap") sharedheap;
+
+    if hh_log_level() > 1
+    then begin
+      (* value_size is a bit expensive to call this often, so only run with log levels >= 2 *)
+      let localheap = float (value_size r) in
+
+      Measure.sample (Value.description ^ " (bytes allocated for deserialized value)") localheap;
       Measure.sample ("ALL bytes allocated for deserialized value") localheap
     end
 

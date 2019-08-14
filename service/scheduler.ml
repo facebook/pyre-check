@@ -30,7 +30,6 @@ let create
       ~heap_handle
       ~gc_control:Memory.worker_garbage_control
   in
-  Memory.SharedMemory.connect heap_handle ~is_master:true;
   { workers; number_of_workers; bucket_multiplier; is_parallel = parallel }
 
 
