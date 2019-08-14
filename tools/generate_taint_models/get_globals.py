@@ -49,7 +49,7 @@ class GlobalModelGenerator(ModelGenerator):
                     return
                 parent = self.parent
                 if parent is not None:
-                    name_to_register = f"{parent}.{name.id}"
+                    name_to_register = f"{parent}.__class__.{name.id}"
                 else:
                     name_to_register = name.id
                 self.globals.add(name_to_register)

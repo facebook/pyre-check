@@ -109,8 +109,8 @@ class GetGlobalsTest(unittest.TestCase):
                 H: typing.ClassVar[int] = ...
             """,
             {
-                "module.Class.F: TaintSink[Global] = ...",
-                "module.Class.G: TaintSink[Global] = ...",
+                "module.Class.__class__.F: TaintSink[Global] = ...",
+                "module.Class.__class__.G: TaintSink[Global] = ...",
             },
         )
         self.assert_module_has_global_models(
@@ -164,9 +164,9 @@ class GetGlobalsTest(unittest.TestCase):
             """,
             expected={
                 "module.B: TaintSink[Global] = ...",
-                "module.Class.D: TaintSink[Global] = ...",
+                "module.Class.__class__.D: TaintSink[Global] = ...",
             },
-            blacklist={"module.A", "module.Class.C"},
+            blacklist={"module.A", "module.Class.__class__.C"},
         )
         self.assert_module_has_global_models(
             """
@@ -204,7 +204,7 @@ class GetGlobalsTest(unittest.TestCase):
               def __init__(self):
                 self.C = 1
             """,
-            {"module.MyClass.D: TaintSink[Global] = ..."},
+            {"module.MyClass.__class__.D: TaintSink[Global] = ..."},
         )
         # We ignore ClassVar for now.
         self.assert_module_has_global_models(
@@ -235,5 +235,5 @@ class GetGlobalsTest(unittest.TestCase):
             class SubClass(MyClass):
               C: int = ...
             """,
-            {"module.SubClass.C: TaintSink[Global] = ..."},
+            {"module.SubClass.__class__.C: TaintSink[Global] = ..."},
         )
