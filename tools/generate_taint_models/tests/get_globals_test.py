@@ -237,3 +237,21 @@ class GetGlobalsTest(unittest.TestCase):
             """,
             {"module.SubClass.__class__.C: TaintSink[Global] = ..."},
         )
+        self.assert_module_has_global_models(
+            """
+            from typing import TypedDict
+            class MyClass(TypedDict):
+              x: int = ...
+              y: str = ...
+            """,
+            {},
+        )
+        self.assert_module_has_global_models(
+            """
+            import typing
+            class MyClass(typing.TypedDict):
+              x: int = ...
+              y: str = ...
+            """,
+            {},
+        )

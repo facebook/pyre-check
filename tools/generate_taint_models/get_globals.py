@@ -87,6 +87,16 @@ class GlobalModelGenerator(ModelGenerator):
             if visitor.parent is not None:
                 return False
 
+            # TypedDicts use top-level attribute declarations to declare attributes.
+            for base in class_definition.bases:
+                base_name = None
+                if isinstance(base, ast.Name):
+                    base_name = base.id
+                if isinstance(base, ast.Attribute):
+                    base_name = base.attr
+                if base_name == "TypedDict":
+                    return False
+
             def is_dataclass_decorator(expression: ast.expr) -> bool:
                 if isinstance(expression, ast.Call):
                     # pyre-ignore[18]: Not handling nested recursive functions.
