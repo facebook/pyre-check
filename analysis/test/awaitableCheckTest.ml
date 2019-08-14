@@ -652,9 +652,48 @@ let test_attribute_access context =
     []
 
 
+let test_aliases context =
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def foo() -> None:
+        a = [awaitable()]
+        b = [1]
+        c = a + b
+        await c
+    |}
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def foo() -> None:
+        a = [awaitable()]
+        b = [1]
+        c = a + b
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `c`, `a` is never awaited."];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def foo() -> None:
+        a = [1]
+        b = [awaitable()]
+        c = a + b
+        await c
+    |}
+    []
+
+
 let () =
   "awaitableCheck"
   >::: [ "forward" >:: test_forward;
          "state" >:: test_state;
-         "attribute_access" >:: test_attribute_access ]
+         "attribute_access" >:: test_attribute_access;
+         "aliases" >:: test_aliases ]
   |> Test.run

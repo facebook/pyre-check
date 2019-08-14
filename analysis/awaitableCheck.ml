@@ -314,6 +314,19 @@ module State (Context : Context) = struct
         in
         forward_expression ~resolution ~state ~expression:value |>> awaitables
     | Name (Name.Attribute { base; _ }) -> forward_expression ~resolution ~state ~expression:base
+    | Name name when Expression.is_simple_name name ->
+        let awaitables =
+          match Map.find state.locals (Reference (Expression.name_to_reference_exn name)) with
+          | Some aliases ->
+              let add_unawaited unawaited location =
+                match Map.find state.unawaited location with
+                | Some (Unawaited expression) -> expression :: unawaited
+                | _ -> unawaited
+              in
+              Set.fold aliases ~init:[] ~f:add_unawaited
+          | None -> []
+        in
+        awaitables, state
     (* Base cases. *)
     | Complex _
     | False
