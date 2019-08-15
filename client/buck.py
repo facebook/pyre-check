@@ -205,10 +205,8 @@ def _normalize(targets: List[str]) -> List[Tuple[str, str]]:
             .decode()
             .strip()
             .split("\n")
-        )
-        targets_to_destinations = cast(
-            List[str], list(filter(bool, targets_to_destinations))
-        )
+        )  # type: List[str]
+        targets_to_destinations = list(filter(bool, targets_to_destinations))
         # The output is of the form //target //corresponding.par
         result = []
         for target in targets_to_destinations:
