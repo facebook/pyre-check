@@ -78,6 +78,53 @@ During analysis, each function will be processed into a control flow graph to re
 
 6. TypeCheckService will collect all the errors and return them to the caller. In the case of `pyre check`, all errors will be reported to stdout.
 
+## Development Tips and Tricks
+
+### How do I test my OCaml changes against real code?
+When you run pyre on the command line, what runs under the hood is a shim which finds and runs a suitable pyre binary. This works well for production use, but isn't great for testing out your own build of Pyre.
+
+The way you can get around this is by setting up environment variables. If set, `PYRE_BINARY` will override any binary in a configuration file and use the OCaml binary you've provided as `$PYRE_BINARY`.
+
+Example `.bashrc`/`.bash_profile`:
+```bash
+export PYRE_BINARY=/path/to/pyre-check/_build/default/main.exe
+```
+
+If you're working with a `PYRE_BINARY` and are frequently re-compiling Pyre, you should avoid using the Pyre server, as the server will not stop when you re-compile Pyre. You should instead run `pyre check` to create a one-off run.
+
+### How do I debug?
+Since OCaml doesn't have a great debugger at the time of writing of this article, we rely quite a bit on print debugging. In order to get persistent messages instead of having the preceding line get deleted, you should run `pyre --noninteractive check`. You can introduce your own debugging messages into the code via `Log.dump`. Most Pyre data structures automatically derive pretty printing functions, and you can use this in order to debug. Example:
+
+```ocaml
+let function_that_takes_expression (expression: Expression.t) =
+  ...
+  Log.dump "Expression at this point: %s" (Expression.show expression);
+  rest_of_statements
+```
+
+In general, if you have a value of type `Module.t`, `Module.show` will be a function of type `t -> string` that can be used for debugging purposes.
+If you're hoping to understand Pyre's state at a particular point in Python code, you can use the `pyre_dump`, `pyre_dump_cfg`, `pyre_dump_locations`, and `reveal_type` functions.
+Example:
+
+```python
+# a.py
+def foo(x: typing.Optional[int]) -> None:
+  pyre_dump() # dumps the exit state and annotations of variables
+  pyre_dump_cfg() # Prints out the control flow graph for the function
+  pyre_dump_locations() # dumps AST as JSON, with locations attached
+  if x is not None:
+    reveal_type(x) # Reveals the type of x at this point
+  else:
+    return x
+```
+
+### How do I run a single test with Dune?
+Assuming that the test you're interested in running is `analysis/test/integration/methodTest.ml`:
+
+```bash
+dune exec analysis/test/integration/methodTest.exe
+```
+
 ## License
 By contributing to Pyre, you agree that your contributions will be licensed
 under the LICENSE file in the root directory of this source tree.
