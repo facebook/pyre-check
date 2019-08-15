@@ -720,11 +720,52 @@ let test_return context =
     []
 
 
+let test_assign context =
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def foo() -> int:
+        d = {}
+        d["bar"] = awaitable()
+        d["foo"] = awaitable()
+    |}
+    [ "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited.";
+      "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited." ];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def foo() -> int:
+        d = {}
+        d["bar"] = awaitable()
+        d["foo"] = awaitable()
+        await d
+    |}
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      import asyncio
+      import typing
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def foo() -> int:
+        d = {}
+        d["bar"] = awaitable()
+        d["foo"] = "not awaitable"
+        await asyncio.gather(*d.values())
+    |}
+    []
+
+
 let () =
   "awaitableCheck"
-  >::: [ "return" >:: test_return;
-         "aliases" >:: test_aliases;
+  >::: [ "aliases" >:: test_aliases;
+         "assign" >:: test_assign;
          "attribute_access" >:: test_attribute_access;
          "forward" >:: test_forward;
+         "return" >:: test_return;
          "state" >:: test_state ]
   |> Test.run

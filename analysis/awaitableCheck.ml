@@ -216,16 +216,46 @@ module State (Context : Context) = struct
             let state = await_all_subexpressions ~state ~expression:value in
             awaitables, state
         in
-        let need_to_await = state.need_to_await in
-        (* Don't introduce awaitables for the arguments of a call, as they will be consumed by the
-           call anyway. *)
         let awaitables, state =
-          List.fold
-            arguments
-            ~init:(awaitables, { state with need_to_await = is_special_function })
-            ~f:forward_argument
+          match Node.value callee, arguments with
+          (* a["b"] = c gets converted to a.__setitem__("b", c). *)
+          | ( Name (Name.Attribute { attribute = "__setitem__"; base; _ }),
+              [_; { Call.Argument.value; _ }] ) -> (
+              let new_awaitables, state =
+                forward_expression ~resolution ~state ~expression:value
+              in
+              match Node.value base with
+              | Name name when Expression.is_simple_name name && not (List.is_empty new_awaitables)
+                ->
+                  let { locals; _ } = state in
+                  let name = Expression.name_to_reference_exn name in
+                  let awaitable_locations =
+                    new_awaitables |> List.map ~f:Node.location |> Location.Reference.Set.of_list
+                  in
+                  let locals =
+                    match Map.find locals (Reference name) with
+                    | Some awaitables ->
+                        Map.set
+                          locals
+                          ~key:(Reference name)
+                          ~data:(Set.union awaitables awaitable_locations)
+                    | None -> Map.set locals ~key:(Reference name) ~data:awaitable_locations
+                  in
+                  List.rev_append new_awaitables awaitables, { state with locals }
+              | _ -> awaitables, state )
+          | _ ->
+              let need_to_await = state.need_to_await in
+              (* Don't introduce awaitables for the arguments of a call, as they will be consumed
+                 by the call anyway. *)
+              let awaitables, state =
+                List.fold
+                  arguments
+                  ~init:(awaitables, { state with need_to_await = is_special_function })
+                  ~f:forward_argument
+              in
+              let state = { state with need_to_await } in
+              awaitables, state
         in
-        let state = { state with need_to_await } in
         let annotation = Resolution.resolve resolution expression in
         let is_awaitable =
           GlobalResolution.less_or_equal
@@ -360,7 +390,7 @@ module State (Context : Context) = struct
         [], state
 
 
-  let rec forward_assign
+  and forward_assign
       ~resolution
       ~state:({ unawaited; locals; need_to_await } as state)
       ~annotation
