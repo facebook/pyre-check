@@ -62,7 +62,7 @@ You can install the latest release via `opam install ocamlformat`, and run it on
 ## Architecture
 On a high level, Pyre goes through the following steps to when "pyre" is called from the command line:
 
-1. Read a .pyre_configuration to determine which source roots to analyze, as well as which python packages to analyze annotations for, and which pyre command to run. This information is used to determine which flags to pass into `pyre.bin`, and shell out to the OCaml binary. The implementation of this step can be found under `scripts/`.
+1. Read a .pyre_configuration to determine which source roots to analyze, as well as which python packages to analyze annotations for, and which pyre command to run. This information is used to determine which flags to pass into `pyre.bin`, and shell out to the OCaml binary. The implementation of this step can be found under `client/`.
 
 2. Determine which pyre command to run. The commands include some which handle the lifetime and state of a persistent pyre server for a project, as well as a standalone run command called `pyre check`. The implementation of these commands are found under `commands/`. `main.ml` aggregates these commands, and handles the parsing of the command-line arguments. Most steps will eventually call the TypeCheckService.
 

@@ -67,7 +67,7 @@ Más información disponible en: https://github.com/ambv/black
 
 En un nivel alto, Pyre realiza los siguientes pasos para cuando se llama "pira" desde la línea de comando:
 
-1. Lea una .pyre_configuration para determinar qué raíces de origen analizar, así como también para qué paquetes de python analizar anotaciones y qué comando de pyre ejecutar. Esta información se usa para determinar qué banderas pasan a `pyre.bin`, y envían al binario de OCaml. La implementación de este paso se puede encontrar en `scripts/`.
+1. Lea una .pyre_configuration para determinar qué raíces de origen analizar, así como también para qué paquetes de python analizar anotaciones y qué comando de pyre ejecutar. Esta información se usa para determinar qué banderas pasan a `pyre.bin`, y envían al binario de OCaml. La implementación de este paso se puede encontrar en `client/`.
 
 2. Determine qué comando de piratería ejecutar. Los comandos incluyen algunos que manejan el tiempo de vida y el estado de un servidor de piro persistente para un proyecto, así como un comando de ejecución independiente denominado `pyre check`. La implementación de estos comandos se encuentra en `commands/`. `main.ml` agrega estos comandos y maneja el análisis de los argumentos de la línea de comandos. La mayoría de los pasos eventualmente llamarán a TypeCheckService.
 
