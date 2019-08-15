@@ -1,4 +1,4 @@
-# @nolint
+# flake8: noqa
 
 
 def source_via_format():

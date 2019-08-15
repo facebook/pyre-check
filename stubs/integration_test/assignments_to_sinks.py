@@ -1,4 +1,4 @@
-# @nolint
+# flake8: noqa
 
 import pyre
 from django.http import HttpRequest

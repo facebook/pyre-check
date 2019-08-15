@@ -1,4 +1,4 @@
-# @nolint
+# flake8: noqa
 
 
 def int_source() -> int:

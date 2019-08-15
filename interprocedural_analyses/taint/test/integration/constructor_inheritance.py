@@ -1,4 +1,4 @@
-# @nolint
+# flake8: noqa
 
 
 # Integration test illustrating flows through an inherited constructor

@@ -1,4 +1,4 @@
-# @nolint
+# flake8: noqa
 
 from django.http import HttpRequest
 from util.tasks import igtask

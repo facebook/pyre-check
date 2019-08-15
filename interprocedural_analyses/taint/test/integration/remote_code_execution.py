@@ -1,4 +1,4 @@
-# @nolint
+# flake8: noqa
 
 
 def rce_problem():

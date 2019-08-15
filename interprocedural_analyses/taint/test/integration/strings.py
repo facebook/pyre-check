@@ -1,4 +1,4 @@
-# @nolint
+# flake8: noqa
 def concatenate_lhs(source: str):
     return source + "A"
 

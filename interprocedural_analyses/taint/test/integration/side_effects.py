@@ -1,4 +1,4 @@
-# @nolint
+# flake8: noqa
 
 
 def test_from_1_to_0():
