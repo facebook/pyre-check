@@ -6,11 +6,13 @@ import fileinput
 import json
 import logging
 import os
+import pathlib
 import shutil
 import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
+from zipfile import ZipFile
 
 
 LOG = logging.getLogger(__name__)
@@ -27,33 +29,11 @@ def assert_readable_directory(directory: str) -> None:
         raise Exception("{} is not a readable directory.".format(directory))
 
 
-def extract_typeshed(configuration_file: str):
-    try:
-        with open(configuration_file) as file:
-            configuration = json.load(file)
-
-            typeshed = configuration.get("typeshed")
-            version_hash = configuration.get("version")
-            if not typeshed:
-                return None
-            if version_hash:
-                typeshed = typeshed.replace("%V", version_hash)
-            return typeshed
-    except Exception as e:
-        LOG.error("Exception raised while reading %s:", configuration_file)
-        LOG.error("%s", e)
-    return None
-
-
-def get_typeshed_from_github(base_directory: str):
-    typeshed = os.path.join(base_directory, "typeshed")
+def extract_typeshed(typeshed_zip_path: str, base_directory: str):
+    typeshed = os.path.join(base_directory, "typeshed-master")
     os.mkdir(typeshed)
-
-    result = subprocess.run(
-        ["git", "clone", "https://github.com/python/typeshed.git", typeshed]
-    )
-    if result.returncode != 0:
-        return None
+    with ZipFile(typeshed_zip_path, "r") as typeshed_zip:
+        typeshed_zip.extractall(base_directory)
     assert_readable_directory(typeshed)
     # Prune all non-essential directories.
     for entry in os.listdir(typeshed):
@@ -65,36 +45,6 @@ def get_typeshed_from_github(base_directory: str):
         elif os.path.isdir(full_path):
             shutil.rmtree(full_path)
     return typeshed
-
-
-def find_test_typeshed(base_directory: str) -> str:
-    test_typeshed = os.getenv("PYRE_TEST_TYPESHED_LOCATION")
-    if test_typeshed and is_readable_directory(test_typeshed):
-        LOG.info("Using typeshed from environment: %s", test_typeshed)
-        return test_typeshed
-
-    # Check if we can infer typeshed from a .pyre_configuration
-    # file living in a directory above.
-    path = os.getcwd()
-    while True:
-        configuration = os.path.join(path, ".pyre_configuration")
-        if os.path.isfile(configuration):
-            test_typeshed = extract_typeshed(configuration)
-            if test_typeshed and is_readable_directory(test_typeshed):
-                LOG.info("Using typeshed from configuration: %s", test_typeshed)
-                return test_typeshed
-        parent_directory = os.path.dirname(path)
-        if parent_directory == path:
-            # We have reached the root.
-            break
-        path = parent_directory
-
-    # Try and fetch it from the web in a temporary directory.
-    temporary_typeshed = get_typeshed_from_github(base_directory)
-    if temporary_typeshed and is_readable_directory(temporary_typeshed):
-        LOG.info("Using typeshed from the web: %s", temporary_typeshed)
-        return temporary_typeshed
-    raise Exception("Could not find a valid typeshed to use")
 
 
 def poor_mans_rsync(source_directory, destination_directory, ignored_files=None):
@@ -162,8 +112,12 @@ def poor_mans_rsync(source_directory, destination_directory, ignored_files=None)
 
 
 class Repository:
-    def __init__(self, base_directory: str, repository_path: str) -> None:
-        self._test_typeshed_location = find_test_typeshed(base_directory)
+    def __init__(
+        self, typeshed_zip_path: str, base_directory: str, repository_path: str
+    ) -> None:
+        self._test_typeshed_location = extract_typeshed(
+            typeshed_zip_path, base_directory
+        )
 
         # Parse list of fake commits.
         assert_readable_directory(repository_path)
@@ -248,14 +202,16 @@ class Repository:
         return output.decode("utf-8")
 
 
-def run_integration_test(repository_path: str, debug: bool) -> int:
+def run_integration_test(
+    typeshed_zip_path: str, repository_path: str, debug: bool
+) -> int:
     if not shutil.which("watchman"):
         LOG.error("The integration test cannot work if watchman is not installed!")
         return 1
 
     with tempfile.TemporaryDirectory() as base_directory:
         discrepancies = {}
-        repository = Repository(base_directory, repository_path)
+        repository = Repository(typeshed_zip_path, base_directory, repository_path)
         with _watch_directory(repository.get_repository_directory()):
             try:
                 repository.run_pyre("start", "--transitive")
@@ -287,12 +243,14 @@ def run_integration_test(repository_path: str, debug: bool) -> int:
 # In general, saved state load/saves are a distributed system problem - the file systems
 # are completely different. Make sure that Pyre doesn't rely on absolute paths when
 # loading via this test.
-def run_saved_state_test(repository_path: str) -> int:
+def run_saved_state_test(typeshed_zip_path: str, repository_path: str) -> int:
     # Copy files over to a temporary directory.
     original_directory = os.getcwd()
     saved_state_path = tempfile.NamedTemporaryFile().name
     with tempfile.TemporaryDirectory() as saved_state_create_directory:
-        repository = Repository(saved_state_create_directory, repository_path)
+        repository = Repository(
+            typeshed_zip_path, saved_state_create_directory, repository_path
+        )
         repository.run_pyre("--save-initial-state-to", saved_state_path, "incremental")
         repository.__next__()
         expected_errors = repository.run_pyre("check")
@@ -300,7 +258,9 @@ def run_saved_state_test(repository_path: str) -> int:
 
     os.chdir(original_directory)
     with tempfile.TemporaryDirectory() as saved_state_load_directory:
-        repository = Repository(saved_state_load_directory, repository_path)
+        repository = Repository(
+            typeshed_zip_path, saved_state_load_directory, repository_path
+        )
         repository.__next__()
         repository.run_pyre("--load-initial-state-from", saved_state_path, "start")
         actual_errors = repository.run_pyre("incremental")
@@ -337,21 +297,31 @@ if __name__ == "__main__":
     parser.add_argument(
         "repository_location", help="Path to directory with fake commit list"
     )
+    parser.add_argument(
+        "--typeshed-zip-path",
+        help="Path to zip containing typeshed.",
+        type=os.path.abspath,
+    )
     parser.add_argument("--debug", action="store_true", default=False)
     arguments = parser.parse_args()
     retries = 3
+    typeshed_zip_path = arguments.typeshed_zip_path or str(
+        pathlib.Path.cwd() / "stubs/typeshed/typeshed.zip"
+    )
     original_directory = os.getcwd()
     while retries > 0:
         try:
             os.chdir(original_directory)
             exit_code = run_integration_test(
-                arguments.repository_location, arguments.debug
+                typeshed_zip_path, arguments.repository_location, arguments.debug
             )
             if exit_code != 0:
                 sys.exit(exit_code)
             print("### Running Saved State Test ###")
             os.chdir(original_directory)
-            sys.exit(run_saved_state_test(arguments.repository_location))
+            sys.exit(
+                run_saved_state_test(typeshed_zip_path, arguments.repository_location)
+            )
         except Exception as e:
             LOG.error("Exception raised in integration test:\n %s \nretrying...", e)
             # Retry the integration test for uncaught exceptions. Caught issues will
