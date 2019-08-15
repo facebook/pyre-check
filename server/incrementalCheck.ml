@@ -147,4 +147,5 @@ let recheck
       [ "number of direct files", List.length paths;
         "number of files", List.length recheck_source_paths ]
     ();
+  StatusUpdate.information ~message:"Done recheck." ~short_message:(Some "Done recheck.") ~state;
   state, new_errors
