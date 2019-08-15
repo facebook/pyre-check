@@ -99,6 +99,7 @@ def find_test_typeshed(base_directory: str) -> str:
 
 def poor_mans_rsync(source_directory, destination_directory, ignored_files=None):
     ignored_files = ignored_files or []
+    ignored_directories = [".pyre"]
     # Do not delete the server directory while copying!
     assert_readable_directory(source_directory)
     source_files = [
@@ -118,11 +119,13 @@ def poor_mans_rsync(source_directory, destination_directory, ignored_files=None)
         entry
         for entry in os.listdir(source_directory)
         if os.path.isdir(os.path.join(source_directory, entry))
+        and entry not in ignored_directories
     ]
     destination_directories = [
         entry
         for entry in os.listdir(destination_directory)
         if os.path.isdir(os.path.join(destination_directory, entry))
+        and entry not in ignored_directories
     ]
 
     # Copy all directories over blindly.
@@ -340,7 +343,9 @@ if __name__ == "__main__":
             if exit_code != 0:
                 sys.exit(exit_code)
             sys.exit(run_saved_state_test(arguments.repository_location))
-        except Exception:
+        except Exception as e:
+            LOG.error("Exception raised in integration test:\n %s \nretrying...", e)
             # Retry the integration test for uncaught exceptions. Caught issues will
             # result in an exit code of 1.
             retries = retries - 1
+    exit(1)
