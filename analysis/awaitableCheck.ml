@@ -569,9 +569,23 @@ let run ~configuration:_ ~global_resolution ~source =
     in
     let module State = State (Context) in
     let module Fixpoint = Fixpoint.Make (State) in
-    Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:State.initial
-    |> Fixpoint.exit
-    >>| State.errors
-    |> Option.value ~default:[]
+    let should_run_analysis =
+      define.Node.value.Define.signature.Define.parent
+      >>| (fun parent -> Type.Primitive (Reference.show parent))
+      >>| (fun parent_type ->
+            not
+              (GlobalResolution.less_or_equal
+                 global_resolution
+                 ~left:parent_type
+                 ~right:(Type.awaitable Type.Top)))
+      |> Option.value ~default:true
+    in
+    if should_run_analysis then
+      Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:State.initial
+      |> Fixpoint.exit
+      >>| State.errors
+      |> Option.value ~default:[]
+    else
+      []
   in
   source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check |> List.concat

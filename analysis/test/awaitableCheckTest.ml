@@ -553,7 +553,39 @@ let test_forward context =
       async def foo() -> None:
         [] + [awaitable()]
     |}
-    ["Unawaited awaitable [1001]: `awaitable()` is never awaited."]
+    ["Unawaited awaitable [1001]: `awaitable()` is never awaited."];
+
+  (* We don't error on methods for classes that are awaitable themselves. *)
+  assert_awaitable_errors
+    {|
+      import typing
+      async def awaitable() -> int: ...
+      class C(typing.Awaitable[int]):
+        def __init__(self) -> None:
+          self.x = awaitable()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      import typing
+      async def awaitable() -> int: ...
+      class C(typing.Awaitable[int]):
+        pass
+      class D(C):
+        def __init__(self) -> None:
+          self.x = awaitable()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      import typing
+      T = TypeVar("T")
+      async def awaitable() -> int: ...
+      class C(typing.Awaitable[T], typing.Generic[T]):
+        def __init__(self) -> None:
+          self.x = awaitable()
+    |}
+    []
 
 
 let test_state context =
