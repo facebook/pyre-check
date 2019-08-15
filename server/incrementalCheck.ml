@@ -31,7 +31,7 @@ let recheck
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
-  let recheck_source_paths, removed =
+  let recheck_source_paths, removed_modules =
     let categorize = function
       | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
       | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
@@ -41,22 +41,29 @@ let recheck
   let recheck_modules =
     List.map recheck_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
   in
-  if not (List.is_empty removed) then
-    List.map removed ~f:Reference.show
+  if not (List.is_empty removed_modules) then
+    List.map removed_modules ~f:Reference.show
     |> String.concat ~sep:", "
     |> Log.info "Removing type information for `%s`";
   let scheduler =
     Scheduler.with_parallel scheduler ~is_parallel:(List.length recheck_source_paths > 5)
   in
   (* Also recheck dependencies of the changed files. *)
-  let recheck =
+  let recheck_modules =
     if ignore_dependencies then
       recheck_modules
     else
       Set.union
         (Reference.Set.of_list recheck_modules)
-        (ServerDependencies.compute_dependencies recheck_source_paths ~state ~configuration)
+        (ServerDependencies.compute_dependencies
+           recheck_source_paths
+           ~state
+           ~configuration
+           ~removed_modules)
       |> Set.to_list
+  in
+  let recheck_source_paths =
+    List.filter_map recheck_modules ~f:(ModuleTracker.lookup module_tracker)
   in
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment.";
@@ -67,7 +74,7 @@ let recheck
   let recheck_sources =
     let timer = Timer.start () in
     (* Clean up all data related to updated files. *)
-    let qualifiers = List.append removed recheck_modules in
+    let qualifiers = List.append removed_modules recheck_modules in
     AstEnvironment.remove_sources ast_environment qualifiers;
     Analysis.Environment.purge environment ~debug qualifiers;
     List.iter qualifiers ~f:(LookupCache.evict ~state);
@@ -76,9 +83,9 @@ let recheck
       ~timer
       ~integers:["number of files", List.length qualifiers]
       ();
-    Log.info "Parsing %d updated sources..." (List.length recheck);
+    Log.info "Parsing %d updated sources..." (List.length recheck_source_paths);
     StatusUpdate.warning
-      ~message:(Format.asprintf "Parsing %d updated sources..." (List.length recheck))
+      ~message:(Format.asprintf "Parsing %d updated sources..." (List.length recheck_source_paths))
       ~short_message:(Some "[Parsing sources]")
       ~state;
     let { Service.Parser.parsed; syntax_error; system_error } =
@@ -125,7 +132,7 @@ let recheck
       recheck_sources
   in
   (* Kill all previous errors for new files we just checked *)
-  List.iter ~f:(Hashtbl.remove errors) (removed @ recheck_modules);
+  List.iter ~f:(Hashtbl.remove errors) (removed_modules @ recheck_modules);
 
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
@@ -135,6 +142,8 @@ let recheck
   Statistics.performance
     ~name:"incremental check"
     ~timer
-    ~integers:["number of direct files", List.length paths; "number of files", List.length recheck]
+    ~integers:
+      [ "number of direct files", List.length paths;
+        "number of files", List.length recheck_source_paths ]
     ();
   state, new_errors

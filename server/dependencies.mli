@@ -6,5 +6,6 @@
 val compute_dependencies
   :  state:State.t ->
   configuration:Configuration.Analysis.t ->
+  removed_modules:Ast.Reference.t list ->
   Ast.SourcePath.t list ->
   Ast.Reference.Set.t

@@ -12,6 +12,7 @@ open Pyre
 let compute_dependencies
     ~state:{ State.ast_environment; environment; scheduler; _ }
     ~configuration:({ incremental_transitive_dependencies; _ } as configuration)
+    ~removed_modules
     source_paths
   =
   let timer = Timer.start () in
@@ -52,7 +53,7 @@ let compute_dependencies
     |> Option.value ~default:false
   in
   let dependents =
-    let modules = List.filter qualifiers ~f:signature_hash_changed in
+    let modules = List.filter qualifiers ~f:signature_hash_changed @ removed_modules in
     let get_dependencies =
       if incremental_transitive_dependencies then
         Dependencies.transitive_of_list
