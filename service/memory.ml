@@ -4,6 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
+open Pyre
 module Hashtbl = Caml.Hashtbl
 module Gc = Caml.Gc
 module Digest = Caml.Digest
@@ -413,7 +414,7 @@ module DependencyKey = struct
 end
 
 module RegisterDependencyTrackedTable
-    (Key : KeyType)
+    (Table : NoCache.S)
     (DependencyKey : DependencyKey.S)
     (Value : ValueType) =
 struct
@@ -425,6 +426,11 @@ struct
     DependencyGraph.get (Dependency.make (Value.prefix, key))
     |> DependencySet.to_list
     |> List.map ~f:DependencyKey.decode
+
+
+  let get ?dependency key =
+    dependency >>| add_dependency key |> Option.value ~default:();
+    Table.get key
 end
 
 module DependencyTrackedTableWithCache
@@ -432,12 +438,9 @@ module DependencyTrackedTableWithCache
     (DependencyKey : DependencyKey.S)
     (Value : ValueType) =
 struct
-  include RegisterDependencyTrackedTable (Key) (DependencyKey) (Value)
-  include WithCache.Make (Key) (Value)
-
-  let get key ~dependency =
-    add_dependency key dependency;
-    get key
+  module Table = WithCache.Make (Key) (Value)
+  include Table
+  include RegisterDependencyTrackedTable (Table) (DependencyKey) (Value)
 end
 
 module DependencyTrackedTableNoCache
@@ -445,10 +448,7 @@ module DependencyTrackedTableNoCache
     (DependencyKey : DependencyKey.S)
     (Value : ValueType) =
 struct
-  include RegisterDependencyTrackedTable (Key) (DependencyKey) (Value)
-  include NoCache.Make (Key) (Value)
-
-  let get key ~dependency =
-    add_dependency key dependency;
-    get key
+  module Table = NoCache.Make (Key) (Value)
+  include Table
+  include RegisterDependencyTrackedTable (Table) (DependencyKey) (Value)
 end

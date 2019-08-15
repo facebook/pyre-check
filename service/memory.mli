@@ -151,7 +151,7 @@ module DependencyTrackedTableWithCache
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : key -> dependency:DependencyKey.t -> t option
+  val get : ?dependency:DependencyKey.t -> key -> t option
 
   val get_dependents : key -> DependencyKey.t list
 end
@@ -168,7 +168,7 @@ module DependencyTrackedTableNoCache
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : key -> dependency:DependencyKey.t -> t option
+  val get : ?dependency:DependencyKey.t -> key -> t option
 
   val get_dependents : key -> DependencyKey.t list
 end
