@@ -172,4 +172,7 @@ class Start(Reporting):
         for extension in extensions:
             flags.extend(["-extension", extension])
 
+        if self._transitive:
+            flags.append("-transitive")
+
         return flags

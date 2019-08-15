@@ -422,6 +422,7 @@ let run_start_command
     saved_state_metadata
     configuration_file_hash
     store_type_check_resolution
+    transitive
     verbose
     expected_version
     sections
@@ -484,6 +485,7 @@ let run_start_command
       ~extensions
       ~local_root:(Path.create_absolute local_root)
       ~store_type_check_resolution
+      ~incremental_transitive_dependencies:transitive
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
@@ -566,5 +568,6 @@ let command =
            "-store-type-check-resolution"
            no_arg
            ~doc:"Store extra information, needed for `types_at_position` and `types` queries."
+      +> flag "-transitive" no_arg ~doc:"Calculate dependencies of changed files transitively."
       ++ Specification.base_command_line_arguments)
     run_start_command

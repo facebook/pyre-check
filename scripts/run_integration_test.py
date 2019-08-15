@@ -258,7 +258,7 @@ def run_integration_test(repository_path: str, debug: bool) -> int:
         repository = Repository(base_directory, repository_path)
         with _watch_directory(repository.get_repository_directory()):
             try:
-                repository.run_pyre("start")
+                repository.run_pyre("start", "--transitive")
                 for commit in repository:
                     (actual_error, expected_error) = repository.get_pyre_errors()
                     if actual_error != expected_error:
