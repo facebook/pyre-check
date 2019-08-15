@@ -248,7 +248,7 @@ class Repository:
         return output.decode("utf-8")
 
 
-def run_integration_test(repository_path) -> int:
+def run_integration_test(repository_path: str, debug: bool) -> int:
     if not shutil.which("watchman"):
         LOG.error("The integration test cannot work if watchman is not installed!")
         return 1
@@ -263,6 +263,8 @@ def run_integration_test(repository_path) -> int:
                     (actual_error, expected_error) = repository.get_pyre_errors()
                     if actual_error != expected_error:
                         discrepancies[commit] = (actual_error, expected_error)
+                        if debug:
+                            break
                 repository.run_pyre("stop")
             except Exception as uncaught_pyre_exception:
                 LOG.error("Uncaught exception: `%s`", str(uncaught_pyre_exception))
@@ -335,11 +337,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "repository_location", help="Path to directory with fake commit list"
     )
+    parser.add_argument("--debug", action="store_true", default=False)
     arguments = parser.parse_args()
     retries = 3
     while retries > 0:
         try:
-            exit_code = run_integration_test(arguments.repository_location)
+            exit_code = run_integration_test(
+                arguments.repository_location, arguments.debug
+            )
             if exit_code != 0:
                 sys.exit(exit_code)
             sys.exit(run_saved_state_test(arguments.repository_location))
