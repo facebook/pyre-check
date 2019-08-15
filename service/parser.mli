@@ -11,7 +11,7 @@ type parse_result =
 val parse_source : configuration:Configuration.Analysis.t -> Ast.SourcePath.t -> parse_result
 
 type parse_sources_result = {
-  parsed: Ast.Source.t list;
+  parsed: Ast.Reference.t list;
   syntax_error: Ast.SourcePath.t list;
   system_error: Ast.SourcePath.t list;
 }

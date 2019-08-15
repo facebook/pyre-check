@@ -102,14 +102,15 @@ let recheck
         "Unable to parse `%s`."
         ( List.map unparsed ~f:(fun { SourcePath.relative; _ } -> relative)
         |> String.concat ~sep:", " );
-    let parsed_paths = List.map parsed ~f:(fun { Source.relative; _ } -> relative) in
+    let parsed_sources = List.filter_map parsed ~f:(AstEnvironment.get_source ast_environment) in
+    let parsed_paths = List.map parsed_sources ~f:(fun { Source.relative; _ } -> relative) in
     Log.log
       ~section:`Debug
       "Repopulating the environment with %a"
       Sexp.pp
       [%message (parsed_paths : string list)];
-    Log.info "Updating the type environment for %d files." (List.length parsed);
-    parsed
+    Log.info "Updating the type environment for %d files." (List.length parsed_sources);
+    parsed_sources
   in
   Service.Environment.populate ~configuration ~scheduler environment recheck_sources;
   Statistics.event

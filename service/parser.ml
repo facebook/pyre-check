@@ -204,7 +204,7 @@ let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environm
 let clean_shared_memory qualifiers = RawSources.remove_batch (RawSources.KeySet.of_list qualifiers)
 
 type parse_sources_result = {
-  parsed: Source.t list;
+  parsed: Reference.t list;
   syntax_error: SourcePath.t list;
   system_error: SourcePath.t list;
 }
@@ -215,7 +215,6 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environmen
   in
   process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment parsed;
   clean_shared_memory parsed;
-  let parsed = List.filter_map parsed ~f:(AstEnvironment.get_source ast_environment) in
   { parsed; syntax_error; system_error }
 
 
@@ -278,7 +277,7 @@ let parse_all ~scheduler ~configuration module_tracker =
   in
   log_parse_errors ~syntax_error ~system_error;
   Statistics.performance ~name:"sources parsed" ~timer ();
-  parsed, ast_environment
+  List.filter_map parsed ~f:(AstEnvironment.get_source ast_environment), ast_environment
 
 
 let update ~configuration ~scheduler ~ast_environment module_updates =
@@ -305,5 +304,4 @@ let update ~configuration ~scheduler ~ast_environment module_updates =
       reparse_source_paths
   in
   log_parse_errors ~syntax_error ~system_error;
-  let modules = List.map parsed ~f:(fun { Source.qualifier; _ } -> qualifier) in
-  List.append removed_modules modules
+  List.append removed_modules parsed

@@ -1254,7 +1254,7 @@ module ScratchProject = struct
           |> String.concat ~sep:", "
         in
         raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
-    parsed, ast_environment
+    List.filter_map parsed ~f:(AstEnvironment.get_source ast_environment), ast_environment
 
 
   let build_environment
