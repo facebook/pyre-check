@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -11,6 +12,7 @@ from .. import (
     _resolve_filter_paths,
     buck,
     commands,
+    get_binary_version_from_file,
     resolve_analysis_directory,
     switch_root,
     translate_paths,
@@ -169,3 +171,63 @@ class InitTest(unittest.TestCase):
             arguments, commands, configuration
         )
         assert_analysis_directory(expected_analysis_directory, analysis_directory)
+
+    @patch.object(os, "getenv", return_value=None)
+    @patch("builtins.open")
+    @patch("json.loads")
+    def test_get_binary_version_from_file(
+        self, json_load, open, os_environment
+    ) -> None:
+        # No local configuration
+        json_load.side_effect = [
+            {
+                "source_directories": ["a"],
+                "logger": "/usr/logger",
+                "ignore_all_errors": ["buck-out/dev/gen"],
+                "version": "VERSION",
+            },
+            {},
+        ]
+        self.assertEqual("VERSION", get_binary_version_from_file(None))
+
+        json_load.side_effect = [
+            {
+                "source_directories": ["a"],
+                "logger": "/usr/logger",
+                "ignore_all_errors": ["buck-out/dev/gen"],
+            },
+            {},
+        ]
+        self.assertEqual("No version set", get_binary_version_from_file(None))
+
+        # With local configuration
+        json_load.side_effect = [
+            {
+                "source_directories": ["a"],
+                "logger": "/usr/logger",
+                "ignore_all_errors": ["buck-out/dev/gen"],
+                "version": "LOCAL_VERSION",
+            },
+            {
+                "source_directories": ["a"],
+                "logger": "/usr/logger",
+                "ignore_all_errors": ["buck-out/dev/gen"],
+                "version": "MASTER_VERSION",
+            },
+        ]
+        self.assertEqual("LOCAL_VERSION", get_binary_version_from_file("local"))
+
+        json_load.side_effect = [
+            {
+                "source_directories": ["a"],
+                "logger": "/usr/logger",
+                "ignore_all_errors": ["buck-out/dev/gen"],
+            },
+            {
+                "source_directories": ["a"],
+                "logger": "/usr/logger",
+                "ignore_all_errors": ["buck-out/dev/gen"],
+                "version": "MASTER_VERSION",
+            },
+        ]
+        self.assertEqual("MASTER_VERSION", get_binary_version_from_file("local"))

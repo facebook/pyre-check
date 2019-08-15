@@ -19,6 +19,7 @@ from . import (
     buck,
     commands,
     get_binary_version,
+    get_binary_version_from_file,
     is_capable_terminal,
     log,
     log_statistics,
@@ -491,6 +492,17 @@ def main() -> int:
         if arguments.command in [commands.Initialize]:
             analysis_directory = AnalysisDirectory(".")
         else:
+            if arguments.version:
+                binary_version = get_binary_version_from_file(
+                    arguments.local_configuration
+                )
+                log.stdout.write(
+                    "binary version: {}\nclient version: {}".format(
+                        binary_version, __version__
+                    )
+                )
+                return ExitCode.SUCCESS
+
             configuration = Configuration(
                 local_configuration=arguments.local_configuration,
                 search_path=arguments.search_path,
@@ -502,15 +514,6 @@ def main() -> int:
             if configuration.disabled:
                 LOG.log(
                     log.SUCCESS, "Pyre will not run due to being explicitly disabled"
-                )
-                return ExitCode.SUCCESS
-
-            if arguments.version:
-                binary_version = get_binary_version(configuration)
-                log.stdout.write(
-                    "binary version: {}\nclient version: {}".format(
-                        binary_version, __version__
-                    )
                 )
                 return ExitCode.SUCCESS
 

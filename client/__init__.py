@@ -75,6 +75,32 @@ def get_binary_version(configuration) -> str:
     return "No version set"
 
 
+def get_binary_version_from_file(local_path: Optional[str]) -> str:
+    override = os.getenv("PYRE_BINARY")
+    if override:
+        return "override: {}".format(override)
+
+    # Get local configuration version
+    if local_path:
+        local_configuration = os.path.join(local_path, CONFIGURATION_FILE + ".local")
+        with open(local_configuration) as file:
+            configuration_contents = file.read()
+            version = json.loads(configuration_contents).pop("version", None)
+
+            if version:
+                return version
+
+    # Get configuration version
+    with open(CONFIGURATION_FILE) as file:
+        configuration_contents = file.read()
+        version = json.loads(configuration_contents).pop("version", None)
+
+        if version:
+            return version
+
+    return "No version set"
+
+
 def switch_root(arguments) -> None:
     arguments.original_directory = os.getcwd()
     local_root = find_root(arguments.original_directory, CONFIGURATION_FILE + ".local")
