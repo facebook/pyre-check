@@ -340,13 +340,17 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", default=False)
     arguments = parser.parse_args()
     retries = 3
+    original_directory = os.getcwd()
     while retries > 0:
         try:
+            os.chdir(original_directory)
             exit_code = run_integration_test(
                 arguments.repository_location, arguments.debug
             )
             if exit_code != 0:
                 sys.exit(exit_code)
+            print("### Running Saved State Test ###")
+            os.chdir(original_directory)
             sys.exit(run_saved_state_test(arguments.repository_location))
         except Exception as e:
             LOG.error("Exception raised in integration test:\n %s \nretrying...", e)
