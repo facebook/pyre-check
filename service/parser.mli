@@ -29,3 +29,12 @@ val parse_all
   configuration:Configuration.Analysis.t ->
   Analysis.ModuleTracker.t ->
   Ast.Source.t list * Analysis.AstEnvironment.t
+
+(* Update the AstEnvironment and return the list of module names whose parsing result may have
+   changed *)
+val update
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  ast_environment:Analysis.AstEnvironment.t ->
+  Analysis.ModuleTracker.IncrementalUpdate.t list ->
+  Ast.Reference.t list

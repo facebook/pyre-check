@@ -7,6 +7,7 @@ open Core
 open OUnit2
 open Test
 open Ast
+open Analysis
 open Pyre
 
 let test_parse_stubs_modules_list context =
@@ -262,11 +263,194 @@ let test_parse_repository context =
       ["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo"; "c.py", "from b import foo"]
 
 
+module IncrementalTest = struct
+  type t = {
+    handle: string;
+    old_source: string option;
+    new_source: string option;
+  }
+
+  let assert_parser_update ?(external_setups = []) ~context ~expected setups =
+    let get_old_inputs setups =
+      List.filter_map setups ~f:(fun { handle; old_source; _ } ->
+          old_source >>| fun source -> handle, source)
+    in
+    let update_filesystem_state { Configuration.Analysis.local_root; search_path; _ } =
+      let update_file ~root { handle; old_source; new_source } =
+        let path = Path.create_relative ~root ~relative:handle in
+        match old_source, new_source with
+        | Some old_source, Some new_source
+          when String.equal (trim_extra_indentation old_source) (trim_extra_indentation new_source)
+          ->
+            (* File content did not change *)
+            None
+        | _, Some source ->
+            (* A file is added/updated *)
+            File.create path ~content:(trim_extra_indentation source) |> File.write;
+            Some path
+        | Some _, None ->
+            (* A file is removed *)
+            Path.remove path;
+            Some path
+        | _, _ -> None
+      in
+      let paths = List.filter_map setups ~f:(update_file ~root:local_root) in
+      let external_paths =
+        let external_root = List.hd_exn search_path |> SearchPath.get_root in
+        List.filter_map external_setups ~f:(update_file ~root:external_root)
+      in
+      List.append external_paths paths
+    in
+    (* Set up the initial project *)
+    let old_external_sources = get_old_inputs external_setups in
+    let old_sources = get_old_inputs setups in
+    let configuration, module_tracker, ast_environment =
+      let ({ ScratchProject.configuration; module_tracker; _ } as project) =
+        ScratchProject.setup ~context ~external_sources:old_external_sources old_sources
+      in
+      let _, ast_environment = ScratchProject.parse_sources project in
+      configuration, module_tracker, ast_environment
+    in
+    (* Update filesystem *)
+    let paths = update_filesystem_state configuration in
+    (* Compute the dependencies *)
+    let module_tracker_updates = ModuleTracker.update ~configuration ~paths module_tracker in
+    let updated_qualifiers =
+      Service.Parser.update
+        ~configuration
+        ~scheduler:(Scheduler.mock ())
+        ~ast_environment
+        module_tracker_updates
+    in
+    (* The actual checks *)
+    let assert_ast_existence ~ast_environment { handle; new_source; _ } =
+      let qualifier = SourcePath.qualifier_of_relative handle in
+      assert_equal
+        ~cmp:Bool.equal
+        ~printer:Bool.to_string
+        (Option.is_some new_source)
+        (AstEnvironment.ReadOnly.get_source ast_environment qualifier |> Option.is_some)
+    in
+    List.iter
+      (List.append external_setups setups)
+      ~f:(assert_ast_existence ~ast_environment:(AstEnvironment.read_only ast_environment));
+    let assert_parser_dependency expected actual =
+      let expected_set = Reference.Set.of_list expected in
+      let actual_set = Reference.Set.of_list actual in
+      assert_bool
+        "Check if the actual parser dependency overapproximates the expected one"
+        (Set.is_subset expected_set ~of_:actual_set)
+    in
+    assert_parser_dependency expected updated_qualifiers;
+    Memory.reset_shared_memory ()
+end
+
+let test_parser_update context =
+  let open IncrementalTest in
+  let assert_parser_update = assert_parser_update ~context in
+  (* Single project file update *)
+  assert_parser_update
+    [{ handle = "test.py"; old_source = None; new_source = Some "def foo() -> None: ..." }]
+    ~expected:[!&"test"];
+  assert_parser_update
+    [{ handle = "test.py"; old_source = Some "def foo() -> None: ..."; new_source = None }]
+    ~expected:[!&"test"];
+  assert_parser_update
+    [ {
+        handle = "test.py";
+        old_source = Some "def foo() -> None: ...";
+        new_source = Some "def foo() -> None: ...";
+      } ]
+    ~expected:[];
+  assert_parser_update
+    [ {
+        handle = "test.py";
+        old_source = Some "def foo() -> None: ...";
+        new_source = Some "def foo(x: int) -> int: ...";
+      } ]
+    ~expected:[!&"test"];
+
+  (* Single external file update *)
+  assert_parser_update
+    ~external_setups:
+      [{ handle = "test.pyi"; old_source = None; new_source = Some "def foo() -> None: ..." }]
+    []
+    ~expected:[!&"test"];
+  assert_parser_update
+    ~external_setups:
+      [{ handle = "test.pyi"; old_source = Some "def foo() -> None: ..."; new_source = None }]
+    []
+    ~expected:[!&"test"];
+  assert_parser_update
+    ~external_setups:
+      [ {
+          handle = "test.pyi";
+          old_source = Some "def foo() -> None: ...";
+          new_source = Some "def foo() -> None: ...";
+        } ]
+    []
+    ~expected:[];
+  assert_parser_update
+    ~external_setups:
+      [ {
+          handle = "test.pyi";
+          old_source = Some "def foo() -> None: ...";
+          new_source = Some "def foo(x: int) -> int: ...";
+        } ]
+    []
+    ~expected:[!&"test"];
+
+  (* Multi-file updates *)
+  assert_parser_update
+    [ { handle = "a.py"; old_source = None; new_source = Some "def foo() -> None: ..." };
+      { handle = "b.py"; old_source = None; new_source = Some "def bar() -> None: ..." } ]
+    ~expected:[!&"a"; !&"b"];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "def foo() -> None: ..."; new_source = None };
+      { handle = "b.py"; old_source = Some "def bar() -> None: ..."; new_source = None } ]
+    ~expected:[!&"a"; !&"b"];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "def foo() -> None: ..."; new_source = None };
+      { handle = "b.py"; old_source = None; new_source = Some "def bar() -> None: ..." } ]
+    ~expected:[!&"a"; !&"b"];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = None; new_source = Some "def foo() -> None: ..." };
+      {
+        handle = "b.py";
+        old_source = Some "def bar() -> None: ...";
+        new_source = Some "def bar() -> None: ...";
+      } ]
+    ~expected:[!&"a"];
+  assert_parser_update
+    [ {
+        handle = "a.py";
+        old_source = Some "def foo() -> None: ...";
+        new_source = Some "def foo() -> None: ...";
+      };
+      { handle = "b.py"; old_source = Some "def bar() -> None: ..."; new_source = None } ]
+    ~expected:[!&"b"];
+  assert_parser_update
+    ~external_setups:
+      [ {
+          handle = "a.py";
+          old_source = Some "def foo() -> None: ...";
+          new_source = Some "def foo(x: int) -> int: ...";
+        } ]
+    [ {
+        handle = "b.py";
+        old_source = Some "def bar() -> None: ...";
+        new_source = Some "def bar(x: str) -> str: ...";
+      } ]
+    ~expected:[!&"a"; !&"b"];
+  ()
+
+
 let () =
   "parser"
   >::: [ "parse_stubs_modules_list" >:: test_parse_stubs_modules_list;
          "parse_source" >:: test_parse_source;
          "parse_sources" >:: test_parse_sources;
          "register_modules" >:: test_register_modules;
-         "parse_repository" >:: test_parse_repository ]
+         "parse_repository" >:: test_parse_repository;
+         "parser_update" >:: test_parser_update ]
   |> Test.run
