@@ -43,7 +43,89 @@ let test_check_variance context =
         d.update({ 1: 1 })
     |}
     [ "Missing parameter annotation [2]: Parameter `d` must have a type "
-      ^ "that does not contain `Any`." ]
+      ^ "that does not contain `Any`." ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      IV = TypeVar('IV')
+      CV = TypeVar('CV', covariant=True)
+      class A(Generic[IV]): pass
+      class B(A[CV], Generic[CV]):pass
+    |}
+    [ "Invalid type variance [46]: The type variable `Variable[CV](covariant)` is incompatible \
+       with parent class type variable `Variable[IV]` because subclasses cannot use more \
+       permissive type variables than their superclasses." ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      IV = TypeVar('IV')
+      CV = TypeVar('CV', contravariant=True)
+      class A(Generic[IV]): pass
+      class B(A[CV], Generic[CV]):pass
+    |}
+    [ "Invalid type variance [46]: The type variable `Variable[CV](contravariant)` is \
+       incompatible with parent class type variable `Variable[IV]` because subclasses cannot use \
+       more permissive type variables than their superclasses." ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      CV = TypeVar('CV', covariant=True)
+      CNV = TypeVar('CNV', contravariant=True)
+      class A(Generic[CV]): pass
+      class B(A[CNV], Generic[CNV]):pass
+    |}
+    [ "Invalid type variance [46]: The type variable `Variable[CNV](contravariant)` is \
+       incompatible with parent class type variable `Variable[CV](covariant)` because subclasses \
+       cannot use more permissive type variables than their superclasses." ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      CV = TypeVar('CV', covariant=True)
+      CNV = TypeVar('CNV', contravariant=True)
+      class A(Generic[CNV]): pass
+      class B(A[CV], Generic[CV]):pass
+    |}
+    [ "Invalid type variance [46]: The type variable `Variable[CV](covariant)` is incompatible \
+       with parent class type variable `Variable[CNV](contravariant)` because subclasses cannot \
+       use more permissive type variables than their superclasses." ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      IV = TypeVar('IV')
+      CV = TypeVar('CV', covariant=True)
+      class A(Generic[CV]): pass
+      class B(A[IV], Generic[IV]):pass
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      IV = TypeVar('IV')
+      CV = TypeVar('CV', contravariant=True)
+      class A(Generic[CV]): pass
+      class B(A[IV], Generic[IV]):pass
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      T = TypeVar('T')
+      U = TypeVar('U')
+      V = TypeVar('V')
+      class A(Generic[T]): pass
+      class B(A[U, V], Generic[U, V]): pass
+    |}
+    ["Invalid type parameters [24]: Generic type `A` expects 1 type parameter, received 2."];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      T = TypeVar('T')
+      U = TypeVar('U')
+      V = TypeVar('V')
+      class A(Generic[T, U]): pass
+      class B(A[V], Generic[V]): pass
+    |}
+    ["Invalid type parameters [24]: Generic type `A` expects 2 type parameters, received 1."]
 
 
 let test_check_literal_variance context =

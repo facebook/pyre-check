@@ -84,6 +84,7 @@ and type_variable_origin =
 and type_variance_origin =
   | Parameter
   | Return
+  | Inheritance of Type.t
 
 and illegal_action_on_incomplete_type =
   | Naming
@@ -956,14 +957,33 @@ let messages ~concise ~signature location kind =
   | InvalidTypeVariance { origin; _ } when concise -> (
     match origin with
     | Parameter -> ["Parameter type cannot be covariant."]
-    | Return -> ["Return type cannot be contravariant."] )
+    | Return -> ["Return type cannot be contravariant."]
+    | Inheritance _ ->
+        ["Subclasses cannot use more permissive type variables than their superclasses."] )
   | InvalidTypeVariance { annotation; origin } ->
-      let format : ('a, Format.formatter, unit, string) format4 =
+      let formatted =
         match origin with
-        | Parameter -> "The type variable `%a` is covariant and cannot be a parameter type."
-        | Return -> "The type variable `%a` is contravariant and cannot be a return type."
+        | Parameter ->
+            Format.asprintf
+              "The type variable `%a` is covariant and cannot be a parameter type."
+              pp_type
+              annotation
+        | Return ->
+            Format.asprintf
+              "The type variable `%a` is contravariant and cannot be a return type."
+              pp_type
+              annotation
+        | Inheritance parent ->
+            Format.asprintf
+              "The type variable `%a` is incompatible with parent class type variable `%a` \
+               because subclasses cannot use more permissive type variables than their \
+               superclasses."
+              pp_type
+              annotation
+              pp_type
+              parent
       in
-      [ Format.asprintf format pp_type annotation;
+      [ formatted;
         "See `https://pyre-check.org/docs/error-types.html#35-invalid-type-variance` for details."
       ]
   | InvalidInheritance invalid_inheritance -> (

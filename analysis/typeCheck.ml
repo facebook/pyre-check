@@ -4618,6 +4618,42 @@ module State (Context : Context) = struct
           |> fun resolution -> { state with resolution }
         else
           state
+    | Class { Class.bases; _ } when bases <> [] ->
+        (* Check that variance isn't widened on inheritence *)
+        let check_base state { Call.Argument.value = base; _ } =
+          let check_pair state extended actual =
+            match extended, actual with
+            | ( Type.Variable { Type.Record.Variable.RecordUnary.variance = left; _ },
+                Type.Variable { Type.Record.Variable.RecordUnary.variance = right; _ } ) -> (
+              match left, right with
+              | Type.Variable.Covariant, Type.Variable.Invariant
+              | Type.Variable.Contravariant, Type.Variable.Invariant
+              | Type.Variable.Covariant, Type.Variable.Contravariant
+              | Type.Variable.Contravariant, Type.Variable.Covariant ->
+                  emit_error
+                    ~state
+                    ~location
+                    ~kind:
+                      (Error.InvalidTypeVariance
+                         { annotation = extended; origin = Error.Inheritance actual })
+              | _ -> state )
+            | _, _ -> state
+          in
+          match GlobalResolution.parse_annotation global_resolution base with
+          | Type.Parametric { name; parameters = Concrete extended_parameters }
+            when not (String.equal name "typing.Generic") -> (
+              let actual_parameters =
+                match GlobalResolution.variables global_resolution name with
+                | Some (ClassHierarchy.Unaries variables) ->
+                    List.map variables ~f:(fun variable -> Type.Variable variable)
+                | _ -> []
+              in
+              match List.fold2 extended_parameters actual_parameters ~init:state ~f:check_pair with
+              | Ok state -> state
+              | Unequal_lengths -> state )
+          | _ -> state
+        in
+        List.fold bases ~f:check_base ~init:state
     | Class _ ->
         (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
         state

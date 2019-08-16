@@ -75,6 +75,7 @@ and type_variable_origin =
 and type_variance_origin =
   | Parameter
   | Return
+  | Inheritance of Type.t
 
 and illegal_action_on_incomplete_type =
   | Naming
