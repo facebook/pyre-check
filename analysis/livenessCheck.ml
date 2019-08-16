@@ -70,13 +70,25 @@ module State (Context : Context) = struct
     in
     (* Add assignments to unused. *)
     let unused =
+      let update_unused ~unused identifier =
+        let update = function
+          | Some existing -> Set.add existing location
+          | None -> Location.Reference.Set.of_list [location]
+        in
+        Map.update unused identifier ~f:update
+      in
       match value with
-      | Assign { target = { Node.value = Name (Name.Identifier identifier); _ }; _ } ->
-          let update = function
-            | Some existing -> Set.add existing location
-            | None -> Location.Reference.Set.of_list [location]
+      | Assign { target; _ } ->
+          let rec update_target unused = function
+            | { Node.value = Name (Name.Identifier identifier); _ } ->
+                update_unused ~unused identifier
+            | { Node.value = List elements; _ } -> List.fold ~init:unused ~f:update_target elements
+            | { Node.value = Starred (Starred.Once target); _ } -> update_target unused target
+            | { Node.value = Tuple elements; _ } ->
+                List.fold ~init:unused ~f:update_target elements
+            | _ -> unused
           in
-          Map.update unused identifier ~f:update
+          update_target unused target
       | _ -> unused
     in
     let nested_defines = NestedDefines.update_nested_defines nested_defines ~statement ~state in
