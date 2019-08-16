@@ -28,7 +28,7 @@ let handshake_message version =
 let computation_thread
     request_queue
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
-    ({ Server.State.environment; _ } as state)
+    ({ Server.State.environment; ast_environment; open_documents; _ } as state)
   =
   let errors_to_lsp_responses errors =
     let build_file_to_error_map error_list =
@@ -41,6 +41,19 @@ let computation_thread
         let key = Error.Instantiated.path error in
         Hashtbl.update table key ~f:update
       in
+      List.iter error_list ~f:add_to_table;
+      let add_empty_error_array reference =
+        let update = function
+          | None -> []
+          | Some errors -> errors
+        in
+        let open Analysis in
+        reference
+        |> Analysis.AstEnvironment.ReadOnly.get_relative (AstEnvironment.read_only ast_environment)
+        >>| Hashtbl.update table ~f:update
+        |> ignore
+      in
+      Ast.Reference.Table.iter_keys open_documents ~f:add_empty_error_array;
       List.iter error_list ~f:add_to_table;
       Hashtbl.to_alist table
     in
