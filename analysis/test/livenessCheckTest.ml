@@ -51,7 +51,22 @@ let test_forward context =
     |}
     [ "Dead store [1003]: Value assigned to `z` is never used.";
       "Dead store [1003]: Value assigned to `y` is never used.";
-      "Dead store [1003]: Value assigned to `x` is never used." ]
+      "Dead store [1003]: Value assigned to `x` is never used." ];
+  assert_liveness_errors
+    {|
+      def foo(x: int) -> None:
+        y = 1
+    |}
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `y` is never used." ];
+  assert_liveness_errors
+    {|
+      def foo(x: int, y: int, z: int) -> None:
+        a = z
+    |}
+    [ "Dead store [1003]: Value assigned to `y` is never used.";
+      "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `a` is never used." ]
 
 
 let test_nested_defines context =

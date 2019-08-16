@@ -24,8 +24,25 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~state:_ ~define =
-    { unused = Identifier.Map.empty; define; nested_defines = NestedDefines.initial }
+  let update_unused ~unused ~location identifier =
+    let update = function
+      | Some existing -> Set.add existing location
+      | None -> Location.Reference.Set.of_list [location]
+    in
+    Map.update unused identifier ~f:update
+
+
+  let initial
+      ~state:_
+      ~define:({ Node.value = { Define.signature = { Define.parameters; _ }; _ }; _ } as define)
+    =
+    let unused =
+      let add_parameter unused { Node.value = { Parameter.name; _ }; location } =
+        update_unused ~unused ~location name
+      in
+      List.fold ~init:Identifier.Map.empty ~f:add_parameter parameters
+    in
+    { unused; define; nested_defines = NestedDefines.initial }
 
 
   let less_or_equal ~left:{ unused = left; _ } ~right:{ unused = right; _ } =
@@ -70,18 +87,11 @@ module State (Context : Context) = struct
     in
     (* Add assignments to unused. *)
     let unused =
-      let update_unused ~unused identifier =
-        let update = function
-          | Some existing -> Set.add existing location
-          | None -> Location.Reference.Set.of_list [location]
-        in
-        Map.update unused identifier ~f:update
-      in
       match value with
       | Assign { target; _ } ->
           let rec update_target unused = function
             | { Node.value = Name (Name.Identifier identifier); _ } ->
-                update_unused ~unused identifier
+                update_unused ~unused ~location identifier
             | { Node.value = List elements; _ } -> List.fold ~init:unused ~f:update_target elements
             | { Node.value = Starred (Starred.Once target); _ } -> update_target unused target
             | { Node.value = Tuple elements; _ } ->
