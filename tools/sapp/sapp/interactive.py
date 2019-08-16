@@ -1068,6 +1068,7 @@ details              show additional information about the current trace frame
         )
         assert trace_frame.callee_location is not None
         location = trace_frame.callee_location
+        # pyre-fixme[16]: `Optional` has no attribute `line_no`.
         center_line_number = location.line_no
         begin_lineno = max(center_line_number - context, 1)
         end_lineno = min(center_line_number + context, len(file_lines))
@@ -1094,7 +1095,9 @@ details              show additional information about the current trace frame
             print(f"{prefix} {line}")
             if i == center_line_number:
                 print(
+                    # pyre-fixme[16]: `Optional` has no attribute `begin_column`.
                     " " * (len(prefix) + location.begin_column),
+                    # pyre-fixme[16]: `Optional` has no attribute `end_column`.
                     "^" * (location.end_column - location.begin_column),
                 )
 

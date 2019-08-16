@@ -127,7 +127,10 @@ class AnalysisOutput(object):
         generator ends.
         """
         if self.file_handle:
+            # pyre-fixme[7]: Expected `Iterable[IO[str]]` but got
+            #  `Generator[Optional[IO[str]], None, None]`.
             yield self.file_handle
+            # pyre-fixme[16]: `Optional` has no attribute `close`.
             self.file_handle.close()
             self.file_handle = None
         else:
@@ -141,10 +144,13 @@ class AnalysisOutput(object):
         if self.is_sharded():
             yield from ShardedFile(self.filename_spec).get_filenames()
         elif self.filename_spec:
+            # pyre-fixme[7]: Expected `Iterable[str]` but got
+            #  `Generator[Optional[str], None, None]`.
             yield self.filename_spec
 
     def is_sharded(self) -> bool:
         if self.filename_spec:
+            # pyre-fixme[16]: `Optional` has no attribute `__getitem__`.
             return "@" in self.filename_spec
         else:
             return False
