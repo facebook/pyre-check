@@ -8,11 +8,14 @@ open Statement
 open CustomAnalysis
 module Error = AnalysisError
 
-module type Context = sig end
+module type Context = sig
+  val global_resolution : GlobalResolution.t
+end
 
 module State (Context : Context) : sig
   type t = {
     unused: Location.Reference.Set.t Identifier.Map.t;
+    bottom: bool;
     define: Define.t Node.t;
     nested_defines: t NestedDefines.t;
   }

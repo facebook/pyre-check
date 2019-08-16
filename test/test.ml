@@ -1289,6 +1289,11 @@ module ScratchProject = struct
     let _, _, environment = build_environment ~include_typeshed_stubs project in
     let global_resolution = Environment.resolution environment () in
     TypeCheck.resolution global_resolution ()
+
+
+  let build_global_resolution ?(include_typeshed_stubs = true) project =
+    let _, _, environment = build_environment ~include_typeshed_stubs project in
+    Environment.resolution environment ()
 end
 
 type test_update_environment_with_t = {

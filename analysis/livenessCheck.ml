@@ -11,11 +11,14 @@ open Pyre
 open CustomAnalysis
 module Error = AnalysisError
 
-module type Context = sig end
+module type Context = sig
+  val global_resolution : GlobalResolution.t
+end
 
 module State (Context : Context) = struct
   type t = {
     unused: Location.Reference.Set.t Identifier.Map.t;
+    bottom: bool;
     define: Define.t Node.t;
     nested_defines: t NestedDefines.t;
   }
@@ -42,7 +45,7 @@ module State (Context : Context) = struct
       in
       List.fold ~init:Identifier.Map.empty ~f:add_parameter parameters
     in
-    { unused; define; nested_defines = NestedDefines.initial }
+    { unused; bottom = false; define; nested_defines = NestedDefines.initial }
 
 
   let less_or_equal ~left:{ unused = left; _ } ~right:{ unused = right; _ } =
@@ -60,7 +63,11 @@ module State (Context : Context) = struct
       | `Left left -> Some left
       | `Right right -> Some right
     in
-    { left with unused = Map.merge left.unused right.unused ~f:merge }
+    {
+      left with
+      unused = Map.merge left.unused right.unused ~f:merge;
+      bottom = left.bottom && right.bottom;
+    }
 
 
   let widen ~previous ~next ~iteration:_ = join previous next
@@ -77,9 +84,21 @@ module State (Context : Context) = struct
 
   let forward
       ?key:_
-      ({ unused; nested_defines; _ } as state)
+      ({ unused; bottom; nested_defines; _ } as state)
       ~statement:({ Node.location; value } as statement)
     =
+    (* Check for bottomed out state. *)
+    let bottom =
+      match value with
+      | Assert { Assert.test; _ } ->
+          let hits_bottom =
+            match Node.value test with
+            | False -> true
+            | _ -> false
+          in
+          bottom || hits_bottom
+      | _ -> bottom
+    in
     (* Remove used names. *)
     let unused =
       let used_names = Visit.collect_base_identifiers statement |> List.map ~f:Node.value in
@@ -102,7 +121,7 @@ module State (Context : Context) = struct
       | _ -> unused
     in
     let nested_defines = NestedDefines.update_nested_defines nested_defines ~statement ~state in
-    { state with unused; nested_defines }
+    { state with unused; bottom; nested_defines }
 
 
   let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
@@ -110,8 +129,11 @@ end
 
 let name = "Liveness"
 
-let run ~configuration:_ ~global_resolution:_ ~source =
-  let module Context = struct end in
+let run ~configuration:_ ~global_resolution ~source =
+  let module Context = struct
+    let global_resolution = global_resolution
+  end
+  in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let rec check ~state define =
