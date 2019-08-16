@@ -63,8 +63,49 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial =
-    { unawaited = Location.Reference.Map.empty; locals = AliasMap.empty; need_to_await = true }
+  let initial ~global_resolution { Define.signature = { Define.parameters; _ }; _ } =
+    let state =
+      { unawaited = Location.Reference.Map.empty; locals = AliasMap.empty; need_to_await = true }
+    in
+    let forward_parameter
+        ({ unawaited; locals; need_to_await } as state)
+        { Node.value = { Parameter.name; annotation; _ }; location }
+      =
+      let is_awaitable =
+        match annotation with
+        | Some annotation ->
+            GlobalResolution.less_or_equal
+              global_resolution
+              ~left:(GlobalResolution.parse_annotation global_resolution annotation)
+              ~right:(Type.awaitable Type.Top)
+        | None -> false
+      in
+      if is_awaitable then
+        let name =
+          if String.is_prefix ~prefix:"**" name then
+            String.drop_prefix name 2
+          else if String.is_prefix ~prefix:"*" name then
+            String.drop_prefix name 1
+          else
+            name
+        in
+        {
+          unawaited =
+            Map.set
+              unawaited
+              ~key:location
+              ~data:(Unawaited { Node.value = Name (Expression.Name.Identifier name); location });
+          locals =
+            Map.set
+              locals
+              ~key:(Reference (Reference.create name))
+              ~data:(Location.Reference.Set.singleton location);
+          need_to_await;
+        }
+      else
+        state
+    in
+    List.fold ~init:state ~f:forward_parameter parameters
 
 
   let errors { unawaited; locals; _ } =
@@ -581,7 +622,9 @@ let run ~configuration:_ ~global_resolution ~source =
       |> Option.value ~default:true
     in
     if should_run_analysis then
-      Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:State.initial
+      Fixpoint.forward
+        ~cfg:(Cfg.create (Node.value define))
+        ~initial:(State.initial ~global_resolution (Node.value define))
       |> Fixpoint.exit
       >>| State.errors
       |> Option.value ~default:[]

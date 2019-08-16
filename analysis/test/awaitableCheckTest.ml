@@ -588,6 +588,61 @@ let test_forward context =
     []
 
 
+let test_initial context =
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable(x: typing.Awaitable[int]) -> int:
+        return 0
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable(x: typing.Awaitable[int]) -> int:
+        return (await x)
+    |}
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable( *x: typing.Awaitable[int]) -> int:
+        return 0
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      import asyncio
+      async def awaitable( *x: typing.Awaitable[int]) -> int:
+        value, *_others = asyncio.gather( *x)
+        return value
+    |}
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      async def awaitable( **x: typing.Awaitable[int]) -> int:
+        return 0
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+  assert_awaitable_errors
+    ~context
+    {|
+      import typing
+      import asyncio
+      async def awaitable( **d: typing.Awaitable[int]) -> int:
+        value, *_others = await_list(d.values())
+        return value
+    |}
+    []
+
+
 let test_state context =
   assert_awaitable_errors
     ~context
@@ -798,6 +853,7 @@ let () =
          "assign" >:: test_assign;
          "attribute_access" >:: test_attribute_access;
          "forward" >:: test_forward;
+         "initial" >:: test_initial;
          "return" >:: test_return;
          "state" >:: test_state ]
   |> Test.run
