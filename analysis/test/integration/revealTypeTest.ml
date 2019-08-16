@@ -131,7 +131,27 @@ let test_reveal_type context =
          reveal_type(Foo.attribute)
      |}
     [ "Revealed type [-1]: Revealed type for `Foo.attribute` is `typing.Optional[int]` (inferred: \
-       `typing_extensions.Literal[1]`)." ]
+       `typing_extensions.Literal[1]`)." ];
+  assert_type_errors
+    {|
+      def f( *args) -> None: # type: ( *str) -> None
+        reveal_type(args[0])
+    |}
+    ["Revealed type [-1]: Revealed type for `args.__getitem__(0)` is `str`."];
+  assert_type_errors
+    {|
+      def f( **kwargs) -> None: # type: ( **int) -> None
+        reveal_type(kwargs['key'])
+    |}
+    ["Revealed type [-1]: Revealed type for `kwargs.__getitem__(\"key\")` is `int`."];
+  assert_type_errors
+    {|
+      def f( *args, **kwargs) -> None: # type: ( *str, **int) -> None
+        reveal_type(args[0])
+        reveal_type(kwargs['key'])
+    |}
+    [ "Revealed type [-1]: Revealed type for `args.__getitem__(0)` is `str`.";
+      "Revealed type [-1]: Revealed type for `kwargs.__getitem__(\"key\")` is `int`." ]
 
 
 let () = "revealType" >::: ["reveal_type" >:: test_reveal_type] |> Test.run

@@ -70,6 +70,8 @@ let parse_integer value =
   with Failure _ ->
     Int.max_value
 
+let star_type_prefix_regex = Str.regexp "\\*"
+
 let parse_signature_comment comment =
   let strip character string =
     string
@@ -107,7 +109,10 @@ let parse_signature_comment comment =
           | [] ->
               (reverse_stringify next) :: sofar
       in
-      List.rev (split ~sofar:[] ~next:[] ~open_brackets:0 (String.to_list annotations_string))
+      split ~sofar:[] ~next:[] ~open_brackets:0 (String.to_list annotations_string)
+      (* Handle parsing *type and **type annotation in python 2 type comment. *)
+      |> List.map ~f:(Str.global_substitute star_type_prefix_regex (fun _ -> ""))
+      |> List.rev
     in
     let is_not_empty annotation_string =
       Str.string_match (Str.regexp "\\.*") annotation_string 0
@@ -134,7 +139,7 @@ let whitespace = [' ' '\t']
 let comment = '#' [^ '\n' '\r']*
 
 let signature = '#' whitespace* "type:" whitespace* "("
-  (['a'-'z' 'A'-'Z' ' ' ',' '_' '[' ']' '.' '0'-'9']+)*
+  (['a'-'z' 'A'-'Z' ' ' '*' ',' '_' '[' ']' '.' '0'-'9']+)*
   ")" whitespace* "->" whitespace* [^ '\n' '\r']+
 
 let identifier = ['$' 'a'-'z' 'A'-'Z' '_'] ['$' '?' 'a'-'z' 'A'-'Z' '0'-'9' '_']*

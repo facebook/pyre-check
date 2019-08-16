@@ -905,6 +905,86 @@ let test_define _ =
   assert_parsed_equal
     (trim_extra_indentation
        {|
+         def foo( *args): # type: ( *str) -> str
+           return 4
+       |})
+    [ +Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters =
+                 [ +{
+                      Parameter.name = "*args";
+                      value = None;
+                      annotation = Some (+String (StringLiteral.create "str"));
+                    } ];
+               decorators = [];
+               docstring = None;
+               return_annotation = Some (+String (StringLiteral.create "str"));
+               async = false;
+               parent = None;
+             };
+           body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }];
+         } ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+         def foo( **kwargs): # type: ( **str) -> str
+           return 4
+       |})
+    [ +Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters =
+                 [ +{
+                      Parameter.name = "**kwargs";
+                      value = None;
+                      annotation = Some (+String (StringLiteral.create "str"));
+                    } ];
+               decorators = [];
+               docstring = None;
+               return_annotation = Some (+String (StringLiteral.create "str"));
+               async = false;
+               parent = None;
+             };
+           body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }];
+         } ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+         def foo( *args, **kwargs): # type: ( *str, **str) -> str
+           return 4
+       |})
+    [ +Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters =
+                 [ +{
+                      Parameter.name = "*args";
+                      value = None;
+                      annotation = Some (+String (StringLiteral.create "str"));
+                    };
+                   +{
+                      Parameter.name = "**kwargs";
+                      value = None;
+                      annotation = Some (+String (StringLiteral.create "str"));
+                    } ];
+               decorators = [];
+               docstring = None;
+               return_annotation = Some (+String (StringLiteral.create "str"));
+               async = false;
+               parent = None;
+             };
+           body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }];
+         } ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
       def foo(a):
         # type: (str) -> str
         return 4
