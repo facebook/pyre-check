@@ -19,6 +19,7 @@ let assert_liveness_errors ~context =
 
 let test_forward context =
   let assert_liveness_errors = assert_liveness_errors ~context in
+  (* Assignments *)
   assert_liveness_errors
     {|
       x = 1
@@ -53,6 +54,8 @@ let test_forward context =
     [ "Dead store [1003]: Value assigned to `z` is never used.";
       "Dead store [1003]: Value assigned to `y` is never used.";
       "Dead store [1003]: Value assigned to `x` is never used." ];
+
+  (* Parameters *)
   assert_liveness_errors
     {|
       def foo(x: int) -> None:
@@ -67,7 +70,37 @@ let test_forward context =
     |}
     [ "Dead store [1003]: Value assigned to `y` is never used.";
       "Dead store [1003]: Value assigned to `x` is never used.";
-      "Dead store [1003]: Value assigned to `a` is never used." ]
+      "Dead store [1003]: Value assigned to `a` is never used." ];
+
+  (* Dead Code *)
+  assert_liveness_errors
+    {|
+      def foo() -> None:
+        x = 1
+        return
+        x
+    |}
+    ["Dead store [1003]: Value assigned to `x` is never used."];
+  assert_liveness_errors
+    {|
+      def foo() -> None:
+        x = 1
+        if False:
+          x
+    |}
+    ["Dead store [1003]: Value assigned to `x` is never used."];
+  assert_liveness_errors
+    {|
+      def use(x: int) -> None:
+        x
+
+      def foo(test: bool) -> None:
+        x = 1
+        if test:
+          sys.exit(0)
+          use(x)
+    |}
+    ["Dead store [1003]: Value assigned to `x` is never used."]
 
 
 let test_bottom context =
@@ -101,6 +134,10 @@ let test_bottom context =
     |} false;
   assert_bottom {|
       assert False
+    |} true;
+  assert_bottom {|
+      x = 1
+      sys.exit(0)
     |} true
 
 

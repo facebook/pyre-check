@@ -83,26 +83,21 @@ module State (Context : Context) = struct
 
 
   let forward
-      ?key:_
-      ({ unused; bottom; nested_defines; _ } as state)
+      ?key
+      ({ unused; bottom; nested_defines; define } as state)
       ~statement:({ Node.location; value } as statement)
     =
-    (* Check for bottomed out state. *)
-    let bottom =
-      match value with
-      | Assert { Assert.test; _ } ->
-          let hits_bottom =
-            match Node.value test with
-            | False -> true
-            | _ -> false
-          in
-          bottom || hits_bottom
-      | _ -> bottom
+    let resolution =
+      let { Node.value = { Define.signature = { name; parent; _ }; _ }; _ } = define in
+      TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
     in
     (* Remove used names. *)
     let unused =
-      let used_names = Visit.collect_base_identifiers statement |> List.map ~f:Node.value in
-      List.fold used_names ~f:Map.remove ~init:unused
+      if bottom then
+        unused
+      else
+        let used_names = Visit.collect_base_identifiers statement |> List.map ~f:Node.value in
+        List.fold used_names ~f:Map.remove ~init:unused
     in
     (* Add assignments to unused. *)
     let unused =
@@ -119,6 +114,21 @@ module State (Context : Context) = struct
           in
           update_target unused target
       | _ -> unused
+    in
+    (* Check for bottomed out state. *)
+    let bottom =
+      match value with
+      | Assert { Assert.test; _ } -> (
+        match Node.value test with
+        | False -> true
+        | _ -> bottom )
+      | Expression expression ->
+          if Type.is_noreturn (Resolution.resolve resolution expression) then
+            true
+          else
+            bottom
+      | Return _ -> true
+      | _ -> bottom
     in
     let nested_defines = NestedDefines.update_nested_defines nested_defines ~statement ~state in
     { state with unused; bottom; nested_defines }
