@@ -38,6 +38,10 @@ val defines
   Source.t ->
   Statement.Define.t Node.t list
 
+(* `count_defines source` should be the same as `List.length (defines ~include_stubs:true
+   ~include_nested:true ~include_toplevels:true source)` except it's more efficient *)
+val count_defines : Source.t -> int
+
 (* List of class definitions in a source. *)
 val classes : Source.t -> Statement.Class.t Node.t list
 

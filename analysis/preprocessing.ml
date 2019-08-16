@@ -1409,6 +1409,30 @@ let defines ?(include_stubs = false) ?(include_nested = false) ?(include_topleve
     defines
 
 
+let count_defines source =
+  let module Visitor = Visit.MakeStatementVisitor (struct
+    type t = int
+
+    let visit_children = function
+      | { Node.value = Define _; _ }
+      | { Node.value = Class _; _ } ->
+          true
+      | _ -> false
+
+
+    let statement _ count = function
+      | { Node.value = Class _; _ } ->
+          (* +1 for $classtoplevel *)
+          count + 1
+      | { Node.value = Define _; _ } -> count + 1
+      | _ -> count
+  end)
+  in
+  let count = Visitor.visit 0 source in
+  (* +1 for $toplevel *)
+  count + 1
+
+
 let classes source =
   let module Collector = Visit.StatementCollector (struct
     type t = Statement.Class.t Node.t

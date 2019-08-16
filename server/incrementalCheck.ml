@@ -145,7 +145,9 @@ let recheck
     ~timer
     ~integers:
       [ "number of direct files", List.length paths;
-        "number of files", List.length recheck_source_paths ]
+        "number of files", List.length recheck_source_paths;
+        "number of functions", List.sum (module Int) ~f:Preprocessing.count_defines recheck_sources
+      ]
     ();
   StatusUpdate.information ~message:"Done recheck." ~short_message:(Some "Done recheck.") ~state;
   state, new_errors

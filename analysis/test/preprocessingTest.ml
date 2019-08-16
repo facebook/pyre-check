@@ -1843,12 +1843,22 @@ let test_expand_implicit_returns _ =
 let test_defines _ =
   let assert_defines statements defines =
     let printer defines = List.map defines ~f:Define.show |> String.concat ~sep:"\n" in
+    let source = Source.create statements in
     assert_equal
       ~cmp:(List.equal Define.equal)
       ~printer
       defines
-      ( Preprocessing.defines ~include_toplevels:true (Source.create statements)
-      |> List.map ~f:Node.value )
+      (Preprocessing.defines ~include_toplevels:true source |> List.map ~f:Node.value);
+    assert_equal
+      ~cmp:Int.equal
+      ~printer:Int.to_string
+      ( Preprocessing.defines
+          ~include_stubs:true
+          ~include_nested:true
+          ~include_toplevels:true
+          source
+      |> List.length )
+      (Preprocessing.count_defines source)
   in
   let create_define name =
     {
