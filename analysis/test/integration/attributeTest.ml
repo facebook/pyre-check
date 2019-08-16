@@ -527,6 +527,77 @@ let test_check_attributes context =
     |}
     [];
 
+  let implicit_submodule_test_environment =
+    [{ handle = "foo/bar.py"; source = "hello: str = 'world'" }]
+  in
+  assert_type_errors
+    ~update_environment_with:implicit_submodule_test_environment
+    {|
+      import foo.bar
+      foo.bar.hello
+    |}
+    [];
+  assert_type_errors
+    ~handle:"test.py"
+    ~update_environment_with:implicit_submodule_test_environment
+    {|
+      foo.bar.hello
+    |}
+    [ "Undefined name [18]: Global name `foo` is not defined, or there is at least one control \
+       flow path that doesn't define `foo`." ];
+  assert_type_errors
+    ~update_environment_with:implicit_submodule_test_environment
+    {|
+      import foo.bar
+      foo.bar.derp.hello
+    |}
+    ["Undefined attribute [16]: Module `foo.bar` has no attribute `derp`."];
+  assert_type_errors
+    ~update_environment_with:implicit_submodule_test_environment
+    {|
+      import foo
+      foo.bar.hello
+    |}
+    [ "Undefined name [18]: Global name `foo.bar` is not defined, or there is at least one \
+       control flow path that doesn't define `foo.bar`." ];
+  assert_type_errors
+    ~update_environment_with:implicit_submodule_test_environment
+    {|
+      import foo.bar
+      hello: str = foo.bar.hello
+      hello
+    |}
+    [];
+
+  (* Exported import is still recognized *)
+  assert_type_errors
+    ~update_environment_with:
+      [ { handle = "foo/__init__.py"; source = "from . import bar" };
+        { handle = "foo/bar.py"; source = "hello: str = 'world'" } ]
+    {|
+      import foo
+      foo.bar.hello
+    |}
+    [];
+  assert_type_errors
+    ~update_environment_with:
+      [ { handle = "foo/__init__.py"; source = "from foo import bar as baz" };
+        { handle = "foo/bar.py"; source = "hello: str = 'world'" } ]
+    {|
+      import foo
+      foo.baz.hello
+    |}
+    [];
+  assert_type_errors
+    ~update_environment_with:
+      [ { handle = "foo.py"; source = "import bar" };
+        { handle = "bar.py"; source = "hello: str = 'world'" } ]
+    {|
+      import foo
+      foo.bar.hello
+    |}
+    [];
+
   (* Any has all attributes in default mode, but not strict mode. *)
   assert_strict_type_errors
     {|

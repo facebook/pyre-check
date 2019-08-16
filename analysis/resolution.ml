@@ -9,14 +9,22 @@ open Ast
 
 type t = {
   global_resolution: GlobalResolution.t;
+  imports: Reference.Set.t;
   annotations: Annotation.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
   resolve: resolution:t -> Expression.t -> Annotation.t;
   parent: Reference.t option;
 }
 
-let create ~global_resolution ~annotations ~resolve ?parent () =
-  { global_resolution; annotations; type_variables = Type.Variable.Set.empty; resolve; parent }
+let create ~global_resolution ~imports ~annotations ~resolve ?parent () =
+  {
+    global_resolution;
+    imports;
+    annotations;
+    type_variables = Type.Variable.Set.empty;
+    resolve;
+    parent;
+  }
 
 
 let pp format { annotations; type_variables; _ } =
@@ -34,6 +42,26 @@ let pp format { annotations; type_variables; _ } =
 
 
 let show resolution = Format.asprintf "%a" pp resolution
+
+let add_import ({ imports; _ } as resolution) ~reference =
+  let imports = Set.add imports reference in
+  let add_with_parents_of_import (imports, parent_module_prefix) module_name =
+    let parents_of_imports =
+      if parent_module_prefix = [] then
+        imports
+      else
+        parent_module_prefix |> Reference.create_from_list |> Set.add imports
+    in
+    let parent_module_prefix = parent_module_prefix @ [module_name] in
+    parents_of_imports, parent_module_prefix
+  in
+  let imports, _ =
+    reference |> Reference.as_list |> List.fold ~f:add_with_parents_of_import ~init:(imports, [])
+  in
+  { resolution with imports }
+
+
+let is_imported { imports; _ } ~reference = Set.mem imports reference
 
 let set_local ({ annotations; _ } as resolution) ~reference ~annotation =
   { resolution with annotations = Map.set annotations ~key:reference ~data:annotation }

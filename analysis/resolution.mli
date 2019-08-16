@@ -9,11 +9,16 @@ type t [@@deriving show]
 
 val create
   :  global_resolution:GlobalResolution.t ->
+  imports:Reference.Set.t ->
   annotations:Annotation.t Reference.Map.t ->
   resolve:(resolution:t -> Expression.t -> Annotation.t) ->
   ?parent:Reference.t ->
   unit ->
   t
+
+val add_import : t -> reference:Reference.t -> t
+
+val is_imported : t -> reference:Reference.t -> bool
 
 val set_local : t -> reference:Reference.t -> annotation:Annotation.t -> t
 
