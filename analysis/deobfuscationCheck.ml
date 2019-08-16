@@ -214,10 +214,6 @@ end
 module UnusedStoreState (Context : Context) = struct
   include LivenessCheck.State (Context)
 
-  let initial ~state:_ ~define = initial ~define
-
-  let nested_defines { nested_defines; _ } = nested_defines
-
   let update_transformations { unused; _ } =
     let add_transformation locations =
       Set.iter locations ~f:(fun key -> Hashtbl.set Context.transformations ~key ~data:[])

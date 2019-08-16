@@ -21,13 +21,15 @@ module State (Context : Context) : sig
 
   val pp : Format.formatter -> t -> unit
 
-  val initial : define:Define.t Node.t -> t
+  val initial : state:t option -> define:Define.t Node.t -> t
 
   val less_or_equal : left:t -> right:t -> bool
 
   val join : t -> t -> t
 
   val widen : previous:t -> next:t -> iteration:'a -> t
+
+  val nested_defines : t -> t NestedDefines.t
 
   val forward : ?key:int -> t -> statement:Statement.t -> t
 end

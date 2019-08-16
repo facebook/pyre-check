@@ -31,4 +31,40 @@ let test_forward context =
     ["Dead store [1003]: Value assigned to `y` is never used."]
 
 
-let () = "livenessCheck" >::: ["forward" >:: test_forward] |> Test.run
+let test_nested_defines context =
+  let assert_liveness_errors = assert_liveness_errors ~context in
+  assert_liveness_errors
+    {|
+      x = 1
+      def foo() -> None:
+        y = 1
+    |}
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `y` is never used." ];
+  assert_liveness_errors
+    {|
+      x = 1
+      def foo() -> None:
+        y = 1
+        def bar() -> None:
+          z = 1
+    |}
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `y` is never used.";
+      "Dead store [1003]: Value assigned to `z` is never used." ];
+  assert_liveness_errors
+    {|
+      x = 1
+      def foo() -> None:
+        y = 1
+        def bar() -> None:
+          z = y
+    |}
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `z` is never used." ]
+
+
+let () =
+  "livenessCheck"
+  >::: ["forward" >:: test_forward; "nested_defines" >:: test_nested_defines]
+  |> Test.run

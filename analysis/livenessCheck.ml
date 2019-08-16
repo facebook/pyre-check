@@ -24,7 +24,7 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~define =
+  let initial ~state:_ ~define =
     { unused = Identifier.Map.empty; define; nested_defines = NestedDefines.initial }
 
 
@@ -47,6 +47,8 @@ module State (Context : Context) = struct
 
 
   let widen ~previous ~next ~iteration:_ = join previous next
+
+  let nested_defines { nested_defines; _ } = nested_defines
 
   let errors { unused; define; _ } =
     let add_errors ~key ~data errors =
@@ -87,13 +89,20 @@ end
 let name = "Liveness"
 
 let run ~configuration:_ ~global_resolution:_ ~source =
-  let check define =
-    let module Context = struct end in
-    let module State = State (Context) in
-    let module Fixpoint = Fixpoint.Make (State) in
-    Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:(State.initial ~define)
+  let module Context = struct end in
+  let module State = State (Context) in
+  let module Fixpoint = Fixpoint.Make (State) in
+  let rec check ~state define =
+    let run_nested ~key ~data:{ NestedDefines.nested_define; state } errors =
+      let result = check ~state:(Some state) { Node.location = key; value = nested_define } in
+      result @ errors
+    in
+    Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:(State.initial ~state ~define)
     |> Fixpoint.exit
-    >>| State.errors
+    >>| (fun state ->
+          State.nested_defines state
+          |> Map.fold ~f:run_nested ~init:[]
+          |> fun result -> State.errors state @ result)
     |> Option.value ~default:[]
   in
-  source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check |> List.concat
+  check ~state:None (Source.top_level_define_node source)
