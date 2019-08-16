@@ -33,6 +33,13 @@ let test_forward context =
     ["Dead store [1003]: Value assigned to `y` is never used."];
   assert_liveness_errors
     {|
+      x = 1
+      x = 2
+    |}
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `x` is never used." ];
+  assert_liveness_errors
+    {|
       def foo(t: typing.Tuple[int, int]) -> None:
         x, y = t
     |}

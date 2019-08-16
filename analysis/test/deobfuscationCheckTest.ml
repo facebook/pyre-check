@@ -64,7 +64,6 @@ let test_forward context =
       a = 2
       a
     |} {|
-      a = 1
       2
     |};
   assert_deobfuscation {|

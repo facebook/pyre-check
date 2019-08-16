@@ -96,7 +96,21 @@ module State (Context : Context) = struct
       if bottom then
         unused
       else
-        let used_names = Visit.collect_base_identifiers statement |> List.map ~f:Node.value in
+        let used_names =
+          match value with
+          | Assign { annotation; value; _ } ->
+              (* Don't count LHS of assignments as used. *)
+              annotation
+              >>| (fun annotation ->
+                    Visit.collect_base_identifiers
+                      (Node.create ~location (Statement.Expression annotation)))
+              |> Option.value ~default:[]
+              |> List.append
+                   (Visit.collect_base_identifiers
+                      (Node.create ~location (Statement.Expression value)))
+              |> List.map ~f:Node.value
+          | _ -> Visit.collect_base_identifiers statement |> List.map ~f:Node.value
+        in
         List.fold used_names ~f:Map.remove ~init:unused
     in
     (* Add assignments to unused. *)
