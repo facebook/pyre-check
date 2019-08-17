@@ -10,6 +10,8 @@ module Error = AnalysisError
 
 module type Context = sig
   val global_resolution : GlobalResolution.t
+
+  val errors : Error.t Location.Reference.Table.t
 end
 
 module State (Context : Context) : sig
@@ -23,6 +25,8 @@ module State (Context : Context) : sig
   val show : t -> string
 
   val pp : Format.formatter -> t -> unit
+
+  val errors : t -> Error.t list
 
   val initial : state:t option -> define:Define.t Node.t -> t
 

@@ -82,7 +82,6 @@ let test_forward context =
       b
     |}
     {|
-      a = 1
       a = foo()
       a
     |};
@@ -93,7 +92,6 @@ let test_forward context =
       a
     |}
     {|
-      a = 1
       a = 1 + 1
       a
     |};

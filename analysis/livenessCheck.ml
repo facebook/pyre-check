@@ -13,6 +13,8 @@ module Error = AnalysisError
 
 module type Context = sig
   val global_resolution : GlobalResolution.t
+
+  val errors : Error.t Location.Reference.Table.t
 end
 
 module State (Context : Context) = struct
@@ -27,25 +29,39 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let update_unused ~unused ~location identifier =
-    let update = function
-      | Some existing -> Set.add existing location
-      | None -> Location.Reference.Set.of_list [location]
+  let update_unused ~state:({ unused; define; _ } as state) ~location identifier =
+    let _ =
+      match Map.find unused identifier with
+      | Some existing ->
+          let add_error location =
+            let error = Error.create ~location ~kind:(Error.DeadStore identifier) ~define in
+            Hashtbl.set Context.errors ~key:location ~data:error
+          in
+          Set.to_list existing |> List.iter ~f:add_error
+      | None -> ()
     in
-    Map.update unused identifier ~f:update
+    let unused =
+      Map.set unused ~key:identifier ~data:(Location.Reference.Set.of_list [location])
+    in
+    { state with unused }
 
 
   let initial
       ~state:_
       ~define:({ Node.value = { Define.signature = { Define.parameters; _ }; _ }; _ } as define)
     =
-    let unused =
-      let add_parameter unused { Node.value = { Parameter.name; _ }; location } =
-        update_unused ~unused ~location name
-      in
-      List.fold ~init:Identifier.Map.empty ~f:add_parameter parameters
+    let empty_state =
+      {
+        unused = Identifier.Map.empty;
+        bottom = false;
+        define;
+        nested_defines = NestedDefines.initial;
+      }
     in
-    { unused; bottom = false; define; nested_defines = NestedDefines.initial }
+    let add_parameter state { Node.value = { Parameter.name; _ }; location } =
+      update_unused ~state ~location name
+    in
+    List.fold ~init:empty_state ~f:add_parameter parameters
 
 
   let less_or_equal ~left:{ unused = left; _ } ~right:{ unused = right; _ } =
@@ -75,16 +91,20 @@ module State (Context : Context) = struct
   let nested_defines { nested_defines; _ } = nested_defines
 
   let errors { unused; define; _ } =
-    let add_errors ~key ~data errors =
-      let create_error location = Error.create ~location ~kind:(Error.DeadStore key) ~define in
-      Set.to_list data |> List.map ~f:create_error |> fun new_errors -> new_errors @ errors
+    let add_errors ~key ~data =
+      let add_error location =
+        let error = Error.create ~location ~kind:(Error.DeadStore key) ~define in
+        Hashtbl.set Context.errors ~key:location ~data:error
+      in
+      Set.to_list data |> List.iter ~f:add_error
     in
-    Map.fold unused ~init:[] ~f:add_errors
+    Map.iteri unused ~f:add_errors;
+    Hashtbl.data Context.errors |> List.sort ~compare:Error.compare
 
 
   let forward
       ?key
-      ({ unused; bottom; nested_defines; define } as state)
+      ({ unused; bottom; nested_defines; define; _ } as state)
       ~statement:({ Node.location; value } as statement)
     =
     let resolution =
@@ -92,42 +112,44 @@ module State (Context : Context) = struct
       TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
     in
     (* Remove used names. *)
-    let unused =
-      if bottom then
-        unused
-      else
-        let used_names =
-          match value with
-          | Assign { annotation; value; _ } ->
-              (* Don't count LHS of assignments as used. *)
-              annotation
-              >>| (fun annotation ->
-                    Visit.collect_base_identifiers
-                      (Node.create ~location (Statement.Expression annotation)))
-              |> Option.value ~default:[]
-              |> List.append
-                   (Visit.collect_base_identifiers
-                      (Node.create ~location (Statement.Expression value)))
-              |> List.map ~f:Node.value
-          | _ -> Visit.collect_base_identifiers statement |> List.map ~f:Node.value
-        in
-        List.fold used_names ~f:Map.remove ~init:unused
+    let state =
+      let unused =
+        if bottom then
+          unused
+        else
+          let used_names =
+            match value with
+            | Assign { annotation; value; _ } ->
+                (* Don't count LHS of assignments as used. *)
+                annotation
+                >>| (fun annotation ->
+                      Visit.collect_base_identifiers
+                        (Node.create ~location (Statement.Expression annotation)))
+                |> Option.value ~default:[]
+                |> List.append
+                     (Visit.collect_base_identifiers
+                        (Node.create ~location (Statement.Expression value)))
+                |> List.map ~f:Node.value
+            | _ -> Visit.collect_base_identifiers statement |> List.map ~f:Node.value
+          in
+          List.fold used_names ~f:Map.remove ~init:unused
+      in
+      { state with unused }
     in
     (* Add assignments to unused. *)
-    let unused =
+    let state =
       match value with
       | Assign { target; _ } ->
-          let rec update_target unused = function
+          let rec update_target state = function
             | { Node.value = Name (Name.Identifier identifier); _ } ->
-                update_unused ~unused ~location identifier
-            | { Node.value = List elements; _ } -> List.fold ~init:unused ~f:update_target elements
-            | { Node.value = Starred (Starred.Once target); _ } -> update_target unused target
-            | { Node.value = Tuple elements; _ } ->
-                List.fold ~init:unused ~f:update_target elements
-            | _ -> unused
+                update_unused ~state ~location identifier
+            | { Node.value = List elements; _ } -> List.fold ~init:state ~f:update_target elements
+            | { Node.value = Starred (Starred.Once target); _ } -> update_target state target
+            | { Node.value = Tuple elements; _ } -> List.fold ~init:state ~f:update_target elements
+            | _ -> state
           in
-          update_target unused target
-      | _ -> unused
+          update_target state target
+      | _ -> state
     in
     (* Check for bottomed out state. *)
     let bottom =
@@ -145,7 +167,7 @@ module State (Context : Context) = struct
       | _ -> bottom
     in
     let nested_defines = NestedDefines.update_nested_defines nested_defines ~statement ~state in
-    { state with unused; bottom; nested_defines }
+    { state with bottom; nested_defines }
 
 
   let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
@@ -156,21 +178,21 @@ let name = "Liveness"
 let run ~configuration:_ ~global_resolution ~source =
   let module Context = struct
     let global_resolution = global_resolution
+
+    let errors = Location.Reference.Table.create ()
   end
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let rec check ~state define =
-    let run_nested ~key ~data:{ NestedDefines.nested_define; state } errors =
-      let result = check ~state:(Some state) { Node.location = key; value = nested_define } in
-      result @ errors
+    let run_nested ~key ~data:{ NestedDefines.nested_define; state } =
+      check ~state:(Some state) { Node.location = key; value = nested_define } |> ignore
     in
     Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:(State.initial ~state ~define)
     |> Fixpoint.exit
     >>| (fun state ->
-          State.nested_defines state
-          |> Map.fold ~f:run_nested ~init:[]
-          |> fun result -> State.errors state @ result)
+          State.nested_defines state |> Map.iteri ~f:run_nested;
+          State.errors state)
     |> Option.value ~default:[]
   in
   check ~state:None (Source.top_level_define_node source)

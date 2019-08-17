@@ -17,6 +17,8 @@ module type Context = sig
   val global_resolution : GlobalResolution.t
 
   val transformations : Statement.t list Location.Reference.Table.t
+
+  val errors : Error.t Location.Reference.Table.t
 end
 
 module ConstantPropagationState (Context : Context) = struct
@@ -214,11 +216,11 @@ end
 module UnusedStoreState (Context : Context) = struct
   include LivenessCheck.State (Context)
 
-  let update_transformations { unused; _ } =
-    let add_transformation locations =
-      Set.iter locations ~f:(fun key -> Hashtbl.set Context.transformations ~key ~data:[])
+  let update_transformations state =
+    let add_transformation { Error.location; _ } =
+      Hashtbl.set Context.transformations ~key:location ~data:[]
     in
-    Map.iter ~f:add_transformation unused
+    List.iter ~f:add_transformation (errors state)
 
 
   let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
@@ -279,6 +281,8 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
     let global_resolution = global_resolution
 
     let transformations = Location.Reference.Table.create ()
+
+    let errors = Location.Reference.Table.create ()
   end
   in
   (* Constant propagation. *)

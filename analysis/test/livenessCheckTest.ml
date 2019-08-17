@@ -33,34 +33,22 @@ let test_forward context =
     ["Dead store [1003]: Value assigned to `y` is never used."];
   assert_liveness_errors
     {|
-      x = 1
-      x = 2
-    |}
-    [ "Dead store [1003]: Value assigned to `x` is never used.";
-      "Dead store [1003]: Value assigned to `x` is never used." ];
-  assert_liveness_errors
-    {|
       def foo(t: typing.Tuple[int, int]) -> None:
         x, y = t
     |}
-    [ "Dead store [1003]: Value assigned to `y` is never used.";
-      "Dead store [1003]: Value assigned to `x` is never used." ];
+    ["Dead store [1003]: Value assigned to `y` is never used."];
   assert_liveness_errors
     {|
       def foo() -> None:
         x, (y, z) = 1, (2, 3)
     |}
-    [ "Dead store [1003]: Value assigned to `z` is never used.";
-      "Dead store [1003]: Value assigned to `y` is never used.";
-      "Dead store [1003]: Value assigned to `x` is never used." ];
+    ["Dead store [1003]: Value assigned to `z` is never used."];
   assert_liveness_errors
     {|
       def foo() -> None:
         [x, *y, z] = [1, 2, 3, 4, 5]
     |}
-    [ "Dead store [1003]: Value assigned to `z` is never used.";
-      "Dead store [1003]: Value assigned to `y` is never used.";
-      "Dead store [1003]: Value assigned to `x` is never used." ];
+    ["Dead store [1003]: Value assigned to `z` is never used."];
 
   (* Parameters *)
   assert_liveness_errors
@@ -75,9 +63,25 @@ let test_forward context =
       def foo(x: int, y: int, z: int) -> None:
         a = z
     |}
-    [ "Dead store [1003]: Value assigned to `y` is never used.";
-      "Dead store [1003]: Value assigned to `x` is never used.";
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `y` is never used.";
       "Dead store [1003]: Value assigned to `a` is never used." ];
+
+  (* Reassignment *)
+  assert_liveness_errors
+    {|
+      x = 1
+      x = 2
+    |}
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `x` is never used." ];
+  assert_liveness_errors
+    {|
+      x = 1
+      x = 2
+      x
+    |}
+    ["Dead store [1003]: Value assigned to `x` is never used."];
 
   (* Dead Code *)
   assert_liveness_errors
@@ -115,6 +119,9 @@ let test_bottom context =
     let module Context = struct
       let global_resolution =
         ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+
+
+      let errors = Location.Reference.Table.create ()
     end
     in
     let module State = LivenessCheck.State (Context) in
