@@ -3,15 +3,28 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
 open Ast
 open Statement
 open CustomAnalysis
 module Error = AnalysisError
 
+module ErrorMap : sig
+  type key = {
+    location: Location.t;
+    identifier: string;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  include Hashable with type t := key
+
+  type t = Error.t Table.t
+end
+
 module type Context = sig
   val global_resolution : GlobalResolution.t
 
-  val errors : Error.t Location.Reference.Table.t
+  val errors : ErrorMap.t
 end
 
 module State (Context : Context) : sig

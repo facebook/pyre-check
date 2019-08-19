@@ -18,7 +18,7 @@ module type Context = sig
 
   val transformations : Statement.t list Location.Reference.Table.t
 
-  val errors : Error.t Location.Reference.Table.t
+  val errors : LivenessCheck.ErrorMap.t
 end
 
 module ConstantPropagationState (Context : Context) = struct
@@ -282,7 +282,7 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
 
     let transformations = Location.Reference.Table.create ()
 
-    let errors = Location.Reference.Table.create ()
+    let errors = LivenessCheck.ErrorMap.Table.create ()
   end
   in
   (* Constant propagation. *)

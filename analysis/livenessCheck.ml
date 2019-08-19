@@ -11,10 +11,34 @@ open Pyre
 open CustomAnalysis
 module Error = AnalysisError
 
+module ErrorMap = struct
+  type key = {
+    location: Location.t;
+    identifier: string;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  include Hashable.Make (struct
+    type nonrec t = key
+
+    let compare = compare_key
+
+    let hash = Hashtbl.hash
+
+    let hash_fold_t = hash_fold_key
+
+    let sexp_of_t = sexp_of_key
+
+    let t_of_sexp = key_of_sexp
+  end)
+
+  type t = Error.t Table.t
+end
+
 module type Context = sig
   val global_resolution : GlobalResolution.t
 
-  val errors : Error.t Location.Reference.Table.t
+  val errors : ErrorMap.t
 end
 
 module State (Context : Context) = struct
@@ -35,7 +59,7 @@ module State (Context : Context) = struct
       | Some existing ->
           let add_error location =
             let error = Error.create ~location ~kind:(Error.DeadStore identifier) ~define in
-            Hashtbl.set Context.errors ~key:location ~data:error
+            ErrorMap.Table.set Context.errors ~key:{ ErrorMap.location; identifier } ~data:error
           in
           Set.to_list existing |> List.iter ~f:add_error
       | None -> ()
@@ -94,12 +118,12 @@ module State (Context : Context) = struct
     let add_errors ~key ~data =
       let add_error location =
         let error = Error.create ~location ~kind:(Error.DeadStore key) ~define in
-        Hashtbl.set Context.errors ~key:location ~data:error
+        ErrorMap.Table.set Context.errors ~key:{ ErrorMap.location; identifier = key } ~data:error
       in
       Set.to_list data |> List.iter ~f:add_error
     in
     Map.iteri unused ~f:add_errors;
-    Hashtbl.data Context.errors |> List.sort ~compare:Error.compare
+    ErrorMap.Table.data Context.errors |> List.sort ~compare:Error.compare
 
 
   let forward
@@ -179,7 +203,7 @@ let run ~configuration:_ ~global_resolution ~source =
   let module Context = struct
     let global_resolution = global_resolution
 
-    let errors = Location.Reference.Table.create ()
+    let errors = ErrorMap.Table.create ()
   end
   in
   let module State = State (Context) in
