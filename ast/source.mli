@@ -19,8 +19,9 @@ module Metadata : sig
     debug: bool;
     local_mode: mode;
     ignore_lines: Ignore.t list;
-    number_of_lines: int;
     version: int;
+    number_of_lines: int;
+    raw_hash: int;
   }
   [@@deriving compare, eq, show, hash, sexp]
 
@@ -32,6 +33,7 @@ module Metadata : sig
     ?strict:bool ->
     ?unsafe:bool ->
     ?version:int ->
+    ?raw_hash:int ->
     number_of_lines:int ->
     unit ->
     t
@@ -41,7 +43,6 @@ end
 
 type t = {
   docstring: string option;
-  hash: int;
   metadata: Metadata.t;
   relative: string;
   is_external: bool;
@@ -57,7 +58,6 @@ val mode : configuration:Configuration.Analysis.t -> local_mode:mode option -> m
 val create_from_source_path
   :  docstring:string option ->
   metadata:Metadata.t ->
-  hash:int ->
   source_path:SourcePath.t ->
   Statement.t list ->
   t
@@ -67,11 +67,8 @@ val create
   ?metadata:Metadata.t ->
   ?relative:string ->
   ?is_external:bool ->
-  ?hash:int ->
   Statement.t list ->
   t
-
-val hash : t -> int
 
 val signature_hash : t -> int
 

@@ -17,7 +17,19 @@ type t = {
   location: Location.t;
   kind: kind;
 }
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, eq, show, sexp]
+
+let hash { ignored_line; codes; location; _ } =
+  let { Location.path; start; _ } = location in
+  [%hash: int * int list * Reference.t * Location.position] (ignored_line, codes, path, start)
+
+
+let hash_fold_t state { ignored_line; codes; location; _ } =
+  let { Location.path; start; _ } = location in
+  [%hash_fold: int * int list * Reference.t * Location.position]
+    state
+    (ignored_line, codes, path, start)
+
 
 let create ~ignored_line ~codes ~location ~kind = { ignored_line; codes; location; kind }
 

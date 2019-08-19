@@ -25,7 +25,8 @@ let assert_deobfuscation ~context source expected =
     | _ -> failwith "Did not generate a source"
   in
   let source_equal left right =
-    Source.equal { left with Source.hash = -1 } { right with Source.hash = -1 }
+    let metadata = Source.Metadata.create ~number_of_lines:1 () in
+    Source.equal { left with Source.metadata } { right with Source.metadata }
   in
   assert_equal ~cmp:source_equal ~printer:Source.show (parse ~handle expected) actual
 

@@ -110,7 +110,8 @@ let compute_locally_changed_paths
   let changed_paths changed new_source_paths =
     let changed_path ({ SourcePath.qualifier; _ } as source_path) =
       let old_hash =
-        AstEnvironment.ReadOnly.get_source ast_environment qualifier >>| Ast.Source.hash
+        AstEnvironment.ReadOnly.get_source ast_environment qualifier
+        >>| fun { Source.metadata = { Source.Metadata.raw_hash; _ }; _ } -> raw_hash
       in
       let path = SourcePath.full_path ~configuration source_path in
       let current_hash = File.hash (File.create path) in

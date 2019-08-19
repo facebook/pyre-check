@@ -159,9 +159,143 @@ let test_parse_sources context =
     source_handles
     ["stub.pyi"; "a.py"];
   match Analysis.AstEnvironment.get_source ast_environment (Reference.create "c") with
-  | Some { Source.hash; _ } ->
-      assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
+  | Some { metadata = { Source.Metadata.raw_hash; _ }; _ } ->
+      assert_equal raw_hash ([%hash: string list] (String.split ~on:'\n' content))
   | None -> assert_unreached ()
+
+
+let test_ast_hash _ =
+  let assert_hash_changed ~old_source ~new_source ~expected =
+    (* FIXME: We have to do our own parsing here since `Test.parse` does not parse metadata for us. *)
+    let do_parse source =
+      let source = trim_extra_indentation source in
+      let metadata = Source.Metadata.parse ~qualifier:!&"test" (String.split_lines source) in
+      let source = Test.parse ~handle:"test.py" source in
+      { source with metadata }
+    in
+    let old_source = do_parse old_source in
+    let new_source = do_parse new_source in
+    let actual = not (Int.equal (Source.hash old_source) (Source.hash new_source)) in
+    assert_bool "Test if source hash change is expected" (Bool.equal expected actual)
+  in
+  assert_hash_changed
+    ~old_source:"def foo() -> int: ..."
+    ~new_source:"def foo() -> int: ..."
+    ~expected:false;
+  assert_hash_changed
+    ~old_source:"def foo() -> int: ..."
+    ~new_source:"def bar() -> int: ..."
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:"def foo() -> int: ..."
+    ~new_source:"def foo() -> str: ..."
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    def foo() -> int:
+        return 42
+    |}
+    ~expected:false;
+  assert_hash_changed
+    ~old_source:{|
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    def foo() -> int:
+  
+      return 42
+    |}
+    ~expected:false;
+  assert_hash_changed
+    ~old_source:{|
+    def foo(a: int, b: int) -> int:
+      return a + b
+    |}
+    ~new_source:{|
+    def foo(a: int,  b:    int) ->    int:
+        return a   +   b
+    |}
+    ~expected:false;
+  assert_hash_changed
+    ~old_source:{|
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    # pyre-ignore
+    def foo() -> int:
+      return 42
+    |}
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    # pyre-ignore-all-errors
+    def foo() -> int:
+      return 42
+    |}
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+    # pyre-ignore
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    def foo() -> int: # pyre-ignore
+      return 42
+    |}
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+    # pyre-ignore[42]
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    # pyre-ignore[43]
+    def foo() -> int:
+      return 42
+    |}
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+    # pyre-fixme
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    # pyre-ignore
+    def foo() -> int:
+      return 42
+    |}
+    ~expected:false;
+
+  (* TODO: This should be false. It seems that docstrings are still counted as part of the function
+     body *)
+  assert_hash_changed
+    ~old_source:
+      {|
+    def foo() -> int:
+      '''Lets just wait it out. You know, we could be all poetic and lose our minds together.'''
+      return 42
+    |}
+    ~new_source:
+      {|
+    def foo() -> int:
+      '''I'm still waiting for my turn.'''
+      return 42
+    |}
+    ~expected:true;
+  ()
 
 
 let test_register_modules context =
@@ -450,6 +584,7 @@ let () =
   >::: [ "parse_stubs_modules_list" >:: test_parse_stubs_modules_list;
          "parse_source" >:: test_parse_source;
          "parse_sources" >:: test_parse_sources;
+         "ast_hash" >:: test_ast_hash;
          "register_modules" >:: test_register_modules;
          "parse_repository" >:: test_parse_repository;
          "parser_update" >:: test_parser_update ]
