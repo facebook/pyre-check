@@ -139,6 +139,22 @@ let test_hash_of_key _ =
        |> Int64.to_string ))
 
 
+let test_reset _ =
+  Memory.reset_shared_memory ();
+
+  let heap_size = SharedMem.heap_size () in
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 heap_size;
+
+  let { SharedMem.nonempty_slots; used_slots; _ } = SharedMem.dep_stats () in
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 nonempty_slots;
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 used_slots;
+
+  let { SharedMem.nonempty_slots; used_slots; _ } = SharedMem.hash_stats () in
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 nonempty_slots;
+  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 used_slots;
+  ()
+
+
 module StringKey = struct
   type t = string
 
@@ -179,18 +195,21 @@ module OtherStringValue = struct
   let unmarshall value = value
 end
 
-let test_dependency_table _ =
+module TableA =
+  Memory.DependencyTrackedTableWithCache (StringKey) (StringDependencyKey) (StringValue)
+module TableB =
+  Memory.DependencyTrackedTableWithCache (StringKey) (StringDependencyKey) (OtherStringValue)
+
+let assert_dependency ~expected actual =
   let open Core in
-  let assert_dependency ~expected actual =
-    let expected_set = String.Set.of_list expected in
-    let actual_set = String.Set.of_list actual in
-    assert_bool
-      "Check if the actual dependency overapproximate the expected one"
-      (String.Set.is_subset expected_set ~of_:actual_set)
-  in
-  let module TableA =
-    Memory.DependencyTrackedTableWithCache (StringKey) (StringDependencyKey) (StringValue)
-  in
+  let expected_set = String.Set.of_list expected in
+  let actual_set = String.Set.of_list actual in
+  assert_bool
+    "Check if the actual dependency overapproximate the expected one"
+    (String.Set.is_subset expected_set ~of_:actual_set)
+
+
+let test_dependency_table _ =
   let function_1 = "function_1" in
   let function_2 = "function_2" in
   let function_3 = "function_3" in
@@ -202,39 +221,29 @@ let test_dependency_table _ =
 
   assert_dependency ~expected:[function_3; function_2; function_1] (TableA.get_dependents "Foo");
   assert_dependency ~expected:[function_1] (TableA.get_dependents "Bar");
-  let module TableB =
-    Memory.DependencyTrackedTableWithCache (StringKey) (StringDependencyKey) (OtherStringValue)
-  in
   TableB.get "Foo" ~dependency:function_4 |> ignore;
 
   (* Ensure that different tables' same keys are encoded differently *)
   assert_dependency ~expected:[function_4] (TableB.get_dependents "Foo");
-  ()
 
-
-let test_reset _ =
+  (* Ensure that `reset_shared_memory` correctly resets all dependency-related info *)
   Memory.reset_shared_memory ();
+  assert_dependency ~expected:[] (TableA.get_dependents "Foo");
+  assert_dependency ~expected:[] (TableB.get_dependents "Foo");
+  TableB.get "Foo" ~dependency:function_4 |> ignore;
+  assert_dependency ~expected:[function_4] (TableB.get_dependents "Foo");
 
-  let heap_size = SharedMem.heap_size () in
-  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 heap_size;
-
-  let { SharedMem.nonempty_slots; used_slots; _ } = SharedMem.dep_stats () in
-  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 nonempty_slots;
-  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 used_slots;
-
-  let { SharedMem.nonempty_slots; used_slots; _ } = SharedMem.hash_stats () in
-  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 nonempty_slots;
-  assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 used_slots;
+  (* Final cleanup *)
+  Memory.reset_shared_memory ();
   ()
 
 
 let () =
   "memory"
-  >::: [ "test_reset_before" >:: test_reset;
-         "little_endian_representation" >:: test_little_endian_representation;
+  >::: [ "little_endian_representation" >:: test_little_endian_representation;
          "decodable" >:: test_decodable;
          "serialize_key" >:: test_serialize_key;
          "hash_of_key" >:: test_hash_of_key;
-         "dependencies" >:: test_dependency_table;
-         "test_reset_after" >:: test_reset ]
+         "test_rest" >:: test_reset;
+         "dependencies" >:: test_dependency_table ]
   |> Test.run

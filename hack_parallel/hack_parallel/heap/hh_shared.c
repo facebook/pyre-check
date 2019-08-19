@@ -1072,6 +1072,7 @@ void pyre_reset() {
 
   // Zero out the tables
   memset(deptbl, 0, dep_size_b);
+  memset(deptbl_bindings, 0, bindings_size_b);
   memset(hashtbl, 0, hashtbl_size_b);
 }
 
