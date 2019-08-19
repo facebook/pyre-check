@@ -133,6 +133,10 @@ module Serializer (Value : SerializableValueType) : sig
   val store : Value.t -> unit
 end
 
+(* Deliberately left abstract to prevent calls to DependencyKey.Transaction.add from outside this
+   module *)
+type 'keyset transaction_element
+
 module DependencyKey : sig
   module type S = sig
     include KeyType
@@ -142,6 +146,17 @@ module DependencyKey : sig
     val encode : t -> int
 
     val decode : int -> t
+
+    module Transaction : sig
+      type t
+
+      val empty : t
+
+      (* Cannot be called from outside this module *)
+      val add : t -> KeySet.t transaction_element -> t
+
+      val execute : t -> update:(unit -> 'a) -> 'a * KeySet.t
+    end
   end
 
   module Make (Key : KeyType) : S with type t = Key.t
@@ -165,29 +180,10 @@ module DependencyTrackedTableWithCache
 
   val get_dependents : key -> DependencyKey.KeySet.t
 
-  (* `deprecate_keys` and `dependencies_since_last_deprecate` are supposed to be used as follows:
-   *  ----
-   *   let keys = /* compute key set to be deprecated */ in
-   *   deprecate_keys keys;
-   *   /* Incrementally updating the table here  */
-   *   let dependencies = dependencies_since_last_deprecate keys in
-   *   ...
-   *  ----
-   * It is expected that these two APIs are (1) always invoked together, and (2) always invoked
-   * with the same key set.
-   *
-   * In the long term we should probably migrate to a better design where such complexity can be
-   * hidden behind a cleaner API like `update_and_compute_dependencies`.
-   *)
-
-  val deprecate_keys : KeySet.t -> unit
-
-  val dependencies_since_last_deprecate : KeySet.t -> DependencyKey.KeySet.t
-
-  val update_and_compute_dependencies
-    :  update:(KeySet.t -> 'a) ->
-    KeySet.t ->
-    'a * DependencyKey.KeySet.t
+  val add_to_transaction
+    :  DependencyKey.Transaction.t ->
+    keys:KeySet.t ->
+    DependencyKey.Transaction.t
 end
 
 module DependencyTrackedTableNoCache
@@ -208,12 +204,8 @@ module DependencyTrackedTableNoCache
 
   val get_dependents : key -> DependencyKey.KeySet.t
 
-  val deprecate_keys : KeySet.t -> unit
-
-  val dependencies_since_last_deprecate : KeySet.t -> DependencyKey.KeySet.t
-
-  val update_and_compute_dependencies
-    :  update:(KeySet.t -> 'a) ->
-    KeySet.t ->
-    'a * DependencyKey.KeySet.t
+  val add_to_transaction
+    :  DependencyKey.Transaction.t ->
+    keys:KeySet.t ->
+    DependencyKey.Transaction.t
 end

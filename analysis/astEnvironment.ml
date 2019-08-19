@@ -112,12 +112,16 @@ let create module_tracker =
   in
   let update_and_compute_dependencies ~update qualifiers =
     let keys = Sources.KeySet.of_list qualifiers in
-    Sources.oldify_batch keys;
-
-    (* TODO (T50863499): Take wildcard import dependency into account *)
-    WildcardExports.remove_batch keys;
-    update qualifiers;
-    let dependency_set = Sources.dependencies_since_last_deprecate keys in
+    let (), dependency_set =
+      let update () =
+        (* TODO (T50863499): Take wildcard import dependency into account *)
+        WildcardExports.remove_batch keys;
+        update qualifiers
+      in
+      SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
+      |> Sources.add_to_transaction ~keys
+      |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
+    in
     SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements dependency_set
   in
   {

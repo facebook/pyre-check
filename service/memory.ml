@@ -350,6 +350,11 @@ end
    documentation/discoverability purposes *)
 let _ = DependencyGraph.hh_allow_dependency_table_reads
 
+type 'keyset transaction_element = {
+  before: unit -> unit;
+  after: unit -> 'keyset;
+}
+
 module DependencyKey = struct
   module type S = sig
     include KeyType
@@ -359,6 +364,16 @@ module DependencyKey = struct
     val encode : t -> int
 
     val decode : int -> t
+
+    module Transaction : sig
+      type t
+
+      val empty : t
+
+      val add : t -> KeySet.t transaction_element -> t
+
+      val execute : t -> update:(unit -> 'a) -> 'a * KeySet.t
+    end
   end
 
   module Make (Key : KeyType) = struct
@@ -423,6 +438,20 @@ module DependencyKey = struct
 
 
     let decode encoded = DecodeTable.find_unsafe encoded
+
+    module Transaction = struct
+      type t = KeySet.t transaction_element list
+
+      let empty = []
+
+      let add existing element = element :: existing
+
+      let execute (elements : t) ~update =
+        List.iter elements ~f:(fun { before; _ } -> before ());
+        let update_result = update () in
+        let f sofar { after; _ } = KeySet.union sofar (after ()) in
+        update_result, List.fold elements ~init:KeySet.empty ~f
+    end
   end
 end
 
@@ -474,10 +503,13 @@ module DependencyTracking = struct
       Table.KeySet.fold add_dependency keys DependencyKey.KeySet.empty
 
 
-    let update_and_compute_dependencies ~update keys =
-      deprecate_keys keys;
-      let result = update keys in
-      result, dependencies_since_last_deprecate keys
+    let add_to_transaction (transaction : DependencyKey.Transaction.t) ~keys =
+      DependencyKey.Transaction.add
+        transaction
+        {
+          before = (fun () -> deprecate_keys keys);
+          after = (fun () -> dependencies_since_last_deprecate keys);
+        }
   end
 end
 

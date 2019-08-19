@@ -267,7 +267,11 @@ module UpdateDependencyTest = struct
     let setup_new_state { key; new_value; _ } = Option.iter new_value ~f:(TableA.add key) in
     let update _ = List.iter specification ~f:setup_new_state in
     let keys = List.map specification ~f:(fun { key; _ } -> key) |> TableB.KeySet.of_list in
-    let _, actual = TableA.update_and_compute_dependencies keys ~update in
+    let _, actual =
+      StringDependencyKey.Transaction.empty
+      |> TableA.add_to_transaction ~keys
+      |> StringDependencyKey.Transaction.execute ~update
+    in
     assert_dependency ~expected actual;
     Memory.reset_shared_memory ()
 end
