@@ -112,3 +112,35 @@ let ignore ~configuration scheduler sources errors =
     error :: errors
   in
   List.fold ~init:errors ~f:create_unused_ignore_error unused_ignores
+
+
+let shared_memory_hash_to_key_map module_tracker =
+  let keys =
+    Analysis.ModuleTracker.all_source_paths module_tracker
+    |> List.map ~f:(fun { Ast.SourcePath.relative; _ } -> relative)
+  in
+  let extend_map map ~new_map =
+    Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
+  in
+  let all_locations = List.filter_map keys ~f:IgnoreKeys.get |> List.concat in
+  IgnoreKeys.compute_hashes_to_keys ~keys
+  |> extend_map ~new_map:(IgnoreLines.compute_hashes_to_keys ~keys:all_locations)
+
+
+let serialize_decoded decoded =
+  match decoded with
+  | IgnoreLines.Decoded (key, value) ->
+      Some (IgnoreValue.description, key, Option.map value ~f:(List.to_string ~f:Ast.Ignore.show))
+  | IgnoreKeys.Decoded (key, value) ->
+      Some
+        (LocationListValue.description, key, Option.map value ~f:(List.to_string ~f:Location.show))
+  | _ -> None
+
+
+let decoded_equal first second =
+  match first, second with
+  | IgnoreLines.Decoded (_, first), IgnoreLines.Decoded (_, second) ->
+      Some (Option.equal IgnoreValue.equal first second)
+  | IgnoreKeys.Decoded (_, first), IgnoreKeys.Decoded (_, second) ->
+      Some (Option.equal LocationListValue.equal first second)
+  | _ -> None

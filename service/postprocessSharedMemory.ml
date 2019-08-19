@@ -7,7 +7,7 @@ open Ast
 module SharedMemory = Memory
 
 module IgnoreValue = struct
-  type t = Ast.Ignore.t list
+  type t = Ast.Ignore.t list [@@deriving eq]
 
   let prefix = Prefix.make ()
 
@@ -17,7 +17,7 @@ module IgnoreValue = struct
 end
 
 module LocationListValue = struct
-  type t = Location.t list
+  type t = Location.t list [@@deriving eq]
 
   let prefix = Prefix.make ()
 

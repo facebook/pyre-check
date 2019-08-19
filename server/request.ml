@@ -506,6 +506,12 @@ let process_type_query_request
         let map =
           extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:qualifiers)
         in
+        (* Postprocess. *)
+        let map =
+          extend_map
+            map
+            ~new_map:(Service.Postprocess.shared_memory_hash_to_key_map module_tracker)
+        in
         (* Calls *)
         let map =
           let keys =
@@ -582,6 +588,8 @@ let process_type_query_request
               AstEnvironment.serialize_decoded decoded
           | _ when Option.is_some (Environment.serialize_decoded decoded) ->
               Environment.serialize_decoded decoded
+          | _ when Option.is_some (Service.Postprocess.serialize_decoded decoded) ->
+              Service.Postprocess.serialize_decoded decoded
           | _ -> Service.Parser.serialize_decoded decoded
         in
         let build_response { TypeQuery.decoded; undecodable_keys } = function
@@ -614,7 +622,11 @@ let process_type_query_request
                         Option.value_exn (AstEnvironment.decoded_equal first second)
                     | _ when Option.is_some (Environment.decoded_equal first second) ->
                         Option.value_exn (Environment.decoded_equal first second)
-                    | _ -> Service.Parser.decoded_equal first second |> Option.value ~default:false
+                    | _ when Option.is_some (Service.Parser.decoded_equal first second) ->
+                        Option.value_exn (Service.Parser.decoded_equal first second)
+                    | _ ->
+                        Service.Postprocess.decoded_equal first second
+                        |> Option.value ~default:false
                   in
                   match serialize_decoded first, serialize_decoded second with
                   | Some (kind, key, first_value), Some (_, _, second_value) ->
