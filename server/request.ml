@@ -486,6 +486,10 @@ let process_type_query_request
         let qualifiers = ModuleTracker.qualifiers module_tracker in
         let ast_environment = Environment.ast_environment environment in
         let map = Analysis.Environment.shared_memory_hash_to_key_map ~qualifiers () in
+        (* Parser shared memory. *)
+        let map =
+          extend_map map ~new_map:(Service.Parser.shared_memory_hash_to_key_map ~qualifiers)
+        in
         (* AST shared memory. *)
         let map =
           map |> extend_map ~new_map:(AstEnvironment.shared_memory_hash_to_key_map qualifiers)

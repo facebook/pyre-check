@@ -302,3 +302,19 @@ let update ~configuration ~scheduler ~ast_environment module_updates =
           reparse_source_paths
       in
       log_parse_errors ~syntax_error ~system_error)
+
+
+let shared_memory_hash_to_key_map ~qualifiers = RawSources.compute_hashes_to_keys ~keys:qualifiers
+
+let serialize_decoded decoded =
+  match decoded with
+  | RawSources.Decoded (key, value) ->
+      Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
+  | _ -> None
+
+
+let decoded_equal first second =
+  match first, second with
+  | RawSources.Decoded (_, first), RawSources.Decoded (_, second) ->
+      Some (Option.equal Source.equal first second)
+  | _ -> None
