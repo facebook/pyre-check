@@ -1821,37 +1821,37 @@ let decoded_equal first second =
   let open SharedMemory in
   match first, second with
   | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
-      Option.equal (Node.equal Statement.Class.equal) first second
+      Some (Option.equal (Node.equal Statement.Class.equal) first second)
   | ClassMetadata.Decoded (_, first), ClassMetadata.Decoded (_, second) ->
-      Option.equal GlobalResolution.equal_class_metadata first second
+      Some (Option.equal GlobalResolution.equal_class_metadata first second)
   | Aliases.Decoded (_, first), Aliases.Decoded (_, second) ->
-      Option.equal Type.equal_alias first second
+      Some (Option.equal Type.equal_alias first second)
   | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
-      Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value)
+      Some (Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value))
   | UndecoratedFunctions.Decoded (_, first), UndecoratedFunctions.Decoded (_, second) ->
-      Option.equal (Type.Callable.equal_overload Type.equal) first second
+      Some (Option.equal (Type.Callable.equal_overload Type.equal) first second)
   | Dependents.Decoded (_, first), Dependents.Decoded (_, second) ->
-      Option.equal Reference.Set.Tree.equal first second
+      Some (Option.equal Reference.Set.Tree.equal first second)
   | FunctionKeys.Decoded (_, first), FunctionKeys.Decoded (_, second) ->
-      Option.equal (List.equal Reference.equal) first second
+      Some (Option.equal (List.equal Reference.equal) first second)
   | ClassKeys.Decoded (_, first), ClassKeys.Decoded (_, second) ->
-      Option.equal (List.equal Identifier.equal) first second
+      Some (Option.equal (List.equal Identifier.equal) first second)
   | GlobalKeys.Decoded (_, first), GlobalKeys.Decoded (_, second) ->
-      Option.equal (List.equal Reference.equal) first second
+      Some (Option.equal (List.equal Reference.equal) first second)
   | AliasKeys.Decoded (_, first), AliasKeys.Decoded (_, second) ->
-      Option.equal (List.equal Identifier.equal) first second
+      Some (Option.equal (List.equal Identifier.equal) first second)
   | DependentKeys.Decoded (_, first), DependentKeys.Decoded (_, second) ->
-      Option.equal (List.equal Reference.equal) first second
+      Some (Option.equal (List.equal Reference.equal) first second)
   | OrderIndices.Decoded (_, first), OrderIndices.Decoded (_, second) ->
-      Option.equal Int.equal first second
+      Some (Option.equal Int.equal first second)
   | OrderAnnotations.Decoded (_, first), OrderAnnotations.Decoded (_, second) ->
-      Option.equal String.equal first second
+      Some (Option.equal String.equal first second)
   | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
-      Option.equal (List.equal ClassHierarchy.Target.equal) first second
+      Some (Option.equal (List.equal ClassHierarchy.Target.equal) first second)
   | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
-      Option.equal ClassHierarchy.Target.Set.Tree.equal first second
+      Some (Option.equal ClassHierarchy.Target.Set.Tree.equal first second)
   | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
-      Option.equal (List.equal Int.equal) first second
+      Some (Option.equal (List.equal Int.equal) first second)
   | Modules.Decoded (_, first), Modules.Decoded (_, second) ->
-      Option.equal Module.equal first second
-  | _ -> false
+      Some (Option.equal Module.equal first second)
+  | _ -> None

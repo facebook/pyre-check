@@ -578,10 +578,11 @@ let process_type_query_request
                 ( ResolutionSharedMemory.AnnotationsKeyValue.description,
                   Reference.show key,
                   value >>| List.map ~f:Reference.show >>| String.concat ~sep:"," )
-          | _ -> (
-            match AstEnvironment.serialize_decoded decoded with
-            | Some _ as serialized -> serialized
-            | None -> Environment.serialize_decoded decoded )
+          | _ when Option.is_some (AstEnvironment.serialize_decoded decoded) ->
+              AstEnvironment.serialize_decoded decoded
+          | _ when Option.is_some (Environment.serialize_decoded decoded) ->
+              Environment.serialize_decoded decoded
+          | _ -> Service.Parser.serialize_decoded decoded
         in
         let build_response { TypeQuery.decoded; undecodable_keys } = function
           | TypeQuery.SerializedValue { serialized_key; serialized_value } -> (
@@ -609,10 +610,11 @@ let process_type_query_request
                     | ( ResolutionSharedMemory.Decoded (_, first),
                         ResolutionSharedMemory.Decoded (_, second) ) ->
                         Option.equal ResolutionSharedMemory.equal_annotations first second
-                    | _ -> (
-                      match AstEnvironment.decoded_equal first second with
-                      | Some result -> result
-                      | None -> Environment.decoded_equal first second )
+                    | _ when Option.is_some (AstEnvironment.decoded_equal first second) ->
+                        Option.value_exn (AstEnvironment.decoded_equal first second)
+                    | _ when Option.is_some (Environment.decoded_equal first second) ->
+                        Option.value_exn (Environment.decoded_equal first second)
+                    | _ -> Service.Parser.decoded_equal first second |> Option.value ~default:false
                   in
                   match serialize_decoded first, serialize_decoded second with
                   | Some (kind, key, first_value), Some (_, _, second_value) ->
