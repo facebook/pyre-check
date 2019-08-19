@@ -569,6 +569,11 @@ let process_type_query_request
                 ( ResolutionSharedMemory.TypeAnnotationsValue.description,
                   Reference.show key,
                   value >>| ResolutionSharedMemory.show_annotations )
+          | ResolutionSharedMemory.Keys.Decoded (key, value) ->
+              Some
+                ( ResolutionSharedMemory.AnnotationsKeyValue.description,
+                  Reference.show key,
+                  value >>| List.map ~f:Reference.show >>| String.concat ~sep:"," )
           | _ -> (
             match AstEnvironment.serialize_decoded decoded with
             | Some _ as serialized -> serialized
