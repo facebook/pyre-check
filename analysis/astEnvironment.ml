@@ -10,6 +10,8 @@ open Pyre
 type t = {
   add_source: Source.t -> unit;
   remove_sources: Reference.t list -> unit;
+  update_and_compute_dependencies:
+    update:(Reference.t list -> unit) -> Reference.t list -> Reference.t list;
   get_source: Reference.t -> Source.t option;
   get_wildcard_exports: Reference.t -> Reference.t list option;
   get_source_path: Reference.t -> SourcePath.t option;
@@ -22,10 +24,16 @@ module SourceValue = struct
 
   let description = "AST"
 
+  let compare left right = Int.compare (Source.hash left) (Source.hash right)
+
   let unmarshall value = Marshal.from_string value 0
 end
 
-module Sources = Memory.NoCache.Make (SharedMemoryKeys.ReferenceKey) (SourceValue)
+module Sources =
+  Memory.DependencyTrackedTableNoCache
+    (SharedMemoryKeys.ReferenceKey)
+    (SharedMemoryKeys.ReferenceDependencyKey)
+    (SourceValue)
 
 module WildcardExportsValue = struct
   type t = Reference.t list
@@ -92,18 +100,32 @@ let add_wildcard_export { Source.qualifier; statements; _ } =
 
 
 let create module_tracker =
+  let add_source ({ Source.qualifier; _ } as source) =
+    Sources.add qualifier source;
+    Sources.add_dependency qualifier qualifier;
+    add_wildcard_export source
+  in
+  let remove_sources qualifiers =
+    let keys = Sources.KeySet.of_list qualifiers in
+    Sources.remove_batch keys;
+    WildcardExports.remove_batch keys
+  in
+  let update_and_compute_dependencies ~update qualifiers =
+    let keys = Sources.KeySet.of_list qualifiers in
+    Sources.oldify_batch keys;
+
+    (* TODO (T50863499): Take wildcard import dependency into account *)
+    WildcardExports.remove_batch keys;
+    update qualifiers;
+    let dependency_set = Sources.dependencies_since_last_deprecate keys in
+    SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements dependency_set
+  in
   {
-    add_source =
-      (fun ({ Source.qualifier; _ } as source) ->
-        Sources.add qualifier source;
-        add_wildcard_export source);
-    remove_sources =
-      (fun qualifiers ->
-        let keys = Sources.KeySet.of_list qualifiers in
-        Sources.remove_batch keys;
-        WildcardExports.remove_batch keys);
+    add_source;
+    remove_sources;
+    update_and_compute_dependencies;
     get_source = Sources.get;
-    get_wildcard_exports = (fun qualifier -> WildcardExports.get qualifier);
+    get_wildcard_exports = WildcardExports.get;
     get_source_path = ModuleTracker.lookup module_tracker;
   }
 
@@ -111,6 +133,10 @@ let create module_tracker =
 let add_source { add_source; _ } = add_source
 
 let remove_sources { remove_sources; _ } = remove_sources
+
+let update_and_compute_dependencies { update_and_compute_dependencies; _ } =
+  update_and_compute_dependencies
+
 
 let get_source { get_source; _ } = get_source
 

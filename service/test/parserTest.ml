@@ -457,17 +457,6 @@ module IncrementalTest = struct
         module_tracker_updates
     in
     (* The actual checks *)
-    let assert_ast_existence ~ast_environment { handle; new_source; _ } =
-      let qualifier = SourcePath.qualifier_of_relative handle in
-      assert_equal
-        ~cmp:Bool.equal
-        ~printer:Bool.to_string
-        (Option.is_some new_source)
-        (AstEnvironment.ReadOnly.get_source ast_environment qualifier |> Option.is_some)
-    in
-    List.iter
-      (List.append external_setups setups)
-      ~f:(assert_ast_existence ~ast_environment:(AstEnvironment.read_only ast_environment));
     let assert_parser_dependency expected actual =
       let expected_set = Reference.Set.of_list expected in
       let actual_set = Reference.Set.of_list actual in
@@ -493,7 +482,22 @@ let test_parser_update context =
     [ {
         handle = "test.py";
         old_source = Some "def foo() -> None: ...";
+        (* Intentionally invalid syntax *)
+        new_source = Some "def foo() -> None";
+      } ]
+    ~expected:[!&"test"];
+  assert_parser_update
+    [ {
+        handle = "test.py";
+        old_source = Some "def foo() -> None: ...";
         new_source = Some "def foo() -> None: ...";
+      } ]
+    ~expected:[];
+  assert_parser_update
+    [ {
+        handle = "test.py";
+        old_source = Some "def foo(x: int) -> None: ...";
+        new_source = Some "def foo   (x  :    int)  ->    None: ...";
       } ]
     ~expected:[];
   assert_parser_update

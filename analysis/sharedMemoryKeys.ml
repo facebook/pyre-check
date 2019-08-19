@@ -42,6 +42,8 @@ module ReferenceKey = struct
   let from_string name = Reference.create name
 end
 
+module ReferenceDependencyKey = Memory.DependencyKey.Make (ReferenceKey)
+
 module LocationKey = struct
   type t = Location.t
 

@@ -279,8 +279,6 @@ let parse_all ~scheduler ~configuration module_tracker =
 
 
 let update ~configuration ~scheduler ~ast_environment module_updates =
-  (* TODO (T50863499): Do not count the dependency if there's no change in AST *)
-  (* TODO (T50863499): Take wildcard import dependency into account *)
   let reparse_source_paths, removed_modules =
     let categorize = function
       | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
@@ -288,18 +286,19 @@ let update ~configuration ~scheduler ~ast_environment module_updates =
     in
     List.partition_map module_updates ~f:categorize
   in
-  let reparse_modules =
-    List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+  let changed_modules =
+    let reparse_modules =
+      List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+    in
+    List.append removed_modules reparse_modules
   in
-  AstEnvironment.remove_sources ast_environment reparse_modules;
-  AstEnvironment.remove_sources ast_environment removed_modules;
-  let { parsed; syntax_error; system_error } =
-    parse_sources
-      ~configuration
-      ~scheduler
-      ~preprocessing_state:None
-      ~ast_environment
-      reparse_source_paths
-  in
-  log_parse_errors ~syntax_error ~system_error;
-  List.append removed_modules parsed
+  AstEnvironment.update_and_compute_dependencies ast_environment changed_modules ~update:(fun _ ->
+      let { syntax_error; system_error; _ } =
+        parse_sources
+          ~configuration
+          ~scheduler
+          ~preprocessing_state:None
+          ~ast_environment
+          reparse_source_paths
+      in
+      log_parse_errors ~syntax_error ~system_error)
