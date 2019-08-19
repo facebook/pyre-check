@@ -103,7 +103,6 @@ class GlobalModelGenerator(ModelGenerator):
 
             def is_dataclass_decorator(expression: ast.expr) -> bool:
                 if isinstance(expression, ast.Call):
-                    # pyre-ignore[18]: Not handling nested recursive functions.
                     return is_dataclass_decorator(expression.func)
                 if isinstance(expression, ast.Name):
                     return expression.id == "dataclass"
@@ -155,7 +154,6 @@ class GlobalModelGenerator(ModelGenerator):
                 visitor.blacklist = all_attributes(statement)
 
                 for toplevel_statement in statement.body:
-                    # pyre-ignore: T46622677
                     visit_statement(toplevel_statement)
                 visitor.parent = None
                 visitor.blacklist = None

@@ -28,7 +28,6 @@ class ViewGenerator(ModelGenerator, ABC):
                 if isinstance(pattern, Configuration.url_resolver_type):
                     # TODO(T47152686): Fix the pyre bug that causes us to miss the
                     # nested function.
-                    # pyre-ignore[18]: Qualification bug.
                     visit_all_patterns(pattern.url_patterns)
                 elif isinstance(pattern, Configuration.url_pattern_type):
                     functions_to_model.append(pattern.callback)
