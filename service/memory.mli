@@ -137,6 +137,8 @@ module DependencyKey : sig
   module type S = sig
     include KeyType
 
+    module KeySet : Set.S with type elt = t
+
     val encode : t -> int
 
     val decode : int -> t
@@ -159,7 +161,31 @@ module DependencyTrackedTableWithCache
 
   val get : ?dependency:DependencyKey.t -> key -> t option
 
-  val get_dependents : key -> DependencyKey.t list
+  val get_dependents : key -> DependencyKey.KeySet.t
+
+  (* `deprecate_keys` and `dependencies_since_last_deprecate` are supposed to be used as follows:
+   *  ----
+   *   let keys = /* compute key set to be deprecated */ in
+   *   deprecate_keys keys;
+   *   /* Incrementally updating the table here  */
+   *   let dependencies = dependencies_since_last_deprecate keys in
+   *   ...
+   *  ----
+   * It is expected that these two APIs are (1) always invoked together, and (2) always invoked
+   * with the same key set.
+   *
+   * In the long term we should probably migrate to a better design where such complexity can be
+   * hidden behind a cleaner API like `update_and_compute_dependencies`.
+   *)
+
+  val deprecate_keys : KeySet.t -> unit
+
+  val dependencies_since_last_deprecate : KeySet.t -> DependencyKey.KeySet.t
+
+  val update_and_compute_dependencies
+    :  update:(KeySet.t -> 'a) ->
+    KeySet.t ->
+    'a * DependencyKey.KeySet.t
 end
 
 module DependencyTrackedTableNoCache
@@ -176,5 +202,14 @@ module DependencyTrackedTableNoCache
 
   val get : ?dependency:DependencyKey.t -> key -> t option
 
-  val get_dependents : key -> DependencyKey.t list
+  val get_dependents : key -> DependencyKey.KeySet.t
+
+  val deprecate_keys : KeySet.t -> unit
+
+  val dependencies_since_last_deprecate : KeySet.t -> DependencyKey.KeySet.t
+
+  val update_and_compute_dependencies
+    :  update:(KeySet.t -> 'a) ->
+    KeySet.t ->
+    'a * DependencyKey.KeySet.t
 end

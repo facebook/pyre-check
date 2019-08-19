@@ -355,6 +355,8 @@ module DependencyKey = struct
   module type S = sig
     include KeyType
 
+    module KeySet : Set.S with type elt = t
+
     val encode : t -> int
 
     val decode : int -> t
@@ -362,6 +364,7 @@ module DependencyKey = struct
 
   module Make (Key : KeyType) = struct
     include Key
+    module KeySet = Set.Make (Key)
 
     module IntegerKey = struct
       type t = int
@@ -438,13 +441,44 @@ module DependencyTracking = struct
 
     let get_dependents key =
       DependencyGraph.get (Dependency.make (Table.Value.prefix, key))
-      |> DependencySet.to_list
-      |> List.map ~f:DependencyKey.decode
+      |> DependencySet.fold ~init:DependencyKey.KeySet.empty ~f:(fun sofar encoded ->
+             let decoded = DependencyKey.decode encoded in
+             DependencyKey.KeySet.add decoded sofar)
 
 
     let get ?dependency key =
       dependency >>| add_dependency key |> Option.value ~default:();
       Table.get key
+
+
+    let deprecate_keys = Table.oldify_batch
+
+    let dependencies_since_last_deprecate keys =
+      let old_key_map = Table.get_old_batch keys in
+      let new_key_map = Table.get_batch keys in
+      Table.remove_old_batch keys;
+
+      let add_dependency key sofar =
+        let value_has_changed key =
+          match Table.KeyMap.find key old_key_map, Table.KeyMap.find key new_key_map with
+          | None, None -> false
+          | Some old_value, Some new_value ->
+              not (Int.equal 0 (Table.Value.compare old_value new_value))
+          | _ -> true
+        in
+        if value_has_changed key then
+          let dependencies = get_dependents key in
+          DependencyKey.KeySet.union dependencies sofar
+        else
+          sofar
+      in
+      Table.KeySet.fold add_dependency keys DependencyKey.KeySet.empty
+
+
+    let update_and_compute_dependencies ~update keys =
+      deprecate_keys keys;
+      let result = update keys in
+      result, dependencies_since_last_deprecate keys
   end
 end
 
