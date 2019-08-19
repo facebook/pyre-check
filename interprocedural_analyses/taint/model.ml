@@ -742,15 +742,57 @@ let create ~resolution ?path ~configuration source =
           raise_invalid_model message )
     | _ -> ()
   in
-  let create_model ({ Define.name; parameters; return_annotation; _ }, location, call_target) =
+  let create_model
+      (({ Define.name; parameters; return_annotation; _ } as define), location, call_target)
+    =
     (* Make sure we know about what we model. *)
     let global_resolution = Resolution.global_resolution resolution in
     try
       let call_target = (call_target :> Callable.t) in
       let callable_annotation =
-        name
-        |> Expression.from_reference ~location:Location.Reference.any
-        |> Resolution.resolve_to_annotation resolution
+        (* Since properties and setters share the same undecorated name, we need to special-case
+           them. *)
+        let global_type () =
+          name
+          |> Expression.from_reference ~location:Location.Reference.any
+          |> Resolution.resolve_to_annotation resolution
+        in
+        let parent =
+          name
+          |> Reference.as_list
+          |> List.rev
+          |> (fun list -> List.drop list 1)
+          |> List.rev
+          |> Reference.create_from_list
+        in
+        let get_matching_method ~predicate =
+          let get_matching_define = function
+            | { Node.value = Define define; _ } ->
+                if predicate define && define.Define.signature.Define.name = name then
+                  define
+                  |> Annotated.Define.Callable.create_overload ~resolution:global_resolution
+                  |> Type.Callable.create_from_implementation
+                  |> Option.some
+                else
+                  None
+            | _ -> None
+          in
+          GlobalResolution.class_definition
+            global_resolution
+            (Type.Primitive (Reference.show parent))
+          >>| (fun definition -> definition.Node.value.Class.body)
+          >>= List.find_map ~f:get_matching_define
+          >>| Annotation.create
+          |> function
+          | Some annotation -> annotation
+          | None -> global_type ()
+        in
+        if Define.Signature.is_property define then
+          get_matching_method ~predicate:Define.is_property
+        else if Define.Signature.is_property_setter define then
+          get_matching_method ~predicate:Define.is_property_setter
+        else
+          global_type ()
       in
       let () =
         if

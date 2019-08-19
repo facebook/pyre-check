@@ -9,3 +9,6 @@ properties.Derived::uses_property (method) -> [__test_source (fun) properties.Cl
 properties.Derived::uses_property_but_no_tito_taint (method) -> [__test_source (fun) properties.Class::my_property (method)]
 properties.OtherDerived::my_property (method) -> [__test_source (fun)]
 properties.OtherDerived::uses_property_but_no_tito_taint (method) -> [__test_source (fun) properties.OtherDerived::my_property (method)]
+properties.TaintedGetterAndSetter::my_property (method) -> []
+properties.TaintedGetterAndSetter::uses_property (method) -> [properties.TaintedGetterAndSetter::my_property (method)]
+properties.TaintedGetterAndSetter::writes_to_property (method) -> [__test_source (fun) properties.TaintedGetterAndSetter::my_property (method)]

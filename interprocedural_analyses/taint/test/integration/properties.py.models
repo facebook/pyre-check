@@ -468,3 +468,83 @@
     "tito": []
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.TaintedGetterAndSetter.my_property",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "ParameterUpdate0" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.TaintedGetterAndSetter.my_property",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "ParameterUpdate0" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.TaintedGetterAndSetter.uses_property",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "properties.py",
+              "line": 58,
+              "start": 15,
+              "end": 31
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "properties.TaintedGetterAndSetter.my_property",
+                "on_all_flows": true
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

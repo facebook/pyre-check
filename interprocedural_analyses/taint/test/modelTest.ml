@@ -72,7 +72,44 @@ let test_source_models context =
     ~source:"def f(x: int): ..."
     ~model_source:"def f(x) -> TaintSource[Test, ViaValueOf[x]]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "f"]
-    ()
+    ();
+  assert_model
+    ~source:
+      {|
+    class C:
+      @property
+      def foo(self) -> int:
+        return self.x
+      @foo.setter
+      def foo(self, value) -> None:
+        self.x = value
+    |}
+    ~model_source:{|
+      @property
+      def C.foo(self) -> TaintSource[Test]: ...
+    |}
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.Test] "C.foo"]
+    ();
+  assert_model
+    ~source:
+      {|
+    class C:
+      @property
+      def foo(self) -> int:
+        return self.x
+      @foo.setter
+      def foo(self, value) -> None:
+        self.x = value
+    |}
+    ~model_source:
+      {|
+      @foo.setter
+      def C.foo(self, value) -> TaintSource[Test]: ...
+    |}
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.Test] "C.foo"]
+    ();
+
+  ()
 
 
 let test_sink_models context =
@@ -324,12 +361,12 @@ let test_attach_features context =
 
 
 let test_invalid_models context =
-  let assert_invalid_model ?path ~model_source ~expect () =
-    let resolution =
-      ScratchProject.setup
-        ~context
-        [ ( "__init__.py",
-            {|
+  let assert_invalid_model ?path ?source ~model_source ~expect () =
+    let source =
+      match source with
+      | Some source -> source
+      | None ->
+          {|
               unannotated_global = source()
               def sink(parameter) -> None: pass
               def sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
@@ -341,8 +378,9 @@ let test_invalid_models context =
               class C:
                 unannotated_class_variable = source()
             |}
-          ) ]
-      |> ScratchProject.build_resolution
+    in
+    let resolution =
+      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
     in
     let configuration =
       TaintConfiguration.
@@ -563,6 +601,44 @@ let test_invalid_models context =
     ~model_source:
       "def sink(parameter) -> TaintSource[Test, ViaValueOf[nonexistent_parameter]]: ..."
     ~expect:"Invalid model for `sink`: No such parameter `nonexistent_parameter`"
+    ();
+  assert_invalid_model
+    ~source:
+      {|
+    class C:
+      @property
+      def foo(self) -> int:
+        return self.x
+      @foo.setter
+      def foo(self, value) -> None:
+        self.x = value
+    |}
+    ~model_source:{|
+      @property
+      def C.foo(self, value) -> TaintSource[Test]: ...
+    |}
+    ~expect:
+      "Invalid model for `C.foo`: Model signature parameters do not match implementation `(self: \
+       unknown) -> int`. Reason(s): unexpected named parameter: `value`."
+    ();
+  assert_invalid_model
+    ~source:
+      {|
+    class C:
+      @property
+      def foo(self) -> int:
+        return self.x
+      @foo.setter
+      def foo(self, value: int) -> None:
+        self.x = value
+    |}
+    ~model_source:{|
+      @foo.setter
+      def C.foo(self) -> TaintSource[Test]: ...
+    |}
+    ~expect:
+      "Invalid model for `C.foo`: Model signature parameters do not match implementation `(self: \
+       unknown, value: int) -> None`. Reason(s): missing named parameters: `value`."
     ()
 
 
