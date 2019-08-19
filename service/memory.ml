@@ -419,24 +419,28 @@ module DependencyKey = struct
   end
 end
 
-module RegisterDependencyTrackedTable
-    (Table : NoCache.S)
-    (DependencyKey : DependencyKey.S)
-    (Value : ComparableValueType) =
-struct
-  let add_dependency key value =
-    DependencyKey.encode value |> DependencyGraph.add (Dependency.make (Value.prefix, key))
+module DependencyTracking = struct
+  module type TableType = sig
+    include NoCache.S
+
+    module Value : ComparableValueType with type t = t
+  end
+
+  module Make (DependencyKey : DependencyKey.S) (Table : TableType) = struct
+    let add_dependency key value =
+      DependencyKey.encode value |> DependencyGraph.add (Dependency.make (Table.Value.prefix, key))
 
 
-  let get_dependents key =
-    DependencyGraph.get (Dependency.make (Value.prefix, key))
-    |> DependencySet.to_list
-    |> List.map ~f:DependencyKey.decode
+    let get_dependents key =
+      DependencyGraph.get (Dependency.make (Table.Value.prefix, key))
+      |> DependencySet.to_list
+      |> List.map ~f:DependencyKey.decode
 
 
-  let get ?dependency key =
-    dependency >>| add_dependency key |> Option.value ~default:();
-    Table.get key
+    let get ?dependency key =
+      dependency >>| add_dependency key |> Option.value ~default:();
+      Table.get key
+  end
 end
 
 module DependencyTrackedTableWithCache
@@ -446,7 +450,13 @@ module DependencyTrackedTableWithCache
 struct
   module Table = WithCache.Make (Key) (Value)
   include Table
-  include RegisterDependencyTrackedTable (Table) (DependencyKey) (Value)
+
+  include DependencyTracking.Make
+            (DependencyKey)
+            (struct
+              include Table
+              module Value = Value
+            end)
 end
 
 module DependencyTrackedTableNoCache
@@ -456,5 +466,11 @@ module DependencyTrackedTableNoCache
 struct
   module Table = NoCache.Make (Key) (Value)
   include Table
-  include RegisterDependencyTrackedTable (Table) (DependencyKey) (Value)
+
+  include DependencyTracking.Make
+            (DependencyKey)
+            (struct
+              include Table
+              module Value = Value
+            end)
 end
