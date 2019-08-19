@@ -1662,38 +1662,19 @@ let shared_memory_hash_to_key_map ~qualifiers () =
     Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
   in
   let open SharedMemory in
+  (* Type order. *)
   let map =
-    let map =
-      Map.set
-        String.Map.empty
-        ~key:(OrderKeys.hash_of_key Memory.SingletonKey.key)
-        ~data:(OrderKeys.serialize_key Memory.SingletonKey.key)
+    let order_keys = OrderKeys.find_unsafe Memory.SingletonKey.key in
+    let index_keys =
+      OrderAnnotations.get_batch (OrderAnnotations.KeySet.of_list order_keys)
+      |> OrderAnnotations.KeyMap.values
+      |> List.filter_opt
     in
-    match OrderKeys.get Memory.SingletonKey.key with
-    | Some indices ->
-        let annotations = List.filter_map indices ~f:OrderAnnotations.get in
-        let class_hierarchy_map =
-          let add_index_mappings map key =
-            Map.set
-              map
-              ~key:(OrderAnnotations.hash_of_key key)
-              ~data:(OrderAnnotations.serialize_key key)
-            |> Map.set ~key:(OrderEdges.hash_of_key key) ~data:(OrderEdges.serialize_key key)
-            |> Map.set
-                 ~key:(OrderBackedges.hash_of_key key)
-                 ~data:(OrderBackedges.serialize_key key)
-          in
-          let add_annotation_mappings map annotation =
-            Map.set
-              map
-              ~key:(OrderIndices.hash_of_key annotation)
-              ~data:(OrderIndices.serialize_key annotation)
-          in
-          List.fold indices ~init:String.Map.empty ~f:add_index_mappings
-          |> fun map -> List.fold annotations ~init:map ~f:add_annotation_mappings
-        in
-        extend_map map ~new_map:class_hierarchy_map
-    | None -> map
+    OrderKeys.compute_hashes_to_keys ~keys:[Memory.SingletonKey.key]
+    |> extend_map ~new_map:(OrderAnnotations.compute_hashes_to_keys ~keys:order_keys)
+    |> extend_map ~new_map:(OrderIndices.compute_hashes_to_keys ~keys:index_keys)
+    |> extend_map ~new_map:(OrderEdges.compute_hashes_to_keys ~keys:order_keys)
+    |> extend_map ~new_map:(OrderBackedges.compute_hashes_to_keys ~keys:order_keys)
   in
   let map = extend_map map ~new_map:(Modules.compute_hashes_to_keys ~keys:qualifiers) in
   (* Handle-based keys. *)
