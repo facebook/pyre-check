@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Pyre
 module Hashtbl = Caml.Hashtbl
 module Gc = Caml.Gc
 module Digest = Caml.Digest
@@ -447,7 +446,7 @@ module DependencyTracking = struct
 
 
     let get ?dependency key =
-      dependency >>| add_dependency key |> Option.value ~default:();
+      Option.iter dependency ~f:(add_dependency key);
       Table.get key
 
 

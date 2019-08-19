@@ -161,6 +161,8 @@ module DependencyTrackedTableWithCache
 
   val get : ?dependency:DependencyKey.t -> key -> t option
 
+  val add_dependency : key -> DependencyKey.t -> unit
+
   val get_dependents : key -> DependencyKey.KeySet.t
 
   (* `deprecate_keys` and `dependencies_since_last_deprecate` are supposed to be used as follows:
@@ -199,6 +201,8 @@ module DependencyTrackedTableNoCache
        and type key_out = Key.out
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
+
+  val add_dependency : key -> DependencyKey.t -> unit
 
   val get : ?dependency:DependencyKey.t -> key -> t option
 
