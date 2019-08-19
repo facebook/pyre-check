@@ -52,6 +52,8 @@ module State (Context : Context) : sig
   val nested_defines : t -> t NestedDefines.t
 
   val forward : ?key:int -> t -> statement:Statement.t -> t
+
+  val backward : ?key:int -> t -> statement:Statement.t -> t
 end
 
 val name : string

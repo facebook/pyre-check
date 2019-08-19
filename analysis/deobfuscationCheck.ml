@@ -210,7 +210,7 @@ module ConstantPropagationState (Context : Context) = struct
     { state with nested_defines }
 
 
-  let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
+  let backward ?key:_ state ~statement:_ = state
 end
 
 module UnusedStoreState (Context : Context) = struct
@@ -221,9 +221,6 @@ module UnusedStoreState (Context : Context) = struct
       Hashtbl.set Context.transformations ~key:location ~data:[]
     in
     List.iter ~f:add_transformation (errors state)
-
-
-  let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
 module type State = sig
@@ -244,8 +241,11 @@ module Scheduler (State : State) (Context : Context) = struct
     Hashtbl.clear Context.transformations;
     let module Fixpoint = Fixpoint.Make (State) in
     let rec run ~state ~define =
-      Fixpoint.forward ~cfg:(Cfg.create define.Node.value) ~initial:(State.initial ~state ~define)
+      let cfg = Cfg.create define.Node.value in
+      Fixpoint.forward ~cfg ~initial:(State.initial ~state ~define)
       |> Fixpoint.exit
+      >>| (fun state -> Fixpoint.backward ~cfg ~initial:state)
+      >>= Fixpoint.exit
       >>| (fun state ->
             State.update_transformations state;
             State.nested_defines state

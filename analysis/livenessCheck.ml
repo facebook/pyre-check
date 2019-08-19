@@ -194,7 +194,7 @@ module State (Context : Context) = struct
     { state with bottom; nested_defines }
 
 
-  let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
+  let backward ?key:_ state ~statement:_ = state
 end
 
 let name = "Liveness"
