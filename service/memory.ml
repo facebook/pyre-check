@@ -252,7 +252,12 @@ let save_shared_memory ~path =
 
 let load_shared_memory ~path = SharedMem.load_table path
 
-external reset_shared_memory : unit -> unit = "pyre_reset"
+external pyre_reset : unit -> unit = "pyre_reset"
+
+let reset_shared_memory () =
+  SharedMem.invalidate_caches ();
+  pyre_reset ()
+
 
 module SingletonKey = struct
   type t = int

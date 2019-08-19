@@ -140,7 +140,11 @@ let test_hash_of_key _ =
 
 
 let test_reset _ =
+  MockAnnotations.add 42 "derp";
+
   Memory.reset_shared_memory ();
+
+  assert_bool "reset_shared_memory should clear all cached results" (not (MockAnnotations.mem 42));
 
   let heap_size = SharedMem.heap_size () in
   assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 heap_size;
