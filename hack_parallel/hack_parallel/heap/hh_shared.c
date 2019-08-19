@@ -2830,7 +2830,7 @@ CAMLprim value hh_save_table_sqlite(value out_filename) {
       continue;
     }
 
-    char *value = hashtbl[slot].addr->data;
+    char *value = (char*) hashtbl[slot].addr;
     size_t value_size = Heap_entry_total_size(hashtbl[slot].addr->header);
 
     assert_sql(sqlite3_bind_int64(insert_stmt, 1, slot_hash), SQLITE_OK);
