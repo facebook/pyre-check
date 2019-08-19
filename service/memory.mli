@@ -111,6 +111,12 @@ module SingletonKey : sig
   val key : t
 end
 
+module type ComparableValueType = sig
+  include ValueType
+
+  val compare : t -> t -> int
+end
+
 module type SerializableValueType = sig
   type t
 
@@ -142,7 +148,7 @@ end
 module DependencyTrackedTableWithCache
     (Key : KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : ValueType) : sig
+    (Value : ComparableValueType) : sig
   include
     WithCache.S
       with type t = Value.t
@@ -159,7 +165,7 @@ end
 module DependencyTrackedTableNoCache
     (Key : KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : ValueType) : sig
+    (Value : ComparableValueType) : sig
   include
     NoCache.S
       with type t = Value.t

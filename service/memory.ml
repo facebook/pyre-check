@@ -268,6 +268,12 @@ module SingletonKey = struct
   let key = 0
 end
 
+module type ComparableValueType = sig
+  include ValueType
+
+  val compare : t -> t -> int
+end
+
 module type SerializableValueType = sig
   type t
 
@@ -416,7 +422,7 @@ end
 module RegisterDependencyTrackedTable
     (Table : NoCache.S)
     (DependencyKey : DependencyKey.S)
-    (Value : ValueType) =
+    (Value : ComparableValueType) =
 struct
   let add_dependency key value =
     DependencyKey.encode value |> DependencyGraph.add (Dependency.make (Value.prefix, key))
@@ -436,7 +442,7 @@ end
 module DependencyTrackedTableWithCache
     (Key : KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : ValueType) =
+    (Value : ComparableValueType) =
 struct
   module Table = WithCache.Make (Key) (Value)
   include Table
@@ -446,7 +452,7 @@ end
 module DependencyTrackedTableNoCache
     (Key : KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : ValueType) =
+    (Value : ComparableValueType) =
 struct
   module Table = NoCache.Make (Key) (Value)
   include Table
