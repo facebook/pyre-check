@@ -15,11 +15,9 @@ import traceback
 from typing import Type  # noqa
 
 from . import (
-    apply_annotations,
     assert_writable_directory,
     buck,
     commands,
-    get_binary_version,
     get_binary_version_from_file,
     is_capable_terminal,
     log,
