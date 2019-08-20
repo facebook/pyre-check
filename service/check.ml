@@ -85,7 +85,7 @@ let analyze_sources ?open_documents ~scheduler ~configuration ~environment sourc
   let run = run_check ?open_documents ~scheduler ~configuration ~environment checked_sources in
   let errors = List.map (Analysis.Check.checks ~configuration) ~f:run |> List.concat in
   Statistics.performance ~name:"analyzed sources" ~timer ();
-  let errors = Postprocess.ignore ~configuration scheduler checked_sources errors in
+  let errors = Postprocess.ignore checked_sources errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
   errors
 
