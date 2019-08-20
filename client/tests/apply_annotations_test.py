@@ -7,23 +7,30 @@
 
 import textwrap
 import unittest
+from typing import Tuple
 
-from libcst import parse_module
+from libcst import Module, parse_module
 
-from ..apply_annotations import _annotate_functions
+from ..apply_annotations import _annotate_source
 
 
 class ApplyAnnotationsTest(unittest.TestCase):
-    def assert_annotate_functions(self, stub: str, source: str, expected: str) -> None:
-        stub_file = parse_module(textwrap.dedent(stub.rstrip()))
-        source_file = parse_module(textwrap.dedent(source.rstrip()))
-        self.assertEqual(
-            _annotate_functions(stub_file, source_file).code,
+    @staticmethod
+    def format_files(
+        stub: str, source: str, expected: str
+    ) -> Tuple[Module, Module, str]:
+        return (
+            parse_module(textwrap.dedent(stub.rstrip())),
+            parse_module(textwrap.dedent(source.rstrip())),
             textwrap.dedent(expected.rstrip()),
         )
 
-    def test_annotate_file(self) -> None:
-        self.assert_annotate_functions(
+    def assert_annotations(self, stub: str, source: str, expected: str) -> None:
+        stub_file, source_file, expected = self.format_files(stub, source, expected)
+        self.assertEqual(_annotate_source(stub_file, source_file).code, expected)
+
+    def test_annotate_functions(self) -> None:
+        self.assert_annotations(
             """
             def foo() -> int: ...
             """,
@@ -37,7 +44,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
             """,
         )
 
-        self.assert_annotate_functions(
+        self.assert_annotations(
             """
             def foo() -> int: ...
 
@@ -57,5 +64,103 @@ class ApplyAnnotationsTest(unittest.TestCase):
             class A:
                 def foo() -> str:
                     return ''
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            bar: int = ...
+            """,
+            """
+            bar = foo()
+            """,
+            """
+            bar: int = foo()
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            bar: int = ...
+            """,
+            """
+            bar: str = foo()
+            """,
+            """
+            bar: str = foo()
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            bar: int = ...
+            class A:
+                bar: str = ...
+            """,
+            """
+            bar = foo()
+            class A:
+                bar = foobar()
+            """,
+            """
+            bar: int = foo()
+            class A:
+                bar: str = foobar()
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            bar: int = ...
+            class A:
+                bar: str = ...
+            """,
+            """
+            bar = foo()
+            class A:
+                bar = foobar()
+            """,
+            """
+            bar: int = foo()
+            class A:
+                bar: str = foobar()
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            a: int = ...
+            b: str = ...
+            """,
+            """
+            def foo() -> Tuple[int, str]:
+                return (1, "")
+
+            a, b = foo()
+            """,
+            """
+            b: str
+            a: int
+            def foo() -> Tuple[int, str]:
+                return (1, "")
+
+            a, b = foo()
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            x: int = ...
+            y: int = ...
+            z: int = ...
+            """,
+            """
+            x = y = z = 1
+            """,
+            """
+            z: int
+            y: int
+            x: int
+            x = y = z = 1
             """,
         )
