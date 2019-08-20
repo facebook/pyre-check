@@ -1658,7 +1658,7 @@ let test_expand_wildcard_imports context =
       from a import *
     |}
     {|
-      from a import y, foo, bar
+      from a import bar, foo, y
     |};
   assert_expanded
     [ ( "a.py",

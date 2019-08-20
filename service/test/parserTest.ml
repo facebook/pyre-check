@@ -316,11 +316,14 @@ let test_register_modules context =
         in
         Option.value_exn exports
       in
+      let expected_exports =
+        List.map ~f:Reference.create expected_exports |> List.sort ~compare:Reference.compare
+      in
+      let actual_exports = List.sort ~compare:Reference.compare actual_exports in
       assert_equal
         ~cmp:(List.equal Reference.equal)
-        ~printer:(fun expression_list ->
-          List.map ~f:Reference.show expression_list |> String.concat ~sep:", ")
-        (List.map ~f:Reference.create expected_exports)
+        ~printer:(List.to_string ~f:Reference.show)
+        expected_exports
         actual_exports
     in
     assert_exports ~qualifier:!&"testing";
@@ -579,6 +582,86 @@ let test_parser_update context =
         old_source = Some "def bar() -> None: ...";
         new_source = Some "def bar(x: str) -> str: ...";
       } ]
+    ~expected:[!&"a"; !&"b"];
+
+  (* Wildcard export tests *)
+  assert_parser_update
+    ~external_setups:[{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" }]
+    [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
+    ~expected:[];
+  assert_parser_update
+    ~external_setups:[{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 2" }]
+    [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
+    ~expected:[!&"a"];
+  assert_parser_update
+    ~external_setups:
+      [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1\ny = 2" }]
+    [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
+    ~expected:[!&"a"; !&"b"];
+  assert_parser_update
+    ~external_setups:
+      [{ handle = "a.py"; old_source = Some "x = 1\ny = 2\n"; new_source = Some "x = 1" }]
+    [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
+    ~expected:[!&"a"; !&"b"];
+  assert_parser_update
+    ~external_setups:
+      [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "def foo() -> int: ..." }]
+    [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
+    ~expected:[!&"a"; !&"b"];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 2" };
+      { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "y = 2" };
+      {
+        handle = "c.py";
+        old_source = Some "from a import *\nfrom b import *";
+        new_source = Some "from a import *\nfrom b import *";
+      } ]
+    ~expected:[!&"a"; !&"b"];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "y = 2" };
+      { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "y = 1" };
+      {
+        handle = "c.py";
+        old_source = Some "from a import *\nfrom b import *";
+        new_source = Some "from a import *\nfrom b import *";
+      } ]
+    ~expected:[!&"a"; !&"c"];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" };
+      { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "x = 2" };
+      {
+        handle = "c.py";
+        old_source = Some "from a import *\nfrom b import *";
+        new_source = Some "from a import *\nfrom b import *";
+      } ]
+    ~expected:[!&"b"; !&"c"];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" };
+      { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
+      { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
+    ]
+    ~expected:[];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 2" };
+      { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
+      { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
+    ]
+    ~expected:[!&"a"];
+
+  (* This is expected -- the parser knows only names, not types *)
+  assert_parser_update
+    ~external_setups:
+      [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "def x() -> None: ..." }]
+    [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
+    ~expected:[!&"a"];
+
+  (* TODO (T50863499): Transitive wildcard import is currently broken. Expected output should be
+     a,b,c *)
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "y = 1" };
+      { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
+      { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
+    ]
     ~expected:[!&"a"; !&"b"];
   ()
 

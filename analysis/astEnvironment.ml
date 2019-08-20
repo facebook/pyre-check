@@ -10,10 +10,9 @@ open Pyre
 type t = {
   add_source: Source.t -> unit;
   remove_sources: Reference.t list -> unit;
-  update_and_compute_dependencies:
-    update:(Reference.t list -> unit) -> Reference.t list -> Reference.t list;
+  update_and_compute_dependencies: update:(unit -> unit) -> Reference.t list -> Reference.t list;
   get_source: Reference.t -> Source.t option;
-  get_wildcard_exports: Reference.t -> Reference.t list option;
+  get_wildcard_exports: ?dependency:Reference.t -> Reference.t -> Reference.t list option;
   get_source_path: Reference.t -> SourcePath.t option;
 }
 
@@ -42,11 +41,16 @@ module WildcardExportsValue = struct
 
   let description = "Wildcard exports"
 
+  let compare = List.compare Reference.compare
+
   let unmarshall value = Marshal.from_string value 0
 end
 
 module WildcardExports =
-  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (WildcardExportsValue)
+  Memory.DependencyTrackedTableWithCache
+    (SharedMemoryKeys.ReferenceKey)
+    (SharedMemoryKeys.ReferenceDependencyKey)
+    (WildcardExportsValue)
 
 let add_wildcard_export { Source.qualifier; statements; _ } =
   let open Statement in
@@ -95,7 +99,9 @@ let add_wildcard_export { Source.qualifier; statements; _ } =
     in
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
-  let wildcard_exports = Option.value dunder_all ~default:toplevel_public in
+  let wildcard_exports =
+    Option.value dunder_all ~default:toplevel_public |> List.sort ~compare:Reference.compare
+  in
   WildcardExports.write_through qualifier wildcard_exports
 
 
@@ -113,13 +119,9 @@ let create module_tracker =
   let update_and_compute_dependencies ~update qualifiers =
     let keys = Sources.KeySet.of_list qualifiers in
     let (), dependency_set =
-      let update () =
-        (* TODO (T50863499): Take wildcard import dependency into account *)
-        WildcardExports.remove_batch keys;
-        update qualifiers
-      in
       SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
       |> Sources.add_to_transaction ~keys
+      |> WildcardExports.add_to_transaction ~keys
       |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
     in
     SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements dependency_set

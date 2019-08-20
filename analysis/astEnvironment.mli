@@ -11,7 +11,7 @@ val create : ModuleTracker.t -> t
 
 val get_source : t -> Reference.t -> Source.t option
 
-val get_wildcard_exports : t -> Reference.t -> Reference.t list option
+val get_wildcard_exports : t -> ?dependency:Reference.t -> Reference.t -> Reference.t list option
 
 val add_source : t -> Source.t -> unit
 
@@ -19,7 +19,7 @@ val remove_sources : t -> Reference.t list -> unit
 
 val update_and_compute_dependencies
   :  t ->
-  update:(Reference.t list -> unit) ->
+  update:(unit -> unit) ->
   Reference.t list ->
   Reference.t list
 

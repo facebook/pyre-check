@@ -118,7 +118,7 @@ end
 
 exception MissingWildcardImport
 
-let expand_wildcard_imports ~force ~ast_environment source =
+let expand_wildcard_imports ~force ~ast_environment ({ Source.qualifier; _ } as source) =
   let open Statement in
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
@@ -131,7 +131,9 @@ let expand_wildcard_imports ~force ~ast_environment source =
         when List.exists imports ~f:(fun { Import.name; _ } ->
                  String.equal (Reference.show name) "*") ->
           let expanded_import =
-            match AstEnvironment.get_wildcard_exports ast_environment from with
+            match
+              AstEnvironment.get_wildcard_exports ast_environment ~dependency:qualifier from
+            with
             | Some exports ->
                 exports
                 |> List.map ~f:(fun name -> { Import.name; alias = None })
