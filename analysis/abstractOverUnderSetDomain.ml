@@ -60,9 +60,8 @@ module Make (Element : Set.Elt) = struct
     match from, to_remove with
     | Bottom, _ -> Bottom
     | _, Bottom -> from
-    | BiSet { over; under }, BiSet { over = remove_over; under = remove_under } ->
+    | BiSet { over; under }, BiSet { over = remove_over; under = _remove_under } ->
         let over = Set.diff over remove_over in
-        let under = Set.inter under (Set.union under remove_under) in
         BiSet { over; under }
 
 
