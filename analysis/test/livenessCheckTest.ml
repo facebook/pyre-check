@@ -32,6 +32,12 @@ let test_forward context =
     ["Dead store [1003]: Value assigned to `y` is never used."];
   assert_liveness_errors
     {|
+      x = 1
+      x = x + 1
+    |}
+    ["Dead store [1003]: Value assigned to `x` is never used."];
+  assert_liveness_errors
+    {|
       def foo(t: typing.Tuple[int, int]) -> None:
         x, y = t
     |}
@@ -159,7 +165,74 @@ let test_forward context =
     |}
     [ "Dead store [1003]: Value assigned to `x` is never used.";
       "Dead store [1003]: Value assigned to `x` is never used.";
-      "Dead store [1003]: Value assigned to `x` is never used." ]
+      "Dead store [1003]: Value assigned to `x` is never used." ];
+
+  (* For *)
+  assert_liveness_errors
+    {|
+      def foo(my_list: typing.List[int]) -> None:
+        for item in my_list:
+          x = 1
+    |}
+    [ "Dead store [1003]: Value assigned to `item` is never used.";
+      "Dead store [1003]: Value assigned to `x` is never used." ];
+  assert_liveness_errors
+    {|
+      def foo(my_list: typing.List[int]) -> None:
+        for item in my_list:
+          x = 1
+        a = item
+        b = x
+    |}
+    (* TODO(T52796841): Unused iterator not caught. *)
+    [ "Dead store [1003]: Value assigned to `a` is never used.";
+      "Dead store [1003]: Value assigned to `b` is never used." ];
+
+  (* While *)
+  assert_liveness_errors
+    {|
+      def foo() -> None:
+        x = 1
+        while x > 0:
+          y = 1
+    |}
+    (* TODO(T52796841): While condition should mark 'x' as used. *)
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `y` is never used." ];
+  assert_liveness_errors
+    {|
+      def foo() -> None:
+        while True:
+          y = 1
+          y
+          y = 2
+    |}
+    ["Dead store [1003]: Value assigned to `y` is never used."];
+
+  (* Global *)
+  assert_liveness_errors
+    {|
+      x = 1
+      def foo() -> None:
+        x = 2
+        global x
+        x
+    |}
+    (* TODO(T52796841): Usage in 'global' is not a use. *)
+    [];
+
+  (* Try *)
+  assert_liveness_errors
+    {|
+      try:
+        x = 1
+      except:
+        pass
+      finally:
+        x
+    |}
+    (* TODO(T52796841): Usage in 'finally' block should work. *)
+    ["Dead store [1003]: Value assigned to `x` is never used."]
 
 
 let test_nested_defines context =
