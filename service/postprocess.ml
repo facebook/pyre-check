@@ -40,6 +40,7 @@ let register_ignores ~configuration scheduler sources =
 
 
 let ignore ~configuration scheduler sources errors =
+  register_ignores ~configuration scheduler sources;
   let error_lookup =
     let add_to_lookup lookup error =
       Map.add_multi ~key:(Error.key error) ~data:(Error.code error) lookup

@@ -8,24 +8,6 @@ open OUnit2
 
 let ( !+ ) descriptor = Unix.File_descr.of_int descriptor
 
-let connections persistent_clients =
-  let persistent_clients =
-    List.map persistent_clients ~f:(fun (descriptor, failures) -> !+descriptor, failures)
-    |> Network.Socket.Map.of_alist_exn
-  in
-  {
-    Server.State.lock = Mutex.create ();
-    connections =
-      ref
-        {
-          Server.State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-          json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-          persistent_clients;
-          file_notifiers = [];
-        };
-  }
-
-
 module TrackedWrites = struct
   (* Type inference fails us for top-level polymorphic types :( *)
   let writes : Server.Protocol.response list Unix.File_descr.Table.t =
@@ -59,7 +41,7 @@ let response content = Server.Protocol.LanguageServerProtocolResponse content
 
 let test_broadcast_response _ =
   let response content = Server.Protocol.LanguageServerProtocolResponse content in
-  Connections.broadcast_response ~connections:(connections []) ~response:(response "1");
+  Connections.broadcast_response ~connections:(ServerTest.connections []) ~response:(response "1");
 
   (* Clients need to be present before writes can happen. *)
   TrackedWrites.clear ();
@@ -67,19 +49,25 @@ let test_broadcast_response _ =
 
   (* Simple case - broadcasting to a single socket. *)
   TrackedWrites.clear ();
-  Connections.broadcast_response ~connections:(connections [42, 0]) ~response:(response "1");
+  Connections.broadcast_response
+    ~connections:(ServerTest.connections [42, 0])
+    ~response:(response "1");
   assert_equal [response "1"] (Hashtbl.find_exn TrackedWrites.writes !+42);
 
   (* Broadcasting to two descriptors. *)
   TrackedWrites.clear ();
-  Connections.broadcast_response ~connections:(connections [42, 0; 43, 0]) ~response:(response "1");
+  Connections.broadcast_response
+    ~connections:(ServerTest.connections [42, 0; 43, 0])
+    ~response:(response "1");
   assert_equal [response "1"] (Hashtbl.find_exn TrackedWrites.writes !+42);
   assert_equal [response "1"] (Hashtbl.find_exn TrackedWrites.writes !+43);
 
   (* Fail writes for one of the sockets. *)
   TrackedWrites.clear ();
   TrackedWrites.fail_writes_for !+42;
-  Connections.broadcast_response ~connections:(connections [42, 4; 43, 0]) ~response:(response "1");
+  Connections.broadcast_response
+    ~connections:(ServerTest.connections [42, 4; 43, 0])
+    ~response:(response "1");
   assert_equal false (Hashtbl.mem TrackedWrites.writes !+42);
   assert_equal [response "1"] (Hashtbl.find_exn TrackedWrites.writes !+43);
   assert_equal true (Hash_set.mem TrackedWrites.closed !+42)
@@ -90,7 +78,7 @@ let test_write_to_persistent_client _ =
   (* Successful case - write to a known persistent client. *)
   TrackedWrites.clear ();
   Connections.write_to_persistent_client
-    ~connections:(connections [42, 0])
+    ~connections:(ServerTest.connections [42, 0])
     ~socket:!+42
     ~response:(response "1");
   assert_equal [response "1"] (Hashtbl.find_exn TrackedWrites.writes !+42);
@@ -98,11 +86,11 @@ let test_write_to_persistent_client _ =
   (* Multiple writes. *)
   TrackedWrites.clear ();
   Connections.write_to_persistent_client
-    ~connections:(connections [42, 0])
+    ~connections:(ServerTest.connections [42, 0])
     ~socket:!+42
     ~response:(response "1");
   Connections.write_to_persistent_client
-    ~connections:(connections [42, 0])
+    ~connections:(ServerTest.connections [42, 0])
     ~socket:!+42
     ~response:(response "2");
   assert_equal [response "2"; response "1"] (Hashtbl.find_exn TrackedWrites.writes !+42);
@@ -110,7 +98,7 @@ let test_write_to_persistent_client _ =
   (* The socket must be tracked in order to write. *)
   TrackedWrites.clear ();
   Connections.write_to_persistent_client
-    ~connections:(connections [])
+    ~connections:(ServerTest.connections [])
     ~socket:!+42
     ~response:(response "1");
   assert_equal false (Hashtbl.mem TrackedWrites.writes !+42)
@@ -118,7 +106,7 @@ let test_write_to_persistent_client _ =
 
 let test_add_persistent_client _ =
   TrackedWrites.clear ();
-  let mock_connections = connections [] in
+  let mock_connections = ServerTest.connections [] in
   Connections.add_persistent_client ~connections:mock_connections ~socket:!+42;
   Connections.broadcast_response ~connections:mock_connections ~response:(response "1");
   Connections.add_persistent_client ~connections:mock_connections ~socket:!+43;
@@ -129,7 +117,7 @@ let test_add_persistent_client _ =
 
 let test_remove_persistent_client _ =
   TrackedWrites.clear ();
-  let mock_connections = connections [] in
+  let mock_connections = ServerTest.connections [] in
   Connections.add_persistent_client ~connections:mock_connections ~socket:!+42;
   Connections.broadcast_response ~connections:mock_connections ~response:(response "1");
   Connections.remove_persistent_client ~connections:mock_connections ~socket:!+42;
@@ -144,7 +132,7 @@ let test_file_notifiers _ =
     assert_equal expected file_notifiers
   in
   TrackedWrites.clear ();
-  let mock_connections = connections [] in
+  let mock_connections = ServerTest.connections [] in
   assert_file_notifiers mock_connections [];
   Connections.add_file_notifier ~connections:mock_connections ~socket:!+42;
   assert_file_notifiers mock_connections [!+42];

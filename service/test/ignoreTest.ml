@@ -18,7 +18,6 @@ let ignore_lines_test context =
       configuration, sources, environment
     in
     let scheduler = Scheduler.mock () in
-    Service.Postprocess.register_ignores ~configuration scheduler sources;
     let descriptions =
       let ast_environment = Environment.ast_environment environment in
       Service.Check.analyze_sources ~scheduler ~configuration ~environment sources

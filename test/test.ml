@@ -1218,6 +1218,30 @@ module ScratchProject = struct
     { context; configuration; module_tracker }
 
 
+  (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
+     here. *)
+  let add_source
+      { configuration = { Configuration.Analysis.local_root; search_path; _ }; _ }
+      ~is_external
+      (relative, content)
+    =
+    let path =
+      let root =
+        if is_external then
+          match search_path with
+          | SearchPath.Root root :: _ -> root
+          | _ ->
+              failwith
+                "Scratch projects should have the external root at the start of their search path."
+        else
+          local_root
+      in
+      Path.create_relative ~root ~relative
+    in
+    let file = File.create ~content path in
+    File.write file
+
+
   let configuration_of { configuration; _ } = configuration
 
   let source_paths_of { module_tracker; _ } = ModuleTracker.source_paths module_tracker

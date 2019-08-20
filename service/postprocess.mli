@@ -6,12 +6,6 @@
 open Core
 open Analysis
 
-val register_ignores
-  :  configuration:Configuration.Analysis.t ->
-  Scheduler.t ->
-  Ast.Source.t list ->
-  unit
-
 val ignore
   :  configuration:Configuration.Analysis.t ->
   Scheduler.t ->

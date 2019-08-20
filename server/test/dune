@@ -1,13 +1,28 @@
+(library
+ (name serverTest)
+ (public_name pyrelib.serverTest)
+ (modules serverTest)
+ (libraries
+  oUnit
+  pyrelib.commands
+  pyrelib.languageServer
+  pyrelib.server
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.analysis))
+
 (tests
  (names
   autoCompleteTest
   connectionsTest
   lookupLocationTest
+  incrementalCheckTest
   incrementalStaticAnalysisTest
   queryTest
   requestTest
   operationsTest
   savedStateTest)
+ (modules :standard \ serverTest)
  (preprocess
   (pps
    ppx_sexp_conv
@@ -17,6 +32,7 @@
   oUnit
   ppx_deriving
   pyrelib.commandTest
+  pyrelib.serverTest
   pyrelib.test
   pyrelib.languageServer
   pyrelib.network

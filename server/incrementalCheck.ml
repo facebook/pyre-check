@@ -113,12 +113,12 @@ let recheck
     parsed_sources
   in
   Service.Environment.populate ~configuration ~scheduler environment recheck_sources;
+
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
     ~integers:["size", Memory.heap_size ()]
     ();
-  Service.Postprocess.register_ignores ~configuration scheduler recheck_sources;
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)

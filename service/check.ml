@@ -85,7 +85,7 @@ let analyze_sources ?open_documents ~scheduler ~configuration ~environment sourc
   let run = run_check ?open_documents ~scheduler ~configuration ~environment checked_sources in
   let errors = List.map (Analysis.Check.checks ~configuration) ~f:run |> List.concat in
   Statistics.performance ~name:"analyzed sources" ~timer ();
-  let errors = Postprocess.ignore ~configuration scheduler sources errors in
+  let errors = Postprocess.ignore ~configuration scheduler checked_sources errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
   errors
 
@@ -122,12 +122,7 @@ let check
     let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
     Environment.populate_shared_memory ~configuration ~scheduler ~ast_environment sources
   in
-  (* Do not count external files when computing ignores / checking types / computing coverages *)
-  let checked_sources =
-    List.filter sources ~f:(fun { Source.is_external; _ } -> not is_external)
-  in
-  Postprocess.register_ignores ~configuration scheduler checked_sources;
-  let errors = analyze_sources ~scheduler ~configuration ~environment checked_sources in
+  let errors = analyze_sources ~scheduler ~configuration ~environment sources in
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
@@ -136,7 +131,7 @@ let check
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
     let number_of_files = List.length sources in
-    Coverage.coverage ~sources:checked_sources ~number_of_files
+    Coverage.coverage ~sources ~number_of_files
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
     let aggregate sofar { Source.qualifier; _ } =
