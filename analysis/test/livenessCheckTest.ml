@@ -6,7 +6,6 @@
 open Core
 open OUnit2
 open Analysis
-open Ast
 open Test
 
 let assert_liveness_errors ~context =
@@ -137,7 +136,7 @@ let test_forward context =
           x = 2
         x
     |}
-    ["Dead store [1003]: Value assigned to `x` is never used."];
+    [];
   assert_liveness_errors
     {|
       def foo(test: bool) -> None:
@@ -161,47 +160,6 @@ let test_forward context =
     [ "Dead store [1003]: Value assigned to `x` is never used.";
       "Dead store [1003]: Value assigned to `x` is never used.";
       "Dead store [1003]: Value assigned to `x` is never used." ]
-
-
-let test_bottom context =
-  let assert_bottom source bottom =
-    let module Context = struct
-      let global_resolution =
-        ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
-
-
-      let errors = LivenessCheck.ErrorMap.Table.create ()
-    end
-    in
-    let module State = LivenessCheck.State (Context) in
-    let state =
-      let parsed =
-        parse source
-        |> function
-        | { Source.statements = statement :: rest; _ } -> statement :: rest
-        | _ -> failwith "unable to parse test"
-      in
-      List.fold
-        ~f:(fun state statement -> State.forward ~key:0 state ~statement)
-        ~init:(State.initial ~state:None ~define:(Node.create_with_default_location mock_define))
-        parsed
-    in
-    let { State.bottom = actual_bottom; _ } = state in
-    assert_equal bottom actual_bottom
-  in
-  assert_bottom {|
-      x = 1
-    |} false;
-  assert_bottom {|
-      assert True
-    |} false;
-  assert_bottom {|
-      assert False
-    |} true;
-  assert_bottom {|
-      x = 1
-      sys.exit(0)
-    |} true
 
 
 let test_nested_defines context =
@@ -239,7 +197,5 @@ let test_nested_defines context =
 
 let () =
   "livenessCheck"
-  >::: [ "forward" >:: test_forward;
-         "bottom" >:: test_bottom;
-         "nested_defines" >:: test_nested_defines ]
+  >::: ["forward" >:: test_forward; "nested_defines" >:: test_nested_defines]
   |> Test.run

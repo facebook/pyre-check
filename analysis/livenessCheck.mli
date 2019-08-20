@@ -29,9 +29,7 @@ end
 
 module State (Context : Context) : sig
   type t = {
-    unused: Location.Reference.Set.t Identifier.Map.t;
     used: Identifier.Set.t;
-    bottom: bool;
     define: Define.t Node.t;
     nested_defines: t NestedDefines.t;
   }

@@ -245,7 +245,7 @@ module Scheduler (State : State) (Context : Context) = struct
       Fixpoint.forward ~cfg ~initial:(State.initial ~state ~define)
       |> Fixpoint.exit
       >>| (fun state -> Fixpoint.backward ~cfg ~initial:state)
-      >>= Fixpoint.exit
+      >>= Fixpoint.entry
       >>| (fun state ->
             State.update_transformations state;
             State.nested_defines state
