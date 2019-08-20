@@ -91,8 +91,9 @@ type aggregate = {
   source_files: int;
 }
 
-let coverage ~number_of_files ~sources =
+let coverage ~sources =
   let sources = List.filter sources ~f:(fun { Source.is_external; _ } -> not is_external) in
+  let number_of_files = List.length sources in
   let strict_coverage, declare_coverage =
     List.fold
       ~init:(0, 0)

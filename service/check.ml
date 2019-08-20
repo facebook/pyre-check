@@ -130,8 +130,7 @@ let check
   in
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
-    let number_of_files = List.length sources in
-    Coverage.coverage ~sources ~number_of_files
+    Coverage.coverage ~sources
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
     let aggregate sofar { Source.qualifier; _ } =

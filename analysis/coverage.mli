@@ -63,4 +63,4 @@ type aggregate = {
   source_files: int;
 }
 
-val coverage : number_of_files:int -> sources:Source.t list -> aggregate
+val coverage : sources:Source.t list -> aggregate
