@@ -5,31 +5,28 @@
 
 open Core
 open Ast
-open Analysis
 open Pyre
+module Error = AnalysisError
 
 (* General idea: Keep two hash tables - one for unused ignores, and one from ignored lines -> list
    of ignores affecting the line. For each error, process the ignores on that line one by one, and
    remove the used codes from the map of unused ignores. Since the hash tables are initialized with
    only the sources we're considering, this is sufficient to determine all ignored errors and
    unused ignores. *)
-let ignore sources errors =
+let ignore { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
   let unused_ignores, ignore_lookup =
     let unused_ignores = Location.Reference.Table.create () in
     let ignore_lookup = Location.Reference.Table.create () in
-    let add_to_lookup { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } =
-      List.iter ignore_lines ~f:(fun ignore ->
-          Hashtbl.add_multi ignore_lookup ~key:(Ignore.key ignore) ~data:ignore);
-      let register_unused_ignore ignore =
-        match Ignore.kind ignore with
-        | Ignore.TypeIgnore ->
-            (* # type: ignore's don't throw unused ignore errors. *)
-            ()
-        | _ -> Hashtbl.set unused_ignores ~key:(Ignore.location ignore) ~data:ignore
-      in
-      List.iter ignore_lines ~f:register_unused_ignore
+    List.iter ignore_lines ~f:(fun ignore ->
+        Hashtbl.add_multi ignore_lookup ~key:(Ignore.key ignore) ~data:ignore);
+    let register_unused_ignore ignore =
+      match Ignore.kind ignore with
+      | Ignore.TypeIgnore ->
+          (* # type: ignore's don't throw unused ignore errors. *)
+          ()
+      | _ -> Hashtbl.set unused_ignores ~key:(Ignore.location ignore) ~data:ignore
     in
-    List.iter sources ~f:add_to_lookup;
+    List.iter ignore_lines ~f:register_unused_ignore;
     unused_ignores, ignore_lookup
   in
   let errors =

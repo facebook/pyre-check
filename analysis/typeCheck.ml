@@ -5015,7 +5015,9 @@ let run
     check_defines ~configuration ~global_resolution ~source [toplevel]
   in
   let errors =
-    List.concat_map results ~f:(fun { errors; _ } -> errors) |> List.sort ~compare:Error.compare
+    List.concat_map results ~f:(fun { errors; _ } -> errors)
+    |> Postprocessing.ignore source
+    |> List.sort ~compare:Error.compare
   in
   let coverage =
     List.map results ~f:(fun { coverage; _ } -> coverage) |> Coverage.aggregate_over_source ~source

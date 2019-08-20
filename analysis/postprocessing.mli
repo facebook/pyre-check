@@ -3,6 +3,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-open Analysis
+module Error = AnalysisError
 
-val ignore : Ast.Source.t list -> Error.t list -> Error.t list
+val ignore : Ast.Source.t -> Error.t list -> Error.t list

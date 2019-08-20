@@ -111,8 +111,8 @@ let ignore_lines_test context =
         def foo() -> str:
           return 1.0  # pyre-ignore[5]
       |}
-    [ "Unused ignore [0]: Pyre ignore [5] is extraneous.";
-      "Incompatible return type [7]: Expected `str` but got `float`." ];
+    [ "Incompatible return type [7]: Expected `str` but got `float`.";
+      "Unused ignore [0]: Pyre ignore [5] is extraneous." ];
   assert_errors
     {|
         def foo(a: int) -> int:
