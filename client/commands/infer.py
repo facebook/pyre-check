@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, List, Optional, Set, Union  # noqa
 
-from .. import log
+from .. import apply_annotations, log
 from .check import Check
 from .command import Command, Result, typeshed_search_path
 from .reporting import JSON, Reporting
@@ -176,9 +176,11 @@ class Stub:
     def is_field(self) -> bool:
         return isinstance(self.stub, FieldStub)
 
-    def is_complete(self):
+    def is_complete(self) -> bool:
         return isinstance(self.stub, FieldStub) or (
-            isinstance(self.stub, FunctionStub) and self.stub.is_complete()
+            isinstance(self.stub, FunctionStub)
+            # pyre-fixme[16]: `Optional` has no attribute `is_complete`.
+            and self.stub.is_complete()
         )
 
     def to_string(self):
@@ -339,31 +341,18 @@ def annotate_paths(arguments, stubs, type_directory) -> None:
         stubs = filter_paths(arguments, stubs, type_directory)
 
     project_directory = pyre_configuration_directory(arguments)
-
     for stub in stubs:
+        stub_path = stub.path(type_directory)
+        file_path = str(stub.path(project_directory)).rstrip("i")
         try:
-            subprocess.check_call(
-                [
-                    "retype",
-                    "--replace-any",
-                    "--quiet",
-                    "--incremental",
-                    "--target-dir",
-                    stub.path(project_directory).parent,
-                    "--pyi-dir",
-                    stub.path(type_directory).parent,
-                    str(stub.path(project_directory)).rstrip("i"),
-                ]
+            annotated_content = apply_annotations.apply_stub_annotations(
+                stub_path, file_path
             )
-            LOG.info(
-                "Annotated {}".format(str(stub.path(project_directory)).rstrip("i"))
-            )
-        except (subprocess.CalledProcessError):
-            LOG.warning(
-                "Failed to annotate {}".format(
-                    str(stub.path(project_directory)).rstrip("i")
-                )
-            )
+            with open(file_path, "w") as source_file:
+                source_file.write(annotated_content)
+            LOG.info("Annotated {}".format(file_path))
+        except Exception:
+            LOG.warning("Failed to annotate {}".format(file_path))
     with open(os.devnull, "w") as FNULL:
         subprocess.call(
             ["arc", "lint", "--apply-patches", "--only-changed"],

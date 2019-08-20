@@ -15,6 +15,7 @@ import traceback
 from typing import Type  # noqa
 
 from . import (
+    apply_annotations,
     assert_writable_directory,
     buck,
     commands,
