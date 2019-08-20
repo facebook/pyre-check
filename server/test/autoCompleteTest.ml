@@ -47,6 +47,34 @@ let test_remove_dot _ =
       a = 1 + 1
       variable1
       b = 2 + 2
+    |};
+
+  (* Edge case: DOT is in column 0, avoid erroring in this case. *)
+  assert_remove_dot
+    ~position:{ line = 3; column = 0 }
+    ~original:{|
+      a = 1 + 1
+      .
+      b = 2 + 2
+    |}
+    ~expected:{|
+      a = 1 + 1
+      .
+      b = 2 + 2
+    |};
+
+  (* Edge case: pos and len are past end. *)
+  assert_remove_dot
+    ~position:{ line = 4; column = 20 }
+    ~original:{|
+      a = 1 + 1
+      variable1.
+      b = 2 + 2
+    |}
+    ~expected:{|
+      a = 1 + 1
+      variable1.
+      b = 2 + 2
     |}
 
 
