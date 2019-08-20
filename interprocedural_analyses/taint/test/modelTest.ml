@@ -409,8 +409,8 @@ let test_invalid_models context =
     in
     assert_equal ~printer:ident expect error_message
   in
-  let assert_valid_model ~model_source =
-    assert_invalid_model ~model_source ~expect:"no failure" ()
+  let assert_valid_model ?source ~model_source () =
+    assert_invalid_model ?source ~model_source ~expect:"no failure" ()
   in
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
@@ -463,10 +463,11 @@ let test_invalid_models context =
        secondOptional: unknown = ...) -> None: ...`. Reason(s): missing named parameters: \
        `parameter`."
     ();
-  assert_valid_model ~model_source:"def sink_with_optional(parameter): ...";
-  assert_valid_model ~model_source:"def sink_with_optional(parameter, firstOptional): ...";
+  assert_valid_model ~model_source:"def sink_with_optional(parameter): ..." ();
+  assert_valid_model ~model_source:"def sink_with_optional(parameter, firstOptional): ..." ();
   assert_valid_model
-    ~model_source:"def sink_with_optional(parameter, firstOptional, secondOptional): ...";
+    ~model_source:"def sink_with_optional(parameter, firstOptional, secondOptional): ..."
+    ();
   assert_invalid_model
     ~model_source:
       "def sink_with_optional(parameter, firstOptional, secondOptional, thirdOptional): ..."
@@ -507,15 +508,21 @@ let test_invalid_models context =
        `parameter`; unexpected anonymous parameter: `__parameter`."
     ();
   assert_valid_model
-    ~model_source:"def function_with_args(normal_arg, __random_name, named_arg, *args): ...";
-  assert_valid_model ~model_source:"def function_with_args(normal_arg, __random_name, *args): ...";
+    ~model_source:"def function_with_args(normal_arg, __random_name, named_arg, *args): ..."
+    ();
   assert_valid_model
-    ~model_source:"def function_with_args(normal_arg, __random_name, __random_name_2, *args): ...";
-  assert_valid_model ~model_source:"def function_with_kwargs(normal_arg, **kwargs): ...";
-  assert_valid_model ~model_source:"def function_with_kwargs(normal_arg, crazy_arg, **kwargs): ...";
-  assert_valid_model ~model_source:"def anonymous_only(__a1, __a2, __a3): ...";
-  assert_valid_model ~model_source:"def anonymous_with_optional(__a1, __a2): ...";
-  assert_valid_model ~model_source:"def anonymous_with_optional(__a1, __a2, __a3=...): ...";
+    ~model_source:"def function_with_args(normal_arg, __random_name, *args): ..."
+    ();
+  assert_valid_model
+    ~model_source:"def function_with_args(normal_arg, __random_name, __random_name_2, *args): ..."
+    ();
+  assert_valid_model ~model_source:"def function_with_kwargs(normal_arg, **kwargs): ..." ();
+  assert_valid_model
+    ~model_source:"def function_with_kwargs(normal_arg, crazy_arg, **kwargs): ..."
+    ();
+  assert_valid_model ~model_source:"def anonymous_only(__a1, __a2, __a3): ..." ();
+  assert_valid_model ~model_source:"def anonymous_with_optional(__a1, __a2): ..." ();
+  assert_valid_model ~model_source:"def anonymous_with_optional(__a1, __a2, __a3=...): ..." ();
   assert_invalid_model
     ~model_source:"def sink(parameter: Any): ..."
     ~expect:"Invalid model for `sink`: Unrecognized taint annotation `Any`"
@@ -535,12 +542,12 @@ let test_invalid_models context =
     ~model_source:"def sink(parameter: TaintSink[Updates[self]]): ..."
     ~expect:"Invalid model for `sink`: No such parameter `self`"
     ();
-  assert_valid_model ~model_source:"unannotated_global: TaintSink[Test]";
+  assert_valid_model ~model_source:"unannotated_global: TaintSink[Test]" ();
   assert_invalid_model
     ~model_source:"missing_global: TaintSink[Test]"
     ~expect:"Invalid model for `missing_global`: Modeled entity is not part of the environment!"
     ();
-  assert_valid_model ~model_source:"C.unannotated_class_variable: TaintSink[Test]";
+  assert_valid_model ~model_source:"C.unannotated_class_variable: TaintSink[Test]" ();
   assert_invalid_model
     ~model_source:"C.missing: TaintSink[Test]"
     ~expect:"Invalid model for `C.missing`: Modeled entity is not part of the environment!"
@@ -580,7 +587,8 @@ let test_invalid_models context =
 
   (* Multiple features. *)
   assert_valid_model
-    ~model_source:"def sink(parameter: AttachToSink[Via[featureA, featureB]]): ...";
+    ~model_source:"def sink(parameter: AttachToSink[Via[featureA, featureB]]): ..."
+    ();
 
   (* Default values must be `...`. *)
   assert_invalid_model
@@ -639,6 +647,48 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `C.foo`: Model signature parameters do not match implementation `(self: \
        unknown, value: int) -> None`. Reason(s): missing named parameters: `value`."
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      @decorated
+      def accidental_decorator_passed_in() -> TaintSource[Test]: ...
+    |}
+    ~expect:
+      "Invalid model for `accidental_decorator_passed_in`: Unexpected decorators found when \
+       parsing model: `decorated`"
+    ();
+  assert_invalid_model
+    ~source:
+      {|
+      class C:
+        @property
+        def foo(self) -> int: ...
+        @foo.setter
+        def foo(self, value) -> None: ...
+    |}
+    ~model_source:
+      {|
+      @wrong_name.setter
+      def C.foo(self, value: TaintSink[Test]): ...
+    |}
+    ~expect:
+      "Invalid model for `C.foo`: Unexpected decorators found when parsing model: \
+       `wrong_name.setter`"
+    ();
+  assert_valid_model
+    ~source:
+      {|
+      class C:
+        @property
+        def foo(self) -> int: ...
+        @foo.setter
+        def foo(self, value) -> None: ...
+    |}
+    ~model_source:{|
+      @foo.setter
+      def C.foo(self, value: TaintSink[Test]): ...
+    |}
     ()
 
 

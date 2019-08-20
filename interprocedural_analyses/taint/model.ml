@@ -743,7 +743,9 @@ let create ~resolution ?path ~configuration source =
     | _ -> ()
   in
   let create_model
-      (({ Define.name; parameters; return_annotation; _ } as define), location, call_target)
+      ( ({ Define.name; parameters; return_annotation; decorators; _ } as define),
+        location,
+        call_target )
     =
     (* Make sure we know about what we model. *)
     let global_resolution = Resolution.global_resolution resolution in
@@ -791,6 +793,13 @@ let create ~resolution ?path ~configuration source =
           get_matching_method ~predicate:Define.is_property
         else if Define.Signature.is_property_setter define then
           get_matching_method ~predicate:Define.is_property_setter
+        else if not (List.is_empty decorators) then
+          (* Ensure that models don't declare decorators that our taint analyses doesn't
+             understand. *)
+          raise_invalid_model
+            (Format.sprintf
+               "Unexpected decorators found when parsing model: `%s`"
+               (List.map decorators ~f:Expression.show |> String.concat ~sep:", "))
         else
           global_type ()
       in
