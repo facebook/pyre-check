@@ -2741,7 +2741,10 @@ let suppress ~mode ~resolution ({ location; _ } as error) =
     | _ ->
         due_to_analysis_limitations error
         || due_to_mismatch_with_any resolution error
-        || (Define.Signature.is_untyped signature && not (Define.Signature.is_toplevel signature))
+        || Define.Signature.is_untyped signature
+           && not
+                ( Define.Signature.is_toplevel signature
+                || Define.Signature.is_class_toplevel signature )
   in
   let suppress_in_infer { kind; _ } =
     match kind with

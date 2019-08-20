@@ -4,16 +4,16 @@ from typing import Optional
 
 
 class Token:
-    token: str
+    token: str = ""
 
 
 class OAuthRequest:
-    access_token: Optional[Token]
+    access_token: Optional[Token] = None
 
 
 class Request:
-    optional: Optional[OAuthRequest]
-    non_optional: OAuthRequest
+    optional: Optional[OAuthRequest] = None
+    non_optional: OAuthRequest = OAuthRequest()
 
 
 def test_via_optional(request: Request):

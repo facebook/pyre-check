@@ -12,7 +12,7 @@ class DictRecord:
 
 
 class MutableRecord:
-    __dict__: Dict[str, Any] = ...
+    __dict__: Dict[str, Any] = {}
 
 
 def _is_dataclass_instance(obj) -> bool:

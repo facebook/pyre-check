@@ -150,7 +150,7 @@ let test_check_assert_functions context =
     ~context
     {|
       class One:
-          a: int
+          a: int = 1
 
       # The actual content of this function does not really matter.
       def pyretestassert(x: typing.Any) -> None:
@@ -170,7 +170,7 @@ let test_check_assert_functions context =
     ~handle:"foo.py"
     {|
       class One:
-          a: int
+          a: int = 1
 
       # The actual content of this function does not really matter.
       def pyretestassert(x: typing.Any) -> None:

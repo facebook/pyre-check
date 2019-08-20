@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from typing import Optional, Type
+from typing import List, Optional, Type
 
 
 class C:
