@@ -57,6 +57,8 @@ end
 
 val name : string
 
+val ordered_nested_defines : Define.t -> Define.t list
+
 val run
   :  configuration:Configuration.Analysis.t ->
   global_resolution:GlobalResolution.t ->

@@ -152,6 +152,18 @@ end
 
 let name = "Liveness"
 
+let rec ordered_nested_defines ({ Statement.Define.body; _ } as define) =
+  let shallow_nested_defines =
+    let find_nested = function
+      | { Node.value = Define define; _ } -> Some define
+      | _ -> None
+    in
+    List.filter_map ~f:find_nested body
+  in
+  let nested = shallow_nested_defines |> List.map ~f:ordered_nested_defines |> List.concat in
+  nested @ [define]
+
+
 let run ~configuration:_ ~global_resolution ~source =
   let module Context = struct
     let global_resolution = global_resolution
