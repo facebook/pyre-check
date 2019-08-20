@@ -1279,10 +1279,22 @@ let test_purge_hierarchy context =
       ["A.py", a_source; "B.py", b_source; "One.py", one_source; "Two.py", two_source]
   in
   let assert_backedges_equal wrapped_left unwrapped_right =
+    let printer set =
+      ClassHierarchy.Target.Set.to_list set |> List.to_string ~f:ClassHierarchy.Target.show
+    in
     assert_equal
+      ~printer
       ~cmp:ClassHierarchy.Target.Set.equal
       wrapped_left
       (ClassHierarchy.Target.Set.of_list unwrapped_right)
+  in
+  let assert_node_completely_deleted (module Handler : ClassHierarchy.Handler) ~annotation ~index =
+    assert_equal
+      ( Handler.indices annotation,
+        Handler.annotations index,
+        Handler.edges index,
+        Handler.backedges index )
+      (None, None, None, None)
   in
   let () =
     let handler = order () in
@@ -1290,7 +1302,7 @@ let test_purge_hierarchy context =
     let index key = find_unsafe Handler.indices key in
     let one_index = index "One.One" in
     Environment.purge handler [Reference.create "One"];
-    assert_equal (find_unsafe Handler.edges one_index) [];
+    assert_node_completely_deleted (module Handler) ~annotation:"One.One" ~index:one_index;
     assert_backedges_equal (find_unsafe Handler.backedges (index "Two.Two")) [];
     assert_equal
       (find_unsafe Handler.edges (index "A.a"))
@@ -1302,7 +1314,7 @@ let test_purge_hierarchy context =
     let index key = find_unsafe Handler.indices key in
     let a_index = index "A.a" in
     Environment.purge handler [Reference.create "A"];
-    assert_equal (find_unsafe Handler.edges a_index) [];
+    assert_node_completely_deleted (module Handler) ~annotation:"A.a" ~index:a_index;
     assert_backedges_equal
       (find_unsafe Handler.backedges (index "One.One"))
       [{ ClassHierarchy.Target.target = index "B.b"; parameters = Concrete [] }]
@@ -1313,7 +1325,7 @@ let test_purge_hierarchy context =
     let index key = find_unsafe Handler.indices key in
     let b_index = index "B.b" in
     Environment.purge handler [Reference.create "B"];
-    assert_equal (find_unsafe Handler.edges b_index) [];
+    assert_node_completely_deleted (module Handler) ~annotation:"B.b" ~index:b_index;
     assert_backedges_equal
       (find_unsafe Handler.backedges (index "One.One"))
       [{ ClassHierarchy.Target.target = index "A.a"; parameters = Concrete [] }]
@@ -1325,8 +1337,8 @@ let test_purge_hierarchy context =
     let a_index = index "A.a" in
     let b_index = index "B.b" in
     Environment.purge handler [Reference.create "A"; Reference.create "B"];
-    assert_equal (find_unsafe Handler.edges a_index) [];
-    assert_equal (find_unsafe Handler.edges b_index) [];
+    assert_node_completely_deleted (module Handler) ~annotation:"A.a" ~index:a_index;
+    assert_node_completely_deleted (module Handler) ~annotation:"B.b" ~index:b_index;
     assert_backedges_equal (find_unsafe Handler.backedges (index "One.One")) []
   in
   ()
