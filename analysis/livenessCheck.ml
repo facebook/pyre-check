@@ -44,12 +44,13 @@ end
 module State (Context : Context) = struct
   type t = {
     unused: Location.Reference.Set.t Identifier.Map.t;
+    used: Identifier.Set.t;
     bottom: bool;
     define: Define.t Node.t;
     nested_defines: t NestedDefines.t;
   }
 
-  let show { unused; _ } = Map.keys unused |> String.concat ~sep:", "
+  let show { used; _ } = Set.to_list used |> String.concat ~sep:", "
 
   let pp format state = Format.fprintf format "%s" (show state)
 
@@ -77,6 +78,7 @@ module State (Context : Context) = struct
     let empty_state =
       {
         unused = Identifier.Map.empty;
+        used = Identifier.Set.empty;
         bottom = false;
         define;
         nested_defines = NestedDefines.initial;
@@ -88,13 +90,16 @@ module State (Context : Context) = struct
     List.fold ~init:empty_state ~f:add_parameter parameters
 
 
-  let less_or_equal ~left:{ unused = left; _ } ~right:{ unused = right; _ } =
+  let less_or_equal
+      ~left:{ unused = left; used = used_left; _ }
+      ~right:{ unused = right; used = used_right; _ }
+    =
     let less_or_equal (reference, location) =
       match location, Map.find right reference with
       | left, Some right -> Set.is_subset left ~of_:right
       | _ -> false
     in
-    Map.to_alist left |> List.for_all ~f:less_or_equal
+    Map.to_alist left |> List.for_all ~f:less_or_equal && Set.is_subset used_left ~of_:used_right
 
 
   let join left right =
@@ -105,6 +110,7 @@ module State (Context : Context) = struct
     in
     {
       left with
+      used = Set.union left.used right.used;
       unused = Map.merge left.unused right.unused ~f:merge;
       bottom = left.bottom && right.bottom;
     }
@@ -194,7 +200,54 @@ module State (Context : Context) = struct
     { state with bottom; nested_defines }
 
 
-  let backward ?key:_ state ~statement:_ = state
+  let backward
+      ?key:_
+      ({ used; define; _ } as state)
+      ~statement:({ Node.location; value } as statement)
+    =
+    (* Remove assignments from used. *)
+    let used =
+      let remove_from_used ~used ~location identifier =
+        match Set.find used ~f:(Identifier.equal identifier) with
+        | Some _ -> Set.remove used identifier
+        | None ->
+            let error = Error.create ~location ~kind:(Error.DeadStore identifier) ~define in
+            ErrorMap.Table.set Context.errors ~key:{ ErrorMap.location; identifier } ~data:error;
+            used
+      in
+      match value with
+      | Assign { target; _ } ->
+          let rec update_target used = function
+            | { Node.value = Name (Name.Identifier identifier); _ } ->
+                remove_from_used ~used ~location identifier
+            | { Node.value = List elements; _ } -> List.fold ~init:used ~f:update_target elements
+            | { Node.value = Starred (Starred.Once target); _ } -> update_target used target
+            | { Node.value = Tuple elements; _ } -> List.fold ~init:used ~f:update_target elements
+            | _ -> used
+          in
+          update_target used target
+      | _ -> used
+    in
+    (* Add used identifiers. *)
+    let used =
+      let used_names =
+        match value with
+        | Assign { annotation; value; _ } ->
+            (* Don't count LHS of assignments as used. *)
+            annotation
+            >>| (fun annotation ->
+                  Visit.collect_base_identifiers
+                    (Node.create ~location (Statement.Expression annotation)))
+            |> Option.value ~default:[]
+            |> List.append
+                 (Visit.collect_base_identifiers
+                    (Node.create ~location (Statement.Expression value)))
+            |> List.map ~f:Node.value
+        | _ -> Visit.collect_base_identifiers statement |> List.map ~f:Node.value
+      in
+      List.fold used_names ~f:Set.add ~init:used
+    in
+    { state with used }
 end
 
 let name = "Liveness"
@@ -212,8 +265,11 @@ let run ~configuration:_ ~global_resolution ~source =
     let run_nested ~key ~data:{ NestedDefines.nested_define; state } =
       check ~state:(Some state) { Node.location = key; value = nested_define } |> ignore
     in
-    Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:(State.initial ~state ~define)
+    let cfg = Cfg.create (Node.value define) in
+    Fixpoint.forward ~cfg ~initial:(State.initial ~state ~define)
     |> Fixpoint.exit
+    >>| (fun state -> Fixpoint.backward ~cfg ~initial:state)
+    >>= Fixpoint.exit
     >>| (fun state ->
           State.nested_defines state |> Map.iteri ~f:run_nested;
           State.errors state)
