@@ -609,6 +609,23 @@ module State (Context : Context) = struct
           else
             errors
         in
+        let check_redefined_class definition errors =
+          (* Detect when a class from an import is redefined. This relies on the fact that
+             resolve_exports always chooses an imported class if it exists, so we can compare that
+             against the current class definition to determine if it is shadowing an imported
+             class. *)
+          let class_name = AnnotatedClass.name definition in
+          let exported_name =
+            GlobalResolution.resolve_exports global_resolution ~reference:class_name
+          in
+          if not (Reference.equal class_name exported_name) then
+            let error =
+              Error.create ~location ~kind:(Error.RedefinedClass class_name) ~define:Context.define
+            in
+            error :: errors
+          else
+            errors
+        in
         let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
         GlobalResolution.class_definition global_resolution (Type.Primitive name)
         >>| Annotated.Class.create
@@ -616,7 +633,8 @@ module State (Context : Context) = struct
               errors
               |> check_base_and_attributes definition
               |> check_abstract_methods definition
-              |> check_unimplemented_abstract_methods definition)
+              |> check_unimplemented_abstract_methods definition
+              |> check_redefined_class definition)
         |> Option.value ~default:errors
       else
         errors

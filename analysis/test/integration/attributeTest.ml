@@ -598,6 +598,16 @@ let test_check_attributes context =
     |}
     [];
 
+  (* Check for class definitions that conflict with imports *)
+  assert_type_errors
+    ~handle:"test.py"
+    ~update_environment_with:[{ handle = "foo.py"; source = "class Bar: pass" }]
+    {|
+      from foo import Bar
+      class Bar: pass
+    |}
+    ["Redefined class [50]: Class `test.Bar` conflicts with an imported class."];
+
   (* Any has all attributes in default mode, but not strict mode. *)
   assert_strict_type_errors
     {|

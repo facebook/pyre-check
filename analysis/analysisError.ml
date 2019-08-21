@@ -229,6 +229,7 @@ type kind =
       is_type_alias: bool;
       missing_annotation: missing_annotation;
     }
+  | RedefinedClass of Reference.t
   | RedundantCast of Type.t
   | RevealedType of {
       expression: Expression.t;
@@ -331,6 +332,7 @@ let code = function
   | InvalidMethodSignature _ -> 47
   | InvalidException _ -> 48
   | UnsafeCast _ -> 49
+  | RedefinedClass _ -> 50
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -374,6 +376,7 @@ let name = function
   | MutuallyRecursiveTypeVariables _ -> "Mutually recursive type variables"
   | NotCallable _ -> "Call error"
   | ProhibitedAny _ -> "Prohibited any"
+  | RedefinedClass _ -> "Redefined class"
   | RedundantCast _ -> "Redundant cast"
   | RevealedType _ -> "Revealed type"
   | TooManyArguments _ -> "Too many arguments"
@@ -1368,6 +1371,9 @@ let messages ~concise ~signature location kind =
     match given_annotation with
     | Some Type.Any -> [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
     | _ -> [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name] )
+  | RedefinedClass name when concise -> [Format.asprintf "Class `%a` redefined" pp_reference name]
+  | RedefinedClass name ->
+      [Format.asprintf "Class `%a` conflicts with an imported class." pp_reference name]
   | RedundantCast _ when concise -> ["The cast is redundant."]
   | RedundantCast annotation ->
       [Format.asprintf "The value being cast is already of type `%a`." pp_type annotation]
@@ -1815,6 +1821,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
   | Unpack _
+  | RedefinedClass _
   | RevealedType _
   | UnsafeCast _
   | UnawaitedAwaitable _
@@ -1910,6 +1917,7 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | MissingReturnAnnotation _
   | MutuallyRecursiveTypeVariables _
   | ProhibitedAny _
+  | RedefinedClass _
   | RedundantCast _
   | RevealedType _
   | UnsafeCast _
@@ -2146,6 +2154,7 @@ let less_or_equal ~resolution left right =
   | MutuallyRecursiveTypeVariables _, _
   | NotCallable _, _
   | ProhibitedAny _, _
+  | RedefinedClass _, _
   | RedundantCast _, _
   | RevealedType _, _
   | UnsafeCast _, _
@@ -2479,6 +2488,7 @@ let join ~resolution left right =
     | MutuallyRecursiveTypeVariables _, _
     | NotCallable _, _
     | ProhibitedAny _, _
+    | RedefinedClass _, _
     | RedundantCast _, _
     | RevealedType _, _
     | UnsafeCast _, _
@@ -2871,6 +2881,7 @@ let dequalify
             is_type_alias;
             missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
           }
+    | RedefinedClass name -> RedefinedClass name
     | RedundantCast annotation -> RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
         RevealedType { expression; annotation = dequalify_annotation annotation }
