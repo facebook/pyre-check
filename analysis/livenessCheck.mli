@@ -21,6 +21,14 @@ module ErrorMap : sig
   type t = Error.t Table.t
 end
 
+module NestedDefineLookup : sig
+  type key = Define.t [@@deriving compare, eq, sexp, show, hash]
+
+  include Hashable with type t := key
+
+  type 'data t = 'data Table.t
+end
+
 module type Context = sig
   val global_resolution : GlobalResolution.t
 
@@ -32,6 +40,7 @@ module State (Context : Context) : sig
     used: Identifier.Set.t;
     define: Define.t Node.t;
     nested_defines: t NestedDefines.t;
+    nested_define_lookup: t NestedDefineLookup.t;
   }
 
   val show : t -> string
@@ -40,7 +49,7 @@ module State (Context : Context) : sig
 
   val errors : t -> Error.t list
 
-  val initial : state:t option -> define:Define.t Node.t -> t
+  val initial : state:t option -> lookup:t NestedDefineLookup.t -> define:Define.t Node.t -> t
 
   val less_or_equal : left:t -> right:t -> bool
 
@@ -57,7 +66,7 @@ end
 
 val name : string
 
-val ordered_nested_defines : Define.t -> Define.t list
+val ordered_nested_defines : Define.t Node.t -> Define.t Node.t list
 
 val run
   :  configuration:Configuration.Analysis.t ->

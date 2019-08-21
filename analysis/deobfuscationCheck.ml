@@ -45,7 +45,7 @@ module ConstantPropagationState (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~state ~define =
+  let initial ~state ~lookup:_ ~define =
     let constants =
       match state with
       | Some { constants; _ } -> constants
@@ -228,7 +228,11 @@ module type State = sig
 
   include Fixpoint.State with type t := t
 
-  val initial : state:t option -> define:Define.t Node.t -> t
+  val initial
+    :  state:t option ->
+    lookup:t LivenessCheck.NestedDefineLookup.t ->
+    define:Define.t Node.t ->
+    t
 
   val nested_defines : t -> t NestedDefines.t
 
@@ -240,9 +244,10 @@ module Scheduler (State : State) (Context : Context) = struct
   let run source =
     Hashtbl.clear Context.transformations;
     let module Fixpoint = Fixpoint.Make (State) in
+    let lookup = LivenessCheck.NestedDefineLookup.Table.create () in
     let rec run ~state ~define =
       let cfg = Cfg.create define.Node.value in
-      Fixpoint.forward ~cfg ~initial:(State.initial ~state ~define)
+      Fixpoint.forward ~cfg ~initial:(State.initial ~state ~lookup ~define)
       |> Fixpoint.exit
       >>| (fun state -> Fixpoint.backward ~cfg ~initial:state)
       >>= Fixpoint.entry

@@ -41,19 +41,45 @@ module type Context = sig
   val errors : ErrorMap.t
 end
 
+module NestedDefineLookup = struct
+  type key = Define.t [@@deriving compare, eq, sexp, show, hash]
+
+  include Hashable.Make (struct
+    type nonrec t = key
+
+    let compare = compare_key
+
+    let hash = Hashtbl.hash
+
+    let hash_fold_t = hash_fold_key
+
+    let sexp_of_t = sexp_of_key
+
+    let t_of_sexp = key_of_sexp
+  end)
+
+  type 'data t = 'data Table.t
+end
+
 module State (Context : Context) = struct
   type t = {
     used: Identifier.Set.t;
     define: Define.t Node.t;
     nested_defines: t NestedDefines.t;
+    nested_define_lookup: t NestedDefineLookup.t;
   }
 
   let show { used; _ } = Set.to_list used |> String.concat ~sep:", "
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~state:_ ~define =
-    { used = Identifier.Set.empty; define; nested_defines = NestedDefines.initial }
+  let initial ~state:_ ~lookup ~define =
+    {
+      used = Identifier.Set.empty;
+      define;
+      nested_defines = NestedDefines.initial;
+      nested_define_lookup = lookup;
+    }
 
 
   let less_or_equal ~left:{ used = left; _ } ~right:{ used = right; _ } =
@@ -152,16 +178,19 @@ end
 
 let name = "Liveness"
 
-let rec ordered_nested_defines ({ Statement.Define.body; _ } as define) =
-  let shallow_nested_defines =
+let ordered_nested_defines define =
+  let shallow_nested_defines { Node.value = { Statement.Define.body; _ }; _ } =
     let find_nested = function
-      | { Node.value = Define define; _ } -> Some define
+      | { Node.value = Define define; location } -> Some (Node.create ~location define)
       | _ -> None
     in
     List.filter_map ~f:find_nested body
   in
-  let nested = shallow_nested_defines |> List.map ~f:ordered_nested_defines |> List.concat in
-  nested @ [define]
+  let rec ordered_defines define =
+    let nested = shallow_nested_defines define |> List.map ~f:ordered_defines |> List.concat in
+    nested @ [define]
+  in
+  shallow_nested_defines define |> List.map ~f:ordered_defines |> List.concat
 
 
 let run ~configuration:_ ~global_resolution ~source =
@@ -173,18 +202,18 @@ let run ~configuration:_ ~global_resolution ~source =
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
-  let rec check ~state define =
-    let run_nested ~key ~data:{ NestedDefines.nested_define; state } =
-      check ~state:(Some state) { Node.location = key; value = nested_define } |> ignore
-    in
+  let lookup = NestedDefineLookup.Table.create () in
+  let define = Source.top_level_define_node source in
+  let check define =
     let cfg = Cfg.create (Node.value define) in
-    Fixpoint.forward ~cfg ~initial:(State.initial ~state ~define)
+    Fixpoint.forward ~cfg ~initial:(State.initial ~state:None ~lookup ~define)
     |> Fixpoint.exit
     >>| (fun state -> Fixpoint.backward ~cfg ~initial:state)
     >>= Fixpoint.entry
     >>| (fun state ->
-          State.nested_defines state |> Map.iteri ~f:run_nested;
+          NestedDefineLookup.Table.set lookup ~key:(Node.value define) ~data:state;
           State.errors state)
     |> Option.value ~default:[]
   in
-  check ~state:None (Source.top_level_define_node source)
+  List.map ~f:check (ordered_nested_defines define) |> ignore;
+  check define

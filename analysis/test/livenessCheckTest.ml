@@ -274,7 +274,9 @@ let test_ordered_nested_defines _ =
   let assert_ordered_nested_defines source expected =
     let nested =
       parse_single_define source
+      |> Node.create_with_default_location
       |> LivenessCheck.ordered_nested_defines
+      |> List.map ~f:Node.value
       |> List.map ~f:(fun { Define.signature = { Define.name; _ }; _ } -> name)
     in
     let expected = List.map ~f:Reference.create expected in
@@ -293,7 +295,7 @@ let test_ordered_nested_defines _ =
         def c():
           pass
     |}
-    ["d"; "b"; "c"; "a"];
+    ["d"; "b"; "c"];
   assert_ordered_nested_defines
     {|
       def a():
@@ -303,7 +305,7 @@ let test_ordered_nested_defines _ =
           def c():
             pass
     |}
-    ["d"; "c"; "b"; "a"]
+    ["d"; "c"; "b"]
 
 
 let () =
