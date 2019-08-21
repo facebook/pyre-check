@@ -1238,8 +1238,7 @@ let test_purge context =
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_true (GlobalResolution.is_tracked global_resolution "test.P");
-  let class_hierarchy = class_hierarchy handler in
-  ClassHierarchy.check_integrity class_hierarchy;
+  Environment.check_class_hierarchy_integrity ();
   Environment.purge handler [Reference.create "test"];
   assert_is_none (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
@@ -1247,7 +1246,7 @@ let test_purge context =
   assert_is_none (GlobalResolution.aliases global_resolution "test._T");
   assert_false (GlobalResolution.is_tracked global_resolution "test.P");
   assert_equal (dependencies "a.py") (Some []);
-  ClassHierarchy.check_integrity class_hierarchy;
+  Environment.check_class_hierarchy_integrity ();
   ()
 
 

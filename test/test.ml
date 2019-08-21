@@ -1448,8 +1448,6 @@ module MockClassHierarchyHandler = struct
       let indices = Hashtbl.find order.indices
 
       let annotations = Hashtbl.find order.annotations
-
-      let keys () = Hashtbl.keys order.annotations
     end : ClassHierarchy.Handler )
 
 

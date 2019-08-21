@@ -45,6 +45,8 @@ val built_in_annotations : Type.Primitive.Set.t
 
 val is_module : t -> Reference.t -> bool
 
+val check_class_hierarchy_integrity : unit -> unit
+
 val purge : t -> ?debug:bool -> Reference.t list -> unit
 
 val deduplicate_class_hierarchy : annotations:Type.Primitive.t list -> unit
@@ -72,3 +74,5 @@ val shared_memory_hash_to_key_map : qualifiers:Ast.Reference.t list -> unit -> s
 val serialize_decoded : Memory.decodable -> (string * string * string sexp_option) sexp_option
 
 val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
+
+val class_hierarchy_dot : unit -> string

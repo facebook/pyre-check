@@ -80,7 +80,6 @@ val create
   backedges:(int -> ClassHierarchy.Target.Set.Tree.t option) ->
   indices:(string -> int option) ->
   annotations:(int -> string option) ->
-  class_hierarchy_keys:(Memory.SingletonKey.t -> int list option) ->
   (module AnnotatedClass) ->
   t
 

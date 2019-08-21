@@ -61,38 +61,6 @@ let test_normalize_dependencies _ =
     ["A_Alias"; "B_Alias"; "C_Alias"]
 
 
-let test_normalize context =
-  let _, _, environment =
-    ScratchProject.setup
-      ~context
-      [ ( "x.py",
-          {|
-            class D: pass
-            class C(D): pass
-            class E: pass
-            class F: pass
-          |}
-        ) ]
-    |> ScratchProject.build_environment
-  in
-  Analysis.Environment.fill_shared_memory_with_default_typeorder ();
-  let order = Environment.resolution environment () |> GlobalResolution.class_hierarchy in
-  let (module TypeOrderHandler) = order in
-  let index_of annotation =
-    TypeOrderHandler.indices annotation |> fun optional -> Option.value_exn optional
-  in
-  let unsorted_indices = [index_of "x.D"; index_of "x.C"; index_of "x.E"; index_of "x.F"] in
-  let sorted_indices = unsorted_indices |> List.sort ~compare:Int.compare in
-  let filtered () =
-    List.filter (TypeOrderHandler.keys ()) ~f:(List.mem unsorted_indices ~equal:Int.equal)
-  in
-  assert_false (filtered () = sorted_indices);
-  Analysis.Environment.normalize_shared_memory [];
-
-  assert_equal (filtered ()) sorted_indices;
-  ()
-
-
 let test_populate context =
   let configuration, sources, ast_environment =
     let project =
@@ -172,7 +140,6 @@ let test_purge context =
 let () =
   "environment"
   >::: [ "normalize_dependencies" >:: test_normalize_dependencies;
-         "normalize" >:: test_normalize;
          "populate" >:: test_populate;
          "purge" >:: test_purge ]
   |> Test.run

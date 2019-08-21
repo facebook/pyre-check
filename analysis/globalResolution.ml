@@ -95,7 +95,6 @@ let create
     ~backedges
     ~indices
     ~annotations
-    ~class_hierarchy_keys
     (module AnnotatedClass : AnnotatedClass)
   =
   let constructor ~resolution class_name =
@@ -140,8 +139,6 @@ let create
       let indices = indices
 
       let annotations = annotations
-
-      let keys () = Option.value ~default:[] (class_hierarchy_keys Memory.SingletonKey.key)
     end : ClassHierarchy.Handler )
   in
   {

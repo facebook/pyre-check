@@ -61,8 +61,6 @@ module type Handler = sig
   val indices : Type.Primitive.t -> int option
 
   val annotations : int -> Type.Primitive.t option
-
-  val keys : unit -> int list
 end
 
 (* Returns true if the class hierarchy contains the given class. *)
@@ -107,9 +105,9 @@ val greatest_lower_bound
   Type.Primitive.t ->
   Type.Primitive.t list
 
-val check_integrity : (module Handler) -> unit
+val check_integrity : (module Handler) -> indices:int list -> unit
 
-val to_dot : (module Handler) -> string
+val to_dot : (module Handler) -> indices:int list -> string
 
 val is_transitive_successor
   :  (module Handler) ->

@@ -94,8 +94,6 @@ module type Handler = sig
   val indices : Type.Primitive.t -> int option
 
   val annotations : int -> Type.Primitive.t option
-
-  val keys : unit -> int list
 end
 
 let find_unsafe lookup key = lookup key |> fun option -> Option.value_exn option
@@ -513,7 +511,7 @@ let instantiate_predecessors_parameters
       None
 
 
-let check_integrity (module Handler : Handler) =
+let check_integrity (module Handler : Handler) ~indices =
   (* Ensure keys are consistent. *)
   let key_consistent key =
     let raise_if_none value =
@@ -527,7 +525,7 @@ let check_integrity (module Handler : Handler) =
     let annotation = Option.value_exn (Handler.annotations key) in
     raise_if_none (Handler.indices annotation)
   in
-  List.iter ~f:key_consistent (Handler.keys ());
+  List.iter ~f:key_consistent indices;
 
   (* Check for cycles. *)
   let started_from = ref Int.Set.empty in
@@ -552,11 +550,11 @@ let check_integrity (module Handler : Handler) =
       in
       visit [] start
   in
-  Handler.keys () |> List.iter ~f:find_cycle;
+  indices |> List.iter ~f:find_cycle;
 
   (* Check that backedges are complete. *)
   let module InverseChecker (Edges : Target.ListOrSet) (Backedges : Target.ListOrSet) = struct
-    let check_inverse ~get_keys ~edges ~backedges =
+    let check_inverse ~edges ~backedges =
       let check_backedge index =
         let check_backedge { Target.target; _ } =
           let has_backedge =
@@ -574,23 +572,17 @@ let check_integrity (module Handler : Handler) =
         in
         Edges.iter ~f:check_backedge (find_unsafe edges index)
       in
-      get_keys () |> List.iter ~f:check_backedge
+      indices |> List.iter ~f:check_backedge
   end
   in
   let module ForwardCheckInverse = InverseChecker (Target.List) (Target.Set) in
-  ForwardCheckInverse.check_inverse
-    ~get_keys:Handler.keys
-    ~edges:Handler.edges
-    ~backedges:Handler.backedges;
+  ForwardCheckInverse.check_inverse ~edges:Handler.edges ~backedges:Handler.backedges;
   let module ReverseCheckInverse = InverseChecker (Target.Set) (Target.List) in
-  ReverseCheckInverse.check_inverse
-    ~get_keys:Handler.keys
-    ~edges:Handler.backedges
-    ~backedges:Handler.edges
+  ReverseCheckInverse.check_inverse ~edges:Handler.backedges ~backedges:Handler.edges
 
 
-let to_dot (module Handler : Handler) =
-  let indices = List.sort ~compare (Handler.keys ()) in
+let to_dot (module Handler : Handler) ~indices =
+  let indices = List.sort ~compare indices in
   let nodes = List.map indices ~f:(fun index -> index, find_unsafe Handler.annotations index) in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";

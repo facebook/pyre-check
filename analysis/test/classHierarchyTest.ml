@@ -15,7 +15,7 @@ let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
  *  0 - 2
  *    X
  *  1 - 3 *)
-let butterfly =
+let butterfly, butterfly_indices =
   let order = MockClassHierarchyHandler.create () in
   let open MockClassHierarchyHandler in
   insert order "0";
@@ -26,7 +26,7 @@ let butterfly =
   connect order ~predecessor:"0" ~successor:"3";
   connect order ~predecessor:"1" ~successor:"2";
   connect order ~predecessor:"1" ~successor:"3";
-  handler order
+  handler order, Hashtbl.keys order.annotations
 
 
 (*          0 - 3
@@ -34,7 +34,7 @@ let butterfly =
  *          BOTTOM  - b - 1      TOP
  *          |  \       /
  *          4 -- 2 --- *)
-let order =
+let order, order_indices =
   let bottom = "bottom" in
   let order = MockClassHierarchyHandler.create () in
   let open MockClassHierarchyHandler in
@@ -52,7 +52,7 @@ let order =
   connect order ~predecessor:bottom ~successor:"1";
   connect order ~predecessor:bottom ~successor:"2";
   connect order ~predecessor:bottom ~successor:"4";
-  handler order
+  handler order, Hashtbl.keys order.annotations
 
 
 let diamond_order =
@@ -139,6 +139,7 @@ let test_greatest_lower_bound _ =
     let actual = greatest_lower_bound order type1 type2 |> List.sort ~compare:String.compare in
     assert_equal ~printer:(List.to_string ~f:Fn.id) actual expected
   in
+  let (module H : ClassHierarchy.Handler) = diamond_order in
   assert_greatest_lower_bound ~order:diamond_order "A" "C" ["C"];
   assert_greatest_lower_bound ~order:diamond_order "A" "B" ["B"];
   assert_greatest_lower_bound ~order:diamond_order "A" "D" ["D"];
@@ -148,26 +149,26 @@ let test_greatest_lower_bound _ =
 
 
 let test_check_integrity _ =
-  check_integrity order;
-  check_integrity butterfly;
+  check_integrity order ~indices:order_indices;
+  check_integrity butterfly ~indices:butterfly_indices;
 
-  (* 0 <-> 1 *)
-  let order =
+  (*(* 0 <-> 1 *)*)
+  let order, indices =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
     insert order "0";
     insert order "1";
     connect order ~predecessor:"0" ~successor:"1";
     connect order ~predecessor:"1" ~successor:"0";
-    handler order
+    handler order, Hashtbl.keys order.annotations
   in
-  assert_raises Cyclic (fun _ -> check_integrity order);
+  assert_raises Cyclic (fun _ -> check_integrity order ~indices);
 
   (* 0 -> 1
    * ^    |
    *  \   v
    * .  - 2 -> 3 *)
-  let order =
+  let order, indices =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
     insert order "0";
@@ -178,13 +179,13 @@ let test_check_integrity _ =
     connect order ~predecessor:"1" ~successor:"2";
     connect order ~predecessor:"2" ~successor:"0";
     connect order ~predecessor:"2" ~successor:"3";
-    handler order
+    handler order, Hashtbl.keys order.annotations
   in
-  assert_raises Cyclic (fun _ -> check_integrity order)
+  assert_raises Cyclic (fun _ -> check_integrity order ~indices)
 
 
 let test_to_dot _ =
-  let order =
+  let order, keys =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
     insert order "0";
@@ -195,7 +196,7 @@ let test_to_dot _ =
     connect order ~predecessor:"0" ~successor:"1" ~parameters:![Type.string];
 
     (*connect_annotations_to_object order ["0"; "1"; "2"; "object"];*)
-    handler order
+    handler order, Hashtbl.keys order.annotations
   in
   let (module Handler) = order in
   assert_equal
@@ -211,7 +212,7 @@ let test_to_dot _ =
       }
     |}
     |> Test.trim_extra_indentation )
-    ("\n" ^ to_dot order)
+    ("\n" ^ to_dot order ~indices:keys)
 
 
 let test_variables _ =

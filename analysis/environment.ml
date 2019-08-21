@@ -620,7 +620,6 @@ let resolution { ast_environment } () =
     ~backedges:SharedMemory.OrderBackedges.get
     ~indices:SharedMemory.OrderIndices.get
     ~annotations:SharedMemory.OrderAnnotations.get
-    ~class_hierarchy_keys:SharedMemory.OrderKeys.get
     (module Annotated.Class)
 
 
@@ -1625,6 +1624,12 @@ let fill_shared_memory_with_default_typeorder () =
     ~successor:typing_mapping
 
 
+let check_class_hierarchy_integrity () =
+  ClassHierarchy.check_integrity
+    (module SharedMemoryClassHierarchyHandler)
+    ~indices:(SharedMemoryClassHierarchyHandler.keys ())
+
+
 let purge environment ?(debug = false) (qualifiers : Reference.t list) =
   let {
     SharedMemoryDependencyHandler.aliases;
@@ -1662,7 +1667,7 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) =
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
 
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
-    ClassHierarchy.check_integrity (module SharedMemoryClassHierarchyHandler);
+    check_class_hierarchy_integrity ();
   fill_shared_memory_with_default_typeorder ();
   add_special_classes environment;
   add_dummy_modules environment;
@@ -1862,3 +1867,9 @@ let decoded_equal first second =
   | Modules.Decoded (_, first), Modules.Decoded (_, second) ->
       Some (Option.equal Module.equal first second)
   | _ -> None
+
+
+let class_hierarchy_dot () =
+  ClassHierarchy.to_dot
+    (module SharedMemoryClassHierarchyHandler)
+    ~indices:(SharedMemoryClassHierarchyHandler.keys ())
