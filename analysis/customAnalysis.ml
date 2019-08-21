@@ -23,3 +23,17 @@ module NestedDefines = struct
         Map.set nested_defines ~key:location ~data:{ nested_define; state }
     | _ -> nested_defines
 end
+
+let ordered_nested_defines define =
+  let shallow_nested_defines { Node.value = { Statement.Define.body; _ }; _ } =
+    let find_nested = function
+      | { Node.value = Define define; location } -> Some (Node.create ~location define)
+      | _ -> None
+    in
+    List.filter_map ~f:find_nested body
+  in
+  let rec ordered_defines define =
+    let nested = shallow_nested_defines define |> List.map ~f:ordered_defines |> List.concat in
+    nested @ [define]
+  in
+  shallow_nested_defines define |> List.map ~f:ordered_defines |> List.concat

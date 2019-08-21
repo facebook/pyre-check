@@ -216,6 +216,24 @@ end
 module UnusedStoreState (Context : Context) = struct
   include LivenessCheck.State (Context)
 
+  let nested_defines { define; _ } =
+    let add_nested nested_defines { Node.location; value = define_value } =
+      Map.set
+        nested_defines
+        ~key:location
+        ~data:
+          {
+            NestedDefines.nested_define = define_value;
+            state =
+              initial
+                ~state:None
+                ~lookup:(LivenessCheck.NestedDefineLookup.Table.create ())
+                ~define;
+          }
+    in
+    List.fold ~init:NestedDefines.initial ~f:add_nested (ordered_nested_defines define)
+
+
   let update_transformations state =
     let add_transformation { Error.location; _ } =
       Hashtbl.set Context.transformations ~key:location ~data:[]

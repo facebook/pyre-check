@@ -20,6 +20,7 @@ module Cfg = Cfg
 module Check = Check
 module ClassHierarchy = ClassHierarchy
 module Coverage = Coverage
+module CustomAnalysis = CustomAnalysis
 module DeobfuscationCheck = DeobfuscationCheck
 module Dependencies = Dependencies
 module Environment = Environment

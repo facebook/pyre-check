@@ -22,3 +22,5 @@ module NestedDefines : sig
     state:'state ->
     (Location.t, 'state nested, 'a) Base.Map.t
 end
+
+val ordered_nested_defines : Define.t Node.t -> Define.t Node.t list

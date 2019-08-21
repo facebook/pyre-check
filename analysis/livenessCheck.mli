@@ -6,7 +6,6 @@
 open Core
 open Ast
 open Statement
-open CustomAnalysis
 module Error = AnalysisError
 
 module ErrorMap : sig
@@ -39,7 +38,6 @@ module State (Context : Context) : sig
   type t = {
     used: Identifier.Set.t;
     define: Define.t Node.t;
-    nested_defines: t NestedDefines.t;
     nested_define_lookup: t NestedDefineLookup.t;
   }
 
@@ -57,16 +55,12 @@ module State (Context : Context) : sig
 
   val widen : previous:t -> next:t -> iteration:'a -> t
 
-  val nested_defines : t -> t NestedDefines.t
-
   val forward : ?key:int -> t -> statement:Statement.t -> t
 
   val backward : ?key:int -> t -> statement:Statement.t -> t
 end
 
 val name : string
-
-val ordered_nested_defines : Define.t Node.t -> Define.t Node.t list
 
 val run
   :  configuration:Configuration.Analysis.t ->

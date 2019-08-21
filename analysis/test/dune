@@ -11,6 +11,7 @@
   cfgTest
   classHierarchyTest
   coverageTest
+  customAnalysisTest
   deobfuscationCheckTest
   dependentTest
   environmentTest
