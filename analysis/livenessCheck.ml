@@ -72,7 +72,7 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~state:_ ~lookup ~define =
+  let initial ~lookup ~define =
     { used = Identifier.Set.empty; define; nested_define_lookup = lookup }
 
 
@@ -180,7 +180,7 @@ let run ~configuration:_ ~global_resolution ~source =
   let define = Source.top_level_define_node source in
   let check define =
     let cfg = Cfg.create (Node.value define) in
-    Fixpoint.backward ~cfg ~initial:(State.initial ~state:None ~lookup ~define)
+    Fixpoint.backward ~cfg ~initial:(State.initial ~lookup ~define)
     |> Fixpoint.entry
     >>| (fun state ->
           NestedDefineLookup.Table.set lookup ~key:(Node.value define) ~data:state;

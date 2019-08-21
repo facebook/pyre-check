@@ -224,15 +224,13 @@ module UnusedStoreState (Context : Context) = struct
         ~data:
           {
             NestedDefines.nested_define = define_value;
-            state =
-              initial
-                ~state:None
-                ~lookup:(LivenessCheck.NestedDefineLookup.Table.create ())
-                ~define;
+            state = initial ~lookup:(LivenessCheck.NestedDefineLookup.Table.create ()) ~define;
           }
     in
     List.fold ~init:NestedDefines.initial ~f:add_nested (ordered_nested_defines define)
 
+
+  let initial ~state:_ = initial
 
   let update_transformations state =
     let add_transformation { Error.location; _ } =

@@ -47,7 +47,7 @@ module State (Context : Context) : sig
 
   val errors : t -> Error.t list
 
-  val initial : state:t option -> lookup:t NestedDefineLookup.t -> define:Define.t Node.t -> t
+  val initial : lookup:t NestedDefineLookup.t -> define:Define.t Node.t -> t
 
   val less_or_equal : left:t -> right:t -> bool
 
