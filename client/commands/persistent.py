@@ -10,7 +10,7 @@ import sys
 import time
 from typing import List, Optional
 
-from .command import Command
+from .command import Command, IncrementalStyle
 from .start import Start
 
 
@@ -27,7 +27,7 @@ class Persistent(Command):
         # pyre-fixme[16]: `Namespace` has no attribute `store_type_check_resolution`.
         arguments.store_type_check_resolution = False
         # pyre-fixme[16]: `Namespace` has no attribute `transitive`.
-        arguments.transitive = False
+        arguments.incremental_style = IncrementalStyle.SHALLOW
         Start(arguments, self._configuration, self._analysis_directory).run()
 
         self._call_client(command=self.NAME, capture_output=False).check()

@@ -214,7 +214,7 @@ def run_integration_test(
         repository = Repository(typeshed_zip_path, base_directory, repository_path)
         with _watch_directory(repository.get_repository_directory()):
             try:
-                repository.run_pyre("start", "--transitive")
+                repository.run_pyre("start", "--incremental-style=fine_grained")
                 for commit in repository:
                     (actual_error, expected_error) = repository.get_pyre_errors()
                     if actual_error != expected_error:

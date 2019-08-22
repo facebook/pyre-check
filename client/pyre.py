@@ -27,7 +27,7 @@ from . import (
     switch_root,
     translate_arguments,
 )
-from .commands import Command, ExitCode  # noqa
+from .commands import Command, ExitCode, IncrementalStyle  # noqa
 from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .filesystem import AnalysisDirectory
@@ -267,9 +267,11 @@ def main() -> int:
         ),
     )
     incremental.add_argument(
-        "--transitive",
-        action="store_true",
-        help="Calculate transitive dependencies of changed files.",
+        "--incremental-style",
+        type=IncrementalStyle,
+        choices=list(IncrementalStyle),
+        default=IncrementalStyle.SHALLOW,
+        help="How to approach doing incremental checks.",
     )
     rage = parsed_commands.add_parser(
         commands.Rage.NAME,
@@ -348,9 +350,11 @@ def main() -> int:
         help="Do not spawn a watchman client in the background.",
     )
     start.add_argument(
-        "--transitive",
-        action="store_true",
-        help="Calculate transitive dependencies of changed files.",
+        "--incremental-style",
+        type=IncrementalStyle,
+        choices=list(IncrementalStyle),
+        default=IncrementalStyle.SHALLOW,
+        help="How to approach doing incremental checks.",
     )
     start.set_defaults(command=commands.Start)
 
@@ -377,9 +381,11 @@ def main() -> int:
         help="Do not spawn a watchman client in the background.",
     )
     restart.add_argument(
-        "--transitive",
-        action="store_true",
-        help="Calculate transitive dependencies of changed files.",
+        "--incremental-style",
+        type=IncrementalStyle,
+        choices=list(IncrementalStyle),
+        default=IncrementalStyle.SHALLOW,
+        help="How to approach doing incremental checks.",
     )
     restart.set_defaults(command=commands.Restart)
 
@@ -460,7 +466,7 @@ def main() -> int:
             # pyre-fixme[16]: `Namespace` has no attribute `nonblocking`.
             arguments.nonblocking = False
             # pyre-fixme[16]: `Namespace` has no attribute `transitive`.
-            arguments.transitive = False
+            arguments.incremental_style = IncrementalStyle.SHALLOW
         else:
             watchman_link = "https://facebook.github.io/watchman/docs/install.html"
             LOG.warning(

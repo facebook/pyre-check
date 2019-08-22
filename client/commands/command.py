@@ -44,6 +44,15 @@ class ExitCode(enum.IntEnum):
     SIGSEGV = -signal.SIGSEGV
 
 
+class IncrementalStyle(enum.Enum):
+    SHALLOW = "shallow"
+    TRANSITIVE = "transitive"
+    FINE_GRAINED = "fine_grained"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class Result:
     def __init__(self, code: int, output: str) -> None:
         self.code = code

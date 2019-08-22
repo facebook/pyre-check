@@ -110,7 +110,9 @@ class IncrementalTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             transitive_arguments = mock_arguments()
-            transitive_arguments.transitive = True
+            transitive_arguments.incremental_style = (
+                commands.IncrementalStyle.TRANSITIVE
+            )
             command = incremental.Incremental(
                 transitive_arguments, configuration, analysis_directory
             )

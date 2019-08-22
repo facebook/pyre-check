@@ -9,7 +9,7 @@ import os
 from typing import List, Optional
 
 from .. import filesystem, monitor, project_files_monitor
-from .command import ExitCode, typeshed_search_path
+from .command import ExitCode, IncrementalStyle, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -25,7 +25,7 @@ class Start(Reporting):
         self._terminal = arguments.terminal  # type: bool
         self._store_type_check_resolution = arguments.store_type_check_resolution
         self._use_watchman = not arguments.no_watchman  # type: bool
-        self._transitive = arguments.transitive  # type: bool
+        self._incremental_style = arguments.incremental_style  # type: bool
         self._number_of_workers = configuration.number_of_workers  # type: int
         self._configuration_file_hash = configuration.file_hash  # type: Optional[str]
         self._file_monitor = None  # type: Optional[project_files_monitor.Monitor]
@@ -172,7 +172,9 @@ class Start(Reporting):
         for extension in extensions:
             flags.extend(["-extension", extension])
 
-        if self._transitive:
+        if self._incremental_style == IncrementalStyle.TRANSITIVE:
             flags.append("-transitive")
+        elif self._incremental_style == IncrementalStyle.FINE_GRAINED:
+            flags.append("-new-incremental-check")
 
         return flags

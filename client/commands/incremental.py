@@ -11,7 +11,13 @@ import sys
 from typing import IO, List, cast
 
 from ..project_files_monitor import Monitor, MonitorException
-from .command import ClientException, ExitCode, State, typeshed_search_path
+from .command import (
+    ClientException,
+    ExitCode,
+    IncrementalStyle,
+    State,
+    typeshed_search_path,
+)
 from .reporting import Reporting
 from .start import Start
 
@@ -25,7 +31,7 @@ class Incremental(Reporting):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Incremental, self).__init__(arguments, configuration, analysis_directory)
         self._nonblocking = arguments.nonblocking  # type: bool
-        self._transitive = arguments.transitive  # type: bool
+        self._incremental_style = arguments.incremental_style  # type: bool
 
     def _run(self) -> None:
         if self._state() == State.DEAD:
@@ -87,7 +93,7 @@ class Incremental(Reporting):
         if self._nonblocking:
             flags.append("-nonblocking")
 
-        if self._transitive:
+        if self._incremental_style == IncrementalStyle.TRANSITIVE:
             flags.append("-transitive")
 
         return flags
