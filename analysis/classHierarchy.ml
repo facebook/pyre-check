@@ -299,17 +299,20 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
   raise_if_untracked handler source;
   raise_if_untracked handler target;
   let worklist = Queue.create () in
+  let visited = Int.Hash_set.create () in
   Queue.enqueue worklist { Target.target = index_of handler source; parameters = Concrete [] };
   let rec iterate worklist =
     match Queue.dequeue worklist with
-    | Some { Target.target = current; _ } ->
-        if current = index_of handler target then
-          true
-        else
-          let enqueue_all targets = List.iter targets ~f:(Queue.enqueue worklist) in
-          Option.iter (Handler.edges current) ~f:enqueue_all;
-          iterate worklist
     | None -> false
+    | Some { Target.target = current; _ } -> (
+      match Hash_set.strict_add visited current with
+      | Error _ -> iterate worklist
+      | Ok () ->
+          if current = index_of handler target then
+            true
+          else (
+            Option.iter (Handler.edges current) ~f:(Queue.enqueue_all worklist);
+            iterate worklist ) )
   in
   iterate worklist
 
