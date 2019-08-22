@@ -329,10 +329,10 @@ let test_signature_hash _ =
 
 let test_localize_configuration _ =
   let unsafe_source =
-    Source.create ~metadata:(Source.Metadata.create ~number_of_lines:0 ~unsafe:true ()) []
+    Source.create ~metadata:(Source.Metadata.create_for_testing ~local_mode:Source.Unsafe ()) []
   in
   let strict_source =
-    Source.create ~metadata:(Source.Metadata.create ~number_of_lines:0 ~strict:true ()) []
+    Source.create ~metadata:(Source.Metadata.create_for_testing ~local_mode:Source.Strict ()) []
   in
   let default_configuration = Configuration.Analysis.create ~debug:true () in
   let strict_configuration = Configuration.Analysis.create ~debug:true ~strict:true () in
