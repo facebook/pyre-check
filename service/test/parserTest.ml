@@ -166,15 +166,9 @@ let test_parse_sources context =
 
 let test_ast_hash _ =
   let assert_hash_changed ~old_source ~new_source ~expected =
-    (* FIXME: We have to do our own parsing here since `Test.parse` does not parse metadata for us. *)
-    let do_parse source =
-      let source = trim_extra_indentation source in
-      let metadata = Source.Metadata.parse ~qualifier:!&"test" (String.split_lines source) in
-      let source = Test.parse ~handle:"test.py" source in
-      { source with metadata }
-    in
-    let old_source = do_parse old_source in
-    let new_source = do_parse new_source in
+    let handle = "test.py" in
+    let old_source = Test.parse ~handle old_source in
+    let new_source = Test.parse ~handle new_source in
     let actual = not (Int.equal (Source.hash old_source) (Source.hash new_source)) in
     assert_bool "Test if source hash change is expected" (Bool.equal expected actual)
   in
