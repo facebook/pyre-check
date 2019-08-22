@@ -33,9 +33,18 @@ let remove_source_path ~configuration ~removed existing_files =
     | current_file :: rest -> (
       match SourcePath.same_module_compare ~configuration removed current_file with
       | 0 ->
-          (* We have the following precondition for files that are in the same module: *)
-          (* `same_module_compare a b = 0` implies `equal a b` *)
-          assert (SourcePath.equal removed current_file);
+          let () =
+            (* For removed files, we only check for equality on relative path & priority. *)
+            (* There's a corner case (where symlink is involved) that may cause `removed` to have a
+               different `is_external` flag. *)
+            let partially_equal
+                { SourcePath.relative = left_relative; priority = left_priority; _ }
+                { SourcePath.relative = right_relative; priority = right_priority; _ }
+              =
+              String.equal left_relative right_relative && Int.equal left_priority right_priority
+            in
+            assert (partially_equal removed current_file)
+          in
           List.rev_append sofar rest
       | x when x > 0 -> existing_files
       | _ -> remove (current_file :: sofar) rest )
