@@ -1630,7 +1630,7 @@ let check_class_hierarchy_integrity () =
     ~indices:(SharedMemoryClassHierarchyHandler.keys ())
 
 
-let purge environment ?(debug = false) (qualifiers : Reference.t list) =
+let purge _ ?(debug = false) (qualifiers : Reference.t list) =
   let {
     SharedMemoryDependencyHandler.aliases;
     modules;
@@ -1667,11 +1667,7 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) =
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
 
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
-    check_class_hierarchy_integrity ();
-  fill_shared_memory_with_default_typeorder ();
-  add_special_classes environment;
-  add_dummy_modules environment;
-  add_special_globals environment
+    check_class_hierarchy_integrity ()
 
 
 let shared_memory_handler ast_environment = { ast_environment }
