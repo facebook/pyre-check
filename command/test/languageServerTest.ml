@@ -130,8 +130,7 @@ let test_initialize_request_parses _ =
             "didSave": true
           },
           "completion": {
-            "dynamicRegistration": false,
-            "completionItem": { "snippetSupport": true }
+            "dynamicRegistration": false
           },
           "hover": { "dynamicRegistration": false },
           "signatureHelp": { "dynamicRegistration": false },
@@ -417,10 +416,6 @@ let test_initialize_response _ =
         "result": {
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
-            "completionProvider": {
-              "resolveProvider": false,
-              "triggerCharacters": ["."]
-            },
             "definitionProvider": true,
             "executeCommandProvider": { "commands": [ "add_pyre_annotation" ] },
             "hoverProvider": true,
@@ -446,10 +441,6 @@ let test_initialize_response _ =
         "result": {
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
-            "completionProvider": {
-              "resolveProvider": false,
-              "triggerCharacters": ["."]
-            },
             "definitionProvider": true,
             "executeCommandProvider": { "commands": [ "add_pyre_annotation" ] },
             "hoverProvider": true,

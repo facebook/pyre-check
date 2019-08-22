@@ -161,17 +161,6 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
           None )
     | "textDocument/completion" -> (
       match CompletionRequest.of_yojson request with
-      | Ok
-          {
-            CompletionRequest.parameters =
-              Some { textDocument = { TextDocumentIdentifier.uri; _ }; position; _ };
-            id;
-            _;
-          } ->
-          uri_to_path ~uri
-          >>| fun path ->
-          CompletionRequest
-            { Protocol.CompletionRequest.id; path; position = to_pyre_position position }
       | Ok _ -> None
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;

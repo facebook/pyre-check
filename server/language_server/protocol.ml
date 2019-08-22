@@ -168,12 +168,7 @@ module InitializeResponse = struct
                           save = Some { SaveOptions.include_text = Some false };
                         };
                     hover_provider = Some true;
-                    completion_provider =
-                      Some
-                        {
-                          CompletionOptions.resolve_provider = Some false;
-                          trigger_characters = Some ["."];
-                        };
+                    completion_provider = None;
                     signature_help_provider = None;
                     definition_provider = Some true;
                     references_provider = None;
