@@ -6,6 +6,12 @@
 open Pyre
 
 module Analysis : sig
+  type incremental_style =
+    | Shallow
+    | Transitive
+    | FineGrained
+  [@@deriving show]
+
   type t = {
     start_time: float;
     infer: bool;
@@ -33,7 +39,7 @@ module Analysis : sig
     excludes: Str.regexp list;
     extensions: string list;
     store_type_check_resolution: bool;
-    incremental_transitive_dependencies: bool;
+    incremental_style: incremental_style;
     include_hints: bool;
   }
   [@@deriving show, eq]
@@ -65,7 +71,7 @@ module Analysis : sig
     ?excludes:string list ->
     ?extensions:string list ->
     ?store_type_check_resolution:bool ->
-    ?incremental_transitive_dependencies:bool ->
+    ?incremental_style:incremental_style ->
     ?include_hints:bool ->
     unit ->
     t

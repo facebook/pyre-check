@@ -264,18 +264,14 @@ let test_process_type_check_request context =
       ?(sources = [])
       ~check
       ~expected_errors
-      ?(incremental_transitive_dependencies = false)
+      ?(incremental_style = Configuration.Analysis.Shallow)
       ()
     =
     let actual_errors =
       (* Start with empty files *)
       let { ScratchServer.configuration; state; _ } =
         let check = List.map check ~f:(fun (relative, _) -> relative, "") in
-        ScratchServer.start
-          ~incremental_transitive_dependencies
-          ~context
-          ~external_sources:sources
-          check
+        ScratchServer.start ~incremental_style ~context ~external_sources:sources check
       in
       let paths =
         let { Configuration.Analysis.local_root; _ } = configuration in
@@ -330,7 +326,7 @@ let test_process_type_check_request context =
 
   (* Indirect dependency. *)
   assert_response
-    ~incremental_transitive_dependencies:true
+    ~incremental_style:Transitive
     ~sources:
       [ "library.py", "def function() -> int: ...";
         ( "client.py",
@@ -357,7 +353,7 @@ let test_process_type_check_request context =
     ~expected_errors:[]
     ();
   assert_response
-    ~incremental_transitive_dependencies:true
+    ~incremental_style:Transitive
     ~sources:["a.py", "var = 42"; "b.py", "from a import *"; "c.py", "from b import *"]
     ~check:["a.py", "var = 1337"]
     ~expected_errors:[]

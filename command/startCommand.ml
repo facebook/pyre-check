@@ -436,6 +436,7 @@ let run_start_command
     configuration_file_hash
     store_type_check_resolution
     transitive
+    new_incremental_check
     verbose
     expected_version
     sections
@@ -473,6 +474,14 @@ let run_start_command
     >>| List.map ~f:Path.create_absolute
   in
   let configuration =
+    let incremental_style =
+      if new_incremental_check then
+        Configuration.Analysis.FineGrained
+      else if transitive then
+        Transitive
+      else
+        Shallow
+    in
     Configuration.Analysis.create
       ~verbose
       ?expected_version
@@ -498,7 +507,7 @@ let run_start_command
       ~extensions
       ~local_root:(Path.create_absolute local_root)
       ~store_type_check_resolution
-      ~incremental_transitive_dependencies:transitive
+      ~incremental_style
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
@@ -582,5 +591,6 @@ let command =
            no_arg
            ~doc:"Store extra information, needed for `types_at_position` and `types` queries."
       +> flag "-transitive" no_arg ~doc:"Calculate dependencies of changed files transitively."
+      +> flag "-new-incremental-check" no_arg ~doc:"Use the new fine grain dependency incremental"
       ++ Specification.base_command_line_arguments)
     run_start_command

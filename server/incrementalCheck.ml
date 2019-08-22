@@ -24,46 +24,29 @@ let recheck
                open_documents;
                _;
              } as state )
-    ~configuration:({ debug; ignore_dependencies; _ } as configuration)
+    ~configuration:({ debug; ignore_dependencies; incremental_style; _ } as configuration)
     paths
   =
   let timer = Timer.start () in
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
-  let recheck_source_paths, removed_modules =
+  let directly_changed_source_paths, removed_modules =
     let categorize = function
       | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
       | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
     in
     List.partition_map module_updates ~f:categorize
   in
-  let recheck_modules =
-    List.map recheck_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+  let directly_changed_modules =
+    List.map directly_changed_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
   in
   if not (List.is_empty removed_modules) then
     List.map removed_modules ~f:Reference.show
     |> String.concat ~sep:", "
     |> Log.info "Removing type information for `%s`";
   let scheduler =
-    Scheduler.with_parallel scheduler ~is_parallel:(List.length recheck_source_paths > 5)
-  in
-  (* Also recheck dependencies of the changed files. *)
-  let recheck_modules =
-    if ignore_dependencies then
-      recheck_modules
-    else
-      Set.union
-        (Reference.Set.of_list recheck_modules)
-        (ServerDependencies.compute_dependencies
-           recheck_source_paths
-           ~state
-           ~configuration
-           ~removed_modules)
-      |> Set.to_list
-  in
-  let recheck_source_paths =
-    List.filter_map recheck_modules ~f:(ModuleTracker.lookup module_tracker)
+    Scheduler.with_parallel scheduler ~is_parallel:(List.length directly_changed_source_paths > 5)
   in
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment.";
@@ -71,21 +54,34 @@ let recheck
     ~message:"Repopulating the environment"
     ~short_message:(Some "[Repopulating]")
     ~state;
-  let recheck_sources =
-    let timer = Timer.start () in
+  let re_environment_build_sources, invalidated_environment_qualifiers =
+    (* Also recheck dependencies of the changed files. *)
+    let re_environment_build_modules =
+      if ignore_dependencies then
+        directly_changed_modules
+      else
+        Set.union
+          (Reference.Set.of_list directly_changed_modules)
+          (ServerDependencies.compute_dependencies
+             directly_changed_source_paths
+             ~state
+             ~configuration
+             ~removed_modules)
+        |> Set.to_list
+    in
+    let re_environment_build_source_paths =
+      List.filter_map re_environment_build_modules ~f:(ModuleTracker.lookup module_tracker)
+    in
     (* Clean up all data related to updated files. *)
-    let qualifiers = List.append removed_modules recheck_modules in
+    let qualifiers = List.append removed_modules re_environment_build_modules in
     AstEnvironment.remove_sources ast_environment qualifiers;
-    Analysis.Environment.purge environment ~debug qualifiers;
     List.iter qualifiers ~f:(LookupCache.evict ~state);
-    Statistics.performance
-      ~name:"purged old environment"
-      ~timer
-      ~integers:["number of files", List.length qualifiers]
-      ();
-    Log.info "Parsing %d updated sources..." (List.length recheck_source_paths);
+    Log.info "Parsing %d updated sources..." (List.length re_environment_build_source_paths);
     StatusUpdate.warning
-      ~message:(Format.asprintf "Parsing %d updated sources..." (List.length recheck_source_paths))
+      ~message:
+        (Format.asprintf
+           "Parsing %d updated sources..."
+           (List.length re_environment_build_source_paths))
       ~short_message:(Some "[Parsing sources]")
       ~state;
     let { Service.Parser.parsed; syntax_error; system_error } =
@@ -94,7 +90,7 @@ let recheck
         ~scheduler
         ~preprocessing_state:None
         ~ast_environment
-        recheck_source_paths
+        re_environment_build_source_paths
     in
     let unparsed = List.concat [syntax_error; system_error] in
     if not (List.is_empty unparsed) then
@@ -110,10 +106,51 @@ let recheck
       Sexp.pp
       [%message (parsed_paths : string list)];
     Log.info "Updating the type environment for %d files." (List.length parsed_sources);
-    parsed_sources
+    parsed_sources, qualifiers
   in
-  Service.Environment.populate ~configuration ~scheduler environment recheck_sources;
-
+  let recheck_modules, recheck_sources =
+    match incremental_style with
+    | FineGrained ->
+        let (), invalidated_type_checking_keys =
+          let update () =
+            Service.Environment.populate
+              ~configuration
+              ~scheduler
+              environment
+              re_environment_build_sources;
+            if debug then
+              Analysis.Environment.check_class_hierarchy_integrity ()
+          in
+          Analysis.Environment.update_and_compute_dependencies
+            environment
+            invalidated_environment_qualifiers
+            ~update
+        in
+        let invalidated_type_checking_keys =
+          List.fold
+            directly_changed_modules
+            ~init:invalidated_type_checking_keys
+            ~f:(fun sofar key -> SharedMemoryKeys.ReferenceDependencyKey.KeySet.add key sofar)
+        in
+        let invalidated_type_checking_keys =
+          SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements invalidated_type_checking_keys
+        in
+        let recheck_modules = invalidated_type_checking_keys in
+        let recheck_sources =
+          List.filter_map recheck_modules ~f:(AstEnvironment.get_source ast_environment)
+        in
+        recheck_modules, recheck_sources
+    | _ ->
+        let () =
+          Analysis.Environment.purge environment ~debug invalidated_environment_qualifiers;
+          Service.Environment.populate
+            ~configuration
+            ~scheduler
+            environment
+            re_environment_build_sources
+        in
+        invalidated_environment_qualifiers, re_environment_build_sources
+  in
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
@@ -145,7 +182,7 @@ let recheck
     ~timer
     ~integers:
       [ "number of direct files", List.length paths;
-        "number of files", List.length recheck_source_paths;
+        "number of files", List.length recheck_sources;
         "number of functions", List.sum (module Int) ~f:Preprocessing.count_defines recheck_sources
       ]
     ();

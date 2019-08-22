@@ -71,7 +71,7 @@ let run
         ~excludes
         ~extensions
         ~local_root:(Path.create_absolute local_root)
-        ~incremental_transitive_dependencies:transitive
+        ~incremental_style:(if transitive then Transitive else Shallow)
         ()
     in
     (fun () ->

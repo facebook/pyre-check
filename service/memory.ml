@@ -210,7 +210,7 @@ let initialize log_level =
         {
           SharedMemory.global_size = initial_heap_size;
           heap_size = initial_heap_size;
-          dep_table_pow = 19;
+          dep_table_pow = 24;
           hash_table_pow = 22;
           shm_dirs = ["/dev/shm"; "/pyre"];
           shm_min_avail = 1024 * 1024 * 512;

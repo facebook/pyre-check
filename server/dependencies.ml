@@ -11,7 +11,7 @@ open Pyre
 
 let compute_dependencies
     ~state:{ State.ast_environment; environment; scheduler; _ }
-    ~configuration:({ incremental_transitive_dependencies; _ } as configuration)
+    ~configuration:({ incremental_style; _ } as configuration)
     ~removed_modules
     source_paths
   =
@@ -55,10 +55,9 @@ let compute_dependencies
   let dependents =
     let modules = List.filter qualifiers ~f:signature_hash_changed @ removed_modules in
     let get_dependencies =
-      if incremental_transitive_dependencies then
-        Dependencies.transitive_of_list
-      else
-        Dependencies.of_list
+      match incremental_style with
+      | Shallow -> Dependencies.of_list
+      | _ -> Dependencies.transitive_of_list
     in
     get_dependencies ~get_dependencies:(Environment.dependencies environment) ~modules
     |> Fn.flip Set.diff (Reference.Set.of_list qualifiers)

@@ -143,7 +143,7 @@ module ScratchServer = struct
   let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
 
   let start
-      ?(incremental_transitive_dependencies = false)
+      ?(incremental_style = Configuration.Analysis.Shallow)
       ~context
       ?(external_sources = [])
       sources
@@ -155,7 +155,7 @@ module ScratchServer = struct
       let sources, ast_environment, environment =
         ScratchProject.build_environment ~include_helper_builtins:false project
       in
-      ( { configuration with incremental_transitive_dependencies },
+      ( { configuration with incremental_style },
         module_tracker,
         ast_environment,
         environment,

@@ -7,6 +7,12 @@ open Core
 open Pyre
 
 module Analysis = struct
+  type incremental_style =
+    | Shallow
+    | Transitive
+    | FineGrained
+  [@@deriving show]
+
   type t = {
     start_time: float;
     infer: bool;
@@ -34,7 +40,7 @@ module Analysis = struct
     excludes: Str.regexp list; [@opaque]
     extensions: string list;
     store_type_check_resolution: bool;
-    incremental_transitive_dependencies: bool;
+    incremental_style: incremental_style;
     include_hints: bool;
   }
   [@@deriving show]
@@ -75,7 +81,7 @@ module Analysis = struct
       ?(excludes = [])
       ?(extensions = [])
       ?(store_type_check_resolution = true)
-      ?(incremental_transitive_dependencies = false)
+      ?(incremental_style = Shallow)
       ?(include_hints = false)
       ()
     =
@@ -112,7 +118,7 @@ module Analysis = struct
             |> Str.regexp);
       extensions;
       store_type_check_resolution;
-      incremental_transitive_dependencies;
+      incremental_style;
       include_hints;
     }
 
