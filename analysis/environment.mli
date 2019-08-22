@@ -19,6 +19,9 @@ val ast_environment : t -> AstEnvironment.ReadOnly.t
 
 val resolution : t -> unit -> GlobalResolution.t
 
+(* Currently experimental *)
+val dependency_tracked_resolution : t -> dependency:Reference.t -> unit -> GlobalResolution.t
+
 val dependencies : t -> Reference.t -> Reference.Set.Tree.t option
 
 val connect_definition : t -> resolution:GlobalResolution.t -> definition:Class.t Node.t -> unit
@@ -48,6 +51,12 @@ val is_module : t -> Reference.t -> bool
 val check_class_hierarchy_integrity : unit -> unit
 
 val purge : t -> ?debug:bool -> Reference.t list -> unit
+
+val update_and_compute_dependencies
+  :  t ->
+  Reference.t list ->
+  update:(unit -> 'a) ->
+  'a * SharedMemoryKeys.ReferenceDependencyKey.KeySet.t
 
 val deduplicate_class_hierarchy : annotations:Type.Primitive.t list -> unit
 

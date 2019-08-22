@@ -474,6 +474,12 @@ module DependencyTracking = struct
              DependencyKey.KeySet.add decoded sofar)
 
 
+    let get_all_dependents keys =
+      Table.KeySet.elements keys
+      |> List.map ~f:get_dependents
+      |> List.fold ~init:DependencyKey.KeySet.empty ~f:DependencyKey.KeySet.union
+
+
     let get ?dependency key =
       Option.iter dependency ~f:(add_dependency key);
       Table.get key

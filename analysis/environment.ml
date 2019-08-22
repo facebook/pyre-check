@@ -80,6 +80,8 @@ module SharedMemory = struct
     let description = "Class"
 
     let unmarshall value = Marshal.from_string value 0
+
+    let compare = Node.compare Statement.Class.compare
   end
 
   module ClassMetadataValue = struct
@@ -90,6 +92,8 @@ module SharedMemory = struct
     let description = "Class metadata"
 
     let unmarshall value = Marshal.from_string value 0
+
+    let compare = GlobalResolution.compare_class_metadata
   end
 
   module AliasValue = struct
@@ -100,6 +104,8 @@ module SharedMemory = struct
     let description = "Alias"
 
     let unmarshall value = Marshal.from_string value 0
+
+    let compare = Type.compare_alias
   end
 
   module GlobalValue = struct
@@ -110,6 +116,8 @@ module SharedMemory = struct
     let description = "Global"
 
     let unmarshall value = Marshal.from_string value 0
+
+    let compare = GlobalResolution.compare_global
   end
 
   module DependentValue = struct
@@ -130,6 +138,8 @@ module SharedMemory = struct
     let description = "Order indices"
 
     let unmarshall value = Marshal.from_string value 0
+
+    let compare = compare_int
   end
 
   module OrderAnnotationValue = struct
@@ -141,10 +151,12 @@ module SharedMemory = struct
 
     (* Strings are not marshalled by shared memory *)
     let unmarshall value = value
+
+    let compare = compare_string
   end
 
   module EdgeValue = struct
-    type t = ClassHierarchy.Target.t list
+    type t = ClassHierarchy.Target.t list [@@deriving compare]
 
     let prefix = Prefix.make ()
 
@@ -164,7 +176,7 @@ module SharedMemory = struct
   end
 
   module OrderKeyValue = struct
-    type t = int list
+    type t = int list [@@deriving compare]
 
     let prefix = Prefix.make ()
 
@@ -181,10 +193,12 @@ module SharedMemory = struct
     let description = "Module"
 
     let unmarshall value = Marshal.from_string value 0
+
+    let compare = Module.compare
   end
 
   module UndecoratedFunctionValue = struct
-    type t = Type.t Type.Callable.overload
+    type t = Type.t Type.Callable.overload [@@deriving compare]
 
     let prefix = Prefix.make ()
 
@@ -193,16 +207,39 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module ClassDefinitions = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (ClassValue)
+  module ClassDefinitions =
+    Memory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.StringKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (ClassValue)
   (** Shared memory maps *)
 
-  module Modules = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ModuleValue)
-  module ClassMetadata = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (ClassMetadataValue)
-  module Aliases = Memory.NoCache.Make (SharedMemoryKeys.StringKey) (AliasValue)
-  module Globals = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (GlobalValue)
+  module Modules =
+    Memory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.ReferenceKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (ModuleValue)
+  module ClassMetadata =
+    Memory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.StringKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (ClassMetadataValue)
+  module Aliases =
+    Memory.DependencyTrackedTableNoCache
+      (SharedMemoryKeys.StringKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (AliasValue)
+  module Globals =
+    Memory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.ReferenceKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (GlobalValue)
   module Dependents = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentValue)
   module UndecoratedFunctions =
-    Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UndecoratedFunctionValue)
+    Memory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.ReferenceKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (UndecoratedFunctionValue)
 
   module FunctionKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (FunctionKeyValue)
   (** Keys *)
@@ -212,19 +249,35 @@ module SharedMemory = struct
   module AliasKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (AliasKeyValue)
   module DependentKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentKeyValue)
 
-  module OrderIndices = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (OrderIndexValue)
+  module OrderIndices =
+    Memory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.StringKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (OrderIndexValue)
   (** Type order maps *)
 
-  module OrderAnnotations = Memory.WithCache.Make (SharedMemoryKeys.IntKey) (OrderAnnotationValue)
-  module OrderEdges = Memory.WithCache.Make (SharedMemoryKeys.IntKey) (EdgeValue)
+  module OrderAnnotations =
+    Memory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.IntKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (OrderAnnotationValue)
+  module OrderEdges =
+    Memory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.IntKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (EdgeValue)
   module OrderBackedges = Memory.WithCache.Make (SharedMemoryKeys.IntKey) (BackedgeValue)
-  module OrderKeys = Memory.WithCache.Make (Memory.SingletonKey) (OrderKeyValue)
+  module OrderKeys =
+    Memory.DependencyTrackedTableWithCache
+      (Memory.SingletonKey)
+      (SharedMemoryKeys.ReferenceDependencyKey)
+      (OrderKeyValue)
 end
 
 module SharedMemoryClassHierarchyHandler = struct
   open SharedMemory
 
-  let edges = OrderEdges.get
+  let edges = OrderEdges.get ?dependency:None
 
   let set_edges ~key ~data =
     OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
@@ -239,14 +292,14 @@ module SharedMemoryClassHierarchyHandler = struct
     OrderBackedges.add key value
 
 
-  let indices = OrderIndices.get
+  let indices = OrderIndices.get ?dependency:None
 
   let set_indices ~key ~data =
     OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
     OrderIndices.add key data
 
 
-  let annotations = OrderAnnotations.get
+  let annotations = OrderAnnotations.get ?dependency:None
 
   let set_annotations ~key ~data =
     OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
@@ -554,11 +607,31 @@ module SharedMemoryDependencyHandler = struct
       class_metadata = ClassMetadata.KeySet.of_list class_keys;
       undecorated_signatures = UndecoratedFunctions.KeySet.of_list global_keys;
       (* We add a global name for each function definition as well. *)
-      globals = UndecoratedFunctions.KeySet.of_list (global_keys @ function_keys);
-      edges = OrderAnnotations.KeySet.of_list index_keys;
-      backedges = OrderAnnotations.KeySet.of_list index_keys;
+      globals = Globals.KeySet.of_list (global_keys @ function_keys);
+      edges = OrderEdges.KeySet.of_list index_keys;
+      backedges = OrderBackedges.KeySet.of_list index_keys;
       indices = OrderIndices.KeySet.of_list class_keys;
       annotations = OrderAnnotations.KeySet.of_list index_keys;
+    }
+
+
+  let find_added_dependent_table_keys qualifiers ~old_keys =
+    let new_keys = get_all_dependent_table_keys qualifiers in
+    {
+      aliases = Aliases.KeySet.diff new_keys.aliases old_keys.aliases;
+      modules = Modules.KeySet.diff new_keys.modules old_keys.modules;
+      class_definitions =
+        ClassDefinitions.KeySet.diff new_keys.class_definitions old_keys.class_definitions;
+      class_metadata = ClassMetadata.KeySet.diff new_keys.class_metadata old_keys.class_metadata;
+      undecorated_signatures =
+        UndecoratedFunctions.KeySet.diff
+          new_keys.undecorated_signatures
+          old_keys.undecorated_signatures;
+      globals = Globals.KeySet.diff new_keys.globals old_keys.globals;
+      edges = OrderEdges.KeySet.diff new_keys.edges old_keys.edges;
+      backedges = OrderBackedges.KeySet.diff new_keys.backedges old_keys.backedges;
+      indices = OrderIndices.KeySet.diff new_keys.indices old_keys.indices;
+      annotations = OrderAnnotations.KeySet.diff new_keys.annotations old_keys.annotations;
     }
 end
 
@@ -607,20 +680,26 @@ let connect_annotations_to_object annotations =
   List.iter ~f:connect_to_top annotations
 
 
-let resolution { ast_environment } () =
+let resolution_implementation ?dependency { ast_environment } () =
   GlobalResolution.create
     ~ast_environment
-    ~aliases:SharedMemory.Aliases.get
-    ~module_definition:SharedMemory.Modules.get
-    ~class_definition:SharedMemory.ClassDefinitions.get
-    ~class_metadata:SharedMemory.ClassMetadata.get
-    ~undecorated_signature:SharedMemory.UndecoratedFunctions.get
-    ~global:SharedMemory.Globals.get
-    ~edges:SharedMemory.OrderEdges.get
+    ~aliases:(SharedMemory.Aliases.get ?dependency)
+    ~module_definition:(SharedMemory.Modules.get ?dependency)
+    ~class_definition:(SharedMemory.ClassDefinitions.get ?dependency)
+    ~class_metadata:(SharedMemory.ClassMetadata.get ?dependency)
+    ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
+    ~global:(SharedMemory.Globals.get ?dependency)
+    ~edges:(SharedMemory.OrderEdges.get ?dependency)
     ~backedges:SharedMemory.OrderBackedges.get
-    ~indices:SharedMemory.OrderIndices.get
-    ~annotations:SharedMemory.OrderAnnotations.get
+    ~indices:(SharedMemory.OrderIndices.get ?dependency)
+    ~annotations:(SharedMemory.OrderAnnotations.get ?dependency)
     (module Annotated.Class)
+
+
+let resolution = resolution_implementation ?dependency:None
+
+let dependency_tracked_resolution environment ~dependency () =
+  resolution_implementation ~dependency environment ()
 
 
 let ast_environment { ast_environment } = ast_environment
@@ -1668,6 +1747,80 @@ let purge _ ?(debug = false) (qualifiers : Reference.t list) =
 
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
     check_class_hierarchy_integrity ()
+
+
+let update_and_compute_dependencies _ qualifiers ~update =
+  let old_dependent_table_keys =
+    SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
+  in
+  let {
+    SharedMemoryDependencyHandler.aliases;
+    modules;
+    class_definitions;
+    class_metadata;
+    undecorated_signatures;
+    globals;
+    edges;
+    backedges;
+    indices;
+    annotations;
+  }
+    =
+    old_dependent_table_keys
+  in
+  let open SharedMemory in
+  (* Backedges are not tracked *)
+  SharedMemoryClassHierarchyHandler.disconnect_backedges (OrderIndices.KeySet.elements indices);
+  OrderBackedges.remove_batch backedges;
+
+  SharedMemoryClassHierarchyHandler.remove_keys annotations;
+
+  SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
+  SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
+
+  let update, mutation_triggers =
+    SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
+    |> Aliases.add_to_transaction ~keys:aliases
+    |> Modules.add_to_transaction ~keys:modules
+    |> ClassDefinitions.add_to_transaction ~keys:class_definitions
+    |> ClassMetadata.add_to_transaction ~keys:class_metadata
+    |> UndecoratedFunctions.add_to_transaction ~keys:undecorated_signatures
+    |> Globals.add_to_transaction ~keys:globals
+    |> OrderEdges.add_to_transaction ~keys:edges
+    |> OrderIndices.add_to_transaction ~keys:indices
+    |> OrderAnnotations.add_to_transaction ~keys:annotations
+    |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
+  in
+  let {
+    SharedMemoryDependencyHandler.aliases;
+    modules;
+    class_definitions;
+    class_metadata;
+    undecorated_signatures;
+    globals;
+    edges;
+    backedges = _;
+    indices;
+    annotations;
+  }
+    =
+    SharedMemoryDependencyHandler.find_added_dependent_table_keys
+      qualifiers
+      ~old_keys:old_dependent_table_keys
+  in
+  let mutation_and_addition_triggers =
+    [ Aliases.get_all_dependents aliases;
+      Modules.get_all_dependents modules;
+      ClassDefinitions.get_all_dependents class_definitions;
+      ClassMetadata.get_all_dependents class_metadata;
+      UndecoratedFunctions.get_all_dependents undecorated_signatures;
+      Globals.get_all_dependents globals;
+      OrderEdges.get_all_dependents edges;
+      OrderIndices.get_all_dependents indices;
+      OrderAnnotations.get_all_dependents annotations ]
+    |> List.fold ~init:mutation_triggers ~f:SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
+  in
+  update, mutation_and_addition_triggers
 
 
 let shared_memory_handler ast_environment = { ast_environment }

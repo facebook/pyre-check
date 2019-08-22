@@ -19,15 +19,16 @@ let class_hierarchy environment =
 
 let find_unsafe getter value = getter value |> fun optional -> Option.value_exn optional
 
-let create_environment
+let create_environment_and_project
     ~context
     ?(include_typeshed_stubs = true)
     ?(include_helpers = false)
     ?(additional_sources = [])
     ()
   =
+  let project = ScratchProject.setup ~context additional_sources in
   let sources, _, environment =
-    ScratchProject.setup ~context additional_sources
+    project
     |> ScratchProject.build_environment
          ~include_typeshed_stubs
          ~include_helper_builtins:include_helpers
@@ -50,7 +51,17 @@ let create_environment
     in
     OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
   in
-  environment
+  environment, project
+
+
+let create_environment ~context ?include_typeshed_stubs ?include_helpers ?additional_sources () =
+  create_environment_and_project
+    ~context
+    ?include_typeshed_stubs
+    ?include_helpers
+    ?additional_sources
+    ()
+  |> fst
 
 
 let populate ?include_typeshed_stubs ?include_helpers sources =
@@ -1597,6 +1608,117 @@ let test_remove_extra_edges_to_object context =
   ()
 
 
+let test_update_and_compute_dependencies context =
+  (* Pre-test setup *)
+  let environment, project =
+    create_environment_and_project
+      ~context
+      ~additional_sources:
+        [ "source.py", {|
+      class Foo(): ...
+      |};
+          "other.py", {|
+      class Bar(): ...
+      |} ]
+      ()
+  in
+  let dependency_A = Reference.create "A" in
+  let dependency_B = Reference.create "B" in
+  (* Establish dependencies *)
+  let untracked_global_resolution = Environment.resolution environment () in
+  let dependency_tracked_global_resolution_A =
+    Environment.dependency_tracked_resolution environment ~dependency:dependency_A ()
+  in
+  let dependency_tracked_global_resolution_B =
+    Environment.dependency_tracked_resolution environment ~dependency:dependency_B ()
+  in
+  (* A read Foo *)
+  GlobalResolution.class_definition dependency_tracked_global_resolution_A (Primitive "source.Foo")
+  |> Option.is_some
+  |> assert_true;
+
+  (* B read Bar *)
+  GlobalResolution.class_definition dependency_tracked_global_resolution_B (Primitive "other.Bar")
+  |> Option.is_some
+  |> assert_true;
+
+  let assert_update
+      ~repopulate_source_to
+      ~expected_state_in_update
+      ~expected_state_after_update
+      ~expected_dependencies
+    =
+    let repopulate source =
+      let source = Test.parse ~handle:"source.py" source |> Preprocessing.preprocess in
+      Service.Environment.populate
+        ~configuration:(ScratchProject.configuration_of project)
+        ~scheduler:(Scheduler.mock ())
+        environment
+        [source]
+    in
+    let assert_state (primitive, expected) =
+      GlobalResolution.class_definition untracked_global_resolution (Primitive primitive)
+      |> Option.is_some
+      |> assert_equal expected
+    in
+    let (), dependents =
+      let update () =
+        List.iter expected_state_in_update ~f:assert_state;
+        Option.iter repopulate_source_to ~f:repopulate
+      in
+      Environment.update_and_compute_dependencies environment [Reference.create "source"] ~update
+    in
+    assert_equal
+      (SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements dependents)
+      expected_dependencies;
+    List.iter expected_state_after_update ~f:assert_state
+  in
+  (* Removes source without replacing it, triggers dependency *)
+  assert_update
+    ~repopulate_source_to:None
+    ~expected_state_in_update:["source.Foo", false]
+    ~expected_state_after_update:["source.Foo", false]
+    ~expected_dependencies:[dependency_A];
+
+  (* Re-adds source, triggers dependency *)
+  assert_update
+    ~repopulate_source_to:(Some "class Foo: ...")
+    ~expected_state_in_update:["source.Foo", false]
+    ~expected_state_after_update:["source.Foo", true]
+    ~expected_dependencies:[dependency_A];
+
+  (* Removes source, but replaces it exactly, does not trigger dependency *)
+  assert_update
+    ~repopulate_source_to:(Some "class Foo: ...")
+    ~expected_state_in_update:["source.Foo", false]
+    ~expected_state_after_update:["source.Foo", true]
+    ~expected_dependencies:[];
+
+  (* Removes source, but replaced it with something new, triggers dependency *)
+  assert_update
+    ~repopulate_source_to:(Some {|
+      class Foo:
+        x: int
+      |})
+    ~expected_state_in_update:["source.Foo", false]
+    ~expected_state_after_update:["source.Foo", true]
+    ~expected_dependencies:[dependency_A];
+
+  (* Irrelevant update, does not trigger dependencies *)
+  assert_update
+    ~repopulate_source_to:
+      (Some {|
+      class Foo:
+        x: int
+      class Irrelevant:
+        x: str
+      |})
+    ~expected_state_in_update:["source.Foo", false; "source.Irrelevant", false]
+    ~expected_state_after_update:["source.Foo", true; "source.Irrelevant", true]
+    ~expected_dependencies:[];
+  ()
+
+
 let () =
   "environment"
   >::: [ "connect_type_order" >:: test_connect_type_order;
@@ -1621,5 +1743,6 @@ let () =
          "connect_to_top" >:: test_connect_annotations_to_top;
          "deduplicate" >:: test_deduplicate;
          "remove_extra" >:: test_remove_extra_edges_to_object;
-         "purge_hierarchy" >:: test_purge_hierarchy ]
+         "purge_hierarchy" >:: test_purge_hierarchy;
+         "update_and_compute_dependencies" >:: test_update_and_compute_dependencies ]
   |> Test.run

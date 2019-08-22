@@ -35,9 +35,9 @@ type class_metadata = {
   is_final: bool;
   extends_placeholder_stub_class: bool;
 }
-[@@deriving eq]
+[@@deriving eq, compare]
 
-type global = Annotation.t Node.t [@@deriving eq, show]
+type global = Annotation.t Node.t [@@deriving eq, show, compare]
 
 type t = {
   ast_environment: AstEnvironment.ReadOnly.t;

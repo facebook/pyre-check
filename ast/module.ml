@@ -7,13 +7,17 @@ open Core
 open Expression
 open Statement
 
+type aliased_exports = Reference.t Reference.Map.Tree.t [@@deriving eq, sexp]
+
+let compare_aliased_exports = Reference.Map.Tree.compare_direct Reference.compare
+
 type t =
   | Explicit of {
-      aliased_exports: Reference.t Reference.Map.Tree.t;
+      aliased_exports: aliased_exports;
       empty_stub: bool;
     }
   | Implicit of { empty_stub: bool }
-[@@deriving eq, sexp]
+[@@deriving eq, sexp, compare]
 
 (* We cache results of `from_empty_stub` here since module definition lookup requires shared memory
    lookup, which can be expensive *)

@@ -180,6 +180,8 @@ module DependencyTrackedTableWithCache
 
   val get_dependents : key -> DependencyKey.KeySet.t
 
+  val get_all_dependents : KeySet.t -> DependencyKey.KeySet.t
+
   val add_to_transaction
     :  DependencyKey.Transaction.t ->
     keys:KeySet.t ->
@@ -203,6 +205,8 @@ module DependencyTrackedTableNoCache
   val get : ?dependency:DependencyKey.t -> key -> t option
 
   val get_dependents : key -> DependencyKey.KeySet.t
+
+  val get_all_dependents : KeySet.t -> DependencyKey.KeySet.t
 
   val add_to_transaction
     :  DependencyKey.Transaction.t ->
