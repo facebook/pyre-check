@@ -35,7 +35,10 @@ class LintMessage(NamedTuple):
 
 
 def _lint_paths(
-    checks: List[str], directory: str, paths: Iterable[str]
+    checks: List[str],
+    directory: str,
+    paths: Iterable[str],
+    timeout: Optional[int] = None,
 ) -> List[LintMessage]:
     messages = []
     try:
@@ -45,6 +48,7 @@ def _lint_paths(
                 ["pyre", "query", f"run_check('{check}', {','.join(paths)})"],
                 check=True,
                 stdout=subprocess.PIPE,
+                timeout=timeout,
             )
             response = json.loads(result.stdout.decode())
             if "response" in response:
@@ -67,6 +71,11 @@ def _lint_paths(
         LOG.error(str(exception))
     except json.decoder.JSONDecodeError:
         LOG.warning("Unable to decode server response.")
+    except subprocess.TimeoutExpired as exception:
+        LOG.warning(
+            f"Pyre query timed out after {str(exception.timeout)} seconds, \
+            skipping {directory}."
+        )
     return messages
 
 
@@ -103,6 +112,7 @@ def main() -> None:
     parser.add_argument(
         "--check", action="append", help="List of static analyses that should be run."
     )
+    parser.add_argument("--timeout", type=int, help="timeout (in seconds) per server")
     parser.add_argument("filenames", nargs="+", help="paths to lint")
     arguments = parser.parse_args()
 
@@ -116,7 +126,10 @@ def main() -> None:
     to_lint = _group_by_pyre_server(paths)
     for directory in to_lint:
         for result in _lint_paths(
-            checks=arguments.check, directory=directory, paths=to_lint[directory]
+            checks=arguments.check,
+            directory=directory,
+            paths=to_lint[directory],
+            timeout=arguments.timeout,
         ):
             print(json.dumps(result._asdict()))
 

@@ -48,6 +48,7 @@ class PyreLinterTest(unittest.TestCase):
             ["pyre", "query", "run_check('awaitable', '/root/async_test.py')"],
             check=True,
             stdout=subprocess.PIPE,
+            timeout=None,
         )
         self.assertEqual(
             [result._asdict() for result in results],
@@ -87,4 +88,18 @@ class PyreLinterTest(unittest.TestCase):
         self.assertEqual(
             _group_by_pyre_server(["/b/c/x.py", "/b/c/y.py", "/b/a/first.py"]),
             {"/b/c": ["/b/c/x.py", "/b/c/y.py"], "/b": ["/b/a/first.py"]},
+        )
+
+    # Test that the function handles timeouts gracefully.
+    @patch("subprocess.run", side_effect=subprocess.TimeoutExpired("pyre", 42))
+    def test_timeout(self, run: _patch) -> None:
+        self.assertEqual(
+            _lint_paths(["awaitable"], "/root", ["/root/async_test.py"], 42), []
+        )
+        # pyre-ignore[16]: assert_called_once_with is missing from typeshed.
+        run.assert_called_once_with(
+            ["pyre", "query", "run_check('awaitable', '/root/async_test.py')"],
+            check=True,
+            stdout=subprocess.PIPE,
+            timeout=42,
         )
