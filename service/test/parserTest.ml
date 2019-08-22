@@ -641,6 +641,12 @@ let test_parser_update context =
       { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
     ]
     ~expected:[!&"a"];
+  assert_parser_update
+    [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "y = 1" };
+      { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
+      { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
+    ]
+    ~expected:[!&"a"; !&"b"; !&"c"];
 
   (* This is expected -- the parser knows only names, not types *)
   assert_parser_update
@@ -649,14 +655,6 @@ let test_parser_update context =
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
     ~expected:[!&"a"];
 
-  (* TODO (T50863499): Transitive wildcard import is currently broken. Expected output should be
-     a,b,c *)
-  assert_parser_update
-    [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "y = 1" };
-      { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
-      { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
-    ]
-    ~expected:[!&"a"; !&"b"];
   ()
 
 

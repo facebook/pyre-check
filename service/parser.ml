@@ -125,25 +125,63 @@ let expand_wildcard_imports ~force ~ast_environment ({ Source.qualifier; _ } as 
 
     type t = unit
 
+    let get_transitive_exports ~ast_environment ~dependency qualifier =
+      let module Visitor = Visit.MakeStatementVisitor (struct
+        type t = Reference.t list
+
+        let visit_children _ = false
+
+        let statement _ collected_imports { Node.value; _ } =
+          match value with
+          | Statement.Import { Statement.Import.from = Some from; imports }
+            when List.exists imports ~f:(fun { Statement.Import.name; _ } ->
+                     String.equal (Reference.show name) "*") ->
+              from :: collected_imports
+          | _ -> collected_imports
+      end)
+      in
+      let visited_modules = Reference.Hash_set.create () in
+      let transitive_exports = Reference.Hash_set.create () in
+      let worklist = Queue.of_list [qualifier] in
+      let rec search_wildcard_imports () =
+        match Queue.dequeue worklist with
+        | None -> ()
+        | Some qualifier ->
+            let _ =
+              match Hash_set.strict_add visited_modules qualifier with
+              | Error _ -> ()
+              | Ok () -> (
+                match
+                  AstEnvironment.get_wildcard_exports ast_environment ~dependency qualifier
+                with
+                | None -> raise MissingWildcardImport
+                | Some exports -> (
+                    List.iter exports ~f:(Hash_set.add transitive_exports);
+                    match RawSources.get qualifier with
+                    | None -> ()
+                    | Some source -> Visitor.visit [] source |> Queue.enqueue_all worklist ) )
+            in
+            search_wildcard_imports ()
+      in
+      search_wildcard_imports ();
+      Hash_set.to_list transitive_exports |> List.sort ~compare:Reference.compare
+
+
     let statement state ({ Node.value; _ } as statement) =
       match value with
       | Import { Import.from = Some from; imports }
         when List.exists imports ~f:(fun { Import.name; _ } ->
                  String.equal (Reference.show name) "*") ->
           let expanded_import =
-            match
-              AstEnvironment.get_wildcard_exports ast_environment ~dependency:qualifier from
+            try
+              match get_transitive_exports ~ast_environment ~dependency:qualifier from with
+              | [] -> statement
+              | exports ->
+                  List.map exports ~f:(fun name -> { Import.name; alias = None })
+                  |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
+                  |> fun value -> { statement with Node.value }
             with
-            | Some exports ->
-                exports
-                |> List.map ~f:(fun name -> { Import.name; alias = None })
-                |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
-                |> fun value -> { statement with Node.value }
-            | None ->
-                if force then
-                  statement
-                else
-                  raise MissingWildcardImport
+            | MissingWildcardImport -> if force then statement else raise MissingWildcardImport
           in
           state, [expanded_import]
       | _ -> state, [statement]
