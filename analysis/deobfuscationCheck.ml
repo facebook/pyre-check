@@ -227,7 +227,7 @@ module UnusedStoreState (Context : Context) = struct
             state = initial ~lookup:(LivenessCheck.NestedDefineLookup.Table.create ()) ~define;
           }
     in
-    List.fold ~init:NestedDefines.initial ~f:add_nested (ordered_nested_defines define)
+    List.fold ~init:NestedDefines.initial ~f:add_nested (nested_defines_deep_to_shallow define)
 
 
   let initial ~state:_ = initial

@@ -10,12 +10,12 @@ open Ast
 open Statement
 open Test
 
-let test_ordered_nested_defines _ =
-  let assert_ordered_nested_defines source expected =
+let test_nested_defines_deep_to_shallow _ =
+  let assert_nested_defines_deep_to_shallow source expected =
     let nested =
       parse_single_define source
       |> Node.create_with_default_location
-      |> CustomAnalysis.ordered_nested_defines
+      |> CustomAnalysis.nested_defines_deep_to_shallow
       |> List.map ~f:Node.value
       |> List.map ~f:(fun { Define.signature = { Define.name; _ }; _ } -> name)
     in
@@ -26,7 +26,7 @@ let test_ordered_nested_defines _ =
       expected
       nested
   in
-  assert_ordered_nested_defines
+  assert_nested_defines_deep_to_shallow
     {|
       def a():
         def b():
@@ -36,7 +36,7 @@ let test_ordered_nested_defines _ =
           pass
     |}
     ["d"; "b"; "c"];
-  assert_ordered_nested_defines
+  assert_nested_defines_deep_to_shallow
     {|
       def a():
         def b():
@@ -49,4 +49,6 @@ let test_ordered_nested_defines _ =
 
 
 let () =
-  "customAnalysis" >::: ["ordered_nested_defines" >:: test_ordered_nested_defines] |> Test.run
+  "customAnalysis"
+  >::: ["nested_defines_deep_to_shallow" >:: test_nested_defines_deep_to_shallow]
+  |> Test.run

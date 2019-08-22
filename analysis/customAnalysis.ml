@@ -24,7 +24,7 @@ module NestedDefines = struct
     | _ -> nested_defines
 end
 
-let ordered_nested_defines define =
+let nested_defines_deep_to_shallow define =
   let shallow_nested_defines { Node.value = { Statement.Define.body; _ }; _ } =
     let find_nested = function
       | { Node.value = Define define; location } -> Some (Node.create ~location define)

@@ -187,5 +187,5 @@ let run ~configuration:_ ~global_resolution ~source =
           State.errors state)
     |> Option.value ~default:[]
   in
-  List.map ~f:check (ordered_nested_defines define) |> ignore;
+  List.map ~f:check (nested_defines_deep_to_shallow define) |> ignore;
   check define
