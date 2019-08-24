@@ -102,7 +102,7 @@ def main() -> None:
 
     Configuration.annotation_specs = [
         DecoratorAnnotationSpec(**dict(zip(DecoratorAnnotationSpec._fields, spec)))
-        for spec in arguments.annotation_spec
+        for spec in (arguments.annotation_spec or [])
     ]
 
     modes = arguments.mode or Registry.default_generators
