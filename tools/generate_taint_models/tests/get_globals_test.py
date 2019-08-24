@@ -262,3 +262,49 @@ class GetGlobalsTest(unittest.TestCase):
             """,
             {},
         )
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              @property
+              def foo():
+                return 0
+            """,
+            {},
+        )
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              @cached_property
+              def foo(self):
+                return 0
+            """,
+            {
+                "def module.MyClass.foo(self) -> TaintSink[Global, "
+                "Via[cached_property]]: ..."
+            },
+        )
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              @util.some_property_module.cached_property
+              def foo(self):
+                return 0
+            """,
+            {
+                "def module.MyClass.foo(self) -> TaintSink[Global, "
+                "Via[cached_property]]: ..."
+            },
+        )
+
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              @cached_classproperty
+              def foo(self):
+                return 0
+            """,
+            {
+                "def module.MyClass.foo(self) -> TaintSink[Global, "
+                "Via[cached_class_property]]: ..."
+            },
+        )

@@ -10,19 +10,23 @@ import ast
 import glob
 import logging
 import os
-from typing import Callable, Iterable, Optional, Set
+from typing import Callable, Iterable, Optional, Set, Tuple, Union
 
-from .model import AssignmentModel
+from .model import AssignmentModel, FunctionDefinitionModel
 from .model_generator import Configuration, ModelGenerator, Registry, qualifier
 from .module_loader import find_all_paths, load_module
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
 class GlobalModelGenerator(ModelGenerator):
     def _globals(self, root: str, path: str) -> Iterable[str]:
         globals: Set[str] = set()
+        # The parent of the property needs to be stored as well, as we only store the
+        # module qualifier.
+        cached_properties: Set[Tuple[Optional[str], FunctionDefinition]] = set()
 
         module = load_module(path)
 
@@ -134,13 +138,23 @@ class GlobalModelGenerator(ModelGenerator):
                 # Omit pure aliases of the form `x = alias`.
                 for target in statement.targets:
                     visit_assignment(target, statement.value)
+
             elif isinstance(statement, ast.AugAssign):
                 visitor.visit(statement.target)
+
             # Don't attempt to register statements of the form `x: int`.
             elif isinstance(statement, ast.AnnAssign):
                 value = statement.value
                 if value is not None:
                     visit_assignment(statement.target, value)
+
+            elif isinstance(statement, ast.FunctionDef) or isinstance(
+                statement, ast.AsyncFunctionDef
+            ):
+                for decorator in statement.decorator_list:
+                    if _is_cached_property_decorator(decorator):
+                        cached_properties.add((visitor.parent, statement))
+
             elif isinstance(statement, ast.ClassDef) and should_visit_class(statement):
                 visitor.parent = statement.name
                 visitor.blacklist = all_attributes(statement)
@@ -167,6 +181,29 @@ class GlobalModelGenerator(ModelGenerator):
             ).generate()
             if generated is not None:
                 models.add(generated)
+
+        for (parent, function_definition) in cached_properties:
+            is_class_property = any(
+                (
+                    _is_class_property_decorator(decorator)
+                    for decorator in function_definition.decorator_list
+                )
+            )
+            if is_class_property:
+                returns = "TaintSink[Global, Via[cached_class_property]]"
+            else:
+                returns = "TaintSink[Global, Via[cached_property]]"
+            if parent is not None:
+                function_qualifier = f"{module_qualifier}.{parent}"
+            else:
+                function_qualifier = module_qualifier
+            models.add(
+                FunctionDefinitionModel(
+                    qualifier=function_qualifier,
+                    definition=function_definition,
+                    returns=returns,
+                ).generate()
+            )
         return models
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
@@ -197,6 +234,30 @@ def _get_self_attribute(target: ast.expr) -> Optional[str]:
         if isinstance(value, ast.Name) and value.id == "self":
             return target.attr
     return None
+
+
+def _is_cached_property_decorator(decorator: ast.expr) -> bool:
+    if isinstance(decorator, ast.Name):
+        name = decorator.id
+    elif isinstance(decorator, ast.Attribute):
+        name = decorator.attr
+    else:
+        name = None
+    if name is None:
+        return False
+    return "cached" in name and "property" in name
+
+
+def _is_class_property_decorator(decorator: ast.expr) -> bool:
+    if isinstance(decorator, ast.Name):
+        name = decorator.id
+    elif isinstance(decorator, ast.Attribute):
+        name = decorator.attr
+    else:
+        name = None
+    if name is None:
+        return False
+    return "class" in name and "property" in name
 
 
 Registry.register("get_globals", GlobalModelGenerator, include_by_default=False)
