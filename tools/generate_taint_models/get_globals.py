@@ -20,14 +20,6 @@ from .module_loader import find_all_paths, load_module
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def _get_self_attribute(target: ast.expr) -> Optional[str]:
-    if isinstance(target, ast.Attribute):
-        value = target.value
-        if isinstance(value, ast.Name) and value.id == "self":
-            return target.attr
-    return None
-
-
 class GlobalModelGenerator(ModelGenerator):
     def _globals(self, root: str, path: str) -> Iterable[str]:
         globals: Set[str] = set()
@@ -197,6 +189,14 @@ class GlobalModelGenerator(ModelGenerator):
             for path in paths:
                 sinks = sinks.union(self._globals(stub_root, path))
         return sinks
+
+
+def _get_self_attribute(target: ast.expr) -> Optional[str]:
+    if isinstance(target, ast.Attribute):
+        value = target.value
+        if isinstance(value, ast.Name) and value.id == "self":
+            return target.attr
+    return None
 
 
 Registry.register("get_globals", GlobalModelGenerator, include_by_default=False)
