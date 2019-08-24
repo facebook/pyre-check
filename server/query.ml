@@ -218,7 +218,7 @@ let parse_query
           let check_name = string check_name in
           let paths =
             List.map paths ~f:(fun path ->
-                Path.create_absolute ~follow_symbolic_links:true (string path))
+                Path.create_absolute ~follow_symbolic_links:false (string path))
           in
           Request.TypeQueryRequest (RunCheck { check_name; paths })
       | "save_server_state", [path] ->

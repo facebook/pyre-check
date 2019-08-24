@@ -112,6 +112,9 @@ class AnalysisDirectory:
     def prepare(self) -> None:
         pass
 
+    def compute_symbolic_links(self) -> Dict[str, str]:
+        return {}
+
     def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """
             Process a list of paths which were added/removed/updated, making any
@@ -228,9 +231,10 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             LOG.log(
                 log.PERFORMANCE, "Merged analysis directories in %fs", time() - start
             )
-        self._symbolic_links.update(
-            _compute_symbolic_link_mapping(self.get_root(), self._extensions)
-        )
+        self._symbolic_links.update(self.compute_symbolic_links())
+
+    def compute_symbolic_links(self) -> Dict[str, str]:
+        return _compute_symbolic_link_mapping(self.get_root(), self._extensions)
 
     def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """
