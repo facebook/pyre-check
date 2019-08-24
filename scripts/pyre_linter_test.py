@@ -12,10 +12,15 @@ import unittest
 from collections import OrderedDict
 from unittest.mock import MagicMock, _patch, call, patch
 
-from .pyre_linter import _group_by_pyre_server, _lint_paths
+from .pyre_linter import (
+    __name__ as pyre_linter_name,
+    _group_by_pyre_server,
+    _lint_paths,
+)
 
 
 class PyreLinterTest(unittest.TestCase):
+    @patch(f"{pyre_linter_name}._get_pyre_project", return_value="/root")
     @patch("os.chdir")
     @patch(
         "subprocess.run",
@@ -42,7 +47,9 @@ class PyreLinterTest(unittest.TestCase):
             ).encode()
         ),
     )
-    def test_message_output_format(self, run: _patch, change_directory: _patch) -> None:
+    def test_message_output_format(
+        self, run: _patch, change_directory: _patch, get_pyre_project: _patch
+    ) -> None:
         results = _lint_paths(["awaitable"], "/root", ["/root/async_test.py"])
         # pyre-ignore: Typeshed is missing the annotation.
         run.assert_called_once_with(
@@ -56,7 +63,7 @@ class PyreLinterTest(unittest.TestCase):
             [
                 OrderedDict(
                     [
-                        ("path", "async_test.py"),
+                        ("path", "/root/async_test.py"),
                         ("line", 5),
                         ("char", 4),
                         ("code", "PYRELINT"),
@@ -76,19 +83,24 @@ class PyreLinterTest(unittest.TestCase):
         side_effect=lambda path: path
         in {
             "/a/.pyre_configuration",
-            "/b/c/.pyre_configuration.local",
-            "/b/.pyre_configuration.local",
+            "/d/b/c/.pyre_configuration.local",
+            "/d/b/.pyre_configuration.local",
+            "/d/.pyre_configuration",
         },
     )
     def test_group_by_pyre_server(self, isfile: _patch) -> None:
         self.assertEqual(_group_by_pyre_server(["/nonexistent/a.py"]), {})
         self.assertEqual(_group_by_pyre_server(["/a/a.py"]), {"/a": ["/a/a.py"]})
-        self.assertEqual(_group_by_pyre_server(["/b/c.py"]), {"/b": ["/b/c.py"]})
-        self.assertEqual(_group_by_pyre_server(["/b/a/x.py"]), {"/b": ["/b/a/x.py"]})
-        self.assertEqual(_group_by_pyre_server(["/b/c/x.py"]), {"/b/c": ["/b/c/x.py"]})
+        self.assertEqual(_group_by_pyre_server(["/d/b/c.py"]), {"/d/b": ["/d/b/c.py"]})
         self.assertEqual(
-            _group_by_pyre_server(["/b/c/x.py", "/b/c/y.py", "/b/a/first.py"]),
-            {"/b/c": ["/b/c/x.py", "/b/c/y.py"], "/b": ["/b/a/first.py"]},
+            _group_by_pyre_server(["/d/b/a/x.py"]), {"/d/b": ["/d/b/a/x.py"]}
+        )
+        self.assertEqual(
+            _group_by_pyre_server(["/d/b/c/x.py"]), {"/d/b/c": ["/d/b/c/x.py"]}
+        )
+        self.assertEqual(
+            _group_by_pyre_server(["/d/b/c/x.py", "/d/b/c/y.py", "/d/b/a/first.py"]),
+            {"/d/b/c": ["/d/b/c/x.py", "/d/b/c/y.py"], "/d/b": ["/d/b/a/first.py"]},
         )
 
     # Test that the function handles timeouts gracefully.
@@ -106,6 +118,7 @@ class PyreLinterTest(unittest.TestCase):
             timeout=42,
         )
 
+    @patch(f"{pyre_linter_name}._get_pyre_project")
     @patch("os.chdir")
     @patch(
         "subprocess.run",
@@ -113,7 +126,9 @@ class PyreLinterTest(unittest.TestCase):
             stdout=json.dumps({"response": {"errors": []}}).encode()
         ),
     )
-    def test_start_server(self, run: _patch, change_directory: _patch) -> None:
+    def test_start_server(
+        self, run: _patch, change_directory: _patch, get_project: _patch
+    ) -> None:
         results = _lint_paths(
             ["awaitable"], "/root", ["/root/async_test.py"], start_server=True
         )

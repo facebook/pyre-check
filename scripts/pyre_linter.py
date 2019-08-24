@@ -57,11 +57,20 @@ def _lint_paths(
                 timeout=timeout,
             )
             response = json.loads(result.stdout.decode())
+            pyre_configuration_directory = _get_pyre_project(
+                directory, include_local=False
+            )
+            assert pyre_configuration_directory is not None
             if "response" in response:
                 for error in response["response"]["errors"]:
+                    if os.path.isabs(error["path"]):
+                        path = error["path"]
+                    else:
+                        # Errors are emitted relative to a .pyre_configuration.
+                        path = os.path.join(pyre_configuration_directory, error["path"])
                     messages.append(
                         LintMessage(
-                            path=error["path"],
+                            path=path,
                             line=error["line"],
                             char=error["column"],
                             code="PYRELINT",
@@ -89,11 +98,11 @@ def _lint_paths(
     return messages
 
 
-def _get_local_pyre_project(path: str) -> Optional[str]:
+def _get_pyre_project(path: str, include_local: bool) -> Optional[str]:
     while path != "/":
-        if os.path.isfile(f"{path}/.pyre_configuration.local") or os.path.isfile(
-            f"{path}/.pyre_configuration"
-        ):
+        if include_local and os.path.isfile(f"{path}/.pyre_configuration.local"):
+            return path
+        if os.path.isfile(f"{path}/.pyre_configuration"):
             return path
         path = os.path.dirname(path)
     return None
@@ -107,7 +116,7 @@ def _group_by_pyre_server(paths: Iterable[str]) -> Mapping[str, List[str]]:
     """
     file_mapping: Dict[str, List[str]] = defaultdict(list)
     for path in paths:
-        pyre_configuration = _get_local_pyre_project(path)
+        pyre_configuration = _get_pyre_project(path, include_local=True)
         if pyre_configuration is not None:
             file_mapping[pyre_configuration].append(path)
     return dict(file_mapping)
