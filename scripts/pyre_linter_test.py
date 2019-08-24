@@ -10,12 +10,13 @@ import os.path  # noqa
 import subprocess
 import unittest
 from collections import OrderedDict
-from unittest.mock import MagicMock, _patch, patch
+from unittest.mock import MagicMock, _patch, call, patch
 
 from .pyre_linter import _group_by_pyre_server, _lint_paths
 
 
 class PyreLinterTest(unittest.TestCase):
+    @patch("os.chdir")
     @patch(
         "subprocess.run",
         return_value=MagicMock(
@@ -41,7 +42,7 @@ class PyreLinterTest(unittest.TestCase):
             ).encode()
         ),
     )
-    def test_message_output_format(self, run: _patch) -> None:
+    def test_message_output_format(self, run: _patch, change_directory: _patch) -> None:
         results = _lint_paths(["awaitable"], "/root", ["/root/async_test.py"])
         # pyre-ignore: Typeshed is missing the annotation.
         run.assert_called_once_with(
@@ -91,8 +92,9 @@ class PyreLinterTest(unittest.TestCase):
         )
 
     # Test that the function handles timeouts gracefully.
+    @patch("os.chdir")
     @patch("subprocess.run", side_effect=subprocess.TimeoutExpired("pyre", 42))
-    def test_timeout(self, run: _patch) -> None:
+    def test_timeout(self, run: _patch, change_directory: _patch) -> None:
         self.assertEqual(
             _lint_paths(["awaitable"], "/root", ["/root/async_test.py"], 42), []
         )
@@ -103,3 +105,29 @@ class PyreLinterTest(unittest.TestCase):
             stdout=subprocess.PIPE,
             timeout=42,
         )
+
+    @patch("os.chdir")
+    @patch(
+        "subprocess.run",
+        return_value=MagicMock(
+            stdout=json.dumps({"response": {"errors": []}}).encode()
+        ),
+    )
+    def test_start_server(self, run: _patch, change_directory: _patch) -> None:
+        results = _lint_paths(
+            ["awaitable"], "/root", ["/root/async_test.py"], start_server=True
+        )
+        # pyre-ignore: Typeshed is missing the annotation.
+        run.assert_has_calls(
+            [
+                call(["pyre"], check=True, stdout=subprocess.DEVNULL),
+                call(
+                    ["pyre", "query", "run_check('awaitable', '/root/async_test.py')"],
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    timeout=None,
+                ),
+                call(["pyre", "stop"], check=True, stdout=subprocess.DEVNULL),
+            ]
+        )
+        self.assertEqual([result._asdict() for result in results], [])

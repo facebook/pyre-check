@@ -39,9 +39,15 @@ def _lint_paths(
     directory: str,
     paths: Iterable[str],
     timeout: Optional[int] = None,
+    start_server: bool = False,
 ) -> List[LintMessage]:
+    # Chdir to the server's directory.
     messages = []
     try:
+        os.chdir(directory)
+        if start_server:
+            # Start a server if necessary, and block until it gives results.
+            subprocess.run(["pyre"], check=True, stdout=subprocess.DEVNULL)
         paths = [f"'{path}'" for path in paths]
         for check in checks:
             result = subprocess.run(
@@ -67,6 +73,10 @@ def _lint_paths(
                             bypassChangedLineFiltering=None,
                         )
                     )
+        if start_server:
+            # This will not be invoked via the regular lint flow, only on CI checks, so
+            # stopping the server is appropriate.
+            subprocess.run(["pyre", "stop"], check=True, stdout=subprocess.DEVNULL)
     except subprocess.CalledProcessError as exception:
         LOG.error(str(exception))
     except json.decoder.JSONDecodeError:
@@ -113,6 +123,11 @@ def main() -> None:
         "--check", action="append", help="List of static analyses that should be run."
     )
     parser.add_argument("--timeout", type=int, help="timeout (in seconds) per server")
+    parser.add_argument(
+        "--start-server",
+        action="store_true",
+        help="Start a Pyre server if necessary and block on its results",
+    )
     parser.add_argument("filenames", nargs="+", help="paths to lint")
     arguments = parser.parse_args()
 
@@ -130,6 +145,7 @@ def main() -> None:
             directory=directory,
             paths=to_lint[directory],
             timeout=arguments.timeout,
+            start_server=arguments.start_server,
         ):
             print(json.dumps(result._asdict()))
 
