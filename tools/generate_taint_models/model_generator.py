@@ -62,6 +62,7 @@ class Configuration:
     stub_root: ClassVar[Optional[str]] = ""
     graphql_module: ClassVar[str] = ""
     blacklisted_globals: ClassVar[Set[str]] = set()
+    blacklisted_global_directories: ClassVar[Set[str]] = set()
     annotation_specs: ClassVar[List[DecoratorAnnotationSpec]] = []
 
 

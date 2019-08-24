@@ -215,7 +215,17 @@ class GlobalModelGenerator(ModelGenerator):
         sinks: Set[str] = set()
 
         for path in find_all_paths():
-            sinks = sinks.union(self._globals(Configuration.root, path))
+            relative_path = os.path.relpath(path, Configuration.root)
+            should_skip = any(
+                (
+                    relative_path.startswith(blacklisted)
+                    for blacklisted in Configuration.blacklisted_global_directories
+                )
+            )
+            if should_skip:
+                LOG.info("Skipping %s", os.path.relpath(path, Configuration.root))
+            else:
+                sinks = sinks.union(self._globals(Configuration.root, path))
 
         stub_root = Configuration.stub_root
         if stub_root:
