@@ -674,6 +674,11 @@ class ConfigurationTest(unittest.TestCase):
     def test_find_binary(
         self, _validate, _resolve_versioned_paths, _override_version_hash, _read
     ):
+        # The PYRE_BINARY environment variable may change the result of this test,
+        # as the configuration lets it override the actual search.
+        if "PYRE_BINARY" in os.environ:
+            del os.environ["PYRE_BINARY"]
+
         def accept_tmp(argument: str) -> Optional[str]:
             if argument == "/tmp/pyre/bin/pyre.bin":
                 return argument
