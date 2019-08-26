@@ -40,9 +40,3 @@ val update
   ast_environment:Analysis.AstEnvironment.t ->
   Analysis.ModuleTracker.IncrementalUpdate.t list ->
   Reference.t list
-
-val shared_memory_hash_to_key_map : qualifiers:Reference.t list -> string Core.String.Map.t
-
-val serialize_decoded : Memory.decodable -> (string * string * string option) option
-
-val decoded_equal : Memory.decodable -> Memory.decodable -> bool option

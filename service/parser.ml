@@ -37,18 +37,6 @@ let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source
       SystemError message
 
 
-module SourceValue = struct
-  type t = Source.t
-
-  let prefix = Prefix.make ()
-
-  let description = "Unprocessed source"
-
-  let unmarshall value = Marshal.from_string value 0
-end
-
-module RawSources = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (SourceValue)
-
 module RawParseResult = struct
   type t = {
     parsed: Reference.t list;
@@ -73,7 +61,7 @@ module RawParseResult = struct
     }
 end
 
-let parse_raw_sources ~configuration ~scheduler source_paths =
+let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
   let parse_and_categorize
       ({ RawParseResult.parsed; syntax_error; system_error } as result)
       source_path
@@ -81,7 +69,7 @@ let parse_raw_sources ~configuration ~scheduler source_paths =
     match parse_source ~configuration source_path with
     | Success ({ Source.qualifier; _ } as source) ->
         let source = Preprocessing.preprocess_phase0 source in
-        RawSources.add qualifier source;
+        AstEnvironment.Raw.add_source ast_environment source;
         { result with parsed = qualifier :: parsed }
     | SyntaxError message ->
         Log.log ~section:`Parser "%s" message;
@@ -125,7 +113,7 @@ let expand_wildcard_imports ~force ~ast_environment ({ Source.qualifier; _ } as 
 
     type t = unit
 
-    let get_transitive_exports ~ast_environment ~dependency qualifier =
+    let get_transitive_exports ~dependency ~ast_environment qualifier =
       let module Visitor = Visit.MakeStatementVisitor (struct
         type t = Reference.t list
 
@@ -152,12 +140,14 @@ let expand_wildcard_imports ~force ~ast_environment ({ Source.qualifier; _ } as 
               | Error _ -> ()
               | Ok () -> (
                 match
-                  AstEnvironment.get_wildcard_exports ast_environment ~dependency qualifier
+                  AstEnvironment.Raw.get_wildcard_exports ast_environment qualifier ~dependency
                 with
-                | None -> raise MissingWildcardImport
+                | None -> ()
                 | Some exports -> (
-                    List.iter exports ~f:(Hash_set.add transitive_exports);
-                    match RawSources.get qualifier with
+                    List.iter exports ~f:(fun export ->
+                        if not (String.equal (Reference.show export) "*") then
+                          Hash_set.add transitive_exports export);
+                    match AstEnvironment.Raw.get_source ast_environment qualifier ~dependency with
                     | None -> ()
                     | Some source -> Visitor.visit [] source |> Queue.enqueue_all worklist ) )
             in
@@ -174,7 +164,7 @@ let expand_wildcard_imports ~force ~ast_environment ({ Source.qualifier; _ } as 
                  String.equal (Reference.show name) "*") ->
           let expanded_import =
             try
-              match get_transitive_exports ~ast_environment ~dependency:qualifier from with
+              match get_transitive_exports from ~ast_environment ~dependency:qualifier with
               | [] -> statement
               | exports ->
                   List.map exports ~f:(fun name -> { Import.name; alias = None })
@@ -200,17 +190,19 @@ let process_sources_job ~preprocessing_state ~ast_environment ~force qualifiers 
       let stored = Plugin.apply_to_ast preprocessed in
       AstEnvironment.add_source ast_environment stored
     in
-    let source =
-      let source = Option.value_exn (RawSources.get qualifier) in
-      match preprocessing_state with
-      | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
-      | None -> source
-    in
-    match try_preprocess_phase1 ~force source with
-    | Some preprocessed ->
-        store_result preprocessed;
-        { result with processed = qualifier :: processed }
-    | None -> { result with not_processed = qualifier :: not_processed }
+    match AstEnvironment.Raw.get_source ast_environment qualifier ~dependency:qualifier with
+    | None -> result
+    | Some source -> (
+        let source =
+          match preprocessing_state with
+          | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
+          | None -> source
+        in
+        match try_preprocess_phase1 ~force source with
+        | Some preprocessed ->
+            store_result preprocessed;
+            { result with processed = qualifier :: processed }
+        | None -> { result with not_processed = qualifier :: not_processed } )
   in
   List.fold ~init:{ FixpointResult.processed = []; not_processed = [] } ~f:process qualifiers
 
@@ -239,8 +231,6 @@ let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environm
   ()
 
 
-let clean_shared_memory qualifiers = RawSources.remove_batch (RawSources.KeySet.of_list qualifiers)
-
 type parse_sources_result = {
   parsed: Reference.t list;
   syntax_error: SourcePath.t list;
@@ -249,10 +239,10 @@ type parse_sources_result = {
 
 let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment source_paths =
   let { RawParseResult.parsed; syntax_error; system_error } =
-    parse_raw_sources ~configuration ~scheduler source_paths
+    parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths
   in
   process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment parsed;
-  clean_shared_memory parsed;
+  SharedMem.invalidate_caches ();
   { parsed; syntax_error; system_error }
 
 
@@ -332,29 +322,27 @@ let update ~configuration ~scheduler ~ast_environment module_updates =
     in
     List.append removed_modules reparse_modules
   in
-  AstEnvironment.update_and_compute_dependencies ast_environment changed_modules ~update:(fun _ ->
-      let { syntax_error; system_error; _ } =
-        parse_sources
-          ~configuration
-          ~scheduler
-          ~preprocessing_state:None
-          ~ast_environment
-          reparse_source_paths
-      in
-      log_parse_errors ~syntax_error ~system_error)
-
-
-let shared_memory_hash_to_key_map ~qualifiers = RawSources.compute_hashes_to_keys ~keys:qualifiers
-
-let serialize_decoded decoded =
-  match decoded with
-  | RawSources.Decoded (key, value) ->
-      Some (SourceValue.description, Reference.show key, Option.map value ~f:Source.show)
-  | _ -> None
-
-
-let decoded_equal first second =
-  match first, second with
-  | RawSources.Decoded (_, first), RawSources.Decoded (_, second) ->
-      Some (Option.equal Source.equal first second)
-  | _ -> None
+  let update_raw_sources () =
+    let { RawParseResult.syntax_error; system_error; _ } =
+      parse_raw_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
+    in
+    log_parse_errors ~syntax_error ~system_error
+  in
+  let raw_dependencies =
+    AstEnvironment.Raw.update_and_compute_dependencies
+      ast_environment
+      changed_modules
+      ~update:update_raw_sources
+  in
+  let update_processed_sources () =
+    process_sources
+      ~configuration
+      ~scheduler
+      ~preprocessing_state:None
+      ~ast_environment
+      raw_dependencies
+  in
+  AstEnvironment.update_and_compute_dependencies
+    ast_environment
+    raw_dependencies
+    ~update:update_processed_sources

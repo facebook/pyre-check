@@ -475,10 +475,6 @@ let process_type_query_request
         let qualifiers = ModuleTracker.qualifiers module_tracker in
         let ast_environment = Environment.ast_environment environment in
         let map = Analysis.Environment.shared_memory_hash_to_key_map ~qualifiers () in
-        (* Parser shared memory. *)
-        let map =
-          extend_map map ~new_map:(Service.Parser.shared_memory_hash_to_key_map ~qualifiers)
-        in
         (* AST shared memory. *)
         let map =
           map |> extend_map ~new_map:(AstEnvironment.shared_memory_hash_to_key_map qualifiers)
@@ -571,7 +567,7 @@ let process_type_query_request
               AstEnvironment.serialize_decoded decoded
           | _ when Option.is_some (Environment.serialize_decoded decoded) ->
               Environment.serialize_decoded decoded
-          | _ -> Service.Parser.serialize_decoded decoded
+          | _ -> failwith "undecodable"
         in
         let build_response { TypeQuery.decoded; undecodable_keys } = function
           | TypeQuery.SerializedValue { serialized_key; serialized_value } -> (
@@ -603,7 +599,7 @@ let process_type_query_request
                         Option.value_exn (AstEnvironment.decoded_equal first second)
                     | _ when Option.is_some (Environment.decoded_equal first second) ->
                         Option.value_exn (Environment.decoded_equal first second)
-                    | _ -> Service.Parser.decoded_equal first second |> Option.value ~default:false
+                    | _ -> false
                   in
                   match serialize_decoded first, serialize_decoded second with
                   | Some (kind, key, first_value), Some (_, _, second_value) ->

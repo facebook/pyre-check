@@ -495,12 +495,16 @@ module IncrementalTest = struct
 end
 
 let test_parser_update context =
+  (* TODO (T47159596): Automatic shared memory reset for ScratchProject *)
+  Memory.reset_shared_memory ();
+
   let open IncrementalTest in
   let assert_parser_update = assert_parser_update ~context in
   (* Single project file update *)
   assert_parser_update
     [{ handle = "test.py"; old_source = None; new_source = Some "def foo() -> None: ..." }]
     ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", [!&"foo"]]);
+
   assert_parser_update
     [{ handle = "test.py"; old_source = Some "def foo() -> None: ..."; new_source = None }]
     ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", []]);
@@ -622,22 +626,21 @@ let test_parser_update context =
     ~external_setups:
       [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1\ny = 2" }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    (* FIXME: Expected export of b should be x and y *)
     ~expected:
-      (Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"x"; !&"y"]; !&"b", [!&"x"]]);
+      (Expectation.create
+         [!&"a"; !&"b"]
+         ~check_exports:[!&"a", [!&"x"; !&"y"]; !&"b", [!&"x"; !&"y"]]);
   assert_parser_update
     ~external_setups:
       [{ handle = "a.py"; old_source = Some "x = 1\ny = 2\n"; new_source = Some "x = 1" }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    (* FIXME: Expected export of b should be only x *)
-    ~expected:
-      (Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"; !&"y"]]);
+    ~expected:(Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]]);
   assert_parser_update
     ~external_setups:
       [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "def foo() -> int: ..." }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    (* FIXME: Expected export of b should be foo, not x *)
-    ~expected:(Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"foo"]; !&"b", [!&"x"]]);
+    ~expected:
+      (Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"foo"]; !&"b", [!&"foo"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 2" };
       { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "y = 2" };
@@ -662,7 +665,7 @@ let test_parser_update context =
     ~expected:
       (Expectation.create
          [!&"a"; !&"c"]
-         ~check_exports:[!&"a", [!&"y"]; !&"b", [!&"y"]; !&"c", [!&"x"; !&"y"]]);
+         ~check_exports:[!&"a", [!&"y"]; !&"b", [!&"y"]; !&"c", [!&"y"; !&"y"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" };
       { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "x = 2" };
@@ -675,7 +678,7 @@ let test_parser_update context =
     ~expected:
       (Expectation.create
          [!&"b"; !&"c"]
-         ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]; !&"c", [!&"x"; !&"y"]]);
+         ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]; !&"c", [!&"x"; !&"x"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" };
       { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
@@ -695,11 +698,10 @@ let test_parser_update context =
       { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
       { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
     ]
-    (* FIXME: Expected export of b and c should be y *)
     ~expected:
       (Expectation.create
          [!&"a"; !&"b"; !&"c"]
-         ~check_exports:[!&"a", [!&"y"]; !&"b", [!&"x"]; !&"c", [!&"x"]]);
+         ~check_exports:[!&"a", [!&"y"]; !&"b", [!&"y"]; !&"c", [!&"y"]]);
 
   (* This is expected -- the parser knows only names, not types *)
   assert_parser_update

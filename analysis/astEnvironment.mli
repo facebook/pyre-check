@@ -9,7 +9,7 @@ type t
 
 val create : ModuleTracker.t -> t
 
-val get_source : t -> Reference.t -> Source.t option
+val get_source : t -> ?dependency:Reference.t -> Reference.t -> Source.t option
 
 val get_wildcard_exports : t -> ?dependency:Reference.t -> Reference.t -> Reference.t list option
 
@@ -24,6 +24,20 @@ val update_and_compute_dependencies
   Reference.t list
 
 val get_source_path : t -> Reference.t -> SourcePath.t option
+
+module Raw : sig
+  val get_source : t -> ?dependency:Reference.t -> Reference.t -> Source.t option
+
+  val get_wildcard_exports : t -> ?dependency:Reference.t -> Reference.t -> Reference.t list option
+
+  val add_source : t -> Source.t -> unit
+
+  val update_and_compute_dependencies
+    :  t ->
+    update:(unit -> unit) ->
+    Reference.t list ->
+    Reference.t list
+end
 
 (* Store the environment to saved-state *)
 val store : t -> unit
