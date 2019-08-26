@@ -565,9 +565,7 @@ let process_type_query_request
                   value >>| List.map ~f:Reference.show >>| String.concat ~sep:"," )
           | _ when Option.is_some (AstEnvironment.serialize_decoded decoded) ->
               AstEnvironment.serialize_decoded decoded
-          | _ when Option.is_some (Environment.serialize_decoded decoded) ->
-              Environment.serialize_decoded decoded
-          | _ -> failwith "undecodable"
+          | _ -> Environment.serialize_decoded decoded
         in
         let build_response { TypeQuery.decoded; undecodable_keys } = function
           | TypeQuery.SerializedValue { serialized_key; serialized_value } -> (

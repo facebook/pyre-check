@@ -88,25 +88,7 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
     ()
 
 
-module FixpointResult = struct
-  type t = {
-    processed: Reference.t list;
-    not_processed: Reference.t list;
-  }
-
-  let merge
-      { processed = left_processed; not_processed = left_not_processed }
-      { processed = right_processed; not_processed = right_not_processed }
-    =
-    {
-      processed = left_processed @ right_processed;
-      not_processed = left_not_processed @ right_not_processed;
-    }
-end
-
-exception MissingWildcardImport
-
-let expand_wildcard_imports ~force ~ast_environment ({ Source.qualifier; _ } as source) =
+let expand_wildcard_imports ~ast_environment ({ Source.qualifier; _ } as source) =
   let open Statement in
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
@@ -163,72 +145,41 @@ let expand_wildcard_imports ~force ~ast_environment ({ Source.qualifier; _ } as 
         when List.exists imports ~f:(fun { Import.name; _ } ->
                  String.equal (Reference.show name) "*") ->
           let expanded_import =
-            try
-              match get_transitive_exports from ~ast_environment ~dependency:qualifier with
-              | [] -> statement
-              | exports ->
-                  List.map exports ~f:(fun name -> { Import.name; alias = None })
-                  |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
-                  |> fun value -> { statement with Node.value }
-            with
-            | MissingWildcardImport -> if force then statement else raise MissingWildcardImport
+            match get_transitive_exports from ~ast_environment ~dependency:qualifier with
+            | [] -> statement
+            | exports ->
+                List.map exports ~f:(fun name -> { Import.name; alias = None })
+                |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
+                |> fun value -> { statement with Node.value }
           in
           state, [expanded_import]
       | _ -> state, [statement]
   end)
   in
-  try Some (Transform.transform () source |> Transform.source) with
-  | MissingWildcardImport -> None
-
-
-let process_sources_job ~preprocessing_state ~ast_environment ~force qualifiers =
-  let process ({ FixpointResult.processed; not_processed } as result) qualifier =
-    let try_preprocess_phase1 ~force source =
-      expand_wildcard_imports ~force ~ast_environment source >>| Preprocessing.preprocess_phase1
-    in
-    let store_result preprocessed =
-      let stored = Plugin.apply_to_ast preprocessed in
-      AstEnvironment.add_source ast_environment stored
-    in
-    match AstEnvironment.Raw.get_source ast_environment qualifier ~dependency:qualifier with
-    | None -> result
-    | Some source -> (
-        let source =
-          match preprocessing_state with
-          | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
-          | None -> source
-        in
-        match try_preprocess_phase1 ~force source with
-        | Some preprocessed ->
-            store_result preprocessed;
-            { result with processed = qualifier :: processed }
-        | None -> { result with not_processed = qualifier :: not_processed } )
-  in
-  List.fold ~init:{ FixpointResult.processed = []; not_processed = [] } ~f:process qualifiers
+  Transform.transform () source |> Transform.source
 
 
 let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment qualifiers =
-  let rec fixpoint ~force not_processed =
-    let { FixpointResult.processed = new_processed; not_processed = new_not_processed } =
-      Scheduler.map_reduce
-        scheduler
-        ~configuration
-        ~initial:{ FixpointResult.processed = []; not_processed = [] }
-        ~map:(fun _ -> process_sources_job ~preprocessing_state ~ast_environment ~force)
-        ~reduce:FixpointResult.merge
-        ~inputs:not_processed
-        ()
+  let process_sources_job =
+    let process qualifier =
+      match AstEnvironment.Raw.get_source ast_environment qualifier ~dependency:qualifier with
+      | None -> ()
+      | Some source ->
+          let source =
+            match preprocessing_state with
+            | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
+            | None -> source
+          in
+          let stored =
+            expand_wildcard_imports ~ast_environment source
+            |> Preprocessing.preprocess_phase1
+            |> Plugin.apply_to_ast
+          in
+          AstEnvironment.add_source ast_environment stored
     in
-    if List.is_empty new_not_processed then (* All done. *)
-      ()
-    else if List.is_empty new_processed then
-      (* No progress was made, force the parse ignoring all temporary errors. *)
-      fixpoint ~force:true not_processed
-    else (* We made some progress, continue with the fixpoint. *)
-      fixpoint ~force:false new_not_processed
+    List.iter ~f:process
   in
-  fixpoint ~force:false qualifiers;
-  ()
+  Scheduler.iter scheduler ~configuration ~f:process_sources_job ~inputs:qualifiers
 
 
 type parse_sources_result = {
