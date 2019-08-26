@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-module ServerDependencies = Dependencies
 module ModuleTracker = Analysis.ModuleTracker
 open Ast
 open Analysis
@@ -13,6 +12,31 @@ open Configuration.Analysis
 open Pyre
 
 type errors = State.Error.t list [@@deriving show]
+
+let direct_parser_update ~configuration ~scheduler ~ast_environment module_updates =
+  let directly_changed_source_paths, removed_modules =
+    let categorize = function
+      | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
+      | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
+    in
+    List.partition_map module_updates ~f:categorize
+  in
+  let directly_changed_modules =
+    List.map directly_changed_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+  in
+  AstEnvironment.remove_sources
+    ast_environment
+    (List.append removed_modules directly_changed_modules);
+  let { Service.Parser.parsed; _ } =
+    Service.Parser.parse_sources
+      ~configuration
+      ~scheduler
+      ~preprocessing_state:None
+      ~ast_environment
+      directly_changed_source_paths
+  in
+  parsed
+
 
 let recheck
     ~state:( {
@@ -31,82 +55,58 @@ let recheck
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
-  let directly_changed_source_paths, removed_modules =
-    let categorize = function
-      | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
-      | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
-    in
-    List.partition_map module_updates ~f:categorize
-  in
-  let directly_changed_modules =
-    List.map directly_changed_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-  in
-  if not (List.is_empty removed_modules) then
-    List.map removed_modules ~f:Reference.show
-    |> String.concat ~sep:", "
-    |> Log.info "Removing type information for `%s`";
   let scheduler =
-    Scheduler.with_parallel scheduler ~is_parallel:(List.length directly_changed_source_paths > 5)
+    Scheduler.with_parallel scheduler ~is_parallel:(List.length module_updates > 10)
   in
+  Log.info "Parsing %d updated modules..." (List.length module_updates);
+  StatusUpdate.warning
+    ~message:"Reparsing updated modules..."
+    ~short_message:(Some "[Reparsing]")
+    ~state;
+  Log.log
+    ~section:`Server
+    "Incremental Module Update %a"
+    Sexp.pp
+    [%message (module_updates : ModuleTracker.IncrementalUpdate.t list)];
+  let invalidated_environment_qualifiers =
+    if ignore_dependencies then
+      direct_parser_update ~configuration ~scheduler ~ast_environment module_updates
+    else
+      Service.Parser.update ~configuration ~scheduler ~ast_environment module_updates
+  in
+  Log.log
+    ~section:`Server
+    "Incremental Parser Update %s"
+    (List.to_string ~f:Reference.show invalidated_environment_qualifiers);
+
   (* Repopulate the environment. *)
-  Log.info "Repopulating the environment.";
+  let invalidated_environment_qualifiers =
+    match incremental_style with
+    | FineGrained -> invalidated_environment_qualifiers
+    | Shallow ->
+        Dependencies.of_list
+          ~modules:invalidated_environment_qualifiers
+          ~get_dependencies:(Environment.dependencies environment)
+        |> Reference.Set.union (Reference.Set.of_list invalidated_environment_qualifiers)
+        |> Reference.Set.to_list
+    | Transitive ->
+        Dependencies.transitive_of_list
+          ~modules:invalidated_environment_qualifiers
+          ~get_dependencies:(Environment.dependencies environment)
+        |> Reference.Set.union (Reference.Set.of_list invalidated_environment_qualifiers)
+        |> Reference.Set.to_list
+  in
+  Log.info
+    "Repopulating the environment for %d modules."
+    (List.length invalidated_environment_qualifiers);
   StatusUpdate.warning
     ~message:"Repopulating the environment"
     ~short_message:(Some "[Repopulating]")
     ~state;
-  let re_environment_build_sources, invalidated_environment_qualifiers =
-    (* Also recheck dependencies of the changed files. *)
-    let re_environment_build_modules =
-      if ignore_dependencies then
-        directly_changed_modules
-      else
-        Set.union
-          (Reference.Set.of_list directly_changed_modules)
-          (ServerDependencies.compute_dependencies
-             directly_changed_source_paths
-             ~state
-             ~configuration
-             ~removed_modules)
-        |> Set.to_list
-    in
-    let re_environment_build_source_paths =
-      List.filter_map re_environment_build_modules ~f:(ModuleTracker.lookup module_tracker)
-    in
-    (* Clean up all data related to updated files. *)
-    let qualifiers = List.append removed_modules re_environment_build_modules in
-    AstEnvironment.remove_sources ast_environment qualifiers;
-    List.iter qualifiers ~f:(LookupCache.evict ~state);
-    Log.info "Parsing %d updated sources..." (List.length re_environment_build_source_paths);
-    StatusUpdate.warning
-      ~message:
-        (Format.asprintf
-           "Parsing %d updated sources..."
-           (List.length re_environment_build_source_paths))
-      ~short_message:(Some "[Parsing sources]")
-      ~state;
-    let { Service.Parser.parsed; syntax_error; system_error } =
-      Service.Parser.parse_sources
-        ~configuration
-        ~scheduler
-        ~preprocessing_state:None
-        ~ast_environment
-        re_environment_build_source_paths
-    in
-    let unparsed = List.concat [syntax_error; system_error] in
-    if not (List.is_empty unparsed) then
-      Log.warning
-        "Unable to parse `%s`."
-        ( List.map unparsed ~f:(fun { SourcePath.relative; _ } -> relative)
-        |> String.concat ~sep:", " );
-    let parsed_sources = List.filter_map parsed ~f:(AstEnvironment.get_source ast_environment) in
-    let parsed_paths = List.map parsed_sources ~f:(fun { Source.relative; _ } -> relative) in
-    Log.log
-      ~section:`Debug
-      "Repopulating the environment with %a"
-      Sexp.pp
-      [%message (parsed_paths : string list)];
-    Log.info "Updating the type environment for %d files." (List.length parsed_sources);
-    parsed_sources, qualifiers
+  let re_environment_build_sources =
+    List.filter_map
+      invalidated_environment_qualifiers
+      ~f:(AstEnvironment.get_source ast_environment)
   in
   let recheck_modules, recheck_sources =
     match incremental_style with
@@ -128,7 +128,7 @@ let recheck
         in
         let invalidated_type_checking_keys =
           List.fold
-            directly_changed_modules
+            invalidated_environment_qualifiers
             ~init:invalidated_type_checking_keys
             ~f:(fun sofar key -> SharedMemoryKeys.ReferenceDependencyKey.KeySet.add key sofar)
         in
@@ -139,6 +139,10 @@ let recheck
         let recheck_sources =
           List.filter_map recheck_modules ~f:(AstEnvironment.get_source ast_environment)
         in
+        Log.log
+          ~section:`Server
+          "Incremental Environment Builder Update %s"
+          (List.to_string ~f:Reference.show invalidated_type_checking_keys);
         recheck_modules, recheck_sources
     | _ ->
         let () =
@@ -161,6 +165,9 @@ let recheck
   (* Clear all type resolution info from shared memory for all affected sources. *)
   ResolutionSharedMemory.remove recheck_modules;
   Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list recheck_modules);
+
+  (* Clean up all lookup data related to updated files. *)
+  List.iter recheck_modules ~f:(LookupCache.evict ~state);
   let new_errors =
     Service.Check.analyze_sources
       ~open_documents:(Reference.Table.mem open_documents)
@@ -170,7 +177,7 @@ let recheck
       recheck_sources
   in
   (* Kill all previous errors for new files we just checked *)
-  List.iter ~f:(Hashtbl.remove errors) (removed_modules @ recheck_modules);
+  List.iter ~f:(Hashtbl.remove errors) recheck_modules;
 
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
@@ -181,10 +188,12 @@ let recheck
     ~name:"incremental check"
     ~timer
     ~integers:
-      [ "number of direct files", List.length paths;
-        "number of files", List.length recheck_sources;
-        "number of functions", List.sum (module Int) ~f:Preprocessing.count_defines recheck_sources
-      ]
+      [ "number of changed files", List.length paths;
+        "number of module tracker updates", List.length module_updates;
+        "number of parser updates", List.length invalidated_environment_qualifiers;
+        "number of environment builder updates", List.length recheck_sources;
+        ( "number of re-checked functions",
+          List.sum (module Int) ~f:Preprocessing.count_defines recheck_sources ) ]
     ();
   StatusUpdate.information ~message:"Done recheck." ~short_message:(Some "Done recheck.") ~state;
   state, new_errors
