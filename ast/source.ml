@@ -369,7 +369,8 @@ let wildcard_exports_of { qualifier; statements; _ } =
     in
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
-  Option.value dunder_all ~default:toplevel_public |> List.sort ~compare:Reference.compare
+  Option.value dunder_all ~default:toplevel_public
+  |> List.dedup_and_sort ~compare:Reference.compare
 
 
 let expand_relative_import ~from { is_init; qualifier; _ } =

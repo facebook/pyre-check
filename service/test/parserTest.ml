@@ -661,11 +661,10 @@ let test_parser_update context =
         old_source = Some "from a import *\nfrom b import *";
         new_source = Some "from a import *\nfrom b import *";
       } ]
-    (* FIXME: Expected export of c should be only y *)
     ~expected:
       (Expectation.create
          [!&"a"; !&"c"]
-         ~check_exports:[!&"a", [!&"y"]; !&"b", [!&"y"]; !&"c", [!&"y"; !&"y"]]);
+         ~check_exports:[!&"a", [!&"y"]; !&"b", [!&"y"]; !&"c", [!&"y"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" };
       { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "x = 2" };
@@ -674,11 +673,10 @@ let test_parser_update context =
         old_source = Some "from a import *\nfrom b import *";
         new_source = Some "from a import *\nfrom b import *";
       } ]
-    (* FIXME: Expected export of c should be only x *)
     ~expected:
       (Expectation.create
          [!&"b"; !&"c"]
-         ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]; !&"c", [!&"x"; !&"x"]]);
+         ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]; !&"c", [!&"x"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" };
       { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
