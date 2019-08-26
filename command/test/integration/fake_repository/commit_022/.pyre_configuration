@@ -1,0 +1,9 @@
+{
+  "source_directories": [
+    "."
+  ],
+  "typeshed": "PYRE_TEST_TYPESHED_LOCATION",
+  "search_path": [
+    "stubs"
+  ]
+}
