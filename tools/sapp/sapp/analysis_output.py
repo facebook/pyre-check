@@ -19,6 +19,7 @@ METADATA_GLOB = "*metadata.json"
 class Metadata(NamedTuple):
     analysis_root: str
     repo_root: Optional[str] = None
+    repository_name: Optional[str] = None
     tool: Optional[str] = None
     analysis_tool_version: Optional[str] = None
     commit_hash: Optional[str] = None
@@ -106,6 +107,7 @@ class AnalysisOutput(object):
                 repo_root=repo_root,
                 job_instance=metadata.get("job_instance"),
                 tool=metadata.get("tool"),
+                repository_name=metadata.get("repository_name"),
             ),
         )
 
