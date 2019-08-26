@@ -401,7 +401,21 @@ module IncrementalTest = struct
     new_source: string option;
   }
 
-  let assert_parser_update ?(external_setups = []) ~context ~expected setups =
+  module Expectation = struct
+    type t = {
+      dependencies: Reference.t list;
+      check_exports: (Reference.t * Reference.t list) list;
+    }
+
+    let create ?(check_exports = []) dependencies = { dependencies; check_exports }
+  end
+
+  let assert_parser_update
+      ?(external_setups = [])
+      ~context
+      ~expected:{ Expectation.dependencies = expected_dependencies; check_exports }
+      setups
+    =
     let get_old_inputs setups =
       List.filter_map setups ~f:(fun { handle; old_source; _ } ->
           old_source >>| fun source -> handle, source)
@@ -453,7 +467,7 @@ module IncrementalTest = struct
         ~ast_environment
         module_tracker_updates
     in
-    (* The actual checks *)
+    (* Check dependency expectations *)
     let assert_parser_dependency expected actual =
       let expected_set = Reference.Set.of_list expected in
       let actual_set = Reference.Set.of_list actual in
@@ -461,7 +475,22 @@ module IncrementalTest = struct
         "Check if the actual parser dependency overapproximates the expected one"
         (Set.is_subset expected_set ~of_:actual_set)
     in
-    assert_parser_dependency expected updated_qualifiers;
+    assert_parser_dependency expected_dependencies updated_qualifiers;
+
+    (* Check export expectations *)
+    let assert_new_exports ~expected qualifier =
+      let expected = List.sort ~compare:Reference.compare expected in
+      let actual =
+        AstEnvironment.get_wildcard_exports ast_environment qualifier |> Option.value ~default:[]
+      in
+      assert_equal
+        ~cmp:(List.equal Reference.equal)
+        ~printer:(List.to_string ~f:Reference.show)
+        expected
+        actual
+    in
+    List.iter check_exports ~f:(fun (qualifier, expected) ->
+        assert_new_exports ~expected qualifier);
     Memory.reset_shared_memory ()
 end
 
@@ -471,10 +500,10 @@ let test_parser_update context =
   (* Single project file update *)
   assert_parser_update
     [{ handle = "test.py"; old_source = None; new_source = Some "def foo() -> None: ..." }]
-    ~expected:[!&"test"];
+    ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", [!&"foo"]]);
   assert_parser_update
     [{ handle = "test.py"; old_source = Some "def foo() -> None: ..."; new_source = None }]
-    ~expected:[!&"test"];
+    ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", []]);
   assert_parser_update
     [ {
         handle = "test.py";
@@ -482,40 +511,40 @@ let test_parser_update context =
         (* Intentionally invalid syntax *)
         new_source = Some "def foo() -> None";
       } ]
-    ~expected:[!&"test"];
+    ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", []]);
   assert_parser_update
     [ {
         handle = "test.py";
         old_source = Some "def foo() -> None: ...";
         new_source = Some "def foo() -> None: ...";
       } ]
-    ~expected:[];
+    ~expected:(Expectation.create [] ~check_exports:[!&"test", [!&"foo"]]);
   assert_parser_update
     [ {
         handle = "test.py";
         old_source = Some "def foo(x: int) -> None: ...";
         new_source = Some "def foo   (x  :    int)  ->    None: ...";
       } ]
-    ~expected:[];
+    ~expected:(Expectation.create [] ~check_exports:[!&"test", [!&"foo"]]);
   assert_parser_update
     [ {
         handle = "test.py";
         old_source = Some "def foo() -> None: ...";
         new_source = Some "def foo(x: int) -> int: ...";
       } ]
-    ~expected:[!&"test"];
+    ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", [!&"foo"]]);
 
   (* Single external file update *)
   assert_parser_update
     ~external_setups:
       [{ handle = "test.pyi"; old_source = None; new_source = Some "def foo() -> None: ..." }]
     []
-    ~expected:[!&"test"];
+    ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", [!&"foo"]]);
   assert_parser_update
     ~external_setups:
       [{ handle = "test.pyi"; old_source = Some "def foo() -> None: ..."; new_source = None }]
     []
-    ~expected:[!&"test"];
+    ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", []]);
   assert_parser_update
     ~external_setups:
       [ {
@@ -524,7 +553,7 @@ let test_parser_update context =
           new_source = Some "def foo() -> None: ...";
         } ]
     []
-    ~expected:[];
+    ~expected:(Expectation.create [] ~check_exports:[!&"test", [!&"foo"]]);
   assert_parser_update
     ~external_setups:
       [ {
@@ -533,21 +562,22 @@ let test_parser_update context =
           new_source = Some "def foo(x: int) -> int: ...";
         } ]
     []
-    ~expected:[!&"test"];
+    ~expected:(Expectation.create [!&"test"] ~check_exports:[!&"test", [!&"foo"]]);
 
   (* Multi-file updates *)
   assert_parser_update
     [ { handle = "a.py"; old_source = None; new_source = Some "def foo() -> None: ..." };
       { handle = "b.py"; old_source = None; new_source = Some "def bar() -> None: ..." } ]
-    ~expected:[!&"a"; !&"b"];
+    ~expected:
+      (Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"foo"]; !&"b", [!&"bar"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "def foo() -> None: ..."; new_source = None };
       { handle = "b.py"; old_source = Some "def bar() -> None: ..."; new_source = None } ]
-    ~expected:[!&"a"; !&"b"];
+    ~expected:(Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", []; !&"b", []]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "def foo() -> None: ..."; new_source = None };
       { handle = "b.py"; old_source = None; new_source = Some "def bar() -> None: ..." } ]
-    ~expected:[!&"a"; !&"b"];
+    ~expected:(Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", []; !&"b", [!&"bar"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = None; new_source = Some "def foo() -> None: ..." };
       {
@@ -555,7 +585,7 @@ let test_parser_update context =
         old_source = Some "def bar() -> None: ...";
         new_source = Some "def bar() -> None: ...";
       } ]
-    ~expected:[!&"a"];
+    ~expected:(Expectation.create [!&"a"] ~check_exports:[!&"a", [!&"foo"]; !&"b", [!&"bar"]]);
   assert_parser_update
     [ {
         handle = "a.py";
@@ -563,7 +593,7 @@ let test_parser_update context =
         new_source = Some "def foo() -> None: ...";
       };
       { handle = "b.py"; old_source = Some "def bar() -> None: ..."; new_source = None } ]
-    ~expected:[!&"b"];
+    ~expected:(Expectation.create [!&"b"] ~check_exports:[!&"a", [!&"foo"]; !&"b", []]);
   assert_parser_update
     ~external_setups:
       [ {
@@ -576,32 +606,38 @@ let test_parser_update context =
         old_source = Some "def bar() -> None: ...";
         new_source = Some "def bar(x: str) -> str: ...";
       } ]
-    ~expected:[!&"a"; !&"b"];
+    ~expected:
+      (Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"foo"]; !&"b", [!&"bar"]]);
 
   (* Wildcard export tests *)
   assert_parser_update
     ~external_setups:[{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    ~expected:[];
+    ~expected:(Expectation.create [] ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]]);
   assert_parser_update
     ~external_setups:[{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 2" }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    ~expected:[!&"a"];
+    ~expected:(Expectation.create [!&"a"] ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]]);
   assert_parser_update
     ~external_setups:
       [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1\ny = 2" }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    ~expected:[!&"a"; !&"b"];
+    (* FIXME: Expected export of b should be x and y *)
+    ~expected:
+      (Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"x"; !&"y"]; !&"b", [!&"x"]]);
   assert_parser_update
     ~external_setups:
       [{ handle = "a.py"; old_source = Some "x = 1\ny = 2\n"; new_source = Some "x = 1" }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    ~expected:[!&"a"; !&"b"];
+    (* FIXME: Expected export of b should be only x *)
+    ~expected:
+      (Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"; !&"y"]]);
   assert_parser_update
     ~external_setups:
       [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "def foo() -> int: ..." }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    ~expected:[!&"a"; !&"b"];
+    (* FIXME: Expected export of b should be foo, not x *)
+    ~expected:(Expectation.create [!&"a"; !&"b"] ~check_exports:[!&"a", [!&"foo"]; !&"b", [!&"x"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 2" };
       { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "y = 2" };
@@ -610,7 +646,10 @@ let test_parser_update context =
         old_source = Some "from a import *\nfrom b import *";
         new_source = Some "from a import *\nfrom b import *";
       } ]
-    ~expected:[!&"a"; !&"b"];
+    ~expected:
+      (Expectation.create
+         [!&"a"; !&"b"]
+         ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"y"]; !&"c", [!&"x"; !&"y"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "y = 2" };
       { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "y = 1" };
@@ -619,7 +658,11 @@ let test_parser_update context =
         old_source = Some "from a import *\nfrom b import *";
         new_source = Some "from a import *\nfrom b import *";
       } ]
-    ~expected:[!&"a"; !&"c"];
+    (* FIXME: Expected export of c should be only y *)
+    ~expected:
+      (Expectation.create
+         [!&"a"; !&"c"]
+         ~check_exports:[!&"a", [!&"y"]; !&"b", [!&"y"]; !&"c", [!&"x"; !&"y"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" };
       { handle = "b.py"; old_source = Some "y = 1"; new_source = Some "x = 2" };
@@ -628,33 +671,42 @@ let test_parser_update context =
         old_source = Some "from a import *\nfrom b import *";
         new_source = Some "from a import *\nfrom b import *";
       } ]
-    ~expected:[!&"b"; !&"c"];
+    (* FIXME: Expected export of c should be only x *)
+    ~expected:
+      (Expectation.create
+         [!&"b"; !&"c"]
+         ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]; !&"c", [!&"x"; !&"y"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 1" };
       { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
       { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
     ]
-    ~expected:[];
+    ~expected:
+      (Expectation.create [] ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]; !&"c", [!&"x"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "x = 2" };
       { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
       { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
     ]
-    ~expected:[!&"a"];
+    ~expected:
+      (Expectation.create [!&"a"] ~check_exports:[!&"a", [!&"x"]; !&"b", [!&"x"]; !&"c", [!&"x"]]);
   assert_parser_update
     [ { handle = "a.py"; old_source = Some "x = 1"; new_source = Some "y = 1" };
       { handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" };
       { handle = "c.py"; old_source = Some "from b import *"; new_source = Some "from b import *" }
     ]
-    ~expected:[!&"a"; !&"b"; !&"c"];
+    (* FIXME: Expected export of b and c should be y *)
+    ~expected:
+      (Expectation.create
+         [!&"a"; !&"b"; !&"c"]
+         ~check_exports:[!&"a", [!&"y"]; !&"b", [!&"x"]; !&"c", [!&"x"]]);
 
   (* This is expected -- the parser knows only names, not types *)
   assert_parser_update
     ~external_setups:
       [{ handle = "a.py"; old_source = Some "x = 1"; new_source = Some "def x() -> None: ..." }]
     [{ handle = "b.py"; old_source = Some "from a import *"; new_source = Some "from a import *" }]
-    ~expected:[!&"a"];
-
+    ~expected:(Expectation.create [!&"a"]);
   ()
 
 
