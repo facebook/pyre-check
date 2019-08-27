@@ -71,6 +71,37 @@ let test_check_async context =
     [];
   assert_type_errors
     {|
+      async def foo() -> None:
+        pass
+      reveal_type(foo())
+    |}
+    [ "Revealed type [-1]: Revealed type for `foo()` is `typing.Coroutine[typing.Any, typing.Any, \
+       None]`." ];
+  assert_type_errors
+    {|
+      from typing import Generator
+      async def foo() -> None:
+        def bar() -> Generator[None, None, None]:
+          yield
+        pass
+      reveal_type(foo())
+    |}
+    [ "Revealed type [-1]: Revealed type for `foo()` is `typing.Coroutine[typing.Any, typing.Any, \
+       None]`." ];
+  assert_type_errors
+    {|
+      from typing import Generator
+      async def foo() -> None:
+        class Inner:
+          def bar(self) -> Generator[None, None, None]:
+            yield
+        pass
+      reveal_type(foo())
+    |}
+    [ "Revealed type [-1]: Revealed type for `foo()` is `typing.Coroutine[typing.Any, typing.Any, \
+       None]`." ];
+  assert_type_errors
+    {|
       async def foo() -> typing.AsyncGenerator[bool, None]:
         # not a generator; this gets wrapped in a coroutine
         ...

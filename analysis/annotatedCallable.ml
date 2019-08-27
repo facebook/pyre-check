@@ -27,6 +27,11 @@ let is_generator { Define.body; _ } =
       | false, _ -> false
   end)
   in
+  let body =
+    List.filter body ~f:(function
+        | { Node.value = Statement.(Define _ | Class _); _ } -> false
+        | _ -> true)
+  in
   YieldVisit.visit false (Source.create body)
 
 
