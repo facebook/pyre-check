@@ -20,7 +20,7 @@ from ...error import Error
 from ...filesystem import AnalysisDirectory
 
 
-_typeshed_search_path = "{}.typeshed_search_path".format(commands.infer.__name__)
+_typeshed_search_path: str = "{}.typeshed_search_path".format(commands.infer.__name__)
 
 
 def build_json(inference):
@@ -71,6 +71,12 @@ class HelperTest(unittest.TestCase):
                 "tools.pyre.client.function", "tools/pyre/client/__init__.py"
             ),
             ["function"],
+        )
+        self.assertEqual(
+            _relativize_access(
+                "path.example.ExampleName", "distillery/path/example.py"
+            ),
+            ["ExampleName"],
         )
 
 
