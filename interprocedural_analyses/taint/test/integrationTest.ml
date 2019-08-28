@@ -98,7 +98,7 @@ let test_integration context =
       check_overrides_expectation overrides;
       Analysis.compute_fixpoint
         ~configuration:(Configuration.Analysis.create ())
-        ~scheduler:(Scheduler.mock ())
+        ~scheduler:(Test.mock_scheduler ())
         ~environment
         ~analyses:[Taint.Analysis.abstract_kind]
         ~dependencies

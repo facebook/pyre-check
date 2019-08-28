@@ -18,7 +18,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
       ~local_root:root
       ()
   in
-  let scheduler = Scheduler.mock () in
+  let scheduler = Test.mock_scheduler () in
   List.iter ~f:File.write files;
   let module_tracker = Analysis.ModuleTracker.create configuration in
   let sources, ast_environment =

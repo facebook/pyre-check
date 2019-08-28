@@ -93,7 +93,7 @@ let test_compute_locally_changed_files context =
     List.iter files ~f:write_new_file;
     let actual =
       Server.SavedState.compute_locally_changed_paths
-        ~scheduler:(Scheduler.mock ())
+        ~scheduler:(Test.mock_scheduler ())
         ~configuration
         ~module_tracker
         ~ast_environment:(Analysis.AstEnvironment.read_only ast_environment)

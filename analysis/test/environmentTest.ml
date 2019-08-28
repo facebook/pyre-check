@@ -1652,7 +1652,7 @@ let test_update_and_compute_dependencies context =
       let source = Test.parse ~handle:"source.py" source |> Preprocessing.preprocess in
       Service.Environment.populate
         ~configuration:(ScratchProject.configuration_of project)
-        ~scheduler:(Scheduler.mock ())
+        ~scheduler:(Test.mock_scheduler ())
         environment
         [source]
     in

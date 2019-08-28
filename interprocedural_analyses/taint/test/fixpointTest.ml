@@ -15,7 +15,7 @@ type expect_fixpoint = {
 }
 
 let assert_fixpoint ?models ~context source ~expect:{ iterations = expect_iterations; expect } =
-  let scheduler = Scheduler.mock () in
+  let scheduler = Test.mock_scheduler () in
   let { all_callables; callgraph; environment; overrides } =
     initialize ?models ~handle:"qualifier.py" ~context source
   in

@@ -201,7 +201,7 @@ module ScratchServer = struct
                   file_notifiers = [];
                 };
           };
-        scheduler = Scheduler.mock ();
+        scheduler = Test.mock_scheduler ();
         open_documents = Ast.Reference.Table.create ();
       }
     in

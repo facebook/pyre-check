@@ -67,7 +67,7 @@ let initialize_server ~context ~initial_sources =
       last_request_time = 0.0;
       open_documents = Reference.Table.create ();
       errors;
-      scheduler = Scheduler.mock ();
+      scheduler = Test.mock_scheduler ();
     }
   in
   project, state

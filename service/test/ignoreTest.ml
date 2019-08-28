@@ -17,7 +17,7 @@ let ignore_lines_test context =
       let configuration = ScratchProject.configuration_of project in
       configuration, sources, environment
     in
-    let scheduler = Scheduler.mock () in
+    let scheduler = Test.mock_scheduler () in
     let descriptions =
       let ast_environment = Environment.ast_environment environment in
       Service.Check.analyze_sources ~scheduler ~configuration ~environment sources

@@ -46,7 +46,11 @@ let populate ~configuration environment sources =
   Environment.add_special_classes environment;
   Environment.add_dummy_modules environment;
   Environment.add_special_globals environment;
-  Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment sources
+  Service.Environment.populate
+    ~configuration
+    ~scheduler:(Test.mock_scheduler ())
+    environment
+    sources
 
 
 let environment

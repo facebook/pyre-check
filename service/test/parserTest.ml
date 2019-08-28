@@ -76,7 +76,7 @@ let test_parse_source context =
 
 
 let test_parse_sources context =
-  let scheduler = Scheduler.mock () in
+  let scheduler = Test.mock_scheduler () in
   let content = "def foo() -> int: ..." in
   let source_handles, ast_environment =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
@@ -238,7 +238,6 @@ let test_ast_hash _ =
     |}
     ~new_source:{|
     def foo() -> int:
-  
       return 42
     |}
     ~expected:false;
@@ -618,7 +617,7 @@ module IncrementalTest = struct
     let updated_qualifiers =
       Service.Parser.update
         ~configuration
-        ~scheduler:(Scheduler.mock ())
+        ~scheduler:(Test.mock_scheduler ())
         ~ast_environment
         module_tracker_updates
     in

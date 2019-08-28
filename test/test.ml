@@ -1151,6 +1151,11 @@ let create_type_alias_table type_aliases =
   aliases
 
 
+let mock_scheduler () =
+  Analysis.GlobalResolution.FunctionDefinitionsCache.invalidate ();
+  Scheduler.mock ()
+
+
 module ScratchProject = struct
   type t = {
     context: test_ctxt;
@@ -1237,7 +1242,7 @@ module ScratchProject = struct
       Analysis.ModuleTracker.source_paths module_tracker
       |> Service.Parser.parse_sources
            ~configuration
-           ~scheduler:(Scheduler.mock ())
+           ~scheduler:(mock_scheduler ())
            ~preprocessing_state:None
            ~ast_environment
     in

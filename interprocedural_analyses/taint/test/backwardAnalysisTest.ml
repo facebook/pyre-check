@@ -21,7 +21,11 @@ let assert_taint ~context source expected =
   in
   let environment = TestHelper.environment ~configuration () in
   let global_resolution = Environment.resolution environment () in
-  Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment [source];
+  Service.Environment.populate
+    ~configuration
+    ~scheduler:(Test.mock_scheduler ())
+    environment
+    [source];
   TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in

@@ -82,7 +82,7 @@ let test_populate context =
   let environment =
     Service.Environment.populate_shared_memory
       ~configuration
-      ~scheduler:(Scheduler.mock ())
+      ~scheduler:(Test.mock_scheduler ())
       ~ast_environment
       sources
   in
@@ -115,7 +115,7 @@ let test_populate context =
     Service.Environment.populate
       environment
       ~configuration
-      ~scheduler:(Scheduler.mock ())
+      ~scheduler:(Test.mock_scheduler ())
       [Option.value_exn (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a"))]
   in
   assert_successors "a.C" ["a.D"; "object"]
