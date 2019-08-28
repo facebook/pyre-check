@@ -1,0 +1,329 @@
+body { padding: 0px 0px;
+       margin: 0px 0px;
+       background-color: white }
+
+#page { display: block;
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 10px; }
+
+#header { display: block;
+          position: relative;
+          padding: 0;
+          margin: 0;
+          vertical-align: middle;
+          border-bottom-style: solid;
+          border-width: thin }
+
+#header h1 { padding: 0;
+             margin: 0;}
+
+
+/* Contents */
+
+#main{ display: block;
+       padding: 10px;
+       font-family: sans-serif;
+       font-size: 100%;
+       line-height: 100% }
+
+#main  h1 { line-height: 95% } /* allow for multi-line headers */
+
+#main  a.idref:visited {color : #416DFF; text-decoration : none; }
+#main  a.idref:link {color : #416DFF; text-decoration : none; }
+#main  a.idref:hover {text-decoration : none; }
+#main  a.idref:active {text-decoration : none; }
+
+#main  a.modref:visited {color : #416DFF; text-decoration : none; }
+#main  a.modref:link {color : #416DFF; text-decoration : none; }
+#main  a.modref:hover {text-decoration : none; }
+#main  a.modref:active {text-decoration : none; }
+
+#main .keyword { color : #cf1d1d }
+#main { color: black }
+
+.section { background-color: rgb(60%,60%,100%);
+           padding-top: 13px;
+           padding-bottom: 13px;
+           padding-left: 3px;
+           margin-top: 5px;
+           margin-bottom: 5px;
+           font-size : 175% }
+
+h2.section { background-color: rgb(80%,80%,100%);
+             padding-left: 3px;
+             padding-top: 12px;
+             padding-bottom: 10px;
+             font-size : 130% }
+
+h3.section { background-color: rgb(90%,90%,100%);
+             padding-left: 3px;
+             padding-top: 7px;
+             padding-bottom: 7px;
+             font-size : 115% }
+
+h4.section {
+/*
+                   background-color: rgb(80%,80%,80%);
+                   max-width: 20em;
+                   padding-left: 5px;
+                   padding-top: 5px;
+                   padding-bottom: 5px;
+*/
+                   background-color: white;
+                   padding-left: 0px;
+                   padding-top: 0px;
+                   padding-bottom: 0px;
+                   font-size : 100%;
+                   font-weight : bold;
+                   text-decoration : underline;
+ }
+
+#main .doc { margin: 0px;
+             font-family: sans-serif;
+             font-size: 100%;
+       line-height: 125%;
+             max-width: 40em;
+             color: black;
+       padding: 10px;
+             background-color: #90bdff }
+
+.inlinecode {
+    display: inline;
+/*    font-size: 125%; */
+    color: #666666;
+    font-family: monospace }
+
+.doc .inlinecode {
+    display: inline;
+    font-size: 120%;
+    color: rgb(30%,30%,70%);
+    font-family: monospace }
+
+.doc .inlinecode .id {
+    color: rgb(30%,30%,70%);
+}
+
+.inlinecodenm {
+    display: inline;
+    color: #444444;
+}
+
+.doc .code {
+    display: inline;
+    font-size: 120%;
+    color: rgb(30%,30%,70%);
+    font-family: monospace }
+
+.comment {
+    display: inline;
+    font-family: monospace;
+    color: rgb(50%,50%,80%);
+}
+
+.code {
+    display: block;
+/*  padding-left: 15px; */
+    font-size: 110%;
+    font-family: monospace;
+ }
+
+table.infrule {
+  border: 0px;
+  margin-left: 50px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+td.infrule {
+    font-family: monospace;
+    text-align: center;
+/*    color: rgb(35%,35%,70%);  */
+    padding: 0px;
+    line-height: 100%;
+}
+
+tr.infrulemiddle hr {
+    margin: 1px 0 1px 0;
+}
+
+.infrulenamecol {
+    color: rgb(60%,60%,60%);
+    font-size: 80%;
+    padding-left: 1em;
+    padding-bottom: 0.1em
+}
+
+/* Pied de page */
+
+#footer { font-size: 65%;
+          font-family: sans-serif; }
+
+/* Identifiers: <span class="id" title="...">) */
+
+.id { display: inline; }
+
+.id[title="constructor"] {
+    color: rgb(60%,0%,0%);
+}
+
+.id[title="var"] {
+    color: rgb(40%,0%,40%);
+}
+
+.id[title="variable"] {
+    color: rgb(40%,0%,40%);
+}
+
+.id[title="definition"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[title="abbreviation"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[title="lemma"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[title="instance"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[title="projection"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[title="method"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[title="inductive"] {
+    color: rgb(0%,0%,80%);
+}
+
+.id[title="record"] {
+    color: rgb(0%,0%,80%);
+}
+
+.id[title="class"] {
+    color: rgb(0%,0%,80%);
+}
+
+.id[title="keyword"] {
+ color : #cf1d1d;
+/*     color: black; */
+}
+
+/* Deprecated rules using the 'type' attribute of <span> (not xhtml valid) */
+
+.id[type="constructor"] {
+    color: rgb(60%,0%,0%);
+}
+
+.id[type="var"] {
+    color: rgb(40%,0%,40%);
+}
+
+.id[type="variable"] {
+    color: rgb(40%,0%,40%);
+}
+
+.id[type="definition"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[type="abbreviation"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[type="lemma"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[type="instance"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[type="projection"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[type="method"] {
+    color: rgb(0%,40%,0%);
+}
+
+.id[type="inductive"] {
+    color: rgb(0%,0%,80%);
+}
+
+.id[type="record"] {
+    color: rgb(0%,0%,80%);
+}
+
+.id[type="class"] {
+    color: rgb(0%,0%,80%);
+}
+
+.id[type="keyword"] {
+ color : #cf1d1d;
+/*     color: black; */
+}
+
+.inlinecode .id {
+    color: rgb(0%,0%,0%);
+}
+
+
+/* TOC */
+
+#toc h2 {
+    padding: 10px;
+    background-color: rgb(60%,60%,100%);
+}
+
+#toc li {
+    padding-bottom: 8px;
+}
+
+/* Index */
+
+#index {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+#index #frontispiece {
+    margin: 1em auto;
+    padding: 1em;
+    width: 60%;
+}
+
+.booktitle { font-size : 140%  }
+.authors { font-size : 90%;
+           line-height: 115%;  }
+.moreauthors { font-size : 60%  }
+
+#index #entrance {
+    text-align: center;
+}
+
+#index #entrance .spacer {
+    margin: 0 30px 0 30px;
+}
+
+#index #footer {
+    position: absolute;
+    bottom: 0;
+}
+
+.paragraph {
+    height: 0.75em;
+}
+
+ul.doclist {
+    margin-top: 0em;
+    margin-bottom: 0em;
+}

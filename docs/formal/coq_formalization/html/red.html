@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>red</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library red</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">STLC_Ref.term</span> <span class="id" title="var">STLC_Ref.ty</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Arith</span> <span class="id" title="var">Omega</span> <span class="id" title="var">List</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+'value' definition.
+
+<div class="paragraph"> </div>
+
+  Note that we are going to work with a call-by-value reduction, so we
+  could remove the variable which don't make sense in an empty context,
+  but in practice, it doesn't harm so keeping the usual definition is
+  not a problem.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">is_value</span> (<span class="id" title="var">t</span>: <span class="id" title="var">Term</span>) : <span class="id" title="keyword">Prop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">t</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| # <span class="id" title="var">v</span> ⇒ <span class="id" title="var">True</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">λ</span>[<span class="id" title="var">A</span>] , <span class="id" title="var">M</span> ⇒ <span class="id" title="var">True</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">Addr</span> <span class="id" title="var">u</span> ⇒ <span class="id" title="var">True</span> <br/>
+&nbsp;&nbsp;| <span class="id" title="var">unit</span> ⇒ <span class="id" title="var">True</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <span class="id" title="var">False</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+ A memory is a partial map from addresses to untyped terms.
+ The typing part will be done by an external map in sr.v.
+ All terms in a memory should be regarded as well-typed term <i>in the empty
+ context</i>.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">Mem</span> := <span class="id" title="var">list</span> (<span class="id" title="var">Addrs</span> × <span class="id" title="var">Term</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Check if an address is bound by some generic map (will be used 
+   for memories and type stores)
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">InAddr</span> {<span class="id" title="var">T</span>: <span class="id" title="keyword">Type</span>} <span class="id" title="var">u</span> (<span class="id" title="var">l</span>: <span class="id" title="var">list</span> (<span class="id" title="var">Addrs</span> × <span class="id" title="var">T</span>)) := <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">l</span> <span class="id" title="keyword">with</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">nil</span> ⇒ <span class="id" title="var">False</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| (<span class="id" title="var">a</span>, <span class="id" title="var">_</span>) :: <span class="id" title="var">tl</span> ⇒ <span class="id" title="keyword">if</span> <span class="id" title="var">eq_nat_dec</span> <span class="id" title="var">a</span> <span class="id" title="var">u</span> <span class="id" title="keyword">then</span> <span class="id" title="var">True</span> <span class="id" title="keyword">else</span> <span class="id" title="var">InAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">tl</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Bind a new address in a map with some value 
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">bindAddr</span> {<span class="id" title="var">T</span> : <span class="id" title="keyword">Type</span>} (<span class="id" title="var">a</span>: <span class="id" title="var">Addrs</span>) (<span class="id" title="var">t</span>: <span class="id" title="var">T</span>) (<span class="id" title="var">l</span> : <span class="id" title="var">list</span> (<span class="id" title="var">Addrs</span> × <span class="id" title="var">T</span>)) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">a</span>, <span class="id" title="var">t</span>) :: <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">Inbind</span> : <span class="id" title="keyword">∀</span> {<span class="id" title="var">T</span> : <span class="id" title="keyword">Type</span>} <span class="id" title="var">l</span> <span class="id" title="var">a</span> <span class="id" title="var">u</span> (<span class="id" title="var">t</span>: <span class="id" title="var">T</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">InAddr</span> <span class="id" title="var">a</span> (<span class="id" title="var">bindAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">t</span> <span class="id" title="var">l</span>) ↔ (<span class="id" title="var">a</span> = <span class="id" title="var">u</span> ∨ <span class="id" title="var">InAddr</span> <span class="id" title="var">a</span> <span class="id" title="var">l</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Tries to find the associated value to an address in a map.
+  If the value is not bound, it will return None.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">readAddr</span> {<span class="id" title="var">T</span>: <span class="id" title="keyword">Type</span>} (<span class="id" title="var">u</span>: <span class="id" title="var">Addrs</span>) (<span class="id" title="var">l</span>: <span class="id" title="var">list</span> (<span class="id" title="var">Addrs</span> × <span class="id" title="var">T</span>)) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">l</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">nil</span> ⇒ <span class="id" title="var">None</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| (<span class="id" title="var">a</span>, <span class="id" title="var">V</span>) :: <span class="id" title="var">tl</span> ⇒ <span class="id" title="keyword">if</span> <span class="id" title="var">eq_nat_dec</span> <span class="id" title="var">a</span> <span class="id" title="var">u</span> <span class="id" title="keyword">then</span> <span class="id" title="var">Some</span> <span class="id" title="var">V</span> <span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">tl</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">read2In</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">T</span>: <span class="id" title="keyword">Type</span>) <span class="id" title="var">l</span> <span class="id" title="var">u</span> (<span class="id" title="var">t</span> : <span class="id" title="var">T</span>), <span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">l</span> = <span class="id" title="var">Some</span> <span class="id" title="var">t</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">InAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">In2read</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">T</span>: <span class="id" title="keyword">Type</span>) <span class="id" title="var">l</span> <span class="id" title="var">u</span>, <span class="id" title="var">InAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">l</span> → <span class="id" title="tactic">∃</span> <span class="id" title="var">t</span>:<span class="id" title="var">T</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">l</span> = <span class="id" title="var">Some</span> <span class="id" title="var">t</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">readAddr_app</span> {<span class="id" title="var">T</span>: <span class="id" title="keyword">Type</span>}: <span class="id" title="keyword">∀</span> <span class="id" title="var">D1</span> <span class="id" title="var">u</span> (<span class="id" title="var">t</span>: <span class="id" title="var">T</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">D1</span> = <span class="id" title="var">Some</span> <span class="id" title="var">t</span> → <span class="id" title="keyword">∀</span> <span class="id" title="var">D2</span>, <span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> (<span class="id" title="var">D1</span> ++ <span class="id" title="var">D2</span>) = <span class="id" title="var">Some</span> <span class="id" title="var">t</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Call by Value based on traditional  reduction extended
+to deal with references:
+<ul class="doclist">
+<li> (λ<span class="inlinecode"><span class="id" title="var">x</span>:<span class="id" title="var">A</span></span>, M)•N → M<span class="inlinecode">[<span class="id" title="var">x</span>/<span class="id" title="var">N</span>]</span>
+
+</li>
+<li> (mem, ref M) → (mem + (u, M), u) for any u not bound in mem 
+
+</li>
+<li> (mem, deref u) → (mem, mem(u))
+
+</li>
+<li> (mem, u := M) → (mem + (u, M), unit)
+
+</li>
+<li> usual contextual extension to make it a congruence
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+Since we need a memory to interprete the addresses, the reduction relation
+associate a term and a memory to a new term and a new memory.
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <span class="id" title="tactic">red</span> : <span class="id" title="var">Term</span> → <span class="id" title="var">Mem</span> → <span class="id" title="var">Term</span> → <span class="id" title="var">Mem</span> → <span class="id" title="keyword">Prop</span> :=<br/>
+<br/>
+&nbsp;&nbsp;| <span class="id" title="var">rBeta</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">A</span> <span class="id" title="var">M</span> <span class="id" title="var">V</span> <span class="id" title="var">mem</span>, <span class="id" title="var">is_value</span> <span class="id" title="var">V</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">red</span> ((<span class="id" title="var">λ</span>[<span class="id" title="var">A</span>], <span class="id" title="var">M</span>) • <span class="id" title="var">V</span>) <span class="id" title="var">mem</span> (<span class="id" title="var">M</span> [← <span class="id" title="var">V</span>]) <span class="id" title="var">mem</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">rRef</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">u</span> <span class="id" title="var">mem</span> <span class="id" title="var">V</span>,  ¬ <span class="id" title="var">InAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">mem</span> → <span class="id" title="var">is_value</span> <span class="id" title="var">V</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">red</span> (<span class="id" title="var">ref</span> <span class="id" title="var">V</span>) <span class="id" title="var">mem</span> (<span class="id" title="var">Addr</span> <span class="id" title="var">u</span>) (<span class="id" title="var">bindAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">V</span> <span class="id" title="var">mem</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">rDeref</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">u</span> <span class="id" title="var">mem</span> <span class="id" title="var">V</span>, <span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">mem</span> = <span class="id" title="var">Some</span> <span class="id" title="var">V</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">red</span> (<span class="id" title="var">deref</span> (<span class="id" title="var">Addr</span> <span class="id" title="var">u</span>)) <span class="id" title="var">mem</span> <span class="id" title="var">V</span> <span class="id" title="var">mem</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">rStore</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">u</span> <span class="id" title="var">V</span> <span class="id" title="var">mem</span>, <span class="id" title="var">is_value</span> <span class="id" title="var">V</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">red</span> ((<span class="id" title="var">Addr</span> <span class="id" title="var">u</span>) :=: <span class="id" title="var">V</span>) <span class="id" title="var">mem</span> <span class="id" title="var">unit</span> (<span class="id" title="var">bindAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">V</span> <span class="id" title="var">mem</span>)<br/>
+<br/>
+&nbsp;&nbsp;| <span class="id" title="var">rApp1</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">m1</span> <span class="id" title="var">m2</span> <span class="id" title="var">M</span> <span class="id" title="var">M'</span> <span class="id" title="var">N</span> , <span class="id" title="tactic">red</span> <span class="id" title="var">M</span> <span class="id" title="var">m1</span> <span class="id" title="var">M'</span> <span class="id" title="var">m2</span> → <span class="id" title="tactic">red</span> (<span class="id" title="var">M</span> • <span class="id" title="var">N</span>) <span class="id" title="var">m1</span> (<span class="id" title="var">M'</span> • <span class="id" title="var">N</span>) <span class="id" title="var">m2</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">rApp2</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">m1</span> <span class="id" title="var">m2</span> <span class="id" title="var">V</span> <span class="id" title="var">N</span>  <span class="id" title="var">N'</span>, <span class="id" title="var">is_value</span> <span class="id" title="var">V</span> → <span class="id" title="tactic">red</span> <span class="id" title="var">N</span> <span class="id" title="var">m1</span> <span class="id" title="var">N'</span> <span class="id" title="var">m2</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">red</span>  (<span class="id" title="var">V</span> • <span class="id" title="var">N</span>) <span class="id" title="var">m1</span> ( <span class="id" title="var">V</span>  • <span class="id" title="var">N'</span>) <span class="id" title="var">m2</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">rRef1</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">m1</span> <span class="id" title="var">m2</span> <span class="id" title="var">M</span> <span class="id" title="var">M'</span>, <span class="id" title="tactic">red</span> <span class="id" title="var">M</span> <span class="id" title="var">m1</span> <span class="id" title="var">M'</span> <span class="id" title="var">m2</span> → <span class="id" title="tactic">red</span> (<span class="id" title="var">ref</span> <span class="id" title="var">M</span>) <span class="id" title="var">m1</span> (<span class="id" title="var">ref</span> <span class="id" title="var">M'</span>) <span class="id" title="var">m2</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">rDeref1</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">m1</span> <span class="id" title="var">m2</span> <span class="id" title="var">M</span> <span class="id" title="var">M'</span>, <span class="id" title="tactic">red</span> <span class="id" title="var">M</span> <span class="id" title="var">m1</span> <span class="id" title="var">M'</span> <span class="id" title="var">m2</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">red</span> (<span class="id" title="var">deref</span> <span class="id" title="var">M</span>) <span class="id" title="var">m1</span> (<span class="id" title="var">deref</span> <span class="id" title="var">M'</span>) <span class="id" title="var">m2</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">rAssign1</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">m1</span> <span class="id" title="var">m2</span> <span class="id" title="var">M</span> <span class="id" title="var">M'</span> <span class="id" title="var">N</span>, <span class="id" title="tactic">red</span> <span class="id" title="var">M</span> <span class="id" title="var">m1</span> <span class="id" title="var">M'</span> <span class="id" title="var">m2</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">red</span> (<span class="id" title="var">M</span> :=: <span class="id" title="var">N</span>) <span class="id" title="var">m1</span> (<span class="id" title="var">M'</span> :=: <span class="id" title="var">N</span>) <span class="id" title="var">m2</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">rAssign2</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">m1</span> <span class="id" title="var">m2</span> <span class="id" title="var">V</span> <span class="id" title="var">N</span> <span class="id" title="var">N'</span>, <span class="id" title="var">is_value</span> <span class="id" title="var">V</span> → <span class="id" title="tactic">red</span> <span class="id" title="var">N</span> <span class="id" title="var">m1</span> <span class="id" title="var">N'</span> <span class="id" title="var">m2</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">red</span> (<span class="id" title="var">V</span> :=: <span class="id" title="var">N</span>) <span class="id" title="var">m1</span> (<span class="id" title="var">V</span> :=: <span class="id" title="var">N'</span>) <span class="id" title="var">m2</span><br/>
+.<br/>
+
+<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>term</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library term</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+Simply Typed Lambda Calculus with References with de Bruijn indexes 
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Arith</span> <span class="id" title="var">Omega</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">STLC_Ref.ty</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Var syntax: 
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">Vars</span> := <span class="id" title="var">nat</span>.<br/>
+</div>
+
+<div class="doc">
+Addresses syntax:
+
+<div class="paragraph"> </div>
+
+ we don't really need them to be natural number, we just need a decidable
+ equality and a way to build a 'fresh' one. Using nats make that easy
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">Addrs</span> := <span class="id" title="var">nat</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Term syntax:
+A term can be:
+<ul class="doclist">
+<li> a variable
+
+</li>
+<li> a function application
+
+</li>
+<li> a function abstraction
+
+</li>
+<li> the unit singleton
+
+</li>
+<li> a reference over a term
+
+</li>
+<li> a dereferenced term
+
+</li>
+<li> an address
+
+</li>
+<li> an assignation to a reference
+
+</li>
+</ul>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">Term</span> : <span class="id" title="keyword">Set</span>:=<br/>
+&nbsp;| <span class="id" title="var">Var</span> : <span class="id" title="var">Vars</span> → <span class="id" title="var">Term</span><br/>
+&nbsp;| <span class="id" title="var">App</span> : <span class="id" title="var">Term</span> → <span class="id" title="var">Term</span> → <span class="id" title="var">Term</span><br/>
+&nbsp;| <span class="id" title="var">La</span>  : <span class="id" title="var">Ty</span> → <span class="id" title="var">Term</span> → <span class="id" title="var">Term</span><br/>
+&nbsp;| <span class="id" title="var">unit</span> : <span class="id" title="var">Term</span><br/>
+&nbsp;| <span class="id" title="var">ref</span> : <span class="id" title="var">Term</span> → <span class="id" title="var">Term</span><br/>
+&nbsp;| <span class="id" title="var">deref</span> : <span class="id" title="var">Term</span> → <span class="id" title="var">Term</span><br/>
+&nbsp;| <span class="id" title="var">Addr</span> : <span class="id" title="var">Addrs</span> → <span class="id" title="var">Term</span><br/>
+&nbsp;| <span class="id" title="var">Assign</span> : <span class="id" title="var">Term</span> → <span class="id" title="var">Term</span> → <span class="id" title="var">Term</span><br/>
+.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;x • y" := (<span class="id" title="var">App</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 15, <span class="id" title="tactic">left</span> <span class="id" title="keyword">associativity</span>).<br/>
+<span class="id" title="keyword">Notation</span> &quot;# v" := (<span class="id" title="var">Var</span> <span class="id" title="var">v</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 1).<br/>
+<span class="id" title="keyword">Notation</span> &quot;'λ' [ T ] , v " := (<span class="id" title="var">La</span> <span class="id" title="var">T</span> <span class="id" title="var">v</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 20, <span class="id" title="var">T</span> , <span class="id" title="var">v</span> <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 30).<br/>
+<span class="id" title="keyword">Notation</span> &quot;M :=: N" := (<span class="id" title="var">Assign</span> <span class="id" title="var">M</span> <span class="id" title="var">N</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 25).<br/>
+<span class="id" title="keyword">Reserved Notation</span> &quot; t ↑ x # n " (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 5, <span class="id" title="var">x</span> <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 0, <span class="id" title="tactic">left</span> <span class="id" title="keyword">associativity</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+In order to deal with variable bindings and captures, we need a lift
+function to deal with free and bounded variables.
+
+<div class="paragraph"> </div>
+
+   <span class="inlinecode"><span class="id" title="var">M</span></span> <span class="inlinecode">↑</span> <span class="inlinecode"><span class="id" title="var">n</span></span> <span class="inlinecode">#</span> <span class="inlinecode"><span class="id" title="var">m</span></span> recursivly add <span class="inlinecode"><span class="id" title="var">n</span></span> to all variables that are
+   above <span class="inlinecode"><span class="id" title="var">m</span></span> in <span class="inlinecode"><span class="id" title="var">M</span></span>. 
+</div>
+<div class="code">
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">lift_rec</span> (<span class="id" title="var">n</span>:<span class="id" title="var">nat</span>) (<span class="id" title="var">k</span>:<span class="id" title="var">nat</span>) (<span class="id" title="var">T</span>:<span class="id" title="var">Term</span>) {<span class="id" title="keyword">struct</span> <span class="id" title="var">T</span>} := <span class="id" title="keyword">match</span> <span class="id" title="var">T</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;| # <span class="id" title="var">x</span> ⇒  <span class="id" title="keyword">if</span> <span class="id" title="var">le_gt_dec</span> <span class="id" title="var">k</span> <span class="id" title="var">x</span> <span class="id" title="keyword">then</span> # (<span class="id" title="var">n</span>+<span class="id" title="var">x</span>) <span class="id" title="keyword">else</span> # <span class="id" title="var">x</span><br/>
+&nbsp;&nbsp;&nbsp;| <span class="id" title="var">M</span> • <span class="id" title="var">N</span> ⇒  (<span class="id" title="var">M</span> ↑ <span class="id" title="var">n</span> # <span class="id" title="var">k</span>) • (<span class="id" title="var">N</span> ↑ <span class="id" title="var">n</span> # <span class="id" title="var">k</span>)<br/>
+&nbsp;&nbsp;&nbsp;| <span class="id" title="var">λ</span>[<span class="id" title="var">A</span>], <span class="id" title="var">M</span> ⇒ <span class="id" title="var">λ</span>[<span class="id" title="var">A</span>], (<span class="id" title="var">M</span> ↑ <span class="id" title="var">n</span> # (<span class="id" title="var">S</span> <span class="id" title="var">k</span>)) <br/>
+&nbsp;&nbsp;&nbsp;| <span class="id" title="var">unit</span> ⇒ <span class="id" title="var">unit</span> <br/>
+&nbsp;&nbsp;&nbsp;| <span class="id" title="var">ref</span> <span class="id" title="var">M</span> ⇒ <span class="id" title="var">ref</span> (<span class="id" title="var">M</span> ↑ <span class="id" title="var">n</span> # <span class="id" title="var">k</span>)<br/>
+&nbsp;&nbsp;&nbsp;| <span class="id" title="var">deref</span> <span class="id" title="var">M</span> ⇒ <span class="id" title="var">deref</span> (<span class="id" title="var">M</span> ↑ <span class="id" title="var">n</span> # <span class="id" title="var">k</span>)<br/>
+&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Addr</span> <span class="id" title="var">u</span> ⇒ <span class="id" title="var">Addr</span> <span class="id" title="var">u</span><br/>
+&nbsp;&nbsp;&nbsp;| <span class="id" title="var">M</span> :=: <span class="id" title="var">N</span> ⇒ (<span class="id" title="var">M</span> ↑ <span class="id" title="var">n</span> # <span class="id" title="var">k</span>) :=: (<span class="id" title="var">N</span> ↑ <span class="id" title="var">n</span> # <span class="id" title="var">k</span>)<br/>
+&nbsp;<span class="id" title="keyword">end</span>  <br/>
+&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">where</span> &quot;t ↑ n # k" := (<span class="id" title="var">lift_rec</span> <span class="id" title="var">n</span> <span class="id" title="var">k</span> <span class="id" title="var">t</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot; t ↑ n " := (<span class="id" title="var">lift_rec</span> <span class="id" title="var">n</span> 0 <span class="id" title="var">t</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 5, <span class="id" title="var">n</span> <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 0, <span class="id" title="tactic">left</span> <span class="id" title="keyword">associativity</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We will consider the usual implicit substitution without variable capture
+(this is where the lift operator comes in handy).
+  <span class="inlinecode"></span> <span class="inlinecode"><span class="id" title="var">M</span></span> <span class="inlinecode">[</span> <span class="inlinecode"><span class="id" title="var">n</span></span> <span class="inlinecode">←</span> <span class="inlinecode"><span class="id" title="var">N</span></span> <span class="inlinecode">]</span> <span class="inlinecode"></span> replace the variable <span class="inlinecode"><span class="id" title="var">n</span></span> in <span class="inlinecode"><span class="id" title="var">M</span></span> by the term <span class="inlinecode"><span class="id" title="var">N</span></span>.
+  
+</div>
+<div class="code">
+<span class="id" title="keyword">Reserved Notation</span> &quot;t [ x ← u ]" (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 5, <span class="id" title="var">x</span> <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 0, <span class="id" title="tactic">left</span> <span class="id" title="keyword">associativity</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">subst_rec</span> <span class="id" title="var">U</span> <span class="id" title="var">T</span> <span class="id" title="var">n</span> {<span class="id" title="keyword">struct</span> <span class="id" title="var">T</span>} :=<br/>
+&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">T</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| # <span class="id" title="var">x</span> ⇒ <span class="id" title="keyword">match</span> (<span class="id" title="var">lt_eq_lt_dec</span> <span class="id" title="var">x</span> <span class="id" title="var">n</span>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">inleft</span> (<span class="id" title="tactic">left</span> <span class="id" title="var">_</span>) ⇒ # <span class="id" title="var">x</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">inleft</span> (<span class="id" title="tactic">right</span> <span class="id" title="var">_</span>) ⇒ <span class="id" title="var">U</span> ↑ <span class="id" title="var">n</span>  <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">inright</span> <span class="id" title="var">_</span> ⇒ # (<span class="id" title="var">x</span> - 1) <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">M</span> • <span class="id" title="var">N</span> ⇒ (<span class="id" title="var">M</span> [ <span class="id" title="var">n</span> ← <span class="id" title="var">U</span> ]) • ( <span class="id" title="var">N</span> [ <span class="id" title="var">n</span> ← <span class="id" title="var">U</span> ]) <br/>
+&nbsp;&nbsp;| <span class="id" title="var">λ</span>[<span class="id" title="var">A</span>] , <span class="id" title="var">M</span> ⇒ <span class="id" title="var">λ</span>[<span class="id" title="var">A</span>] , (<span class="id" title="var">M</span> [ <span class="id" title="var">S</span> <span class="id" title="var">n</span> ← <span class="id" title="var">U</span> ]) <br/>
+&nbsp;&nbsp;| <span class="id" title="var">unit</span> ⇒ <span class="id" title="var">unit</span> <br/>
+&nbsp;&nbsp;| <span class="id" title="var">ref</span> <span class="id" title="var">M</span> ⇒ <span class="id" title="var">ref</span> (<span class="id" title="var">M</span> [ <span class="id" title="var">n</span> ← <span class="id" title="var">U</span> ])<br/>
+&nbsp;&nbsp;| <span class="id" title="var">deref</span> <span class="id" title="var">M</span> ⇒ <span class="id" title="var">deref</span> (<span class="id" title="var">M</span> [ <span class="id" title="var">n</span> ← <span class="id" title="var">U</span> ])<br/>
+&nbsp;&nbsp;| <span class="id" title="var">Addr</span> <span class="id" title="var">u</span> ⇒ <span class="id" title="var">Addr</span> <span class="id" title="var">u</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">M</span> :=: <span class="id" title="var">N</span> ⇒ (<span class="id" title="var">M</span> [ <span class="id" title="var">n</span> ← <span class="id" title="var">U</span> ]) :=: (<span class="id" title="var">N</span> [ <span class="id" title="var">n</span> ← <span class="id" title="var">U</span> ])<br/>
+<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">where</span> &quot; t [ n ← w ] " := (<span class="id" title="var">subst_rec</span> <span class="id" title="var">w</span> <span class="id" title="var">t</span> <span class="id" title="var">n</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot; t [ ← w ] " := (<span class="id" title="var">subst_rec</span> <span class="id" title="var">w</span> <span class="id" title="var">t</span> 0) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 5).<br/>
+
+<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

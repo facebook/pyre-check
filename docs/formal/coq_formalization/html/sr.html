@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>sr</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library sr</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">List</span> <span class="id" title="var">Arith</span> <span class="id" title="var">Omega</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">STLC_Ref.term</span> <span class="id" title="var">STLC_Ref.ty</span> <span class="id" title="var">STLC_Ref.env</span> <span class="id" title="var">STLC_Ref.red</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+So far memories where not typed. We are going to use a second storage
+    in our typing judgement to keep track of the type of terms associated
+    to any addresses.
+
+<div class="paragraph"> </div>
+
+   This map is used as truth source to type memories: each address in the
+   the map is associated with a type. The idea is that memories should be
+   typed in the empty context, so we get something like:
+
+<div class="paragraph"> </div>
+
+   forall address a in a memory m typed by a type store D,
+     nil, D ⊢ Addr a : D(a)
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">TStore</span> := <span class="id" title="var">list</span> (<span class="id" title="var">Addrs</span> × <span class="id" title="var">Ty</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab2"></a><h1 class="section">Typing judgement for terms.</h1>
+
+
+<div class="paragraph"> </div>
+
+It is STLC extended with references as
+described in https://www-apr.lip6.fr/~demangeon/Recherche/impfun2.pdf
+with minor tweaks to be able to mechanism the proofs:
+<ul class="doclist">
+<li> Addition of the type store D instead of having typed variables,
+  which break the hard mutual dependency between reduction and typing
+
+</li>
+<li> Subject Reduction is proved in the empty context (as usual for call
+  by value reductions). This removes the need for memories to be only
+  values.
+
+</li>
+</ul>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">typ</span> : <span class="id" title="var">Env</span> → <span class="id" title="var">TStore</span> → <span class="id" title="var">Term</span> → <span class="id" title="var">Ty</span> → <span class="id" title="keyword">Prop</span> :=<br/>
+&nbsp;| <span class="id" title="var">cVar</span>  : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">A</span> <span class="id" title="var">v</span>, <span class="id" title="var">A</span> ↓ <span class="id" title="var">v</span> ∈ <span class="id" title="var">Γ</span> → <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> (#<span class="id" title="var">v</span>) <span class="id" title="var">A</span><br/>
+&nbsp;| <span class="id" title="var">cLa</span>   : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">A</span> <span class="id" title="var">B</span> <span class="id" title="var">M</span>, <span class="id" title="var">typ</span> (<span class="id" title="var">A</span>::<span class="id" title="var">Γ</span>) <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">B</span> → <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> (<span class="id" title="var">λ</span>[<span class="id" title="var">A</span>], <span class="id" title="var">M</span>) (<span class="id" title="var">A</span> ⇒ <span class="id" title="var">B</span>)<br/>
+&nbsp;| <span class="id" title="var">cApp</span>  : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">N</span> <span class="id" title="var">A</span> <span class="id" title="var">B</span>, <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> (<span class="id" title="var">A</span> ⇒ <span class="id" title="var">B</span>) → <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">N</span> <span class="id" title="var">A</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> (<span class="id" title="var">M</span> • <span class="id" title="var">N</span>) <span class="id" title="var">B</span><br/>
+&nbsp;| <span class="id" title="var">cRef</span>  : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">A</span>, <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">A</span> → <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> (<span class="id" title="var">ref</span> <span class="id" title="var">M</span>) (<span class="id" title="var">Ref</span> <span class="id" title="var">A</span>)<br/>
+&nbsp;| <span class="id" title="var">cUnit</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span>, <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">unit</span> <span class="id" title="var">Unit</span><br/>
+&nbsp;| <span class="id" title="var">cAddr</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">T</span> <span class="id" title="var">u</span>, <span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">D</span> = <span class="id" title="var">Some</span> <span class="id" title="var">T</span> → <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> (<span class="id" title="var">Addr</span> <span class="id" title="var">u</span>) (<span class="id" title="var">Ref</span> <span class="id" title="var">T</span>)<br/>
+&nbsp;| <span class="id" title="var">cAsg</span>  : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">N</span> <span class="id" title="var">A</span>, <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> (<span class="id" title="var">Ref</span> <span class="id" title="var">A</span>) → <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">N</span> <span class="id" title="var">A</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> (<span class="id" title="var">M</span> :=: <span class="id" title="var">N</span>) <span class="id" title="var">Unit</span> <br/>
+&nbsp;| <span class="id" title="var">cDrf</span>  : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">A</span>, <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> (<span class="id" title="var">Ref</span> <span class="id" title="var">A</span>) → <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> (<span class="id" title="var">deref</span> <span class="id" title="var">M</span>)  <span class="id" title="var">A</span><br/>
+.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+A type store D types a memory m if they map the same set of addresses
+ and types in D type the corresponding term in m in the empty context 
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">WfTStore</span> <span class="id" title="var">D</span> <span class="id" title="var">mem</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">∀</span> <span class="id" title="var">u</span>, <span class="id" title="var">InAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">D</span> ↔ <span class="id" title="var">InAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">mem</span>) ∧<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">∀</span> <span class="id" title="var">u</span> <span class="id" title="var">V</span>, <span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">mem</span> = <span class="id" title="var">Some</span> <span class="id" title="var">V</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">match</span> <span class="id" title="var">readAddr</span> <span class="id" title="var">u</span> <span class="id" title="var">D</span> <span class="id" title="keyword">with</span> <span class="id" title="var">Some</span> <span class="id" title="var">T</span> ⇒ <span class="id" title="var">typ</span> <span class="id" title="var">nil</span> <span class="id" title="var">D</span> <span class="id" title="var">V</span> <span class="id" title="var">T</span> | <span class="id" title="var">None</span> ⇒ <span class="id" title="var">False</span> <span class="id" title="keyword">end</span>)).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Weakening Property: if a judgement is valid, we can insert a well-typed term
+  in the context, it will remain valid. This is where the type checking for
+  inserting items in a context is done.
+</div>
+<div class="code">
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">weakening</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">Δ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span>, <span class="id" title="var">typ</span> <span class="id" title="var">Δ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">A</span> <span class="id" title="var">n</span> <span class="id" title="var">Δ'</span>, <span class="id" title="var">ins_in_env</span> <span class="id" title="var">Γ</span> <span class="id" title="var">A</span> <span class="id" title="var">n</span> <span class="id" title="var">Δ</span> <span class="id" title="var">Δ'</span> → <span class="id" title="var">typ</span> <span class="id" title="var">Δ'</span> <span class="id" title="var">D</span> (<span class="id" title="var">M</span> ↑ 1 # <span class="id" title="var">n</span>) <span class="id" title="var">T</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">thinning</span> :<br/>
+&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span> <span class="id" title="var">A</span>, <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span> → <span class="id" title="var">typ</span> (<span class="id" title="var">A</span>::<span class="id" title="var">Γ</span>) <span class="id" title="var">D</span> (<span class="id" title="var">M</span> ↑ 1) <span class="id" title="var">T</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">thinning_n</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">n</span> <span class="id" title="var">Δ</span> <span class="id" title="var">Δ'</span>, <span class="id" title="var">trunc</span> <span class="id" title="var">n</span> <span class="id" title="var">Δ</span> <span class="id" title="var">Δ'</span> → <span class="id" title="keyword">∀</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">typ</span> <span class="id" title="var">Δ'</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span> → <span class="id" title="var">typ</span> <span class="id" title="var">Δ</span> <span class="id" title="var">D</span> (<span class="id" title="var">M</span> ↑ <span class="id" title="var">n</span>)  <span class="id" title="var">T</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Substitution Property: if a judgment is valid and we replace a variable by a
+  well-typed term of the same type, it will remain valid.
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">substitution</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span> , <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span>  →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">∀</span> <span class="id" title="var">Δ</span> <span class="id" title="var">P</span> <span class="id" title="var">A</span>,  <span class="id" title="var">typ</span> <span class="id" title="var">Δ</span> <span class="id" title="var">D</span> <span class="id" title="var">P</span> <span class="id" title="var">A</span> →<br/>
+&nbsp;<span class="id" title="keyword">∀</span> <span class="id" title="var">Γ'</span> <span class="id" title="var">n</span> , <span class="id" title="var">sub_in_env</span> <span class="id" title="var">Δ</span> <span class="id" title="var">A</span> <span class="id" title="var">n</span> <span class="id" title="var">Γ</span> <span class="id" title="var">Γ'</span> → <span class="id" title="var">typ</span> <span class="id" title="var">Γ'</span> <span class="id" title="var">D</span> (<span class="id" title="var">M</span> [ <span class="id" title="var">n</span> ←<span class="id" title="var">P</span> ])  <span class="id" title="var">T</span>.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Subject Reduction 
+</div>
+<div class="code">
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">SR</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span>, <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span> → <span class="id" title="keyword">∀</span> <span class="id" title="var">m1</span> <span class="id" title="var">m2</span> <span class="id" title="var">N</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Γ</span> = <span class="id" title="var">nil</span> → <span class="id" title="tactic">red</span> <span class="id" title="var">M</span> <span class="id" title="var">m1</span> <span class="id" title="var">N</span> <span class="id" title="var">m2</span> → <span class="id" title="var">WfTStore</span> <span class="id" title="var">D</span> <span class="id" title="var">m1</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">∃</span> <span class="id" title="var">D'</span>, (<span class="id" title="var">InclTStore</span> <span class="id" title="var">D</span> <span class="id" title="var">D'</span> ∧ <span class="id" title="var">WfTStore</span> <span class="id" title="var">D'</span> <span class="id" title="var">m2</span> ∧ <span class="id" title="var">typ</span> <span class="id" title="var">Γ</span> <span class="id" title="var">D'</span> <span class="id" title="var">N</span> <span class="id" title="var">T</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Progress 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">Progress</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span>, <span class="id" title="var">typ</span> <span class="id" title="var">nil</span> <span class="id" title="var">D</span> <span class="id" title="var">M</span> <span class="id" title="var">T</span> → <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">∀</span> <span class="id" title="var">m1</span>, <span class="id" title="var">WfTStore</span> <span class="id" title="var">D</span> <span class="id" title="var">m1</span> →<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="tactic">∃</span> <span class="id" title="var">N</span>, <span class="id" title="tactic">∃</span> <span class="id" title="var">m2</span>, <span class="id" title="tactic">red</span> <span class="id" title="var">M</span> <span class="id" title="var">m1</span> <span class="id" title="var">N</span> <span class="id" title="var">m2</span>) ∨ <span class="id" title="var">is_value</span> <span class="id" title="var">M</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
