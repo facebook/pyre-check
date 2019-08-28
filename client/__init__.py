@@ -10,6 +10,7 @@ import os
 import platform
 import subprocess
 import sys
+import time
 import traceback
 from argparse import Namespace
 from typing import Any, Dict, Optional
@@ -251,6 +252,8 @@ def log_statistics(
     logger: Optional[str] = None,
 ) -> None:
     integers = integers or {}
+    if "time" not in integers:
+        integers["time"] = int(time.time())
     normals = normals or {}
     if configuration:
         normals = {
@@ -262,12 +265,7 @@ def log_statistics(
     if not logger:
         raise ValueError("Logger must either be given or in configuration")
     if arguments:
-        normals = {
-            **normals,
-            "source_directories": str(arguments.source_directories or []),
-            "arguments": str(arguments),
-            "target": str(arguments.targets or []),
-        }
+        normals = {**normals, "arguments": str(arguments)}
     try:
         statistics = {
             "int": integers,
