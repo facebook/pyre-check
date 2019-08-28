@@ -354,6 +354,7 @@ let test_check_variable_bindings context =
 
 let test_unbound_variables context =
   let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       def foo() -> None:
@@ -447,8 +448,7 @@ let test_unbound_variables context =
       ^ "incomplete, add an explicit annotation.";
       "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
       "Incompatible return type [7]: Expected `G[int]` but got `G[typing.Any]`." ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
@@ -490,8 +490,7 @@ let test_unbound_variables context =
       "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
       ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
       "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`." ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
