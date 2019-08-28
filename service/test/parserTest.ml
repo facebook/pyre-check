@@ -172,6 +172,21 @@ let test_ast_hash _ =
     let actual = not (Int.equal (Source.hash old_source) (Source.hash new_source)) in
     assert_bool "Test if source hash change is expected" (Bool.equal expected actual)
   in
+  (* Metadata *)
+  assert_hash_changed ~old_source:"# pyre-strict" ~new_source:"# pyre-strict" ~expected:false;
+  assert_hash_changed ~old_source:"# pyre-strict" ~new_source:"" ~expected:true;
+  assert_hash_changed
+    ~old_source:"# pyre-strict"
+    ~new_source:"# pyre-declare-but-dont-check"
+    ~expected:true;
+
+  (* Assignments. *)
+  assert_hash_changed ~old_source:"a = 1" ~new_source:"a = 1" ~expected:false;
+  assert_hash_changed ~old_source:"a: int = 1" ~new_source:"a: int = 1" ~expected:false;
+  assert_hash_changed ~old_source:"a: str = 1" ~new_source:"a: int = 1" ~expected:true;
+  assert_hash_changed ~old_source:"a = 2" ~new_source:"a = 1" ~expected:true;
+
+  (* Defines *)
   assert_hash_changed
     ~old_source:"def foo() -> int: ..."
     ~new_source:"def foo() -> int: ..."
@@ -181,8 +196,30 @@ let test_ast_hash _ =
     ~new_source:"def bar() -> int: ..."
     ~expected:true;
   assert_hash_changed
+    ~old_source:"def foo(a: int): ..."
+    ~new_source:"def foo(a: str): ..."
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:"def foo(a: int = 1): ..."
+    ~new_source:"def foo(a: int = 2): ..."
+    ~expected:true;
+  assert_hash_changed
     ~old_source:"def foo() -> int: ..."
     ~new_source:"def foo() -> str: ..."
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:"def foo(): ..."
+    ~new_source:"async def foo(): ..."
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+        @decorator
+        def foo(): ...
+      |}
+    ~new_source:{|
+        @other_decorator
+        def foo(): ...
+      |}
     ~expected:true;
   assert_hash_changed
     ~old_source:{|
@@ -272,6 +309,124 @@ let test_ast_hash _ =
       return 42
     |}
     ~expected:false;
+
+  (* Classes *)
+  assert_hash_changed
+    ~old_source:{|
+       @decorator
+       class B(A):
+         attribute: int = 1
+     |}
+    ~new_source:{|
+       @decorator
+       class B(A):
+         attribute: int = 1
+     |}
+    ~expected:false;
+  assert_hash_changed ~old_source:"class A: ..." ~new_source:"class B: ..." ~expected:true;
+  assert_hash_changed ~old_source:"class A(B): ..." ~new_source:"class A(C): ..." ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+       class A:
+         attribute: int = 1
+     |}
+    ~new_source:{|
+       class A:
+         attribute: str = 1
+     |}
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+       @decorator
+       class A: ...
+     |}
+    ~new_source:{|
+       @other_decorator
+       class A: ...
+     |}
+    ~expected:true;
+
+  (* If *)
+  assert_hash_changed
+    ~old_source:
+      {|
+        if test:
+          attribute = 1
+        else:
+          attribute = 2
+      |}
+    ~new_source:
+      {|
+        if test:
+          attribute = 1
+        else:
+          attribute = 2
+      |}
+    ~expected:false;
+  assert_hash_changed
+    ~old_source:{|
+        if test:
+          attribute = 1
+      |}
+    ~new_source:{|
+        if other_test:
+          attribute = 1
+      |}
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:{|
+        if test:
+          attribute = 1
+      |}
+    ~new_source:{|
+        if test:
+          attribute = 2
+      |}
+    ~expected:true;
+  assert_hash_changed
+    ~old_source:
+      {|
+        if test:
+          attribute = 1
+        else:
+          attribute = 2
+      |}
+    ~new_source:
+      {|
+        if test:
+          attribute = 1
+        else:
+          attribute = 3
+      |}
+    ~expected:true;
+
+  (* Imports *)
+  assert_hash_changed ~old_source:"from a import b" ~new_source:"from a import b" ~expected:false;
+  assert_hash_changed ~old_source:"import a" ~new_source:"import a" ~expected:false;
+  assert_hash_changed ~old_source:"from a import b" ~new_source:"from a import c" ~expected:true;
+  assert_hash_changed ~old_source:"import a" ~new_source:"import b" ~expected:true;
+
+  (* With *)
+  assert_hash_changed
+    ~old_source:{|
+        with resource:
+          attribute = 1
+      |}
+    ~new_source:{|
+        with resource:
+          attribute = 1
+      |}
+    ~expected:false;
+  assert_hash_changed
+    ~old_source:{|
+        with resource:
+          attribute = 1
+      |}
+    ~new_source:{|
+        with resource:
+          attribute = 2
+      |}
+    ~expected:true;
 
   (* TODO: This should be false. It seems that docstrings are still counted as part of the function
      body *)

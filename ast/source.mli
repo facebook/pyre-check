@@ -68,8 +68,6 @@ val create
   Statement.t list ->
   t
 
-val signature_hash : t -> int
-
 val ignore_lines : t -> Ignore.t list
 
 val statements : t -> Statement.t list
