@@ -58,7 +58,28 @@ let test_check_data_class context =
       def boo() -> None:
           b = Foo()
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      @dataclass
+      class Foo():
+        dangan: int
+      def boo() -> None:
+          b = Foo(1)
+    |}
+    [];
+  assert_type_errors
+    {|
+      @dataclass
+      class Base():
+        x: int
+      class Child(Base):
+        pass
+      def boo() -> None:
+          b = Child(1)
+    |}
+    [];
+  ()
 
 
 let test_check_attr context =

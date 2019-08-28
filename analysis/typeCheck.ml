@@ -585,12 +585,8 @@ module State (Context : Context) = struct
           unimplemented_errors @ errors
         in
         let check_base_and_attributes definition errors =
-          let no_explicit_class_constructor =
-            definition
-            |> Annotated.Class.constructors ~resolution:global_resolution
-            |> List.is_empty
-          in
-          if no_explicit_class_constructor then
+          if not (AnnotatedClass.has_explicit_constructor definition ~resolution:global_resolution)
+          then
             let base_errors = check_bases () in
             if
               (not (AnnotatedClass.is_protocol definition))

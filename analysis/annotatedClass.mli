@@ -140,7 +140,7 @@ val fallback_attribute : resolution:Resolution.t -> name:Identifier.t -> t -> At
 
 val constructor : t -> instantiated:Type.t -> resolution:GlobalResolution.t -> Type.t
 
-val constructors : t -> resolution:GlobalResolution.t -> Define.t list
+val has_explicit_constructor : t -> resolution:GlobalResolution.t -> bool
 
 val overrides : t -> resolution:GlobalResolution.t -> name:Identifier.t -> Attribute.t option
 

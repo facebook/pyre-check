@@ -7,15 +7,14 @@ open Core
 open OUnit2
 
 let test_transform_environment context =
-  let assert_environment_contains = PluginTest.assert_environment_contains ~context in
-  assert_environment_contains
+  let assert_equivalent_attributes = PluginTest.assert_equivalent_attributes ~context in
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
         ...
     |}
     [ {|
-        @dataclass
         class Foo:
           def __init__(self) -> None:
             pass
@@ -25,7 +24,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       if 1 > 2:
         @dataclass
@@ -33,7 +32,6 @@ let test_transform_environment context =
           ...
     |}
     [ {|
-        @dataclass
         class Foo:
           def __init__(self) -> None:
             pass
@@ -43,7 +41,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
@@ -51,7 +49,7 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclass
+        # spacer
         class Foo:
           def foo() -> None:
             pass
@@ -63,7 +61,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclasses.dataclass
       class Foo:
@@ -71,7 +69,7 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclasses.dataclass
+        @spacer
         class Foo:
           def foo() -> None:
             pass
@@ -83,7 +81,7 @@ let test_transform_environment context =
            pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
@@ -93,7 +91,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-       @dataclass
        class Foo:
          def __init__(self) -> None:
            pass
@@ -103,16 +100,15 @@ let test_transform_environment context =
            pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
         name = 'abc'
     |}
     [ {|
-        @dataclass
         class Foo:
-          name = 'abc'
+          name: unknown = 'abc'
           def __init__(self) -> None:
             pass
           def __repr__(self) -> str:
@@ -121,14 +117,13 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
         name: str
     |}
     [ {|
-        @dataclass
         class Foo:
           name: str
           def __init__(self, name: str) -> None:
@@ -139,7 +134,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
@@ -147,7 +142,6 @@ let test_transform_environment context =
         age: int
     |}
     [ {|
-        @dataclass
         class Foo:
           name: str
           age: int
@@ -159,7 +153,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
@@ -169,7 +163,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclass
         class Foo:
           name: str
           age: int
@@ -181,7 +174,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
@@ -189,10 +182,9 @@ let test_transform_environment context =
         age = 3
     |}
     [ {|
-        @dataclass
         class Foo:
           name: str
-          age = 3
+          age: unknown = 3
           def __init__(self, name: str) -> None:
             pass
           def __repr__(self) -> str:
@@ -201,7 +193,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
@@ -209,7 +201,6 @@ let test_transform_environment context =
         age: int = 3
     |}
     [ {|
-        @dataclass
         class Foo:
           name: str
           age: int = 3
@@ -221,7 +212,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class Foo:
@@ -230,7 +221,6 @@ let test_transform_environment context =
         parent: typing.Tuple['int', 'str']
     |}
     [ {|
-        @dataclass
         class Foo:
           name: str
           age: typing.List[int]
@@ -245,7 +235,7 @@ let test_transform_environment context =
     ];
 
   (* Dataclass boolean arguments *)
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass(init = False)
       class Foo:
@@ -253,7 +243,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclass(init = False)
         class Foo:
           def foo(self) -> None:
             pass
@@ -263,7 +252,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass(repr = False)
       class Foo:
@@ -271,7 +260,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclass(repr = False)
         class Foo:
           def foo(self) -> None:
             pass
@@ -281,7 +269,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass(eq = False)
       class Foo:
@@ -289,7 +277,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclass(eq = False)
         class Foo:
           def foo(self) -> None:
             pass
@@ -299,7 +286,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass(order = True)
       class Foo:
@@ -307,7 +294,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclass(order = True)
         class Foo:
           def foo(self) -> None:
             pass
@@ -327,7 +313,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass(eq = False, order = True)
       class Foo:
@@ -335,7 +321,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclass(eq = False, order = True)
         class Foo:
           def foo(self) -> None:
             pass
@@ -353,7 +338,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass(frozen = True)
       class Foo:
@@ -361,7 +346,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @dataclass(frozen = True)
         class Foo:
           def foo(self) -> None:
             pass
@@ -375,7 +359,7 @@ let test_transform_environment context =
     ];
 
   (* Dataclass inheritance *)
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class C(Base):
@@ -388,7 +372,6 @@ let test_transform_environment context =
         z: str = "a"
     |}
     [ {|
-        @dataclass
         class C(Base):
           z: int = 10
           x: int = 15
@@ -400,7 +383,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @dataclass
         class Base:
           x: typing.Any = 15.0
           y: int = 0
@@ -413,7 +395,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class C(Base):
@@ -426,7 +408,6 @@ let test_transform_environment context =
         z: str = "a"
     |}
     [ {|
-        @dataclass
         class C(Base):
           z: int = 10
           x: int = 15
@@ -438,7 +419,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @dataclass
         class Base:
           x: typing.Any = 15.0
           y: int = 0
@@ -451,7 +431,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class C(Base):
@@ -463,10 +443,9 @@ let test_transform_environment context =
         y: int = 0
     |}
     [ {|
-        @dataclass
         class C(Base):
           z: int = 10
-          x = 15
+          x: unknown = 15
           def __init__(self, x: typing.Any = 15.0, y: int = 0, z: int = 10) -> None:
             pass
           def __repr__(self) -> str:
@@ -475,7 +454,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @dataclass
         class Base:
           x: typing.Any = 15.0
           y: int = 0
@@ -487,7 +465,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class C(Base):
@@ -499,7 +477,6 @@ let test_transform_environment context =
         y: int = 0
     |}
     [ {|
-        @dataclass
         class C(Base):
           z: int = 10
           x: int
@@ -511,7 +488,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @dataclass
         class Base:
           x: str = "a"
           y: int = 0
@@ -523,7 +499,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class C(B):
@@ -538,7 +514,6 @@ let test_transform_environment context =
         y: int = 0
     |}
     [ {|
-        @dataclass
         class C(B):
           z: int = 10
           x: int = 15
@@ -555,7 +530,6 @@ let test_transform_environment context =
           y: int = 20
       |};
       {|
-        @dataclass
         class Base:
           x: typing.Any = 15.0
           y: int = 0
@@ -567,7 +541,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class C1(B1, A1):
@@ -580,7 +554,6 @@ let test_transform_environment context =
         x: int = 15
     |}
     [ {|
-        @dataclass
         class C1(B1, A1):
           z: int = 10
           def __init__(self, x: int = 15, y: int = 5, z: int = 10) -> None:
@@ -591,7 +564,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @dataclass
         class B1:
           y: int = 5
           def __init__(self, y: int = 5) -> None:
@@ -602,7 +574,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @dataclass
         class A1:
           x: int = 15
           def __init__(self, x: int = 15) -> None:
@@ -613,7 +584,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       class NotDataClass:
         x: int = 15
@@ -626,7 +597,6 @@ let test_transform_environment context =
           x: int = 15
       |};
       {|
-        @dataclass
         class DataClass(NotDataClass):
           y: int = 5
           def __init__(self, y: int = 5) -> None:
@@ -637,18 +607,14 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
-      _T = typing.TypeVar("_T")
-      class dataclasses.InitVar(typing.Generic[_T]):
-        ...
       @dataclass
       class A:
         x: int
         init_variable: dataclasses.InitVar[str]
     |}
     [ {|
-        @dataclass
         class A:
           x: int
           init_variable: dataclasses.InitVar[str]
@@ -662,14 +628,14 @@ let test_transform_environment context =
     ];
 
   (* Dataclass field init disabler *)
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class A:
         x: int = dataclasses.field(init=False)
     |}
     [ {|
-        @dataclass
+        # spacer
         class A:
           x: int = dataclasses.field(init=False)
           def __init__(self) -> None:
@@ -680,14 +646,14 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class A:
         x: int = dataclasses.field(init=True)
     |}
     [ {|
-        @dataclass
+        # spacer
         class A:
           x: int = dataclasses.field(init=True)
           def __init__(self, x: int) -> None:
@@ -698,14 +664,14 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class A:
         x: int = dataclasses.field(init=True, default=1)
     |}
     [ {|
-        @dataclass
+        # spacer
         class A:
           x: int = dataclasses.field(init=True, default=1)
           def __init__(self, x: int = 1) -> None:
@@ -716,14 +682,14 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class A:
         x: int = dataclasses.field(init=True, default_factory=foo)
     |}
     [ {|
-        @dataclass
+        # spacer
         class A:
           x: int = dataclasses.field(init=True, default_factory=foo)
           def __init__(self, x: int = foo()) -> None:
@@ -734,7 +700,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     (* NOTE: Ideally we'd like to warn about this somehow *)
     {|
       @dataclass
@@ -742,7 +708,7 @@ let test_transform_environment context =
         x: int = dataclasses.field(init=False, default=1)
     |}
     [ {|
-        @dataclass
+        # spacer
         class A:
           x: int = dataclasses.field(init=False, default=1)
           def __init__(self) -> None:
@@ -753,7 +719,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @dataclass
       class A:
@@ -763,7 +729,7 @@ let test_transform_environment context =
         y: str = "abc"
     |}
     [ {|
-        @dataclass
+        # spacer
         class A:
           x: int = dataclasses.field(init=False)
           def __init__(self) -> None:
@@ -774,7 +740,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @dataclass
         class B:
           y: str = "abc"
           def __init__(self, y: str = "abc") -> None:

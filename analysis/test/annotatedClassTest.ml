@@ -365,6 +365,15 @@ let test_constructors context =
     |}
     "T"
     (Some "typing.Callable('C.__init__')[[Named(x, int)], T]");
+  assert_constructor
+    {|
+      from dataclasses import dataclass
+      @dataclass(frozen=True)
+      class A:
+          A.foo:int = 1
+    |}
+    "A"
+    (Some "typing.Callable('A.__init__')[[Named(foo, int, default)], A]");
   ()
 
 
@@ -667,6 +676,14 @@ let test_class_attributes context =
       "__setattr__";
       "__sizeof__";
       "__str__" ];
+  assert_fold
+    {|
+      @dataclass
+      class Foo:
+        def foo() -> None:
+          pass
+    |}
+    ["foo"; "__init__"; "__repr__"; "__eq__"];
 
   (* Test 'attribute' *)
   let resolution, parent =

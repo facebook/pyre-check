@@ -61,10 +61,6 @@ let populate
     ~configuration
     ~f:(fun sources -> List.iter sources ~f:register_values)
     ~inputs:sources;
-  Environment.transaction
-    environment
-    ~f:(fun () -> List.iter ~f:(Plugin.apply_to_environment environment resolution) sources)
-    ();
 
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
   Annotated.Class.AttributeCache.clear ()

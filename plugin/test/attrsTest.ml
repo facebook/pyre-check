@@ -7,15 +7,14 @@ open Core
 open OUnit2
 
 let test_transform_environment context =
-  let assert_environment_contains = PluginTest.assert_environment_contains ~context in
-  assert_environment_contains
+  let assert_equivalent_attributes = PluginTest.assert_equivalent_attributes ~context in
+  assert_equivalent_attributes
     {|
       @attr.s
       class Foo:
         ...
     |}
     [ {|
-        @attr.s
         class Foo:
           def __init__(self) -> None:
             pass
@@ -33,7 +32,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       if 1 > 2:
         @attr.s
@@ -41,7 +40,6 @@ let test_transform_environment context =
           ...
     |}
     [ {|
-        @attr.s
         class Foo:
           def __init__(self) -> None:
             pass
@@ -59,7 +57,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class Foo:
@@ -67,7 +65,7 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @attr.s
+        # spacer
         class Foo:
           def foo() -> None:
             pass
@@ -87,7 +85,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class Foo:
@@ -97,7 +95,7 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-       @attr.s
+       # spacer
        class Foo:
          def __init__(self) -> None:
            pass
@@ -115,14 +113,13 @@ let test_transform_environment context =
            pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class Foo:
         name = 'abc'
     |}
     [ {|
-        @attr.s
         class Foo:
           name = 'abc'
           def __init__(self, name: str ='abc') -> None:
@@ -141,14 +138,13 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class Foo:
         name: str
     |}
     [ {|
-        @attr.s
         class Foo:
           name: str
           def __init__(self, name: str) -> None:
@@ -167,7 +163,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class Foo:
@@ -177,7 +173,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @attr.s
         class Foo:
           name: str
           age: int
@@ -199,7 +194,7 @@ let test_transform_environment context =
     ];
 
   (* Boolean arguments *)
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s(init = False)
       class Foo:
@@ -207,7 +202,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @attr.s(init = False)
         class Foo:
           def foo(self) -> None:
             pass
@@ -225,7 +219,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s(repr = False)
       class Foo:
@@ -233,7 +227,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @attr.s(repr = False)
         class Foo:
           def foo(self) -> None:
             pass
@@ -251,7 +244,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s(cmp = False)
       class Foo:
@@ -259,7 +252,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @attr.s(cmp = False)
         class Foo:
           def foo(self) -> None:
             pass
@@ -269,7 +261,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s(auto_attribs = True)
       class Foo:
@@ -277,7 +269,6 @@ let test_transform_environment context =
           pass
     |}
     [ {|
-        @attr.s(auto_attribs = True)
         class Foo:
           def foo(self) -> None:
             pass
@@ -299,7 +290,7 @@ let test_transform_environment context =
     ];
 
   (* Inheritance *)
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class C(Base):
@@ -312,7 +303,6 @@ let test_transform_environment context =
         z: str = "a"
     |}
     [ {|
-        @attr.s
         class C(Base):
           z: int = 10
           x: int = 15
@@ -332,7 +322,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @attr.s
         class Base:
           x: typing.Any = 15.0
           y: int = 0
@@ -353,7 +342,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class C(Base):
@@ -366,7 +355,6 @@ let test_transform_environment context =
         z: str = "a"
     |}
     [ {|
-        @attr.s
         class C(Base):
           z: int = 10
           x: int = 15
@@ -386,7 +374,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @attr.s
         class Base:
           x: typing.Any = 15.0
           y: int = 0
@@ -407,7 +394,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class C(Base):
@@ -419,7 +406,6 @@ let test_transform_environment context =
         y: int = 0
     |}
     [ {|
-        @attr.s
         class C(Base):
           z: int = 10
           x: int
@@ -439,7 +425,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @attr.s
         class Base:
           x: str = "a"
           y: int = 0
@@ -459,7 +444,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class C(B):
@@ -474,7 +459,6 @@ let test_transform_environment context =
         y: int = 0
     |}
     [ {|
-        @attr.s
         class C(B):
           z: int = 10
           x: int = 15
@@ -499,7 +483,6 @@ let test_transform_environment context =
           y: int = 20
       |};
       {|
-        @attr.s
         class Base:
           x: typing.Any = 15.0
           y: int = 0
@@ -519,7 +502,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       @attr.s
       class C1(B1, A1):
@@ -532,7 +515,6 @@ let test_transform_environment context =
         x: int = 15
     |}
     [ {|
-        @attr.s
         class C1(B1, A1):
           z: int = 10
           def __init__(self, x: int = 15, y: int = 5, z: int = 10) -> None:
@@ -551,7 +533,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @attr.s
         class B1:
           y: int = 5
           def __init__(self, y: int = 5) -> None:
@@ -570,7 +551,6 @@ let test_transform_environment context =
             pass
       |};
       {|
-        @attr.s
         class A1:
           x: int = 15
           def __init__(self, x: int = 15) -> None:
@@ -589,7 +569,7 @@ let test_transform_environment context =
             pass
       |}
     ];
-  assert_environment_contains
+  assert_equivalent_attributes
     {|
       class NoAttr:
         x: int = 15
@@ -602,7 +582,6 @@ let test_transform_environment context =
           x: int = 15
       |};
       {|
-        @attr.s
         class WithAttr(NoAttr):
           y: int = 5
           def __init__(self, y: int = 5) -> None:

@@ -193,7 +193,7 @@ let diff ~print format (left, right) =
     String.substr_replace_all string ~pattern:"\"" ~with_:"\\\""
     |> String.substr_replace_all ~pattern:"'" ~with_:"\\\""
     |> String.substr_replace_all ~pattern:"`" ~with_:"?"
-    |> String.substr_replace_all ~pattern:"$" ~with_:"?"
+    |> String.substr_replace_all ~pattern:"$" ~with_:"@"
   in
   let input =
     Format.sprintf
@@ -913,7 +913,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         _T = typing.TypeVar('_T')
         class InitVar(typing.Generic[_T]): ...
-      |};
+      |}
+    |> Preprocessing.preprocess;
     parse ~handle:"os.pyi" {|
         environ: typing.Dict[str, str] = ...
       |}

@@ -9,7 +9,7 @@ open Ast
 type property =
   | ReadOnly
   | ReadWrite
-[@@deriving eq, show]
+[@@deriving eq, show, compare, sexp]
 
 type attribute = {
   annotation: Annotation.t;
@@ -24,7 +24,7 @@ type attribute = {
   static: bool;
   value: Expression.t;
 }
-[@@deriving eq, show]
+[@@deriving eq, show, compare, sexp]
 
 type t = attribute Node.t [@@deriving eq, show]
 
