@@ -33,13 +33,16 @@ from ..models import (
     TraceFrameLeafAssoc,
     TraceKind,
 )
+from ..pysa_taint_parser import Parser
 from .fake_object_generator import FakeObjectGenerator
 
 
 class InteractiveTest(TestCase):
     def setUp(self) -> None:
         self.db = DB(DBType.MEMORY)
-        self.interactive = Interactive(self.db, "")
+        self.interactive = Interactive(
+            database=self.db, repository_directory="", parser_class=Parser
+        )
         self.stdout = StringIO()
         self.stderr = StringIO()
         sys.stdout = self.stdout  # redirect output

@@ -92,7 +92,11 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
 @click.command(help="interactive exploration of issues")
 @pass_context
 def explore(ctx: Context):
-    scope_vars = Interactive(ctx.database, ctx.repository).setup()
+    scope_vars = Interactive(
+        database=ctx.database,
+        repository_directory=ctx.repository,
+        parser_class=ctx.parser_class,
+    ).setup()
     config = Config()
     config.InteractiveShellApp.extensions = [
         prompt_extension.__name__

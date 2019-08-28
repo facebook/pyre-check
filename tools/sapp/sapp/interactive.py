@@ -41,6 +41,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
 from .analysis_output import AnalysisOutput, AnalysisOutputError
+from .base_parser import BaseParser
 from .db import DB
 from .decorators import UserError, catch_keyboard_interrupt, catch_user_error
 from .models import (
@@ -149,8 +150,15 @@ details              show additional information about the current trace frame
     LEAF_NAMES = {"source", "sink", "leaf"}
 
     SELF_SCOPE_KEY = "_interactive"
+    PARSER_CLASS_SCOPE_KEY = "_parser_class"
 
-    def __init__(self, database: DB, repository_directory: str = ""):
+    def __init__(
+        self,
+        *,
+        database: DB,
+        repository_directory: str = "",
+        parser_class: Type[BaseParser],
+    ):
         self.db = database
         self.scope_vars: Dict[str, Union[Callable, TraceKind]] = {
             "precondition": TraceKind.PRECONDITION,
@@ -178,6 +186,7 @@ details              show additional information about the current trace frame
             "analysis_output": self.analysis_output,
             "callable": self.callable,
             self.SELF_SCOPE_KEY: self,
+            self.PARSER_CLASS_SCOPE_KEY: parser_class,
         }
         self.repository_directory = repository_directory or os.getcwd()
         self.current_analysis_output: Optional[AnalysisOutput] = None
