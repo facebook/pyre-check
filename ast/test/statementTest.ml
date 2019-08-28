@@ -685,62 +685,6 @@ let test_attributes _ =
       attribute ~location:((3, 9), (3, 14)) ~name:"y" ~value:"2" () ]
 
 
-let test_update _ =
-  let assert_updated ~stub ~definition expected =
-    assert_equal
-      ~printer:Class.show
-      ~cmp:Class.equal
-      (parse_single_class expected)
-      (Class.update (parse_single_class stub) ~definition:(parse_single_class definition))
-  in
-  assert_updated
-    ~stub:{|
-      class Foo:
-        i: int = ...
-    |}
-    ~definition:{|
-      class Foo:
-        def foo():
-          pass
-    |}
-    {|
-      class Foo:
-        i: int = ...
-        def foo():
-          pass
-    |};
-  assert_updated
-    ~stub:{|
-      class Foo:
-        i: int = ...
-    |}
-    ~definition:{|
-      class Foo:
-        i: int = 5
-    |}
-    {|
-      class Foo:
-        i: int = 5
-    |};
-  assert_updated
-    ~stub:{|
-      class Foo:
-        i: int = ...
-        def foo(i: int) -> str: ...
-    |}
-    ~definition:{|
-      class Foo:
-        def foo(i):
-          pass
-    |}
-    {|
-      class Foo:
-        i: int = ...
-        def foo(i: int) -> str:
-          pass
-    |}
-
-
 let test_preamble _ =
   let assert_preamble block preamble =
     let block =
@@ -1059,7 +1003,6 @@ let () =
   >::: [ "constructor" >:: test_constructor;
          "defines" >:: test_defines;
          "attributes" >:: test_attributes;
-         "update" >:: test_update;
          "is_unit_test" >:: test_is_unit_test ]
   |> Test.run;
 

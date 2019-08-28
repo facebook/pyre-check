@@ -336,8 +336,6 @@ module Class : sig
     t ->
     Attribute.t Identifier.SerializableMap.t
 
-  val update : t -> definition:t -> t
-
   val has_decorator : t -> string -> bool
 
   val is_unit_test : t -> bool

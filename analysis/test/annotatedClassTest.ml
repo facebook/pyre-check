@@ -484,8 +484,6 @@ let test_class_attributes context =
   let resolution, parent =
     setup
       {|
-        class type:
-          __name__: str = 'asdf'
         class Metaclass:
           def implicit(cls) -> int:
             return 0
@@ -598,8 +596,6 @@ let test_class_attributes context =
   in
   assert_fold
     {|
-      class type:
-        __name__: str = 'asdf'
       class foo():
         def __init__(self):
           self.implicit: int = 1
@@ -612,8 +608,6 @@ let test_class_attributes context =
   assert_fold
     ~class_attributes:true
     {|
-      class type:
-        __name__: str = 'asdf'
       class foo():
         def __init__(self):
           self.implicit: int = 1
@@ -647,8 +641,6 @@ let test_class_attributes context =
   assert_fold
     ~class_attributes:true
     {|
-      class type:
-        __type__: str
       class Meta(type):
         __meta__: str
       class Foo(metaclass=Meta):
@@ -658,7 +650,6 @@ let test_class_attributes context =
     [ "__instance__";
       "__static__";
       "__meta__";
-      "__type__";
       "__call__";
       "__class__";
       "__delattr__";

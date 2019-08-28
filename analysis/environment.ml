@@ -805,19 +805,7 @@ let register_class_metadata _ class_name =
     { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
 
 
-let set_class_definition _ ~name ~definition =
-  let open SharedMemory in
-  let definition =
-    match ClassDefinitions.get name with
-    | Some { Node.location; value = preexisting } ->
-        {
-          Node.location;
-          value = Statement.Class.update preexisting ~definition:(Node.value definition);
-        }
-    | _ -> definition
-  in
-  ClassDefinitions.add name definition
-
+let set_class_definition _ ~name ~definition = SharedMemory.ClassDefinitions.add name definition
 
 let add_special_classes environment =
   (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
@@ -957,7 +945,11 @@ let register_class_definitions environment source =
           let name = Reference.show name in
           let primitive = name in
           SharedMemoryDependencyHandler.add_class_key ~qualifier name;
-          set_class_definition environment ~name ~definition:{ Node.location; value = definition };
+          if not (String.equal name "typing.GenericMeta") then
+            set_class_definition
+              environment
+              ~name
+              ~definition:{ Node.location; value = definition };
           if not (ClassHierarchy.contains order primitive) then
             SharedMemoryClassHierarchyHandler.insert primitive;
           Set.add new_annotations primitive
