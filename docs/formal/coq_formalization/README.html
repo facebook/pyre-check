@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>formal/coq_formalization/README · Pyre</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="# Work in progress: formalization of a calculus with Pyre features"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="formal/coq_formalization/README · Pyre"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pyre-check.org/index.html"/><meta property="og:description" content="# Work in progress: formalization of a calculus with Pyre features"/><meta name="twitter:card" content="summary"/><link rel="shortcut icon" href="/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body class="sideNavVisible"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/integrated_logo_light.png" alt="Pyre"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/installation.html" target="_self">Getting Started</a></li><li class=""><a href="/docs/overview.html" target="_self">Documentation</a></li><li class=""><a href="https://github.com/facebook/pyre-check" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">formal/coq_formalization/README</h1></header><article><div><span><h1><a class="anchor" aria-hidden="true" id="work-in-progress-formalization-of-a-calculus-with-pyre-features"></a><a href="#work-in-progress-formalization-of-a-calculus-with-pyre-features" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Work in progress: formalization of a calculus with Pyre features</h1>
+<p>In this work I am trying to extend the Simply Typed Lambda Calculus with
+features present in Pyre to try to model and prove properties of its current
+implementation. At the moment you will find in here:</p>
+<ul>
+<li>a formalization of STLC using call by value evaluation</li>
+<li>with simple references to memory cells</li>
+</ul>
+<p>Most of this work is inspired by my own formalization [1] of
+&quot;Strong Normalisation in λ-calculi with References&quot; [2]
+by Romain Demangeon, Daniel Hirschkoff, and Davide Sangiorgi</p>
+<p>In this formalization we only focus on Subject Reduction and Progress.
+The main modification to make the proof tractable in this version is the
+we remove the hidden dependency from the reduction to the typing judgment,
+so we are limited to prove Subject Reduction in the empty context only.</p>
+<h1><a class="anchor" aria-hidden="true" id="how-to-read-the-coq-files"></a><a href="#how-to-read-the-coq-files" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How to read the Coq files</h1>
+<p>The Coq files should be red in the following order:</p>
+<ul>
+<li><code>ty.v</code>: definition of the simple types used.</li>
+<li><code>term.v</code>: definition of the untyped terms (and DeBrjuin magic to deal with binders correctly).</li>
+<li><code>env.v</code>: definition of the typing environment for terms.</li>
+<li><code>red.v</code>: definition of the reduction (beta + ref)</li>
+<li><code>sr.v</code>: proof of Subject Reduction and Progress.</li>
+</ul>
+<h1><a class="anchor" aria-hidden="true" id="install"></a><a href="#install" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Install</h1>
+<pre><code class="hljs"><span class="hljs-comment"># install a recent coq, like 8.8 using opam (see [3])</span>
+
+<span class="hljs-attribute">make</span>
+make doc
+</code></pre>
+<p>[1] <a href="https://github.com/vsiles/STLC_Ref">https://github.com/vsiles/STLC_Ref</a>
+[2] <a href="https://www-apr.lip6.fr/~demangeon/Recherche/impfun2.pdf">https://www-apr.lip6.fr/~demangeon/Recherche/impfun2.pdf</a>
+[3] <a href="https://coq.inria.fr/opam-using.html">https://coq.inria.fr/opam-using.html</a></p>
+</span></div></article></div><div class="docs-prevnext"></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
