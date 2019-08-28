@@ -772,7 +772,8 @@ let test_check_function_overloads context =
 
       reveal_type(derp)
     |}
-    [ "Revealed type [-1]: Revealed type for `derp` is "
+    [ "Missing return annotation [3]: Return type is not specified.";
+      "Revealed type [-1]: Revealed type for `derp` is "
       ^ "`typing.Callable(derp)[[Named(x, object)], unknown][[[Named(x, int)], int]]`." ]
 
 
@@ -1093,7 +1094,7 @@ let test_check_named_arguments context =
     {|
       class Bar:
         @classmethod
-        def bar(cls, a: str, b: int): ...
+        def bar(cls, a: str, b: int) -> None: ...
 
       Bar.bar("asdf", 10)
     |}
@@ -1102,22 +1103,22 @@ let test_check_named_arguments context =
     {|
       class Bar:
         @classmethod
-        def bar(cls, a: str, b: int = 10): ...
+        def bar(cls, a: str, b: int = 10) -> None: ...
 
       Bar.bar("asdf", 10)
     |}
     [];
   assert_type_errors
     {|
-      def bar()->int:
+      def bar() -> int:
         return str_float_to_int(i="")
     |}
     ["Missing argument [20]: Call `str_float_to_int` expects argument `f`."];
   assert_type_errors
     {|
-      def bar()->int:
+      def bar() -> int:
         return 1 + str_float_to_int(i=2.0,f=1)
-      def foo()->int:
+      def foo() -> int:
         return str_float_to_int(f="No",i="Hi")
     |}
     [ "Incompatible parameter type [6]: "

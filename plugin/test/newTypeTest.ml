@@ -19,7 +19,7 @@ let test_transform_ast _ =
     |}
     {|
       class qualifier.T(int):
-        def qualifier.T.__init__(self, input: int):
+        def qualifier.T.__init__(self, input: int) -> None:
           pass
     |};
   assert_expand
@@ -28,7 +28,7 @@ let test_transform_ast _ =
     |}
     {|
       class qualifier.T(typing.List[int]):
-        def qualifier.T.__init__(self, input: typing.List[int]):
+        def qualifier.T.__init__(self, input: typing.List[int]) -> None:
           pass
     |};
   assert_expand
@@ -37,7 +37,7 @@ let test_transform_ast _ =
     |}
     {|
       class qualifier.T(typing.Dict[str, typing.List[int]]):
-        def qualifier.T.__init__(self, input: typing.Dict[str, typing.List[int]]):
+        def qualifier.T.__init__(self, input: typing.Dict[str, typing.List[int]]) -> None:
           pass
     |};
 

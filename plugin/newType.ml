@@ -59,7 +59,8 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
                         Parameter.create ~location ~annotation:base ~name:"input" () ];
                     decorators = [];
                     docstring = None;
-                    return_annotation = None;
+                    return_annotation =
+                      Some (Node.create ~location (Name (Name.Identifier "None")));
                     async = false;
                     parent = Some name;
                   };

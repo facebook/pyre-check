@@ -996,11 +996,17 @@ module State (Context : Context) = struct
     let {
       Node.location;
       value =
-        { Define.signature = { name; parent; parameters; return_annotation; decorators; _ }; _ } as
-        define;
+        {
+          Define.signature = { name; parent; parameters; return_annotation; decorators; async; _ };
+          _;
+        } as define;
     }
       =
       Context.define
+    in
+    let instantiate location =
+      let ast_environment = GlobalResolution.ast_environment global_resolution in
+      Location.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) location
     in
     let check_decorators state =
       let check_final_decorator state =
@@ -1042,6 +1048,42 @@ module State (Context : Context) = struct
       List.fold decorators ~init:state ~f:check_decorator |> check_final_decorator
     in
     let check_return_annotation state =
+      let add_missing_return_error ~state annotation =
+        let return_annotation =
+          let annotation =
+            Annotated.Callable.return_annotation ~define ~resolution:global_resolution
+          in
+          if async then
+            Type.coroutine_value annotation
+          else
+            annotation
+        in
+        let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
+        let contains_literal_any =
+          GlobalResolution.contains_prohibited_any global_resolution return_annotation
+          && annotation >>| Type.expression_contains_any |> Option.value ~default:false
+        in
+        if
+          ((not (Define.is_toplevel define)) && not (Define.is_class_toplevel define))
+          && not (Option.is_some annotation)
+          || contains_literal_any
+        then
+          emit_error
+            ~state
+            ~location
+            ~kind:
+              (Error.MissingReturnAnnotation
+                 {
+                   name = Reference.create "$return_annotation";
+                   annotation = None;
+                   given_annotation =
+                     Option.some_if (Define.has_return_annotation define) return_annotation;
+                   evidence_locations = [];
+                   thrown_at_source = true;
+                 })
+        else
+          state
+      in
       let add_variance_error (state, annotation) =
         let state =
           match annotation with
@@ -1060,6 +1102,7 @@ module State (Context : Context) = struct
         else
           state
       in
+      let state = add_missing_return_error ~state return_annotation in
       return_annotation
       >>| parse_and_check_annotation ~state
       >>| add_variance_error
@@ -1087,12 +1130,6 @@ module State (Context : Context) = struct
             then
               state
             else
-              let instantiate location =
-                let ast_environment = GlobalResolution.ast_environment global_resolution in
-                Location.instantiate
-                  ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
-                  location
-              in
               emit_error
                 ~state
                 ~location

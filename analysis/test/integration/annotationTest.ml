@@ -147,7 +147,8 @@ let test_check_undefined_type context =
       def foo() -> Foo["Herp"]:
         return 1
     |}
-    [ "Missing parameter annotation [2]: Parameter `other` has no type specified.";
+    [ "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `other` has no type specified.";
       "Undefined type [11]: Type `Herp` is not defined." ];
 
   (* Attributes *)
@@ -566,7 +567,7 @@ let test_check_immutable_annotations context =
       def foo(x: str = bar()) -> str:
         return x
     |}
-    [];
+    ["Missing return annotation [3]: Return type must be specified as type other than `Any`."];
   assert_type_errors
     {|
       constant: int

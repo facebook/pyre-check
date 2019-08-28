@@ -842,7 +842,8 @@ let test_check_method_resolution context =
         reveal_type(x.attribute)
         x.attribute + 1
     |}
-    ["Revealed type [-1]: Revealed type for `x.attribute` is `typing.Any`."]
+    [ "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `x.attribute` is `typing.Any`." ]
 
 
 let test_check_callables context =

@@ -337,7 +337,7 @@ let test_decorators context =
       def f(x: int) -> int:
         return x
     |}
-    [];
+    ["Missing return annotation [3]: Return type must be specified as type other than `Any`."];
   assert_type_errors
     {|
       from typing import Any
@@ -346,7 +346,8 @@ let test_decorators context =
       def f(x: int) -> int:
         return x
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous "
+    [ "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous "
       ^ "parameter to call `int.__add__` but got `str`." ]
 
 
@@ -469,6 +470,7 @@ let test_check_callable_class_decorators context =
     |}
     [ "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type other than `Any`.";
       "Revealed type [-1]: Revealed type for `am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \

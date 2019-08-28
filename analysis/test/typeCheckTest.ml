@@ -119,15 +119,15 @@ let test_initial context =
     assert_equal
       ~cmp:(List.equal String.equal)
       ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
-      (List.map (State.errors initial) ~f:(description ~resolution))
       errors
+      (List.map (State.errors initial) ~f:(description ~resolution))
   in
   assert_initial
-    "def foo(x: int): ..."
+    "def foo(x: int) -> None: ..."
     ~immutables:["x", (false, Type.integer)]
     ~annotations:["x", Type.integer];
   assert_initial
-    "def foo(x: int = 1.0): ..."
+    "def foo(x: int = 1.0) -> None: ..."
     ~errors:
       [ "Incompatible variable type [9]: x is declared to have type `int` but is used as type "
         ^ "`float`." ]
@@ -137,45 +137,45 @@ let test_initial context =
     ~errors:
       ["Missing parameter annotation [2]: Parameter `x` has type `float` but no type is specified."]
     ~annotations:["x", Type.float]
-    "def foo(x = 1.0): ...";
+    "def foo(x = 1.0) -> None: ...";
   assert_initial
     "def foo(x: int) -> int: ..."
     ~immutables:["x", (false, Type.integer)]
     ~annotations:["x", Type.integer];
   assert_initial
-    "def foo(x: float, y: str): ..."
+    "def foo(x: float, y: str) -> None: ..."
     ~immutables:["x", (false, Type.float); "y", (false, Type.string)]
     ~annotations:["x", Type.float; "y", Type.string];
   assert_initial
-    "def foo(x): ..."
+    "def foo(x) -> None: ..."
     ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
     ~annotations:["x", Type.Any];
   assert_initial
-    "def foo(x: typing.Any): ..."
+    "def foo(x: typing.Any) -> None: ..."
     ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
     ~immutables:["x", (false, Type.Any)]
     ~annotations:["x", Type.Any];
   assert_initial
     ~parent:"Foo"
     ~environment:"class Foo: ..."
-    "def __eq__(self, other: object): ..."
+    "def __eq__(self, other: object) -> None: ..."
     ~errors:[]
     ~immutables:["other", (false, Type.object_primitive)]
     ~annotations:["self", Type.Primitive "Foo"; "other", Type.object_primitive];
   assert_initial
     ~parent:"Foo"
     ~environment:"class Foo: ..."
-    "def foo(self): ..."
+    "def foo(self) -> None: ..."
     ~annotations:["self", Type.Primitive "Foo"];
   assert_initial
     ~parent:"Foo"
     ~environment:"class Foo: ..."
-    "@staticmethod\ndef foo(a): ..."
+    "@staticmethod\ndef foo(a) -> None: ..."
     ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
     ~annotations:["a", Type.Any];
   assert_initial
     ~environment:"T = typing.TypeVar('T')"
-    "def foo(x: T): ..."
+    "def foo(x: T) -> None: ..."
     ~immutables:["x", (false, Type.Variable.mark_all_variables_as_bound (Type.variable "T"))]
     ~annotations:["x", Type.Variable.mark_all_variables_as_bound (Type.variable "T")]
 

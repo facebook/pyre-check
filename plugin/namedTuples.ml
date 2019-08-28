@@ -147,7 +147,17 @@ let transform_ast ({ Source.statements; _ } as source) =
               parameters;
               decorators = [];
               docstring = None;
-              return_annotation = None;
+              return_annotation =
+                Some
+                  (Node.create
+                     ~location
+                     (Name
+                        (Name.Attribute
+                           {
+                             base = { Node.value = Name (Name.Identifier "typing"); location };
+                             attribute = "NamedTuple";
+                             special = false;
+                           })));
               async = false;
               parent = Some parent;
             };
