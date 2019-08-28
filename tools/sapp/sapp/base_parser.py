@@ -10,7 +10,7 @@ import os
 import pprint
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Set, TextIO, Tuple
+from typing import Any, Dict, Iterable, List, NamedTuple, Set, TextIO, Tuple
 
 import xxhash
 
@@ -26,6 +26,14 @@ except ImportError:
 
 
 log = logging.getLogger("sapp")
+
+
+# The callable's json output can be found at the given sharded file and offset.
+# Used for debugging.
+class EntryPosition(NamedTuple):
+    callable: str
+    shard: int
+    offset: int
 
 
 class ParseType(Enum):
@@ -243,3 +251,12 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
     @staticmethod
     def is_supported(metadata: Metadata):
         raise NotImplementedError("Subclasses should implement this!")
+
+    # Instead of returning the actual json from the AnalysisOutput, we return
+    # location information so it can be retrieved later.
+    def get_json_file_offsets(self, input: AnalysisOutput) -> Iterable[EntryPosition]:
+        raise NotImplementedError("get_json_file_offset not implemented")
+
+    # Given a path and an offset, return the json in mostly-raw form.
+    def get_json_from_file_offset(self, path: str, offset: int) -> Dict[str, Any]:
+        raise NotImplementedError("get_json_from_file_offset not implemented")
