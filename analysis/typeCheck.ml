@@ -219,12 +219,13 @@ module State (Context : Context) = struct
                ~location
                ~kind:(Error.UndefinedType (Primitive annotation))
                ~define:Context.define)
-      | _ ->
+      | _ when not (String.equal annotation "...") ->
           Some
             (Error.create
                ~location
                ~kind:(Error.InvalidType (InvalidType (Primitive annotation)))
                ~define:Context.define)
+      | _ -> None
     in
     let untracked =
       List.filter (Type.elements annotation) ~f:(Fn.non (GlobalResolution.is_tracked resolution))
@@ -3408,8 +3409,9 @@ module State (Context : Context) = struct
                 is_type_value parsed && not (Option.is_some local)
             | _ -> is_type_value parsed
           in
-          value_is_type
-          || original_annotation >>| Type.is_type_alias |> Option.value ~default:false
+          match original_annotation with
+          | None -> value_is_type
+          | Some annotation -> Type.is_type_alias annotation || Type.is_meta annotation
         in
         let state, resolved =
           let { state = { resolution; _ } as new_state; resolved; _ } =

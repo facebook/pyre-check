@@ -744,6 +744,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Annotated = TypeAlias(object)
         List = TypeAlias(object)
         Dict = TypeAlias(object)
+        Optional = TypeAlias(object)
+        Union = TypeAlias(object)
         Any = object()
         overload = object()
         final = object()
