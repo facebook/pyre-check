@@ -13,7 +13,7 @@ exception Untracked of Type.t
 
 module Target : sig
   type t = {
-    target: int;
+    target: IndexTracker.t;
     parameters: Type.OrderedTypes.t;
   }
   [@@deriving compare, eq, sexp, show]
@@ -54,13 +54,9 @@ end
 (** The handler module for interfacing with ClassHierarchy lookups. See [Environment_handler] for
     more. *)
 module type Handler = sig
-  val edges : int -> Target.t list option
+  val edges : IndexTracker.t -> Target.t list option
 
-  val backedges : int -> Target.Set.t option
-
-  val indices : Type.Primitive.t -> int option
-
-  val annotations : int -> Type.Primitive.t option
+  val backedges : IndexTracker.t -> Target.Set.t option
 end
 
 (* Returns true if the class hierarchy contains the given class. *)
@@ -74,8 +70,7 @@ val is_instantiated : (module Handler) -> Type.t -> bool
 
 (* Exposed for tests only *)
 val method_resolution_order_linearize
-  :  (module Handler) ->
-  get_successors:(int -> Target.t list option) ->
+  :  get_successors:(IndexTracker.t -> Target.t list option) ->
   Type.Primitive.t ->
   Type.Primitive.t list
 
@@ -105,9 +100,9 @@ val greatest_lower_bound
   Type.Primitive.t ->
   Type.Primitive.t list
 
-val check_integrity : (module Handler) -> indices:int list -> unit
+val check_integrity : (module Handler) -> indices:IndexTracker.t list -> unit
 
-val to_dot : (module Handler) -> indices:int list -> string
+val to_dot : (module Handler) -> indices:IndexTracker.t list -> string
 
 val is_transitive_successor
   :  (module Handler) ->

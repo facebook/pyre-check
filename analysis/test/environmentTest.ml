@@ -483,8 +483,8 @@ let test_connect_definition context =
       |})
   |> ignore;
   let assert_edge ~predecessor ~successor =
-    let predecessor_index = find_unsafe TypeOrderHandler.indices predecessor in
-    let successor_index = find_unsafe TypeOrderHandler.indices successor in
+    let predecessor_index = IndexTracker.index predecessor in
+    let successor_index = IndexTracker.index successor in
     assert_true
       (List.mem
          ~equal:ClassHierarchy.Target.equal
@@ -671,7 +671,7 @@ let test_populate context =
       ~superclasses
     =
     let (module TypeOrderHandler) = class_hierarchy environment in
-    let index annotation = find_unsafe TypeOrderHandler.indices annotation in
+    let index annotation = IndexTracker.index annotation in
     let targets = TypeOrderHandler.edges (index base) in
     let to_target annotation =
       {
@@ -683,8 +683,8 @@ let test_populate context =
       | None -> ""
       | Some targets ->
           let show_target { ClassHierarchy.Target.target; parameters } =
-            let index = Int.to_string target in
-            let target = find_unsafe TypeOrderHandler.annotations target in
+            let index = IndexTracker.show target in
+            let target = IndexTracker.annotation target in
             Format.asprintf "%s: %s%a" index target Type.OrderedTypes.pp_concise parameters
           in
           List.to_string targets ~f:show_target
@@ -1298,21 +1298,17 @@ let test_purge_hierarchy context =
       wrapped_left
       (ClassHierarchy.Target.Set.of_list unwrapped_right)
   in
-  let assert_node_completely_deleted (module Handler : ClassHierarchy.Handler) ~annotation ~index =
-    assert_equal
-      ( Handler.indices annotation,
-        Handler.annotations index,
-        Handler.edges index,
-        Handler.backedges index )
-      (None, None, None, None)
+  let assert_node_completely_deleted (module Handler : ClassHierarchy.Handler) annotation =
+    let index = IndexTracker.index annotation in
+    assert_equal (Handler.edges index, Handler.backedges index) (None, None)
   in
   let () =
     let handler = order () in
     let (module Handler) = class_hierarchy handler in
-    let index key = find_unsafe Handler.indices key in
+    let index key = IndexTracker.index key in
     let one_index = index "One.One" in
     Environment.purge handler [Reference.create "One"];
-    assert_node_completely_deleted (module Handler) ~annotation:"One.One" ~index:one_index;
+    assert_node_completely_deleted (module Handler) "One.One";
     assert_backedges_equal (find_unsafe Handler.backedges (index "Two.Two")) [];
     assert_equal
       (find_unsafe Handler.edges (index "A.a"))
@@ -1321,10 +1317,9 @@ let test_purge_hierarchy context =
   let () =
     let handler = order () in
     let (module Handler) = class_hierarchy handler in
-    let index key = find_unsafe Handler.indices key in
-    let a_index = index "A.a" in
+    let index key = IndexTracker.index key in
     Environment.purge handler [Reference.create "A"];
-    assert_node_completely_deleted (module Handler) ~annotation:"A.a" ~index:a_index;
+    assert_node_completely_deleted (module Handler) "A.a";
     assert_backedges_equal
       (find_unsafe Handler.backedges (index "One.One"))
       [{ ClassHierarchy.Target.target = index "B.b"; parameters = Concrete [] }]
@@ -1332,10 +1327,9 @@ let test_purge_hierarchy context =
   let () =
     let handler = order () in
     let (module Handler) = class_hierarchy handler in
-    let index key = find_unsafe Handler.indices key in
-    let b_index = index "B.b" in
+    let index key = IndexTracker.index key in
     Environment.purge handler [Reference.create "B"];
-    assert_node_completely_deleted (module Handler) ~annotation:"B.b" ~index:b_index;
+    assert_node_completely_deleted (module Handler) "B.b";
     assert_backedges_equal
       (find_unsafe Handler.backedges (index "One.One"))
       [{ ClassHierarchy.Target.target = index "A.a"; parameters = Concrete [] }]
@@ -1343,12 +1337,10 @@ let test_purge_hierarchy context =
   let () =
     let handler = order () in
     let (module Handler) = class_hierarchy handler in
-    let index key = find_unsafe Handler.indices key in
-    let a_index = index "A.a" in
-    let b_index = index "B.b" in
+    let index key = IndexTracker.index key in
     Environment.purge handler [Reference.create "A"; Reference.create "B"];
-    assert_node_completely_deleted (module Handler) ~annotation:"A.a" ~index:a_index;
-    assert_node_completely_deleted (module Handler) ~annotation:"B.b" ~index:b_index;
+    assert_node_completely_deleted (module Handler) "A.a";
+    assert_node_completely_deleted (module Handler) "B.b";
     assert_backedges_equal (find_unsafe Handler.backedges (index "One.One")) []
   in
   ()
@@ -1550,7 +1542,7 @@ let test_deduplicate context =
   Environment.connect_type_order environment resolution source;
   Environment.deduplicate_class_hierarchy ~annotations:["One"; "Zero"];
   let (module Handler) = class_hierarchy environment in
-  let index_of annotation = find_unsafe Handler.indices annotation in
+  let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
     let assert_targets edges from target parameters create =
       assert_equal
@@ -1589,16 +1581,16 @@ let test_remove_extra_edges_to_object context =
   Environment.connect_type_order environment resolution source;
   Environment.remove_extra_edges_to_object ["Zero"; "One"; "Two"; "object"];
   let (module Handler) = class_hierarchy environment in
-  let zero_index = find_unsafe Handler.indices "Zero" in
-  let one_index = find_unsafe Handler.indices "One" in
-  let two_index = find_unsafe Handler.indices "Two" in
-  let object_index = find_unsafe Handler.indices "object" in
+  let zero_index = IndexTracker.index "Zero" in
+  let one_index = IndexTracker.index "One" in
+  let two_index = IndexTracker.index "Two" in
+  let object_index = IndexTracker.index "object" in
   assert_equal
     (find_unsafe Handler.edges zero_index)
     [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }];
   let filter_only_relevant_targets =
     Set.filter ~f:(fun { ClassHierarchy.Target.target; _ } ->
-        List.mem [zero_index; one_index; two_index; object_index] target ~equal:Int.equal)
+        List.mem [zero_index; one_index; two_index; object_index] target ~equal:IndexTracker.equal)
   in
   assert_equal
     ~cmp:ClassHierarchy.Target.Set.equal

@@ -20,7 +20,7 @@ exception Untracked of Type.t
 
 module Target = struct
   type t = {
-    target: int;
+    target: IndexTracker.t;
     parameters: Type.OrderedTypes.t;
   }
   [@@deriving compare, eq, sexp, show]
@@ -87,20 +87,18 @@ end
 let generic_primitive = "typing.Generic"
 
 module type Handler = sig
-  val edges : int -> Target.t list option
+  val edges : IndexTracker.t -> Target.t list option
 
-  val backedges : int -> Target.Set.t option
-
-  val indices : Type.Primitive.t -> int option
-
-  val annotations : int -> Type.Primitive.t option
+  val backedges : IndexTracker.t -> Target.Set.t option
 end
 
 let find_unsafe lookup key = lookup key |> fun option -> Option.value_exn option
 
-let index_of (module Handler : Handler) annotation = find_unsafe Handler.indices annotation
+let index_of annotation = IndexTracker.index annotation
 
-let contains (module Handler : Handler) annotation = Handler.indices annotation |> Option.is_some
+let contains (module Handler : Handler) annotation =
+  Handler.edges (IndexTracker.index annotation) |> Option.is_some
+
 
 let is_instantiated (module Handler : Handler) annotation =
   let is_invalid = function
@@ -118,11 +116,7 @@ let raise_if_untracked order annotation =
     raise (Untracked (Type.Primitive annotation))
 
 
-let method_resolution_order_linearize
-    ((module Handler : Handler) as order)
-    ~get_successors
-    class_name
-  =
+let method_resolution_order_linearize ~get_successors class_name =
   let rec merge = function
     | [] -> []
     | [single_linearized_parent] -> single_linearized_parent
@@ -154,10 +148,8 @@ let method_resolution_order_linearize
   in
   let rec linearize class_name =
     let linearized_successors =
-      let create_annotation { Target.target = index; _ } =
-        index |> find_unsafe Handler.annotations
-      in
-      index_of order class_name
+      let create_annotation { Target.target = index; _ } = IndexTracker.annotation index in
+      index_of class_name
       |> get_successors
       |> Option.value ~default:[]
       |> List.map ~f:create_annotation
@@ -168,10 +160,8 @@ let method_resolution_order_linearize
   linearize class_name
 
 
-let successors ((module Handler : Handler) as order) annotation =
-  let linearization =
-    method_resolution_order_linearize ~get_successors:Handler.edges order annotation
-  in
+let successors (module Handler : Handler) annotation =
+  let linearization = method_resolution_order_linearize ~get_successors:Handler.edges annotation in
   match linearization with
   | _ :: successors -> successors
   | [] -> []
@@ -216,10 +206,10 @@ let variables ?(default = None) (module Handler : Handler) = function
       Some (Unaries [Type.Variable.Unary.create ~variance:Covariant "_T_meta"])
   | node -> (
       let edges =
-        Handler.indices generic_primitive
-        >>= fun generic_index ->
-        Handler.indices node
-        >>= fun primitive_index ->
+        index_of generic_primitive
+        |> fun generic_index ->
+        index_of node
+        |> fun primitive_index ->
         Handler.edges primitive_index
         >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
         >>| fun { Target.parameters; _ } -> parameters
@@ -231,9 +221,7 @@ let variables ?(default = None) (module Handler : Handler) = function
 
 let get_generic_parameters ~generic_index edges =
   let generic_parameters { Target.target; parameters } =
-    match generic_index with
-    | Some index when index = target -> Some parameters
-    | _ -> None
+    Option.some_if (IndexTracker.equal generic_index target) parameters
   in
   List.find_map ~f:generic_parameters edges
 
@@ -247,7 +235,7 @@ let least_common_successor ((module Handler : Handler) as order) ~successors lef
     (let rec iterate left right =
        let successors sources =
          Set.fold
-           ~init:Int.Set.empty
+           ~init:IndexTracker.Set.empty
            ~f:(fun sofar index -> Set.union sofar (successors index))
            sources
        in
@@ -257,7 +245,7 @@ let least_common_successor ((module Handler : Handler) as order) ~successors lef
          []
        else
          let intersect left right =
-           let collect = List.fold ~init:Int.Set.empty ~f:Set.union in
+           let collect = List.fold ~init:IndexTracker.Set.empty ~f:Set.union in
            Set.inter (collect left) (collect right)
          in
          let left = left_successors :: left in
@@ -273,15 +261,15 @@ let least_common_successor ((module Handler : Handler) as order) ~successors lef
            else
              iterate left right
      in
-     iterate [Int.Set.of_list [index_of order left]] [Int.Set.of_list [index_of order right]])
-    |> List.map ~f:(find_unsafe Handler.annotations)
+     iterate [IndexTracker.Set.of_list [index_of left]] [IndexTracker.Set.of_list [index_of right]])
+    |> List.map ~f:IndexTracker.annotation
 
 
 let least_upper_bound ((module Handler : Handler) as order) =
   let successors index =
     match Handler.edges index with
-    | Some targets -> targets |> List.map ~f:Target.target |> Int.Set.of_list
-    | None -> Int.Set.empty
+    | Some targets -> targets |> List.map ~f:Target.target |> IndexTracker.Set.of_list
+    | None -> IndexTracker.Set.empty
   in
   least_common_successor order ~successors
 
@@ -289,8 +277,8 @@ let least_upper_bound ((module Handler : Handler) as order) =
 let greatest_lower_bound ((module Handler : Handler) as order) =
   let predecessors index =
     match Handler.backedges index with
-    | Some targets -> Set.to_list targets |> List.map ~f:Target.target |> Int.Set.of_list
-    | None -> Int.Set.empty
+    | Some targets -> Set.to_list targets |> List.map ~f:Target.target |> IndexTracker.Set.of_list
+    | None -> IndexTracker.Set.empty
   in
   least_common_successor order ~successors:predecessors
 
@@ -299,8 +287,8 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
   raise_if_untracked handler source;
   raise_if_untracked handler target;
   let worklist = Queue.create () in
-  let visited = Int.Hash_set.create () in
-  Queue.enqueue worklist { Target.target = index_of handler source; parameters = Concrete [] };
+  let visited = IndexTracker.Hash_set.create () in
+  Queue.enqueue worklist { Target.target = index_of source; parameters = Concrete [] };
   let rec iterate worklist =
     match Queue.dequeue worklist with
     | None -> false
@@ -308,7 +296,7 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
       match Hash_set.strict_add visited current with
       | Error _ -> iterate worklist
       | Ok () ->
-          if current = index_of handler target then
+          if current = index_of target then
             true
           else (
             Option.iter (Handler.edges current) ~f:(Queue.enqueue_all worklist);
@@ -319,7 +307,7 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
 
 let instantiate_successors_parameters ((module Handler : Handler) as handler) ~source ~target =
   raise_if_untracked handler target;
-  let generic_index = Handler.indices generic_primitive in
+  let generic_index = IndexTracker.index generic_primitive in
   match source with
   | Type.Bottom ->
       let set_to_anys = function
@@ -329,10 +317,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
         | Any ->
             Type.OrderedTypes.Any
       in
-      index_of handler target
-      |> Handler.edges
-      >>= get_generic_parameters ~generic_index
-      >>| set_to_anys
+      index_of target |> Handler.edges >>= get_generic_parameters ~generic_index >>| set_to_anys
   | _ ->
       let split =
         match Type.split source with
@@ -347,7 +332,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       in
       let handle_split (primitive, parameters) =
         let worklist = Queue.create () in
-        Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
+        Queue.enqueue worklist { Target.target = index_of primitive; parameters };
         let rec iterate worklist =
           match Queue.dequeue worklist with
           | Some { Target.target = target_index; parameters } ->
@@ -434,7 +419,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                 Handler.edges target_index
                 >>| get_instantiated_successors ~generic_index ~parameters
               in
-              if target_index = index_of handler target then
+              if target_index = index_of target then
                 match target with
                 | "typing.Callable" -> Some parameters
                 | _ -> instantiated_successors >>= get_generic_parameters ~generic_index
@@ -458,9 +443,9 @@ let instantiate_predecessors_parameters
   | Type.Primitive primitive, parameters ->
       raise_if_untracked handler primitive;
       raise_if_untracked handler target;
-      let generic_index = Handler.indices generic_primitive in
+      let generic_index = IndexTracker.index generic_primitive in
       let worklist = Queue.create () in
-      Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
+      Queue.enqueue worklist { Target.target = index_of primitive; parameters };
       let rec iterate worklist =
         match Queue.dequeue worklist with
         | Some { Target.target = target_index; parameters } ->
@@ -497,7 +482,7 @@ let instantiate_predecessors_parameters
               in
               List.filter_map predecessors ~f:instantiate
             in
-            if target_index = index_of handler target then
+            if target_index = index_of target then
               Some parameters
             else (
               Handler.backedges target_index
@@ -514,30 +499,27 @@ let instantiate_predecessors_parameters
       None
 
 
-let check_integrity (module Handler : Handler) ~indices =
+let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) =
   (* Ensure keys are consistent. *)
   let key_consistent key =
     let raise_if_none value =
       if Option.is_none value then (
-        Log.error "Inconsistency in type order: No value for key %d" key;
+        Log.error "Inconsistency in type order: No value for key %s" (IndexTracker.show key);
         raise Incomplete )
     in
     raise_if_none (Handler.edges key);
-    raise_if_none (Handler.backedges key);
-    raise_if_none (Handler.annotations key);
-    let annotation = Option.value_exn (Handler.annotations key) in
-    raise_if_none (Handler.indices annotation)
+    raise_if_none (Handler.backedges key)
   in
   List.iter ~f:key_consistent indices;
 
   (* Check for cycles. *)
-  let started_from = ref Int.Set.empty in
+  let started_from = ref IndexTracker.Set.empty in
   let find_cycle start =
     if not (Set.mem !started_from start) then
       let rec visit reverse_visited index =
-        if List.mem ~equal:Int.equal reverse_visited index then (
+        if List.mem ~equal:IndexTracker.equal reverse_visited index then (
           let trace =
-            List.rev_map ~f:(find_unsafe Handler.annotations) (index :: reverse_visited)
+            List.rev_map ~f:IndexTracker.annotation (index :: reverse_visited)
             |> String.concat ~sep:" -> "
           in
           Log.error "Order is cyclic:\nTrace: %s" (* (Handler.show ()) *) trace;
@@ -569,8 +551,8 @@ let check_integrity (module Handler : Handler) ~indices =
           if not has_backedge then (
             Log.error
               "No back-edge found for %s -> %s"
-              (find_unsafe Handler.annotations index)
-              (find_unsafe Handler.annotations target);
+              (IndexTracker.annotation index)
+              (IndexTracker.annotation target);
             raise Incomplete )
         in
         Edges.iter ~f:check_backedge (find_unsafe edges index)
@@ -586,18 +568,20 @@ let check_integrity (module Handler : Handler) ~indices =
 
 let to_dot (module Handler : Handler) ~indices =
   let indices = List.sort ~compare indices in
-  let nodes = List.map indices ~f:(fun index -> index, find_unsafe Handler.annotations index) in
+  let nodes = List.map indices ~f:(fun index -> index, IndexTracker.annotation index) in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
   List.iter
     ~f:(fun (index, annotation) ->
-      Format.asprintf "  %d[label=\"%s\"]\n" index annotation |> Buffer.add_string buffer)
+      Format.asprintf "  %s[label=\"%s\"]\n" (IndexTracker.show index) annotation
+      |> Buffer.add_string buffer)
     nodes;
   let add_edges index =
     Handler.edges index
     >>| List.sort ~compare
     >>| List.iter ~f:(fun { Target.target = successor; parameters } ->
-            Format.asprintf "  %d -> %d" index successor |> Buffer.add_string buffer;
+            Format.asprintf "  %s -> %s" (IndexTracker.show index) (IndexTracker.show successor)
+            |> Buffer.add_string buffer;
             if not (Type.OrderedTypes.equal parameters (Concrete [])) then
               Format.asprintf "[label=\"(%a)\"]" Type.OrderedTypes.pp_concise parameters
               |> Buffer.add_string buffer;

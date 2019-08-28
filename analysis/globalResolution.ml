@@ -93,8 +93,6 @@ let create
     ~global
     ~edges
     ~backedges
-    ~indices
-    ~annotations
     (module AnnotatedClass : AnnotatedClass)
   =
   let constructor ~resolution class_name =
@@ -135,10 +133,6 @@ let create
       let edges = edges
 
       let backedges key = backedges key >>| ClassHierarchy.Target.Set.of_tree
-
-      let indices = indices
-
-      let annotations = annotations
     end : ClassHierarchy.Handler )
   in
   {

@@ -130,31 +130,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module OrderIndexValue = struct
-    type t = int
-
-    let prefix = Prefix.make ()
-
-    let description = "Order indices"
-
-    let unmarshall value = Marshal.from_string value 0
-
-    let compare = compare_int
-  end
-
-  module OrderAnnotationValue = struct
-    type t = string
-
-    let prefix = Prefix.make ()
-
-    let description = "Order annotations"
-
-    (* Strings are not marshalled by shared memory *)
-    let unmarshall value = value
-
-    let compare = compare_string
-  end
-
   module EdgeValue = struct
     type t = ClassHierarchy.Target.t list [@@deriving compare]
 
@@ -176,7 +151,7 @@ module SharedMemory = struct
   end
 
   module OrderKeyValue = struct
-    type t = int list [@@deriving compare]
+    type t = IndexTracker.t list [@@deriving compare]
 
     let prefix = Prefix.make ()
 
@@ -249,24 +224,14 @@ module SharedMemory = struct
   module AliasKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (AliasKeyValue)
   module DependentKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentKeyValue)
 
-  module OrderIndices =
-    Memory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.StringKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (OrderIndexValue)
   (** Type order maps *)
 
-  module OrderAnnotations =
-    Memory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.IntKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (OrderAnnotationValue)
   module OrderEdges =
     Memory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.IntKey)
+      (IndexTracker.IndexKey)
       (SharedMemoryKeys.ReferenceDependencyKey)
       (EdgeValue)
-  module OrderBackedges = Memory.WithCache.Make (SharedMemoryKeys.IntKey) (BackedgeValue)
+  module OrderBackedges = Memory.WithCache.Make (IndexTracker.IndexKey) (BackedgeValue)
   module OrderKeys =
     Memory.DependencyTrackedTableWithCache
       (Memory.SingletonKey)
@@ -292,24 +257,6 @@ module SharedMemoryClassHierarchyHandler = struct
     OrderBackedges.add key value
 
 
-  let indices = OrderIndices.get ?dependency:None
-
-  let set_indices ~key ~data =
-    OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
-    OrderIndices.add key data
-
-
-  let annotations = OrderAnnotations.get ?dependency:None
-
-  let set_annotations ~key ~data =
-    OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
-    OrderAnnotations.add key data
-
-
-  let find_unsafe get key = Option.value_exn (get key)
-
-  let contains get key = Option.is_some (get key)
-
   let add_key key =
     match OrderKeys.get Memory.SingletonKey.key with
     | None -> OrderKeys.add Memory.SingletonKey.key [key]
@@ -330,54 +277,38 @@ module SharedMemoryClassHierarchyHandler = struct
 
 
   let insert annotation =
-    if not (contains indices annotation) then (
-      let index =
-        let initial = Type.Primitive.hash annotation in
-        let rec pick_index index =
-          if contains annotations index then
-            pick_index (index + 1)
-          else
-            index
-        in
-        pick_index initial
-      in
+    let index = IndexTracker.index annotation in
+    if edges index |> Option.is_none then (
       add_key index;
-      set_indices ~key:annotation ~data:index;
-      set_annotations ~key:index ~data:annotation;
       set_edges ~key:index ~data:[];
       set_backedges ~key:index ~data:ClassHierarchy.Target.Set.empty )
 
 
   let connect ?(parameters = Type.OrderedTypes.Concrete []) ~predecessor ~successor =
-    if (not (contains indices predecessor)) || not (contains indices successor) then
-      Statistics.event
-        ~name:"invalid type order connection"
-        ~integers:[]
-        ~normals:["Predecessor", predecessor; "Successor", successor]
-        ()
-    else
-      let index_of annotation = find_unsafe indices annotation in
-      let predecessor = index_of predecessor in
-      let successor = index_of successor in
-      (* Add edges. *)
-      let successors = edges predecessor |> Option.value ~default:[] in
-      set_edges
-        ~key:predecessor
-        ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors);
+    let index_of annotation = IndexTracker.index annotation in
+    let predecessor = index_of predecessor in
+    let successor = index_of successor in
+    (* Add edges. *)
+    let successors = edges predecessor |> Option.value ~default:[] in
+    set_edges
+      ~key:predecessor
+      ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors);
 
-      (* Add backedges. *)
-      let predecessors =
-        backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
-      in
-      set_backedges
-        ~key:successor
-        ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
+    (* Add backedges. *)
+    let predecessors =
+      backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
+    in
+    set_backedges
+      ~key:successor
+      ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
 
 
   let disconnect_backedges purged_annotations =
-    let keys_to_remove = List.filter_map purged_annotations ~f:indices |> Int.Hash_set.of_list in
+    let keys_to_remove =
+      List.map purged_annotations ~f:IndexTracker.index |> IndexTracker.Hash_set.of_list
+    in
     let all_successors =
-      let all_successors = Int.Hash_set.create () in
+      let all_successors = IndexTracker.Hash_set.create () in
       let add_successors key =
         match edges key with
         | Some successors ->
@@ -414,7 +345,8 @@ module SharedMemoryClassHierarchyHandler = struct
               Set.add visited target, ListOrSet.add edges edge
           in
           let deduplicate found =
-            ListOrSet.fold found ~f:keep_first ~init:(Int.Set.empty, ListOrSet.empty) |> snd
+            ListOrSet.fold found ~f:keep_first ~init:(IndexTracker.Set.empty, ListOrSet.empty)
+            |> snd
           in
           match edges index with
           | Some found -> set_edges ~key:index ~data:(deduplicate found)
@@ -426,11 +358,11 @@ module SharedMemoryClassHierarchyHandler = struct
       EdgeDeduplicator.deduplicate edges set_edges;
       BackedgeDeduplicator.deduplicate backedges set_backedges
     in
-    annotations |> List.map ~f:(find_unsafe indices) |> List.iter ~f:deduplicate_annotation
+    annotations |> List.map ~f:IndexTracker.index |> List.iter ~f:deduplicate_annotation
 
 
   let remove_extra_edges_to_object annotations =
-    let index_of annotation = find_unsafe indices annotation in
+    let index_of annotation = IndexTracker.index annotation in
     let keys = List.map annotations ~f:index_of in
     let object_index = index_of "object" in
     let remove_extra_references key =
@@ -448,7 +380,9 @@ module SharedMemoryClassHierarchyHandler = struct
               [key] ))
       |> Option.value ~default:[]
     in
-    let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
+    let removed_indices =
+      List.concat_map ~f:remove_extra_references keys |> IndexTracker.Set.of_list
+    in
     backedges object_index
     >>| (fun edges ->
           let edges =
@@ -585,14 +519,12 @@ module SharedMemoryDependencyHandler = struct
     globals: SharedMemory.Globals.KeySet.t;
     edges: SharedMemory.OrderEdges.KeySet.t;
     backedges: SharedMemory.OrderBackedges.KeySet.t;
-    indices: SharedMemory.OrderIndices.KeySet.t;
-    annotations: SharedMemory.OrderAnnotations.KeySet.t;
   }
 
   let get_all_dependent_table_keys qualifiers =
     let alias_keys = List.concat_map ~f:(fun qualifier -> get_alias_keys ~qualifier) qualifiers in
     let class_keys = List.concat_map ~f:(fun qualifier -> get_class_keys ~qualifier) qualifiers in
-    let index_keys = List.filter_map class_keys ~f:SharedMemoryClassHierarchyHandler.indices in
+    let index_keys = List.map class_keys ~f:IndexTracker.index in
     let global_keys =
       List.concat_map ~f:(fun qualifier -> get_global_keys ~qualifier) qualifiers
     in
@@ -610,8 +542,6 @@ module SharedMemoryDependencyHandler = struct
       globals = Globals.KeySet.of_list (global_keys @ function_keys);
       edges = OrderEdges.KeySet.of_list index_keys;
       backedges = OrderBackedges.KeySet.of_list index_keys;
-      indices = OrderIndices.KeySet.of_list class_keys;
-      annotations = OrderAnnotations.KeySet.of_list index_keys;
     }
 
 
@@ -630,8 +560,6 @@ module SharedMemoryDependencyHandler = struct
       globals = Globals.KeySet.diff new_keys.globals old_keys.globals;
       edges = OrderEdges.KeySet.diff new_keys.edges old_keys.edges;
       backedges = OrderBackedges.KeySet.diff new_keys.backedges old_keys.backedges;
-      indices = OrderIndices.KeySet.diff new_keys.indices old_keys.indices;
-      annotations = OrderAnnotations.KeySet.diff new_keys.annotations old_keys.annotations;
     }
 end
 
@@ -653,14 +581,9 @@ module ResolvedAlias = struct
 end
 
 let connect_annotations_to_object annotations =
-  let indices = SharedMemoryClassHierarchyHandler.indices in
   let connect_to_top annotation =
-    let index = SharedMemoryClassHierarchyHandler.find_unsafe indices annotation in
-    let annotation =
-      SharedMemoryClassHierarchyHandler.find_unsafe
-        SharedMemoryClassHierarchyHandler.annotations
-        index
-    in
+    let index = IndexTracker.index annotation in
+    let annotation = IndexTracker.annotation index in
     let object_primitive = "object" in
     if
       not
@@ -691,8 +614,6 @@ let resolution_implementation ?dependency { ast_environment } () =
     ~global:(SharedMemory.Globals.get ?dependency)
     ~edges:(SharedMemory.OrderEdges.get ?dependency)
     ~backedges:SharedMemory.OrderBackedges.get
-    ~indices:(SharedMemory.OrderIndices.get ?dependency)
-    ~annotations:(SharedMemory.OrderAnnotations.get ?dependency)
     (module Annotated.Class)
 
 
@@ -713,19 +634,11 @@ let connect_definition
   (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
      classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
   let connect ~predecessor ~successor ~parameters =
-    let annotations_tracked =
-      SharedMemoryClassHierarchyHandler.contains
-        SharedMemoryClassHierarchyHandler.indices
-        predecessor
-      && SharedMemoryClassHierarchyHandler.contains
-           SharedMemoryClassHierarchyHandler.indices
-           successor
-    in
     let primitive_cycle =
       (* Primitive cycles can be introduced by meta-programming. *)
       String.equal predecessor successor
     in
-    if annotations_tracked && not primitive_cycle then
+    if not primitive_cycle then
       SharedMemoryClassHierarchyHandler.connect ~predecessor ~successor ~parameters
   in
   let primitive = Reference.show name in
@@ -1577,9 +1490,7 @@ let transaction _ ?(only_global_keys = false) ~f () =
     Aliases.LocalChanges.push_stack ();
     OrderEdges.LocalChanges.push_stack ();
     OrderBackedges.LocalChanges.push_stack ();
-    OrderAnnotations.LocalChanges.push_stack ();
     OrderKeys.LocalChanges.push_stack ();
-    OrderIndices.LocalChanges.push_stack ();
     Globals.LocalChanges.push_stack () );
   let result = f () in
   if only_global_keys then
@@ -1598,9 +1509,7 @@ let transaction _ ?(only_global_keys = false) ~f () =
     Aliases.LocalChanges.commit_all ();
     OrderEdges.LocalChanges.commit_all ();
     OrderBackedges.LocalChanges.commit_all ();
-    OrderAnnotations.LocalChanges.commit_all ();
-    OrderKeys.LocalChanges.commit_all ();
-    OrderIndices.LocalChanges.commit_all () );
+    OrderKeys.LocalChanges.commit_all () );
   if only_global_keys then
     GlobalKeys.LocalChanges.pop_stack ()
   else (
@@ -1617,9 +1526,7 @@ let transaction _ ?(only_global_keys = false) ~f () =
     Aliases.LocalChanges.pop_stack ();
     OrderEdges.LocalChanges.pop_stack ();
     OrderBackedges.LocalChanges.pop_stack ();
-    OrderAnnotations.LocalChanges.pop_stack ();
-    OrderKeys.LocalChanges.pop_stack ();
-    OrderIndices.LocalChanges.pop_stack () );
+    OrderKeys.LocalChanges.pop_stack () );
   result
 
 
@@ -1711,19 +1618,16 @@ let purge _ ?(debug = false) (qualifiers : Reference.t list) =
     globals;
     edges;
     backedges;
-    indices;
-    annotations;
   }
     =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
   let open SharedMemory in
   (* Must disconnect backedges before deleting edges, since this relies on edges *)
-  SharedMemoryClassHierarchyHandler.disconnect_backedges (OrderIndices.KeySet.elements indices);
+  SharedMemoryClassHierarchyHandler.disconnect_backedges
+    (ClassDefinitions.KeySet.elements class_definitions);
 
   Globals.remove_batch globals;
-  OrderIndices.remove_batch indices;
-  OrderAnnotations.remove_batch annotations;
   OrderEdges.remove_batch edges;
   OrderBackedges.remove_batch backedges;
   ClassDefinitions.remove_batch class_definitions;
@@ -1732,7 +1636,7 @@ let purge _ ?(debug = false) (qualifiers : Reference.t list) =
   UndecoratedFunctions.remove_batch undecorated_signatures;
   Modules.remove_batch modules;
 
-  SharedMemoryClassHierarchyHandler.remove_keys annotations;
+  SharedMemoryClassHierarchyHandler.remove_keys edges;
 
   SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
@@ -1754,18 +1658,17 @@ let update_and_compute_dependencies _ qualifiers ~update =
     globals;
     edges;
     backedges;
-    indices;
-    annotations;
   }
     =
     old_dependent_table_keys
   in
   let open SharedMemory in
   (* Backedges are not tracked *)
-  SharedMemoryClassHierarchyHandler.disconnect_backedges (OrderIndices.KeySet.elements indices);
+  SharedMemoryClassHierarchyHandler.disconnect_backedges
+    (ClassDefinitions.KeySet.elements class_definitions);
   OrderBackedges.remove_batch backedges;
 
-  SharedMemoryClassHierarchyHandler.remove_keys annotations;
+  SharedMemoryClassHierarchyHandler.remove_keys edges;
 
   SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
@@ -1779,8 +1682,6 @@ let update_and_compute_dependencies _ qualifiers ~update =
     |> UndecoratedFunctions.add_to_transaction ~keys:undecorated_signatures
     |> Globals.add_to_transaction ~keys:globals
     |> OrderEdges.add_to_transaction ~keys:edges
-    |> OrderIndices.add_to_transaction ~keys:indices
-    |> OrderAnnotations.add_to_transaction ~keys:annotations
     |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
   in
   let {
@@ -1792,8 +1693,6 @@ let update_and_compute_dependencies _ qualifiers ~update =
     globals;
     edges;
     backedges = _;
-    indices;
-    annotations;
   }
     =
     SharedMemoryDependencyHandler.find_added_dependent_table_keys
@@ -1807,9 +1706,7 @@ let update_and_compute_dependencies _ qualifiers ~update =
       ClassMetadata.get_all_dependents class_metadata;
       UndecoratedFunctions.get_all_dependents undecorated_signatures;
       Globals.get_all_dependents globals;
-      OrderEdges.get_all_dependents edges;
-      OrderIndices.get_all_dependents indices;
-      OrderAnnotations.get_all_dependents annotations ]
+      OrderEdges.get_all_dependents edges ]
     |> List.fold ~init:mutation_triggers ~f:SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
   in
   update, mutation_and_addition_triggers
@@ -1825,7 +1722,7 @@ let normalize_shared_memory qualifiers =
   | None -> ()
   | Some keys ->
       OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
-      List.sort ~compare:Int.compare keys |> OrderKeys.add Memory.SingletonKey.key );
+      List.sort ~compare:IndexTracker.compare keys |> OrderKeys.add Memory.SingletonKey.key );
   SharedMemoryDependencyHandler.normalize qualifiers
 
 
@@ -1837,14 +1734,7 @@ let shared_memory_hash_to_key_map ~qualifiers () =
   (* Type order. *)
   let map =
     let order_keys = OrderKeys.find_unsafe Memory.SingletonKey.key in
-    let index_keys =
-      OrderAnnotations.get_batch (OrderAnnotations.KeySet.of_list order_keys)
-      |> OrderAnnotations.KeyMap.values
-      |> List.filter_opt
-    in
     OrderKeys.compute_hashes_to_keys ~keys:[Memory.SingletonKey.key]
-    |> extend_map ~new_map:(OrderAnnotations.compute_hashes_to_keys ~keys:order_keys)
-    |> extend_map ~new_map:(OrderIndices.compute_hashes_to_keys ~keys:index_keys)
     |> extend_map ~new_map:(OrderEdges.compute_hashes_to_keys ~keys:order_keys)
     |> extend_map ~new_map:(OrderBackedges.compute_hashes_to_keys ~keys:order_keys)
   in
@@ -1884,12 +1774,7 @@ let shared_memory_hash_to_key_map ~qualifiers () =
 
 
 let serialize_decoded decoded =
-  let decode index =
-    let annotation = SharedMemoryClassHierarchyHandler.annotations index in
-    match annotation with
-    | None -> Format.sprintf "Undecodable(%d)" index
-    | Some annotation -> annotation
-  in
+  let decode index = IndexTracker.annotation index in
   let decode_target { ClassHierarchy.Target.target; parameters } =
     Format.asprintf "%s[%a]" (decode target) Type.OrderedTypes.pp_concise parameters
   in
@@ -1951,10 +1836,6 @@ let serialize_decoded decoded =
         ( DependentKeyValue.description,
           Reference.show key,
           value >>| List.to_string ~f:Reference.show )
-  | OrderIndices.Decoded (key, value) ->
-      Some (OrderIndexValue.description, key, value >>| Int.to_string)
-  | OrderAnnotations.Decoded (key, value) ->
-      Some (OrderAnnotationValue.description, Int.to_string key, value)
   | OrderEdges.Decoded (key, value) ->
       Some (EdgeValue.description, decode key, value >>| List.to_string ~f:decode_target)
   | OrderBackedges.Decoded (key, value) ->
@@ -1995,16 +1876,12 @@ let decoded_equal first second =
       Some (Option.equal (List.equal Identifier.equal) first second)
   | DependentKeys.Decoded (_, first), DependentKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal Reference.equal) first second)
-  | OrderIndices.Decoded (_, first), OrderIndices.Decoded (_, second) ->
-      Some (Option.equal Int.equal first second)
-  | OrderAnnotations.Decoded (_, first), OrderAnnotations.Decoded (_, second) ->
-      Some (Option.equal String.equal first second)
   | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
       Some (Option.equal (List.equal ClassHierarchy.Target.equal) first second)
   | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
       Some (Option.equal ClassHierarchy.Target.Set.Tree.equal first second)
   | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
-      Some (Option.equal (List.equal Int.equal) first second)
+      Some (Option.equal (List.equal IndexTracker.equal) first second)
   | Modules.Decoded (_, first), Modules.Decoded (_, second) ->
       Some (Option.equal Module.equal first second)
   | _ -> None

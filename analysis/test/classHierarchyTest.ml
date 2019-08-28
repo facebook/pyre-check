@@ -26,7 +26,7 @@ let butterfly, butterfly_indices =
   connect order ~predecessor:"0" ~successor:"3";
   connect order ~predecessor:"1" ~successor:"2";
   connect order ~predecessor:"1" ~successor:"3";
-  handler order, Hashtbl.keys order.annotations
+  handler order, Hash_set.to_list order.all_indices
 
 
 (*          0 - 3
@@ -52,7 +52,7 @@ let order, order_indices =
   connect order ~predecessor:bottom ~successor:"1";
   connect order ~predecessor:bottom ~successor:"2";
   connect order ~predecessor:bottom ~successor:"4";
-  handler order, Hashtbl.keys order.annotations
+  handler order, Hash_set.to_list order.all_indices
 
 
 let diamond_order =
@@ -93,11 +93,11 @@ let triangle_order =
 
 
 let test_method_resolution_order_linearize _ =
-  let assert_method_resolution_order ((module Handler : Handler) as order) annotation expected =
+  let assert_method_resolution_order (module Handler : Handler) annotation expected =
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
       expected
-      (method_resolution_order_linearize order annotation ~get_successors:Handler.edges)
+      (method_resolution_order_linearize annotation ~get_successors:Handler.edges)
   in
   assert_method_resolution_order butterfly "3" ["3"];
   assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];
@@ -160,7 +160,7 @@ let test_check_integrity _ =
     insert order "1";
     connect order ~predecessor:"0" ~successor:"1";
     connect order ~predecessor:"1" ~successor:"0";
-    handler order, Hashtbl.keys order.annotations
+    handler order, Hash_set.to_list order.all_indices
   in
   assert_raises Cyclic (fun _ -> check_integrity order ~indices);
 
@@ -179,7 +179,7 @@ let test_check_integrity _ =
     connect order ~predecessor:"1" ~successor:"2";
     connect order ~predecessor:"2" ~successor:"0";
     connect order ~predecessor:"2" ~successor:"3";
-    handler order, Hashtbl.keys order.annotations
+    handler order, Hash_set.to_list order.all_indices
   in
   assert_raises Cyclic (fun _ -> check_integrity order ~indices)
 
@@ -196,7 +196,7 @@ let test_to_dot _ =
     connect order ~predecessor:"0" ~successor:"1" ~parameters:![Type.string];
 
     (*connect_annotations_to_object order ["0"; "1"; "2"; "object"];*)
-    handler order, Hashtbl.keys order.annotations
+    handler order, Hash_set.to_list order.all_indices
   in
   let (module Handler) = order in
   assert_equal

@@ -1373,40 +1373,40 @@ let assert_errors
 
 module MockClassHierarchyHandler = struct
   type t = {
-    edges: ClassHierarchy.Target.t list Int.Table.t;
-    backedges: ClassHierarchy.Target.Set.t Int.Table.t;
-    indices: int Type.Primitive.Table.t;
-    annotations: Type.Primitive.t Int.Table.t;
+    edges: ClassHierarchy.Target.t list IndexTracker.Table.t;
+    backedges: ClassHierarchy.Target.Set.t IndexTracker.Table.t;
+    all_indices: IndexTracker.Hash_set.t;
   }
 
   let create () =
     {
-      edges = Int.Table.create ();
-      backedges = Int.Table.create ();
-      indices = Type.Primitive.Table.create ();
-      annotations = Int.Table.create ();
+      edges = IndexTracker.Table.create ();
+      backedges = IndexTracker.Table.create ();
+      all_indices = IndexTracker.Hash_set.create ();
     }
 
 
-  let copy { edges; backedges; indices; annotations } =
+  let copy { edges; backedges; all_indices } =
     {
       edges = Hashtbl.copy edges;
       backedges = Hashtbl.copy backedges;
-      indices = Hashtbl.copy indices;
-      annotations = Hashtbl.copy annotations;
+      all_indices = Hash_set.copy all_indices;
     }
 
 
-  let pp format { edges; backedges; annotations; _ } =
+  let pp format { edges; backedges; _ } =
     let print_edge (source, targets) =
-      let annotation index = Hashtbl.find_exn annotations index in
       let targets =
         let target { ClassHierarchy.Target.target; parameters } =
-          Format.asprintf "%s [%a]" (annotation target) Type.OrderedTypes.pp_concise parameters
+          Format.asprintf
+            "%s [%a]"
+            (IndexTracker.annotation target)
+            Type.OrderedTypes.pp_concise
+            parameters
         in
         targets |> List.map ~f:target |> String.concat ~sep:", "
       in
-      Format.fprintf format "  %s -> %s\n" (annotation source) targets
+      Format.fprintf format "  %s -> %s\n" (IndexTracker.annotation source) targets
     in
     Format.fprintf format "Edges:\n";
     List.iter ~f:print_edge (Hashtbl.to_alist edges);
@@ -1423,17 +1423,12 @@ module MockClassHierarchyHandler = struct
       let edges = Hashtbl.find order.edges
 
       let backedges = Hashtbl.find order.backedges
-
-      let indices = Hashtbl.find order.indices
-
-      let annotations = Hashtbl.find order.annotations
     end : ClassHierarchy.Handler )
 
 
   let connect ?(parameters = Type.OrderedTypes.Concrete []) order ~predecessor ~successor =
-    let index_of annotation = Hashtbl.find_exn order.indices annotation in
-    let predecessor = index_of predecessor in
-    let successor = index_of successor in
+    let predecessor = IndexTracker.index predecessor in
+    let successor = IndexTracker.index successor in
     let edges = order.edges in
     let backedges = order.backedges in
     (* Add edges. *)
@@ -1454,20 +1449,8 @@ module MockClassHierarchyHandler = struct
 
 
   let insert order annotation =
-    if not (Hashtbl.mem order.indices annotation) then (
-      let annotations = order.annotations in
-      let index =
-        let initial = Type.Primitive.hash annotation in
-        let rec pick_index index =
-          if Hashtbl.mem annotations index then
-            pick_index (index + 1)
-          else
-            index
-        in
-        pick_index initial
-      in
-      Hashtbl.set order.indices ~key:annotation ~data:index;
-      Hashtbl.set annotations ~key:index ~data:annotation;
-      Hashtbl.set order.edges ~key:index ~data:[];
-      Hashtbl.set order.backedges ~key:index ~data:ClassHierarchy.Target.Set.empty )
+    let index = IndexTracker.index annotation in
+    Hash_set.add order.all_indices index;
+    Hashtbl.set order.edges ~key:index ~data:[];
+    Hashtbl.set order.backedges ~key:index ~data:ClassHierarchy.Target.Set.empty
 end

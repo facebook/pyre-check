@@ -76,10 +76,8 @@ val create
   class_metadata:(Type.Primitive.t -> class_metadata option) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   global:(Reference.t -> global option) ->
-  edges:(int -> ClassHierarchy.Target.t list option) ->
-  backedges:(int -> ClassHierarchy.Target.Set.Tree.t option) ->
-  indices:(string -> int option) ->
-  annotations:(int -> string option) ->
+  edges:(IndexTracker.t -> ClassHierarchy.Target.t list option) ->
+  backedges:(IndexTracker.t -> ClassHierarchy.Target.Set.Tree.t option) ->
   (module AnnotatedClass) ->
   t
 
