@@ -20,16 +20,18 @@ val lookup : t -> Ast.Reference.t -> Ast.SourcePath.t option
 
 val lookup_path : configuration:Configuration.Analysis.t -> t -> Path.t -> Ast.SourcePath.t option
 
-val mem : t -> Ast.Reference.t -> bool
-
 val source_paths : t -> Ast.SourcePath.t list
 
 (* This function returns all SourcePaths that are tracked, including the shadowed ones *)
 val all_source_paths : t -> Ast.SourcePath.t list
 
-val qualifiers : t -> Ast.Reference.t list
+(* This function returns all explicit modules (i.e. those backed up by a source path) that are
+   tracked *)
+val tracked_explicit_modules : t -> Ast.Reference.t list
 
-val length : t -> int
+val is_module_tracked : t -> Ast.Reference.t -> bool
+
+val explicit_module_count : t -> int
 
 val update
   :  configuration:Configuration.Analysis.t ->

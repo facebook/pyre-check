@@ -100,10 +100,7 @@ let run_analysis
     let errors, ast_environment =
       Service.Check.check ~scheduler:(Some scheduler) ~configuration
       |> fun { module_tracker; environment; _ } ->
-      let qualifiers =
-        Analysis.ModuleTracker.source_paths module_tracker
-        |> List.map ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier)
-      in
+      let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in
       let errors =
         Service.StaticAnalysis.analyze
           ~scheduler

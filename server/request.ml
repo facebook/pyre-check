@@ -472,7 +472,7 @@ let process_type_query_request
         let extend_map map ~new_map =
           Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
         in
-        let qualifiers = ModuleTracker.qualifiers module_tracker in
+        let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         let ast_environment = Environment.ast_environment environment in
         let map = Analysis.Environment.shared_memory_hash_to_key_map ~qualifiers () in
         (* AST shared memory. *)
@@ -667,7 +667,7 @@ let process_type_query_request
         in
         let timer = Timer.start () in
         (* Normalize the environment for comparison. *)
-        let qualifiers = ModuleTracker.qualifiers module_tracker in
+        let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         Analysis.Environment.normalize_shared_memory qualifiers;
         Memory.SharedMemory.save_table_sqlite path |> ignore;
         let { Memory.SharedMemory.used_slots; _ } = Memory.SharedMemory.hash_stats () in

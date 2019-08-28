@@ -241,11 +241,12 @@ let log_parse_errors ~syntax_error ~system_error =
 
 let parse_all ~scheduler ~configuration module_tracker =
   let timer = Timer.start () in
-  Log.info "Parsing %d stubs and sources..." (ModuleTracker.length module_tracker);
+  Log.info "Parsing %d stubs and sources..." (ModuleTracker.explicit_module_count module_tracker);
   let ast_environment = AstEnvironment.create module_tracker in
   let { parsed; syntax_error; system_error } =
     let preprocessing_state =
-      ProjectSpecificPreprocessing.initial (ModuleTracker.mem module_tracker)
+      ProjectSpecificPreprocessing.initial (fun qualifier ->
+          ModuleTracker.lookup module_tracker qualifier |> Option.is_some)
     in
     ModuleTracker.source_paths module_tracker
     |> parse_sources

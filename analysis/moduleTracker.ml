@@ -116,17 +116,17 @@ let lookup_path ~configuration tracker path =
     None
 
 
-let mem = Hashtbl.mem
-
 let source_paths tracker = Hashtbl.data tracker |> List.filter_map ~f:List.hd
 
 let all_source_paths tracker = Hashtbl.data tracker |> List.concat
 
-let qualifiers tracker =
+let tracked_explicit_modules tracker =
   source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
-let length = Hashtbl.length
+let is_module_tracked = Hashtbl.mem
+
+let explicit_module_count = Hashtbl.length
 
 module FileSystemEvent = struct
   type t =
