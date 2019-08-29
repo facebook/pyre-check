@@ -42,7 +42,7 @@ module type Context = sig
 end
 
 module NestedDefineLookup = struct
-  type key = Define.t [@@deriving compare, eq, sexp, show, hash]
+  type key = Define.Signature.t [@@deriving compare, eq, sexp, show, hash]
 
   include Hashable.Make (struct
     type nonrec t = key
@@ -178,12 +178,12 @@ let run ~configuration:_ ~global_resolution ~source =
   let module Fixpoint = Fixpoint.Make (State) in
   let lookup = NestedDefineLookup.Table.create () in
   let define = Source.top_level_define_node source in
-  let check define =
+  let check ({ Node.value = { Define.signature; _ }; _ } as define) =
     let cfg = Cfg.create (Node.value define) in
     Fixpoint.backward ~cfg ~initial:(State.initial ~lookup ~define)
     |> Fixpoint.entry
     >>| (fun state ->
-          NestedDefineLookup.Table.set lookup ~key:(Node.value define) ~data:state;
+          NestedDefineLookup.Table.set lookup ~key:signature ~data:state;
           State.errors state)
     |> Option.value ~default:[]
   in
