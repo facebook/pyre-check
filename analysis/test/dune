@@ -7,12 +7,14 @@
   annotatedDefineTest
   annotatedSignatureTest
   astEnvironmentTest
+  attrsTest
   awaitableCheckTest
   cfgTest
   classHierarchyTest
   coverageTest
   customAnalysisTest
   deobfuscationCheckTest
+  dataClassTest
   dependentTest
   environmentTest
   fixpointTest
@@ -20,6 +22,8 @@
   livenessCheckTest
   lookupTest
   moduleTrackerTest
+  newTypeTest
+  namedTuplesTest
   preprocessingTest
   refinementTest
   resolutionTest

@@ -29,6 +29,10 @@ val replace_mypy_extensions_stub : Source.t -> Source.t
 
 val expand_typed_dictionary_declarations : Source.t -> Source.t
 
+val expand_named_tuples : Source.t -> Source.t
+
+val expand_new_types : Source.t -> Source.t
+
 (* List of function definitions in a source. include_toplevels copies all definitions into a
    toplevel definition. *)
 val defines

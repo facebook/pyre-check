@@ -20,7 +20,6 @@
   pyrelib.projectSpecificPreprocessing
   pyrelib.interprocedural
   pyrelib.path
-  pyrelib.plugin
   pyrelib.taint
   pyrelib.deadStore
   pyrelib.scheduler

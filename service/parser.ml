@@ -171,9 +171,7 @@ let process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environm
             | None -> source
           in
           let stored =
-            expand_wildcard_imports ~ast_environment source
-            |> Preprocessing.preprocess_phase1
-            |> Plugin.apply_to_ast
+            expand_wildcard_imports ~ast_environment source |> Preprocessing.preprocess_phase1
           in
           AstEnvironment.add_source ast_environment stored
     in

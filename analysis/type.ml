@@ -998,33 +998,7 @@ let parametric_substitution_map =
 let rec expression annotation =
   let location = Location.Reference.any in
   let create_name name = Name (Expression.create_name ~location name) in
-  let get_item_call base arguments =
-    let arguments =
-      if List.length arguments > 1 then
-        Expression.Tuple arguments
-        |> Node.create_with_default_location
-        |> fun tuple -> [{ Call.Argument.name = None; value = tuple }]
-      else
-        let create argument = { Call.Argument.name = None; value = argument } in
-        List.map ~f:create arguments
-    in
-    Call
-      {
-        callee =
-          {
-            Node.location;
-            value =
-              Name
-                (Name.Attribute
-                   {
-                     base = { Node.location; value = create_name base };
-                     attribute = "__getitem__";
-                     special = true;
-                   });
-          };
-        arguments;
-      }
-  in
+  let get_item_call = Expression.get_item_call ~location in
   let convert_annotation annotation =
     match annotation with
     | Annotated annotation -> get_item_call "typing.Annotated" [expression annotation]

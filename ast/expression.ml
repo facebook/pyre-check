@@ -634,6 +634,35 @@ let arguments_location
       { Location.path; start = callee_end; stop = { stop with column = stop.Location.column + 1 } }
 
 
+let get_item_call base arguments ~location =
+  let create_name name = Name (create_name ~location name) in
+  let arguments =
+    if List.length arguments > 1 then
+      Tuple arguments
+      |> Node.create_with_default_location
+      |> fun tuple -> [{ Call.Argument.name = None; value = tuple }]
+    else
+      let create argument = { Call.Argument.name = None; value = argument } in
+      List.map ~f:create arguments
+  in
+  Call
+    {
+      callee =
+        {
+          Node.location;
+          value =
+            Name
+              (Name.Attribute
+                 {
+                   base = { Node.location; value = create_name base };
+                   attribute = "__getitem__";
+                   special = true;
+                 });
+        };
+      arguments;
+    }
+
+
 module PrettyPrinter = struct
   let rec pp_expression_t formatter expression_t =
     match expression_t with
