@@ -183,3 +183,22 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 return ['']
             """,
         )
+
+        # Don't override existing default parameter values
+        self.assert_annotations(
+            """
+            class B:
+                def foo(self, x: int = a.b.A.__add__(1), y=None) -> int: ...
+            """,
+            """
+            class B:
+                def foo(self, x = A + 1, y = None) -> int:
+                    return x
+
+            """,
+            """
+            class B:
+                def foo(self, x: int = A + 1, y = None) -> int:
+                    return x
+            """,
+        )

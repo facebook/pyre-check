@@ -102,6 +102,27 @@ class TypeTransformer(cst.CSTTransformer):
             self.toplevel_annotations[name] = annotation
         self.qualifier.pop()
 
+    def _update_default_parameters(
+        self, annotations: FunctionAnnotation, updated_node: cst.FunctionDef
+    ) -> cst.Parameters:
+        parameter_annotations = {}
+        annotated_default_parameters = []
+        for parameter in list(annotations.parameters.default_params):
+            if parameter.annotation:
+                parameter_annotations[parameter.name.value] = parameter.annotation
+        for parameter in list(updated_node.params.default_params):
+            if parameter.name.value in parameter_annotations:
+                annotated_default_parameters.append(
+                    parameter.with_changes(
+                        annotation=parameter_annotations[parameter.name.value]
+                    )
+                )
+            else:
+                annotated_default_parameters.append(parameter)
+        return annotations.parameters.with_changes(
+            default_params=annotated_default_parameters
+        )
+
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
 
@@ -126,7 +147,9 @@ class TypeTransformer(cst.CSTTransformer):
             # Only add new annotation if one doesn't already exist
             if not updated_node.returns:
                 updated_node = updated_node.with_changes(returns=annotations.returns)
-            return updated_node.with_changes(params=annotations.parameters)
+            # Don't override default values when annotating functions
+            new_parameters = self._update_default_parameters(annotations, updated_node)
+            return updated_node.with_changes(params=new_parameters)
         return updated_node
 
     def leave_Assign(self, node: cst.Assign, updated_node: cst.Assign) -> cst.CSTNode:
