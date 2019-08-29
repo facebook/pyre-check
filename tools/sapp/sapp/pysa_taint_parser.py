@@ -12,7 +12,12 @@ import ujson as json
 
 from . import errors
 from .analysis_output import AnalysisOutput, Metadata
-from .base_parser import BaseParser, ParseType, log_trace_keyerror_in_generator
+from .base_parser import (
+    BaseParser,
+    EntryPosition,
+    ParseType,
+    log_trace_keyerror_in_generator,
+)
 
 
 log = logging.getLogger("sapp")
@@ -32,10 +37,30 @@ class Parser(BaseParser):
         for entry in self._parse_basic(handle):
             yield from self._parse_by_type(entry)
 
+    # Instead of returning the actual json from the AnalysisOutput, we return
+    # location information so it can be retrieved later.
+    def get_json_file_offsets(self, input: AnalysisOutput) -> Iterable[EntryPosition]:
+        for handle in input.file_handles():
+            for entry, position in self._parse_v2(handle):
+                callable = self._get_callable(entry["data"].get("callable")).lstrip(
+                    "\\"
+                )
+                yield EntryPosition(
+                    callable=callable,
+                    shard=position["shard"],
+                    offset=position["offset"],
+                )
+
+    # Given a path and an offset, return the json in mostly-raw form.
+    def get_json_from_file_offset(self, path: str, offset: int) -> Dict[str, Any]:
+        with open(path) as fh:
+            fh.seek(offset)
+            return json.loads(fh.readline())
+
     def _parse_basic(self, handle: IO[str]) -> Iterable[Dict[str, Any]]:
         file_version = self._guess_file_version(handle)
         if file_version == 2:
-            for entry in self._parse_v2(handle):
+            for entry, _ in self._parse_v2(handle):
                 yield entry
         else:
             yield from self._parse_v1(handle)
@@ -47,7 +72,9 @@ class Parser(BaseParser):
         results = data["results"]
         return results
 
-    def _parse_v2(self, handle: IO[str]) -> Iterable[Dict[str, Any]]:
+    def _parse_v2(
+        self, handle: IO[str]
+    ) -> Iterable[Tuple[Dict[str, Any], Dict[str, int]]]:
         """Parse analysis in jsonlines format:
             { "file_version": 2, "config": <json> }
             { <error1> }
@@ -57,10 +84,15 @@ class Parser(BaseParser):
         header = json.loads(handle.readline())
         assert header["file_version"] == 2
 
-        for line in handle.readlines():
+        shard = 0
+
+        offset, line = handle.tell(), handle.readline()
+        while line:
             entry = json.loads(line)
             if entry:
-                yield entry
+                position = {"shard": shard, "offset": offset}
+                yield entry, position
+            offset, line = handle.tell(), handle.readline()
 
     def _guess_file_version(self, handle: IO[str]) -> int:
         first_line = handle.readline()
@@ -84,6 +116,10 @@ class Parser(BaseParser):
             yield from self._parse_model(entry["data"])
         elif entry["kind"] == "issue":
             yield from self._parse_issue(entry["data"])
+
+    @staticmethod
+    def _get_callable(callable):
+        return callable
 
     @log_trace_keyerror_in_generator
     def _parse_model(self, json):
