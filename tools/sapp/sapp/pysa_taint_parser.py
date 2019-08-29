@@ -6,7 +6,7 @@
 """Parse Pysa/Taint output for Zoncolan processing"""
 
 import logging
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import IO, Any, Dict, Iterable, List, Tuple
 
 import ujson as json
 
@@ -23,24 +23,61 @@ class Parser(BaseParser):
     for the Processor.
     """
 
-    def __init__(self, repo_dir=None):
-        super(Parser, self).__init__(repo_dir)
-
-    def parse_raw(self, input):
-        return self._parse(input)
-
     def parse(self, input: AnalysisOutput) -> Iterable[Dict[str, Any]]:
         for handle in input.file_handles():
             for entry in self.parse_handle(handle):
                 yield entry
 
     def parse_handle(self, handle) -> Iterable[Dict[str, Any]]:
+        for entry in self._parse_basic(handle):
+            yield from self._parse_by_type(entry)
+
+    def _parse_basic(self, handle: IO[str]) -> Iterable[Dict[str, Any]]:
+        file_version = self._guess_file_version(handle)
+        if file_version == 2:
+            for entry in self._parse_v2(handle):
+                yield entry
+        else:
+            yield from self._parse_v1(handle)
+
+    def _parse_v1(self, handle: IO[str]) -> Iterable[Dict[str, Any]]:
         data = json.load(handle)
         config = data["config"]
         self.repo_dir = config["repo"]
         results = data["results"]
-        for entry in results:
-            yield from self._parse_by_type(entry)
+        return results
+
+    def _parse_v2(self, handle: IO[str]) -> Iterable[Dict[str, Any]]:
+        """Parse analysis in jsonlines format:
+            { "file_version": 2, "config": <json> }
+            { <error1> }
+            { <error2> }
+            ...
+        """
+        header = json.loads(handle.readline())
+        assert header["file_version"] == 2
+
+        for line in handle.readlines():
+            entry = json.loads(line)
+            if entry:
+                yield entry
+
+    def _guess_file_version(self, handle: IO[str]) -> int:
+        first_line = handle.readline()
+        try:
+            json_first_line = json.loads(first_line)
+            version = json_first_line["file_version"]
+        # Falling back on v1 for expected errors
+        except KeyError as e:
+            if e.args[0] != "file_version":
+                raise
+            version = 1
+        except ValueError:
+            version = 1
+            pass
+
+        handle.seek(0)
+        return version
 
     def _parse_by_type(self, entry):
         if entry["kind"] == "model":
