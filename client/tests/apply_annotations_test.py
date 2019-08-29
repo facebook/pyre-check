@@ -164,3 +164,22 @@ class ApplyAnnotationsTest(unittest.TestCase):
             x = y = z = 1
             """,
         )
+
+        # Don't add annotations if one is already present
+        self.assert_annotations(
+            """
+            def foo(x: int = 1) -> List[str]: ...
+            """,
+            """
+            from typing import Iterable, Any
+
+            def foo(x = 1) -> Iterable[Any]:
+                return ['']
+            """,
+            """
+            from typing import Iterable, Any
+
+            def foo(x: int = 1) -> Iterable[Any]:
+                return ['']
+            """,
+        )

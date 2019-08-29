@@ -123,9 +123,10 @@ class TypeTransformer(cst.CSTTransformer):
         self.qualifier.pop()
         if key in self.function_annotations:
             annotations = self.function_annotations[key]
-            return updated_node.with_changes(
-                params=annotations.parameters, returns=annotations.returns
-            )
+            # Only add new annotation if one doesn't already exist
+            if not updated_node.returns:
+                updated_node = updated_node.with_changes(returns=annotations.returns)
+            return updated_node.with_changes(params=annotations.parameters)
         return updated_node
 
     def leave_Assign(self, node: cst.Assign, updated_node: cst.Assign) -> cst.CSTNode:
