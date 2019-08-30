@@ -512,6 +512,15 @@ let test_infer context =
     |}
     [{|[{"name":"x","type":null,"value":"None"}]|}; {|[{"name":"x","type":null,"value":"None"}]|}];
 
+  assert_infer ~fields:["inference"] {|
+      foo = None
+    |} [{|{}|}];
+
+  assert_infer ~fields:["inference"] {|
+    class A:
+      foo = None
+  |} [{|{}|}];
+
   assert_infer
     ~fields:["inference"]
     {|

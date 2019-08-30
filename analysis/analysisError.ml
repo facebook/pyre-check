@@ -1697,6 +1697,9 @@ let inference_information
           "parameters", `List parameters;
           "decorators", `List decorators;
           "async", `Bool async ]
+  | MissingAttributeAnnotation
+      { missing_annotation = { annotation = Some (Optional Bottom); _ }; _ } ->
+      `Assoc []
   | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } -> (
       let attributes =
         [ "parent", `String (Type.show parent);
@@ -1706,6 +1709,7 @@ let inference_information
       | Some annotation ->
           `Assoc (("annotation", `String (print_annotation annotation)) :: attributes)
       | None -> `Assoc attributes )
+  | MissingGlobalAnnotation { annotation = Some (Optional Bottom); _ } -> `Assoc []
   | MissingGlobalAnnotation { name; annotation; _ } -> (
       let attributes =
         ["parent", `Null; "attribute_name", `String (Reference.show_sanitized name)]
