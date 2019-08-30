@@ -890,6 +890,7 @@ let process_type_query_request
             Taint.Model.parse
               ~resolution:(TypeCheck.resolution global_resolution ())
               ~path
+              ~verify:true
               ~source
               ~configuration
               Interprocedural.Callable.Map.empty

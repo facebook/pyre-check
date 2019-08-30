@@ -576,7 +576,7 @@ let demangle_class_attribute name =
     name
 
 
-let create ~resolution ?path ~configuration source =
+let create ~resolution ?path ~configuration ~verify source =
   let global_resolution = Resolution.global_resolution resolution in
   let signatures =
     let filter_define_signature = function
@@ -837,7 +837,7 @@ let create ~resolution ?path ~configuration source =
              model
              return_annotation
              ~callable_annotation)
-      |> fun model -> { model; call_target; is_obscure = false }
+      |> fun model -> Some { model; call_target; is_obscure = false }
     with
     | Failure message
     | InvalidModel message ->
@@ -850,10 +850,16 @@ let create ~resolution ?path ~configuration source =
                 (Path.absolute path)
                 location.Location.start.Location.line
         in
-        Format.asprintf "Invalid model for `%a`%s: %s" Reference.pp name model_origin message
-        |> raise_invalid_model
+        let message =
+          Format.asprintf "Invalid model for `%a`%s: %s" Reference.pp name model_origin message
+        in
+        if verify then
+          raise_invalid_model message
+        else (
+          Log.error "%s" message;
+          None )
   in
-  List.map signatures ~f:create_model
+  List.filter_map signatures ~f:create_model
 
 
 let get_callsite_model ~call_target ~arguments =
@@ -948,8 +954,8 @@ let get_global_sink_model ~resolution ~location ~expression =
   get_global_model ~resolution ~expression >>| to_sink
 
 
-let parse ~resolution ?path ~source ~configuration models =
-  create ~resolution ?path ~configuration source
+let parse ~resolution ?path ?(verify = true) ~source ~configuration models =
+  create ~resolution ?path ~verify ~configuration source
   |> List.map ~f:(fun model -> model.call_target, model.model)
   |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
   |> Callable.Map.merge models ~f:(fun ~key:_ ->

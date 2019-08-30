@@ -33,6 +33,7 @@ val get_global_sink_model
 val parse
   :  resolution:Resolution.t ->
   ?path:PyrePath.t ->
+  ?verify:bool ->
   source:string ->
   configuration:Configuration.t ->
   TaintResult.call_model Callable.Map.t ->

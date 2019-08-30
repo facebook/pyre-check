@@ -25,6 +25,7 @@ class Analyze(Check):
     ) -> None:
         super(Analyze, self).__init__(arguments, configuration, analysis_directory)
         self._analysis = arguments.analysis  # type: str
+        self._no_verify = arguments.no_verify  # type: bool
         self._taint_models_path = (
             arguments.taint_models_path or configuration.taint_models_path
         )  # type: List[str]
@@ -41,7 +42,9 @@ class Analyze(Check):
         if save_results_to:
             flags.extend(["-save-results-to", save_results_to])
         if self._dump_call_graph:
-            flags.extend(["-dump-call-graph"])
+            flags.append("-dump-call-graph")
+        if self._no_verify:
+            flags.append("-no-verify")
         return flags
 
     def _run(self, retries: int = 1) -> None:

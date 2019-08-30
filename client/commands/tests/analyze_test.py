@@ -135,6 +135,35 @@ class AnalyzeTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Analyze.NAME)
 
+        arguments = mock_arguments(no_verify=True)
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            configuration.taint_models_path = {"taint_models"}
+            arguments.taint_models_path = {"overriding_models"}
+            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "parser",
+                    "-project-root",
+                    ".",
+                    "-workers",
+                    "5",
+                    "-search-path",
+                    "path1,path2,path3",
+                    "-analysis",
+                    "taint",
+                    "-taint-models",
+                    "overriding_models",
+                    "-dump-call-graph",
+                    "-no-verify",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
         # Test "." is a valid directory
         arguments = mock_arguments()
         arguments.save_results_to = "."

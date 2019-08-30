@@ -13,6 +13,12 @@ include TaintResult.Register (struct
 
   let init ~configuration ~environment ~functions:_ =
     (* Parse models *)
+    let taint = Yojson.Safe.Util.member "taint" configuration in
+    let verify =
+      Yojson.Safe.Util.member "verify_models" taint
+      |> Yojson.Safe.Util.to_bool_option
+      |> Option.value ~default:true
+    in
     let create_models ~configuration sources =
       let global_resolution = Analysis.Environment.resolution environment () in
       List.fold sources ~init:Callable.Map.empty ~f:(fun models (path, source) ->
@@ -21,9 +27,9 @@ include TaintResult.Register (struct
             ~path
             ~source
             ~configuration
+            ~verify
             models)
     in
-    let taint = Yojson.Safe.Util.member "taint" configuration in
     let model_directories =
       Yojson.Safe.Util.member "model_directories" taint
       |> Yojson.Safe.Util.to_list

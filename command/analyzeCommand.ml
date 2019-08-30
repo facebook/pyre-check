@@ -17,6 +17,7 @@ let get_analysis_kind = function
 let run_analysis
     analysis
     result_json_path
+    no_verify
     dump_call_graph
     verbose
     expected_version
@@ -106,7 +107,12 @@ let run_analysis
           ~scheduler
           ~analysis_kind:(get_analysis_kind analysis)
           ~configuration:
-            { Configuration.StaticAnalysis.configuration; result_json_path; dump_call_graph }
+            {
+              Configuration.StaticAnalysis.configuration;
+              result_json_path;
+              dump_call_graph;
+              verify_models = not no_verify;
+            }
           ~environment
           ~qualifiers
           ()
@@ -145,6 +151,10 @@ let command =
            "-save-results-to"
            (optional string)
            ~doc:"file A JSON file that Pyre Analyze will save its' results to."
+      +> flag
+           "-no-verify"
+           no_arg
+           ~doc:"Do not verify that all models passed into the analysis are valid."
       +> flag "-dump-call-graph" no_arg ~doc:"Store call graph in .pyre/call_graph.json"
       ++ Specification.base_command_line_arguments)
     run_analysis

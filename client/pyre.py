@@ -312,6 +312,11 @@ def main() -> int:
         help="Location of taint models",
     )
     analyze.add_argument(
+        "--no-verify",
+        action="store_true",
+        help="Do not verify models for the taint analysis.",
+    )
+    analyze.add_argument(
         "--save-results-to",
         default=None,
         type=writable_directory,

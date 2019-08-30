@@ -70,8 +70,12 @@ let callables ~resolution ~source =
 let analyze
     ~scheduler
     ~analysis_kind
-    ~configuration:( { Configuration.StaticAnalysis.configuration; dump_call_graph; _ } as
-                   analysis_configuration )
+    ~configuration:( {
+                       Configuration.StaticAnalysis.configuration;
+                       dump_call_graph;
+                       verify_models;
+                       _;
+                     } as analysis_configuration )
     ~environment
     ~qualifiers
     ()
@@ -166,7 +170,11 @@ let analyze
       |> List.map ~f:Path.absolute
       |> List.map ~f:(fun directory -> `String directory)
     in
-    `Assoc ["taint", `Assoc ["model_directories", `List taint_models_directories]]
+    `Assoc
+      [ ( "taint",
+          `Assoc
+            [ "model_directories", `List taint_models_directories;
+              "verify_models", `Bool verify_models ] ) ]
   in
   let analyses = [analysis_kind] in
   (* Initialize and add initial models of analyses to shared mem. *)

@@ -14,57 +14,59 @@ from ...filesystem import AnalysisDirectory
 
 
 def mock_arguments(
-    no_watchman=False,
-    terminal=False,
-    saved_state_project=None,
-    save_initial_state_to=None,
-    load_initial_state_from=None,
-    changed_files_path=None,
-    no_saved_state=False,
-    original_directory=None,
-    show_parse_errors=False,
-    output=None,
-    command=None,
     build=False,
+    changed_files_path=None,
+    command=None,
+    load_initial_state_from=None,
+    no_saved_state=False,
+    no_verify=False,
+    no_watchman=False,
+    original_directory=None,
+    output=None,
+    save_initial_state_to=None,
+    saved_state_project=None,
+    show_parse_errors=False,
     source_directories=None,
-    targets=None,
     store_type_check_resolution=False,
+    targets=None,
+    terminal=False,
 ) -> MagicMock:
     arguments = MagicMock()
+    arguments.additional_check = []
     arguments.analysis = "taint"
     arguments.build = build
+    arguments.changed_files_path = changed_files_path
     arguments.command = command
     arguments.current_directory = "."
     arguments.debug = False
-    arguments.no_saved_state = no_saved_state
-    arguments.additional_check = []
+    arguments.enable_profiling = None
     arguments.filter_directory = ["."]
+    arguments.hide_parse_errors = False
+    arguments.incremental_style = commands.IncrementalStyle.SHALLOW
+    arguments.load_initial_state_from = load_initial_state_from
     arguments.local = False
     arguments.local_configuration = None
     arguments.log_identifier = None
     arguments.logger = None
     arguments.logging_sections = None
-    arguments.enable_profiling = None
+    arguments.no_saved_state = no_saved_state
+    arguments.no_verify = no_verify
     arguments.no_watchman = no_watchman
+    arguments.nonblocking = False
     arguments.original_directory = original_directory or "/original/directory/"
     arguments.output = output
-    arguments.saved_state_project = saved_state_project
     arguments.save_initial_state_to = save_initial_state_to
-    arguments.load_initial_state_from = load_initial_state_from
-    arguments.changed_files_path = changed_files_path
     arguments.save_results_to = None
+    arguments.saved_state_project = saved_state_project
     arguments.sequential = False
     arguments.show_error_traces = False
     arguments.source_directories = source_directories
-    arguments.hide_parse_errors = False
+    arguments.store_type_check_resolution = store_type_check_resolution
     arguments.strict = False
     arguments.taint_models_path = []
     arguments.targets = targets
     arguments.terminal = terminal
     arguments.verbose = False
-    arguments.nonblocking = False
-    arguments.incremental_style = commands.IncrementalStyle.SHALLOW
-    arguments.store_type_check_resolution = store_type_check_resolution
     return arguments
 
 
