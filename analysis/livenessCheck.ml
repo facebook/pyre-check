@@ -42,7 +42,7 @@ module type Context = sig
 end
 
 module NestedDefineLookup = struct
-  type key = Define.Signature.t [@@deriving compare, eq, sexp, show, hash]
+  type key = Reference.t [@@deriving compare, eq, sexp, show, hash]
 
   include Hashable.Make (struct
     type nonrec t = key
@@ -104,7 +104,7 @@ module State (Context : Context) = struct
 
   let backward
       ?key
-      ({ used; define; _ } as state)
+      ({ used; define; nested_define_lookup; _ } as state)
       ~statement:({ Node.location; value } as statement)
     =
     let resolution =
@@ -145,6 +145,24 @@ module State (Context : Context) = struct
     in
     (* Add used identifiers. *)
     let used =
+      let used_names_in_calls =
+        let lookup_used_in_defines { Node.value; _ } =
+          let name =
+            match value with
+            | Call { callee = { Node.value = Name callee; _ }; _ }
+              when Expression.is_simple_name callee ->
+                Some (Expression.name_to_reference_exn callee)
+            | _ -> None
+          in
+          match name >>= NestedDefineLookup.Table.find nested_define_lookup with
+          | Some { used; _ } -> Set.to_list used
+          | None -> []
+        in
+        Visit.collect_calls statement
+        |> List.map ~f:(fun { Node.value = { Call.callee; _ }; _ } -> callee)
+        |> List.map ~f:lookup_used_in_defines
+        |> List.concat
+      in
       let used_names =
         match value with
         | Assign { annotation; value; _ } ->
@@ -160,7 +178,7 @@ module State (Context : Context) = struct
             |> List.map ~f:Node.value
         | _ -> Visit.collect_base_identifiers statement |> List.map ~f:Node.value
       in
-      List.fold used_names ~f:Set.add ~init:used
+      List.fold (used_names @ used_names_in_calls) ~f:Set.add ~init:used
     in
     { state with used }
 end
@@ -178,12 +196,12 @@ let run ~configuration:_ ~global_resolution ~source =
   let module Fixpoint = Fixpoint.Make (State) in
   let lookup = NestedDefineLookup.Table.create () in
   let define = Source.top_level_define_node source in
-  let check ({ Node.value = { Define.signature; _ }; _ } as define) =
+  let check ({ Node.value = { Define.signature = { Define.name; _ }; _ }; _ } as define) =
     let cfg = Cfg.create (Node.value define) in
     Fixpoint.backward ~cfg ~initial:(State.initial ~lookup ~define)
     |> Fixpoint.entry
     >>| (fun state ->
-          NestedDefineLookup.Table.set lookup ~key:signature ~data:state;
+          NestedDefineLookup.Table.set lookup ~key:name ~data:state;
           State.errors state)
     |> Option.value ~default:[]
   in

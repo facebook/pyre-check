@@ -265,7 +265,41 @@ let test_nested_defines context =
           z = y
     |}
     [ "Dead store [1003]: Value assigned to `x` is never used.";
-      "Dead store [1003]: Value assigned to `z` is never used." ]
+      "Dead store [1003]: Value assigned to `z` is never used." ];
+  assert_liveness_errors
+    {|
+      x = 1
+      def foo() -> None:
+        x = 1
+    |}
+    [ "Dead store [1003]: Value assigned to `x` is never used.";
+      "Dead store [1003]: Value assigned to `x` is never used." ];
+  assert_liveness_errors
+    {|
+      x = 1
+      def foo(x) -> None:
+        x
+    |}
+    ["Dead store [1003]: Value assigned to `x` is never used."];
+  assert_liveness_errors
+    {|
+      def foo():
+        z = 1
+        def bar():
+          print(z)
+        bar()
+    |}
+    [];
+  assert_liveness_errors
+    {|
+      def foo():
+        z = 1
+        def bar():
+          z = 2
+          print(z)
+        bar()
+    |}
+    ["Dead store [1003]: Value assigned to `z` is never used."]
 
 
 let () =

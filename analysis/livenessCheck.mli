@@ -21,7 +21,7 @@ module ErrorMap : sig
 end
 
 module NestedDefineLookup : sig
-  type key = Define.Signature.t [@@deriving compare, eq, sexp, show, hash]
+  type key = Reference.t [@@deriving compare, eq, sexp, show, hash]
 
   include Hashable with type t := key
 
