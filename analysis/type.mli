@@ -721,7 +721,7 @@ module Variable : sig
 
   val pp_concise : Format.formatter -> t -> unit
 
-  val parse_declaration : Expression.t -> t option
+  val parse_declaration : Expression.t -> target:Reference.t -> t option
 
   val dequalify : Reference.t Reference.Map.t -> t -> t
 

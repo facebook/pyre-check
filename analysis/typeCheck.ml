@@ -3388,7 +3388,9 @@ module State (Context : Context) = struct
           let value_is_type =
             (* Consider non-locals with a RHS that is a type to be an alias. *)
             let is_type_value = function
-              | Type.Top -> Option.is_some (Type.Variable.parse_declaration value)
+              | Type.Top ->
+                  Option.is_some
+                    (Type.Variable.parse_declaration value ~target:(Reference.create ""))
               | Type.Optional Type.Bottom -> false
               | annotation ->
                   not (GlobalResolution.contains_untracked global_resolution annotation)

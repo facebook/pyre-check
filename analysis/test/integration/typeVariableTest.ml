@@ -1262,6 +1262,7 @@ let test_user_defined_variadics context =
       "Revealed type [-1]: Revealed type for `f.meth` is `typing.Callable(Foo.meth)[[Named(x, \
        int), bool, int, float], bool]`." ];
   assert_type_errors
+    ~handle:"test.py"
     {|
     from typing import Generic, Tuple, List, Protocol
     from pyre_extensions.type_variable_operators import Map
@@ -1275,7 +1276,7 @@ let test_user_defined_variadics context =
     def gun(x: I) -> None:
       reveal_type(fun(x))
     |}
-    ["Revealed type [-1]: Revealed type for `fun(x)` is `typing.Tuple[int, str, bool]`."];
+    ["Revealed type [-1]: Revealed type for `test.fun(x)` is `typing.Tuple[int, str, bool]`."];
   assert_type_errors
     {|
     from typing import Generic, Tuple, List, Protocol

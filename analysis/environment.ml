@@ -996,7 +996,7 @@ let collect_aliases environment { Source.statements; qualifier; _ } =
         | Call _, None
         | Name _, None -> (
             let value = Expression.delocalize value in
-            match Type.Variable.parse_declaration value with
+            match Type.Variable.parse_declaration value ~target with
             | Some variable ->
                 register_alias
                   environment

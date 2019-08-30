@@ -1933,18 +1933,24 @@ let test_parse_type_variable_declarations _ =
   let assert_parses_declaration expression expected =
     assert_equal
       (Some expected)
-      (Type.Variable.parse_declaration (parse_single_expression expression))
+      (Type.Variable.parse_declaration
+         (parse_single_expression expression)
+         ~target:(Reference.create "target"))
   in
   let assert_declaration_does_not_parse expression =
-    assert_equal None (Type.Variable.parse_declaration (parse_single_expression expression))
+    assert_equal
+      None
+      (Type.Variable.parse_declaration
+         (parse_single_expression expression)
+         ~target:(Reference.create "target"))
   in
   assert_parses_declaration
     "pyre_extensions.ParameterSpecification('Tparams')"
-    (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Tparams"));
+    (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "target"));
   assert_declaration_does_not_parse "pyre_extensions.ParameterSpecification('Tparams', int, str)";
   assert_parses_declaration
     "pyre_extensions.ListVariadic('Ts')"
-    (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "Ts"));
+    (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "target"));
   assert_declaration_does_not_parse "pyre_extensions.ListVariadic('Ts', int, str)";
   ()
 

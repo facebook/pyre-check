@@ -2743,7 +2743,7 @@ module Variable : sig
 
   val pp_concise : Format.formatter -> t -> unit
 
-  val parse_declaration : Expression.t -> t option
+  val parse_declaration : Expression.t -> target:Reference.t -> t option
 
   val dequalify : Reference.t Reference.Map.t -> t -> t
 
@@ -2975,32 +2975,29 @@ end = struct
         { variable with name = dequalify_identifier dequalify_map name }
 
 
-      let parse_declaration = function
+      let parse_declaration value ~target =
+        match value with
         | {
-            Node.value =
-              Call
-                {
-                  callee =
-                    {
-                      Node.value =
-                        Name
-                          (Name.Attribute
-                            {
-                              base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
-                              attribute = "ParameterSpecification";
-                              special = false;
-                            });
-                      _;
-                    };
-                  arguments =
-                    [ {
-                        Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                        _;
-                      } ];
-                };
-            _;
-          } ->
-            Some (create value)
+         Node.value =
+           Call
+             {
+               callee =
+                 {
+                   Node.value =
+                     Name
+                       (Name.Attribute
+                         {
+                           base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                           attribute = "ParameterSpecification";
+                           special = false;
+                         });
+                   _;
+                 };
+               arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+             };
+         _;
+        } ->
+            Some (create (Reference.show target))
         | _ -> None
 
 
@@ -3183,32 +3180,29 @@ end = struct
         { variable with name = dequalify_identifier dequalify_map name }
 
 
-      let parse_declaration = function
+      let parse_declaration value ~target =
+        match value with
         | {
-            Node.value =
-              Call
-                {
-                  callee =
-                    {
-                      Node.value =
-                        Name
-                          (Name.Attribute
-                            {
-                              base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
-                              attribute = "ListVariadic";
-                              special = false;
-                            });
-                      _;
-                    };
-                  arguments =
-                    [ {
-                        Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                        _;
-                      } ];
-                };
-            _;
-          } ->
-            Some (create value)
+         Node.value =
+           Call
+             {
+               callee =
+                 {
+                   Node.value =
+                     Name
+                       (Name.Attribute
+                         {
+                           base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                           attribute = "ListVariadic";
+                           special = false;
+                         });
+                   _;
+                 };
+               arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+             };
+         _;
+        } ->
+            Some (create (Reference.show target))
         | _ -> None
     end
   end
@@ -3348,11 +3342,11 @@ end = struct
     | ListVariadic { name; _ } -> Format.fprintf format "ListVariadic[%s]" name
 
 
-  let parse_declaration expression =
-    match Variadic.Parameters.parse_declaration expression with
+  let parse_declaration expression ~target =
+    match Variadic.Parameters.parse_declaration expression ~target with
     | Some variable -> Some (ParameterVariadic variable)
     | None -> (
-      match Variadic.List.parse_declaration expression with
+      match Variadic.List.parse_declaration expression ~target with
       | Some variable -> Some (ListVariadic variable)
       | None -> None )
 
