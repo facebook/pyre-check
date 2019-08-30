@@ -3506,10 +3506,11 @@ module State (Context : Context) = struct
             (* Bounded tuples subclass iterable, but should be handled in the nonuniform case. *)
             | Type.Tuple (Type.Bounded _) -> false
             | _ ->
-                GlobalResolution.less_or_equal
-                  global_resolution
-                  ~left:annotation
-                  ~right:(Type.iterable Type.Top)
+                (not (is_named_tuple annotation))
+                && GlobalResolution.less_or_equal
+                     global_resolution
+                     ~left:annotation
+                     ~right:(Type.iterable Type.Top)
           in
           let uniform_sequence_parameter annotation =
             match annotation with

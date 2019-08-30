@@ -734,6 +734,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     parse
       ~handle:"typing.pyi"
       {|
+        import collections
         class _SpecialForm:
           def __getitem__(self, typeargs: Any) -> Any: ...
         class TypeAlias:
@@ -869,6 +870,22 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def cast(tp: Type[_T], obj: Any) -> _T: ...
         @overload
         def cast(tp: str, obj: Any) -> Any: ...
+
+        # NamedTuple is special-cased in the type checker
+        class NamedTuple(tuple):
+            _field_types: collections.OrderedDict[str, Type[Any]]
+            _field_defaults: Dict[str, Any] = ...
+            _fields: Tuple[str, ...]
+            _source: str
+
+            def __init__(self, typename: str, fields: Iterable[Tuple[str, Any]] = ..., *,
+                         verbose: bool = ..., rename: bool = ..., **kwargs: Any) -> None: ...
+
+            @classmethod
+            def _make(cls: Type[_T], iterable: Iterable[Any]) -> _T: ...
+
+            def _asdict(self) -> collections.OrderedDict[str, Any]: ...
+            def _replace(self: _T, **kwargs: Any) -> _T: ...
       |}
     |> Preprocessing.preprocess;
     parse
