@@ -449,6 +449,7 @@ class IssueBIGDBIDType(BIGDBIDType):
         return IssueDBID(value)
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class IssueInstanceTraceFrameAssoc(Base, PrepareMixin, RecordMixin):  # noqa
 
     __tablename__ = "issue_instance_trace_frame_assoc"
@@ -532,6 +533,7 @@ class SharedTextKind(enum.Enum):
         return cls.sink_detail
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
     """Any string-ish type that can be shared as a property of some other
     object. (e.g. features, sources, sinks). The table name 'messages' is due
@@ -578,6 +580,7 @@ class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
         )
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class IssueInstanceSharedTextAssoc(Base, PrepareMixin, RecordMixin):  # noqa
     """Assoc table between issue instances and its properties that are
     representable by a string. The DB table name and column names are due to
@@ -643,6 +646,7 @@ class TraceKind(enum.Enum):
         return cls.postcondition
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
     """A particularly instance of an issue found in a run"""
 
@@ -806,6 +810,7 @@ class IssueStatus(enum.Enum):
         return cls.do_not_care
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
     """An issue coming from the static analysis.
 
@@ -906,6 +911,7 @@ class RunStatus(enum.Enum):
 CURRENT_DB_VERSION = 1
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class Run(Base):  # noqa
     """A particular run of the static analyzer.
 
@@ -1061,6 +1067,7 @@ class RunSummary:
         return cls(**d)
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class TraceFrameLeafAssoc(Base, PrepareMixin, RecordMixin):  # noqa
 
     __tablename__ = "trace_frame_message_assoc"
@@ -1093,6 +1100,7 @@ class TraceFrameLeafAssoc(Base, PrepareMixin, RecordMixin):  # noqa
         return cls._merge_assocs(session, items, cls.trace_frame_id, cls.leaf_id)
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class IssueInstanceFixInfo(Base, PrepareMixin, RecordMixin):  # noqa
     __tablename__ = "issue_instance_fix_info"
 
@@ -1109,6 +1117,7 @@ class IssueInstanceFixInfo(Base, PrepareMixin, RecordMixin):  # noqa
     )
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
     __tablename__ = "trace_frames"
@@ -1211,6 +1220,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
 
 # Extra bits of information we can show on a TraceFrame.
+# pyre-fixme[11]: Type `Base` is not defined.
 class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
 
     __tablename__ = "trace_frame_annotations"
@@ -1249,6 +1259,7 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
     )
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class WarningMessage(Base):  # noqa
     __tablename__ = "warning_messages"
 
@@ -1274,6 +1285,7 @@ class WarningCodeCategory(enum.Enum):
         return cls.code_smell
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class WarningCodeProperties(Base):  # noqa
     """Contains properties describing each warning code"""
 
@@ -1380,6 +1392,7 @@ class WarningCodeProperties(Base):  # noqa
     )
 
 
+# pyre-fixme[11]: Type `Base` is not defined.
 class PrimaryKey(Base, PrepareMixin, RecordMixin):  # noqa
 
     __tablename__ = "primary_keys"
