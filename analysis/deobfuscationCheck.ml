@@ -19,6 +19,8 @@ module type Context = sig
   val transformations : Statement.t list Location.Reference.Table.t
 
   val errors : LivenessCheck.ErrorMap.t
+
+  val nested_define_lookup : LivenessCheck.NestedDefineLookup.t
 end
 
 module ConstantPropagationState (Context : Context) = struct
@@ -45,7 +47,7 @@ module ConstantPropagationState (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~state ~lookup:_ ~define =
+  let initial ~state ~define =
     let constants =
       match state with
       | Some { constants; _ } -> constants
@@ -221,11 +223,7 @@ module UnusedStoreState (Context : Context) = struct
       Map.set
         nested_defines
         ~key:location
-        ~data:
-          {
-            NestedDefines.nested_define = define_value;
-            state = initial ~lookup:(LivenessCheck.NestedDefineLookup.Table.create ()) ~define;
-          }
+        ~data:{ NestedDefines.nested_define = define_value; state = initial ~define }
     in
     List.fold ~init:NestedDefines.initial ~f:add_nested (nested_defines_deep_to_shallow define)
 
@@ -244,11 +242,7 @@ module type State = sig
 
   include Fixpoint.State with type t := t
 
-  val initial
-    :  state:t option ->
-    lookup:t LivenessCheck.NestedDefineLookup.t ->
-    define:Define.t Node.t ->
-    t
+  val initial : state:t option -> define:Define.t Node.t -> t
 
   val nested_defines : t -> t NestedDefines.t
 
@@ -260,10 +254,9 @@ module Scheduler (State : State) (Context : Context) = struct
   let run source =
     Hashtbl.clear Context.transformations;
     let module Fixpoint = Fixpoint.Make (State) in
-    let lookup = LivenessCheck.NestedDefineLookup.Table.create () in
     let rec run ~state ~define =
       let cfg = Cfg.create define.Node.value in
-      Fixpoint.forward ~cfg ~initial:(State.initial ~state ~lookup ~define)
+      Fixpoint.forward ~cfg ~initial:(State.initial ~state ~define)
       |> Fixpoint.exit
       >>| (fun state -> Fixpoint.backward ~cfg ~initial:state)
       >>= Fixpoint.entry
@@ -304,6 +297,8 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
     let transformations = Location.Reference.Table.create ()
 
     let errors = LivenessCheck.ErrorMap.Table.create ()
+
+    let nested_define_lookup = LivenessCheck.NestedDefineLookup.Table.create ()
   end
   in
   (* Constant propagation. *)

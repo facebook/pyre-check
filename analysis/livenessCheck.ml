@@ -35,12 +35,6 @@ module ErrorMap = struct
   type t = Error.t Table.t
 end
 
-module type Context = sig
-  val global_resolution : GlobalResolution.t
-
-  val errors : ErrorMap.t
-end
-
 module NestedDefineLookup = struct
   type key = Reference.t [@@deriving compare, eq, sexp, show, hash]
 
@@ -58,23 +52,28 @@ module NestedDefineLookup = struct
     let t_of_sexp = key_of_sexp
   end)
 
-  type 'data t = 'data Table.t
+  type t = Identifier.Set.t Table.t
+end
+
+module type Context = sig
+  val global_resolution : GlobalResolution.t
+
+  val errors : ErrorMap.t
+
+  val nested_define_lookup : NestedDefineLookup.t
 end
 
 module State (Context : Context) = struct
   type t = {
     used: Identifier.Set.t;
     define: Define.t Node.t;
-    nested_define_lookup: t NestedDefineLookup.t;
   }
 
   let show { used; _ } = Set.to_list used |> String.concat ~sep:", "
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~lookup ~define =
-    { used = Identifier.Set.empty; define; nested_define_lookup = lookup }
-
+  let initial ~define = { used = Identifier.Set.empty; define }
 
   let less_or_equal ~left:{ used = left; _ } ~right:{ used = right; _ } =
     Set.is_subset left ~of_:right
@@ -104,7 +103,7 @@ module State (Context : Context) = struct
 
   let backward
       ?key
-      ({ used; define; nested_define_lookup; _ } as state)
+      ({ used; define; _ } as state)
       ~statement:({ Node.location; value } as statement)
     =
     let resolution =
@@ -154,8 +153,8 @@ module State (Context : Context) = struct
                 Some (Expression.name_to_reference_exn callee)
             | _ -> None
           in
-          match name >>= NestedDefineLookup.Table.find nested_define_lookup with
-          | Some { used; _ } -> Set.to_list used
+          match name >>= NestedDefineLookup.Table.find Context.nested_define_lookup with
+          | Some used -> Set.to_list used
           | None -> []
         in
         Visit.collect_calls statement
@@ -190,18 +189,19 @@ let run ~configuration:_ ~global_resolution ~source =
     let global_resolution = global_resolution
 
     let errors = ErrorMap.Table.create ()
+
+    let nested_define_lookup = NestedDefineLookup.Table.create ()
   end
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
-  let lookup = NestedDefineLookup.Table.create () in
   let define = Source.top_level_define_node source in
   let check ({ Node.value = { Define.signature = { Define.name; _ }; _ }; _ } as define) =
     let cfg = Cfg.create (Node.value define) in
-    Fixpoint.backward ~cfg ~initial:(State.initial ~lookup ~define)
+    Fixpoint.backward ~cfg ~initial:(State.initial ~define)
     |> Fixpoint.entry
-    >>| (fun state ->
-          NestedDefineLookup.Table.set lookup ~key:name ~data:state;
+    >>| (fun ({ used; _ } as state) ->
+          NestedDefineLookup.Table.set Context.nested_define_lookup ~key:name ~data:used;
           State.errors state)
     |> Option.value ~default:[]
   in

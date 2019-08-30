@@ -25,20 +25,21 @@ module NestedDefineLookup : sig
 
   include Hashable with type t := key
 
-  type 'data t = 'data Table.t
+  type t = Identifier.Set.t Table.t
 end
 
 module type Context = sig
   val global_resolution : GlobalResolution.t
 
   val errors : ErrorMap.t
+
+  val nested_define_lookup : NestedDefineLookup.t
 end
 
 module State (Context : Context) : sig
   type t = {
     used: Identifier.Set.t;
     define: Define.t Node.t;
-    nested_define_lookup: t NestedDefineLookup.t;
   }
 
   val show : t -> string
@@ -47,7 +48,7 @@ module State (Context : Context) : sig
 
   val errors : t -> Error.t list
 
-  val initial : lookup:t NestedDefineLookup.t -> define:Define.t Node.t -> t
+  val initial : define:Define.t Node.t -> t
 
   val less_or_equal : left:t -> right:t -> bool
 
