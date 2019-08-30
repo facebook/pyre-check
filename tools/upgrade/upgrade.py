@@ -128,6 +128,17 @@ class Configuration:
             json.dump(contents, configuration_file, sort_keys=True, indent=2)
             configuration_file.write("\n")
 
+    def add_strict(self) -> None:
+        with open(self._path) as configuration_file:
+            contents = json.load(configuration_file)
+        if "strict" in contents:
+            LOG.info("Configuration is already strict.")
+            return
+        contents["strict"] = True
+        with open(self._path, "w") as configuration_file:
+            json.dump(contents, configuration_file, sort_keys=True, indent=2)
+            configuration_file.write("\n")
+
     def get_errors(self, should_clean: bool = True) -> List[Dict[str, Any]]:
         # TODO(T37074129): Better parallelization or truncation needed for fbcode
         if self.targets and should_clean:
@@ -410,6 +421,49 @@ def fix(arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]) -> N
         fix_file(arguments, path, error_map)
 
 
+def add_local_unsafe(
+    arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]
+) -> None:
+    for filename, _ in result:
+        LOG.info("Processing `%s`", filename)
+        path = pathlib.Path(filename)
+        text = path.read_text()
+        if "@" "generated" in text:
+            LOG.warning("Attempting to edit generated file %s, skipping.", filename)
+            return
+
+        ast_before = ast.parse(text)
+        lines = text.split("\n")  # type: List[str]
+
+        # Check if already locally strict.
+        is_local_strict = False
+        for line in lines:
+            if line.lstrip().startswith("#") and "pyre-strict" in line:
+                is_local_strict = True
+                break
+
+        if is_local_strict:
+            break
+
+        # Add local unsafe.
+        new_lines = []
+        past_header = False
+        for line in lines:
+            if not past_header and not line.lstrip().startswith("#"):
+                past_header = True
+                new_lines.append("")
+                new_lines.append("# pyre-unsafe")
+            new_lines.append(line)
+        new_text = "\n".join(new_lines)
+        ast_after = ast.parse(new_text)
+        if not ast_equal(ast_before, ast_after):
+            LOG.warning(
+                "Attempted edit changed the AST in file %s, skipping.", filename
+            )
+            return
+        path.write_text(new_text)
+
+
 def run_global_version_update(arguments: argparse.Namespace) -> None:
     global_configuration = Configuration.find_project_configuration()
     if global_configuration is None:
@@ -533,6 +587,27 @@ def run_missing_global_annotations(arguments: argparse.Namespace) -> None:
         path.write_text("\n".join(lines))
 
 
+def run_strict_default(arguments: argparse.Namespace) -> None:
+    project_configuration = Configuration.find_project_configuration()
+    if project_configuration is None:
+        LOG.info("No project configuration found for the given directory.")
+        return
+    configuration_path = arguments.path + "/.pyre_configuration.local"
+    with open(configuration_path) as configuration_file:
+        configuration = Configuration(configuration_path, json.load(configuration_file))
+        LOG.info("Processing %s", configuration.get_directory())
+        configuration.add_strict()
+        errors = configuration.get_errors()
+
+        if len(errors) > 0:
+            add_local_unsafe(arguments, sort_errors(errors))
+
+            if arguments.lint:
+                lint_status = _get_lint_status()
+                if lint_status:
+                    _apply_lint()
+
+
 def run_fixme(arguments: argparse.Namespace) -> None:
     if arguments.run:
         errors = errors_from_run(arguments)
@@ -631,6 +706,20 @@ def main():
         help="Add annotations according to errors inputted through stdin.",
     )
     missing_global_annotations.set_defaults(function=run_missing_global_annotations)
+
+    # Subcommand: Change default pyre mode to strict and adjust module headers.
+    strict_default = commands.add_parser("strict-default")
+    strict_default.set_defaults(function=run_strict_default)
+    strict_default.add_argument(
+        "path", help="Path to project root with local configuration"
+    )
+    strict_default.add_argument(
+        # TODO(T53195818): Not implemented
+        "--remove-strict-headers",
+        action="store_true",
+        help="Delete unnecessary `# pyre-strict` headers.",
+    )
+    strict_default.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.

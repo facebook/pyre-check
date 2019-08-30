@@ -1056,8 +1056,9 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                     ),
                 ]
             )
-        # Push blocking argument: Since the push blocking only argument is only used when
-        # gathering local configurations (mocked here), this is a no-op. Documents it.
+        # Push blocking argument: Since the push blocking only argument is only used
+        # when gathering local configurations (mocked here), this is a no-op.
+        # Documents it.
         subprocess.reset_mock()
         arguments.push_blocking_only = True
         arguments.submit = True
@@ -1154,3 +1155,67 @@ class FilterErrorTest(unittest.TestCase):
 
         arguments.only_fix_error_code = None
         self.assertEqual(upgrade.filter_errors(arguments, errors), errors)
+
+
+class DefaultStrictTest(unittest.TestCase):
+    @patch.object(pathlib.Path, "read_text")
+    def test_add_local_unsafe(self, read_text) -> None:
+        arguments = MagicMock()
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            read_text.return_value = "1\n2"
+            upgrade.add_local_unsafe(arguments, [("local.py", [])])
+            path_write_text.assert_called_once_with("\n# pyre-unsafe\n1\n2")
+
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            read_text.return_value = "# comment\n# comment\n1"
+            upgrade.add_local_unsafe(arguments, [("local.py", [])])
+            path_write_text.assert_called_once_with(
+                "# comment\n# comment\n\n# pyre-unsafe\n1"
+            )
+
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            read_text.return_value = "# comment\n# pyre-strict\n1"
+            upgrade.add_local_unsafe(arguments, [("local.py", [])])
+            path_write_text.assert_not_called()
+
+    @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
+    @patch.object(upgrade.Configuration, "get_directory")
+    @patch.object(upgrade.Configuration, "add_strict")
+    @patch.object(upgrade.Configuration, "get_errors")
+    @patch("%s.add_local_unsafe" % upgrade.__name__)
+    def test_run_strict_default(
+        self,
+        add_local_unsafe,
+        get_errors,
+        add_strict,
+        get_directory,
+        find_configuration,
+    ) -> None:
+        arguments = MagicMock()
+        arguments.path = "local"
+        get_errors.return_value = []
+        configuration_contents = '{"targets":[]}'
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            upgrade.run_strict_default(arguments)
+            add_local_unsafe.assert_not_called()
+
+        add_local_unsafe.reset_mock()
+        get_errors.reset_mock()
+        errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            }
+        ]
+        get_errors.return_value = errors
+        configuration_contents = '{"targets":[]}'
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            upgrade.run_strict_default(arguments)
+            add_local_unsafe.assert_called_once()
