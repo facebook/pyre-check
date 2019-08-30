@@ -1171,7 +1171,7 @@ module ScratchProject = struct
     AstEnvironment.remove_sources ast_environment qualifiers
 
 
-  let setup ~context ?(external_sources = []) sources =
+  let setup ?incremental_style ~context ?(external_sources = []) sources =
     let add_source ~root (relative, content) =
       let content = trim_extra_indentation content in
       let file = File.create ~content (Path.create_relative ~root ~relative) in
@@ -1185,6 +1185,7 @@ module ScratchProject = struct
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
+        ?incremental_style
         ()
     in
     List.iter sources ~f:(add_source ~root:local_root);

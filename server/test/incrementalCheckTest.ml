@@ -14,7 +14,7 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
   let ( ({ ScratchProject.module_tracker; _ } as project),
         ({ Server.State.ast_environment; _ } as state) )
     =
-    ServerTest.initialize_server ~context ~initial_sources
+    ServerTest.initialize_server ~incremental_style:FineGrained ~context ~initial_sources
   in
   let update_module_tracker (is_external, source) =
     ScratchProject.add_source project ~is_external source
@@ -37,7 +37,12 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
         ~lookup:(AstEnvironment.ReadOnly.get_relative (AstEnvironment.read_only ast_environment))
       |> Error.Instantiated.description ~show_error_traces:false ~concise:false
     in
-    Server.IncrementalCheck.recheck ~state ~configuration paths |> snd |> List.map ~f:description
+    Server.IncrementalCheck.recheck ~state ~configuration paths
+    |> fst
+    |> (fun { Server.State.errors; _ } -> errors)
+    |> Reference.Table.data
+    |> List.concat
+    |> List.map ~f:description
   in
   assert_equal ~printer:(String.concat ~sep:"\n") expected errors
 
@@ -87,7 +92,26 @@ let test_incremental_check context =
           return 0
       |}
         ) ]
-    ~expected:[]
+    ~expected:[];
+  assert_incremental_check_errors
+    ~context
+    ~initial_sources:
+      [ false, "a.py", {|
+         class A:
+           y: int = 7
+      |};
+        ( false,
+          "b.py",
+          {|
+          from a import A
+          x = A()
+          reveal_type(x.y)
+      |} ) ]
+    ~updated_sources:[false, "a.py", {|
+         class A:
+           y: str = "A"
+      |}]
+    ~expected:["Revealed type [-1]: Revealed type for `x.y` is `str`."]
 
 
 let () = "incremental_check" >::: ["incremental_check" >:: test_incremental_check] |> Test.run

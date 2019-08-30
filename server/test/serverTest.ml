@@ -28,7 +28,7 @@ let connections persistent_clients =
   }
 
 
-let initialize_server ~context ~initial_sources =
+let initialize_server ?incremental_style ~context ~initial_sources =
   Annotated.Class.AttributeCache.clear ();
   let ({ ScratchProject.module_tracker; _ } as project) =
     let internal_sources, external_sources =
@@ -40,21 +40,22 @@ let initialize_server ~context ~initial_sources =
       in
       List.fold initial_sources ~init:([], []) ~f:fold_source
     in
-    ScratchProject.setup ~context ~external_sources internal_sources
+    ScratchProject.setup ?incremental_style ~context ~external_sources internal_sources
   in
   let sources, _, environment = ScratchProject.build_environment project in
   let configuration = ScratchProject.configuration_of project in
   let ast_environment = AstEnvironment.create module_tracker in
-  let global_resolution = Environment.resolution environment () in
-  let errors =
-    let errors = Reference.Table.create () in
-    let check ({ Source.qualifier; _ } as source) =
-      let source_errors = Analysis.TypeCheck.run ~configuration ~global_resolution ~source in
-      Hashtbl.set errors ~key:qualifier ~data:source_errors
-    in
-    List.iter sources ~f:check;
-    errors
+  let new_errors =
+    Service.Check.analyze_sources
+      ~scheduler:(mock_scheduler ())
+      ~configuration
+      ~environment
+      sources
   in
+  let errors = Reference.Table.create () in
+  List.iter new_errors ~f:(fun error ->
+      let key = Error.path error in
+      Hashtbl.add_multi errors ~key ~data:error);
   let state =
     {
       Server.State.module_tracker;
