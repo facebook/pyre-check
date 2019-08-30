@@ -15,6 +15,7 @@ from .command_test import mock_arguments, mock_configuration
 
 class StopTest(unittest.TestCase):
     @patch.object(os, "kill")
+    # pyre-fixme[18]: Global name `stop` is undefined.
     @patch.object(commands.stop, "open")
     @patch.object(commands.Kill, "_run")
     @patch.object(commands.Command, "_state")
@@ -35,6 +36,7 @@ class StopTest(unittest.TestCase):
         os_kill.side_effect = mark_processes_as_completed
 
         # Check start without watchman.
+        # pyre-fixme[18]: Global name `command` is undefined.
         commands_Command_state.return_value = commands.command.State.RUNNING
         with patch.object(commands.Command, "_call_client") as call_client:
             commands.Stop(arguments, configuration, analysis_directory).run()

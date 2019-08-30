@@ -317,6 +317,7 @@ def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
     except (
         subprocess.TimeoutExpired,
         subprocess.CalledProcessError,
+        # pyre-fixme[18]: Global name `decoder` is undefined.
         json.decoder.JSONDecodeError,
     ) as error:
         raise BuckException("Querying buck for relative paths failed: {}".format(error))

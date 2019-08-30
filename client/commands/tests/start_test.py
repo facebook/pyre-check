@@ -14,6 +14,7 @@ from ...filesystem import AnalysisDirectory, acquire_lock  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
+# pyre-fixme[18]: Global name `start` is undefined.
 _typeshed_search_path = "{}.typeshed_search_path".format(commands.start.__name__)
 
 

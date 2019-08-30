@@ -137,6 +137,7 @@ class IncrementalTest(unittest.TestCase):
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
+        # pyre-fixme[18]: Global name `command` is undefined.
         commands_Command_state.return_value = commands.command.State.DEAD
         Monitor.reset_mock()
         file_monitor_instance.reset_mock()

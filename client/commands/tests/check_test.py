@@ -11,6 +11,7 @@ from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
+# pyre-fixme[18]: Global name `check` is undefined.
 _typeshed_search_path = "{}.typeshed_search_path".format(commands.check.__name__)
 
 
