@@ -2797,7 +2797,64 @@ let dequalify
       } as error )
   =
   let dequalify = Type.dequalify dequalify_map in
+  let dequalify_identifier = Type.dequalify_identifier dequalify_map in
+  let dequalify_reference = Type.dequalify_reference dequalify_map in
   let dequalify_annotation = Annotation.dequalify dequalify_map in
+  let dequalify_class_kind (kind : class_kind) =
+    match kind with
+    | Class -> kind
+    | Protocol reference -> Protocol (dequalify_reference reference)
+    | Abstract reference -> Abstract (dequalify_reference reference)
+  in
+  let dequalify_invalid_inheritance = function
+    | ClassName name -> ClassName (dequalify_identifier name)
+    | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
+    | UninheritableType annotation -> UninheritableType (dequalify annotation)
+  in
+  let dequalify_invalid_assignment = function
+    | FinalAttribute attribute -> FinalAttribute (dequalify_reference attribute)
+    | ClassVariable { class_variable; class_name } ->
+        ClassVariable { class_name = dequalify_identifier class_name; class_variable }
+    | ReadOnly attribute -> ReadOnly (dequalify_reference attribute)
+  in
+  let dequalify_type_variance_origin = function
+    | Parameter -> Parameter
+    | Return -> Return
+    | Inheritance annotation -> Inheritance (dequalify annotation)
+  in
+  let dequalify_incompatible_overload_kind = function
+    | ReturnType { implementation_annotation; name; overload_annotation } ->
+        ReturnType
+          {
+            implementation_annotation = dequalify implementation_annotation;
+            name = dequalify_reference name;
+            overload_annotation = dequalify overload_annotation;
+          }
+    | Unmatchable { name; matched_location; unmatched_location } ->
+        Unmatchable { name = dequalify_reference name; matched_location; unmatched_location }
+    | Parameters { name; location } -> Parameters { name = dequalify_reference name; location }
+  in
+  let dequalify_invalid_type_parameters { GlobalResolution.name; kind } =
+    let dequalify_generic_type_problems = function
+      | GlobalResolution.ViolateConstraints { actual; expected } ->
+          GlobalResolution.ViolateConstraints
+            {
+              actual = dequalify actual;
+              expected = Type.Variable.Unary.dequalify ~dequalify_map expected;
+            }
+      | GlobalResolution.UnexpectedVariadic { actual; expected } ->
+          GlobalResolution.UnexpectedVariadic
+            {
+              actual;
+              expected = List.map expected ~f:(Type.Variable.Unary.dequalify ~dequalify_map);
+            }
+      | GlobalResolution.IncorrectNumberOfParameters _ as problem -> problem
+    in
+    {
+      GlobalResolution.name = dequalify_identifier name;
+      kind = dequalify_generic_type_problems kind;
+    }
+  in
   let dequalify_mismatch ({ actual; expected; _ } as mismatch) =
     { mismatch with actual = dequalify actual; expected = dequalify expected }
   in
@@ -2812,15 +2869,7 @@ let dequalify
     | IncompatibleAwaitableType actual -> IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
-    | IncompatibleOverload (ReturnType { implementation_annotation; name; overload_annotation }) ->
-        IncompatibleOverload
-          (ReturnType
-             {
-               implementation_annotation = dequalify implementation_annotation;
-               name;
-               overload_annotation = dequalify overload_annotation;
-             })
-    | IncompatibleOverload kind -> IncompatibleOverload kind
+    | IncompatibleOverload kind -> IncompatibleOverload (dequalify_incompatible_overload_kind kind)
     | IncompleteType { target; annotation; attempted_action } ->
         IncompleteType { target; annotation = dequalify annotation; attempted_action }
     | InvalidArgument (Keyword { expression; annotation }) ->
@@ -2846,20 +2895,22 @@ let dequalify
     | InvalidType (FinalParameter name) -> InvalidType (FinalParameter name)
     | InvalidType (NestedTypeVariables variable) ->
         InvalidType (NestedTypeVariables (Type.Variable.dequalify dequalify_map variable))
-    | InvalidTypeParameters ({ name; _ } as invalid_type_parameters) ->
-        InvalidTypeParameters
-          { invalid_type_parameters with name = Type.dequalify_identifier dequalify_map name }
+    | InvalidTypeParameters invalid_type_parameters ->
+        InvalidTypeParameters (dequalify_invalid_type_parameters invalid_type_parameters)
     | InvalidTypeVariable { annotation; origin } ->
         InvalidTypeVariable
           { annotation = Type.Variable.dequalify dequalify_map annotation; origin }
     | InvalidTypeVariance { annotation; origin } ->
-        InvalidTypeVariance { annotation = dequalify annotation; origin }
-    | InvalidInheritance name -> InvalidInheritance name
-    | InvalidOverride { parent; decorator } -> InvalidOverride { parent; decorator }
-    | InvalidAssignment kind -> InvalidAssignment kind
-    | InvalidClass name -> InvalidClass name
-    | InvalidClassInstantiation kind -> InvalidClassInstantiation kind
-    | TooManyArguments extra_argument -> TooManyArguments extra_argument
+        InvalidTypeVariance
+          { annotation = dequalify annotation; origin = dequalify_type_variance_origin origin }
+    | InvalidInheritance name -> InvalidInheritance (dequalify_invalid_inheritance name)
+    | InvalidOverride { parent; decorator } ->
+        InvalidOverride { parent = dequalify_identifier parent; decorator }
+    | InvalidAssignment kind -> InvalidAssignment (dequalify_invalid_assignment kind)
+    | InvalidClass name -> InvalidClass (dequalify_reference name)
+    | InvalidClassInstantiation kind -> InvalidClassInstantiation (dequalify_class_kind kind)
+    | TooManyArguments ({ callee; _ } as extra_argument) ->
+        TooManyArguments { extra_argument with callee = Option.map ~f:dequalify_reference callee }
     | Top -> Top
     | MissingParameterAnnotation ({ annotation; _ } as missing_annotation) ->
         MissingParameterAnnotation
@@ -2870,13 +2921,15 @@ let dequalify
         { parent; missing_annotation = { annotation; _ } as missing_annotation } ->
         MissingAttributeAnnotation
           {
-            parent;
+            parent = dequalify parent;
             missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
           }
     | MissingGlobalAnnotation ({ annotation; _ } as immutable_type) ->
         MissingGlobalAnnotation { immutable_type with annotation = annotation >>| dequalify }
-    | MissingOverloadImplementation name -> MissingOverloadImplementation name
-    | MutuallyRecursiveTypeVariables callee -> MutuallyRecursiveTypeVariables callee
+    | MissingOverloadImplementation name ->
+        MissingOverloadImplementation (dequalify_reference name)
+    | MutuallyRecursiveTypeVariables callee ->
+        MutuallyRecursiveTypeVariables (Option.map callee ~f:dequalify_reference)
     | NotCallable annotation -> NotCallable (dequalify annotation)
     | ProhibitedAny { is_type_alias; missing_annotation = { annotation; _ } as missing_annotation }
       ->
@@ -2885,49 +2938,74 @@ let dequalify
             is_type_alias;
             missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
           }
-    | RedefinedClass name -> RedefinedClass name
+    | RedefinedClass name -> RedefinedClass (dequalify_reference name)
     | RedundantCast annotation -> RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
         RevealedType { expression; annotation = dequalify_annotation annotation }
-    | IncompatibleParameterType ({ mismatch; _ } as parameter) ->
-        IncompatibleParameterType { parameter with mismatch = dequalify_mismatch mismatch }
+    | IncompatibleParameterType ({ mismatch; callee; _ } as parameter) ->
+        IncompatibleParameterType
+          {
+            parameter with
+            mismatch = dequalify_mismatch mismatch;
+            callee = Option.map callee ~f:dequalify_reference;
+          }
     | IncompatibleReturnType ({ mismatch; _ } as return) ->
         IncompatibleReturnType { return with mismatch = dequalify_mismatch mismatch }
     | IncompatibleAttributeType
         { parent; incompatible_type = { mismatch; _ } as incompatible_type } ->
         IncompatibleAttributeType
           {
-            parent;
+            parent = dequalify parent;
             incompatible_type = { incompatible_type with mismatch = dequalify_mismatch mismatch };
           }
     | IncompatibleVariableType ({ mismatch; _ } as incompatible_type) ->
         IncompatibleVariableType { incompatible_type with mismatch = dequalify_mismatch mismatch }
     | InconsistentOverride
-        ({ override = StrengthenedPrecondition (Found mismatch); _ } as inconsistent_override) ->
+        ( { override = StrengthenedPrecondition (Found mismatch); parent; overridden_method; _ } as
+        inconsistent_override ) ->
         InconsistentOverride
           {
             inconsistent_override with
+            parent = dequalify_reference parent;
+            overridden_method = dequalify_identifier overridden_method;
             override = StrengthenedPrecondition (Found (dequalify_mismatch mismatch));
           }
     | InconsistentOverride
-        ({ override = StrengthenedPrecondition (NotFound access); _ } as inconsistent_override) ->
-        InconsistentOverride
-          { inconsistent_override with override = StrengthenedPrecondition (NotFound access) }
-    | InconsistentOverride
-        ({ override = WeakenedPostcondition mismatch; _ } as inconsistent_override) ->
+        ( { override = StrengthenedPrecondition (NotFound access); parent; overridden_method; _ }
+        as inconsistent_override ) ->
         InconsistentOverride
           {
             inconsistent_override with
+            parent = dequalify_reference parent;
+            overridden_method = dequalify_identifier overridden_method;
+            override = StrengthenedPrecondition (NotFound access);
+          }
+    | InconsistentOverride
+        ( { override = WeakenedPostcondition mismatch; parent; overridden_method; _ } as
+        inconsistent_override ) ->
+        InconsistentOverride
+          {
+            inconsistent_override with
+            parent = dequalify_reference parent;
+            overridden_method = dequalify_identifier overridden_method;
             override = WeakenedPostcondition (dequalify_mismatch mismatch);
           }
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound key -> TypedDictionaryKeyNotFound key
-    | UninitializedAttribute ({ mismatch; _ } as inconsistent_usage) ->
-        UninitializedAttribute { inconsistent_usage with mismatch = dequalify_mismatch mismatch }
-    | AbstractClass kind -> AbstractClass kind
+    | UninitializedAttribute ({ mismatch; parent; kind; _ } as inconsistent_usage) ->
+        UninitializedAttribute
+          {
+            inconsistent_usage with
+            kind = dequalify_class_kind kind;
+            parent = dequalify parent;
+            mismatch = dequalify_mismatch mismatch;
+          }
+    | AbstractClass { class_name; method_names } ->
+        AbstractClass { class_name = dequalify_reference class_name; method_names }
     | UnsafeCast kind -> UnsafeCast kind
-    | UnawaitedAwaitable left -> UnawaitedAwaitable left
+    | UnawaitedAwaitable { references; expression } ->
+        UnawaitedAwaitable { references = List.map references ~f:dequalify_reference; expression }
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =
           match origin with
@@ -2946,8 +3024,10 @@ let dequalify
     | UndefinedName name -> UndefinedName name
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
     | UndefinedImport reference -> UndefinedImport reference
-    | UnexpectedKeyword call -> UnexpectedKeyword call
-    | MissingArgument missing_argument -> MissingArgument missing_argument
+    | UnexpectedKeyword { name; callee } ->
+        UnexpectedKeyword { name; callee = Option.map callee ~f:dequalify_reference }
+    | MissingArgument { callee; parameter } ->
+        MissingArgument { callee = Option.map callee ~f:dequalify_reference; parameter }
     | UnusedIgnore codes -> UnusedIgnore codes
     | Unpack unpack -> Unpack unpack
   in

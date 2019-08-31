@@ -77,8 +77,9 @@ let test_check_contextmanager context =
       def g() -> None:
         reveal_type(f)
     |}
-    [ "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[Variable(typing.Any), \
-       Keywords(typing.Any)], contextlib._GeneratorContextManager[int]]`." ];
+    [ "Revealed type [-1]: Revealed type for `test.f` is \
+       `typing.Callable(f)[[Variable(typing.Any), Keywords(typing.Any)], \
+       contextlib._GeneratorContextManager[int]]`." ];
   assert_type_errors
     {|
       import typing
@@ -363,7 +364,7 @@ let test_check_user_decorators context =
         return str(x)
       reveal_type(f)
     |}
-    ["Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`."];
+    ["Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[str], int]`."];
 
   (* We currently ignore decorating decorators. *)
   assert_type_errors
@@ -382,7 +383,7 @@ let test_check_user_decorators context =
       reveal_type(f)
     |}
     [ "Missing parameter annotation [2]: Parameter `f` must have a type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`." ];
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[str], int]`." ];
   assert_type_errors
     {|
       import typing
@@ -404,8 +405,8 @@ let test_check_user_decorators context =
       reveal_type(C.f)
       reveal_type(D.f)
     |}
-    [ "Revealed type [-1]: Revealed type for `C.f` is `typing.Callable(C.f)[[C, int], None]`.";
-      "Revealed type [-1]: Revealed type for `D.f` is `typing.Callable(D.f)[[Named(self, \
+    [ "Revealed type [-1]: Revealed type for `test.C.f` is `typing.Callable(C.f)[[C, int], None]`.";
+      "Revealed type [-1]: Revealed type for `test.D.f` is `typing.Callable(D.f)[[Named(self, \
        unknown), Named(y, int)], None]`." ];
   assert_type_errors
     {|
@@ -423,7 +424,7 @@ let test_check_user_decorators context =
     |}
     [ "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
-      "Revealed type [-1]: Revealed type for `am_i_async` is \
+      "Revealed type [-1]: Revealed type for `test.am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], str]`." ]
 
 
@@ -446,7 +447,7 @@ let test_check_callable_class_decorators context =
     |}
     [ "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
-      "Revealed type [-1]: Revealed type for `am_i_async` is \
+      "Revealed type [-1]: Revealed type for `test.am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], str]`." ];
 
   (* We don't support overloaded callable classes. *)
@@ -472,7 +473,7 @@ let test_check_callable_class_decorators context =
        contain `Any`.";
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `am_i_async` is \
+      "Revealed type [-1]: Revealed type for `test.am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
        str]]`." ]
 

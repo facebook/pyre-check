@@ -398,8 +398,8 @@ let test_check_illegal_annotation_target context =
       Foo.a: str = "string"
       reveal_type(Foo.a)
     |}
-    [ "Illegal annotation target [35]: Target `Foo.a` cannot be annotated.";
-      "Revealed type [-1]: Revealed type for `Foo.a` is `int`." ]
+    [ "Illegal annotation target [35]: Target `test.Foo.a` cannot be annotated.";
+      "Revealed type [-1]: Revealed type for `test.Foo.a` is `int`." ]
 
 
 let test_check_missing_type_parameters context =
@@ -1156,7 +1156,10 @@ let test_check_aliases context =
         return a.x
       foo(FOO())
     |}
-    [ "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    [ "Redefined class [50]: Class `FOO` conflicts with an imported class.";
+      "Illegal annotation target [35]: Target `test.FOO.x` cannot be annotated.";
+      "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `BAR` has no attribute `x`." ];
 
   (* Locals are not aliases *)

@@ -83,7 +83,10 @@ let test_check_with_qualification context =
               global global_number
               return global_number
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
+    (* FIXME: The first error is bogus *)
+    [ "Undefined name [18]: Global name `test` is not defined, or there is at least one control \
+       flow path that doesn't define `test`.";
+      "Incompatible return type [7]: Expected `int` but got `str`." ];
   assert_type_errors
     {|
       global_number: int = 1
@@ -323,9 +326,9 @@ let test_check_globals context =
     {|
       A = MappBoo[int, str]
     |}
-    [ "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least one \
-       control flow path that doesn't define `MappBoo`.";
-      "Missing global annotation [5]: Globally accessible variable `A` has no type specified." ];
+    [ "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
+      "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least one \
+       control flow path that doesn't define `MappBoo`." ];
   assert_type_errors
     {|
       MyType = typing.List[typing.Any]

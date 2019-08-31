@@ -16,8 +16,8 @@ let test_enumeration_methods context =
       reveal_type(C.A)
       reveal_type(C.__members__)
     |}
-    [ "Revealed type [-1]: Revealed type for `C.A` is `C`.";
-      "Revealed type [-1]: Revealed type for `C.__members__` is \
+    [ "Revealed type [-1]: Revealed type for `test.C.A` is `C`.";
+      "Revealed type [-1]: Revealed type for `test.C.__members__` is \
        `typing.Callable(enum.EnumMeta.__members__)[[], unknown]`." ];
   assert_type_errors
     {|
@@ -27,8 +27,8 @@ let test_enumeration_methods context =
       reveal_type(C.A)
       reveal_type(C.__members__)
     |}
-    [ "Revealed type [-1]: Revealed type for `C.A` is `C`.";
-      "Revealed type [-1]: Revealed type for `C.__members__` is \
+    [ "Revealed type [-1]: Revealed type for `test.C.A` is `C`.";
+      "Revealed type [-1]: Revealed type for `test.C.__members__` is \
        `typing.Callable(enum.EnumMeta.__members__)[[], unknown]`." ];
   assert_type_errors
     {|
@@ -141,7 +141,7 @@ let test_check_enumeration_attributes context =
 
         reveal_type(A.ONE.example)
       |}
-    ["Revealed type [-1]: Revealed type for `A.ONE.example` is `List[str]`."];
+    ["Revealed type [-1]: Revealed type for `test.A.ONE.example` is `List[str]`."];
   assert_type_errors
     {|
       import enum
@@ -151,7 +151,7 @@ let test_check_enumeration_attributes context =
               self.x: str = "another string"
       reveal_type(A.x)
     |}
-    ["Revealed type [-1]: Revealed type for `A.x` is `A`."];
+    ["Revealed type [-1]: Revealed type for `test.A.x` is `A`."];
   ()
 
 

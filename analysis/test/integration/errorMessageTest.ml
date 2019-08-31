@@ -48,7 +48,7 @@ let test_show_error_traces context =
         def __init__(self) -> None:
           self.attribute = ""
     |}
-    [ "Incompatible attribute type [8]: Attribute `attribute` declared in class `test.Foo` has type "
+    [ "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
       ^ "`int` but is used as type `str`. Attribute `attribute` declared on line 3, incorrectly "
       ^ "used on line 5." ];
   assert_type_errors
@@ -76,7 +76,7 @@ let test_show_error_traces context =
         def __init__(self) -> None:
           attribute = 0
     |}
-    [ "Uninitialized attribute [13]: Attribute `attribute` is declared in class `test.Foo` to have "
+    [ "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
       ^ "type `int` but is never initialized. Attribute `attribute` is declared on "
       ^ "line 3, never initialized and therefore must be `typing.Optional[int]`." ];
   assert_type_errors
@@ -89,11 +89,10 @@ let test_show_error_traces context =
           foo.attribute = 'string'
           return foo.attribute
     |}
-    [ "Missing attribute annotation [4]: Attribute `attribute` of class `test.Foo` has no type \
-       specified.";
-      "Missing attribute annotation [4]: Attribute `attribute` of class `test.Foo` has type `str` \
-       but no type is specified. Attribute `attribute` declared on line 3, type `str` deduced \
-       from test.py:7:4.";
+    [ "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `str` but \
+       no type is specified. Attribute `attribute` declared on line 3, type `str` deduced from \
+       test.py:7:4.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`." ];
   assert_type_errors
@@ -130,11 +129,11 @@ let test_show_error_traces context =
         def foo(self) -> None:
           self.attribute = 1
     |}
-    [ "Missing attribute annotation [4]: Attribute `attribute` of class `test.Other` has no type \
+    [ "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has no type \
        specified.";
-      "Missing attribute annotation [4]: Attribute `attribute` of class `test.Other` has type \
-       `int` but no type is specified. Attribute `attribute` declared on line 3, type `int` \
-       deduced from test.py:5:4.";
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type `int` \
+       but no type is specified. Attribute `attribute` declared on line 3, type `int` deduced \
+       from test.py:5:4.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`." ];
   assert_type_errors

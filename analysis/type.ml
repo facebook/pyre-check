@@ -2570,7 +2570,7 @@ let assume_any = function
   | annotation -> annotation
 
 
-let dequalify_identifier map identifier =
+let dequalify_reference map reference =
   let rec fold accumulator reference =
     if Reference.Map.mem map reference then
       Reference.combine
@@ -2581,7 +2581,11 @@ let dequalify_identifier map identifier =
       | Some prefix -> fold (Reference.last reference :: accumulator) prefix
       | None -> Reference.create_from_list accumulator
   in
-  identifier |> Reference.create |> fold [] |> Reference.show
+  fold [] reference
+
+
+let dequalify_identifier map identifier =
+  Reference.create identifier |> dequalify_reference map |> Reference.show
 
 
 let create_type = create
@@ -3533,6 +3537,13 @@ let rec dequalify map annotation =
         | Primitive name -> Primitive (dequalify_identifier map name)
         | Variable ({ variable = name; _ } as annotation) ->
             Variable { annotation with variable = dequalify_identifier map name }
+        | Callable ({ kind; _ } as callable) ->
+            let kind =
+              match kind with
+              | Anonymous -> kind
+              | Named reference -> Named (dequalify_reference map reference)
+            in
+            Callable { callable with kind }
         | _ -> annotation
       in
       { Transform.transformed_annotation; new_state = () }

@@ -141,9 +141,9 @@ let test_check_method_parameters context =
       reveal_type(Foo.foo)
       reveal_type(Foo().foo)
     |}
-    [ "Revealed type [-1]: Revealed type for `Foo.foo` is "
+    [ "Revealed type [-1]: Revealed type for `test.Foo.foo` is "
       ^ "`typing.Callable(Foo.foo)[[Named(self, unknown)], None]`.";
-      "Revealed type [-1]: Revealed type for `Foo().foo` is "
+      "Revealed type [-1]: Revealed type for `test.Foo().foo` is "
       ^ "`typing.Callable(Foo.foo)[[], None]`." ];
   assert_strict_type_errors
     {|
@@ -156,8 +156,8 @@ let test_check_method_parameters context =
       reveal_type(Foo[1])
       reveal_type(Foo()[1])
     |}
-    [ "Revealed type [-1]: Revealed type for `Foo.__getitem__(1)` is `int`.";
-      "Revealed type [-1]: Revealed type for `Foo().__getitem__(1)` is `str`." ];
+    [ "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(1)` is `int`.";
+      "Revealed type [-1]: Revealed type for `test.Foo().__getitem__(1)` is `str`." ];
   assert_strict_type_errors
     {|
       import typing
@@ -179,8 +179,9 @@ let test_check_method_parameters context =
       reveal_type(StringEnumTwo["key"])
     |}
     [ "Invalid method signature [47]: `typing.Type[Variable[_T]]` cannot be the type of `self`.";
-      "Revealed type [-1]: Revealed type for `StringEnum.__getitem__(\"key\")` is `StringEnum`.";
-      "Revealed type [-1]: Revealed type for `StringEnumTwo.__getitem__(\"key\")` is \
+      "Revealed type [-1]: Revealed type for `test.StringEnum.__getitem__(\"key\")` is \
+       `StringEnum`.";
+      "Revealed type [-1]: Revealed type for `test.StringEnumTwo.__getitem__(\"key\")` is \
        `StringEnumTwo`." ];
 
   (* Defining methods *)
@@ -320,7 +321,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def foo(self) -> float: return 1.0
     |}
-    [ "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Returned type `float` is not a subtype of the overridden return `int`." ];
   assert_type_errors
     {|
@@ -337,7 +338,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def foo(self) -> None: pass
     |}
-    [ "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Returned type `None` is not a subtype of the overridden return `int`." ];
   assert_type_errors
     {|
@@ -348,7 +349,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo[float]):
         def foo(self) -> str: return ""
     |}
-    [ "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Returned type `str` is not a subtype of the overridden return `float`." ];
   assert_type_errors
     {|
@@ -370,7 +371,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Passthrough[float]):
         def foo(self) -> str: return ""
     |}
-    [ "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Returned type `str` is not a subtype of the overridden return `float`." ];
   assert_type_errors
     {|
@@ -392,7 +393,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def foo(self): pass
     |}
-    [ "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "The overriding method is not annotated but should return a subtype of `int`." ];
 
   (* Starred arguments. *)
@@ -434,7 +435,8 @@ let test_check_behavioral_subtyping context =
           return x
     |}
     [ "Invalid type parameters [24]: Non-generic type `Foo` cannot take parameters.";
-      "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
+       inconsistently. "
       ^ "Parameter of type `str` is not a supertype of the overridden parameter "
       ^ "`Variable[T (bound to int)]`." ];
   assert_type_errors
@@ -461,7 +463,7 @@ let test_check_behavioral_subtyping context =
         def bar(self, x: int) -> typing.Union[str, int]:
           return 1
     |}
-    [ "Inconsistent override [15]: `Bar.bar` overrides method defined in `Foo` "
+    [ "Inconsistent override [15]: `test.Bar.bar` overrides method defined in `Foo` "
       ^ "inconsistently. Returned type `typing.Union[int, str]` is not a subtype "
       ^ "of the overridden return `int`." ];
 
@@ -487,7 +489,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def foo(self, a: int) -> None: pass
     |}
-    [ "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `int` is not a supertype of the overridden parameter `float`." ];
   assert_type_errors
     {|
@@ -496,7 +498,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def foo(self) -> None: pass
     |}
-    [ "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Could not find parameter `a` in overriding signature." ];
   assert_type_errors
     {|
@@ -529,7 +531,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def foo(self, b: int) -> None: pass
     |}
-    [ "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Could not find parameter `a` in overriding signature." ];
   assert_type_errors
     {|
@@ -549,7 +551,7 @@ let test_check_behavioral_subtyping context =
         def bar(self, x: int) -> None:
           pass
     |}
-    [ "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` "
+    [ "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` "
       ^ "inconsistently. Parameter of type `int` is not a "
       ^ "supertype of the overridden parameter `typing.Union[int, str]`." ];
   assert_type_errors
@@ -562,7 +564,7 @@ let test_check_behavioral_subtyping context =
         def bar(self, x: typing.Union[str, int]) -> None:
           pass
     |}
-    [ "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `typing.Union[int, str]` is not a supertype "
       ^ "of the overridden parameter `typing.Union[float, str]`." ];
   assert_type_errors
@@ -587,7 +589,7 @@ let test_check_behavioral_subtyping context =
         def bar(self, x: typing.Union[str, int]) -> None:
           pass
     |}
-    [ "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `typing.Union[int, str]` is not a supertype "
       ^ "of the overridden parameter `typing.Union[float, str]`." ];
   assert_type_errors
@@ -643,7 +645,7 @@ let test_check_behavioral_subtyping context =
           def bar(self, x: int) -> str:
               return ""
     |}
-    [ "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` "
+    [ "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` "
       ^ "inconsistently. Could not find parameter `_y` in overriding signature." ];
 
   (* Don't warn on constructors or class methods. *)
@@ -684,7 +686,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def __f(self, a: int) -> None: pass
     |}
-    [ "Inconsistent override [14]: `Bar.__f` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [14]: `test.Bar.__f` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `int` is not a supertype of the overridden parameter `float`." ];
 
   (* Weakening of object precondition is not possible. *)
@@ -725,7 +727,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def f(self, *args: typing.Any) -> None: pass
     |}
-    [ "Inconsistent override [14]: `Bar.f` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` inconsistently. "
       ^ "Could not find parameter `a` in overriding signature." ];
   assert_default_type_errors
     {|
@@ -734,7 +736,7 @@ let test_check_behavioral_subtyping context =
       class Bar(Foo):
         def f(self, **kwargs: typing.Any) -> None: pass
     |}
-    [ "Inconsistent override [14]: `Bar.f` overrides method defined in `Foo` inconsistently. "
+    [ "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` inconsistently. "
       ^ "Could not find parameter `b` in overriding signature." ];
   assert_default_type_errors
     {|
@@ -1431,7 +1433,7 @@ let test_check_in context =
           ...
       reveal_type(1 in WeirdContains())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in WeirdContains()` is `int`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.WeirdContains()` is `int`."];
   assert_type_errors
     {|
       class WeirdIterator:
@@ -1441,7 +1443,7 @@ let test_check_in context =
           ...
       reveal_type(1 in WeirdIterator())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in WeirdIterator()` is `str`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.WeirdIterator()` is `str`."];
   assert_type_errors
     {|
       class WeirdEqual:
@@ -1450,9 +1452,9 @@ let test_check_in context =
       class WeirdGetItem:
         def __getitem__(self, x: int) -> WeirdEqual:
           ...
-      reveal_type(1 in WeirdGetItem())
+      reveal_type(1 in test.WeirdGetItem())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in WeirdGetItem()` is `typing.List[int]`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.WeirdGetItem()` is `typing.List[int]`."];
   assert_type_errors
     {|
       class Equal:
@@ -1465,7 +1467,7 @@ let test_check_in context =
           ...
       reveal_type(1 in Multiple())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in Multiple()` is `bool`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.Multiple()` is `bool`."];
   assert_type_errors
     {|
       class Equal:
@@ -1478,7 +1480,7 @@ let test_check_in context =
           ...
       reveal_type(1 in Multiple())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in Multiple()` is `int`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.Multiple()` is `int`."];
   assert_type_errors
     {|
       class Equal:

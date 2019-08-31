@@ -164,7 +164,7 @@ let test_check_assert_functions context =
           pyretestassert(o)
           return o.a
     |}
-    [];
+    ["Undefined attribute [16]: Optional type has no attribute `a`."];
   assert_default_type_errors
     ~context
     ~handle:"foo.py"
@@ -199,7 +199,10 @@ let test_check_assert_functions context =
           pyretestassert(o)
           return o.a
     |}
-    []
+    [ "Undefined name [18]: Global name `pyretestassert` is not defined, or there is at least one \
+       control flow path that doesn't define `pyretestassert`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: Optional type has no attribute `a`." ]
 
 
 let test_check_all context =

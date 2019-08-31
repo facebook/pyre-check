@@ -564,6 +564,8 @@ val dequalify : Reference.t Reference.Map.t -> t -> t
 
 val dequalify_identifier : Reference.t Reference.Map.t -> Identifier.t -> Identifier.t
 
+val dequalify_reference : Reference.t Reference.Map.t -> Reference.t -> Reference.t
+
 module Variable : sig
   module Namespace : sig
     include module type of struct

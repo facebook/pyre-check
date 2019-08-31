@@ -344,7 +344,7 @@ let test_forward context =
       unawaited = other_unawaited
       await unawaited
     |}
-    ["Unawaited awaitable [1001]: `awaitable()` is never awaited."];
+    ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
   assert_awaitable_errors
     {|
       def awaitable() -> typing.Awaitable[int]: ...
@@ -373,7 +373,7 @@ let test_forward context =
       def foo():
         awaitable()
     |}
-    ["Unawaited awaitable [1001]: `awaitable()` is never awaited."];
+    ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
 
   (* Ensure that we don't crash when attempting to await a non-simple name. *)
   assert_awaitable_errors
@@ -439,7 +439,7 @@ let test_forward context =
         a, *b, c = awaitable(), awaitable(), awaitable()
         await a
     |}
-    [ "Unawaited awaitable [1001]: `awaitable()` is never awaited.";
+    [ "Unawaited awaitable [1001]: `test.awaitable()` is never awaited.";
       "Unawaited awaitable [1001]: Awaitable assigned to `c` is never awaited." ];
 
   (* We don't validate that every expression in a starred one is awaited. *)
@@ -450,7 +450,7 @@ let test_forward context =
         a, *b, c = awaitable(), awaitable(), awaitable()
         await asyncio.gather(a, c)
     |}
-    ["Unawaited awaitable [1001]: `awaitable()` is never awaited."];
+    ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
 
   assert_awaitable_errors
     {|
@@ -468,7 +468,7 @@ let test_forward context =
         def await_the_awaitable(self):
           await self.a
     |}
-    ["Unawaited awaitable [1001]: Awaitable assigned to `C.a` is never awaited."];
+    ["Unawaited awaitable [1001]: Awaitable assigned to `test.C.a` is never awaited."];
   assert_awaitable_errors
     {|
       import typing
@@ -553,7 +553,7 @@ let test_forward context =
       async def foo() -> None:
         [] + [awaitable()]
     |}
-    ["Unawaited awaitable [1001]: `awaitable()` is never awaited."];
+    ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
 
   (* We don't error on methods for classes that are awaitable themselves. *)
   assert_awaitable_errors

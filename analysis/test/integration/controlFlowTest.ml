@@ -345,8 +345,7 @@ let test_check_nested context =
       shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.
     |}
     [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `shadowing.shadowing` but got `str`."
-    ];
+      ^ "Expected `int` for 1st anonymous parameter to call `shadowing` but got `str`." ];
   assert_type_errors
     {|
       def can_fail() -> None:

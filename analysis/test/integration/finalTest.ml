@@ -19,7 +19,7 @@ let test_final_methods context =
           def bar(self) -> None:
             pass
       |}
-    ["Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`."];
+    ["Invalid override [40]: `test.Bar.bar` cannot override final method defined in `Foo`."];
   assert_type_errors
     {|
      from typing import final
@@ -31,7 +31,7 @@ let test_final_methods context =
        def bar(self) -> None:
          pass
    |}
-    ["Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`."];
+    ["Invalid override [40]: `test.Bar.bar` cannot override final method defined in `Foo`."];
   assert_type_errors
     {|
         from typing import final
@@ -40,7 +40,7 @@ let test_final_methods context =
         def foo() -> None:
           pass
       |}
-    ["Invalid inheritance [39]: `typing.final` cannot be used with non-method functions."];
+    ["Invalid inheritance [39]: `final` cannot be used with non-method functions."];
   assert_type_errors
     {|
         from typing import final

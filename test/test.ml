@@ -1331,13 +1331,20 @@ let assert_errors
     ?(infer = false)
     ?(show_error_traces = false)
     ?(concise = false)
-    ?(handle = "__init__.py")
+    ?(handle = "test.py")
     ?(update_environment_with = [])
     ~context
     ~check
     source
     errors
   =
+  ( if SourcePath.qualifier_of_relative handle |> Reference.is_empty then
+      let message =
+        Format.sprintf
+          "Cannot use %s as test file name: Empty qualifier in test is no longer acceptable."
+          handle
+      in
+      failwith message );
   Annotated.Class.AttributeCache.clear ();
 
   let descriptions =
@@ -1390,7 +1397,7 @@ let assert_errors
 
 
 let assert_equivalent_attributes ~context source expected =
-  let handle = "__init__.py" in
+  let handle = "test.py" in
   let attributes class_type source =
     Memory.reset_shared_memory ();
     Annotated.Class.AttributeCache.clear ();

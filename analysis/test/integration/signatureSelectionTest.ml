@@ -140,7 +140,7 @@ let test_check_callables context =
         return ""
       reveal_type(foo(f))
     |}
-    ["Revealed type [-1]: Revealed type for `foo(f)` is `str`."];
+    ["Revealed type [-1]: Revealed type for `test.foo(test.f)` is `str`."];
 
   (* Lambdas. *)
   assert_type_errors
@@ -726,7 +726,7 @@ let test_check_function_overloads context =
     [ "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
       "Missing overload implementation [42]: Overloaded function `derp` must have an \
        implementation.";
-      "Revealed type [-1]: Revealed type for `derp` is "
+      "Revealed type [-1]: Revealed type for `test.derp` is "
       ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`." ];
   assert_type_errors
     {|
@@ -742,7 +742,7 @@ let test_check_function_overloads context =
     [ "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
       "Missing overload implementation [42]: Overloaded function `derp` must have an \
        implementation.";
-      "Revealed type [-1]: Revealed type for `derp` is "
+      "Revealed type [-1]: Revealed type for `test.derp` is "
       ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`." ];
 
   (* The overloaded stub will override the implementation *)
@@ -760,7 +760,7 @@ let test_check_function_overloads context =
     [ "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
       "Missing overload implementation [42]: Overloaded function `derp` must have an \
        implementation.";
-      "Revealed type [-1]: Revealed type for `derp` is "
+      "Revealed type [-1]: Revealed type for `test.derp` is "
       ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`." ];
   assert_type_errors
     {|
@@ -773,7 +773,7 @@ let test_check_function_overloads context =
       reveal_type(derp)
     |}
     [ "Missing return annotation [3]: Return type is not specified.";
-      "Revealed type [-1]: Revealed type for `derp` is "
+      "Revealed type [-1]: Revealed type for `test.derp` is "
       ^ "`typing.Callable(derp)[[Named(x, object)], unknown][[[Named(x, int)], int]]`." ]
 
 

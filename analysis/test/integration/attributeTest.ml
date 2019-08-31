@@ -606,7 +606,7 @@ let test_check_attributes context =
       from foo import Bar
       class Bar: pass
     |}
-    ["Redefined class [50]: Class `test.Bar` conflicts with an imported class."];
+    ["Redefined class [50]: Class `Bar` conflicts with an imported class."];
 
   (* Any has all attributes in default mode, but not strict mode. *)
   assert_strict_type_errors
@@ -636,7 +636,7 @@ let test_check_attributes context =
           reveal_type(instance.actually_there)
     |}
     [ "Revealed type [-1]: Revealed type for `instance.prop` is `typing.Any`.";
-      "Revealed type [-1]: Revealed type for `Else.class_prop` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test.Else.class_prop` is `typing.Any`.";
       "Revealed type [-1]: Revealed type for `instance.actually_there` is `int`." ];
 
   (* We allow instance attributes to be accessed via class objects. *)
