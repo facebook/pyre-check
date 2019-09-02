@@ -259,18 +259,19 @@ let parse_all ~scheduler ~configuration module_tracker =
 
 
 let update ~configuration ~scheduler ~ast_environment module_updates =
-  let reparse_source_paths, removed_modules =
+  let reparse_source_paths, removed_modules, updated_submodules =
     let categorize = function
-      | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
+      | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
       | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
+      | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
     in
-    List.partition_map module_updates ~f:categorize
+    List.partition3_map module_updates ~f:categorize
   in
   let changed_modules =
     let reparse_modules =
       List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
     in
-    List.append removed_modules reparse_modules
+    List.concat [removed_modules; updated_submodules; reparse_modules]
   in
   let update_raw_sources () =
     let { RawParseResult.syntax_error; system_error; _ } =

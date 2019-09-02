@@ -7,7 +7,8 @@ open Pyre
 
 module IncrementalUpdate : sig
   type t =
-    | New of Ast.SourcePath.t
+    | NewExplicit of Ast.SourcePath.t
+    | NewImplicit of Ast.Reference.t
     | Delete of Ast.Reference.t
   [@@deriving sexp, compare, eq]
 end

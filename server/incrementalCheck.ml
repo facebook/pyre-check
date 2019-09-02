@@ -14,12 +14,13 @@ open Pyre
 type errors = State.Error.t list [@@deriving show]
 
 let direct_parser_update ~configuration ~scheduler ~ast_environment module_updates =
-  let directly_changed_source_paths, removed_modules =
+  let directly_changed_source_paths, removed_modules, updated_submodules =
     let categorize = function
-      | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
+      | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
       | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
+      | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
     in
-    List.partition_map module_updates ~f:categorize
+    List.partition3_map module_updates ~f:categorize
   in
   let directly_changed_modules =
     List.map directly_changed_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
@@ -35,7 +36,7 @@ let direct_parser_update ~configuration ~scheduler ~ast_environment module_updat
       ~ast_environment
       directly_changed_source_paths
   in
-  parsed
+  List.append updated_submodules parsed
 
 
 let recheck

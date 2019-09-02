@@ -183,16 +183,32 @@ module FileSystemEvent = struct
   let create path = if Path.file_exists path then Update path else Remove path
 end
 
-module IncrementalUpdate = struct
+module IncrementalExplicitUpdate = struct
   type t =
     | New of SourcePath.t
+    | Changed of SourcePath.t
+    | Delete of Reference.t
+  [@@deriving sexp, compare]
+end
+
+module IncrementalImplicitUpdate = struct
+  type t =
+    | New of Reference.t
+    | Delete of Reference.t
+  [@@deriving sexp, compare]
+end
+
+module IncrementalUpdate = struct
+  type t =
+    | NewExplicit of Ast.SourcePath.t
+    | NewImplicit of Ast.Reference.t
     | Delete of Reference.t
   [@@deriving sexp, compare]
 
   let equal = [%compare.equal: t]
 end
 
-let update ~configuration ~paths { module_to_files; _ } =
+let update_explicit_modules ~configuration ~paths module_to_files =
   (* Process a single filesystem event *)
   let process_filesystem_event ~configuration tracker = function
     | FileSystemEvent.Update path -> (
@@ -205,7 +221,7 @@ let update ~configuration ~paths { module_to_files; _ } =
         | None ->
             (* New file for a new module *)
             Hashtbl.set tracker ~key:qualifier ~data:[source_path];
-            Some (IncrementalUpdate.New source_path)
+            Some (IncrementalExplicitUpdate.New source_path)
         | Some source_paths ->
             let new_source_paths =
               insert_source_path ~configuration ~inserted:source_path source_paths
@@ -214,7 +230,7 @@ let update ~configuration ~paths { module_to_files; _ } =
             Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
             if SourcePath.equal new_source_path source_path then
               (* Updating a shadowing file means the module gets changed *)
-              Some (IncrementalUpdate.New source_path)
+              Some (IncrementalExplicitUpdate.Changed source_path)
             else (* Updating a shadowed file should not trigger any reanalysis *)
               None ) )
     | FileSystemEvent.Remove path -> (
@@ -235,28 +251,70 @@ let update ~configuration ~paths { module_to_files; _ } =
             | [] ->
                 (* Last remaining file for the module gets removed. *)
                 Hashtbl.remove tracker qualifier;
-                Some (IncrementalUpdate.Delete qualifier)
+                Some (IncrementalExplicitUpdate.Delete qualifier)
             | new_source_path :: _ as new_source_paths ->
                 Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
                 if SourcePath.equal old_source_path new_source_path then
                   (* Removing a shadowed file should not trigger any reanalysis *)
                   None
                 else (* Removing source_path un-shadows another source file. *)
-                  Some (IncrementalUpdate.New new_source_path) ) ) )
+                  Some (IncrementalExplicitUpdate.Changed new_source_path) ) ) )
   in
   (* Make sure we have only one update per module *)
   let merge_updates updates =
     let table = Reference.Table.create () in
     let process_update update =
       match update with
-      | IncrementalUpdate.New { SourcePath.qualifier; _ } ->
-          Hashtbl.set table ~key:qualifier ~data:update
-      | IncrementalUpdate.Delete qualifier ->
+      | IncrementalExplicitUpdate.New ({ SourcePath.qualifier; _ } as source_path) ->
+          let update = function
+            | None -> update
+            | Some (IncrementalExplicitUpdate.Delete _) ->
+                IncrementalExplicitUpdate.Changed source_path
+            | Some (IncrementalExplicitUpdate.New _) ->
+                let message =
+                  Format.asprintf "Illegal state: double new module %a" Reference.pp qualifier
+                in
+                failwith message
+            | Some (IncrementalExplicitUpdate.Changed _) ->
+                let message =
+                  Format.asprintf
+                    "Illegal state: new after changed module %a"
+                    Reference.pp
+                    qualifier
+                in
+                failwith message
+          in
+          Hashtbl.update table qualifier ~f:update
+      | IncrementalExplicitUpdate.Changed ({ SourcePath.qualifier; _ } as source_path) ->
           let update = function
             | None
-            | Some (IncrementalUpdate.New _) ->
+            | Some (IncrementalExplicitUpdate.Changed _) ->
+                update
+            | Some (IncrementalExplicitUpdate.New _) -> IncrementalExplicitUpdate.New source_path
+            | Some (IncrementalExplicitUpdate.Delete _) ->
+                let message =
+                  Format.asprintf
+                    "Illegal state: changing a deleted module %a"
+                    Reference.pp
+                    qualifier
+                in
+                failwith message
+          in
+          Hashtbl.update table qualifier ~f:update
+      | IncrementalExplicitUpdate.Delete qualifier ->
+          let update = function
+            | None
+            | Some (IncrementalExplicitUpdate.Changed _) ->
                 Some update
-            | Some (IncrementalUpdate.Delete _) ->
+            | Some (IncrementalExplicitUpdate.New _) ->
+                let message =
+                  Format.asprintf
+                    "Illegal state: delete after new module %a"
+                    Reference.pp
+                    qualifier
+                in
+                failwith message
+            | Some (IncrementalExplicitUpdate.Delete _) ->
                 let message =
                   Format.asprintf "Illegal state: double delete module %a" Reference.pp qualifier
                 in
@@ -272,6 +330,108 @@ let update ~configuration ~paths { module_to_files; _ } =
   |> List.map ~f:FileSystemEvent.create
   |> List.filter_map ~f:(process_filesystem_event ~configuration module_to_files)
   |> merge_updates
+
+
+let update_submodules ~events submodule_refcounts =
+  let aggregate_updates events =
+    let aggregated_refcounts = Reference.Table.create () in
+    let process_event event =
+      let rec do_update ~f = function
+        | None -> ()
+        | Some qualifier when Reference.is_empty qualifier -> ()
+        | Some qualifier ->
+            Hashtbl.update aggregated_refcounts qualifier ~f:(function
+                | None -> f 0
+                | Some count -> f count);
+            do_update (Reference.prefix qualifier) ~f
+      in
+      match event with
+      | IncrementalExplicitUpdate.Changed _ -> ()
+      | IncrementalExplicitUpdate.New { SourcePath.qualifier; _ } ->
+          do_update (Some qualifier) ~f:(fun count -> count + 1)
+      | IncrementalExplicitUpdate.Delete qualifier ->
+          do_update (Some qualifier) ~f:(fun count -> count - 1)
+    in
+    List.iter events ~f:process_event;
+    aggregated_refcounts
+  in
+  let commit_updates update_table =
+    let commit_update ~key ~data sofar =
+      match data with
+      | 0 -> List.rev sofar
+      | delta -> (
+          let original_refcount =
+            Hashtbl.find submodule_refcounts key |> Option.value ~default:0
+          in
+          let new_refcount = original_refcount + delta in
+          match new_refcount with
+          | 0 ->
+              Hashtbl.remove submodule_refcounts key;
+              IncrementalImplicitUpdate.Delete key :: sofar
+          | count when count < 0 ->
+              let message =
+                Format.asprintf
+                  "Illegal state: negative refcount (%d) for module %a"
+                  count
+                  Reference.pp
+                  key
+              in
+              failwith message
+          | _ ->
+              Hashtbl.set submodule_refcounts ~key ~data:new_refcount;
+              if Int.equal original_refcount 0 then
+                IncrementalImplicitUpdate.New key :: sofar
+              else
+                sofar )
+    in
+    Hashtbl.fold update_table ~init:[] ~f:commit_update
+  in
+  aggregate_updates events |> commit_updates
+
+
+let update ~configuration ~paths { module_to_files; submodule_refcounts } =
+  let explicit_updates = update_explicit_modules module_to_files ~configuration ~paths in
+  let implicit_updates = update_submodules submodule_refcounts ~events:explicit_updates in
+  (* Explicit updates should shadow implicit updates *)
+  let merge_updates explicits implicits =
+    let new_qualifiers = Reference.Hash_set.create () in
+    let deleted_qualifiers = Reference.Hash_set.create () in
+    let process_explicit = function
+      | IncrementalExplicitUpdate.New ({ SourcePath.qualifier; _ } as source_path)
+      | IncrementalExplicitUpdate.Changed ({ SourcePath.qualifier; _ } as source_path) ->
+          Hash_set.add new_qualifiers qualifier;
+          IncrementalUpdate.NewExplicit source_path
+      | IncrementalExplicitUpdate.Delete qualifier ->
+          Hash_set.add deleted_qualifiers qualifier;
+          IncrementalUpdate.Delete qualifier
+    in
+    let process_implicit = function
+      | IncrementalImplicitUpdate.New qualifier ->
+          if Hash_set.mem new_qualifiers qualifier then
+            None
+          else
+            Some (IncrementalUpdate.NewImplicit qualifier)
+      | IncrementalImplicitUpdate.Delete qualifier ->
+          if Hash_set.mem deleted_qualifiers qualifier then
+            None
+          else
+            Some (IncrementalUpdate.Delete qualifier)
+    in
+    let explicit_updates = List.map explicits ~f:process_explicit in
+    let implicit_updates = List.filter_map implicits ~f:process_implicit in
+    List.append explicit_updates implicit_updates
+  in
+  Log.log
+    ~section:`Server
+    "Explicit Module Update: %a"
+    Sexp.pp
+    [%message (explicit_updates : IncrementalExplicitUpdate.t list)];
+  Log.log
+    ~section:`Server
+    "Implicit Module Update: %a"
+    Sexp.pp
+    [%message (implicit_updates : IncrementalImplicitUpdate.t list)];
+  merge_updates explicit_updates implicit_updates
 
 
 module SharedMemory = Memory.Serializer (struct

@@ -892,14 +892,15 @@ module IncrementalTest = struct
 
   module Event = struct
     type t =
-      | New of {
+      | NewExplicit of {
           relative: string;
           is_external: bool;
         }
+      | NewImplicit of string
       | Delete of string
     [@@deriving sexp, compare]
 
-    let create_new ?(is_external = false) relative = New { relative; is_external }
+    let create_new_explicit ?(is_external = false) relative = NewExplicit { relative; is_external }
 
     let equal = [%compare.equal: t]
   end
@@ -954,8 +955,10 @@ module IncrementalTest = struct
     let updates = ModuleTracker.update ~configuration ~paths module_tracker in
     let actual =
       let create_event = function
-        | ModuleTracker.IncrementalUpdate.New { SourcePath.relative; is_external; _ } ->
-            Event.New { relative; is_external }
+        | ModuleTracker.IncrementalUpdate.NewExplicit { SourcePath.relative; is_external; _ } ->
+            Event.NewExplicit { relative; is_external }
+        | ModuleTracker.IncrementalUpdate.NewImplicit qualifier ->
+            Event.NewImplicit (Reference.show qualifier)
         | ModuleTracker.IncrementalUpdate.Delete qualifier ->
             Event.Delete (Reference.show qualifier)
       in
@@ -965,8 +968,8 @@ module IncrementalTest = struct
     assert_equal
       ~cmp:(List.equal Event.equal)
       ~printer:(fun events -> [%message (events : Event.t list)] |> Sexp.to_string_hum)
-      expected
-      actual;
+      (List.sort ~compare:Event.compare expected)
+      (List.sort ~compare:Event.compare actual);
 
     (* Also check that the module tracker is in a consistent state: we should track exactly the
        same modules and source files after the update as if we build a fresh module tracker from
@@ -999,33 +1002,33 @@ let test_update context =
   (* Adding new file for a new module *)
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.Add }]
-    ~expected:[Event.create_new "a.py"];
+    ~expected:[Event.create_new_explicit "a.py"];
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.Add };
       { handle = "a.pyi"; operation = FileOperation.Add } ]
-    ~expected:[Event.create_new "a.pyi"];
+    ~expected:[Event.create_new_explicit "a.pyi"];
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.Update };
       { handle = "a.pyi"; operation = FileOperation.Add } ]
-    ~expected:[Event.create_new "a.pyi"];
+    ~expected:[Event.create_new_explicit "a.pyi"];
 
   (* Adding new shadowing file for an existing module *)
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.LeftAlone };
       { handle = "a.pyi"; operation = FileOperation.Add } ]
-    ~expected:[Event.create_new "a.pyi"];
+    ~expected:[Event.create_new_explicit "a.pyi"];
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.LeftAlone };
       { handle = "a.pyi"; operation = FileOperation.Add } ]
     ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Add }]
-    ~expected:[Event.create_new ~is_external:true "a.pyi"];
+    ~expected:[Event.create_new_explicit ~is_external:true "a.pyi"];
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
     ~external_setups:
       [ { handle = "a.py"; operation = FileOperation.Add };
         { handle = "a.pyi"; operation = FileOperation.LeftAlone };
         { handle = "a/__init__.pyi"; operation = FileOperation.Add } ]
-    ~expected:[Event.create_new ~is_external:true "a/__init__.pyi"];
+    ~expected:[Event.create_new_explicit ~is_external:true "a/__init__.pyi"];
 
   (* Adding new shadowed file for an existing module *)
   assert_incremental
@@ -1064,18 +1067,18 @@ let test_update context =
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
     ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Remove }]
-    ~expected:[Event.create_new "a.py"];
+    ~expected:[Event.create_new_explicit "a.py"];
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.LeftAlone };
       { handle = "a.pyi"; operation = FileOperation.Add } ]
     ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Remove }]
-    ~expected:[Event.create_new "a.pyi"];
+    ~expected:[Event.create_new_explicit "a.pyi"];
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
     ~external_setups:
       [ { handle = "a.pyi"; operation = FileOperation.Remove };
         { handle = "a/__init__.pyi"; operation = FileOperation.Remove } ]
-    ~expected:[Event.create_new "a.py"];
+    ~expected:[Event.create_new_explicit "a.py"];
 
   (* Removing shadowed file for a module *)
   assert_incremental
@@ -1097,15 +1100,15 @@ let test_update context =
   (* Update file *)
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.Update }]
-    ~expected:[Event.create_new "a.py"];
+    ~expected:[Event.create_new_explicit "a.py"];
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.Update };
       { handle = "a.pyi"; operation = FileOperation.Update } ]
-    ~expected:[Event.create_new "a.pyi"];
+    ~expected:[Event.create_new_explicit "a.pyi"];
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.LeftAlone };
       { handle = "a.pyi"; operation = FileOperation.Update } ]
-    ~expected:[Event.create_new "a.pyi"];
+    ~expected:[Event.create_new_explicit "a.pyi"];
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.Update };
       { handle = "a.pyi"; operation = FileOperation.LeftAlone } ]
@@ -1115,7 +1118,96 @@ let test_update context =
   assert_incremental
     [ { handle = "a.py"; operation = FileOperation.Remove };
       { handle = "a.pyi"; operation = FileOperation.Add } ]
-    ~expected:[Event.create_new "a.pyi"];
+    ~expected:[Event.create_new_explicit "a.pyi"];
+
+  (* Implicit submodule insertion *)
+  assert_incremental
+    [{ handle = "a/b.py"; operation = FileOperation.Add }]
+    ~expected:[Event.create_new_explicit "a/b.py"; Event.NewImplicit "a"];
+  assert_incremental
+    [{ handle = "a/b/c.py"; operation = FileOperation.Add }]
+    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.NewImplicit "a"; Event.NewImplicit "a.b"];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.Add };
+      { handle = "a/b/d.py"; operation = FileOperation.Add } ]
+    ~expected:
+      [ Event.create_new_explicit "a/b/c.py";
+        Event.create_new_explicit "a/b/d.py";
+        Event.NewImplicit "a";
+        Event.NewImplicit "a.b" ];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.Add };
+      { handle = "a/b/d.py"; operation = FileOperation.LeftAlone } ]
+    ~expected:[Event.create_new_explicit "a/b/c.py"];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.Add };
+      { handle = "a/b/d.py"; operation = FileOperation.LeftAlone } ]
+    ~expected:[Event.create_new_explicit "a/b/c.py"];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.Add };
+      { handle = "a/b/d.py"; operation = FileOperation.Update } ]
+    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.create_new_explicit "a/b/d.py"];
+
+  (* Implicit submodule remove *)
+  assert_incremental
+    [{ handle = "a/b/c.py"; operation = FileOperation.Remove }]
+    ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b"; Event.Delete "a"];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.Remove };
+      { handle = "a/b/d.py"; operation = FileOperation.LeftAlone } ]
+    ~expected:[Event.Delete "a.b.c"];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.Remove };
+      { handle = "a/d.py"; operation = FileOperation.LeftAlone } ]
+    ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b"];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
+      { handle = "a/d.py"; operation = FileOperation.Remove } ]
+    ~expected:[Event.Delete "a.d"];
+  assert_incremental
+    [ { handle = "a/b.py"; operation = FileOperation.LeftAlone };
+      { handle = "a/b.pyi"; operation = FileOperation.Remove } ]
+    ~expected:[Event.create_new_explicit "a/b.py"];
+  assert_incremental
+    [ { handle = "a/b.py"; operation = FileOperation.Remove };
+      { handle = "a/b.pyi"; operation = FileOperation.Remove } ]
+    ~expected:[Event.Delete "a.b"; Event.Delete "a"];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
+      { handle = "a/d/e.py"; operation = FileOperation.Remove };
+      { handle = "a/d/f.py"; operation = FileOperation.Remove } ]
+    ~expected:[Event.Delete "a.d"; Event.Delete "a.d.e"; Event.Delete "a.d.f"];
+
+  (* Implicit submodule add+remove *)
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.Add };
+      { handle = "a/b/d.py"; operation = FileOperation.Update } ]
+    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.create_new_explicit "a/b/d.py"];
+  assert_incremental
+    [ { handle = "a/b/c.py"; operation = FileOperation.Add };
+      { handle = "a/b/d.py"; operation = FileOperation.Remove };
+      { handle = "a/b/e.py"; operation = FileOperation.Remove } ]
+    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.Delete "a.b.d"; Event.Delete "a.b.e"];
+
+  (* NOTE: These tests are likely to change if we want to allow a/b.py to shadow a/b/... *)
+  assert_incremental
+    [ { handle = "a/b.py"; operation = FileOperation.Remove };
+      { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
+      { handle = "a/b/d.py"; operation = FileOperation.LeftAlone } ]
+    ~expected:[Event.Delete "a.b"];
+  assert_incremental
+    [ { handle = "a/b.py"; operation = FileOperation.Remove };
+      { handle = "a/b/c.py"; operation = FileOperation.Add };
+      { handle = "a/b/d.py"; operation = FileOperation.Add } ]
+    ~expected:
+      [ Event.Delete "a.b";
+        Event.create_new_explicit "a/b/c.py";
+        Event.create_new_explicit "a/b/d.py" ];
+  assert_incremental
+    [ { handle = "a/b.py"; operation = FileOperation.Add };
+      { handle = "a/b/c.py"; operation = FileOperation.Remove };
+      { handle = "a/b/d.py"; operation = FileOperation.Remove } ]
+    ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b.d"; Event.create_new_explicit "a/b.py"];
   ()
 
 
