@@ -9,11 +9,10 @@ open Analysis
 
 let test_coverage context =
   let assert_coverage ?external_sources sources expected =
-    let sources, _ =
-      Test.ScratchProject.setup ~context ?external_sources sources
-      |> Test.ScratchProject.parse_sources
-    in
-    Coverage.coverage ~sources |> assert_equal expected
+    let project = Test.ScratchProject.setup ~context ?external_sources sources in
+    let configuration = Test.ScratchProject.configuration_of project in
+    let sources, _ = Test.ScratchProject.parse_sources project in
+    Coverage.coverage ~configuration sources |> assert_equal expected
   in
   assert_coverage
     [ "a.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";

@@ -205,16 +205,16 @@ let pp format { statements; _ } =
 
 let show source = Format.asprintf "%a" pp source
 
-let mode ~configuration ~local_mode =
+let mode ~configuration { metadata = { Metadata.local_mode; _ }; _ } =
   match configuration, local_mode with
   | { Configuration.Analysis.infer = true; _ }, _ -> Infer
   | { Configuration.Analysis.strict = true; _ }, _
-  | _, Some Strict ->
+  | _, Strict ->
       Strict
   | { Configuration.Analysis.declare = true; _ }, _
-  | _, Some Declare ->
+  | _, Declare ->
       Declare
-  | _, Some (DefaultButDontCheck suppressed_codes) -> DefaultButDontCheck suppressed_codes
+  | _, DefaultButDontCheck suppressed_codes -> DefaultButDontCheck suppressed_codes
   | _ -> Default
 
 

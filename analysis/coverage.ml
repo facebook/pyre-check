@@ -91,16 +91,16 @@ type aggregate = {
   source_files: int;
 }
 
-let coverage ~sources =
+let coverage ~configuration sources =
   let sources = List.filter sources ~f:(fun { Source.is_external; _ } -> not is_external) in
   let number_of_files = List.length sources in
   let strict_coverage, declare_coverage =
     List.fold
       ~init:(0, 0)
-      ~f:
-        (fun (prev_strict, prev_declare) { Source.metadata = { Source.Metadata.local_mode; _ }; _ } ->
-        ( (prev_strict + if Source.equal_mode local_mode Source.Strict then 1 else 0),
-          prev_declare + if Source.equal_mode local_mode Source.Declare then 1 else 0 ))
+      ~f:(fun (prev_strict, prev_declare) source ->
+        let mode = Source.mode ~configuration source in
+        ( (prev_strict + if Source.equal_mode mode Source.Strict then 1 else 0),
+          prev_declare + if Source.equal_mode mode Source.Declare then 1 else 0 ))
       sources
   in
   {

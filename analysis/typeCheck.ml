@@ -4896,7 +4896,7 @@ let name = "TypeCheck"
 let check_define
     ~configuration:({ Configuration.Analysis.include_hints; debug; _ } as configuration)
     ~global_resolution
-    ~source:({ Source.relative; qualifier; metadata = { local_mode; _ }; _ } as source)
+    ~source:({ Source.relative; qualifier; _ } as source)
     ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
       resolution )
   =
@@ -4909,7 +4909,7 @@ let check_define
   end
   in
   let filter_errors errors =
-    let mode = Ast.Source.mode ~configuration ~local_mode:(Some local_mode) in
+    let mode = Source.mode ~configuration source in
     let filter errors =
       if debug then
         errors

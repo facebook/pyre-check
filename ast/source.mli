@@ -51,8 +51,6 @@ type t = {
 }
 [@@deriving compare, eq, hash, show, sexp]
 
-val mode : configuration:Configuration.Analysis.t -> local_mode:mode option -> mode
-
 val create_from_source_path
   :  docstring:string option ->
   metadata:Metadata.t ->
@@ -67,6 +65,8 @@ val create
   ?is_external:bool ->
   Statement.t list ->
   t
+
+val mode : configuration:Configuration.Analysis.t -> t -> mode
 
 val ignore_lines : t -> Ignore.t list
 

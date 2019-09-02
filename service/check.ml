@@ -133,7 +133,7 @@ let check
   in
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
-    Coverage.coverage ~sources
+    Coverage.coverage ~configuration sources
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
     let aggregate sofar { Source.qualifier; _ } =

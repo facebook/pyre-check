@@ -534,11 +534,7 @@ end
 
 let name = "Inference"
 
-let run
-    ~configuration
-    ~global_resolution
-    ~source:({ Source.relative; is_stub; metadata = { local_mode; _ }; _ } as source)
-  =
+let run ~configuration ~global_resolution ~source:({ Source.relative; is_stub; _ } as source) =
   Log.debug "Checking %s..." relative;
   let resolution = TypeCheck.resolution global_resolution () in
   let dequalify_map = Preprocessing.dequalify_map source in
@@ -601,7 +597,7 @@ let run
           errors
         else
           let keep_error error =
-            let mode = Ast.Source.mode ~configuration ~local_mode:(Some local_mode) in
+            let mode = Source.mode ~configuration source in
             not (Error.suppress ~mode ~resolution error)
           in
           List.filter ~f:keep_error errors
