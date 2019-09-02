@@ -17,9 +17,6 @@ let populate
   let resolution = Environment.resolution environment () in
   let populate () =
     List.iter sources ~f:(Environment.register_module environment);
-    sources
-    |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
-    |> List.iter ~f:(Environment.register_implicit_submodules environment);
     let all_annotations =
       List.fold
         ~init:Environment.built_in_annotations

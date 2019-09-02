@@ -459,12 +459,17 @@ let test_register_aliases context =
 
 
 let test_register_implicit_submodules context =
-  let environment = create_environment ~context () in
-  Environment.register_implicit_submodules environment (Reference.create "a.b.c");
+  let environment = create_environment ~context ~additional_sources:["a/b/c.py", ""] () in
+  let ast_environment = Environment.ast_environment environment in
   let global_resolution = Environment.resolution environment () in
-  assert_equal
-    None
-    (GlobalResolution.module_definition global_resolution (Reference.create "a.b.c"));
+  assert_bool
+    "Can get the source of a/b/c.py"
+    ( AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a.b.c")
+    |> Option.is_some );
+  assert_bool
+    "Can get the module definition of a/b/c.py"
+    ( GlobalResolution.module_definition global_resolution (Reference.create "a.b.c")
+    |> Option.is_some );
   assert_true (Environment.is_module environment (Reference.create "a.b"));
   assert_true (Environment.is_module environment (Reference.create "a"))
 

@@ -61,6 +61,7 @@ module ReadOnly : sig
     :  ?get_source:(Reference.t -> Source.t option) ->
     ?get_wildcard_exports:(Reference.t -> Reference.t list option) ->
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
+    ?is_module:(Reference.t -> bool) ->
     unit ->
     t
 
@@ -69,6 +70,8 @@ module ReadOnly : sig
   val get_wildcard_exports : t -> Reference.t -> Reference.t list option
 
   val get_source_path : t -> Reference.t -> SourcePath.t option
+
+  val is_module : t -> Reference.t -> bool
 
   val get_relative : t -> Reference.t -> string option
 end

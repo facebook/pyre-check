@@ -603,11 +603,20 @@ let connect_annotations_to_object annotations =
   List.iter ~f:connect_to_top annotations
 
 
-let resolution_implementation ?dependency { ast_environment } () =
+let module_definition ?dependency { ast_environment } reference =
+  match SharedMemory.Modules.get ?dependency reference with
+  | Some _ as result -> result
+  | None -> (
+    match AstEnvironment.ReadOnly.is_module ast_environment reference with
+    | true -> Some (Module.create_implicit ())
+    | false -> None )
+
+
+let resolution_implementation ?dependency ({ ast_environment } as environment) () =
   GlobalResolution.create
     ~ast_environment
     ~aliases:(SharedMemory.Aliases.get ?dependency)
-    ~module_definition:(SharedMemory.Modules.get ?dependency)
+    ~module_definition:(module_definition ?dependency environment)
     ~class_definition:(SharedMemory.ClassDefinitions.get ?dependency)
     ~class_metadata:(SharedMemory.ClassMetadata.get ?dependency)
     ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
@@ -689,7 +698,7 @@ let connect_definition
   |> List.iter ~f:register_supertype
 
 
-let register_class_metadata _ class_name =
+let register_class_metadata environment class_name =
   let open SharedMemory in
   let open Statement in
   let successors =
@@ -710,7 +719,7 @@ let register_class_metadata _ class_name =
     >>| Annotated.Class.create
     >>| Annotated.Class.extends_placeholder_stub_class
           ~aliases:SharedMemory.Aliases.get
-          ~module_definition:SharedMemory.Modules.get
+          ~module_definition:(module_definition environment)
     |> Option.value ~default:false
   in
   ClassMetadata.add
@@ -828,22 +837,6 @@ let dependencies _ = SharedMemory.Dependents.get
 
 let register_module _ ({ Source.qualifier; _ } as source) =
   SharedMemory.Modules.add qualifier (Module.create source)
-
-
-let register_implicit_submodules _ qualifier =
-  let rec register_submodules = function
-    | None -> ()
-    | Some qualifier ->
-        let register () =
-          let open SharedMemory in
-          match Modules.get qualifier with
-          | Some _ -> ()
-          | None -> Modules.add qualifier (Module.create_implicit ())
-        in
-        register ();
-        register_submodules (Reference.prefix qualifier)
-  in
-  register_submodules (Reference.prefix qualifier)
 
 
 let register_class_definitions environment source =
@@ -1066,7 +1059,7 @@ let collect_aliases environment { Source.statements; qualifier; _ } =
   List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
 
 
-let resolve_alias _ { UnresolvedAlias.qualifier; target; value } =
+let resolve_alias environment { UnresolvedAlias.qualifier; target; value } =
   let order = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
   let target_primitive_name = Reference.show target in
   let value_annotation =
@@ -1100,7 +1093,7 @@ let resolve_alias _ { UnresolvedAlias.qualifier; target; value } =
                   Expression.name_to_reference_exn name
               | _ -> Reference.create "typing.Any"
             in
-            let module_definition = SharedMemory.Modules.get in
+            let module_definition = module_definition environment in
             if Module.from_empty_stub ~reference ~module_definition then
               (), Type.Any
             else if
@@ -1465,7 +1458,7 @@ let built_in_annotations =
   ["TypedDictionary"; "NonTotalTypedDictionary"] |> Type.Primitive.Set.of_list
 
 
-let is_module _ = SharedMemory.Modules.mem
+let is_module { ast_environment } = AstEnvironment.ReadOnly.is_module ast_environment
 
 let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate
 

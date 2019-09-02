@@ -28,8 +28,6 @@ val connect_definition : t -> resolution:GlobalResolution.t -> definition:Class.
 
 val register_module : t -> Source.t -> unit
 
-val register_implicit_submodules : t -> Reference.t -> unit
-
 val register_class_definitions : t -> Source.t -> Type.Primitive.Set.t
 
 val register_aliases : t -> Source.t list -> unit
