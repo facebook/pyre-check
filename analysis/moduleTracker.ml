@@ -7,7 +7,17 @@ open Core
 open Ast
 open Pyre
 
-type t = SourcePath.t list Reference.Table.t
+module Lookup = struct
+  type t =
+    | Explicit of Ast.SourcePath.t
+    | Implicit of Ast.Reference.t
+  [@@deriving sexp, compare, eq]
+end
+
+type t = {
+  module_to_files: SourcePath.t list Reference.Table.t;
+  submodule_refcounts: int Reference.Table.t;
+}
 
 let insert_source_path ~configuration ~inserted existing_files =
   let rec insert sofar = function
@@ -80,8 +90,8 @@ let find_files { Configuration.Analysis.local_root; search_path; excludes; exten
   |> List.concat
 
 
-let create configuration =
-  let tracker = Reference.Table.create () in
+let create_module_to_files configuration =
+  let module_to_files = Reference.Table.create () in
   let process_file path =
     match SourcePath.create ~configuration path with
     | None -> ()
@@ -91,15 +101,39 @@ let create configuration =
           | Some source_paths ->
               insert_source_path ~configuration ~inserted:source_path source_paths
         in
-        Hashtbl.update tracker qualifier ~f:update_table
+        Hashtbl.update module_to_files qualifier ~f:update_table
   in
   let files = find_files configuration in
   List.iter files ~f:process_file;
-  tracker
+  module_to_files
 
 
-let lookup tracker module_name =
-  match Hashtbl.find tracker module_name with
+let create_submodule_refcounts module_to_files =
+  let submodule_refcounts = Reference.Table.create () in
+  let process_module qualifier =
+    let rec process_submodule = function
+      | None -> ()
+      | Some qualifier when Reference.is_empty qualifier -> ()
+      | Some qualifier ->
+          Reference.Table.update submodule_refcounts qualifier ~f:(function
+              | None -> 1
+              | Some count -> count + 1);
+          process_submodule (Reference.prefix qualifier)
+    in
+    process_submodule (Some qualifier)
+  in
+  Hashtbl.keys module_to_files |> List.iter ~f:process_module;
+  submodule_refcounts
+
+
+let create configuration =
+  let module_to_files = create_module_to_files configuration in
+  let submodule_refcounts = create_submodule_refcounts module_to_files in
+  { module_to_files; submodule_refcounts }
+
+
+let lookup_source_path { module_to_files; _ } module_name =
+  match Hashtbl.find module_to_files module_name with
   | Some (source_path :: _) -> Some source_path
   | _ -> None
 
@@ -107,7 +141,7 @@ let lookup tracker module_name =
 let lookup_path ~configuration tracker path =
   SourcePath.create ~configuration path
   >>= fun { SourcePath.relative; priority; qualifier; _ } ->
-  lookup tracker qualifier
+  lookup_source_path tracker qualifier
   >>= fun ( { SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as
           source_path ) ->
   if String.equal relative tracked_relative && Int.equal priority tracked_priority then
@@ -116,17 +150,30 @@ let lookup_path ~configuration tracker path =
     None
 
 
-let source_paths tracker = Hashtbl.data tracker |> List.filter_map ~f:List.hd
+let lookup { module_to_files; submodule_refcounts } module_name =
+  match Hashtbl.find module_to_files module_name with
+  | Some (source_path :: _) -> Some (Lookup.Explicit source_path)
+  | _ -> (
+    match Hashtbl.mem submodule_refcounts module_name with
+    | true -> Some (Lookup.Implicit module_name)
+    | false -> None )
 
-let all_source_paths tracker = Hashtbl.data tracker |> List.concat
+
+let source_paths { module_to_files; _ } =
+  Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
+
+
+let all_source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.concat
 
 let tracked_explicit_modules tracker =
   source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
-let is_module_tracked = Hashtbl.mem
+let is_module_tracked { module_to_files; submodule_refcounts } qualifier =
+  Hashtbl.mem module_to_files qualifier || Hashtbl.mem submodule_refcounts qualifier
 
-let explicit_module_count = Hashtbl.length
+
+let explicit_module_count { module_to_files; _ } = Hashtbl.length module_to_files
 
 module FileSystemEvent = struct
   type t =
@@ -145,7 +192,7 @@ module IncrementalUpdate = struct
   let equal = [%compare.equal: t]
 end
 
-let update ~configuration ~paths tracker =
+let update ~configuration ~paths { module_to_files; _ } =
   (* Process a single filesystem event *)
   let process_filesystem_event ~configuration tracker = function
     | FileSystemEvent.Update path -> (
@@ -223,7 +270,7 @@ let update ~configuration ~paths tracker =
   (* Since `process_filesystem_event` is not idempotent, we don't want duplicated filesystem events *)
   List.dedup_and_sort ~compare:Path.compare paths
   |> List.map ~f:FileSystemEvent.create
-  |> List.filter_map ~f:(process_filesystem_event ~configuration tracker)
+  |> List.filter_map ~f:(process_filesystem_event ~configuration module_to_files)
   |> merge_updates
 
 
@@ -231,7 +278,7 @@ module SharedMemory = Memory.Serializer (struct
   type nonrec t = t
 
   module Serialized = struct
-    type t = (Reference.t * SourcePath.t list) list
+    type t = (Reference.t * SourcePath.t list) list * (Reference.t * int) list
 
     let prefix = Prefix.make ()
 
@@ -240,7 +287,13 @@ module SharedMemory = Memory.Serializer (struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  let serialize = Hashtbl.to_alist
+  let serialize { module_to_files; submodule_refcounts } =
+    Hashtbl.to_alist module_to_files, Hashtbl.to_alist submodule_refcounts
 
-  let deserialize data = Reference.Table.of_alist_exn data
+
+  let deserialize (module_data, submodule_data) =
+    {
+      module_to_files = Reference.Table.of_alist_exn module_data;
+      submodule_refcounts = Reference.Table.of_alist_exn submodule_data;
+    }
 end)

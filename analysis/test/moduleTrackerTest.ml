@@ -27,7 +27,7 @@ let create_source_path_exn ~configuration root relative =
 
 
 let lookup_exn tracker reference =
-  match ModuleTracker.lookup tracker reference with
+  match ModuleTracker.lookup_source_path tracker reference with
   | Some source_path -> source_path
   | None ->
       let message =
@@ -35,6 +35,14 @@ let lookup_exn tracker reference =
       in
       assert_failure message
 
+
+module ModuleStatus = struct
+  type t =
+    | Untracked
+    | Explicit
+    | Implicit
+  [@@deriving sexp, compare]
+end
 
 let test_creation context =
   let assert_create_fail ~configuration root relative =
@@ -299,6 +307,74 @@ let test_creation context =
       ~is_stub:false
       ~is_external:false
       ~is_init:false
+  in
+  let test_submodules () =
+    (* SETUP:
+     * local_root/a.py
+     * local_root/b/c.py
+     * local_root/d/__init__.py
+     * local_root/d/e/f.py
+     * external_root/d/g.py
+     * external_root/h/i/j/__init__.pyi
+     *)
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    List.iter
+      ~f:Sys_utils.mkdir_no_fail
+      [ Path.absolute local_root ^ "/b";
+        Path.absolute local_root ^ "/d";
+        Path.absolute local_root ^ "/d/e";
+        Path.absolute external_root ^ "/d";
+        Path.absolute external_root ^ "/h";
+        Path.absolute external_root ^ "/h/i";
+        Path.absolute external_root ^ "/h/i/j" ];
+    List.iter ~f:(touch local_root) ["a.py"; "b/c.py"; "d/__init__.py"; "d/e/f.py"];
+    List.iter ~f:(touch external_root) ["d/g.py"; "h/i/j/__init__.pyi"];
+    let module_tracker =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root external_root]
+        ~filter_directories:[local_root]
+        ()
+      |> ModuleTracker.create
+    in
+    let assert_module ~expected qualifier =
+      let actual =
+        match ModuleTracker.lookup module_tracker qualifier with
+        | None -> ModuleStatus.Untracked
+        | Some (ModuleTracker.Lookup.Explicit _) -> ModuleStatus.Explicit
+        | Some (ModuleTracker.Lookup.Implicit _) -> ModuleStatus.Implicit
+      in
+      assert_equal
+        ~cmp:[%compare.equal: ModuleStatus.t]
+        ~printer:(fun status -> ModuleStatus.sexp_of_t status |> Sexp.to_string_hum)
+        expected
+        actual;
+
+      (* Also make sure `is_module_tracked` result is sensible *)
+      let expected_is_tracked =
+        match expected with
+        | ModuleStatus.Untracked -> false
+        | _ -> true
+      in
+      let actual_is_tracked = ModuleTracker.is_module_tracked module_tracker qualifier in
+      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_tracked actual_is_tracked
+    in
+    let open Test in
+    assert_module !&"a" ~expected:ModuleStatus.Explicit;
+    assert_module !&"a.b" ~expected:ModuleStatus.Untracked;
+    assert_module !&"b" ~expected:ModuleStatus.Implicit;
+    assert_module !&"b.c" ~expected:ModuleStatus.Explicit;
+    assert_module !&"b.d" ~expected:ModuleStatus.Untracked;
+    assert_module !&"d" ~expected:ModuleStatus.Explicit;
+    assert_module !&"d.e" ~expected:ModuleStatus.Implicit;
+    assert_module !&"d.g" ~expected:ModuleStatus.Explicit;
+    assert_module !&"d.e.f" ~expected:ModuleStatus.Explicit;
+    assert_module !&"d.e.g" ~expected:ModuleStatus.Untracked;
+    assert_module !&"h" ~expected:ModuleStatus.Implicit;
+    assert_module !&"h.i" ~expected:ModuleStatus.Implicit;
+    assert_module !&"h.i.j" ~expected:ModuleStatus.Explicit;
+    assert_module !&"h.i.j.k" ~expected:ModuleStatus.Untracked
   in
   let test_search_path_subdirectory () =
     let local_root = bracket_tmpdir context |> Path.create_absolute in
@@ -793,6 +869,7 @@ let test_creation context =
       source_paths_copy
   in
   test_basic ();
+  test_submodules ();
   test_search_path_subdirectory ();
   test_exclude ();
   test_directory_filter ();

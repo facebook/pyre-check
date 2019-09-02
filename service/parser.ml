@@ -244,7 +244,7 @@ let parse_all ~scheduler ~configuration module_tracker =
   let { parsed; syntax_error; system_error } =
     let preprocessing_state =
       ProjectSpecificPreprocessing.initial (fun qualifier ->
-          ModuleTracker.lookup module_tracker qualifier |> Option.is_some)
+          ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some)
     in
     ModuleTracker.source_paths module_tracker
     |> parse_sources

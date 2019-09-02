@@ -27,7 +27,7 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
   let paths =
     List.map updated_sources ~f:(fun (_, (relative, _)) ->
         SourcePath.qualifier_of_relative relative)
-    |> List.filter_map ~f:(ModuleTracker.lookup module_tracker)
+    |> List.filter_map ~f:(ModuleTracker.lookup_source_path module_tracker)
     |> List.map ~f:(SourcePath.full_path ~configuration)
   in
   let errors =

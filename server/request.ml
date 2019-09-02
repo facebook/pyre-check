@@ -739,7 +739,7 @@ let process_type_query_request
         parse_and_validate expression
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.PathOfModule module_name ->
-        ModuleTracker.lookup module_tracker module_name
+        ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
               let path = SourcePath.full_path ~configuration source_path |> Path.absolute in
               Some (TypeQuery.Response (TypeQuery.FoundPath path)))

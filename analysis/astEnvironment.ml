@@ -142,7 +142,7 @@ let create module_tracker =
     get_raw_wildcard_exports = RawWildcardExports.get;
     get_source = Sources.get;
     get_wildcard_exports = WildcardExports.get;
-    get_source_path = ModuleTracker.lookup module_tracker;
+    get_source_path = ModuleTracker.lookup_source_path module_tracker;
   }
 
 
