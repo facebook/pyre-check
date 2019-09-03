@@ -511,7 +511,7 @@ let test_forward_expression context =
       annotation
     =
     let expression =
-      let expression = parse expression |> Preprocessing.expand_format_string in
+      let expression = parse expression |> Preprocessing.preprocess in
       expression
       |> function
       | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
@@ -520,7 +520,9 @@ let test_forward_expression context =
       | _ -> failwith "Unable to extract expression"
     in
     let resolution =
-      ScratchProject.setup ~context ["__init__.py", environment] |> ScratchProject.build_resolution
+      ScratchProject.setup ~context ["test.py", environment]
+      |> ScratchProject.build_resolution
+           ~imports:(Reference.Set.singleton (Reference.create "test"))
     in
     let { State.state = forwarded; resolved; _ } =
       State.forward_expression ~state:(create ~resolution precondition) ~expression
@@ -604,9 +606,9 @@ let test_forward_expression context =
     ~errors:
       (`Specific
         [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-           `foo` but got `unknown`.";
+           `test.foo` but got `unknown`.";
           "Undefined attribute [16]: Optional type has no attribute `attribute`." ])
-    "foo(unknown).attribute"
+    "test.foo(unknown).attribute"
     Type.Top;
   assert_forward
     ~precondition:["undefined", Type.Union [Type.integer; Type.undeclared]]
@@ -628,11 +630,11 @@ let test_forward_expression context =
         def foo(x: typing.Any) -> Foo: ...
       |}
     ~errors:(`Specific ["Undefined attribute [16]: `Foo` has no attribute `unknown`."])
-    "foo(foo_instance.unknown).attribute"
+    "test.foo(foo_instance.unknown).attribute"
     Type.integer;
   assert_forward
-    ~precondition:["foo_instance", Type.Primitive "Foo"]
-    ~postcondition:["foo_instance", Type.Primitive "Foo"]
+    ~precondition:["foo_instance", Type.Primitive "test.Foo"]
+    ~postcondition:["foo_instance", Type.Primitive "test.Foo"]
     ~environment:
       {|
         class Foo:
@@ -642,9 +644,9 @@ let test_forward_expression context =
       |}
     ~errors:
       (`Specific
-        [ "Undefined attribute [16]: `Foo` has no attribute `unknown`.";
-          "Undefined attribute [16]: `Foo` has no attribute `another_unknown`." ])
-    "foo(foo_instance.unknown).another_unknown"
+        [ "Undefined attribute [16]: `test.Foo` has no attribute `unknown`.";
+          "Undefined attribute [16]: `test.Foo` has no attribute `another_unknown`." ])
+    "test.foo(foo_instance.unknown).another_unknown"
     Type.Top;
 
   (* Comparison operator. *)
@@ -680,8 +682,8 @@ let test_forward_expression context =
         def Foo.foo(self) -> int:
           return 9
     |}
-    ~precondition:["Container", Type.meta (Type.Primitive "Foo")]
-    ~postcondition:["Container", Type.meta (Type.Primitive "Foo")]
+    ~precondition:["Container", Type.meta (Type.Primitive "test.Foo")]
+    ~postcondition:["Container", Type.meta (Type.Primitive "test.Foo")]
     "1 in Container"
     Type.bool;
   let dictionary_set_union =

@@ -15,88 +15,110 @@ module Signature = Annotated.Signature
 open Signature
 
 let test_select context =
-  let resolution =
-    ScratchProject.setup
-      ~context
-      [ ( "__init__.py",
-          {|
-      _T = typing.TypeVar('_T')
-      _S = typing.TypeVar('_S')
-      _R = typing.TypeVar('_R', int, float)
-      _T_float_or_str = typing.TypeVar('_U', float, str)
-      _T_float_str_or_union = (
-        typing.TypeVar('_T_float_str_or_union', float, str, typing.Union[float, str])
-      )
-      _T_bound_by_float_str_union = (
-        typing.TypeVar('_T_bound_by_float_str_union', bound=typing.Union[float, str])
-      )
-
-      class C(): ...
-      class B(C): ...
-
-      meta: typing.Type[typing.List[int]] = ...
-      union: typing.Union[int, str] = ...
-      int_to_int_dictionary: typing.Dict[int, int] = ...
-
-      unknown: $unknown = ...
-      g: typing.Callable[[int], bool]
-      f: typing.Callable[[int], typing.List[bool]]
-      Tparams = pyre_extensions.ParameterSpecification("Tparams")
-      Ts = pyre_extensions.ListVariadic("Ts")
-      int_string_tuple: typing.Tuple[int, str]
-      unbounded_tuple: typing.Tuple[int, ...]
-
-      class ExtendsDictStrInt(typing.Dict[str, int]): pass
-      optional: typing.Optional[int]
-    |}
-        ) ]
-    |> ScratchProject.build_resolution
-  in
-  let parse_annotation annotation =
-    (* Allow untracked to create callables with unknowns, which would otherwise be generated from
-       Callable.create on defines. *)
-    annotation
-    |> parse_single_expression
-    |> GlobalResolution.parse_annotation
-         ~allow_untracked:true
-         ~allow_invalid_type_parameters:true
-         (Resolution.global_resolution resolution)
-  in
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
-    let parse_callable callable =
-      callable
-      |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
-      |> String.substr_replace_all
-           ~pattern:"$literal_string"
-           ~with_:"typing_extensions.Literal[\"string\"]"
-      |> Format.asprintf "typing.Callable%s"
-      |> parse_annotation
-      |> function
-      | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
-          let undefined { Type.Callable.parameters; _ } =
-            match parameters with
-            | Type.Callable.Undefined -> true
-            | _ -> false
-          in
-          if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
-            failwith "Undefined parameters"
-          else
-            name
-            >>| Reference.create
-            >>| (fun name -> { callable with kind = Named name })
-            |> Option.value ~default:callable
-      | _ -> failwith "Could not extract signatures"
+    let parse_callable_and_signature ~callable ~arguments =
+      let callable =
+        callable
+        |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
+        |> String.substr_replace_all
+             ~pattern:"$literal_string"
+             ~with_:"typing_extensions.Literal[\"string\"]"
+      in
+      let _, ast_environment, environment =
+        ScratchProject.setup
+          ~context
+          [ ( "test.py",
+              Format.sprintf
+                {|
+                  _T = typing.TypeVar('_T')
+                  _S = typing.TypeVar('_S')
+                  _R = typing.TypeVar('_R', int, float)
+                  _T_float_or_str = typing.TypeVar('_U', float, str)
+                  _T_float_str_or_union = (
+                    typing.TypeVar('_T_float_str_or_union', float, str, typing.Union[float, str])
+                  )
+                  _T_bound_by_float_str_union = (
+                    typing.TypeVar('_T_bound_by_float_str_union', bound=typing.Union[float, str])
+                  )
+
+                  class C(): ...
+                  class B(C): ...
+
+                  meta: typing.Type[typing.List[int]] = ...
+                  union: typing.Union[int, str] = ...
+                  int_to_int_dictionary: typing.Dict[int, int] = ...
+
+                  unknown: $unknown = ...
+                  g: typing.Callable[[int], bool]
+                  f: typing.Callable[[int], typing.List[bool]]
+                  Tparams = pyre_extensions.ParameterSpecification("Tparams")
+                  Ts = pyre_extensions.ListVariadic("Ts")
+                  int_string_tuple: typing.Tuple[int, str]
+                  unbounded_tuple: typing.Tuple[int, ...]
+
+                  class ExtendsDictStrInt(typing.Dict[str, int]): pass
+                  optional: typing.Optional[int]
+                  typing.Callable%s
+                  call%s
+                |}
+                callable
+                arguments ) ]
+        |> ScratchProject.build_environment
+      in
+      let global_resolution = Environment.resolution environment () in
+      let resolution = TypeCheck.resolution global_resolution () in
+      let enforce_callable = function
+        | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
+            let undefined { Type.Callable.parameters; _ } =
+              match parameters with
+              | Type.Callable.Undefined -> true
+              | _ -> false
+            in
+            if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
+              failwith "Undefined parameters"
+            else
+              name
+              >>| Reference.create
+              >>| (fun name -> { callable with kind = Named name })
+              |> Option.value ~default:callable
+        | _ -> failwith "Could not extract signatures"
+      in
+      Type.Variable.Namespace.reset ();
+      let callable, signature =
+        let arguments, expression =
+          match
+            AstEnvironment.get_source ast_environment (Reference.create "test")
+            >>| Source.statements
+            >>| List.rev
+          with
+          | Some
+              ({
+                 Node.value =
+                   Statement.Expression { Node.value = Expression.Call { arguments; _ }; _ };
+                 _;
+               }
+              :: { Node.value = Statement.Expression expression; _ } :: _) ->
+              arguments, expression
+          | _ -> failwith "couldnt extract"
+        in
+        let callable =
+          expression
+          |> GlobalResolution.parse_annotation
+               ~allow_untracked:true
+               ~allow_invalid_type_parameters:true
+               (Resolution.global_resolution resolution)
+          |> enforce_callable
+        in
+        callable, Signature.select ~arguments ~resolution ~callable
+      in
+      callable, signature
     in
-    let callable = parse_callable callable in
-    Type.Variable.Namespace.reset ();
-    let signature =
-      let { Call.arguments; _ } = parse_single_call (Format.asprintf "call%s" arguments) in
-      Signature.select ~arguments ~resolution ~callable
-    in
+    let callable, signature = parse_callable_and_signature ~callable ~arguments in
     let callable = { callable with Type.Callable.overloads = [] } in
     let parse_callable callable =
+      let callable, _ = parse_callable_and_signature ~callable ~arguments:"()" in
       Type.Variable.Namespace.reset ();
-      parse_callable callable
+      callable
       |> Type.Callable.map ~f:Type.Variable.mark_all_free_variables_as_escaped
       |> fun callable -> Option.value_exn callable
     in
@@ -140,9 +162,13 @@ let test_select context =
               reason = Some (TooManyArguments { expected; provided });
             }
       | `NotFoundUnexpectedKeyword name ->
-          NotFound { callable; reason = Some (UnexpectedKeyword name) }
+          NotFound { callable; reason = Some (UnexpectedKeyword ("$parameter$" ^ name)) }
       | `NotFoundUnexpectedKeywordWithClosest (closest, name) ->
-          NotFound { callable = parse_callable closest; reason = Some (UnexpectedKeyword name) }
+          NotFound
+            {
+              callable = parse_callable closest;
+              reason = Some (UnexpectedKeyword ("$parameter$" ^ name));
+            }
       | `NotFoundMismatch (actual, actual_expression, expected, name, position) ->
           let actual_expression = parse_single_expression actual_expression in
           let reason =
@@ -200,7 +226,8 @@ let test_select context =
   assert_select
     "[[int], None]"
     "(union)"
-    (`NotFoundMismatch (Type.union [Type.integer; Type.string], "union", Type.integer, None, 1));
+    (`NotFoundMismatch
+      (Type.union [Type.integer; Type.string], "$local_test$union", Type.integer, None, 1));
   assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundTooManyArguments (1, 2));
 
   (* Traverse variable arguments. *)
@@ -280,7 +307,7 @@ let test_select context =
   assert_select
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
-    (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, Some "j", 2));
+    (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, Some "$parameter$j", 2));
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'j': 1, 'i': 2})"
@@ -304,7 +331,7 @@ let test_select context =
     "[[int], int]"
     "(**int_to_int_dictionary)"
     (`NotFoundInvalidKeywordArgument
-      ( +Name (Name.Identifier "int_to_int_dictionary"),
+      ( +Name (Name.Identifier "$local_test$int_to_int_dictionary"),
         Type.dictionary ~key:Type.integer ~value:Type.integer ));
   assert_select
     "[[int, Named(i, int)], int]"
@@ -321,7 +348,7 @@ let test_select context =
   assert_select
     "[[Named(i, str)], int]"
     "(**(ExtendsDictStrInt()))"
-    (`NotFoundMismatch (Type.integer, "**ExtendsDictStrInt()", Type.string, None, 1));
+    (`NotFoundMismatch (Type.integer, "**test.ExtendsDictStrInt()", Type.string, None, 1));
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**({}), j=2)"
@@ -363,11 +390,11 @@ let test_select context =
   assert_select
     "[[Keywords(str)], int]"
     "(a=1, b=2)"
-    (`NotFoundMismatch (Type.literal_integer 1, "1", Type.string, Some "a", 1));
+    (`NotFoundMismatch (Type.literal_integer 1, "1", Type.string, Some "$parameter$a", 1));
   assert_select
     "[[Keywords(str)], int]"
     "(a='string', b=2)"
-    (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, Some "b", 2));
+    (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, Some "$parameter$b", 2));
 
   (* Constraint resolution. *)
   assert_select "[[_T], _T]" "(1)" (`Found "[[$literal_one], $literal_one]");
@@ -423,7 +450,7 @@ let test_select context =
       ( "[[typing.Sequence[_T]], int]",
         Type.literal_integer 1,
         "1",
-        Type.parametric "typing.Sequence" (Concrete [Type.variable "_T"]),
+        Type.parametric "typing.Sequence" (Concrete [Type.variable "test._T"]),
         None,
         1 ));
   assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");
@@ -434,7 +461,7 @@ let test_select context =
       ( "[[_R], _R]",
         Type.literal_string "string",
         "\"string\"",
-        Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "_R",
+        Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "test._R",
         None,
         1 ));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
@@ -446,7 +473,7 @@ let test_select context =
         Type.list Type.string,
         "['string']",
         Type.list
-          (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "_R"),
+          (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "test._R"),
         None,
         1 ));
   assert_select "[[], _R]" "()" (`Found "[[], _R]");
@@ -467,9 +494,9 @@ let test_select context =
     (`NotFoundMismatchWithClosest
       ( "[[_T_float_or_str], None]",
         Type.union [Type.integer; Type.string],
-        "union",
+        "$local_test$union",
         Type.variable
-          "_T_float_or_str"
+          "test._T_float_or_str"
           ~constraints:(Type.Variable.Explicit [Type.float; Type.string]),
         None,
         1 ));
@@ -542,15 +569,16 @@ let test_select context =
   assert_select
     "[[typing.Union[str, int]], typing.Union[str, int]][[[str], str][[int], int]]"
     "(unknown)"
-    (`NotFoundMismatch (Type.Top, "unknown", Type.union [Type.integer; Type.string], None, 1));
+    (`NotFoundMismatch
+      (Type.Top, "$local_test$unknown", Type.union [Type.integer; Type.string], None, 1));
   assert_select
     "[[bool], bool][[[str], str][[int], int]]"
     "(unknown)"
-    (`NotFoundMismatch (Type.Top, "unknown", Type.bool, None, 1));
+    (`NotFoundMismatch (Type.Top, "$local_test$unknown", Type.bool, None, 1));
   assert_select
     "[[bool], bool][[[str, str], str][[int, int], int]]"
     "(unknown)"
-    (`NotFoundMismatch (Type.Top, "unknown", Type.bool, None, 1));
+    (`NotFoundMismatch (Type.Top, "$local_test$unknown", Type.bool, None, 1));
   assert_select
     "[[bool], bool][[[str, str], str][[int, int], int]]"
     "(int, str)"
@@ -636,10 +664,10 @@ let test_select context =
              ( Concatenation
                  (Type.OrderedTypes.Concatenation.create
                     (Type.OrderedTypes.Concatenation.Middle.create_bare
-                       (Type.Variable.Variadic.List.create "Ts"))),
+                       (Type.Variable.Variadic.List.create "test.Ts"))),
                NotDefiniteTuple
                  {
-                   expression = +Name (Name.Identifier "unbounded_tuple");
+                   expression = +Name (Name.Identifier "$local_test$unbounded_tuple");
                    annotation = Type.Tuple (Unbounded Type.integer);
                  } )) ));
   assert_select
@@ -652,7 +680,7 @@ let test_select context =
              ( Concatenation
                  (Type.OrderedTypes.Concatenation.create
                     (Type.OrderedTypes.Concatenation.Middle.create_bare
-                       (Type.Variable.Variadic.List.create "Ts"))),
+                       (Type.Variable.Variadic.List.create "test.Ts"))),
                ConstraintFailure (Concrete [Type.float]) )) ));
   assert_select
     "[[pyre_extensions.type_variable_operators.Map[typing.List, Ts]], int]"

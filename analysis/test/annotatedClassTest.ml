@@ -472,7 +472,7 @@ let test_is_protocol _ =
 let test_class_attributes context =
   let setup source =
     let sources, _, environment =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
     let parent =
       match List.hd_exn sources |> last_statement_exn with
@@ -721,7 +721,7 @@ let test_class_attributes context =
   in
   let create_expected_attribute
       ?(property = None)
-      ?(parent = Type.Primitive "Attributes")
+      ?(parent = Type.Primitive "test.Attributes")
       name
       callable
     =
@@ -745,22 +745,24 @@ let test_class_attributes context =
     ~parent_instantiated_type:(Type.Primitive "Attributes")
     ~attribute_name:"bar"
     ~expected_attribute:
-      (create_expected_attribute "bar" "typing.Callable('Attributes.bar')[[], int]");
+      (create_expected_attribute "bar" "typing.Callable('test.Attributes.bar')[[], int]");
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.Primitive "Attributes")
     ~attribute_name:"baz"
     ~expected_attribute:
-      (create_expected_attribute "baz" "typing.Callable('Attributes.baz')[[Named(x, int)], int]");
+      (create_expected_attribute
+         "baz"
+         "typing.Callable('test.Attributes.baz')[[Named(x, int)], int]");
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
     ~attribute_name:"implicit"
     ~expected_attribute:
       (create_expected_attribute
-         ~parent:(Type.Primitive "Metaclass")
+         ~parent:(Type.Primitive "test.Metaclass")
          "implicit"
-         "typing.Callable('Metaclass.implicit')[[], int]");
+         "typing.Callable('test.Metaclass.implicit')[[], int]");
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))

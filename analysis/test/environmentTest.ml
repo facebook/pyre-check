@@ -148,6 +148,7 @@ let test_register_class_metadata context =
   let environment = create_environment ~context ~include_helpers:false () in
   let source =
     parse
+      ~handle:"test.py"
       {|
        from placeholder_stub import MadeUpClass
        class A: pass
@@ -170,12 +171,12 @@ let test_register_class_metadata context =
   Environment.deduplicate_class_hierarchy ~annotations:all_annotations;
   Environment.connect_annotations_to_object all_annotations;
   Environment.remove_extra_edges_to_object all_annotations;
-  Environment.register_class_metadata environment "A";
-  Environment.register_class_metadata environment "B";
-  Environment.register_class_metadata environment "C";
-  Environment.register_class_metadata environment "D";
-  Environment.register_class_metadata environment "E";
-  Environment.register_class_metadata environment "F";
+  Environment.register_class_metadata environment "test.A";
+  Environment.register_class_metadata environment "test.B";
+  Environment.register_class_metadata environment "test.C";
+  Environment.register_class_metadata environment "test.D";
+  Environment.register_class_metadata environment "test.E";
+  Environment.register_class_metadata environment "test.F";
   let assert_successors class_name expected =
     let { GlobalResolution.successors; _ } =
       let global_resolution = Environment.resolution environment () in
@@ -187,10 +188,10 @@ let test_register_class_metadata context =
       expected
       successors
   in
-  assert_successors "C" ["object"];
-  assert_successors "D" ["C"; "object"];
-  assert_successors "B" ["A"; "object"];
-  assert_successors "E" ["D"; "C"; "A"; "object"];
+  assert_successors "test.C" ["object"];
+  assert_successors "test.D" ["test.C"; "object"];
+  assert_successors "test.B" ["test.A"; "object"];
+  assert_successors "test.E" ["test.D"; "test.C"; "test.A"; "object"];
   let assert_extends_placeholder_stub_class class_name expected =
     let { GlobalResolution.extends_placeholder_stub_class; _ } =
       let global_resolution = Environment.resolution environment () in
@@ -198,8 +199,8 @@ let test_register_class_metadata context =
     in
     assert_equal expected extends_placeholder_stub_class
   in
-  assert_extends_placeholder_stub_class "A" false;
-  assert_extends_placeholder_stub_class "F" true;
+  assert_extends_placeholder_stub_class "test.A" false;
+  assert_extends_placeholder_stub_class "test.F" true;
   ()
 
 
@@ -1533,6 +1534,7 @@ let test_deduplicate context =
   let environment = create_environment ~context () in
   let source =
     parse
+      ~handle:"test.py"
       {|
        class One:
          pass
@@ -1541,11 +1543,12 @@ let test_deduplicate context =
        class Zero(One[int]):
          pass
     |}
+    |> Preprocessing.preprocess
   in
   Environment.register_class_definitions environment source |> ignore;
   let resolution = Environment.resolution environment () in
   Environment.connect_type_order environment resolution source;
-  Environment.deduplicate_class_hierarchy ~annotations:["One"; "Zero"];
+  Environment.deduplicate_class_hierarchy ~annotations:["test.One"; "test.Zero"];
   let (module Handler) = class_hierarchy environment in
   let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
@@ -1560,9 +1563,16 @@ let test_deduplicate context =
   in
   let module ForwardAsserter = TargetAsserter (ClassHierarchy.Target.List) in
   let module BackwardsAsserter = TargetAsserter (ClassHierarchy.Target.Set) in
-  ForwardAsserter.assert_targets Handler.edges "Zero" "One" [Type.integer] (fun target -> [target]);
-  BackwardsAsserter.assert_targets Handler.backedges "One" "Zero" [Type.integer] (fun target ->
-      ClassHierarchy.Target.Set.of_list [target])
+  ForwardAsserter.assert_targets Handler.edges "test.Zero" "test.One" [Type.integer] (fun target ->
+      [target]);
+  BackwardsAsserter.assert_targets
+    Handler.backedges
+    "test.One"
+    "test.Zero"
+    [Type.integer]
+    (fun target -> ClassHierarchy.Target.Set.of_list [target]);
+  Environment.purge environment [Reference.create "test"];
+  ()
 
 
 let test_remove_extra_edges_to_object context =
@@ -1572,6 +1582,7 @@ let test_remove_extra_edges_to_object context =
   let environment = create_environment ~context () in
   let source =
     parse
+      ~handle:"test.py"
       {|
        class Two(object):
          pass
@@ -1580,17 +1591,20 @@ let test_remove_extra_edges_to_object context =
        class Zero(One, object):
          pass
     |}
+    |> Preprocessing.preprocess
   in
   Environment.register_class_definitions environment source |> ignore;
   let resolution = Environment.resolution environment () in
   Environment.connect_type_order environment resolution source;
-  Environment.remove_extra_edges_to_object ["Zero"; "One"; "Two"; "object"];
+  Environment.remove_extra_edges_to_object ["test.Zero"; "test.One"; "test.Two"; "object"];
   let (module Handler) = class_hierarchy environment in
-  let zero_index = IndexTracker.index "Zero" in
-  let one_index = IndexTracker.index "One" in
-  let two_index = IndexTracker.index "Two" in
+  let zero_index = IndexTracker.index "test.Zero" in
+  let one_index = IndexTracker.index "test.One" in
+  let two_index = IndexTracker.index "test.Two" in
   let object_index = IndexTracker.index "object" in
+  let printer = List.to_string ~f:ClassHierarchy.Target.show in
   assert_equal
+    ~printer
     (find_unsafe Handler.edges zero_index)
     [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }];
   let filter_only_relevant_targets =

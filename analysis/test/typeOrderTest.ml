@@ -16,7 +16,7 @@ let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
 
 let environment ?source context =
   let _, _, environment =
-    let sources = Option.value_map source ~f:(fun source -> ["__init__.py", source]) ~default:[] in
+    let sources = Option.value_map source ~f:(fun source -> ["test.py", source]) ~default:[] in
     ScratchProject.setup ~context sources |> ScratchProject.build_environment
   in
   environment
@@ -1235,8 +1235,8 @@ let test_less_or_equal context =
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"NonGenericChild"
-    ~right:"GenericBase[typing.Any, typing.Any]"
+    ~left:"test.NonGenericChild"
+    ~right:"test.GenericBase[typing.Any, typing.Any]"
     true;
 
   (* This should get filtered by mismatch with any postprocessing *)
@@ -1249,8 +1249,8 @@ let test_less_or_equal context =
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"NonGenericChild"
-    ~right:"GenericBase[int, str]"
+    ~left:"test.NonGenericChild"
+    ~right:"test.GenericBase[int, str]"
     false;
   assert_less_or_equal
     ~source:
@@ -1261,8 +1261,8 @@ let test_less_or_equal context =
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"GenericBase[typing.Any, typing.Any]"
-    ~right:"GenericBase[int, str]"
+    ~left:"test.GenericBase[typing.Any, typing.Any]"
+    ~right:"test.GenericBase[int, str]"
     true;
   assert_less_or_equal
     ~source:
@@ -1273,8 +1273,8 @@ let test_less_or_equal context =
       class GenericBase(Generic[T1, T2]): pass
       class NonGenericChild(GenericBase): pass
     |}
-    ~left:"NonGenericChild"
-    ~right:"GenericBase[int, str]"
+    ~left:"test.NonGenericChild"
+    ~right:"test.GenericBase[int, str]"
     true;
   assert_less_or_equal
     ~source:
@@ -1286,8 +1286,8 @@ let test_less_or_equal context =
       class NonGenericChild(GenericBase): pass
       class Grandchild(NonGenericChild): pass
     |}
-    ~left:"Grandchild"
-    ~right:"GenericBase[typing.Any, typing.Any]"
+    ~left:"test.Grandchild"
+    ~right:"test.GenericBase[typing.Any, typing.Any]"
     true;
   ()
 
@@ -2424,6 +2424,45 @@ let test_solve_less_or_equal context =
   in
   let resolution = Environment.resolution environment () in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
+  let prep annotation =
+    let aliases a =
+      let s =
+        [ "C";
+          "D";
+          "Q";
+          "T_Unconstrained";
+          "T_Bound_C";
+          "T_Bound_D";
+          "T_Bound_Union";
+          "T_Bound_Union_C_Q";
+          "T_Bound_Union";
+          "T_C_Q";
+          "T_D_Q";
+          "T_C_Q_int";
+          "V";
+          "Ts";
+          "T2s";
+          "T";
+          "T1";
+          "T2";
+          "T3";
+          "T4";
+          "G_invariant";
+          "G_covariant";
+          "T_Covariant";
+          "Constructable";
+          "UserDefinedVariadic";
+          "UserDefinedVariadicSimpleChild";
+          "UserDefinedVariadicMapChild" ]
+        |> Type.Primitive.Set.of_list
+      in
+      if Type.Primitive.Set.mem s a then
+        Some (Type.TypeAlias (Type.Primitive ("test." ^ a)))
+      else
+        GlobalResolution.aliases resolution a
+    in
+    annotation |> Type.create ~aliases |> Type.expression
+  in
   let assert_solve
       ~left
       ~right
@@ -2432,6 +2471,7 @@ let test_solve_less_or_equal context =
       ?constraints
       ?(leave_unbound_in_left = [])
       ?(postprocess = default_postprocess)
+      ?(do_prep = true)
       expected
     =
     let handler =
@@ -2450,9 +2490,13 @@ let test_solve_less_or_equal context =
         protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
+    let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
     let parse_annotation annotation =
+      Type.Cache.disable ();
       annotation
+      |> String.substr_replace_all ~pattern:"typing.Callable[V" ~with_:"typing.Callable[test.V"
       |> parse_single_expression
+      |> (if do_prep then prep else Fn.id)
       |> GlobalResolution.parse_annotation
            ~allow_untracked:true
            ~allow_invalid_type_parameters:true
@@ -2712,23 +2756,24 @@ let test_solve_less_or_equal context =
     ~right:"typing.Callable[[int, T3], T4]"
     [["T3", "int"; "T4", "str"]];
   assert_solve
+    ~do_prep:false
     ~leave_unbound_in_left:["T3"]
-    ~left:"typing.Callable[[T3], T3]"
-    ~right:"typing.Callable[[typing.Union[int, str]], object][[[int], T1][[str], T2]] "
-    [["T2", "str"; "T1", "int"]];
+    ~left:"typing.Callable[[test.T3], test.T3]"
+    ~right:"typing.Callable[[typing.Union[int, str]], object][[[int], test.T1][[str], test.T2]] "
+    [["test.T2", "str"; "test.T1", "int"]];
 
   (* Callback protocols *)
   let parse_annotation annotation =
-    annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
+    annotation |> parse_single_expression |> prep |> GlobalResolution.parse_annotation resolution
   in
   let is_protocol annotation ~protocol_assumptions:_ =
     match annotation with
-    | Type.Parametric { name = "G_invariant"; _ } -> true
+    | Type.Parametric { name = "test.G_invariant"; _ } -> true
     | _ -> false
   in
   let attributes annotation ~protocol_assumptions:_ =
     match annotation with
-    | Type.Primitive "G_invariant" ->
+    | Type.Primitive "test.G_invariant" ->
         Some
           (parse_attributes
              ~parse_annotation
@@ -2757,13 +2802,14 @@ let test_solve_less_or_equal context =
     ~right:"typing.Tuple[typing.Union[typing.List[T1], T1], T1]"
     [["T1", "typing.List[int]"]];
   assert_solve
+    ~do_prep:false
     ~left:
       ( "typing.Callable[[typing.Union[int, str]], typing.Union[int, str]]"
       ^ "[[[int], str][[str], int]]" )
-    ~right:"typing.Callable[[T3], T4]"
-    [ ["T3", "int"; "T4", "str"];
-      ["T3", "str"; "T4", "int"];
-      ["T3", "typing.Union[int, str]"; "T4", "typing.Union[int, str]"] ];
+    ~right:"typing.Callable[[test.T3], test.T4]"
+    [ ["test.T3", "int"; "test.T4", "str"];
+      ["test.T3", "str"; "test.T4", "int"];
+      ["test.T3", "typing.Union[int, str]"; "test.T4", "typing.Union[int, str]"] ];
 
   (* Free Variable <-> Free Variable constraints *)
   assert_solve
@@ -3171,8 +3217,17 @@ let test_instantiate_protocol_parameters context =
     =
     let environment = environment ?source context in
     let resolution = Environment.resolution environment () in
+    let substitute name =
+      name
+      |> String.substr_replace_all ~pattern:"P" ~with_:"test.P"
+      |> String.substr_replace_all ~pattern:"T1" ~with_:"test.T1"
+      |> String.substr_replace_all ~pattern:"Ts" ~with_:"test.Ts"
+      |> String.substr_replace_all ~pattern:"VariadicCol" ~with_:"test.VariadicCol"
+    in
+    let protocol = substitute protocol in
     let parse_annotation annotation =
       annotation
+      |> substitute
       |> parse_single_expression
       |> GlobalResolution.parse_annotation
            resolution
@@ -3186,7 +3241,7 @@ let test_instantiate_protocol_parameters context =
     in
     let parse_attributes =
       let parse_class (class_name, attributes) =
-        class_name, parse_attributes attributes ~class_name ~parse_annotation
+        substitute class_name, parse_attributes attributes ~class_name ~parse_annotation
       in
       List.map ~f:parse_class
     in
@@ -3337,23 +3392,23 @@ let test_instantiate_protocol_parameters context =
     ~source:
       {|
       Ts = pyre_extensions.ListVariadic("Ts")
-      class VariadicProtocol(typing.Generic[Ts]): pass
+      class VariadicCol(typing.Generic[Ts]): pass
     |}
     ~classes:["A", ["prop", "typing.Tuple[int, str]"]]
-    ~protocols:["VariadicProtocol", ["prop", "typing.Tuple[Ts]"]]
+    ~protocols:["VariadicCol", ["prop", "typing.Tuple[Ts]"]]
     ~candidate:"A"
-    ~protocol:"VariadicProtocol"
+    ~protocol:"VariadicCol"
     (Some (Concrete [Type.integer; Type.string]));
   assert_instantiate_protocol_parameters
     ~source:
       {|
       Ts = pyre_extensions.ListVariadic("Ts")
-      class VariadicProtocol(typing.Generic[Ts]): pass
+      class VariadicCol(typing.Generic[Ts]): pass
     |}
     ~classes:["A", ["method", "typing.Callable[[int, str], bool]"]]
-    ~protocols:["VariadicProtocol", ["method", "typing.Callable[[Ts], bool]"]]
+    ~protocols:["VariadicCol", ["method", "typing.Callable[[Ts], bool]"]]
     ~candidate:"A"
-    ~protocol:"VariadicProtocol"
+    ~protocol:"VariadicCol"
     (Some (Concrete [Type.integer; Type.string]));
   ()
 

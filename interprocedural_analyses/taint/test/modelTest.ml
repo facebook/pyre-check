@@ -368,9 +368,9 @@ let test_invalid_models context =
       | None ->
           {|
               unannotated_global = source()
-              def sink(parameter) -> None: pass
-              def sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
-              def source() -> None: pass
+              def test.sink(parameter) -> None: pass
+              def test.sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
+              def test.source() -> None: pass
               def function_with_args(normal_arg, __anonymous_arg, *args) -> None: pass
               def function_with_kwargs(normal_arg, **kwargs) -> None: pass
               def anonymous_only(__arg1, __arg2, __arg3) -> None: pass
@@ -380,7 +380,7 @@ let test_invalid_models context =
             |}
     in
     let resolution =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
     in
     let configuration =
       TaintConfiguration.
@@ -413,36 +413,37 @@ let test_invalid_models context =
     assert_invalid_model ?source ~model_source ~expect:"no failure" ()
   in
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
-    ~expect:"Invalid model for `sink`: Unsupported taint sink `Unsupported`"
+    ~model_source:"def test.sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
+    ~expect:"Invalid model for `test.sink`: Unsupported taint sink `Unsupported`"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintSink[UserControlled]): ..."
-    ~expect:"Invalid model for `sink`: Unsupported taint sink `UserControlled`"
+    ~model_source:"def test.sink(parameter: TaintSink[UserControlled]): ..."
+    ~expect:"Invalid model for `test.sink`: Unsupported taint sink `UserControlled`"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: SkipAnalysis): ..."
-    ~expect:"Invalid model for `sink`: SkipAnalysis annotation must be in return position"
+    ~model_source:"def test.sink(parameter: SkipAnalysis): ..."
+    ~expect:"Invalid model for `test.sink`: SkipAnalysis annotation must be in return position"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintSink[X, Y, LocalReturn]): ..."
-    ~expect:"Invalid model for `sink`: Invalid TaintSink annotation `LocalReturn`"
+    ~model_source:"def test.sink(parameter: TaintSink[X, Y, LocalReturn]): ..."
+    ~expect:"Invalid model for `test.sink`: Invalid TaintSink annotation `LocalReturn`"
     ();
   assert_invalid_model
-    ~model_source:"def source() -> TaintSource[Invalid]: ..."
-    ~expect:"Invalid model for `source`: Unsupported taint source `Invalid`"
+    ~model_source:"def test.source() -> TaintSource[Invalid]: ..."
+    ~expect:"Invalid model for `test.source`: Unsupported taint source `Invalid`"
     ();
   assert_invalid_model
-    ~model_source:"def source() -> TaintInTaintOut: ..."
-    ~expect:"Invalid model for `source`: Invalid return annotation: TaintInTaintOut"
+    ~model_source:"def test.source() -> TaintInTaintOut: ..."
+    ~expect:"Invalid model for `test.source`: Invalid return annotation: TaintInTaintOut"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintInTaintOut[Test]): ..."
-    ~expect:"Invalid model for `sink`: Invalid TaintInTaintOut annotation `Test`"
+    ~model_source:"def test.sink(parameter: TaintInTaintOut[Test]): ..."
+    ~expect:"Invalid model for `test.sink`: Invalid TaintInTaintOut annotation `Test`"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `InvalidTaintDirection[Test]`"
+    ~model_source:"def test.sink(parameter: InvalidTaintDirection[Test]): ..."
+    ~expect:
+      "Invalid model for `test.sink`: Unrecognized taint annotation `InvalidTaintDirection[Test]`"
     ();
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
@@ -450,112 +451,114 @@ let test_invalid_models context =
       "Invalid model for `not_in_the_environment`: Modeled entity is not part of the environment!"
     ();
   assert_invalid_model
-    ~model_source:"def sink(): ..."
+    ~model_source:"def test.sink(): ..."
     ~expect:
-      "Invalid model for `sink`: Model signature parameters do not match implementation `def \
+      "Invalid model for `test.sink`: Model signature parameters do not match implementation `def \
        sink(parameter: unknown) -> None: ...`. Reason(s): missing named parameters: `parameter`."
     ();
   assert_invalid_model
-    ~model_source:"def sink_with_optional(): ..."
+    ~model_source:"def test.sink_with_optional(): ..."
     ~expect:
-      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+      "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
        secondOptional: unknown = ...) -> None: ...`. Reason(s): missing named parameters: \
        `parameter`."
     ();
-  assert_valid_model ~model_source:"def sink_with_optional(parameter): ..." ();
-  assert_valid_model ~model_source:"def sink_with_optional(parameter, firstOptional): ..." ();
+  assert_valid_model ~model_source:"def test.sink_with_optional(parameter): ..." ();
+  assert_valid_model ~model_source:"def test.sink_with_optional(parameter, firstOptional): ..." ();
   assert_valid_model
-    ~model_source:"def sink_with_optional(parameter, firstOptional, secondOptional): ..."
+    ~model_source:"def test.sink_with_optional(parameter, firstOptional, secondOptional): ..."
     ();
   assert_invalid_model
     ~model_source:
-      "def sink_with_optional(parameter, firstOptional, secondOptional, thirdOptional): ..."
+      "def test.sink_with_optional(parameter, firstOptional, secondOptional, thirdOptional): ..."
     ~expect:
-      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+      "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
        secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected named parameter: \
        `thirdOptional`."
     ();
   assert_invalid_model
-    ~model_source:"def sink_with_optional(parameter, firstBad, secondBad): ..."
+    ~model_source:"def test.sink_with_optional(parameter, firstBad, secondBad): ..."
     ~expect:
-      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+      "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
        secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected named parameter: \
        `firstBad`; unexpected named parameter: `secondBad`."
     ();
   assert_invalid_model
-    ~model_source:"def sink_with_optional(parameter, *args): ..."
+    ~model_source:"def test.sink_with_optional(parameter, *args): ..."
     ~expect:
-      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+      "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
        secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected star parameter."
     ();
   assert_invalid_model
-    ~model_source:"def sink_with_optional(parameter, **kwargs): ..."
+    ~model_source:"def test.sink_with_optional(parameter, **kwargs): ..."
     ~expect:
-      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+      "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
        secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected star star parameter."
     ();
   assert_invalid_model
-    ~model_source:"def sink_with_optional(__parameter): ..."
+    ~model_source:"def test.sink_with_optional(__parameter): ..."
     ~expect:
-      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+      "Invalid model for `test.sink_with_optional`: Model signature parameters do not match \
        implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
        secondOptional: unknown = ...) -> None: ...`. Reason(s): missing named parameters: \
        `parameter`; unexpected anonymous parameter: `__parameter`."
     ();
   assert_valid_model
-    ~model_source:"def function_with_args(normal_arg, __random_name, named_arg, *args): ..."
+    ~model_source:"def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."
     ();
   assert_valid_model
-    ~model_source:"def function_with_args(normal_arg, __random_name, *args): ..."
+    ~model_source:"def test.function_with_args(normal_arg, __random_name, *args): ..."
     ();
   assert_valid_model
-    ~model_source:"def function_with_args(normal_arg, __random_name, __random_name_2, *args): ..."
+    ~model_source:
+      "def test.function_with_args(normal_arg, __random_name, __random_name_2, *args): ..."
     ();
-  assert_valid_model ~model_source:"def function_with_kwargs(normal_arg, **kwargs): ..." ();
+  assert_valid_model ~model_source:"def test.function_with_kwargs(normal_arg, **kwargs): ..." ();
   assert_valid_model
-    ~model_source:"def function_with_kwargs(normal_arg, crazy_arg, **kwargs): ..."
+    ~model_source:"def test.function_with_kwargs(normal_arg, crazy_arg, **kwargs): ..."
     ();
-  assert_valid_model ~model_source:"def anonymous_only(__a1, __a2, __a3): ..." ();
-  assert_valid_model ~model_source:"def anonymous_with_optional(__a1, __a2): ..." ();
-  assert_valid_model ~model_source:"def anonymous_with_optional(__a1, __a2, __a3=...): ..." ();
+  assert_valid_model ~model_source:"def test.anonymous_only(__a1, __a2, __a3): ..." ();
+  assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2): ..." ();
+  assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2, __a3=...): ..." ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: Any): ..."
-    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `Any`"
+    ~model_source:"def test.sink(parameter: Any): ..."
+    ~expect:"Invalid model for `test.sink`: Unrecognized taint annotation `Any`"
     ();
   assert_invalid_model
     ~path:"broken_model.pysa"
-    ~model_source:"def sink(parameter: Any): ..."
+    ~model_source:"def test.sink(parameter: Any): ..."
     ~expect:
-      "Invalid model for `sink` defined in `broken_model.pysa:1`: Unrecognized taint annotation \
-       `Any`"
+      "Invalid model for `test.sink` defined in `broken_model.pysa:1`: Unrecognized taint \
+       annotation `Any`"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
-    ~expect:"Invalid model for `sink`: Unrecognized Via annotation `bad_feature`"
+    ~model_source:"def test.sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
+    ~expect:"Invalid model for `test.sink`: Unrecognized Via annotation `bad_feature`"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintSink[Updates[self]]): ..."
-    ~expect:"Invalid model for `sink`: No such parameter `self`"
+    ~model_source:"def test.sink(parameter: TaintSink[Updates[self]]): ..."
+    ~expect:"Invalid model for `test.sink`: No such parameter `self`"
     ();
-  assert_valid_model ~model_source:"unannotated_global: TaintSink[Test]" ();
+  assert_valid_model ~model_source:"test.unannotated_global: TaintSink[Test]" ();
   assert_invalid_model
-    ~model_source:"missing_global: TaintSink[Test]"
-    ~expect:"Invalid model for `missing_global`: Modeled entity is not part of the environment!"
+    ~model_source:"test.missing_global: TaintSink[Test]"
+    ~expect:
+      "Invalid model for `test.missing_global`: Modeled entity is not part of the environment!"
     ();
-  assert_valid_model ~model_source:"C.unannotated_class_variable: TaintSink[Test]" ();
+  assert_valid_model ~model_source:"test.C.unannotated_class_variable: TaintSink[Test]" ();
   assert_invalid_model
-    ~model_source:"C.missing: TaintSink[Test]"
-    ~expect:"Invalid model for `C.missing`: Modeled entity is not part of the environment!"
+    ~model_source:"test.C.missing: TaintSink[Test]"
+    ~expect:"Invalid model for `test.C.missing`: Modeled entity is not part of the environment!"
     ();
   assert_invalid_model
     ~model_source:
       {|
-      class ClassSinkWithMethod(TaintSink[TestSink]):
+      class test.ClassSinkWithMethod(TaintSink[TestSink]):
           def method(self): ...
       |}
     ~expect:"Class models must have a body of `...`."
@@ -563,52 +566,52 @@ let test_invalid_models context =
 
   (* Attach syntax. *)
   assert_invalid_model
-    ~model_source:"def sink(parameter: AttachToSink): ..."
-    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `AttachToSink`"
+    ~model_source:"def test.sink(parameter: AttachToSink): ..."
+    ~expect:"Invalid model for `test.sink`: Unrecognized taint annotation `AttachToSink`"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: AttachToSink[feature]): ..."
+    ~model_source:"def test.sink(parameter: AttachToSink[feature]): ..."
     ~expect:
-      "Invalid model for `sink`: All parameters to `AttachToSink` must be of the form \
+      "Invalid model for `test.sink`: All parameters to `AttachToSink` must be of the form \
        `Via[feature]`."
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter: AttachToTito[feature]): ..."
+    ~model_source:"def test.sink(parameter: AttachToTito[feature]): ..."
     ~expect:
-      "Invalid model for `sink`: All parameters to `AttachToTito` must be of the form \
+      "Invalid model for `test.sink`: All parameters to `AttachToTito` must be of the form \
        `Via[feature]`."
     ();
   assert_invalid_model
-    ~model_source:"def source() -> AttachToSource[feature]: ..."
+    ~model_source:"def test.source() -> AttachToSource[feature]: ..."
     ~expect:
-      "Invalid model for `source`: All parameters to `AttachToSource` must be of the form \
+      "Invalid model for `test.source`: All parameters to `AttachToSource` must be of the form \
        `Via[feature]`."
     ();
 
   (* Multiple features. *)
   assert_valid_model
-    ~model_source:"def sink(parameter: AttachToSink[Via[featureA, featureB]]): ..."
+    ~model_source:"def test.sink(parameter: AttachToSink[Via[featureA, featureB]]): ..."
     ();
 
   (* Default values must be `...`. *)
   assert_invalid_model
-    ~model_source:"def sink(parameter = TaintSink[Test]): ..."
+    ~model_source:"def test.sink(parameter = TaintSink[Test]): ..."
     ~expect:
-      "Invalid model for `sink`: Default values of parameters must be `...`. Did you mean to \
+      "Invalid model for `test.sink`: Default values of parameters must be `...`. Did you mean to \
        write `parameter: TaintSink[Test]`?"
     ();
   assert_invalid_model
-    ~model_source:"def sink(parameter = 1): ..."
+    ~model_source:"def test.sink(parameter = 1): ..."
     ~expect:
-      "Invalid model for `sink`: Default values of parameters must be `...`. Did you mean to \
+      "Invalid model for `test.sink`: Default values of parameters must be `...`. Did you mean to \
        write `parameter: 1`?"
     ();
 
   (* ViaValueOf models must specify existing parameters. *)
   assert_invalid_model
     ~model_source:
-      "def sink(parameter) -> TaintSource[Test, ViaValueOf[nonexistent_parameter]]: ..."
-    ~expect:"Invalid model for `sink`: No such parameter `nonexistent_parameter`"
+      "def test.sink(parameter) -> TaintSource[Test, ViaValueOf[nonexistent_parameter]]: ..."
+    ~expect:"Invalid model for `test.sink`: No such parameter `nonexistent_parameter`"
     ();
   assert_invalid_model
     ~source:
@@ -621,13 +624,14 @@ let test_invalid_models context =
       def foo(self, value) -> None:
         self.x = value
     |}
-    ~model_source:{|
+    ~model_source:
+      {|
       @property
-      def C.foo(self, value) -> TaintSource[Test]: ...
+      def test.C.foo(self, value) -> TaintSource[Test]: ...
     |}
     ~expect:
-      "Invalid model for `C.foo`: Model signature parameters do not match implementation `(self: \
-       unknown) -> int`. Reason(s): unexpected named parameter: `value`."
+      "Invalid model for `test.C.foo`: Model signature parameters do not match implementation \
+       `(self: unknown) -> int`. Reason(s): unexpected named parameter: `value`."
     ();
   assert_invalid_model
     ~source:
@@ -642,11 +646,11 @@ let test_invalid_models context =
     |}
     ~model_source:{|
       @foo.setter
-      def C.foo(self) -> TaintSource[Test]: ...
+      def test.C.foo(self) -> TaintSource[Test]: ...
     |}
     ~expect:
-      "Invalid model for `C.foo`: Model signature parameters do not match implementation `(self: \
-       unknown, value: int) -> None`. Reason(s): missing named parameters: `value`."
+      "Invalid model for `test.C.foo`: Model signature parameters do not match implementation \
+       `(self: unknown, value: int) -> None`. Reason(s): missing named parameters: `value`."
     ();
   assert_invalid_model
     ~model_source:
@@ -670,10 +674,10 @@ let test_invalid_models context =
     ~model_source:
       {|
       @wrong_name.setter
-      def C.foo(self, value: TaintSink[Test]): ...
+      def test.C.foo(self, value: TaintSink[Test]): ...
     |}
     ~expect:
-      "Invalid model for `C.foo`: Unexpected decorators found when parsing model: \
+      "Invalid model for `test.C.foo`: Unexpected decorators found when parsing model: \
        `wrong_name.setter`"
     ();
   assert_valid_model
@@ -685,9 +689,10 @@ let test_invalid_models context =
         @foo.setter
         def foo(self, value) -> None: ...
     |}
-    ~model_source:{|
+    ~model_source:
+      {|
       @foo.setter
-      def C.foo(self, value: TaintSink[Test]): ...
+      def test.C.foo(self, value: TaintSink[Test]): ...
     |}
     ()
 

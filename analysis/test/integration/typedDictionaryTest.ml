@@ -9,17 +9,6 @@ open Test
 
 let test_check_typed_dictionaries context =
   let assert_test_typed_dictionary source =
-    let typing_stub =
-      {
-        handle = "typing.pyi";
-        source =
-          {|
-            Any = object()
-            class _SpecialForm:
-                def __getitem__(self, typeargs: Any) -> Any: ...
-          |};
-      }
-    in
     let mypy_extensions_stub =
       {
         handle = "mypy_extensions.pyi";
@@ -60,7 +49,7 @@ let test_check_typed_dictionaries context =
     in
     assert_type_errors
       ~context
-      ~update_environment_with:[typing_stub; mypy_extensions_stub; typed_dictionary_for_import]
+      ~update_environment_with:[mypy_extensions_stub; typed_dictionary_for_import]
       source
   in
   assert_test_typed_dictionary
