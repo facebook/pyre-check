@@ -705,7 +705,7 @@ let save_results ~configuration ~environment ~analyses all_callables =
     let seen_element = ref false in
     fun json ->
       if !seen_element then (
-        Bi_outbuf.add_string out_buffer ",\n";
+        Bi_outbuf.add_string out_buffer "\n";
         Json.to_outbuf out_buffer json )
       else (
         seen_element := true;
@@ -726,16 +726,12 @@ let save_results ~configuration ~environment ~analyses all_callables =
         let out_channel = open_out (Path.absolute output_path) in
         let out_buffer = Bi_outbuf.create_channel_writer out_channel in
         let array_emitter = emit_json_array_elements out_buffer in
-        let config = `Assoc ["repo", `String root] in
-        (* I wish Yojson had a stream emitter. *)
-        Bi_outbuf.add_string out_buffer "{\n";
-        Bi_outbuf.add_string out_buffer "\"config\": ";
-        Json.to_outbuf out_buffer config;
-        Bi_outbuf.add_string out_buffer ",\n";
-        Bi_outbuf.add_string out_buffer "\"results\": [\n";
+        let header_with_version =
+          `Assoc ["file_version", `Int 2; "config", `Assoc ["repo", `String root]]
+        in
+        Json.to_outbuf out_buffer header_with_version;
+        Bi_outbuf.add_string out_buffer "\n";
         List.iter ~f:(emit_externalization ~environment kind array_emitter) all_callables;
-        Bi_outbuf.add_string out_buffer "\n]\n";
-        Bi_outbuf.add_string out_buffer "}\n";
         Bi_outbuf.flush_output_writer out_buffer;
         close_out out_channel
       in
