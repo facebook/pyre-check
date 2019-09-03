@@ -20,6 +20,8 @@ let test_parse _ =
   assert_mode "  # pyre-ignore-all-errors " Source.Declare;
   assert_mode "\t# pyre-ignore-all-errors" Source.Declare;
   assert_mode " # pyre-strict" Source.Strict;
+  assert_mode " # pyre-strict comment comment" Source.Default;
+  assert_mode " # comment comment pyre-strict" Source.Default;
   assert_mode " # pyre-unsafe" Source.Unsafe;
   assert_mode " # pyre-durp" Source.Default;
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " (Source.DefaultButDontCheck [42; 7; 15]);

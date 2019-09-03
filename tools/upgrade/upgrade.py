@@ -439,7 +439,7 @@ def add_local_unsafe(
         # Check if already locally strict.
         is_local_strict = False
         for line in lines:
-            if line.lstrip().startswith("#") and "pyre-strict" in line:
+            if re.match("^[ \t]*# *pyre-strict *$", line):
                 is_local_strict = True
                 break
 
