@@ -93,13 +93,19 @@ BUILD_ROOT="$(mktemp -d)"
 cd "${BUILD_ROOT}"
 echo "Using build root: ${BUILD_ROOT}"
 
-# Copy source files.
+# Copy source files. We can't use longopts here because MacOS mkdir doesn't support --parents.
 mkdir "${MODULE_NAME}"
+# setup.py sdist will refuse to work for directories without a `__init__.py`.
+touch "${MODULE_NAME}/__init__.py"
+mkdir -p "${MODULE_NAME}/client"
+mkdir -p "${MODULE_NAME}/tools/upgrade"
+touch "${MODULE_NAME}/tools/__init__.py"
+touch "${MODULE_NAME}/tools/upgrade/__init__.py"
 # i.e. copy all *.py files from all directories, except "tests"
-rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../client/" "${BUILD_ROOT}/${MODULE_NAME}"
-rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../tools/upgrade/" "${BUILD_ROOT}/${MODULE_NAME}"
+rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../client/" "${BUILD_ROOT}/${MODULE_NAME}/client"
+rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../tools/upgrade/" "${BUILD_ROOT}/${MODULE_NAME}/tools/upgrade"
 # Patch version number.
-sed -i -e "/__version__/s/= \".*\"/= \"${PACKAGE_VERSION}\"/" "${BUILD_ROOT}/${MODULE_NAME}/version.py"
+sed -i -e "/__version__/s/= \".*\"/= \"${PACKAGE_VERSION}\"/" "${BUILD_ROOT}/${MODULE_NAME}/client/version.py"
 
 # Copy binary files.
 BINARY_FILE="${SCRIPTS_DIRECTORY}/../_build/default/main.exe"
@@ -190,8 +196,8 @@ setup(
     install_requires=[${RUNTIME_DEPENDENCIES}],
     entry_points={
         'console_scripts': [
-            'pyre = ${MODULE_NAME}.pyre:main',
-            'pyre-upgrade = ${MODULE_NAME}.upgrade:main',
+            'pyre = ${MODULE_NAME}.client.pyre:main',
+            'pyre-upgrade = ${MODULE_NAME}.tools.upgrade.upgrade:main',
         ],
     }
 )
