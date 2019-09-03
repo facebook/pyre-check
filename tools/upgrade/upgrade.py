@@ -29,7 +29,6 @@ def json_to_errors(json_string: Optional[str]) -> List[Dict[str, Any]]:
     if json_string:
         try:
             return json.loads(json_string)
-        # pyre-fixme[18]: Global name `decoder` is undefined.
         except json.decoder.JSONDecodeError:
             LOG.error(
                 "Recevied invalid JSON as input."

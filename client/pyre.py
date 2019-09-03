@@ -92,7 +92,6 @@ def main() -> int:
     # Logging.
     parser.add_argument(
         "--output",
-        # pyre-fixme[18]: Global name `reporting` is undefined.
         choices=[commands.reporting.TEXT, commands.reporting.JSON],
         default=commands.reporting.TEXT,
         help="How to format output",
@@ -539,8 +538,6 @@ def main() -> int:
                     arguments, commands, configuration, isolate=isolate
                 )
 
-        # pyre-fixme[31]: Expression `command` is not a valid type.
-        # pyre-fixme[11]: Type `command` is not defined.
         command = arguments.command  # type: Type[Command]
         exit_code = (
             # pyre-fixme: need to disentangle the initialize command.

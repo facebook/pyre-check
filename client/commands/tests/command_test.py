@@ -114,7 +114,6 @@ class CommandTest(unittest.TestCase):
                 commands.Command(
                     arguments, configuration, AnalysisDirectory(".")
                 )._state(),
-                # pyre-fixme[18]: Global name `command` is undefined.
                 commands.command.State.RUNNING,
             )
 

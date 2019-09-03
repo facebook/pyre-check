@@ -63,7 +63,6 @@ def read_message(file: BinaryIO) -> Optional[LanguageServerProtocolMessage]:
                 parameters=payload.get("params"),
             )
         return None
-    # pyre-fixme[18]: Global name `decoder` is undefined.
     except (ValueError, OSError, json.decoder.JSONDecodeError):
         return None
 
