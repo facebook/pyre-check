@@ -5,7 +5,7 @@
 
 # pyre-strict
 
-from typing import IO, Any, Dict, List, NamedTuple, Optional
+from typing import IO, Any, Dict, List, NamedTuple, Optional, Union
 
 import libcst as cst
 
@@ -76,7 +76,7 @@ class TypeTransformer(cst.CSTTransformer):
 
     def _annotate_single_target(
         self, node: cst.Assign, updated_node: cst.Assign
-    ) -> cst.CSTNode:
+    ) -> Union[cst.Assign, cst.AnnAssign]:
         if isinstance(node.targets[0].target, cst.Tuple):
             target = node.targets[0].target
             # pyre-fixme[16]: `BaseAssignTargetExpression` has no attribute `elements`.
@@ -127,8 +127,8 @@ class TypeTransformer(cst.CSTTransformer):
         self.qualifier.append(node.name.value)
 
     def leave_ClassDef(
-        self, node: cst.ClassDef, updated_node: cst.ClassDef
-    ) -> cst.CSTNode:
+        self, original_node: cst.ClassDef, updated_node: cst.ClassDef
+    ) -> cst.ClassDef:
         self.qualifier.pop()
         return updated_node
 
@@ -138,8 +138,8 @@ class TypeTransformer(cst.CSTTransformer):
         return False
 
     def leave_FunctionDef(
-        self, node: cst.FunctionDef, updated_node: cst.FunctionDef
-    ) -> cst.CSTNode:
+        self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
+    ) -> cst.FunctionDef:
         key = self._qualifier_name()
         self.qualifier.pop()
         if key in self.function_annotations:
@@ -152,17 +152,21 @@ class TypeTransformer(cst.CSTTransformer):
             return updated_node.with_changes(params=new_parameters)
         return updated_node
 
-    def leave_Assign(self, node: cst.Assign, updated_node: cst.Assign) -> cst.CSTNode:
+    def leave_Assign(
+        self, original_node: cst.Assign, updated_node: cst.Assign
+    ) -> Union[cst.Assign, cst.AnnAssign]:
 
-        if len(node.targets) > 1:
-            for assign in node.targets:
+        if len(original_node.targets) > 1:
+            for assign in original_node.targets:
                 # pyre-fixme[16]: `BaseAssignTargetExpression` has no attribute `value`.
                 self._add_to_toplevel_annotations(assign.target.value)
             return updated_node
         else:
-            return self._annotate_single_target(node, updated_node)
+            return self._annotate_single_target(original_node, updated_node)
 
-    def leave_Module(self, node: cst.Module, updated_node: cst.Module) -> cst.CSTNode:
+    def leave_Module(
+        self, original_node: cst.Module, updated_node: cst.Module
+    ) -> cst.Module:
         body = list(updated_node.body)
         index = self._get_toplevel_index(body)
         for name, annotation in self.toplevel_annotations.items():
