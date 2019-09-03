@@ -16,11 +16,11 @@ module Node : sig
     | Normal
     | Final
     | For of For.t
-    | If of Statement.t If.t
+    | If of If.t
     | Join
     | Try of Try.t
     | With of With.t
-    | While of Statement.t While.t
+    | While of While.t
     | Yield
   [@@deriving compare, eq, show]
 

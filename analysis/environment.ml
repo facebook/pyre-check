@@ -73,7 +73,7 @@ module SharedMemory = struct
   end
 
   module ClassValue = struct
-    type t = Statement.Class.t Node.t
+    type t = Class.t Node.t
 
     let prefix = Prefix.make ()
 
@@ -81,7 +81,7 @@ module SharedMemory = struct
 
     let unmarshall value = Marshal.from_string value 0
 
-    let compare = Node.compare Statement.Class.compare
+    let compare = Node.compare Class.compare
   end
 
   module ClassMetadataValue = struct
@@ -700,7 +700,6 @@ let connect_definition
 
 let register_class_metadata environment class_name =
   let open SharedMemory in
-  let open Statement in
   let successors =
     ClassHierarchy.successors (module SharedMemoryClassHierarchyHandler) class_name
   in
@@ -772,7 +771,7 @@ let add_special_classes environment =
       ( "typing.GenericMeta",
         [],
         [],
-        [ Define
+        [ Statement.Define
             {
               signature =
                 {
@@ -847,7 +846,7 @@ let register_class_definitions environment source =
     let visit_children _ = true
 
     let statement { Source.qualifier; _ } new_annotations = function
-      | { Node.location; value = Class ({ Class.name; _ } as definition) } ->
+      | { Node.location; value = Statement.Class ({ Class.name; _ } as definition) } ->
           let name = Reference.show name in
           let primitive = name in
           SharedMemoryDependencyHandler.add_class_key ~qualifier name;
@@ -868,7 +867,7 @@ let register_class_definitions environment source =
 let collect_aliases environment { Source.statements; qualifier; _ } =
   let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
     match value with
-    | Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
+    | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
       when Expression.is_simple_name target -> (
         let target =
           let target = Expression.name_to_reference_exn target |> Reference.sanitize_qualified in
@@ -1163,7 +1162,7 @@ let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
     type t = unit
 
     let visit_children = function
-      | { Node.value = Define _; _ } ->
+      | { Node.value = Statement.Define _; _ } ->
           (* inner functions are not globals *)
           false
       | _ -> true
@@ -1174,7 +1173,7 @@ let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
         SharedMemory.UndecoratedFunctions.add reference annotation
       in
       match value with
-      | Class definition -> (
+      | Statement.Class definition -> (
           let annotation =
             AnnotatedClass.create { Node.value = definition; location }
             |> AnnotatedClass.inferred_callable_type ~resolution
@@ -1183,7 +1182,7 @@ let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
           | Some { Type.Callable.implementation; overloads = []; _ } ->
               register ~reference:definition.Class.name ~annotation:implementation
           | _ -> () )
-      | Define ({ Define.signature = { Statement.Define.name; _ }; _ } as define) ->
+      | Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
           if Define.is_overloaded_method define then
             ()
           else
@@ -1215,7 +1214,7 @@ let register_values
     type t = Type.Callable.t Node.t list Reference.Map.t
 
     let visit_children = function
-      | { Node.value = Define _; _ } ->
+      | { Node.value = Statement.Define _; _ } ->
           (* inner functions are not globals *)
           false
       | _ -> true
@@ -1235,7 +1234,7 @@ let register_values
       match statement with
       | {
        Node.location;
-       value = Define ({ Statement.Define.signature = { name; parent; _ }; _ } as define);
+       value = Statement.Define ({ Define.signature = { name; parent; _ }; _ } as define);
       } ->
           let parent =
             if Define.is_class_method define then
@@ -1273,7 +1272,7 @@ let register_values
     let visit_children _ = true
 
     let statement { Source.qualifier; _ } _ = function
-      | { Node.location; value = Class { Class.name; _ } } ->
+      | { Node.location; value = Statement.Class { Class.name; _ } } ->
           (* Register meta annotation. *)
           let primitive = Type.Primitive (Reference.show name) in
           let global =
@@ -1290,7 +1289,7 @@ let register_values
   Visit.visit () source |> ignore;
   let rec visit statement =
     match statement with
-    | { Node.value = If { If.body; orelse; _ }; _ } ->
+    | { Node.value = Statement.If { If.body; orelse; _ }; _ } ->
         (* TODO(T28732125): Properly take an intersection here. *)
         List.iter ~f:visit body;
         List.iter ~f:visit orelse
@@ -1359,7 +1358,7 @@ let connect_type_order environment resolution source =
     let visit_children _ = true
 
     let statement _ _ = function
-      | { Node.location; value = Class definition } ->
+      | { Node.location; value = Statement.Class definition } ->
           connect_definition environment ~resolution ~definition:(Node.create ~location definition)
       | _ -> ()
   end)
@@ -1374,7 +1373,7 @@ let register_dependencies _ source =
     let visit_children _ = true
 
     let statement { Source.qualifier; _ } _ = function
-      | { Node.value = Import { Import.from; imports }; _ } ->
+      | { Node.value = Statement.Import { Import.from; imports }; _ } ->
           let imports =
             let imports =
               match from with
@@ -1408,10 +1407,10 @@ let register_dependencies _ source =
 
 
 let propagate_nested_classes environment source =
-  let propagate ~qualifier ({ Statement.Class.name; _ } as definition) successors =
-    let nested_class_names { Statement.Class.name; body; _ } =
+  let propagate ~qualifier ({ Class.name; _ } as definition) successors =
+    let nested_class_names { Class.name; body; _ } =
       let extract_classes = function
-        | { Node.value = Class { name = nested_name; _ }; _ } ->
+        | { Node.value = Statement.Class { name = nested_name; _ }; _ } ->
             Some (Reference.drop_prefix nested_name ~prefix:name, nested_name)
         | _ -> None
       in
@@ -1444,7 +1443,7 @@ let propagate_nested_classes environment source =
     let visit_children _ = true
 
     let statement { Source.qualifier; _ } _ = function
-      | { Node.value = Class ({ Class.name; _ } as definition); _ } ->
+      | { Node.value = Statement.Class ({ Class.name; _ } as definition); _ } ->
           SharedMemory.ClassMetadata.get (Reference.show name)
           |> Option.iter ~f:(fun { GlobalResolution.successors; _ } ->
                  propagate ~qualifier definition successors)
@@ -1777,7 +1776,7 @@ let serialize_decoded decoded =
       let value =
         match value with
         | Some { Node.value = definition; _ } ->
-            `Assoc ["class_definition", `String (Ast.Statement.Class.show definition)]
+            `Assoc ["class_definition", `String (Class.show definition)]
             |> Yojson.to_string
             |> Option.some
         | None -> None
@@ -1848,7 +1847,7 @@ let decoded_equal first second =
   let open SharedMemory in
   match first, second with
   | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
-      Some (Option.equal (Node.equal Statement.Class.equal) first second)
+      Some (Option.equal (Node.equal Class.equal) first second)
   | ClassMetadata.Decoded (_, first), ClassMetadata.Decoded (_, second) ->
       Some (Option.equal GlobalResolution.equal_class_metadata first second)
   | Aliases.Decoded (_, first), Aliases.Decoded (_, second) ->

@@ -295,7 +295,7 @@ let assert_source_equal_with_locations expected actual =
       let pp_nested_statements _ statement =
         let immediate_children =
           match Node.value statement with
-          | Class { Class.body; _ }
+          | Statement.Class { Class.body; _ }
           | Define { Define.body; _ }
           | With { With.body; _ } ->
               body
@@ -305,7 +305,7 @@ let assert_source_equal_with_locations expected actual =
               body @ orelse
           | Try { Try.body; handlers; orelse; finally } ->
               let handlers =
-                let get_handler_body sofar { Try.handler_body; _ } = handler_body @ sofar in
+                let get_handler_body sofar { Try.Handler.body; _ } = body @ sofar in
                 List.fold ~init:[] ~f:get_handler_body handlers
               in
               body @ handlers @ orelse @ finally
@@ -317,7 +317,7 @@ let assert_source_equal_with_locations expected actual =
         format
         "%s%a -> (%a)\n%sNested Expressions:\n%a%sNested Statements:\n%a"
         prefix
-        Statement.pp
+        pp
         statement
         Location.Reference.pp_line_and_column
         statement.Node.location
@@ -1151,7 +1151,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
 let mock_signature =
   {
-    Define.name = Reference.create "$empty";
+    Define.Signature.name = Reference.create "$empty";
     parameters = [];
     decorators = [];
     docstring = None;
@@ -1424,7 +1424,7 @@ let assert_equivalent_attributes ~context source expected =
     in
     let get_name_if_class { Node.value; _ } =
       match value with
-      | Class { Class.name; _ } -> Some (Reference.show name)
+      | Statement.Class { Class.name; _ } -> Some (Reference.show name)
       | _ -> None
     in
     List.map ~f:Source.statements expected

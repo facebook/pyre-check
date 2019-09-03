@@ -17,10 +17,11 @@ let expand_relative_imports ({ Source.qualifier; _ } as source) =
     let statement qualifier { Node.location; value } =
       let value =
         match value with
-        | Import { Import.from = Some from; imports }
+        | Statement.Import { Import.from = Some from; imports }
           when (not (String.equal (Reference.show from) "builtins"))
                && not (String.equal (Reference.show from) "future.builtins") ->
-            Import { Import.from = Some (Source.expand_relative_import source ~from); imports }
+            Statement.Import
+              { Import.from = Some (Source.expand_relative_import source ~from); imports }
         | _ -> value
       in
       qualifier, [{ Node.location; value }]
@@ -155,7 +156,7 @@ let expand_string_annotations ({ Source.relative; _ } as source) =
       let statement =
         let value =
           match value with
-          | Assign assign -> Assign (transform_assign ~assign)
+          | Statement.Assign assign -> Statement.Assign (transform_assign ~assign)
           | Define define -> Define (transform_define ~define)
           | Class class_statement -> Class (transform_class ~class_statement)
           | _ -> value
@@ -340,7 +341,8 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
         { Node.location; value }
       =
       match value with
-      | Assign { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
+      | Statement.Assign
+          { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
         when String.equal (Expression.show annotation) "_SpecialForm" ->
           let name = Expression.name_to_reference_exn name in
           {
@@ -371,9 +373,7 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
       | Try { Try.body; handlers; orelse; finally } ->
           let scope = explore_scope ~scope body in
           let scope =
-            let explore_handler scope { Try.handler_body; _ } =
-              explore_scope ~scope handler_body
-            in
+            let explore_handler scope { Try.Handler.body; _ } = explore_scope ~scope body in
             List.fold handlers ~init:scope ~f:explore_handler
           in
           let scope = explore_scope ~scope orelse in
@@ -691,7 +691,7 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
           let qualify (scope, statements) ({ Node.location; value } as statement) =
             let scope, statement =
               match value with
-              | Define
+              | Statement.Define
                   ( { signature = { name; parameters; return_annotation; decorators; _ }; _ } as
                   define ) ->
                   let _, define = qualify_define original_scope define in
@@ -719,7 +719,7 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
                       return_annotation;
                     }
                   in
-                  scope, { Node.location; value = Define { define with signature } }
+                  scope, { Node.location; value = Statement.Define { define with signature } }
               | _ -> qualify_statement statement ~qualify_assign:true ~scope
             in
             scope, statement :: statements
@@ -748,9 +748,9 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
         }
       in
       match value with
-      | Assign assign ->
+      | Statement.Assign assign ->
           let scope, assign = qualify_assign assign in
-          scope, Assign assign
+          scope, Statement.Assign assign
       | Assert { Assert.test; message; origin } ->
           ( scope,
             Assert
@@ -842,7 +842,7 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
       | Try { Try.body; handlers; orelse; finally } ->
           let body_scope, body = qualify_statements ~scope body in
           let handler_scopes, handlers =
-            let qualify_handler { Try.kind; name; handler_body } =
+            let qualify_handler { Try.Handler.kind; name; body } =
               let renamed_scope, name =
                 match name with
                 | Some name ->
@@ -851,8 +851,8 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
                 | _ -> scope, name
               in
               let kind = kind >>| qualify_expression ~qualify_strings:false ~scope in
-              let scope, handler_body = qualify_statements ~scope:renamed_scope handler_body in
-              scope, { Try.kind; name; handler_body }
+              let scope, body = qualify_statements ~scope:renamed_scope body in
+              scope, { Try.Handler.kind; name; body }
             in
             List.map handlers ~f:qualify_handler |> List.unzip
           in
@@ -1149,7 +1149,7 @@ let replace_version_specific_code source =
 
     let statement _ ({ Node.location; value } as statement) =
       match value with
-      | If { If.test; body; orelse } -> (
+      | Statement.If { If.test; body; orelse } -> (
           (* Normalizes a comparison of a < b, a <= b, b >= a or b > a to Some (a, b). *)
           let extract_single_comparison { Node.value; _ } =
             match value with
@@ -1212,7 +1212,7 @@ let replace_platform_specific_code source =
 
     let statement _ ({ Node.location; value } as statement) =
       match value with
-      | If { If.test = { Node.value = test; _ }; body; orelse } ->
+      | Statement.If { If.test = { Node.value = test; _ }; body; orelse } ->
           let statements =
             let statements =
               let open Expression in
@@ -1273,7 +1273,7 @@ let expand_type_checking_imports source =
         | _ -> false
       in
       match value with
-      | If { If.test; body; _ } when is_type_checking test -> (), body
+      | Statement.If { If.test; body; _ } when is_type_checking test -> (), body
       | If
           {
             If.test = { Node.value = UnaryOperator { UnaryOperator.operator = Not; operand }; _ };
@@ -1297,7 +1297,7 @@ let expand_implicit_returns source =
     let statement state statement =
       match statement with
       (* Insert implicit return statements at the end of function bodies. *)
-      | { Node.value = Define define; _ } when Define.is_stub define -> state, [statement]
+      | { Node.value = Statement.Define define; _ } when Define.is_stub define -> state, [statement]
       | { Node.location; value = Define define } ->
           let define =
             let has_yield =
@@ -1340,14 +1340,14 @@ let expand_implicit_returns source =
                       | _ -> last_statement
                     in
                     match Node.value statement with
-                    | For { body; orelse; _ } ->
+                    | Statement.For { body; orelse; _ } ->
                         List.fold ~init:None ~f:get_last_in_block [orelse; body]
                     | If { body; orelse; _ } ->
                         List.fold ~init:None ~f:get_last_in_block [orelse; body]
                     | Try { body; handlers; orelse; finally } ->
                         let last_handler_body =
                           match List.rev handlers with
-                          | { Try.handler_body; _ } :: _ -> handler_body
+                          | { Try.Handler.body; _ } :: _ -> body
                           | _ -> []
                         in
                         List.fold
@@ -1382,14 +1382,15 @@ let defines ?(include_stubs = false) ?(include_nested = false) ?(include_topleve
     type t = Define.t Node.t
 
     let visit_children = function
-      | { Node.value = Define _; _ } -> include_nested
+      | { Node.value = Statement.Define _; _ } -> include_nested
       | { Node.value = Class _; _ } -> true
       | _ -> false
 
 
     let predicate = function
-      | { Node.location; value = Class { Class.name; body; _ }; _ } when include_toplevels ->
-          Statement.Define.create_class_toplevel ~parent:name ~statements:body
+      | { Node.location; value = Statement.Class { Class.name; body; _ }; _ }
+        when include_toplevels ->
+          Define.create_class_toplevel ~parent:name ~statements:body
           |> Node.create ~location
           |> Option.some
       | { Node.location; value = Define define } when Define.is_stub define ->
@@ -1414,14 +1415,14 @@ let count_defines source =
     type t = int
 
     let visit_children = function
-      | { Node.value = Define _; _ }
+      | { Node.value = Statement.Define _; _ }
       | { Node.value = Class _; _ } ->
           true
       | _ -> false
 
 
     let statement _ count = function
-      | { Node.value = Class _; _ } ->
+      | { Node.value = Statement.Class _; _ } ->
           (* +1 for $classtoplevel *)
           count + 1
       | { Node.value = Define _; _ } -> count + 1
@@ -1435,12 +1436,12 @@ let count_defines source =
 
 let classes source =
   let module Collector = Visit.StatementCollector (struct
-    type t = Statement.Class.t Node.t
+    type t = Class.t Node.t
 
     let visit_children _ = true
 
     let predicate = function
-      | { Node.location; value = Class class_define } ->
+      | { Node.location; value = Statement.Class class_define } ->
           Some { Node.location; Node.value = class_define }
       | _ -> None
   end)
@@ -1456,7 +1457,7 @@ let dequalify_map source =
 
     let statement map ({ Node.value; _ } as statement) =
       match value with
-      | Import { Import.from = None; imports } ->
+      | Statement.Import { Import.from = None; imports } ->
           let add_import map { Import.name; alias } =
             match alias with
             | Some alias ->
@@ -1487,7 +1488,7 @@ let replace_mypy_extensions_stub ({ Source.relative; statements; _ } as source) 
   if String.is_suffix relative ~suffix:"mypy_extensions.pyi" then
     let typed_dictionary_stub ~location =
       let node value = Node.create ~location value in
-      Assign
+      Statement.Assign
         {
           target = node (Name (Name.Identifier "TypedDict"));
           annotation =
@@ -1506,7 +1507,7 @@ let replace_mypy_extensions_stub ({ Source.relative; statements; _ } as source) 
       |> node
     in
     let replace_typed_dictionary_define = function
-      | { Node.location; value = Define { signature = { name; _ }; _ } }
+      | { Node.location; value = Statement.Define { signature = { name; _ }; _ } }
         when String.equal (Reference.show name) "TypedDict" ->
           typed_dictionary_stub ~location
       | statement -> statement
@@ -1602,7 +1603,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           |> Node.create ~location
           |> Option.some
         in
-        Assign { target; annotation; value = name; parent }
+        Statement.Assign { target; annotation; value = name; parent }
       in
       let extract_totality arguments =
         let is_total ~total = String.equal (Identifier.sanitized total) "total" in
@@ -1623,7 +1624,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
         |> Option.value ~default:true
       in
       match value with
-      | Assign
+      | Statement.Assign
           {
             target;
             value =
@@ -1696,7 +1697,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             let extract = function
               | {
                   Node.value =
-                    Assign
+                    Statement.Assign
                       {
                         target = { Node.value = Name name; _ };
                         annotation = Some annotation;
@@ -1832,7 +1833,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
         in
         q |> p |> Node.create ~location
       in
-      Assign
+      Statement.Assign
         {
           Assign.target =
             Reference.create ~prefix:parent "_fields" |> Expression.from_reference ~location;
@@ -1848,7 +1849,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           let target =
             Reference.create ~prefix:parent name |> Expression.from_reference ~location
           in
-          Assign
+          Statement.Assign
             {
               Assign.target;
               annotation = Some annotation;
@@ -1913,7 +1914,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
     in
     let value =
       match value with
-      | Assign { Assign.target = { Node.value = Name name; _ }; value = expression; _ } -> (
+      | Statement.Assign { Assign.target = { Node.value = Name name; _ }; value = expression; _ }
+        -> (
           let name = Expression.name_to_reference name >>| Reference.delocalize in
           match extract_attributes expression, name with
           | Some attributes, Some name
@@ -1921,7 +1923,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$cls") name) ->
               let constructor = tuple_constructor ~parent:name ~location attributes in
               let attributes = tuple_attributes ~parent:name ~location attributes in
-              Class
+              Statement.Class
                 {
                   Class.name;
                   bases = [tuple_base ~location];
@@ -1954,7 +1956,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             let extract_assign = function
               | {
                   Node.value =
-                    Assign
+                    Statement.Assign
                       { Assign.target = { Node.value = Name target; _ }; value; annotation; _ };
                   _;
                 } ->
@@ -1985,7 +1987,11 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               | Some attributes ->
                   let constructor =
                     let is_dunder_new = function
-                      | { Node.value = Define { Define.signature = { Define.name; _ }; _ }; _ } ->
+                      | {
+                          Node.value =
+                            Statement.Define { Define.signature = { Define.Signature.name; _ }; _ };
+                          _;
+                        } ->
                           Reference.last name = "__new__"
                       | _ -> false
                     in
@@ -2020,7 +2026,7 @@ let expand_new_types ({ Source.statements; qualifier; _ } as source) =
   let expand_new_type ({ Node.location; value } as statement) =
     let value =
       match value with
-      | Assign
+      | Statement.Assign
           {
             Assign.value =
               {
@@ -2057,7 +2063,7 @@ let expand_new_types ({ Source.statements; qualifier; _ } as source) =
           } ->
           let name = Reference.create ~prefix:qualifier name in
           let constructor =
-            Define
+            Statement.Define
               {
                 signature =
                   {
@@ -2072,11 +2078,11 @@ let expand_new_types ({ Source.statements; qualifier; _ } as source) =
                     async = false;
                     parent = Some name;
                   };
-                body = [Node.create Pass ~location];
+                body = [Node.create Statement.Pass ~location];
               }
             |> Node.create ~location
           in
-          Class
+          Statement.Class
             {
               Class.name;
               bases = [base_argument];

@@ -19,15 +19,15 @@ module NestedDefines = struct
 
   let update_nested_defines nested_defines ~statement ~state =
     match statement with
-    | { Node.location; value = Define nested_define } ->
+    | { Node.location; value = Statement.Define nested_define } ->
         Map.set nested_defines ~key:location ~data:{ nested_define; state }
     | _ -> nested_defines
 end
 
 let nested_defines_deep_to_shallow define =
-  let shallow_nested_defines { Node.value = { Statement.Define.body; _ }; _ } =
+  let shallow_nested_defines { Node.value = { Define.body; _ }; _ } =
     let find_nested = function
-      | { Node.value = Define define; location } -> Some (Node.create ~location define)
+      | { Node.value = Statement.Define define; location } -> Some (Node.create ~location define)
       | _ -> None
     in
     List.filter_map ~f:find_nested body

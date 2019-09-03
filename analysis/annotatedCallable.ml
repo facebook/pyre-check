@@ -36,7 +36,7 @@ let is_generator { Define.body; _ } =
 
 
 let return_annotation
-    ~define:({ Define.signature = { Define.return_annotation; async; _ }; _ } as define)
+    ~define:({ Define.signature = { Define.Signature.return_annotation; async; _ }; _ } as define)
     ~resolution
   =
   let annotation =
@@ -175,7 +175,7 @@ let create ~resolution ~parent ~name overloads =
 let apply_decorators
     ?location
     ~resolution
-    ({ Define.signature = { Define.decorators; _ }; _ } as define)
+    ({ Define.signature = { Define.Signature.decorators; _ }; _ } as define)
   =
   let apply_decorator
       ({ Type.Callable.annotation; parameters; _ } as overload)

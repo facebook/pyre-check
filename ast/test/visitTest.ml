@@ -56,59 +56,60 @@ let test_collect _ =
     assert_equal ~cmp:equal ~printer expected collect
   in
   assert_collect
-    [+Expression (+Float 1.0); +Expression (+Float 2.0)]
-    ([+Float 2.0; +Float 1.0], [+Expression (+Float 2.0); +Expression (+Float 1.0)]);
+    [+Statement.Expression (+Float 1.0); +Statement.Expression (+Float 2.0)]
+    ( [+Float 2.0; +Float 1.0],
+      [+Statement.Expression (+Float 2.0); +Statement.Expression (+Float 1.0)] );
   assert_collect
-    [ +If
+    [ +Statement.If
          {
            If.test = +Float 2.0;
-           body = [+Expression (+Float 3.0)];
-           orelse = [+Expression (+Float 4.0)];
+           body = [+Statement.Expression (+Float 3.0)];
+           orelse = [+Statement.Expression (+Float 4.0)];
          } ]
     ( [+Float 4.0; +Float 3.0; +Float 2.0],
-      [ +If
+      [ +Statement.If
            {
              If.test = +Float 2.0;
-             body = [+Expression (+Float 3.0)];
-             orelse = [+Expression (+Float 4.0)];
+             body = [+Statement.Expression (+Float 3.0)];
+             orelse = [+Statement.Expression (+Float 4.0)];
            };
-        +Expression (+Float 4.0);
-        +Expression (+Float 3.0) ] );
+        +Statement.Expression (+Float 4.0);
+        +Statement.Expression (+Float 3.0) ] );
   assert_collect
-    [ +If
+    [ +Statement.If
          {
            If.test = +Float 1.0;
            body =
-             [ +If
+             [ +Statement.If
                   {
                     If.test = +Float 2.0;
-                    body = [+Expression (+Float 3.0)];
-                    orelse = [+Expression (+Float 4.0)];
+                    body = [+Statement.Expression (+Float 3.0)];
+                    orelse = [+Statement.Expression (+Float 4.0)];
                   } ];
-           orelse = [+Expression (+Float 5.0)];
+           orelse = [+Statement.Expression (+Float 5.0)];
          } ]
     ( [+Float 5.0; +Float 4.0; +Float 3.0; +Float 2.0; +Float 1.0],
-      [ +If
+      [ +Statement.If
            {
              If.test = +Float 1.0;
              body =
-               [ +If
+               [ +Statement.If
                     {
                       If.test = +Float 2.0;
-                      body = [+Expression (+Float 3.0)];
-                      orelse = [+Expression (+Float 4.0)];
+                      body = [+Statement.Expression (+Float 3.0)];
+                      orelse = [+Statement.Expression (+Float 4.0)];
                     } ];
-             orelse = [+Expression (+Float 5.0)];
+             orelse = [+Statement.Expression (+Float 5.0)];
            };
-        +Expression (+Float 5.0);
-        +If
+        +Statement.Expression (+Float 5.0);
+        +Statement.If
            {
              If.test = +Float 2.0;
-             body = [+Expression (+Float 3.0)];
-             orelse = [+Expression (+Float 4.0)];
+             body = [+Statement.Expression (+Float 3.0)];
+             orelse = [+Statement.Expression (+Float 4.0)];
            };
-        +Expression (+Float 4.0);
-        +Expression (+Float 3.0) ] )
+        +Statement.Expression (+Float 4.0);
+        +Statement.Expression (+Float 3.0) ] )
 
 
 let test_collect_location _ =
@@ -221,7 +222,7 @@ let test_statement_visitor _ =
         | Some value -> Hashtbl.set hash_table ~key ~data:(value + 1)
       in
       match Node.value statement with
-      | Assign _ ->
+      | Statement.Assign _ ->
           increment visited "assign";
           visited
       | Import _ ->

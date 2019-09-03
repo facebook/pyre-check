@@ -63,60 +63,60 @@ let assert_modifying_source ?(shallow = false) statements expected_statements ex
 
 let test_transform _ =
   assert_modifying_source
-    [+Expression (+Integer 1); +Expression (+Integer 2)]
-    [+Expression (+Integer 2); +Expression (+Integer 3)]
+    [+Statement.Expression (+Integer 1); +Statement.Expression (+Integer 2)]
+    [+Statement.Expression (+Integer 2); +Statement.Expression (+Integer 3)]
     0;
   assert_modifying_source
-    [ +If
+    [ +Statement.If
          {
            If.test = +Integer 1;
            body =
-             [ +If
+             [ +Statement.If
                   {
                     If.test = +Integer 2;
-                    body = [+Expression (+Integer 3)];
-                    orelse = [+Expression (+Integer 4)];
+                    body = [+Statement.Expression (+Integer 3)];
+                    orelse = [+Statement.Expression (+Integer 4)];
                   } ];
-           orelse = [+Expression (+Integer 5)];
+           orelse = [+Statement.Expression (+Integer 5)];
          } ]
-    [ +If
+    [ +Statement.If
          {
            If.test = +Integer 2;
            body =
-             [ +If
+             [ +Statement.If
                   {
                     If.test = +Integer 3;
-                    body = [+Expression (+Integer 4)];
-                    orelse = [+Expression (+Integer 5)];
+                    body = [+Statement.Expression (+Integer 4)];
+                    orelse = [+Statement.Expression (+Integer 5)];
                   } ];
-           orelse = [+Expression (+Integer 6)];
+           orelse = [+Statement.Expression (+Integer 6)];
          } ]
     0;
   assert_modifying_source
     ~shallow:true
-    [ +If
+    [ +Statement.If
          {
            If.test = +Integer 1;
            body =
-             [ +If
+             [ +Statement.If
                   {
                     If.test = +Integer 2;
-                    body = [+Expression (+Integer 3)];
-                    orelse = [+Expression (+Integer 4)];
+                    body = [+Statement.Expression (+Integer 3)];
+                    orelse = [+Statement.Expression (+Integer 4)];
                   } ];
-           orelse = [+Expression (+Integer 5)];
+           orelse = [+Statement.Expression (+Integer 5)];
          } ]
-    [ +If
+    [ +Statement.If
          {
            If.test = +Integer 1;
            body =
-             [ +If
+             [ +Statement.If
                   {
                     If.test = +Integer 2;
-                    body = [+Expression (+Integer 3)];
-                    orelse = [+Expression (+Integer 4)];
+                    body = [+Statement.Expression (+Integer 3)];
+                    orelse = [+Statement.Expression (+Integer 4)];
                   } ];
-           orelse = [+Expression (+Integer 5)];
+           orelse = [+Statement.Expression (+Integer 5)];
          } ]
     0
 
@@ -160,56 +160,56 @@ let assert_expanded_source ?(shallow = false) statements expected_statements =
 
 let test_expansion _ =
   assert_expanded_source
-    [+Expression (+Float 1.0); +Expression (+Float 2.0)]
-    [ +Expression (+Float 1.0);
-      +Expression (+Float 1.0);
-      +Expression (+Float 2.0);
-      +Expression (+Float 2.0) ];
+    [+Statement.Expression (+Float 1.0); +Statement.Expression (+Float 2.0)]
+    [ +Statement.Expression (+Float 1.0);
+      +Statement.Expression (+Float 1.0);
+      +Statement.Expression (+Float 2.0);
+      +Statement.Expression (+Float 2.0) ];
   assert_expanded_source
     ~shallow:true
-    [+Expression (+Float 1.0); +Expression (+Float 2.0)]
-    [ +Expression (+Float 1.0);
-      +Expression (+Float 1.0);
-      +Expression (+Float 2.0);
-      +Expression (+Float 2.0) ];
+    [+Statement.Expression (+Float 1.0); +Statement.Expression (+Float 2.0)]
+    [ +Statement.Expression (+Float 1.0);
+      +Statement.Expression (+Float 1.0);
+      +Statement.Expression (+Float 2.0);
+      +Statement.Expression (+Float 2.0) ];
   assert_expanded_source
-    [ +If
+    [ +Statement.If
          {
            If.test = +Integer 1;
-           body = [+Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5)];
+           body = [+Statement.Expression (+Integer 3)];
+           orelse = [+Statement.Expression (+Integer 5)];
          } ]
-    [ +If
+    [ +Statement.If
          {
            If.test = +Integer 1;
-           body = [+Expression (+Integer 3); +Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5); +Expression (+Integer 5)];
+           body = [+Statement.Expression (+Integer 3); +Statement.Expression (+Integer 3)];
+           orelse = [+Statement.Expression (+Integer 5); +Statement.Expression (+Integer 5)];
          };
-      +If
+      +Statement.If
          {
            If.test = +Integer 1;
-           body = [+Expression (+Integer 3); +Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5); +Expression (+Integer 5)];
+           body = [+Statement.Expression (+Integer 3); +Statement.Expression (+Integer 3)];
+           orelse = [+Statement.Expression (+Integer 5); +Statement.Expression (+Integer 5)];
          } ];
   assert_expanded_source
     ~shallow:true
-    [ +If
+    [ +Statement.If
          {
            If.test = +Integer 1;
-           body = [+Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5)];
+           body = [+Statement.Expression (+Integer 3)];
+           orelse = [+Statement.Expression (+Integer 5)];
          } ]
-    [ +If
+    [ +Statement.If
          {
            If.test = +Integer 1;
-           body = [+Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5)];
+           body = [+Statement.Expression (+Integer 3)];
+           orelse = [+Statement.Expression (+Integer 5)];
          };
-      +If
+      +Statement.If
          {
            If.test = +Integer 1;
-           body = [+Expression (+Integer 3)];
-           orelse = [+Expression (+Integer 5)];
+           body = [+Statement.Expression (+Integer 3)];
+           orelse = [+Statement.Expression (+Integer 5)];
          } ]
 
 

@@ -203,8 +203,8 @@ module Make (Transformer : Transformer) = struct
     let rec transform_statement statement =
       let transform_children value =
         match value with
-        | Assign { Assign.target; annotation; value; parent } ->
-            Assign
+        | Statement.Assign { Assign.target; annotation; value; parent } ->
+            Statement.Assign
               {
                 Assign.target = transform_expression target;
                 annotation = annotation >>| transform_expression;
@@ -281,11 +281,11 @@ module Make (Transformer : Transformer) = struct
         | Return ({ Return.expression; _ } as return) ->
             Return { return with Return.expression = expression >>| transform_expression }
         | Try { Try.body; handlers; orelse; finally } ->
-            let transform_handler { Try.kind; name; handler_body } =
+            let transform_handler { Try.Handler.kind; name; body } =
               {
-                Try.kind = kind >>| transform_expression;
+                Try.Handler.kind = kind >>| transform_expression;
                 name;
-                handler_body = transform_list handler_body ~f:transform_statement |> List.concat;
+                body = transform_list body ~f:transform_statement |> List.concat;
               }
             in
             (* Body needs to be evaluated first to update local scope *)
@@ -378,8 +378,8 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
             let orelse = List.concat_map ~f:transform_statement orelse in
             While { value with While.body; orelse }
         | Try { Try.body; handlers; orelse; finally } ->
-            let transform_handler ({ Try.handler_body; _ } as value) =
-              { value with Try.handler_body = List.concat_map ~f:transform_statement handler_body }
+            let transform_handler ({ Try.Handler.body; _ } as value) =
+              { value with Try.Handler.body = List.concat_map ~f:transform_statement body }
             in
             let body = List.concat_map ~f:transform_statement body in
             let handlers = List.map ~f:transform_handler handlers in

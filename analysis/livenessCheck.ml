@@ -84,7 +84,9 @@ module State (Context : Context) = struct
   let widen ~previous ~next ~iteration:_ = join previous next
 
   let errors { used; define; _ } =
-    let { Node.value = { Define.signature = { Define.parameters; _ }; _ }; _ } = define in
+    let { Node.value = { Define.signature = { Define.Signature.parameters; _ }; _ }; _ } =
+      define
+    in
     let check_parameter { Node.value = { Parameter.name; _ }; location } =
       match Set.find used ~f:(Identifier.equal name) with
       | Some _ -> ()
@@ -113,7 +115,7 @@ module State (Context : Context) = struct
     (* Check for bottomed out state. *)
     let bottom =
       match value with
-      | Assert { Assert.test = { Node.value = False; _ }; _ } -> true
+      | Statement.Assert { Assert.test = { Node.value = False; _ }; _ } -> true
       | Expression expression -> Type.is_noreturn (Resolution.resolve resolution expression)
       | Return _ -> true
       | _ -> false
@@ -196,7 +198,7 @@ let run ~configuration:_ ~global_resolution ~source =
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
   let define = Source.top_level_define_node source in
-  let check ({ Node.value = { Define.signature = { Define.name; _ }; _ }; _ } as define) =
+  let check ({ Node.value = { Define.signature = { Define.Signature.name; _ }; _ }; _ } as define) =
     let cfg = Cfg.create (Node.value define) in
     Fixpoint.backward ~cfg ~initial:(State.initial ~define)
     |> Fixpoint.entry

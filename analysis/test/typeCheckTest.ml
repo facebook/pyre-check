@@ -514,9 +514,8 @@ let test_forward_expression context =
       let expression = parse expression |> Preprocessing.preprocess in
       expression
       |> function
-      | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
-          expression
-      | { Source.statements = [{ Node.value = Statement.Yield expression; _ }]; _ } -> expression
+      | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression
+      | { Source.statements = [{ Node.value = Yield expression; _ }]; _ } -> expression
       | _ -> failwith "Unable to extract expression"
     in
     let resolution =
@@ -918,9 +917,8 @@ let test_forward_expression context =
       let expression = parse expression |> Preprocessing.expand_format_string in
       expression
       |> function
-      | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
-          expression
-      | { Source.statements = [{ Node.value = Statement.Yield expression; _ }]; _ } -> expression
+      | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression
+      | { Source.statements = [{ Node.value = Yield expression; _ }]; _ } -> expression
       | _ -> failwith "Unable to extract expression"
     in
     let resolution =
@@ -1537,7 +1535,10 @@ let test_calls context =
     let configuration = ScratchProject.configuration_of project in
     (* Clear dependencies for all defines. *)
     let clear_calls
-        { Node.value = { Statement.Define.signature = { Statement.Define.name; _ }; _ }; _ }
+        {
+          Node.value = { Statement.Define.signature = { Statement.Define.Signature.name; _ }; _ };
+          _;
+        }
       =
       Dependencies.Callgraph.set ~caller:name ~callees:[]
     in

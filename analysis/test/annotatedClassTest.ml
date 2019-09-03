@@ -11,6 +11,9 @@ open Expression
 open Statement
 open Pyre
 open Test
+module StatementClass = Class
+module StatementAttribute = Attribute
+module StatementDefine = Define
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Method = Annotated.Method
@@ -109,9 +112,9 @@ let test_superclasses context =
   in
   let ( ! ) name =
     {
-      Statement.Class.name = !&name;
+      StatementClass.name = !&name;
       bases = [];
-      body = [+Pass];
+      body = [+Statement.Pass];
       decorators = [];
       docstring = None;
     }
@@ -452,7 +455,7 @@ let test_has_method context =
 let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol bases =
-      { Statement.Class.name = !&"Derp"; bases; body = []; decorators = []; docstring = None }
+      { StatementClass.name = !&"Derp"; bases; body = []; decorators = []; docstring = None }
       |> Node.create_with_default_location
       |> Class.create
       |> Class.is_protocol
@@ -520,7 +523,7 @@ let test_class_attributes context =
       name
     =
     +{
-       Statement.Attribute.annotation;
+       StatementAttribute.annotation;
        async;
        defines;
        final;
@@ -897,7 +900,7 @@ let test_constraints context =
     let target =
       let { Source.statements; _ } = parse source in
       let target = function
-        | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
+        | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
           when Reference.show name = target ->
             Some (Class.create { Node.location; value = definition })
         | _ -> None
@@ -1156,7 +1159,7 @@ let test_inferred_generic_base context =
     let { Source.statements; _ } = List.hd_exn sources in
     let target =
       let target = function
-        | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
+        | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
           when Reference.show name = target ->
             Some (Class.create { Node.location; value = definition })
         | _ -> None
@@ -1234,7 +1237,7 @@ let test_metaclasses context =
     let { Source.statements; _ } = List.hd_exn sources in
     let target =
       let target = function
-        | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
+        | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
           when Reference.show name = target ->
             Some (Class.create { Node.location; value = definition })
         | _ -> None
@@ -1391,7 +1394,7 @@ let test_unimplemented_abstract_methods context =
     in
     let unimplemented_methods =
       Class.unimplemented_abstract_methods ~resolution definition
-      |> List.map ~f:Statement.Define.unqualified_name
+      |> List.map ~f:StatementDefine.unqualified_name
     in
     assert_equal unimplemented_methods expected
   in
@@ -1438,7 +1441,7 @@ let test_implicit_attributes context =
       Class.implicit_attributes definition
       |> Identifier.SerializableMap.bindings
       |> List.map ~f:snd
-      |> List.map ~f:(fun { Node.value = { Statement.Attribute.name; _ }; _ } -> name)
+      |> List.map ~f:(fun { Node.value = { StatementAttribute.name; _ }; _ } -> name)
     in
     assert_equal attributes expected
   in

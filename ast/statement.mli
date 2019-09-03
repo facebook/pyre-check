@@ -3,108 +3,16 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-module Record : sig
-  module Define : sig
-    type signature = {
-      name: Reference.t;
-      parameters: Expression.t Parameter.t list;
-      decorators: Expression.t list;
-      docstring: string option;
-      return_annotation: Expression.t option;
-      async: bool;
-      parent: Reference.t option;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'statement record = {
-      signature: signature;
-      body: 'statement list;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
-  module Class : sig
-    type 'statement record = {
-      name: Reference.t;
-      bases: Expression.Call.Argument.t list;
-      body: 'statement list;
-      decorators: Expression.t list;
-      docstring: string option;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
-  module For : sig
-    type 'statement record = {
-      target: Expression.t;
-      iterator: Expression.t;
-      body: 'statement list;
-      orelse: 'statement list;
-      async: bool;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
-  module With : sig
-    type 'statement record = {
-      items: (Expression.t * Expression.t option) list;
-      body: 'statement list;
-      async: bool;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
-  module Try : sig
-    type 'statement handler = {
-      kind: Expression.t option;
-      name: Identifier.t option;
-      handler_body: 'statement list;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'statement record = {
-      body: 'statement list;
-      handlers: 'statement handler list;
-      orelse: 'statement list;
-      finally: 'statement list;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-end
-
-module While : sig
-  type 'statement t = {
-    test: Expression.t;
-    body: 'statement list;
-    orelse: 'statement list;
+module Assign : sig
+  type t = {
+    target: Expression.t;
+    annotation: Expression.t option;
+    value: Expression.t;
+    parent: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
-end
 
-module If : sig
-  type 'statement t = {
-    test: Expression.t;
-    body: 'statement list;
-    orelse: 'statement list;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-end
-
-module Assert : sig
-  type 'statement origin =
-    | Assertion
-    | If of {
-        statement: 'statement;
-        true_branch: bool;
-      }
-    | While
-
-  and 'statement t = {
-    test: Expression.t;
-    message: Expression.t option;
-    origin: 'statement origin;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
+  val is_static_attribute_initialization : t -> bool
 end
 
 module Import : sig
@@ -119,18 +27,6 @@ module Import : sig
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash]
-end
-
-module Assign : sig
-  type t = {
-    target: Expression.t;
-    annotation: Expression.t option;
-    value: Expression.t;
-    parent: Reference.t option;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val is_static_attribute_initialization : t -> bool
 end
 
 module Raise : sig
@@ -149,39 +45,31 @@ module Return : sig
   [@@deriving compare, eq, sexp, show, hash]
 end
 
-type statement =
-  | Assign of Assign.t
-  | Assert of t Assert.t
-  | Break
-  | Class of t Record.Class.record
-  | Continue
-  | Define of t Record.Define.record
-  | Delete of Expression.t
-  | Expression of Expression.t
-  | For of t Record.For.record
-  | Global of Identifier.t list
-  | If of t If.t
-  | Import of Import.t
-  | Nonlocal of Identifier.t list
-  | Pass
-  | Raise of Raise.t
-  | Return of Return.t
-  | Try of t Record.Try.record
-  | With of t Record.With.record
-  | While of t While.t
-  | Yield of Expression.t
-  | YieldFrom of Expression.t
+module rec Assert : sig
+  module Origin : sig
+    type t =
+      | Assertion
+      | If of {
+          statement: Statement.t;
+          true_branch: bool;
+        }
+      | While
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
 
-and t = statement Node.t [@@deriving compare, eq, sexp, show, hash]
+  type t = {
+    test: Expression.t;
+    message: Expression.t option;
+    origin: Origin.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
 
-(* Oh ffs ohcaml... *)
-type statement_t = t [@@deriving compare, eq, sexp, show, hash]
-
-module Attribute : sig
+and Attribute : sig
   type attribute = {
     annotation: Expression.t option;
     async: bool;
-    defines: statement_t Record.Define.record list option;
+    defines: Define.t list option;
     final: bool;
     implicit: bool;
     frozen: bool;
@@ -198,15 +86,57 @@ module Attribute : sig
   type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
 end
 
-module Define : sig
-  include module type of struct
-    include Record.Define
-  end
+and Class : sig
+  type t = {
+    name: Reference.t;
+    bases: Expression.Call.Argument.t list;
+    body: Statement.t list;
+    decorators: Expression.t list;
+    docstring: string option;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  type t = statement_t Record.Define.record [@@deriving compare, eq, sexp, show, hash]
+  val constructors : ?in_test:bool -> t -> Define.t list
 
+  val defines : t -> Define.t list
+
+  val find_define : t -> method_name:Identifier.t -> Define.t Node.t option
+
+  val is_frozen : t -> bool
+
+  val implicit_attributes : ?in_test:bool -> t -> Attribute.t Identifier.SerializableMap.t
+
+  val explicitly_assigned_attributes : t -> Attribute.t Identifier.SerializableMap.t
+
+  val attributes
+    :  ?include_generated_attributes:bool ->
+    ?in_test:bool ->
+    t ->
+    Attribute.t Identifier.SerializableMap.t
+
+  val has_decorator : t -> string -> bool
+
+  val is_unit_test : t -> bool
+
+  val is_final : t -> bool
+
+  val is_abstract : t -> bool
+
+  val is_protocol : t -> bool
+end
+
+and Define : sig
   module Signature : sig
-    type t = Record.Define.signature [@@deriving compare, eq, sexp, show, hash]
+    type t = {
+      name: Reference.t;
+      parameters: Expression.t Parameter.t list;
+      decorators: Expression.t list;
+      docstring: string option;
+      return_annotation: Expression.t option;
+      async: bool;
+      parent: Reference.t option; (* The class owning the method. *)
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     val create_toplevel : qualifier:Reference.t option -> t
 
@@ -248,12 +178,18 @@ module Define : sig
 
     val has_decorator : ?match_prefix:bool -> t -> string -> bool
 
-    val has_return_annotation : t -> bool
+    val has_return_annotation : t -> bool [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
-  val create_toplevel : qualifier:Reference.t option -> statements:statement_t list -> t
+  type t = {
+    signature: Signature.t;
+    body: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val create_class_toplevel : parent:Reference.t -> statements:statement_t list -> t
+  val create_toplevel : qualifier:Reference.t option -> statements:Statement.t list -> t
+
+  val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
 
   val unqualified_name : t -> Identifier.t
 
@@ -299,10 +235,7 @@ module Define : sig
 
   val show_json : t -> string
 
-  val implicit_attributes
-    :  t ->
-    definition:statement_t Record.Class.record ->
-    Attribute.t Identifier.SerializableMap.t
+  val implicit_attributes : t -> definition:Class.t -> Attribute.t Identifier.SerializableMap.t
 
   val property_attribute : location:Location.t -> t -> Attribute.t option
 
@@ -311,74 +244,103 @@ module Define : sig
   val has_return_annotation : t -> bool
 end
 
-module Class : sig
-  include module type of struct
-    include Record.Class
-  end
+and For : sig
+  type t = {
+    target: Expression.t;
+    iterator: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+    async: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  type t = statement_t Record.Class.record [@@deriving compare, eq, sexp, show, hash]
-
-  val constructors : ?in_test:bool -> t -> Define.t list
-
-  val defines : t -> Define.t list
-
-  val find_define : t -> method_name:Identifier.t -> Define.t Node.t option
-
-  val is_frozen : t -> bool
-
-  val implicit_attributes : ?in_test:bool -> t -> Attribute.t Identifier.SerializableMap.t
-
-  val explicitly_assigned_attributes : t -> Attribute.t Identifier.SerializableMap.t
-
-  val attributes
-    :  ?include_generated_attributes:bool ->
-    ?in_test:bool ->
-    t ->
-    Attribute.t Identifier.SerializableMap.t
-
-  val has_decorator : t -> string -> bool
-
-  val is_unit_test : t -> bool
-
-  val is_final : t -> bool
-
-  val is_abstract : t -> bool
-
-  val is_protocol : t -> bool
+  val preamble : t -> Statement.t
 end
 
-module For : sig
-  include module type of struct
-    include Record.For
-  end
-
-  type t = statement_t Record.For.record [@@deriving compare, eq, sexp, show, hash]
-
-  val preamble : t -> statement_t
+and If : sig
+  type t = {
+    test: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
-module With : sig
-  include module type of struct
-    include Record.With
+and Try : sig
+  module Handler : sig
+    type t = {
+      kind: Expression.t option;
+      name: Identifier.t option;
+      body: Statement.t list;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
-  type t = statement_t Record.With.record [@@deriving compare, eq, sexp, show, hash]
+  type t = {
+    body: Statement.t list;
+    handlers: Handler.t list;
+    orelse: Statement.t list;
+    finally: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val preamble : t -> statement_t list
+  val preamble : Handler.t -> Statement.t list
 end
 
-module Try : sig
-  include module type of struct
-    include Record.Try
-  end
-
-  type t = statement_t Record.Try.record [@@deriving compare, eq, sexp, show, hash]
-
-  val preamble : statement_t handler -> statement_t list
+and While : sig
+  type t = {
+    test: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
-val assume : ?origin:t Assert.origin -> Expression.t -> t
+and With : sig
+  type t = {
+    items: (Expression.t * Expression.t option) list;
+    body: Statement.t list;
+    async: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-val terminates : t list -> bool
+  val preamble : t -> Statement.t list
+end
 
-val extract_docstring : t list -> string option
+and Statement : sig
+  type statement =
+    | Assign of Assign.t
+    | Assert of Assert.t
+    | Break
+    | Class of Class.t
+    | Continue
+    | Define of Define.t
+    | Delete of Expression.t
+    | Expression of Expression.t
+    | For of For.t
+    | Global of Identifier.t list
+    | If of If.t
+    | Import of Import.t
+    | Nonlocal of Identifier.t list
+    | Pass
+    | Raise of Raise.t
+    | Return of Return.t
+    | Try of Try.t
+    | With of With.t
+    | While of While.t
+    | Yield of Expression.t
+    | YieldFrom of Expression.t
+  [@@deriving compare, eq, sexp, hash, to_yojson]
+
+  type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val assume : ?origin:Assert.Origin.t -> Expression.t -> t
+
+  val terminates : t list -> bool
+
+  val extract_docstring : t list -> string option
+end
+
+type statement = Statement.statement [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+type t = Statement.t [@@deriving compare, eq, sexp, show, hash, to_yojson]

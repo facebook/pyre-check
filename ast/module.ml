@@ -81,7 +81,7 @@ let create
   let aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
       match value with
-      | Assign
+      | Statement.Assign
           {
             Assign.target = { Node.value = Name (Name.Identifier target); _ };
             value = { Node.value = Name value; _ };

@@ -467,7 +467,9 @@ let messages ~concise ~signature location kind =
     =
     location
   in
-  let { Node.value = { Define.name = define_name; _ }; location = define_location } = signature in
+  let { Node.value = { Define.Signature.name = define_name; _ }; location = define_location } =
+    signature
+  in
   let ordinal number =
     let suffix =
       if number % 10 = 1 && number % 100 <> 11 then
@@ -530,7 +532,7 @@ let messages ~concise ~signature location kind =
   | ImpossibleAssertion _ when concise -> ["Assertion will always fail."]
   | ImpossibleAssertion { expression; annotation; statement } ->
       let statement_string =
-        Statement.show statement
+        show statement
         |> String.chop_prefix_exn ~prefix:"assert"
         |> String.strip ~drop:(function
                | ' '
@@ -1616,8 +1618,15 @@ let messages ~concise ~signature location kind =
 let inference_information
     ~signature:{
                  Node.value =
-                   { Define.name; parameters; return_annotation; decorators; parent; async; _ } as
-                   signature;
+                   {
+                     Define.Signature.name;
+                     parameters;
+                     return_annotation;
+                     decorators;
+                     parent;
+                     async;
+                     _;
+                   } as signature;
                  _;
                }
     kind

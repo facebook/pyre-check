@@ -63,7 +63,7 @@ module State (Context : Context) = struct
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~global_resolution { Define.signature = { Define.parameters; _ }; _ } =
+  let initial ~global_resolution { Define.signature = { Define.Signature.parameters; _ }; _ } =
     let state =
       { unawaited = Location.Reference.Map.empty; locals = AliasMap.empty; need_to_await = true }
     in
@@ -544,7 +544,8 @@ module State (Context : Context) = struct
     in
     let global_resolution = Resolution.global_resolution resolution in
     match value with
-    | Assert { Assert.test; _ } -> forward_expression ~resolution ~state ~expression:test |> snd
+    | Statement.Assert { Assert.test; _ } ->
+        forward_expression ~resolution ~state ~expression:test |> snd
     | Assign { value; target; _ } ->
         let awaitables, state = forward_expression ~resolution ~state ~expression:value in
         let annotation = Resolution.resolve resolution value in
@@ -611,7 +612,7 @@ let run ~configuration:_ ~global_resolution ~source =
     let module State = State (Context) in
     let module Fixpoint = Fixpoint.Make (State) in
     let should_run_analysis =
-      define.Node.value.Define.signature.Define.parent
+      define.Node.value.Define.signature.Define.Signature.parent
       >>| (fun parent -> Type.Primitive (Reference.show parent))
       >>| (fun parent_type ->
             not

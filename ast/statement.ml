@@ -7,113 +7,16 @@ open Core
 open Pyre
 module Name = Expression.Name
 
-module Record = struct
-  module Define = struct
-    type signature = {
-      name: Reference.t;
-      parameters: Expression.t Parameter.t list;
-      decorators: Expression.t list;
-      docstring: string option;
-      return_annotation: Expression.t option;
-      async: bool;
-      parent: Reference.t option; (* The class owning the method. *)
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    type 'statement record = {
-      signature: signature;
-      body: 'statement list;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-  end
-
-  module Class = struct
-    type 'statement record = {
-      name: Reference.t;
-      bases: Expression.Call.Argument.t list;
-      body: 'statement list;
-      decorators: Expression.t list;
-      docstring: string option;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-  end
-
-  module For = struct
-    type 'statement record = {
-      target: Expression.t;
-      iterator: Expression.t;
-      body: 'statement list;
-      orelse: 'statement list;
-      async: bool;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-  end
-
-  module With = struct
-    type 'statement record = {
-      items: (Expression.t * Expression.t option) list;
-      body: 'statement list;
-      async: bool;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-  end
-
-  module Try = struct
-    type 'statement handler = {
-      kind: Expression.t option;
-      name: Identifier.t option;
-      handler_body: 'statement list;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    type 'statement record = {
-      body: 'statement list;
-      handlers: 'statement handler list;
-      orelse: 'statement list;
-      finally: 'statement list;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-  end
-end
-
-(* Not sure why the OCaml compiler hates me... *)
-module RecordWith = Record.With
-module RecordFor = Record.For
-module RecordTry = Record.Try
-
-module While = struct
-  type 'statement t = {
-    test: Expression.t;
-    body: 'statement list;
-    orelse: 'statement list;
+module Assign = struct
+  type t = {
+    target: Expression.t;
+    annotation: Expression.t option;
+    value: Expression.t;
+    parent: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
 
-module If = struct
-  type 'statement t = {
-    test: Expression.t;
-    body: 'statement list;
-    orelse: 'statement list;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
-
-module Assert = struct
-  type 'statement origin =
-    | Assertion
-    | If of {
-        statement: 'statement;
-        true_branch: bool;
-      }
-    | While
-
-  and 'statement t = {
-    test: Expression.t;
-    message: Expression.t option;
-    origin: 'statement origin;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  let is_static_attribute_initialization { parent; _ } = Option.is_some parent
 end
 
 module Import = struct
@@ -128,18 +31,6 @@ module Import = struct
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
-
-module Assign = struct
-  type t = {
-    target: Expression.t;
-    annotation: Expression.t option;
-    value: Expression.t;
-    parent: Reference.t option;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let is_static_attribute_initialization { parent; _ } = Option.is_some parent
 end
 
 module Raise = struct
@@ -158,40 +49,88 @@ module Return = struct
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
-type statement =
-  | Assign of Assign.t
-  | Assert of t Assert.t
-  | Break
-  | Class of t Record.Class.record
-  | Continue
-  | Define of t Record.Define.record
-  | Delete of Expression.t
-  | Expression of Expression.t
-  | For of t Record.For.record
-  | Global of Identifier.t list
-  | If of t If.t
-  | Import of Import.t
-  | Nonlocal of Identifier.t list
-  | Pass
-  | Raise of Raise.t
-  | Return of Return.t
-  | Try of t Record.Try.record
-  | With of t Record.With.record
-  | While of t While.t
-  | Yield of Expression.t
-  | YieldFrom of Expression.t
+module rec Assert : sig
+  module Origin : sig
+    type t =
+      | Assertion
+      | If of {
+          statement: Statement.t;
+          true_branch: bool;
+        }
+      | While
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
 
-and t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  type t = {
+    test: Expression.t;
+    message: Expression.t option;
+    origin: Origin.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  module Origin = struct
+    type t =
+      | Assertion
+      | If of {
+          statement: Statement.t;
+          true_branch: bool;
+        }
+      | While
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
 
-let _ = show (* shadowed below *)
+  type t = {
+    test: Expression.t;
+    message: Expression.t option;
+    origin: Origin.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
 
-type statement_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-module Attribute = struct
+and Attribute : sig
   type attribute = {
     annotation: Expression.t option;
     async: bool;
-    defines: statement_t Record.Define.record list option;
+    defines: Define.t list option;
+    final: bool;
+    implicit: bool;
+    frozen: bool;
+    name: Identifier.t;
+    primitive: bool;
+    property: bool;
+    setter: bool;
+    static: bool;
+    toplevel: bool;
+    value: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
+
+  val create
+    :  location:Location.t ->
+    ?async:bool ->
+    ?setter:bool ->
+    ?primitive:bool ->
+    ?property:bool ->
+    ?toplevel:bool ->
+    ?value:Expression.t ->
+    ?annotation:Expression.t ->
+    ?defines:Define.t list ->
+    ?final:bool ->
+    ?static:bool ->
+    ?frozen:bool ->
+    ?implicit:bool ->
+    name:string ->
+    unit ->
+    t
+
+  val name : parent:Reference.t -> Expression.t -> string option
+end = struct
+  type attribute = {
+    annotation: Expression.t option;
+    async: bool;
+    defines: Define.t list option;
     final: bool;
     implicit: bool;
     frozen: bool;
@@ -253,13 +192,621 @@ module Attribute = struct
     | _ -> None
 end
 
-module Define = struct
-  include Record.Define
+and Class : sig
+  type t = {
+    name: Reference.t;
+    bases: Expression.Call.Argument.t list;
+    body: Statement.t list;
+    decorators: Expression.t list;
+    docstring: string option;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  type t = statement_t Record.Define.record [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  val constructors : ?in_test:bool -> t -> Define.t list
 
+  val defines : t -> Define.t list
+
+  val find_define : t -> method_name:Identifier.t -> Define.t Node.t option
+
+  val is_frozen : t -> bool
+
+  val implicit_attributes : ?in_test:bool -> t -> Attribute.t Identifier.SerializableMap.t
+
+  val explicitly_assigned_attributes : t -> Attribute.t Identifier.SerializableMap.t
+
+  val attributes
+    :  ?include_generated_attributes:bool ->
+    ?in_test:bool ->
+    t ->
+    Attribute.t Identifier.SerializableMap.t
+
+  val has_decorator : t -> string -> bool
+
+  val is_unit_test : t -> bool
+
+  val is_final : t -> bool
+
+  val is_abstract : t -> bool
+
+  val is_protocol : t -> bool
+end = struct
+  type t = {
+    name: Reference.t;
+    bases: Expression.Call.Argument.t list;
+    body: Statement.t list;
+    decorators: Expression.t list;
+    docstring: string option;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let constructors ?(in_test = false) { body; _ } =
+    let constructor = function
+      | { Node.value = Statement.Define define; _ } when Define.is_constructor ~in_test define ->
+          Some define
+      | _ -> None
+    in
+    List.filter_map ~f:constructor body
+
+
+  let defines { body; _ } =
+    let define = function
+      | { Node.value = Statement.Define define; _ } -> Some define
+      | _ -> None
+    in
+    List.filter_map ~f:define body
+
+
+  let find_define { body; _ } ~method_name =
+    let is_define = function
+      | { Node.value = Statement.Define define; location }
+        when String.equal (Define.unqualified_name define) method_name ->
+          Some { Node.value = define; location }
+      | _ -> None
+    in
+    List.filter_map ~f:is_define body |> List.hd
+
+
+  let is_frozen { decorators; _ } =
+    let is_frozen_dataclass decorator =
+      match decorator with
+      | {
+       Node.value =
+         Expression.Call
+           {
+             callee =
+               {
+                 Node.value =
+                   Name
+                     (Name.Attribute
+                       {
+                         base = { value = Name (Name.Identifier "dataclasses"); _ };
+                         attribute = "dataclass";
+                         _;
+                       });
+                 _;
+               };
+             arguments;
+           };
+       _;
+      } ->
+          let has_frozen_argument Expression.Call.Argument.{ name; value } =
+            match name, value with
+            | Some { Node.value; _ }, { Node.value = Expression.True; _ } ->
+                String.equal "frozen" (Identifier.sanitized value)
+            | _, _ -> false
+          in
+          List.exists arguments ~f:has_frozen_argument
+      | _ -> false
+    in
+    List.exists decorators ~f:is_frozen_dataclass
+
+
+  let explicitly_assigned_attributes ({ name; body; _ } as definition) =
+    let assigned_attributes map { Node.location; value } =
+      let open Expression in
+      match value with
+      (* Handle multiple assignments on same line *)
+      | Statement.Assign
+          {
+            Assign.target = { Node.value = Tuple targets; _ };
+            value = { Node.value = Tuple values; _ };
+            _;
+          } ->
+          let add_attribute map ({ Node.location; _ } as target) value =
+            Attribute.name ~parent:name target
+            |> function
+            | Some name ->
+                let attribute = Attribute.create ~primitive:true ~location ~name ~value () in
+                Identifier.SerializableMap.set map ~key:name ~data:attribute
+            | _ -> map
+          in
+          if List.length targets = List.length values then
+            List.fold2_exn ~init:map ~f:add_attribute targets values
+          else
+            map
+      | Assign { Assign.target = { Node.value = Tuple targets; _ }; value; _ } ->
+          let add_attribute index map ({ Node.location; _ } as target) =
+            Attribute.name ~parent:name target
+            |> function
+            | Some name ->
+                let value =
+                  let index = Node.create ~location (Integer index) in
+                  match value with
+                  | { Node.value = Call _; _ }
+                  | { Node.value = Name _; _ } ->
+                      Some
+                        {
+                          value with
+                          Node.value =
+                            Call
+                              {
+                                callee =
+                                  {
+                                    Node.location;
+                                    value =
+                                      Name
+                                        (Name.Attribute
+                                           {
+                                             base = value;
+                                             attribute = "__getitem__";
+                                             special = true;
+                                           });
+                                  };
+                                arguments = [{ Call.Argument.name = None; value = index }];
+                              };
+                        }
+                  | _ -> None
+                in
+                value
+                >>| (fun value -> Attribute.create ~primitive:true ~location ~name ~value ())
+                >>| (fun data -> Identifier.SerializableMap.set map ~key:name ~data)
+                |> Option.value ~default:map
+            | _ -> map
+          in
+          List.foldi ~init:map ~f:add_attribute targets
+      | Assign { Assign.target; annotation; value; _ } -> (
+          Attribute.name ~parent:name target
+          |> function
+          | Some name ->
+              let frozen = is_frozen definition in
+              let attribute =
+                Attribute.create ~primitive:true ~location ~name ?annotation ~frozen ~value ()
+              in
+              Identifier.SerializableMap.set map ~key:name ~data:attribute
+          | _ -> map )
+      | _ -> map
+    in
+    List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
+
+
+  let implicit_attributes ?(in_test = false) ({ name; body; _ } as definition) =
+    (* Bias towards the right (previously occuring map in the `|> merge other_map` flow). *)
+    let merge _ left right =
+      match right with
+      | None -> left
+      | Some _ -> right
+    in
+    let implicitly_assigned_attributes =
+      constructors ~in_test definition
+      |> List.map ~f:(Define.implicit_attributes ~definition)
+      |> List.fold
+           ~init:Identifier.SerializableMap.empty
+           ~f:(Identifier.SerializableMap.merge merge)
+    in
+    let property_attributes =
+      let property_attributes map = function
+        | { Node.location; value = Statement.Define define } -> (
+          match Define.property_attribute ~location define with
+          | Some
+              ( {
+                  Node.value =
+                    { Attribute.name; setter = new_setter; annotation = new_annotation; _ } as
+                    attribute;
+                  _;
+                } as attribute_node ) ->
+              let merged_attribute =
+                let existing_attribute = Identifier.SerializableMap.find_opt name map in
+                match existing_attribute, new_setter with
+                | Some { Node.value = { Attribute.setter = true; annotation; _ }; _ }, false ->
+                    { attribute with Attribute.annotation; value = new_annotation; setter = true }
+                    |> fun edited -> { attribute_node with Node.value = edited }
+                | Some { Node.value = { Attribute.setter = false; annotation; _ }; _ }, true ->
+                    {
+                      attribute with
+                      Attribute.annotation = new_annotation;
+                      value = annotation;
+                      setter = true;
+                    }
+                    |> fun edited -> { attribute_node with Node.value = edited }
+                | _ -> attribute_node
+              in
+              Identifier.SerializableMap.set map ~key:name ~data:merged_attribute
+          | _ -> map )
+        | _ -> map
+      in
+      List.fold ~init:Identifier.SerializableMap.empty ~f:property_attributes body
+    in
+    let callable_attributes =
+      let callable_attributes map { Node.location; value } =
+        match value with
+        | Statement.Define ({ Define.signature = { name = target; _ }; _ } as define) ->
+            Attribute.name (Expression.from_reference ~location target) ~parent:name
+            >>| (fun name ->
+                  let attribute =
+                    match Identifier.SerializableMap.find_opt name map with
+                    | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
+                        Attribute.create
+                          ~location
+                          ~name
+                          ~defines:(define :: defines)
+                          ~final:(Define.is_final_method define)
+                          ~static:(Define.is_static_method define)
+                          ()
+                    | _ ->
+                        Attribute.create
+                          ~location
+                          ~name
+                          ~defines:[define]
+                          ~final:(Define.is_final_method define)
+                          ~static:(Define.is_static_method define)
+                          ()
+                  in
+                  Identifier.SerializableMap.set map ~key:name ~data:attribute)
+            |> Option.value ~default:map
+        | _ -> map
+      in
+      List.fold ~init:Identifier.SerializableMap.empty ~f:callable_attributes body
+    in
+    let class_attributes =
+      let callable_attributes map { Node.location; value } =
+        match value with
+        | Statement.Class { name; _ } ->
+            let open Expression in
+            let annotation =
+              let meta_annotation =
+                {
+                  Node.location;
+                  value =
+                    Call
+                      {
+                        callee =
+                          {
+                            Node.location;
+                            value =
+                              Name
+                                (Name.Attribute
+                                   {
+                                     base =
+                                       {
+                                         Node.location;
+                                         value =
+                                           Name
+                                             (Name.Attribute
+                                                {
+                                                  base =
+                                                    {
+                                                      Node.location;
+                                                      value = Name (Name.Identifier "typing");
+                                                    };
+                                                  attribute = "Type";
+                                                  special = false;
+                                                });
+                                       };
+                                     attribute = "__getitem__";
+                                     special = true;
+                                   });
+                          };
+                        arguments =
+                          [ {
+                              Call.Argument.name = None;
+                              value =
+                                Expression.from_reference ~location:Location.Reference.any name;
+                            } ];
+                      };
+                }
+              in
+              {
+                Node.location;
+                value =
+                  Call
+                    {
+                      callee =
+                        {
+                          Node.location;
+                          value =
+                            Name
+                              (Name.Attribute
+                                 {
+                                   base =
+                                     {
+                                       Node.location;
+                                       value =
+                                         Name
+                                           (Name.Attribute
+                                              {
+                                                base =
+                                                  {
+                                                    Node.location;
+                                                    value = Name (Name.Identifier "typing");
+                                                  };
+                                                attribute = "ClassVar";
+                                                special = false;
+                                              });
+                                     };
+                                   attribute = "__getitem__";
+                                   special = true;
+                                 });
+                        };
+                      arguments = [{ Call.Argument.name = None; value = meta_annotation }];
+                    };
+              }
+            in
+            let attribute_name = Reference.last name in
+            Identifier.SerializableMap.set
+              map
+              ~key:attribute_name
+              ~data:(Attribute.create ~location ~name:attribute_name ~annotation ())
+        | _ -> map
+      in
+      List.fold ~init:Identifier.SerializableMap.empty ~f:callable_attributes body
+    in
+    let slots_attributes =
+      let slots_attributes map { Node.value; _ } =
+        let open Expression in
+        let is_slots = function
+          | Name (Name.Identifier "__slots__")
+          | Name (Name.Attribute { attribute = "__slots__"; _ }) ->
+              true
+          | _ -> false
+        in
+        match value with
+        | Statement.Assign
+            {
+              Assign.target = { Node.value = target_value; _ };
+              value = { Node.value = List attributes; location };
+              _;
+            }
+          when is_slots target_value ->
+            let add_attribute map { Node.value; _ } =
+              match value with
+              | String { StringLiteral.value; _ } ->
+                  Attribute.create ~location ~name:value ()
+                  |> fun attribute -> Identifier.SerializableMap.set map ~key:value ~data:attribute
+              | _ -> map
+            in
+            List.fold ~init:map ~f:add_attribute attributes
+        | _ -> map
+      in
+      List.fold ~init:Identifier.SerializableMap.empty ~f:slots_attributes body
+    in
+    (* Merge with decreasing priority. *)
+    implicitly_assigned_attributes
+    |> Identifier.SerializableMap.merge merge property_attributes
+    |> Identifier.SerializableMap.merge merge callable_attributes
+    |> Identifier.SerializableMap.merge merge class_attributes
+    |> Identifier.SerializableMap.merge merge slots_attributes
+
+
+  let attributes ?(include_generated_attributes = true) ?(in_test = false) definition =
+    let explicit_attributes = explicitly_assigned_attributes definition in
+    if not include_generated_attributes then
+      explicit_attributes
+    else
+      let merge _ left right =
+        match right with
+        | None -> left
+        | Some _ -> right
+      in
+      explicit_attributes
+      |> Identifier.SerializableMap.merge merge (implicit_attributes ~in_test definition)
+
+
+  let has_decorator { decorators; _ } decorator =
+    Expression.exists_in_list ~expression_list:decorators decorator
+
+
+  let is_unit_test { name; _ } =
+    let name = Reference.show name in
+    String.equal name "unittest.TestCase" || String.equal name "unittest.case.TestCase"
+
+
+  let is_final definition = has_decorator definition "typing.final"
+
+  let is_abstract { bases; _ } =
+    let abstract_metaclass { Expression.Call.Argument.value; _ } =
+      match value with
+      | {
+       Node.value =
+         Expression.Name
+           (Name.Attribute
+             {
+               base = { Node.value = Name (Name.Identifier "abc"); _ };
+               attribute = "ABCMeta" | "ABC";
+               _;
+             });
+       _;
+      } ->
+          true
+      | _ -> false
+    in
+    List.exists bases ~f:abstract_metaclass
+
+
+  let is_protocol { bases; _ } =
+    let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
+      match name, value with
+      | ( None,
+          Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base =
+                            {
+                              Node.value =
+                                Name
+                                  (Name.Attribute
+                                    {
+                                      base = { Node.value = Name (Name.Identifier typing); _ };
+                                      attribute = "Protocol";
+                                      _;
+                                    });
+                              _;
+                            };
+                          attribute = "__getitem__";
+                          _;
+                        });
+                  _;
+                };
+              _;
+            } )
+      | ( None,
+          Name
+            (Name.Attribute
+              {
+                base = { Node.value = Name (Name.Identifier typing); _ };
+                attribute = "Protocol";
+                _;
+              }) )
+        when String.equal typing "typing" || String.equal typing "typing_extensions" ->
+          true
+      | _ -> false
+    in
+    List.exists ~f:is_protocol bases
+end
+
+and Define : sig
+  module Signature : sig
+    type t = {
+      name: Reference.t;
+      parameters: Expression.t Parameter.t list;
+      decorators: Expression.t list;
+      docstring: string option;
+      return_annotation: Expression.t option;
+      async: bool;
+      parent: Reference.t option; (* The class owning the method. *)
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val create_toplevel : qualifier:Reference.t option -> t
+
+    val create_class_toplevel : parent:Reference.t -> t
+
+    val unqualified_name : t -> Identifier.t
+
+    val self_identifier : t -> Identifier.t
+
+    val is_method : t -> bool
+
+    val is_coroutine : t -> bool
+
+    val is_abstract_method : t -> bool
+
+    val is_overloaded_method : t -> bool
+
+    val is_static_method : t -> bool
+
+    val is_final_method : t -> bool
+
+    val is_class_method : t -> bool
+
+    val is_class_property : t -> bool
+
+    val is_dunder_method : t -> bool
+
+    val is_constructor : ?in_test:bool -> t -> bool
+
+    val is_property_setter : t -> bool
+
+    val is_property : t -> bool
+
+    val is_untyped : t -> bool
+
+    val is_toplevel : t -> bool
+
+    val is_class_toplevel : t -> bool
+
+    val has_decorator : ?match_prefix:bool -> t -> string -> bool
+
+    val has_return_annotation : t -> bool
+  end
+
+  type t = {
+    signature: Signature.t;
+    body: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val create_toplevel : qualifier:Reference.t option -> statements:Statement.t list -> t
+
+  val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
+
+  val unqualified_name : t -> Identifier.t
+
+  val self_identifier : t -> Identifier.t
+
+  val is_method : t -> bool
+
+  val is_coroutine : t -> bool
+
+  val is_abstract_method : t -> bool
+
+  val is_overloaded_method : t -> bool
+
+  val is_static_method : t -> bool
+
+  val is_final_method : t -> bool
+
+  val is_class_method : t -> bool
+
+  val is_class_property : t -> bool
+
+  val is_dunder_method : t -> bool
+
+  val is_constructor : ?in_test:bool -> t -> bool
+
+  val is_property_setter : t -> bool
+
+  val is_property : t -> bool
+
+  val is_untyped : t -> bool
+
+  val is_stub : t -> bool
+
+  val is_toplevel : t -> bool
+
+  val is_class_toplevel : t -> bool
+
+  val dump : t -> bool
+
+  val dump_cfg : t -> bool
+
+  val dump_locations : t -> bool
+
+  val show_json : t -> string
+
+  val implicit_attributes : t -> definition:Class.t -> Attribute.t Identifier.SerializableMap.t
+
+  val property_attribute : location:Location.t -> t -> Attribute.t option
+
+  val has_decorator : ?match_prefix:bool -> t -> string -> bool
+
+  val has_return_annotation : t -> bool
+end = struct
   module Signature = struct
-    type t = Record.Define.signature [@@deriving compare, eq, sexp, show, hash]
+    type t = {
+      name: Reference.t;
+      parameters: Expression.t Parameter.t list;
+      decorators: Expression.t list;
+      docstring: string option;
+      return_annotation: Expression.t option;
+      async: bool;
+      parent: Reference.t option; (* The class owning the method. *)
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let create_toplevel ~qualifier =
       {
@@ -368,6 +915,12 @@ module Define = struct
     let is_class_toplevel signature = String.equal (unqualified_name signature) "$class_toplevel"
   end
 
+  type t = {
+    signature: Signature.t;
+    body: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
   let create_toplevel ~qualifier ~statements =
     { signature = Signature.create_toplevel ~qualifier; body = statements }
 
@@ -424,7 +977,7 @@ module Define = struct
     let matches = function
       | {
           Node.value =
-            Expression
+            Statement.Expression
               {
                 Node.value =
                   Expression.Call
@@ -462,7 +1015,7 @@ module Define = struct
 
   let implicit_attributes
       ({ body; signature = { parameters; _ } } as define)
-      ~definition:{ Record.Class.body = definition_body; _ }
+      ~definition:{ Class.body = definition_body; _ }
       : Attribute.t Identifier.SerializableMap.t
     =
     let open Expression in
@@ -476,7 +1029,7 @@ module Define = struct
     in
     let attribute ~toplevel map { Node.value; _ } =
       match value with
-      | Assign { Assign.target; annotation; value; _ } -> (
+      | Statement.Assign { Assign.target; annotation; value; _ } -> (
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
             | {
@@ -600,16 +1153,16 @@ module Define = struct
       (* Can't use `Visit` module due to circularity :( *)
       let expand_statement ({ Node.value; _ } as statement) =
         match value with
-        | If { If.body; orelse; _ }
-        | For { RecordFor.body; orelse; _ }
+        | Statement.If { If.body; orelse; _ }
+        | For { For.body; orelse; _ }
         | While { While.body; orelse; _ } ->
             gather_nested_statements ~toplevel:false body
             @ gather_nested_statements ~toplevel:false orelse
-        | Try { RecordTry.body; orelse; finally; _ } ->
+        | Try { Try.body; orelse; finally; _ } ->
             gather_nested_statements ~toplevel:false body
             @ gather_nested_statements ~toplevel:false orelse
             @ gather_nested_statements ~toplevel:false finally
-        | With { RecordWith.body; _ } -> gather_nested_statements ~toplevel:false body
+        | With { With.body; _ } -> gather_nested_statements ~toplevel:false body
         | Expression
             {
               Node.value =
@@ -636,7 +1189,8 @@ module Define = struct
             let inline = function
               | {
                   Node.value =
-                    Define { signature = { name = callee; parent = Some parent; _ }; body };
+                    Statement.Define
+                      { signature = { name = callee; parent = Some parent; _ }; body };
                   _;
                 }
                 when Reference.equal callee (Reference.create ~prefix:parent name) ->
@@ -730,469 +1284,26 @@ module Define = struct
       | _ -> None )
 end
 
-let assume ?(origin = Assert.Assertion) ({ Node.location; _ } as test) =
-  { Node.location; value = Assert { Assert.test; message = None; origin } }
+and For : sig
+  type t = {
+    target: Expression.t;
+    iterator: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+    async: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-
-(* Naive assumptions *)
-let terminates body =
-  let find_terminator = function
-    | { Node.value = Return _; _ }
-    | { Node.value = Raise _; _ }
-    | { Node.value = Continue; _ } ->
-        true
-    | _ -> false
-  in
-  Option.is_some (List.find ~f:find_terminator body)
-
-
-module Class = struct
-  include Record.Class
-
-  type t = statement_t Record.Class.record [@@deriving compare, eq, sexp, show, hash]
-
-  let constructors ?(in_test = false) { Record.Class.body; _ } =
-    let constructor = function
-      | { Node.value = Define define; _ } when Define.is_constructor ~in_test define -> Some define
-      | _ -> None
-    in
-    List.filter_map ~f:constructor body
-
-
-  let defines { Record.Class.body; _ } =
-    let define = function
-      | { Node.value = Define define; _ } -> Some define
-      | _ -> None
-    in
-    List.filter_map ~f:define body
-
-
-  let find_define { Record.Class.body; _ } ~method_name =
-    let is_define = function
-      | { Node.value = Define define; location }
-        when String.equal (Define.unqualified_name define) method_name ->
-          Some { Node.value = define; location }
-      | _ -> None
-    in
-    List.filter_map ~f:is_define body |> List.hd
-
-
-  let is_frozen { decorators; _ } =
-    let is_frozen_dataclass decorator =
-      match decorator with
-      | {
-       Node.value =
-         Expression.Call
-           {
-             callee =
-               {
-                 Node.value =
-                   Name
-                     (Name.Attribute
-                       {
-                         base = { value = Name (Name.Identifier "dataclasses"); _ };
-                         attribute = "dataclass";
-                         _;
-                       });
-                 _;
-               };
-             arguments;
-           };
-       _;
-      } ->
-          let has_frozen_argument Expression.Call.Argument.{ name; value } =
-            match name, value with
-            | Some { Node.value; _ }, { Node.value = Expression.True; _ } ->
-                String.equal "frozen" (Identifier.sanitized value)
-            | _, _ -> false
-          in
-          List.exists arguments ~f:has_frozen_argument
-      | _ -> false
-    in
-    List.exists decorators ~f:is_frozen_dataclass
-
-
-  let explicitly_assigned_attributes ({ Record.Class.name; body; _ } as definition) =
-    let assigned_attributes map { Node.location; value } =
-      let open Expression in
-      match value with
-      (* Handle multiple assignments on same line *)
-      | Assign
-          {
-            Assign.target = { Node.value = Tuple targets; _ };
-            value = { Node.value = Tuple values; _ };
-            _;
-          } ->
-          let add_attribute map ({ Node.location; _ } as target) value =
-            Attribute.name ~parent:name target
-            |> function
-            | Some name ->
-                let attribute = Attribute.create ~primitive:true ~location ~name ~value () in
-                Identifier.SerializableMap.set map ~key:name ~data:attribute
-            | _ -> map
-          in
-          if List.length targets = List.length values then
-            List.fold2_exn ~init:map ~f:add_attribute targets values
-          else
-            map
-      | Assign { Assign.target = { Node.value = Tuple targets; _ }; value; _ } ->
-          let add_attribute index map ({ Node.location; _ } as target) =
-            Attribute.name ~parent:name target
-            |> function
-            | Some name ->
-                let value =
-                  let index = Node.create ~location (Integer index) in
-                  match value with
-                  | { Node.value = Call _; _ }
-                  | { Node.value = Name _; _ } ->
-                      Some
-                        {
-                          value with
-                          Node.value =
-                            Call
-                              {
-                                callee =
-                                  {
-                                    Node.location;
-                                    value =
-                                      Name
-                                        (Name.Attribute
-                                           {
-                                             base = value;
-                                             attribute = "__getitem__";
-                                             special = true;
-                                           });
-                                  };
-                                arguments = [{ Call.Argument.name = None; value = index }];
-                              };
-                        }
-                  | _ -> None
-                in
-                value
-                >>| (fun value -> Attribute.create ~primitive:true ~location ~name ~value ())
-                >>| (fun data -> Identifier.SerializableMap.set map ~key:name ~data)
-                |> Option.value ~default:map
-            | _ -> map
-          in
-          List.foldi ~init:map ~f:add_attribute targets
-      | Assign { Assign.target; annotation; value; _ } -> (
-          Attribute.name ~parent:name target
-          |> function
-          | Some name ->
-              let frozen = is_frozen definition in
-              let attribute =
-                Attribute.create ~primitive:true ~location ~name ?annotation ~frozen ~value ()
-              in
-              Identifier.SerializableMap.set map ~key:name ~data:attribute
-          | _ -> map )
-      | _ -> map
-    in
-    List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
-
-
-  let implicit_attributes ?(in_test = false) ({ Record.Class.name; body; _ } as definition) =
-    (* Bias towards the right (previously occuring map in the `|> merge other_map` flow). *)
-    let merge _ left right =
-      match right with
-      | None -> left
-      | Some _ -> right
-    in
-    let implicitly_assigned_attributes =
-      constructors ~in_test definition
-      |> List.map ~f:(Define.implicit_attributes ~definition)
-      |> List.fold
-           ~init:Identifier.SerializableMap.empty
-           ~f:(Identifier.SerializableMap.merge merge)
-    in
-    let property_attributes =
-      let property_attributes map = function
-        | { Node.location; value = Define define } -> (
-          match Define.property_attribute ~location define with
-          | Some
-              ( {
-                  Node.value =
-                    { Attribute.name; setter = new_setter; annotation = new_annotation; _ } as
-                    attribute;
-                  _;
-                } as attribute_node ) ->
-              let merged_attribute =
-                let existing_attribute = Identifier.SerializableMap.find_opt name map in
-                match existing_attribute, new_setter with
-                | Some { Node.value = { Attribute.setter = true; annotation; _ }; _ }, false ->
-                    { attribute with Attribute.annotation; value = new_annotation; setter = true }
-                    |> fun edited -> { attribute_node with Node.value = edited }
-                | Some { Node.value = { Attribute.setter = false; annotation; _ }; _ }, true ->
-                    {
-                      attribute with
-                      Attribute.annotation = new_annotation;
-                      value = annotation;
-                      setter = true;
-                    }
-                    |> fun edited -> { attribute_node with Node.value = edited }
-                | _ -> attribute_node
-              in
-              Identifier.SerializableMap.set map ~key:name ~data:merged_attribute
-          | _ -> map )
-        | _ -> map
-      in
-      List.fold ~init:Identifier.SerializableMap.empty ~f:property_attributes body
-    in
-    let callable_attributes =
-      let callable_attributes map { Node.location; value } =
-        match value with
-        | Define ({ Define.signature = { name = target; _ }; _ } as define) ->
-            Attribute.name (Expression.from_reference ~location target) ~parent:name
-            >>| (fun name ->
-                  let attribute =
-                    match Identifier.SerializableMap.find_opt name map with
-                    | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
-                        Attribute.create
-                          ~location
-                          ~name
-                          ~defines:(define :: defines)
-                          ~final:(Define.is_final_method define)
-                          ~static:(Define.is_static_method define)
-                          ()
-                    | _ ->
-                        Attribute.create
-                          ~location
-                          ~name
-                          ~defines:[define]
-                          ~final:(Define.is_final_method define)
-                          ~static:(Define.is_static_method define)
-                          ()
-                  in
-                  Identifier.SerializableMap.set map ~key:name ~data:attribute)
-            |> Option.value ~default:map
-        | _ -> map
-      in
-      List.fold ~init:Identifier.SerializableMap.empty ~f:callable_attributes body
-    in
-    let class_attributes =
-      let callable_attributes map { Node.location; value } =
-        match value with
-        | Class { Record.Class.name; _ } ->
-            let open Expression in
-            let annotation =
-              let meta_annotation =
-                {
-                  Node.location;
-                  value =
-                    Call
-                      {
-                        callee =
-                          {
-                            Node.location;
-                            value =
-                              Name
-                                (Name.Attribute
-                                   {
-                                     base =
-                                       {
-                                         Node.location;
-                                         value =
-                                           Name
-                                             (Name.Attribute
-                                                {
-                                                  base =
-                                                    {
-                                                      Node.location;
-                                                      value = Name (Name.Identifier "typing");
-                                                    };
-                                                  attribute = "Type";
-                                                  special = false;
-                                                });
-                                       };
-                                     attribute = "__getitem__";
-                                     special = true;
-                                   });
-                          };
-                        arguments =
-                          [ {
-                              Call.Argument.name = None;
-                              value =
-                                Expression.from_reference ~location:Location.Reference.any name;
-                            } ];
-                      };
-                }
-              in
-              {
-                Node.location;
-                value =
-                  Call
-                    {
-                      callee =
-                        {
-                          Node.location;
-                          value =
-                            Name
-                              (Name.Attribute
-                                 {
-                                   base =
-                                     {
-                                       Node.location;
-                                       value =
-                                         Name
-                                           (Name.Attribute
-                                              {
-                                                base =
-                                                  {
-                                                    Node.location;
-                                                    value = Name (Name.Identifier "typing");
-                                                  };
-                                                attribute = "ClassVar";
-                                                special = false;
-                                              });
-                                     };
-                                   attribute = "__getitem__";
-                                   special = true;
-                                 });
-                        };
-                      arguments = [{ Call.Argument.name = None; value = meta_annotation }];
-                    };
-              }
-            in
-            let attribute_name = Reference.last name in
-            Identifier.SerializableMap.set
-              map
-              ~key:attribute_name
-              ~data:(Attribute.create ~location ~name:attribute_name ~annotation ())
-        | _ -> map
-      in
-      List.fold ~init:Identifier.SerializableMap.empty ~f:callable_attributes body
-    in
-    let slots_attributes =
-      let slots_attributes map { Node.value; _ } =
-        let open Expression in
-        let is_slots = function
-          | Name (Name.Identifier "__slots__")
-          | Name (Name.Attribute { attribute = "__slots__"; _ }) ->
-              true
-          | _ -> false
-        in
-        match value with
-        | Assign
-            {
-              Assign.target = { Node.value = target_value; _ };
-              value = { Node.value = List attributes; location };
-              _;
-            }
-          when is_slots target_value ->
-            let add_attribute map { Node.value; _ } =
-              match value with
-              | String { StringLiteral.value; _ } ->
-                  Attribute.create ~location ~name:value ()
-                  |> fun attribute -> Identifier.SerializableMap.set map ~key:value ~data:attribute
-              | _ -> map
-            in
-            List.fold ~init:map ~f:add_attribute attributes
-        | _ -> map
-      in
-      List.fold ~init:Identifier.SerializableMap.empty ~f:slots_attributes body
-    in
-    (* Merge with decreasing priority. *)
-    implicitly_assigned_attributes
-    |> Identifier.SerializableMap.merge merge property_attributes
-    |> Identifier.SerializableMap.merge merge callable_attributes
-    |> Identifier.SerializableMap.merge merge class_attributes
-    |> Identifier.SerializableMap.merge merge slots_attributes
-
-
-  let attributes ?(include_generated_attributes = true) ?(in_test = false) definition =
-    let explicit_attributes = explicitly_assigned_attributes definition in
-    if not include_generated_attributes then
-      explicit_attributes
-    else
-      let merge _ left right =
-        match right with
-        | None -> left
-        | Some _ -> right
-      in
-      explicit_attributes
-      |> Identifier.SerializableMap.merge merge (implicit_attributes ~in_test definition)
-
-
-  let has_decorator { decorators; _ } decorator =
-    Expression.exists_in_list ~expression_list:decorators decorator
-
-
-  let is_unit_test { name; _ } =
-    let name = Reference.show name in
-    String.equal name "unittest.TestCase" || String.equal name "unittest.case.TestCase"
-
-
-  let is_final definition = has_decorator definition "typing.final"
-
-  let is_abstract { bases; _ } =
-    let abstract_metaclass { Expression.Call.Argument.value; _ } =
-      match value with
-      | {
-       Node.value =
-         Expression.Name
-           (Name.Attribute
-             {
-               base = { Node.value = Name (Name.Identifier "abc"); _ };
-               attribute = "ABCMeta" | "ABC";
-               _;
-             });
-       _;
-      } ->
-          true
-      | _ -> false
-    in
-    List.exists bases ~f:abstract_metaclass
-
-
-  let is_protocol { bases; _ } =
-    let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
-      match name, value with
-      | ( None,
-          Expression.Call
-            {
-              callee =
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base =
-                            {
-                              Node.value =
-                                Name
-                                  (Name.Attribute
-                                    {
-                                      base = { Node.value = Name (Name.Identifier typing); _ };
-                                      attribute = "Protocol";
-                                      _;
-                                    });
-                              _;
-                            };
-                          attribute = "__getitem__";
-                          _;
-                        });
-                  _;
-                };
-              _;
-            } )
-      | ( None,
-          Name
-            (Name.Attribute
-              {
-                base = { Node.value = Name (Name.Identifier typing); _ };
-                attribute = "Protocol";
-                _;
-              }) )
-        when String.equal typing "typing" || String.equal typing "typing_extensions" ->
-          true
-      | _ -> false
-    in
-    List.exists ~f:is_protocol bases
-end
-
-module For = struct
-  include Record.For
-
-  type t = statement_t Record.For.record [@@deriving compare, eq, sexp, show, hash]
+  val preamble : t -> Statement.t
+end = struct
+  type t = {
+    target: Expression.t;
+    iterator: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+    async: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   let preamble { target = { Node.location; _ } as target; iterator; async; _ } =
     let open Expression in
@@ -1242,62 +1353,72 @@ module For = struct
       else
         { Node.location; value }
     in
-    { Node.location; value = Assign { Assign.target; annotation = None; value; parent = None } }
+    {
+      Node.location;
+      value = Statement.Assign { Assign.target; annotation = None; value; parent = None };
+    }
 end
 
-module With = struct
-  include Record.With
-
-  type t = statement_t Record.With.record [@@deriving compare, eq, sexp, show, hash]
-
-  let preamble { items; async; _ } =
-    let preamble (({ Node.location; _ } as expression), target) =
-      target
-      >>| (fun target ->
-            let open Expression in
-            let enter_call =
-              let create_call call_name =
-                {
-                  Node.location;
-                  value =
-                    Call
-                      {
-                        callee =
-                          {
-                            Node.location;
-                            value =
-                              Name
-                                (Name.Attribute
-                                   { base = expression; attribute = call_name; special = true });
-                          };
-                        arguments = [];
-                      };
-                }
-              in
-              if async then
-                Node.create ~location (Await (create_call "__aenter__"))
-              else
-                create_call "__enter__"
-            in
-            let assign = { Assign.target; annotation = None; value = enter_call; parent = None } in
-            Node.create ~location (Assign assign))
-      |> Option.value ~default:(Node.create ~location (Expression expression))
-    in
-    List.map items ~f:preamble
+and If : sig
+  type t = {
+    test: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  type t = {
+    test: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
-module Try = struct
-  include Record.Try
+and Try : sig
+  module Handler : sig
+    type t = {
+      kind: Expression.t option;
+      name: Identifier.t option;
+      body: Statement.t list;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
 
-  type t = statement_t Record.Try.record [@@deriving compare, eq, sexp, show, hash]
+  type t = {
+    body: Statement.t list;
+    handlers: Handler.t list;
+    orelse: Statement.t list;
+    finally: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  let preamble { kind; name; _ } =
+  val preamble : Handler.t -> Statement.t list
+end = struct
+  module Handler = struct
+    type t = {
+      kind: Expression.t option;
+      name: Identifier.t option;
+      body: Statement.t list;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type t = {
+    body: Statement.t list;
+    handlers: Handler.t list;
+    orelse: Statement.t list;
+    finally: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let preamble { Handler.kind; name; _ } =
     let open Expression in
     let assume ~location ~target ~annotation =
       [ {
           Node.location;
           value =
-            Assign
+            Statement.Assign
               {
                 Assign.target;
                 annotation = None;
@@ -1323,7 +1444,7 @@ module Try = struct
                         };
                   };
                 message = None;
-                origin = Assert.Assertion;
+                origin = Assert.Origin.Assertion;
               };
         } ]
     in
@@ -1372,37 +1493,185 @@ module Try = struct
         assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
     | Some ({ Node.location; _ } as expression), _ ->
         (* Insert raw `kind` so that we type check the expression. *)
-        [Node.create ~location (Expression expression)]
+        [Node.create ~location (Statement.Expression expression)]
     | _ -> []
 end
 
-let extract_docstring statements =
-  (* See PEP 257 for Docstring formatting. The main idea is that we want to get the shortest
-   * indentation from line 2 onwards as the indentation of the docstring. *)
-  let unindent docstring =
-    let indentation line =
-      let line_without_indentation = String.lstrip line in
-      String.length line - String.length line_without_indentation
-    in
-    match String.split ~on:'\n' docstring with
-    | [] -> docstring
-    | first :: rest ->
-        let difference =
-          List.map rest ~f:indentation |> List.fold ~init:Int.max_value ~f:Int.min
-        in
-        let rest = List.map rest ~f:(fun s -> String.drop_prefix s difference) in
-        String.concat ~sep:"\n" (first :: rest)
-  in
-  match statements with
-  | {
-      Node.value =
-        Expression { Node.value = Expression.String { Expression.StringLiteral.value; _ }; _ };
-      _;
-    }
-    :: _ ->
-      Some (unindent value)
-  | _ -> None
+and While : sig
+  type t = {
+    test: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  type t = {
+    test: Expression.t;
+    body: Statement.t list;
+    orelse: Statement.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
 
+and With : sig
+  type t = {
+    items: (Expression.t * Expression.t option) list;
+    body: Statement.t list;
+    async: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val preamble : t -> Statement.t list
+end = struct
+  type t = {
+    items: (Expression.t * Expression.t option) list;
+    body: Statement.t list;
+    async: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let preamble { items; async; _ } =
+    let preamble (({ Node.location; _ } as expression), target) =
+      target
+      >>| (fun target ->
+            let open Expression in
+            let enter_call =
+              let create_call call_name =
+                {
+                  Node.location;
+                  value =
+                    Call
+                      {
+                        callee =
+                          {
+                            Node.location;
+                            value =
+                              Name
+                                (Name.Attribute
+                                   { base = expression; attribute = call_name; special = true });
+                          };
+                        arguments = [];
+                      };
+                }
+              in
+              if async then
+                Node.create ~location (Await (create_call "__aenter__"))
+              else
+                create_call "__enter__"
+            in
+            let assign = { Assign.target; annotation = None; value = enter_call; parent = None } in
+            Node.create ~location (Statement.Assign assign))
+      |> Option.value ~default:(Node.create ~location (Statement.Expression expression))
+    in
+    List.map items ~f:preamble
+end
+
+and Statement : sig
+  type statement =
+    | Assign of Assign.t
+    | Assert of Assert.t
+    | Break
+    | Class of Class.t
+    | Continue
+    | Define of Define.t
+    | Delete of Expression.t
+    | Expression of Expression.t
+    | For of For.t
+    | Global of Identifier.t list
+    | If of If.t
+    | Import of Import.t
+    | Nonlocal of Identifier.t list
+    | Pass
+    | Raise of Raise.t
+    | Return of Return.t
+    | Try of Try.t
+    | With of With.t
+    | While of While.t
+    | Yield of Expression.t
+    | YieldFrom of Expression.t
+  [@@deriving compare, eq, sexp, hash, to_yojson]
+
+  type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val assume : ?origin:Assert.Origin.t -> Expression.t -> t
+
+  val terminates : t list -> bool
+
+  val extract_docstring : t list -> string option
+end = struct
+  type statement =
+    | Assign of Assign.t
+    | Assert of Assert.t
+    | Break
+    | Class of Class.t
+    | Continue
+    | Define of Define.t
+    | Delete of Expression.t
+    | Expression of Expression.t
+    | For of For.t
+    | Global of Identifier.t list
+    | If of If.t
+    | Import of Import.t
+    | Nonlocal of Identifier.t list
+    | Pass
+    | Raise of Raise.t
+    | Return of Return.t
+    | Try of Try.t
+    | With of With.t
+    | While of While.t
+    | Yield of Expression.t
+    | YieldFrom of Expression.t
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let assume ?(origin = Assert.Origin.Assertion) ({ Node.location; _ } as test) =
+    { Node.location; value = Assert { Assert.test; message = None; origin } }
+
+
+  (* Naive assumptions *)
+  let terminates body =
+    let find_terminator = function
+      | { Node.value = Return _; _ }
+      | { Node.value = Raise _; _ }
+      | { Node.value = Continue; _ } ->
+          true
+      | _ -> false
+    in
+    Option.is_some (List.find ~f:find_terminator body)
+
+
+  let extract_docstring statements =
+    (* See PEP 257 for Docstring formatting. The main idea is that we want to get the shortest
+     * indentation from line 2 onwards as the indentation of the docstring. *)
+    let unindent docstring =
+      let indentation line =
+        let line_without_indentation = String.lstrip line in
+        String.length line - String.length line_without_indentation
+      in
+      match String.split ~on:'\n' docstring with
+      | [] -> docstring
+      | first :: rest ->
+          let difference =
+            List.map rest ~f:indentation |> List.fold ~init:Int.max_value ~f:Int.min
+          in
+          let rest = List.map rest ~f:(fun s -> String.drop_prefix s difference) in
+          String.concat ~sep:"\n" (first :: rest)
+    in
+    match statements with
+    | {
+        Node.value =
+          Expression { Node.value = Expression.String { Expression.StringLiteral.value; _ }; _ };
+        _;
+      }
+      :: _ ->
+        Some (unindent value)
+    | _ -> None
+end
+
+include Statement
+
+let _ = show (* shadowed below *)
 
 module PrettyPrinter = struct
   let pp_decorators formatter = function
@@ -1464,7 +1733,7 @@ module PrettyPrinter = struct
       value
 
 
-  and pp_class formatter { Record.Class.name; bases; body; decorators; _ } =
+  and pp_class formatter { Class.name; bases; body; decorators; _ } =
     Format.fprintf
       formatter
       "%a@[<v 2>class %a(%a):@;@[<v>%a@]@;@]"
@@ -1572,13 +1841,13 @@ module PrettyPrinter = struct
         Format.fprintf formatter "raise %a" pp_expression_option ("", expression)
     | Return { Return.expression; _ } ->
         Format.fprintf formatter "return %a" pp_expression_option ("", expression)
-    | Try { Record.Try.body; handlers; orelse; finally } ->
+    | Try { Try.body; handlers; orelse; finally } ->
         let pp_try_block formatter body =
           Format.fprintf formatter "@[<v 2>try:@;%a@]" pp_statement_list body
         in
         let pp_except_block formatter handlers =
           let pp_as formatter name = pp_option ~prefix:" as " formatter name String.pp in
-          let pp_handler formatter { Record.Try.kind; name; handler_body } =
+          let pp_handler formatter { Try.Handler.kind; name; body } =
             Format.fprintf
               formatter
               "@[<v 2>except%a%a:@;%a@]"
@@ -1587,7 +1856,7 @@ module PrettyPrinter = struct
               pp_as
               name
               pp_statement_list
-              handler_body
+              body
           in
           let pp_handler_list formatter handler_list =
             pp_list formatter pp_handler "@;" handler_list
@@ -1614,7 +1883,7 @@ module PrettyPrinter = struct
           orelse
           pp_finally_block
           finally
-    | With { Record.With.items; body; async } ->
+    | With { With.items; body; async } ->
         let pp_item formatter (expression, expression_option) =
           Format.fprintf
             formatter
@@ -1656,6 +1925,10 @@ module PrettyPrinter = struct
   let pp = pp_statement_t
 end
 
-let pp formatter statement = Format.fprintf formatter "%a" PrettyPrinter.pp statement
+let pp = PrettyPrinter.pp
 
 let show statement = Format.asprintf "%a" pp statement
+
+let pp_statement = PrettyPrinter.pp_statement
+
+let show_statement statement = Format.asprintf "%a" pp_statement statement

@@ -17,11 +17,11 @@ module Node = struct
     | Normal
     | Final
     | For of For.t
-    | If of Statement.t If.t
+    | If of If.t
     | Join
     | Try of Try.t
     | With of With.t
-    | While of Statement.t While.t
+    | While of While.t
     | Yield
   [@@deriving compare, eq, show]
 
@@ -88,11 +88,11 @@ module Node = struct
         string
     in
     let process_statement statement =
-      Ast.Node.create_with_default_location statement |> Statement.show |> add_newlines
+      Ast.Node.create_with_default_location statement |> show |> add_newlines
     in
     match kind with
     | Block statement_list ->
-        List.map ~f:(fun statement -> Statement.show statement |> add_newlines) statement_list
+        List.map ~f:(fun statement -> show statement |> add_newlines) statement_list
         |> String.concat ~sep:"\n"
     | Dispatch -> "Dispatch"
     | Entry -> "Entry"
@@ -188,7 +188,7 @@ let create define =
      if the flow has ended in a jump. *)
   let rec create statements jumps predecessor =
     match statements with
-    | { Ast.Node.value = For ({ For.body; orelse; _ } as loop); _ } :: statements ->
+    | { Ast.Node.value = Statement.For ({ For.body; orelse; _ } as loop); _ } :: statements ->
         (*       ____________
          *       v          |
          *       -> [split] -> [preamble; body]
@@ -206,7 +206,8 @@ let create define =
         Node.connect_option orelse join;
         Node.connect split join;
         create statements jumps join
-    | ({ Ast.Node.value = If ({ If.test; body; orelse; _ } as conditional); _ } as statement)
+    | ( { Ast.Node.value = Statement.If ({ If.test; body; orelse; _ } as conditional); _ } as
+      statement )
       :: statements ->
         (* -> [split] -> [body]
          *       |          |
@@ -218,7 +219,8 @@ let create define =
         let body_node =
           let body_statements =
             let test = Expression.normalize test in
-            Statement.assume ~origin:(Assert.If { statement; true_branch = true }) test :: body
+            Statement.assume ~origin:(Assert.Origin.If { statement; true_branch = true }) test
+            :: body
           in
           create body_statements jumps split
         in
@@ -230,7 +232,8 @@ let create define =
             |> Expression.normalize
             |> fun test -> { test with location = test_location }
           in
-          Statement.assume ~origin:(Assert.If { statement; true_branch = false }) test :: orelse
+          Statement.assume ~origin:(Assert.Origin.If { statement; true_branch = false }) test
+          :: orelse
         in
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
@@ -241,7 +244,7 @@ let create define =
             |> fun test -> { test with location = test_location }
           in
           if Statement.terminates body then
-            Statement.assume ~origin:(Assert.If { statement; true_branch = false }) test
+            Statement.assume ~origin:(Assert.Origin.If { statement; true_branch = false }) test
             :: statements
           else
             statements
@@ -297,9 +300,9 @@ let create define =
         Node.connect_option body_orelse normal_entry;
 
         (* Exception handling. *)
-        let handler ({ Try.handler_body; _ } as handler) =
+        let handler ({ Try.Handler.body; _ } as handler) =
           let preamble = Try.preamble handler in
-          create (preamble @ handler_body) local_jumps dispatch
+          create (preamble @ body) local_jumps dispatch
           |> (Fn.flip Node.connect_option) normal_entry
         in
         List.iter handlers ~f:handler;
@@ -327,7 +330,7 @@ let create define =
         let body =
           let body_statements =
             let test = Expression.normalize test in
-            Statement.assume ~origin:Assert.While test :: body
+            Statement.assume ~origin:Assert.Origin.While test :: body
           in
           create body_statements loop_jumps split
         in

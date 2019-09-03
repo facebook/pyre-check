@@ -26,7 +26,7 @@ let test_return_annotation context =
         |> ScratchProject.build_environment
       in
       {
-        Statement.Define.signature =
+        Define.signature =
           {
             name = !&"derp";
             parameters = [];
@@ -36,7 +36,7 @@ let test_return_annotation context =
             async;
             parent = None;
           };
-        body = [+Pass];
+        body = [+Statement.Pass];
       }
       |> fun define ->
       Callable.return_annotation ~define ~resolution:(Environment.resolution environment ())
@@ -56,7 +56,7 @@ let test_apply_decorators context =
   let create_define ~decorators ~parameters ~return_annotation =
     let decorators = List.map ~f:parse_single_expression decorators in
     {
-      Statement.Define.signature =
+      Define.signature =
         {
           name = !&"define";
           parameters;
@@ -66,7 +66,7 @@ let test_apply_decorators context =
           async = false;
           parent = None;
         };
-      body = [+Pass];
+      body = [+Statement.Pass];
     }
   in
   (* Contextlib related tests *)
@@ -213,7 +213,9 @@ let test_create context =
       let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
       let parent = parent >>| Reference.create in
       let defines = parse source |> Preprocessing.defines ~include_stubs:true |> List.rev in
-      let { Define.signature = { Define.name; _ }; _ } = List.hd_exn defines |> Node.value in
+      let { Define.signature = { Define.Signature.name; _ }; _ } =
+        List.hd_exn defines |> Node.value
+      in
       let to_overload define =
         Define.is_overloaded_method define, Callable.create_overload ~resolution define
       in

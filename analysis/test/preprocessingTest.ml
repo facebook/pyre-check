@@ -170,7 +170,7 @@ let test_expand_format_string _ =
     assert_source_equal
       (Source.create
          ~relative:handle
-         [+Expression (+String (StringLiteral.create ~expressions value))])
+         [+Statement.Expression (+String (StringLiteral.create ~expressions value))])
       (Preprocessing.expand_format_string (parse_untrimmed ~handle source))
   in
   assert_format_string "f'foo'" "foo" [];
@@ -205,7 +205,7 @@ let test_expand_format_string _ =
   in
   assert_locations
     "f'foo{1}'"
-    [ +Expression
+    [ +Statement.Expression
          (node
             ~start:(1, 0)
             ~stop:(1, 9)
@@ -217,7 +217,7 @@ let test_expand_format_string _ =
                })) ];
   assert_locations
     "f'foo{123}a{456}'"
-    [ +Expression
+    [ +Statement.Expression
          (node
             ~start:(1, 0)
             ~stop:(1, 17)
@@ -231,7 +231,7 @@ let test_expand_format_string _ =
                })) ];
   assert_locations
     "return f'foo{123}a{456}'"
-    [ +Return
+    [ +Statement.Return
          {
            is_implicit = false;
            expression =
@@ -255,7 +255,7 @@ let test_expand_format_string _ =
        b{789}
        '''
      |}
-    [ +Expression
+    [ +Statement.Expression
          (node
             ~start:(2, 0)
             ~stop:(5, 3)
@@ -1614,8 +1614,7 @@ let test_expand_wildcard_imports context =
     in
     assert_equal
       ~cmp:(List.equal Statement.equal)
-      ~printer:(fun statement_list ->
-        List.map statement_list ~f:Statement.show |> String.concat ~sep:", ")
+      ~printer:(fun statement_list -> List.map statement_list ~f:show |> String.concat ~sep:", ")
       (Source.statements (parse expected))
       (Source.statements (Option.value_exn (AstEnvironment.get_source ast_environment !&"test")))
   in
@@ -1687,7 +1686,7 @@ let test_expand_implicit_returns _ =
       (Preprocessing.expand_implicit_returns (parse ~handle source))
       (Source.create
          ~relative:handle
-         [ +Define
+         [ +Statement.Define
               {
                 signature =
                   {
@@ -1707,7 +1706,7 @@ let test_expand_implicit_returns _ =
       def foo():
         pass
     |}
-    [+Pass; +Return { Return.expression = None; is_implicit = true }];
+    [+Statement.Pass; +Statement.Return { Return.expression = None; is_implicit = true }];
   assert_expand
     {|
       def foo():
@@ -1725,8 +1724,9 @@ let test_expand_implicit_returns _ =
         finally:
           pass
     |}
-    [ +Try { Try.body = [+Pass]; handlers = []; orelse = []; finally = [+Pass] };
-      +Return { Return.expression = None; is_implicit = true } ];
+    [ +Statement.Try
+         { Try.body = [+Statement.Pass]; handlers = []; orelse = []; finally = [+Statement.Pass] };
+      +Statement.Return { Return.expression = None; is_implicit = true } ];
 
   (* Lol termination analysis. *)
   assert_expand_implicit_returns
@@ -1735,8 +1735,9 @@ let test_expand_implicit_returns _ =
         while derp:
           pass
     |}
-    [ +While { While.test = +Name (Name.Identifier "derp"); body = [+Pass]; orelse = [] };
-      +Return { Return.expression = None; is_implicit = true } ];
+    [ +Statement.While
+         { While.test = +Name (Name.Identifier "derp"); body = [+Statement.Pass]; orelse = [] };
+      +Statement.Return { Return.expression = None; is_implicit = true } ];
   assert_expand
     {|
       def foo():
@@ -1872,7 +1873,7 @@ let test_defines _ =
           async = false;
           parent = None;
         };
-      body = [+Expression (+Float 1.0)];
+      body = [+Statement.Expression (+Float 1.0)];
     }
   in
   let create_toplevel body =
@@ -1906,7 +1907,7 @@ let test_defines _ =
     }
   in
   let define = create_define "foo" in
-  assert_defines [+Define define] [create_toplevel [+Define define]; define];
+  assert_defines [+Statement.Define define] [create_toplevel [+Statement.Define define]; define];
   let inner =
     {
       Define.signature =
@@ -1919,7 +1920,7 @@ let test_defines _ =
           async = false;
           parent = None;
         };
-      body = [+Expression (+Float 1.0)];
+      body = [+Statement.Expression (+Float 1.0)];
     }
   in
   let define =
@@ -1934,23 +1935,21 @@ let test_defines _ =
           async = false;
           parent = None;
         };
-      body = [+Expression (+Float 1.0); +Define inner];
+      body = [+Statement.Expression (+Float 1.0); +Statement.Define inner];
     }
   in
-  assert_defines [+Define define] [create_toplevel [+Define define]; define];
-  let if_define = { If.test = +Ellipsis; body = [+Define define]; orelse = [] } in
-  assert_defines [+If if_define] [create_toplevel [+If if_define]];
+  assert_defines [+Statement.Define define] [create_toplevel [+Statement.Define define]; define];
+  let if_define = { If.test = +Ellipsis; body = [+Statement.Define define]; orelse = [] } in
+  assert_defines [+Statement.If if_define] [create_toplevel [+Statement.If if_define]];
 
   (* Note: Defines are returned in reverse order. *)
   let define_foo = create_define "foo" in
   let define_bar = create_define "bar" in
-  let body = [+Define define_foo; +Define define_bar] in
-  let parent =
-    { Statement.Class.name = !&"Foo"; bases = []; body; decorators = []; docstring = None }
-  in
+  let body = [+Statement.Define define_foo; +Statement.Define define_bar] in
+  let parent = { Class.name = !&"Foo"; bases = []; body; decorators = []; docstring = None } in
   assert_defines
-    [+Class parent]
-    [ create_toplevel [+Class parent];
+    [+Statement.Class parent]
+    [ create_toplevel [+Statement.Class parent];
       create_class_toplevel ~parent:"Foo" ~body;
       define_bar;
       define_foo ]
@@ -1968,7 +1967,7 @@ let test_classes _ =
       Class.name = !&"foo";
       bases = [];
       body =
-        [ +Define
+        [ +Statement.Define
              {
                signature =
                  {
@@ -1980,20 +1979,32 @@ let test_classes _ =
                    async = false;
                    parent = Some !&"foo";
                  };
-               body = [+Pass];
+               body = [+Statement.Pass];
              } ];
       decorators = [];
       docstring = None;
     }
   in
-  assert_classes [+Class class_define] [class_define];
+  assert_classes [+Statement.Class class_define] [class_define];
   let inner =
-    { Class.name = !&"bar"; bases = []; body = [+Pass]; decorators = []; docstring = None }
+    {
+      Class.name = !&"bar";
+      bases = [];
+      body = [+Statement.Pass];
+      decorators = [];
+      docstring = None;
+    }
   in
   let class_define =
-    { Class.name = !&"foo"; bases = []; body = [+Class inner]; decorators = []; docstring = None }
+    {
+      Class.name = !&"foo";
+      bases = [];
+      body = [+Statement.Class inner];
+      decorators = [];
+      docstring = None;
+    }
   in
-  assert_classes [+Class class_define] [class_define; inner]
+  assert_classes [+Statement.Class class_define] [class_define; inner]
 
 
 let test_replace_mypy_extensions_stub _ =

@@ -26,7 +26,7 @@ let test_is_method _ =
           async = false;
           parent = parent >>| Reference.create;
         };
-      body = [+Pass];
+      body = [+Statement.Pass];
     }
   in
   assert_true (Define.is_method (define ~name:"path.source.foo" ~parent:(Some "path.source")));
@@ -46,7 +46,7 @@ let test_is_classmethod _ =
           async = false;
           parent = Some !&"bar";
         };
-      body = [+Pass];
+      body = [+Statement.Pass];
     }
   in
   assert_false (Define.is_class_method (define "foo" []));
@@ -70,7 +70,7 @@ let test_is_class_property _ =
           async = false;
           parent = Some !&"bar";
         };
-      body = [+Pass];
+      body = [+Statement.Pass];
     }
   in
   assert_false (Define.is_class_property (define "foo" []));
@@ -92,7 +92,7 @@ let test_decorator _ =
           async = false;
           parent = None;
         };
-      body = [+Pass];
+      body = [+Statement.Pass];
     }
   in
   assert_false (Define.is_static_method (define []));
@@ -127,7 +127,7 @@ let test_is_constructor _ =
             async = false;
             parent = parent >>| Reference.create;
           };
-        body = [+Pass];
+        body = [+Statement.Pass];
       }
     in
     assert_equal expected (Define.is_constructor ~in_test define)
@@ -312,7 +312,7 @@ let test_attributes _ =
       List.map expected ~f:attribute
     in
     let definition =
-      { Record.Class.name = !&""; bases = []; body = []; decorators = []; docstring = None }
+      { Class.name = !&""; bases = []; body = []; decorators = []; docstring = None }
     in
     assert_equal
       ~cmp:(List.equal Attribute.equal)
@@ -476,7 +476,7 @@ let test_attributes _ =
           if number_of_defines > 0 then
             let define =
               {
-                Statement.Define.signature =
+                Define.signature =
                   {
                     name = !&"foo";
                     parameters = [];
@@ -695,7 +695,7 @@ let test_preamble _ =
     let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
     assert_equal
       ~cmp:(List.equal Statement.equal)
-      ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
+      ~printer:(fun statements -> List.map ~f:show statements |> String.concat ~sep:", ")
       preamble
       (With.preamble block)
   in
@@ -712,7 +712,7 @@ let test_preamble _ =
     let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
     assert_equal
       ~cmp:(List.equal Statement.equal)
-      ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
+      ~printer:(fun statements -> List.map ~f:show statements |> String.concat ~sep:", ")
       preamble
       [For.preamble block]
   in
@@ -734,8 +734,7 @@ let test_preamble _ =
       List.map preambles ~f:preamble
     in
     let printer preambles =
-      List.map preambles ~f:(fun preamble ->
-          List.map ~f:Statement.show preamble |> String.concat ~sep:", ")
+      List.map preambles ~f:(fun preamble -> List.map ~f:show preamble |> String.concat ~sep:", ")
       |> String.concat ~sep:"\n"
     in
     assert_equal
@@ -784,8 +783,8 @@ let test_preamble _ =
 
 let test_assume _ =
   assert_equal
-    (assume (+True))
-    (+Assert { Assert.test = +True; message = None; origin = Assert.Assertion })
+    (Statement.assume (+True))
+    (+Statement.Assert { Assert.test = +True; message = None; origin = Assert.Origin.Assertion })
 
 
 let test_terminates _ =
@@ -794,19 +793,20 @@ let test_terminates _ =
         x = 1
         return x
      |}
-    |> fun source -> terminates source.Source.statements );
+    |> fun source -> Statement.terminates source.Source.statements );
   assert_true
-    (parse {|
+    ( parse {|
        x = 1
        raise
-    |} |> fun source -> terminates source.Source.statements);
+    |}
+    |> fun source -> Statement.terminates source.Source.statements );
   assert_false
     ( parse {|
          if x:
           return x
          x = 1
      |}
-    |> fun source -> terminates source.Source.statements )
+    |> fun source -> Statement.terminates source.Source.statements )
 
 
 let test_docstring _ =
@@ -835,7 +835,7 @@ let test_pp _ =
       source
       |> String.split_on_chars ~on:['\n']
       |> Parser.parse
-      |> List.map ~f:Statement.show
+      |> List.map ~f:show
       |> String.concat ~sep:"\n"
       |> String.rstrip ~drop:(( = ) '\n')
     in

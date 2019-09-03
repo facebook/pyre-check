@@ -16,12 +16,12 @@ module type Kind = sig
 
   val messages
     :  concise:bool ->
-    signature:Define.signature Node.t ->
+    signature:Define.Signature.t Node.t ->
     Location.Instantiated.t ->
     t ->
     string list
 
-  val inference_information : signature:Define.signature Node.t -> t -> Yojson.Safe.json
+  val inference_information : signature:Define.Signature.t Node.t -> t -> Yojson.Safe.json
 end
 
 module type Error = sig
@@ -30,7 +30,7 @@ module type Error = sig
   type t = {
     location: Location.t;
     kind: kind;
-    signature: Define.signature Node.t;
+    signature: Define.Signature.t Node.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
 

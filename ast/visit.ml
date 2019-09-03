@@ -124,7 +124,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
     let visit_statement = visit_statement ~state in
     let visit_children value =
       match value with
-      | Assign { Assign.target; annotation; value; _ } ->
+      | Statement.Assign { Assign.target; annotation; value; _ } ->
           visit_expression target;
           Option.iter ~f:visit_expression annotation;
           visit_expression value
@@ -157,9 +157,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           Option.iter ~f:visit_expression from
       | Return { Return.expression; _ } -> Option.iter ~f:visit_expression expression
       | Try { Try.body; handlers; orelse; finally } ->
-          let visit_handler { Try.kind; handler_body; _ } =
+          let visit_handler { Try.Handler.kind; body; _ } =
             Option.iter ~f:visit_expression kind;
-            List.iter handler_body ~f:visit_statement
+            List.iter body ~f:visit_statement
           in
           List.iter body ~f:visit_statement;
           List.iter handlers ~f:visit_handler;
@@ -259,9 +259,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
             List.iter ~f:visit_statement body;
             List.iter ~f:visit_statement orelse
         | Try { Try.body; handlers; orelse; finally } ->
-            let visit_handler { Try.handler_body; _ } =
-              List.iter ~f:visit_statement handler_body
-            in
+            let visit_handler { Try.Handler.body; _ } = List.iter ~f:visit_statement body in
             List.iter ~f:visit_statement body;
             List.iter ~f:visit_handler handlers;
             List.iter ~f:visit_statement orelse;

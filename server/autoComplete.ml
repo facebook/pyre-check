@@ -51,6 +51,7 @@ let find_module_reference ~cursor_position:{ Location.line; column } source =
 
 
 let get_exported_imports ~ast_environment module_reference =
+  let open Statement in
   AstEnvironment.ReadOnly.get_source ast_environment module_reference
   >>| Source.statements
   >>| List.concat_map ~f:(function

@@ -5,6 +5,7 @@
 
 open Ast
 open Statement
+module StatementAttribute = Attribute
 module Attribute = AnnotatedAttribute
 
 type t [@@deriving compare, eq, sexp, show, hash]
@@ -36,7 +37,7 @@ val annotation : t -> Type.t
 val successors : t -> resolution:GlobalResolution.t -> Type.Primitive.t list
 
 val successors_fold
-  :  'a Class.record Node.t ->
+  :  Class.t Node.t ->
   resolution:GlobalResolution.t ->
   f:('b -> string -> 'b) ->
   initial:'b ->
@@ -94,7 +95,7 @@ val has_abstract_methods : t -> bool
 
 val is_protocol : t -> bool
 
-val implicit_attributes : t -> Statement.Attribute.t Identifier.SerializableMap.t
+val implicit_attributes : t -> StatementAttribute.t Identifier.SerializableMap.t
 
 val create_attribute
   :  resolution:GlobalResolution.t ->
@@ -103,7 +104,7 @@ val create_attribute
   ?defined:bool ->
   ?inherited:bool ->
   ?default_class_attribute:bool ->
-  Statement.Attribute.t ->
+  StatementAttribute.t ->
   Attribute.t
 
 val attributes

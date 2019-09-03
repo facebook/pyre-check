@@ -98,7 +98,7 @@ let parse_query
   match PyreParser.Parser.parse [query] with
   | [ {
         Node.value =
-          Statement.Expression
+          Expression
             {
               Node.value =
                 Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };

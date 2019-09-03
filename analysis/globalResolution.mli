@@ -102,7 +102,7 @@ val solve_ordered_types_less_or_equal
 
 val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
-val class_extends_placeholder_stub_class : t -> Statement.Class.t -> bool
+val class_extends_placeholder_stub_class : t -> Class.t -> bool
 
 val solve_constraints
   :  ?any_is_bottom:bool ->

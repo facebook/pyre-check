@@ -8,6 +8,7 @@ open Pyre
 open Ast
 open Expression
 open Statement
+module StatementDefine = Define
 module Error = AnalysisError
 
 module ErrorMap = struct
@@ -354,11 +355,11 @@ module State (Context : Context) = struct
                 match Attribute.name attribute with
                 | name when not (Type.is_top expected || Attribute.initialized attribute) ->
                     let reference =
-                      Reference.create_from_list [Statement.Define.self_identifier define; name]
+                      Reference.create_from_list [StatementDefine.self_identifier define; name]
                     in
                     if
                       Map.mem (Resolution.annotations resolution) reference
-                      && not (Statement.Define.is_class_toplevel define)
+                      && not (StatementDefine.is_class_toplevel define)
                     then
                       errors
                     else
@@ -650,7 +651,7 @@ module State (Context : Context) = struct
       let check_implementation_exists errors =
         match annotation with
         | Some { annotation = Type.Callable { implementation; _ }; _ }
-          when Statement.Define.is_overloaded_method define
+          when Define.is_overloaded_method define
                && Type.Callable.Overload.is_undefined implementation ->
             let error =
               Error.create
@@ -675,7 +676,7 @@ module State (Context : Context) = struct
                   };
               _;
             }
-          when not (Statement.Define.is_overloaded_method define) ->
+          when not (Define.is_overloaded_method define) ->
             overloads
             |> List.fold
                  ~init:errors
@@ -734,7 +735,7 @@ module State (Context : Context) = struct
       let check_unmatched_overloads errors =
         match annotation with
         | Some { annotation = Type.Callable { overloads; _ }; _ }
-          when not (Statement.Define.is_overloaded_method define) ->
+          when not (Define.is_overloaded_method define) ->
             let rec compare_parameters errors_sofar overloads =
               match overloads with
               | left :: overloads ->
@@ -1174,7 +1175,7 @@ module State (Context : Context) = struct
             let state =
               match annotation with
               | Type.Variable variable
-                when (not (Statement.Define.is_constructor define))
+                when (not (Define.is_constructor define))
                      && Type.Variable.Unary.is_covariant variable ->
                   emit_error
                     ~state
@@ -1527,7 +1528,7 @@ module State (Context : Context) = struct
                   Class.overrides
                     definition
                     ~resolution:global_resolution
-                    ~name:(Statement.Define.unqualified_name define)
+                    ~name:(StatementDefine.unqualified_name define)
                   >>| fun overridden_attribute ->
                   let errors =
                     if Attribute.final overridden_attribute then
@@ -1547,7 +1548,7 @@ module State (Context : Context) = struct
                       not
                         (Bool.equal
                            (Attribute.static overridden_attribute)
-                           (Statement.Define.is_static_method define))
+                           (StatementDefine.is_static_method define))
                     then
                       let parent = overridden_attribute |> Attribute.parent |> Type.show in
                       let decorator =
@@ -1569,7 +1570,7 @@ module State (Context : Context) = struct
                   (* Check strengthening of postcondition. *)
                   match Annotation.annotation (Attribute.annotation overridden_attribute) with
                   | Type.Callable { Type.Callable.implementation; _ }
-                    when not (Statement.Define.is_static_method define) ->
+                    when not (StatementDefine.is_static_method define) ->
                       let original_implementation =
                         Resolution.resolve_reference resolution name
                         |> function
@@ -1597,7 +1598,7 @@ module State (Context : Context) = struct
                               ~kind:
                                 (Error.InconsistentOverride
                                    {
-                                     overridden_method = Statement.Define.unqualified_name define;
+                                     overridden_method = StatementDefine.unqualified_name define;
                                      parent =
                                        Attribute.parent overridden_attribute
                                        |> Type.show
@@ -1647,7 +1648,7 @@ module State (Context : Context) = struct
                                         (Error.InconsistentOverride
                                            {
                                              overridden_method =
-                                               Statement.Define.unqualified_name define;
+                                               StatementDefine.unqualified_name define;
                                              parent =
                                                Attribute.parent overridden_attribute
                                                |> Type.show
@@ -1691,7 +1692,7 @@ module State (Context : Context) = struct
                                       (Error.InconsistentOverride
                                          {
                                            overridden_method =
-                                             Statement.Define.unqualified_name define;
+                                             StatementDefine.unqualified_name define;
                                            override_kind = Method;
                                            parent =
                                              Attribute.parent overridden_attribute
@@ -1761,13 +1762,13 @@ module State (Context : Context) = struct
       { state with errors }
     in
     let check_constructor_return state =
-      if not (Statement.Define.is_constructor define) then
+      if not (Define.is_constructor define) then
         state
       else
         match return_annotation with
         | Some ({ Node.location; _ } as annotation) -> (
           match define with
-          | { Statement.Define.signature = { Statement.Define.name; _ }; _ }
+          | { Define.signature = { Define.Signature.name; _ }; _ }
             when String.equal (Reference.last name) "__new__" ->
               (* TODO(T45018328): Error here. `__new__` is a special undecorated class method, and
                  we really ought to be checking its return type against typing.Type[Cls]. *)
@@ -1882,7 +1883,8 @@ module State (Context : Context) = struct
                   };
             }
         in
-        Assign { Assign.target; annotation = None; value; parent = None } |> Node.create ~location
+        Statement.Assign { Assign.target; annotation = None; value; parent = None }
+        |> Node.create ~location
       in
       let state =
         let { errors; _ } = state in
@@ -2228,10 +2230,10 @@ module State (Context : Context) = struct
               >>| (function
                     | { Node.value = definition; _ } ->
                         let { Class.name = class_name; _ } = definition in
-                        if Statement.Class.is_abstract definition then
+                        if Class.is_abstract definition then
                           Annotated.Signature.NotFound
                             { callable; reason = Some (AbstractClassInstantiation class_name) }
-                        else if Statement.Class.is_protocol definition then
+                        else if Class.is_protocol definition then
                           Annotated.Signature.NotFound
                             { callable; reason = Some (ProtocolInstantiation class_name) }
                         else

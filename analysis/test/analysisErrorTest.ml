@@ -13,7 +13,7 @@ open Test
 
 let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
   {
-    Define.name = Reference.create name;
+    Define.Signature.name = Reference.create name;
     parameters = [];
     decorators = [];
     docstring = None;

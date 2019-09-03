@@ -456,7 +456,7 @@ module State (Context : Context) = struct
     in
     let resolution =
       match Node.value statement with
-      | Assign { Assign.target; value; _ } -> (
+      | Statement.Assign { Assign.target; value; _ } -> (
           (* Get the annotations of the targets and set the 'value' to be the meet *)
           let rec propagate_assign resolution target_annotation value =
             let state = { state with resolution } in
@@ -552,7 +552,7 @@ let run ~configuration ~global_resolution ~source:({ Source.relative; is_stub; _
     let dump = Define.dump define in
     if dump then (
       Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
-      Log.dump "AST:\n%s" (Annotated.Define.create define |> Annotated.Define.show) );
+      Log.dump "AST:\n%s" (AnnotatedDefine.create define |> AnnotatedDefine.show) );
     let print_state name state =
       if dump then
         Log.dump "%s state:\n%a" name State.pp state;

@@ -10,13 +10,14 @@ open Analysis
 open Pyre
 open Statement
 open Test
+module StatementDefine = Define
 module Class = Annotated.Class
 module Define = Annotated.Define
 
 let test_parent_definition context =
   let parent_class_definition environment name parent =
     {
-      Statement.Define.signature =
+      StatementDefine.signature =
         {
           name = !&name;
           parameters = [];
@@ -26,7 +27,7 @@ let test_parent_definition context =
           async = false;
           parent = Some (Reference.create parent);
         };
-      body = [+Pass];
+      body = [+Statement.Pass];
     }
     |> Define.create
     |> Define.parent_definition ~resolution:(Environment.resolution environment ())
@@ -71,7 +72,6 @@ let test_parent_definition context =
 
 
 let test_decorate context =
-  let open Statement.Define in
   let assert_decorated source ~expected =
     let source, environment =
       let sources, _, environment =

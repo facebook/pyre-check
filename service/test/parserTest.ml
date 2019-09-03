@@ -33,8 +33,7 @@ let test_parse_stubs_modules_list context =
           {
             Source.statements =
               [ {
-                  Node.value =
-                    Statement.Define ({ Statement.Define.signature = { name; _ }; _ } as define);
+                  Node.value = Define ({ Statement.Define.signature = { name; _ }; _ } as define);
                   _;
                 } ];
             _;
@@ -70,7 +69,7 @@ let test_parse_source context =
   assert_equal relative "x.py";
   assert_equal number_of_lines 2;
   match statements with
-  | [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
+  | [{ Node.value = Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
       assert_equal ~cmp:Reference.equal ~printer:Reference.show name (Reference.create "x.foo")
   | _ -> assert_unreached ()
 

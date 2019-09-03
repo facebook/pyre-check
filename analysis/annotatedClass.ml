@@ -8,6 +8,7 @@ open Ast
 open Expression
 open Pyre
 open Statement
+module StatementAttribute = Attribute
 module Callable = AnnotatedCallable
 module Attribute = AnnotatedAttribute
 
@@ -44,7 +45,7 @@ module AttributeCache = struct
     let t_of_sexp = t_of_sexp
   end)
 
-  let cache : Attribute.Table.t Table.t = Table.create ~size:1023 ()
+  let cache : AnnotatedAttribute.Table.t Table.t = Table.create ~size:1023 ()
 
   let clear () = Table.clear cache
 end
@@ -104,7 +105,7 @@ let successors_fold class_node ~resolution ~f ~initial =
 
 let is_unit_test { Node.value; _ } = Class.is_unit_test value
 
-let is_abstract { Node.value; _ } = Statement.Class.is_abstract value
+let is_abstract { Node.value; _ } = Class.is_abstract value
 
 let resolve_class ~resolution annotation =
   let rec extract ~is_meta original_annotation =
@@ -292,31 +293,28 @@ let superclasses definition ~resolution =
 let unimplemented_abstract_methods definition ~resolution =
   let gather_abstract_methods { Node.value = class_definition; _ } sofar =
     let abstract_methods, base_methods =
-      class_definition
-      |> Statement.Class.defines
-      |> List.partition_tf ~f:Statement.Define.is_abstract_method
+      class_definition |> Class.defines |> List.partition_tf ~f:Define.is_abstract_method
     in
     let add_to_map sofar definition =
-      let name = Statement.Define.unqualified_name definition in
+      let name = Define.unqualified_name definition in
       match String.Map.add sofar ~key:name ~data:definition with
       | `Ok map -> map
       | `Duplicate -> sofar
     in
     let sofar =
-      if Statement.Class.is_abstract class_definition then
+      if Class.is_abstract class_definition then
         abstract_methods
-        |> List.filter ~f:(fun method_definition ->
-               not (Statement.Define.is_property method_definition))
+        |> List.filter ~f:(fun method_definition -> not (Define.is_property method_definition))
         |> List.fold ~init:sofar ~f:add_to_map
       else
         sofar
     in
     base_methods
-    |> List.map ~f:Statement.Define.unqualified_name
+    |> List.map ~f:Define.unqualified_name
     |> List.fold ~init:sofar ~f:String.Map.remove
   in
   let successors = definition |> superclasses ~resolution in
-  if List.exists successors ~f:(fun { Node.value; _ } -> Statement.Class.is_abstract value) then
+  if List.exists successors ~f:(fun { Node.value; _ } -> Class.is_abstract value) then
     successors
     |> List.cons definition
     |> List.fold_right ~init:String.Map.empty ~f:gather_abstract_methods
@@ -387,7 +385,7 @@ let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resoluti
 
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
   let extract_define = function
-    | { Node.value = Define define; _ } ->
+    | { Node.value = Statement.Define define; _ } ->
         Some (Method.create ~define ~parent:(annotation definition))
     | _ -> None
   in
@@ -395,14 +393,10 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
 
 
 let has_abstract_methods { Node.value; _ } =
-  not
-    ( value
-    |> Statement.Class.defines
-    |> List.filter ~f:Statement.Define.is_abstract_method
-    |> List.is_empty )
+  not (value |> Class.defines |> List.filter ~f:Define.is_abstract_method |> List.is_empty)
 
 
-let is_protocol { Node.value; _ } = Statement.Class.is_protocol value
+let is_protocol { Node.value; _ } = Class.is_protocol value
 
 let create_attribute
     ~resolution
@@ -415,7 +409,7 @@ let create_attribute
       Node.location;
       value =
         {
-          Statement.Attribute.name = attribute_name;
+          StatementAttribute.name = attribute_name;
           annotation = attribute_annotation;
           defines;
           value;
@@ -486,7 +480,7 @@ let create_attribute
       | None -> class_annotation
     in
     match defines with
-    | Some (({ Define.signature = { Define.name; _ }; _ } as define) :: _ as defines) ->
+    | Some (({ Define.signature = { Define.Signature.name; _ }; _ } as define) :: _ as defines) ->
         let parent =
           (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't play well
              with our logic here - we should clean up the call logic to handle passing the extra
@@ -669,16 +663,16 @@ let create_attribute
   let value = Option.value value ~default:(Node.create Ellipsis ~location) in
   let property =
     match property, setter with
-    | true, true when not frozen -> Some Attribute.ReadWrite
-    | true, false -> Some Attribute.ReadOnly
-    | _, _ when frozen -> Some Attribute.ReadOnly
+    | true, true when not frozen -> Some AnnotatedAttribute.ReadWrite
+    | true, false -> Some AnnotatedAttribute.ReadOnly
+    | _, _ when frozen -> Some AnnotatedAttribute.ReadOnly
     | _, _ -> None
   in
   {
     Node.location;
     value =
       {
-        Attribute.annotation;
+        AnnotatedAttribute.annotation;
         async;
         class_attribute;
         defined;
@@ -711,7 +705,7 @@ let extends_placeholder_stub_class
   List.exists bases ~f:is_from_placeholder_stub
 
 
-let implicit_attributes { Node.value; _ } = Statement.Class.implicit_attributes value
+let implicit_attributes { Node.value; _ } = Class.implicit_attributes value
 
 module ClassDecorators = struct
   type options = {
@@ -729,7 +723,7 @@ module ClassDecorators = struct
       ~repr
       ~eq
       ~order
-      { Node.value = { Statement.Class.decorators; _ }; _ }
+      { Node.value = { Class.decorators; _ }; _ }
     =
     let get_decorators ~names =
       let get_decorator decorator =
@@ -811,7 +805,9 @@ module ClassDecorators = struct
     let parent_dataclasses = superclasses definition ~resolution in
     let name = name definition in
     let generate_attributes ~options =
-      let already_in_table name = Attribute.Table.lookup_name table name |> Option.is_some in
+      let already_in_table name =
+        AnnotatedAttribute.Table.lookup_name table name |> Option.is_some
+      in
       let make_callable ~parameters ~annotation ~attribute_name =
         let parameters =
           if class_attributes then
@@ -836,7 +832,9 @@ module ClassDecorators = struct
             let methods =
               if init && not (already_in_table "__init__") then
                 let parameters =
-                  let extract_dataclass_field_arguments { Node.value = { Attribute.value; _ }; _ } =
+                  let extract_dataclass_field_arguments
+                      { Node.value = { AnnotatedAttribute.value; _ }; _ }
+                    =
                     match value with
                     | {
                      Node.value =
@@ -880,7 +878,8 @@ module ClassDecorators = struct
                     | _ -> true
                   in
                   let extract_init_value
-                      ({ Node.value = { Attribute.initialized; value; _ }; _ } as attribute)
+                      ( { Node.value = { AnnotatedAttribute.initialized; value; _ }; _ } as
+                      attribute )
                     =
                     let get_default_value { Call.Argument.name; value } : expression_t option =
                       match name with
@@ -911,7 +910,7 @@ module ClassDecorators = struct
                   let collect_parameters parameters attribute =
                     (* Parameters must be annotated attributes *)
                     let annotation =
-                      Attribute.annotation attribute
+                      AnnotatedAttribute.annotation attribute
                       |> Annotation.original
                       |> function
                       | Type.Parametric
@@ -922,7 +921,7 @@ module ClassDecorators = struct
                           single_parameter
                       | annotation -> annotation
                     in
-                    match Attribute.name attribute with
+                    match AnnotatedAttribute.name attribute with
                     | name when not (Type.is_unknown annotation) ->
                         let name = "$parameter$" ^ name in
                         let value = extract_init_value attribute in
@@ -954,7 +953,8 @@ module ClassDecorators = struct
                     let compare_by_location left right =
                       Ast.Location.compare (Node.location left) (Node.location right)
                     in
-                    Attribute.Table.to_list parent |> List.sort ~compare:compare_by_location
+                    AnnotatedAttribute.Table.to_list parent
+                    |> List.sort ~compare:compare_by_location
                   in
                   parent_attribute_tables @ [get_table definition]
                   |> List.map ~f:parent_attributes
@@ -1004,7 +1004,7 @@ module ClassDecorators = struct
           let make_attribute (attribute_name, annotation) =
             Node.create_with_default_location
               {
-                Attribute.annotation = Annotation.create_immutable ~global:true annotation;
+                AnnotatedAttribute.annotation = Annotation.create_immutable ~global:true annotation;
                 async = false;
                 class_attribute = false;
                 defined = true;
@@ -1027,7 +1027,8 @@ module ClassDecorators = struct
       (* TODO (T41039225): Add support for other methods *)
       generate_attributes ~options:(attrs_attributes ~resolution)
     in
-    dataclass_attributes () @ attrs_attributes () |> List.iter ~f:(Attribute.Table.add table)
+    dataclass_attributes () @ attrs_attributes ()
+    |> List.iter ~f:(AnnotatedAttribute.Table.add table)
 end
 
 let rec attribute_table
@@ -1070,19 +1071,19 @@ let rec attribute_table
               ~instantiated
               ~inherited:(not (Reference.equal name parent_name))
               ~default_class_attribute:class_attributes
-            |> Attribute.Table.add table
+            |> AnnotatedAttribute.Table.add table
           in
-          Statement.Class.attributes ~include_generated_attributes ~in_test definition
+          Class.attributes ~include_generated_attributes ~in_test definition
           |> fun attribute_map ->
           Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in
         let add_placeholder_stub_inheritances () =
-          if Option.is_none (Attribute.Table.lookup_name table "__init__") then
-            Attribute.Table.add
+          if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__init__") then
+            AnnotatedAttribute.Table.add
               table
               (Node.create_with_default_location
                  {
-                   Attribute.annotation =
+                   AnnotatedAttribute.annotation =
                      Annotation.create (Type.Callable.create ~annotation:Type.none ());
                    async = false;
                    class_attribute = false;
@@ -1095,12 +1096,12 @@ let rec attribute_table
                    static = true;
                    value = Node.create_with_default_location Ellipsis;
                  });
-          if Option.is_none (Attribute.Table.lookup_name table "__getattr__") then
-            Attribute.Table.add
+          if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__getattr__") then
+            AnnotatedAttribute.Table.add
               table
               (Node.create_with_default_location
                  {
-                   Attribute.annotation =
+                   AnnotatedAttribute.annotation =
                      Annotation.create (Type.Callable.create ~annotation:Type.Any ());
                    async = false;
                    class_attribute = false;
@@ -1139,7 +1140,7 @@ let rec attribute_table
         List.exists (definition :: superclass_definitions) ~f:(fun { Node.value; _ } ->
             Class.is_unit_test value)
       in
-      let table = Attribute.Table.create () in
+      let table = AnnotatedAttribute.Table.create () in
       (* Pass over normal class hierarchy. *)
       let definitions =
         if class_attributes && special_method then
@@ -1172,17 +1173,17 @@ let rec attribute_table
              ~class_attributes:false
              ~table);
       let instantiate ~instantiated attribute =
-        Attribute.parent attribute
+        AnnotatedAttribute.parent attribute
         |> GlobalResolution.class_definition resolution
         >>| fun target ->
         let solution = constraints ~target ~instantiated ~resolution definition in
-        Attribute.instantiate
+        AnnotatedAttribute.instantiate
           ~constraints:(fun annotation ->
             Some (TypeConstraints.Solution.instantiate solution annotation))
           attribute
       in
       Option.iter original_instantiated ~f:(fun instantiated ->
-          Attribute.Table.filter_map table ~f:(instantiate ~instantiated));
+          AnnotatedAttribute.Table.filter_map table ~f:(instantiate ~instantiated));
       Hashtbl.set ~key ~data:table AttributeCache.cache;
       table
 
@@ -1202,7 +1203,7 @@ let attributes
     ?instantiated
     definition
     ~resolution
-  |> Attribute.Table.to_list
+  |> AnnotatedAttribute.Table.to_list
 
 
 let attribute_fold
@@ -1237,7 +1238,7 @@ let attribute
       ~resolution
       definition
   in
-  match Attribute.Table.lookup_name table name with
+  match AnnotatedAttribute.Table.lookup_name table name with
   | Some attribute -> attribute
   | None ->
       create_attribute
@@ -1249,7 +1250,7 @@ let attribute
           Node.location;
           value =
             {
-              Statement.Attribute.name;
+              StatementAttribute.name;
               annotation = None;
               defines = None;
               value = None;
@@ -1312,11 +1313,11 @@ let rec fallback_attribute
         ~name:"__getattr__"
         ~instantiated:(annotation definition)
     in
-    if Attribute.defined fallback then
-      let annotation = fallback |> Attribute.annotation |> Annotation.annotation in
+    if AnnotatedAttribute.defined fallback then
+      let annotation = fallback |> AnnotatedAttribute.annotation |> Annotation.annotation in
       match annotation with
       | Type.Callable ({ implementation; _ } as callable) ->
-          let location = Attribute.location fallback in
+          let location = AnnotatedAttribute.location fallback in
           let arguments =
             let self_argument =
               { Call.Argument.name = None; value = Expression.from_reference ~location class_name }
@@ -1343,7 +1344,7 @@ let rec fallback_attribute
                  Node.location;
                  value =
                    {
-                     Statement.Attribute.name;
+                     StatementAttribute.name;
                      annotation = Some (Type.expression return_annotation);
                      defines = None;
                      value = None;
@@ -1363,7 +1364,7 @@ let rec fallback_attribute
       None
   in
   match compound_backup with
-  | Some backup when Attribute.defined backup -> Some backup
+  | Some backup when AnnotatedAttribute.defined backup -> Some backup
   | _ -> getitem_backup ()
 
 
@@ -1398,7 +1399,7 @@ let constructor definition ~instantiated ~resolution =
   in
   let definition_index attribute =
     attribute
-    |> Attribute.parent
+    |> AnnotatedAttribute.parent
     |> (fun class_annotation ->
          List.findi definitions ~f:(fun _ annotation -> Type.equal annotation class_annotation))
     >>| fst
@@ -1408,14 +1409,14 @@ let constructor definition ~instantiated ~resolution =
     let attribute =
       attribute definition ~transitive:true ~resolution ~name:"__init__" ~instantiated
     in
-    let signature = attribute |> Attribute.annotation |> Annotation.annotation in
+    let signature = attribute |> AnnotatedAttribute.annotation |> Annotation.annotation in
     signature, definition_index attribute
   in
   let new_signature, new_index =
     let attribute =
       attribute definition ~transitive:true ~resolution ~name:"__new__" ~instantiated
     in
-    let signature = attribute |> Attribute.annotation |> Annotation.annotation in
+    let signature = attribute |> AnnotatedAttribute.annotation |> Annotation.annotation in
     signature, definition_index attribute
   in
   let signature =
@@ -1444,7 +1445,7 @@ let has_explicit_constructor definition ~resolution =
     let superclasses = superclasses ~resolution definition in
     List.exists ~f:is_unit_test (definition :: superclasses)
   in
-  let mem name = Attribute.Table.lookup_name table name |> Option.is_some in
+  let mem name = AnnotatedAttribute.Table.lookup_name table name |> Option.is_some in
   mem "__init__"
   || mem "__new__"
   || in_test
@@ -1466,11 +1467,11 @@ let overrides definition ~resolution ~name =
         ~name
         ~instantiated:(annotation parent)
     in
-    if Attribute.defined potential_override then
+    if AnnotatedAttribute.defined potential_override then
       annotation definition
       |> (fun instantiated -> constraints ~target:parent definition ~resolution ~instantiated)
       |> (fun solution ->
-           Attribute.instantiate
+           AnnotatedAttribute.instantiate
              ~constraints:(fun annotation ->
                Some (TypeConstraints.Solution.instantiate solution annotation))
              potential_override)
@@ -1483,7 +1484,7 @@ let overrides definition ~resolution ~name =
 
 let has_method ?transitive definition ~resolution ~name =
   attribute ?transitive definition ~resolution ~name ~instantiated:(annotation definition)
-  |> Attribute.annotation
+  |> AnnotatedAttribute.annotation
   |> Annotation.annotation
   |> Type.is_callable
 

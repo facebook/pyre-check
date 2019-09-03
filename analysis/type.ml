@@ -2095,7 +2095,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                     |> Source.statements
                   in
                   match parsed with
-                  | [{ Node.value = Statement.Expression { Node.value; _ }; _ }] -> Some value
+                  | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
                   | _ -> None
                 with
                 | _ -> None
@@ -3721,6 +3721,7 @@ module TypedDictionary = struct
 
 
   let defines ~t_self_expression ~total =
+    let open Statement in
     let class_name = if total then "TypedDictionary" else "NonTotalTypedDictionary" in
     let define ?self_parameter ?return_annotation name =
       Statement.Define

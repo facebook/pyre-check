@@ -23,13 +23,13 @@ end = struct
 
   let forward ?key:_ state ~statement =
     match statement with
-    | { Node.value = Pass; _ } -> state + 1
+    | { Node.value = Statement.Pass; _ } -> state + 1
     | _ -> state
 
 
   let backward ?key:_ state ~statement =
     match statement with
-    | { Node.value = Pass; _ } -> state + 1
+    | { Node.value = Statement.Pass; _ } -> state + 1
     | _ -> state
 
 
@@ -72,20 +72,23 @@ let assert_fixpoint body expected =
 
 let test_forward _ =
   assert_fixpoint
-    [+Pass]
+    [+Statement.Pass]
     (Int.Table.of_alist_exn [0, 0; (* Entry *) 1, 1; (* Exit *) 3, 1; (* Final *) 5, 0 (* Pass *)]);
   assert_fixpoint
-    [+Pass; +Statement.Expression !"ignored"]
+    [+Statement.Pass; +Statement.Expression !"ignored"]
     (Int.Table.of_alist_exn [0, 0; 1, 1; 3, 1; 5, 0]);
-  assert_fixpoint [+Pass; +Pass] (Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0]);
   assert_fixpoint
-    [+Pass; +Pass; +Statement.Expression !"ignored"; +Pass]
+    [+Statement.Pass; +Statement.Pass]
+    (Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0]);
+  assert_fixpoint
+    [+Statement.Pass; +Statement.Pass; +Statement.Expression !"ignored"; +Statement.Pass]
     (Int.Table.of_alist_exn [0, 0; 1, 3; 3, 3; 5, 0])
 
 
 let test_join _ =
   assert_fixpoint
-    [+If { If.test = +Expression.True; body = [+Pass]; orelse = [+Pass] }]
+    [ +Statement.If
+         { If.test = +Expression.True; body = [+Statement.Pass]; orelse = [+Statement.Pass] } ]
     (Int.Table.of_alist_exn
        [ 0, 0;
          (* Entry *)
@@ -103,16 +106,21 @@ let test_join _ =
          (* Orelse *)
         ]);
   assert_fixpoint
-    [+If { If.test = +Expression.True; body = [+Pass]; orelse = [] }]
+    [+Statement.If { If.test = +Expression.True; body = [+Statement.Pass]; orelse = [] }]
     (Int.Table.of_alist_exn [5, 0; 6, 1; 0, 0; 8, 0; 1, 1; 3, 1; 7, 0]);
   assert_fixpoint
-    [+If { If.test = +Expression.True; body = [+Pass; +Pass]; orelse = [+Pass] }]
+    [ +Statement.If
+         {
+           If.test = +Expression.True;
+           body = [+Statement.Pass; +Statement.Pass];
+           orelse = [+Statement.Pass];
+         } ]
     (Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0; 6, 2; 7, 0; 8, 0])
 
 
 let test_widening _ =
   assert_fixpoint
-    [+While { While.test = +Expression.True; body = [+Pass]; orelse = [] }]
+    [+Statement.While { While.test = +Expression.True; body = [+Statement.Pass]; orelse = [] }]
     (Int.Table.of_alist_exn
        [ 0, 0;
          (* Entry *)

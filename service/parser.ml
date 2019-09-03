@@ -18,6 +18,7 @@ let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source
   let parse_lines lines =
     let metadata = Source.Metadata.parse ~qualifier lines in
     try
+      let open Statement in
       let statements = Parser.parse ~relative lines in
       Success
         (Source.create_from_source_path
@@ -103,8 +104,8 @@ let expand_wildcard_imports ~ast_environment ({ Source.qualifier; _ } as source)
 
         let statement _ collected_imports { Node.value; _ } =
           match value with
-          | Statement.Import { Statement.Import.from = Some from; imports }
-            when List.exists imports ~f:(fun { Statement.Import.name; _ } ->
+          | Statement.Import { Import.from = Some from; imports }
+            when List.exists imports ~f:(fun { Import.name; _ } ->
                      String.equal (Reference.show name) "*") ->
               from :: collected_imports
           | _ -> collected_imports
@@ -141,7 +142,7 @@ let expand_wildcard_imports ~ast_environment ({ Source.qualifier; _ } as source)
 
     let statement state ({ Node.value; _ } as statement) =
       match value with
-      | Import { Import.from = Some from; imports }
+      | Statement.Import { Import.from = Some from; imports }
         when List.exists imports ~f:(fun { Import.name; _ } ->
                  String.equal (Reference.show name) "*") ->
           let expanded_import =
@@ -149,7 +150,8 @@ let expand_wildcard_imports ~ast_environment ({ Source.qualifier; _ } as source)
             | [] -> statement
             | exports ->
                 List.map exports ~f:(fun name -> { Import.name; alias = None })
-                |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
+                |> (fun expanded ->
+                     Statement.Import { Import.from = Some from; imports = expanded })
                 |> fun value -> { statement with Node.value }
           in
           state, [expanded_import]

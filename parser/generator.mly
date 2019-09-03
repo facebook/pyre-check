@@ -155,12 +155,12 @@
     |> Node.create ~location
 
   let with_decorators decorators = function
-    | { Node.location; value = Class value } ->
+    | { Node.location; value = Statement.Class value } ->
         let decorated = { value with Class.decorators = List.map ~f:convert decorators; } in
-        { Node.location; value = Class decorated }
+        { Node.location; value = Statement.Class decorated }
     | { Node.location; value = Define value } ->
         let signature =
-          { value.signature with Define.decorators = List.map ~f:convert decorators }
+          { value.signature with Define.Signature.decorators = List.map ~f:convert decorators }
         in
         let decorated = { value with signature } in
         { Node.location; value = Define decorated }
@@ -342,7 +342,7 @@
       arguments = [subscript_argument ~subscripts ~location; { Call.Argument.name = None; value }];
     }
     |> Node.create ~location
-    |> fun expression -> Expression (convert expression)
+    |> fun expression -> Statement.Expression (convert expression)
     |> Node.create ~location
 
   let with_annotation ~parameter ~annotation =
@@ -573,7 +573,7 @@ small_statement:
           target.Node.location with Location.stop =
             annotation.Node.location.Location.stop;
         };
-        value = Assign {
+        value = Statement.Assign {
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = create_ellipsis_after annotation |> convert;
@@ -627,7 +627,7 @@ small_statement:
   | start = ASSERT; test = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Assert { Assert.test = convert test; message = None; origin = Assert.Assertion }
+        value = Assert { Assert.test = convert test; message = None; origin = Assert.Origin.Assertion }
       }]
     }
   | start = ASSERT; test = test;
@@ -637,7 +637,7 @@ small_statement:
         value = Assert {
           Assert.test = convert test;
           message = Some message >>| convert;
-          origin = Assert.Assertion
+          origin = Assert.Origin.Assertion
         }
       }]
     }
@@ -778,13 +778,13 @@ compound_statement:
       let _, name = name in
       let body =
         let rec transform_toplevel_statements = function
-          | { Node.location; value = Assign assign } ->
+          | { Node.location; value = Statement.Assign assign } ->
               {
                 Node.location;
-                value = Assign { assign with Assign.parent = Some name };
+                value = Statement.Assign { assign with Assign.parent = Some name };
               }
           | { Node.location; value = Define define } ->
-              let signature = { define.signature with Define.parent = Some name } in
+              let signature = { define.signature with Define.Signature.parent = Some name } in
               {
                 Node.location;
                 value = Define { define with signature };
@@ -1003,12 +1003,12 @@ async_statement:
   | position = ASYNC; statement = compound_statement {
       let location = location_create_with_stop ~start:(fst position) ~stop:(Node.stop statement) in
       match statement with
-      | { Node.value = Define value; _ } ->
-          let signature = { value.signature with Define.async = true } in
+      | { Node.value = Statement.Define value; _ } ->
+          let signature = { value.signature with Define.Signature.async = true } in
           let decorated = { value with signature } in
           {
             Node.location;
-            value = Define decorated;
+            value = Statement.Define decorated;
           }
       | { Node.value = For value; _ } ->
           let with_async = { value with For.async = true } in
@@ -1030,7 +1030,7 @@ block_or_stub_body:
   | ellipsis = ELLIPSES; NEWLINE
   | NEWLINE+; INDENT; ellipsis = ELLIPSES; NEWLINE; DEDENT; NEWLINE* {
     let location = Location.create ~start:(fst ellipsis) ~stop:(snd ellipsis) in
-    let body = [Node.create (Expression (Node.create Expression.Ellipsis ~location)) ~location] in
+    let body = [Node.create (Statement.Expression (Node.create Expression.Ellipsis ~location)) ~location] in
     location, body
    }
   | statements = block { statements }
@@ -1065,7 +1065,7 @@ conditional:
     else_start = ELSEIF; value = conditional {
       let stop = (fst value).Location.stop in
       { test.Node.location with Location.stop },
-      If {
+      Statement.If {
         If.test = convert test;
         body = (snd body);
         orelse = [{
@@ -1221,11 +1221,11 @@ with_item:
 handler:
   | start = EXCEPT; COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = None; name = None; handler_body = snd handler_body }
+      { Try.Handler.kind = None; name = None; body = snd handler_body }
     }
   | start = EXCEPT; kind = expression; COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = Some kind >>| convert; name = None; handler_body = snd handler_body }
+      { Try.Handler.kind = Some kind >>| convert; name = None; body = snd handler_body }
     }
   | start = EXCEPT;
     kind = expression; AS; name = identifier;
@@ -1234,18 +1234,18 @@ handler:
     kind = expression; COMMA; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = Some kind >>| convert; name = Some (snd name); handler_body = snd handler_body }
+      { Try.Handler.kind = Some kind >>| convert; name = Some (snd name); body = snd handler_body }
     }
   | start = EXCEPT;
     kind = or_test; COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = Some kind >>| convert; name = None; handler_body = snd handler_body }
+      { Try.Handler.kind = Some kind >>| convert; name = None; body = snd handler_body }
     }
   | start = EXCEPT;
     kind = or_test; AS; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = Some kind >>| convert; name = Some (snd name); handler_body = snd handler_body }
+      { Try.Handler.kind = Some kind >>| convert; name = Some (snd name); body = snd handler_body }
     }
   ;
 
@@ -1323,7 +1323,7 @@ import:
             target.Node.location with Location.stop =
               value.Node.location.Location.stop;
           };
-          value = Assign {
+          value = Statement.Assign {
             Assign.target = convert target;
             annotation = annotation >>| convert;
             value = convert value;

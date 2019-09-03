@@ -141,7 +141,7 @@ module Visit = struct
           Hashtbl.add annotations_lookup ~key:location ~data:resolved |> ignore
       in
       match Node.value statement with
-      | Assign { Assign.target; annotation; value; _ } ->
+      | Statement.Assign { Assign.target; annotation; value; _ } ->
           postcondition_visit target;
           annotation >>| store_annotation |> ignore;
           precondition_visit value
@@ -185,8 +185,11 @@ let create_of_source global_resolution source =
       in
       let statement =
         match Node.value statement with
-        | Class class_statement ->
-            { statement with Node.value = Class { class_statement with Class.body = [] } }
+        | Statement.Class class_statement ->
+            {
+              statement with
+              Node.value = Statement.Class { class_statement with Class.body = [] };
+            }
         | Define define_statement ->
             { statement with Node.value = Define { define_statement with Define.body = [] } }
         | _ -> statement
@@ -203,7 +206,9 @@ let create_of_source global_resolution source =
     Hashtbl.iteri cfg ~f:walk_cfg_node;
 
     (* Special-case define signature processing, since this is not included in the define's cfg. *)
-    let define_signature = { define_node with value = Define { define with Define.body = [] } } in
+    let define_signature =
+      { define_node with value = Statement.Define { define with Define.body = [] } }
+    in
     walk_statement Cfg.entry_index 0 define_signature
   in
   Preprocessing.defines ~include_nested:true ~include_toplevels:true source

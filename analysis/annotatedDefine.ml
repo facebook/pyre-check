@@ -38,7 +38,8 @@ let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
 
 let decorate
     ( {
-        Define.signature = { Define.decorators; parameters = original_parameters; _ } as signature;
+        Define.signature =
+          { Define.Signature.decorators; parameters = original_parameters; _ } as signature;
         _;
       } as define )
     ~resolution
@@ -103,7 +104,10 @@ let decorate
             original_parameters
       in
       let return_annotation = Some (Type.expression annotation) in
-      { define with Define.signature = { signature with Define.parameters; return_annotation } }
+      {
+        define with
+        Define.signature = { signature with Define.Signature.parameters; return_annotation };
+      }
 
 
 let is_constructor definition ~resolution =

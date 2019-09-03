@@ -149,14 +149,14 @@ module ConstantPropagationState (Context : Context) = struct
         | _ -> failwith "Could not extract expression"
       in
       match Node.value statement with
-      | Assign ({ value; _ } as assign) ->
+      | Statement.Assign ({ value; _ } as assign) ->
           (* Do not update left hand side of assignment. *)
           let value = transform_expression value in
-          { statement with Node.value = Assign { assign with value } }
+          { statement with Node.value = Statement.Assign { assign with value } }
       | Assert
           {
             Assert.origin =
-              Assert.If
+              Assert.Origin.If
                 {
                   statement = { Node.location; value = If ({ If.test; _ } as conditional) };
                   true_branch = true;
@@ -165,7 +165,7 @@ module ConstantPropagationState (Context : Context) = struct
           } ->
           let transformed_test = transform_expression test in
           if not (Expression.equal test transformed_test) then
-            { Node.location; value = If { conditional with If.test = transformed_test } }
+            { Node.location; value = Statement.If { conditional with If.test = transformed_test } }
           else
             statement
       | _ -> transform_statement statement
@@ -281,7 +281,7 @@ module Scheduler (State : State) (Context : Context) = struct
           match statement, transformed with
           | { Node.value = If conditional; _ }, [{ Node.value = If { If.test; _ }; _ }] ->
               (* Don't undo work we've done in the body of the conditional. *)
-              [{ statement with Node.value = If { conditional with If.test } }]
+              [{ statement with Node.value = Statement.If { conditional with If.test } }]
           | _ -> transformed
         in
         (), transformed
@@ -384,7 +384,7 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
         let transformed =
           let value =
             match Node.value statement with
-            | Define ({ Define.signature = { name; parameters; _ }; body } as define) ->
+            | Statement.Define ({ Define.signature = { name; parameters; _ }; body } as define) ->
                 (* Scope parameters to the function. *)
                 let names = String.Hash_set.create () in
                 let scope_name identifier =
@@ -467,7 +467,7 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
                 let signature =
                   { define.signature with name = sanitize_reference name; parameters }
                 in
-                Define { signature; body }
+                Statement.Define { signature; body }
             | For ({ For.target = { Node.value = Name name; _ } as target; _ } as block)
               when Expression.is_simple_name name ->
                 let target = { target with Node.value = Name (sanitize_name name) } in
@@ -517,7 +517,7 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
         let transformed =
           let value =
             match Node.value statement with
-            | Assign ({ target; _ } as assign) ->
+            | Statement.Assign ({ target; _ } as assign) ->
                 let rec sanitize_target target =
                   match target with
                   | { Node.value = Name name; _ } as target when Expression.is_simple_name name ->
@@ -526,7 +526,7 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
                       { tuple with Node.value = Tuple (List.map targets ~f:sanitize_target) }
                   | _ -> target
                 in
-                Assign { assign with Assign.target = sanitize_target target }
+                Statement.Assign { assign with Assign.target = sanitize_target target }
             | value -> value
           in
           { statement with Node.value }
@@ -576,7 +576,7 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
         let transformed =
           let value =
             match Node.value statement with
-            | Define ({ Define.signature = { name; parameters; _ }; _ } as define) ->
+            | Statement.Define ({ Define.signature = { name; parameters; _ }; _ } as define) ->
                 let parameters =
                   let sanitize_parameter =
                     let sanitize_parameter ({ Parameter.name; _ } as parameter) =
@@ -589,11 +589,11 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
                 let signature =
                   { define.signature with name = dequalify_reference name; parameters }
                 in
-                Define { define with signature }
+                Statement.Define { define with signature }
             | Try ({ Try.handlers; _ } as block) ->
                 let handlers =
-                  let sanitize_handler ({ Try.name; _ } as handler) =
-                    { handler with Try.name = name >>| Identifier.sanitized }
+                  let sanitize_handler ({ Try.Handler.name; _ } as handler) =
+                    { handler with Try.Handler.name = name >>| Identifier.sanitized }
                   in
                   List.map handlers ~f:sanitize_handler
                 in
@@ -615,17 +615,19 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
       let statement _ statement =
         let transformed =
           let fix_statement_list = function
-            | [] -> [Node.create_with_default_location Pass]
+            | [] -> [Node.create_with_default_location Statement.Pass]
             | statements -> statements
           in
           let value =
             match Node.value statement with
-            | If ({ If.body; _ } as conditional) ->
-                If { conditional with If.body = fix_statement_list body }
+            | Statement.If ({ If.body; _ } as conditional) ->
+                Statement.If { conditional with If.body = fix_statement_list body }
             | Define ({ Define.body; _ } as define) ->
                 let body =
                   let remove_docstring = function
-                    | { Node.value = Expression { Node.value = String _; _ }; _ } :: tail -> tail
+                    | { Node.value = Statement.Expression { Node.value = String _; _ }; _ } :: tail
+                      ->
+                        tail
                     | statements -> statements
                   in
                   fix_statement_list body |> remove_docstring

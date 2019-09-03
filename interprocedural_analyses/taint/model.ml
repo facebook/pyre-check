@@ -580,7 +580,7 @@ let create ~resolution ?path ~configuration ~verify source =
   let global_resolution = Resolution.global_resolution resolution in
   let signatures =
     let filter_define_signature = function
-      | { Node.value = Define { signature = { name; _ } as signature; _ }; location } ->
+      | { Node.value = Statement.Define { signature = { name; _ } as signature; _ }; location } ->
           let class_candidate =
             Reference.prefix name
             >>| GlobalResolution.parse_reference global_resolution
@@ -625,8 +625,11 @@ let create ~resolution ?path ~configuration ~verify source =
             >>| (fun { Node.value = { Class.body; _ }; _ } ->
                   let signature { Node.value; location } =
                     match value with
-                    | Define { Define.signature = { Define.name; parameters; _ } as signature; _ }
-                      ->
+                    | Statement.Define
+                        {
+                          Define.signature = { Define.Signature.name; parameters; _ } as signature;
+                          _;
+                        } ->
                         let signature =
                           let parameters =
                             let sink_parameter parameter =
@@ -645,7 +648,7 @@ let create ~resolution ?path ~configuration ~verify source =
                           in
                           {
                             signature with
-                            Define.parameters;
+                            Define.Signature.parameters;
                             return_annotation = source_annotation;
                           }
                         in
@@ -667,7 +670,7 @@ let create ~resolution ?path ~configuration ~verify source =
           let name = Expression.name_to_reference_exn name in
           let signature =
             {
-              Define.name;
+              Define.Signature.name;
               parameters = [];
               decorators = [];
               docstring = None;
@@ -688,7 +691,7 @@ let create ~resolution ?path ~configuration ~verify source =
           let name = Expression.name_to_reference_exn name in
           let signature =
             {
-              Define.name;
+              Define.Signature.name;
               parameters =
                 [Parameter.create ~location:Location.Reference.any ~annotation ~name:"$global" ()];
               decorators = [];
@@ -743,7 +746,7 @@ let create ~resolution ?path ~configuration ~verify source =
     | _ -> ()
   in
   let create_model
-      ( ({ Define.name; parameters; return_annotation; decorators; _ } as define),
+      ( ({ Define.Signature.name; parameters; return_annotation; decorators; _ } as define),
         location,
         call_target )
     =
@@ -769,8 +772,11 @@ let create ~resolution ?path ~configuration ~verify source =
         in
         let get_matching_method ~predicate =
           let get_matching_define = function
-            | { Node.value = Define define; _ } ->
-                if predicate define && define.Define.signature.Define.name = name then
+            | { Node.value = Statement.Define define; _ } ->
+                if
+                  predicate define
+                  && Reference.equal define.Define.signature.Define.Signature.name name
+                then
                   define
                   |> Annotated.Define.Callable.create_overload ~resolution:global_resolution
                   |> Type.Callable.create_from_implementation

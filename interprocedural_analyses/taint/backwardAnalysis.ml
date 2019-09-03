@@ -522,9 +522,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     let analyze_statement ~resolution state statement =
-      log "State: %a\nStmt: %a" pp state Statement.pp_statement statement;
+      log "State: %a\nStmt: %a" pp state pp_statement statement;
       match statement with
-      | Assign { target; value; _ } ->
+      | Statement.Assign { target; value; _ } ->
           let taint, _ = compute_assignment_taint ~resolution target state in
           analyze_expression ~resolution ~taint ~state ~expression:value
       | Assert _

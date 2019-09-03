@@ -282,7 +282,7 @@ let wildcard_exports_of { qualifier; statements; _ } =
         List.filter_map ~f:is_public
       in
       match value with
-      | Assign
+      | Statement.Assign
           {
             Assign.target = { Node.value = Name (Name.Identifier target); _ };
             value = { Node.value = Expression.List names; _ };
