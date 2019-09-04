@@ -391,9 +391,13 @@ let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as 
                   let qualifier =
                     Reference.show name |> String.substr_replace_all ~pattern:"." ~with_:"?"
                   in
-                  identifier
-                  |> String.chop_prefix_exn ~prefix:"$parameter"
-                  |> Format.asprintf "$parameter_%s%s" qualifier
+                  let stars, name = Identifier.split_star identifier in
+                  let name =
+                    name
+                    |> String.chop_prefix_exn ~prefix:"$parameter"
+                    |> Format.asprintf "$parameter_%s%s" qualifier
+                  in
+                  stars ^ name
                 in
                 let parameters =
                   let parameter ({ Node.value = { Parameter.name; _ } as parameter; _ } as node) =
