@@ -92,12 +92,8 @@ let test_select context =
             >>| List.rev
           with
           | Some
-              ({
-                 Node.value =
-                   Statement.Expression { Node.value = Expression.Call { arguments; _ }; _ };
-                 _;
-               }
-              :: { Node.value = Statement.Expression expression; _ } :: _) ->
+              ({ Node.value = Expression { Node.value = Expression.Call { arguments; _ }; _ }; _ }
+              :: { Node.value = Expression expression; _ } :: _) ->
               arguments, expression
           | _ -> failwith "couldnt extract"
         in
