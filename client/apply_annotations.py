@@ -5,7 +5,7 @@
 
 # pyre-strict
 
-from typing import IO, Any, Dict, List, NamedTuple, Optional, Union
+from typing import IO, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 import libcst as cst
 
@@ -22,6 +22,7 @@ class TypeCollector(cst.CSTVisitor):
         # Store the annotations.
         self.function_annotations: Dict[str, FunctionAnnotation] = {}
         self.attribute_annotations: Dict[str, cst.Annotation] = {}
+        self.imports: Dict[str, List[cst.ImportFrom]] = {}
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
@@ -50,29 +51,45 @@ class TypeCollector(cst.CSTVisitor):
     def leave_AnnAssign(self, node: cst.AnnAssign) -> None:
         self.qualifier.pop()
 
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
+        module = node.module
+        if module is None:
+            return
+        if module.value not in self.imports:
+            # pyre-fixme[6]: Expected `str` for 1st param but got
+            #  `Union[BaseExpression, str]`.
+            self.imports[module.value] = node.names
+        else:
+            # pyre-fixme[6]: Expected `Iterable[ImportFrom]` for 1st param but got
+            #  `Union[Sequence[ImportAlias], ImportStar]`.
+            self.imports[module.value] += node.names
+
 
 class TypeTransformer(cst.CSTTransformer):
     def __init__(
         self,
         function_annotations: Dict[str, FunctionAnnotation],
         attribute_annotations: Dict[str, cst.Annotation],
+        imports: Dict[str, List[cst.ImportFrom]],
     ) -> None:
         # Qualifier for storing the canonical name of the current function.
         self.qualifier: List[str] = []
         # Store the annotations.
-        self.function_annotations: Dict[str, FunctionAnnotation] = function_annotations
-        self.attribute_annotations: Dict[str, cst.Annotation] = attribute_annotations
+        self.function_annotations = function_annotations
+        self.attribute_annotations = attribute_annotations
         self.toplevel_annotations: Dict[str, cst.CSTNode] = {}
+        self.imports = imports
+        self.import_statements: List[cst.CSTNode] = []
 
     def _qualifier_name(self) -> str:
         return ".".join(self.qualifier)
 
-    # pyre-fixme[2]: Parameter must be annotated.
-    def _get_toplevel_index(self, body) -> int:
-        for index, node in enumerate(body):
-            if isinstance(node, cst.FunctionDef) or isinstance(node, cst.ClassDef):
-                return index
-        return 0
+    def _get_name_as_string(self, node: Union[cst.CSTNode, str]) -> str:
+        if isinstance(node, cst.Name):
+            return node.value
+        else:
+            # pyre-fixme[7]: Expected `str` but got `Union[CSTNode, str]`.
+            return node
 
     def _annotate_single_target(
         self, node: cst.Assign, updated_node: cst.Assign
@@ -81,19 +98,48 @@ class TypeTransformer(cst.CSTTransformer):
             target = node.targets[0].target
             # pyre-fixme[16]: `BaseAssignTargetExpression` has no attribute `elements`.
             for element in target.elements:
-                self._add_to_toplevel_annotations(element.value.value)
+                if not isinstance(element.value, cst.Subscript):
+                    name = self._get_name_as_string(element.value.value)
+                    self._add_to_toplevel_annotations(name)
             return updated_node
         else:
+            target = node.targets[0].target
             # pyre-fixme[16]: `BaseAssignTargetExpression` has no attribute `value`.
-            name = node.targets[0].target.value
+            name = self._get_name_as_string(target.value)
             self.qualifier.append(name)
-            if self._qualifier_name() in self.attribute_annotations:
+            if self._qualifier_name() in self.attribute_annotations and not isinstance(
+                target, cst.Subscript
+            ):
                 annotation = self.attribute_annotations[self._qualifier_name()]
                 self.qualifier.pop()
                 return cst.AnnAssign(cst.Name(name), annotation, node.value)
             else:
                 self.qualifier.pop()
                 return updated_node
+
+    def _split_module(
+        self, module: cst.Module, updated_module: cst.Module
+    ) -> Tuple[
+        List[Union[cst.SimpleStatementLine, cst.BaseCompoundStatement]],
+        List[Union[cst.SimpleStatementLine, cst.BaseCompoundStatement]],
+    ]:
+        import_add_location = 0
+        # This works under the principle that while we might modify node contents,
+        # we have yet to modify the number of statements. So we can match on the
+        # original tree but break up the statements of the modified tree. If we
+        # change this assumption in this visitor, we will have to change this code.
+        for i, statement in enumerate(module.body):
+            if isinstance(statement, cst.SimpleStatementLine):
+                for possible_import in statement.body:
+                    for last_import in self.import_statements:
+                        if possible_import is last_import:
+                            import_add_location = i + 1
+                            break
+
+        return (
+            list(updated_module.body[:import_add_location]),
+            list(updated_module.body[import_add_location:]),
+        )
 
     def _add_to_toplevel_annotations(self, name: str) -> None:
         self.qualifier.append(name)
@@ -122,6 +168,30 @@ class TypeTransformer(cst.CSTTransformer):
         return annotations.parameters.with_changes(
             default_params=annotated_default_parameters
         )
+
+    def _insert_empty_line(
+        self,
+        statements: List[Union[cst.SimpleStatementLine, cst.BaseCompoundStatement]],
+    ) -> List[Union[cst.SimpleStatementLine, cst.BaseCompoundStatement]]:
+        if len(statements) < 1:
+            # No statements, nothing to add to
+            return statements
+        if len(statements[0].leading_lines) == 0:
+            # Statement has no leading lines, add one!
+            return [
+                statements[0].with_changes(leading_lines=(cst.EmptyLine(),)),
+                *statements[1:],
+            ]
+        if statements[0].leading_lines[0].comment is None:
+            # First line is empty, so its safe to leave as-is
+            return statements
+        # Statement has a comment first line, so lets add one more empty line
+        return [
+            statements[0].with_changes(
+                leading_lines=(cst.EmptyLine(), *statements[0].leading_lines)
+            ),
+            *statements[1:],
+        ]
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
@@ -158,17 +228,63 @@ class TypeTransformer(cst.CSTTransformer):
 
         if len(original_node.targets) > 1:
             for assign in original_node.targets:
-                # pyre-fixme[16]: `BaseAssignTargetExpression` has no attribute `value`.
-                self._add_to_toplevel_annotations(assign.target.value)
+                if not isinstance(assign.target, cst.Subscript):
+                    # pyre-fixme[16]: `BaseAssignTargetExpression`
+                    # has no attribute `value`.
+                    value = self._get_name_as_string(assign.target.value)
+                    self._add_to_toplevel_annotations(value)
             return updated_node
         else:
             return self._annotate_single_target(original_node, updated_node)
 
+    def leave_ImportFrom(
+        self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
+    ) -> cst.ImportFrom:
+        self.import_statements.append(original_node)
+        if (
+            original_node.module is not None
+            # pyre-fixme[16]: `Optional` has no attribute `value`.
+            and original_node.module.value in self.imports
+        ):
+            names = list(updated_node.names) + self.imports[original_node.module.value]
+            updated_node = updated_node.with_changes(names=tuple(names))
+            del self.imports[original_node.module.value]
+        return updated_node
+
+    def visit_ImportAlias(self, node: cst.ImportAlias) -> None:
+        self.import_statements.append(node)
+
+    def visit_ImportStar(self, node: cst.ImportStar) -> None:
+        self.import_statements.append(node)
+
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
-        body = list(updated_node.body)
-        index = self._get_toplevel_index(body)
+        if not self.toplevel_annotations and not self.imports:
+            return updated_node
+
+        toplevel_statements = []
+
+        # First, find the insertion point for imports
+        statements_before_imports, statements_after_imports = self._split_module(
+            original_node, updated_node
+        )
+
+        # Make sure there's at least one empty line before the first non-import
+        statements_after_imports = self._insert_empty_line(statements_after_imports)
+
+        for module_name, aliases in self.imports.items():
+            import_statement = cst.ImportFrom(
+                module=cst.Name(module_name),
+                # pyre-fixme[6]: Expected `Union[Sequence[ImportAlias], ImportStar]`
+                #  for 2nd param but got `List[ImportFrom]`.
+                names=aliases,
+            )
+            # Add import statements to module body.
+            # Need to assign an Iterable, and the argument to SimpleStatementLine
+            # must be subscriptable.
+            toplevel_statements = [cst.SimpleStatementLine([import_statement])]
+
         for name, annotation in self.toplevel_annotations.items():
             annotated_assign = cst.AnnAssign(
                 cst.Name(name),
@@ -176,8 +292,15 @@ class TypeTransformer(cst.CSTTransformer):
                 cst.Annotation(annotation.annotation),
                 None,
             )
-            body.insert(index, cst.SimpleStatementLine([annotated_assign]))
-        return updated_node.with_changes(body=tuple(body))
+            toplevel_statements.append(cst.SimpleStatementLine([annotated_assign]))
+
+        return updated_node.with_changes(
+            body=[
+                *statements_before_imports,
+                *toplevel_statements,
+                *statements_after_imports,
+            ]
+        )
 
 
 # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
@@ -190,7 +313,7 @@ def _annotate_source(stubs: cst.Module, source: cst.Module) -> cst.Module:
     visitor = TypeCollector()
     stubs.visit(visitor)
     transformer = TypeTransformer(
-        visitor.function_annotations, visitor.attribute_annotations
+        visitor.function_annotations, visitor.attribute_annotations, visitor.imports
     )
     return source.visit(transformer)
 

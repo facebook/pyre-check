@@ -139,8 +139,9 @@ class ApplyAnnotationsTest(unittest.TestCase):
             a, b = foo()
             """,
             """
-            b: str
             a: int
+            b: str
+
             def foo() -> Tuple[int, str]:
                 return (1, "")
 
@@ -158,9 +159,10 @@ class ApplyAnnotationsTest(unittest.TestCase):
             x = y = z = 1
             """,
             """
-            z: int
-            y: int
             x: int
+            y: int
+            z: int
+
             x = y = z = 1
             """,
         )
@@ -184,6 +186,116 @@ class ApplyAnnotationsTest(unittest.TestCase):
             """,
         )
 
+        self.assert_annotations(
+            """
+            from typing import List
+
+            def foo() -> List[int]: ...
+            """,
+            """
+            def foo():
+                return [1]
+            """,
+            """
+            from typing import List
+
+            def foo() -> List[int]:
+                return [1]
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            from typing import List
+            def foo() -> List[int]: ...
+            """,
+            """
+            from typing import Union
+            def foo():
+                return [1]
+            """,
+            """
+            from typing import Union, List
+            def foo() -> List[int]:
+                return [1]
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            from typing import Any
+
+            a: Dict[Any, Any] = ...
+            """,
+            """
+            def foo() -> int:
+                return 1
+            a = {}
+            a['x'] = foo()
+            """,
+            """
+            from typing import Any
+
+            def foo() -> int:
+                return 1
+            a: Dict[Any, Any] = {}
+            a['x'] = foo()
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            from typing import Any, Dict
+
+            b: Dict[Any, Any] = ...
+            """,
+            """
+            from typing import  Tuple
+
+            def foo() -> Tuple[int, str]:
+                return 1, ""
+
+            b = {}
+
+            b['z'] = b['x'] = foo()
+
+            """,
+            """
+            from typing import  Tuple, Any, Dict
+
+            def foo() -> Tuple[int, str]:
+                return 1, ""
+
+            b: Dict[Any, Any] = {}
+
+            b['z'] = b['x'] = foo()
+            """,
+        )
+        # Test that tuples with subscripts are handled correctly
+        # and top level annotations are added in the correct place
+        self.assert_annotations(
+            """
+            a: int = ...
+            """,
+            """
+            from typing import Tuple
+
+            def foo() -> Tuple[str, int]:
+                return "", 1
+
+            b['z'], a = foo()
+            """,
+            """
+            from typing import Tuple
+            a: int
+
+            def foo() -> Tuple[str, int]:
+                return "", 1
+
+            b['z'], a = foo()
+            """,
+        )
+
         # Don't override existing default parameter values
         self.assert_annotations(
             """
@@ -200,5 +312,19 @@ class ApplyAnnotationsTest(unittest.TestCase):
             class B:
                 def foo(self, x: int = A + 1, y = None) -> int:
                     return x
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            def foo(x: int) -> int: ...
+            """,
+            """
+            def foo(x) -> int:
+                return x
+            """,
+            """
+            def foo(x: int) -> int:
+                return x
             """,
         )
