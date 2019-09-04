@@ -84,7 +84,7 @@ let test_initial context =
     end
     in
     let resolution =
-      ScratchProject.setup ~context ["__init__.py", environment] |> ScratchProject.build_resolution
+      ScratchProject.setup ~context ["test.py", environment] |> ScratchProject.build_resolution
     in
     let module Create = Create (Context) in
     let state = Create.create ~immutables ~resolution annotations in
@@ -175,9 +175,9 @@ let test_initial context =
     ~annotations:["a", Type.Any];
   assert_initial
     ~environment:"T = typing.TypeVar('T')"
-    "def foo(x: T) -> None: ..."
-    ~immutables:["x", (false, Type.Variable.mark_all_variables_as_bound (Type.variable "T"))]
-    ~annotations:["x", Type.Variable.mark_all_variables_as_bound (Type.variable "T")]
+    "def foo(x: test.T) -> None: ..."
+    ~immutables:["x", (false, Type.Variable.mark_all_variables_as_bound (Type.variable "test.T"))]
+    ~annotations:["x", Type.Variable.mark_all_variables_as_bound (Type.variable "test.T")]
 
 
 let test_less_or_equal context =
@@ -272,7 +272,7 @@ let test_widen context =
 let test_check_annotation context =
   let assert_check_annotation source expression descriptions =
     let resolution =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
     in
     let create =
       let module Create = Create (DefaultContext) in
@@ -291,30 +291,30 @@ let test_check_annotation context =
   assert_check_annotation "" "x" ["Undefined type [11]: Type `x` is not defined."];
   assert_check_annotation
     "x: int = 1"
-    "x"
-    ["Invalid type [31]: Expression `x` is not a valid type."];
+    "test.x"
+    ["Invalid type [31]: Expression `test.x` is not a valid type."];
   assert_check_annotation
     "x: typing.Type[int] = int"
-    "x"
-    ["Invalid type [31]: Expression `x` is not a valid type."];
-  assert_check_annotation "x = int" "x" [];
+    "test.x"
+    ["Invalid type [31]: Expression `test.x` is not a valid type."];
+  assert_check_annotation "x = int" "test.x" [];
   assert_check_annotation
     "x: typing.Any"
-    "x"
-    ["Invalid type [31]: Expression `x` is not a valid type."];
-  assert_check_annotation "x = typing.Any" "x" [];
-  assert_check_annotation "x: typing.TypeAlias = typing.Any" "x" [];
+    "test.x"
+    ["Invalid type [31]: Expression `test.x` is not a valid type."];
+  assert_check_annotation "x = typing.Any" "test.x" [];
+  assert_check_annotation "x: typing.TypeAlias = typing.Any" "test.x" [];
   assert_check_annotation {|
       class Foo: ...
       x = Foo
-    |} "x" [];
+    |} "test.x" [];
   assert_check_annotation
     {|
       class Foo: ...
       x = Foo()
     |}
-    "x"
-    ["Invalid type [31]: Expression `x` is not a valid type."];
+    "test.x"
+    ["Invalid type [31]: Expression `test.x` is not a valid type."];
   assert_check_annotation
     {|
       class Foo:
@@ -322,8 +322,8 @@ let test_check_annotation context =
           ...
       x = Foo[Undefined]
     |}
-    "x"
-    ["Undefined type [11]: Type `x` is not defined."]
+    "test.x"
+    ["Undefined type [11]: Type `test.x` is not defined."]
 
 
 type definer =
@@ -922,7 +922,7 @@ let test_forward_expression context =
       | _ -> failwith "Unable to extract expression"
     in
     let resolution =
-      ScratchProject.setup ~context ["__init__.py", environment] |> ScratchProject.build_resolution
+      ScratchProject.setup ~context ["test.py", environment] |> ScratchProject.build_resolution
     in
     let { State.resolved_annotation; _ } =
       State.forward_expression ~state:(create ~resolution precondition) ~expression
@@ -936,11 +936,11 @@ let test_forward_expression context =
   assert_annotation "1" None;
   assert_annotation
     ~environment:"x = 1"
-    "x"
+    "test.x"
     (Some (Annotation.create_immutable ~global:true Type.integer));
   assert_annotation
     ~environment:"x: typing.Union[int, str] = 1"
-    "x"
+    "test.x"
     (Some
        (Annotation.create_immutable
           ~global:true
@@ -953,7 +953,7 @@ let test_forward_expression context =
           def __init__(self):
             self.attribute: int = 1
       |}
-    "Foo().attribute"
+    "test.Foo().attribute"
     (Some (Annotation.create_immutable ~global:true Type.integer))
 
 
@@ -1489,8 +1489,9 @@ let test_coverage context =
   let assert_coverage source expected =
     let coverage =
       let project = ScratchProject.setup ~context ["coverage_test.py", source] in
-      let sources, _, environment = ScratchProject.build_environment project in
-      let source = List.hd_exn sources in
+      let _, ast_environment, environment = ScratchProject.build_environment project in
+      let source = AstEnvironment.get_source ast_environment (Reference.create "coverage_test") in
+      let source = Option.value_exn source in
       let configuration = ScratchProject.configuration_of project in
       let global_resolution = Environment.resolution environment () in
       TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
@@ -1530,8 +1531,9 @@ type method_call = {
 let test_calls context =
   let assert_calls source calls =
     let project = ScratchProject.setup ~context ["qualifier.py", source] in
-    let sources, _, environment = ScratchProject.build_environment project in
-    let source = List.hd_exn sources in
+    let _, ast_environment, environment = ScratchProject.build_environment project in
+    let source = AstEnvironment.get_source ast_environment (Reference.create "qualifier") in
+    let source = Option.value_exn source in
     let configuration = ScratchProject.configuration_of project in
     (* Clear dependencies for all defines. *)
     let clear_calls

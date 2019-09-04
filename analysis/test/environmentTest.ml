@@ -26,27 +26,19 @@ let create_environment_and_project
     ?(additional_sources = [])
     ()
   =
-  let project = ScratchProject.setup ~context additional_sources in
-  let sources, _, environment =
-    project
-    |> ScratchProject.build_environment
-         ~include_typeshed_stubs
-         ~include_helper_builtins:include_helpers
+  let project =
+    ScratchProject.setup
+      ~context
+      ~include_typeshed_stubs
+      ~include_helper_builtins:include_helpers
+      additional_sources
   in
+  let sources, _, environment = project |> ScratchProject.build_environment in
   (* TODO (T47159596): This can be done in a more elegant way *)
   let () =
     let set_up_shared_memory _ = () in
     let tear_down_shared_memory () _ =
-      let typeshed_sources =
-        if include_typeshed_stubs then
-          typeshed_stubs ~include_helper_builtins:include_helpers ()
-        else
-          []
-      in
-      let qualifiers =
-        List.append sources typeshed_sources
-        |> List.map ~f:(fun { Source.qualifier; _ } -> qualifier)
-      in
+      let qualifiers = sources |> List.map ~f:(fun { Source.qualifier; _ } -> qualifier) in
       Environment.purge environment qualifiers
     in
     OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
@@ -221,7 +213,7 @@ let test_register_aliases context =
   in
   (* Explicit Aliases *)
   assert_resolved
-    [ ( "__init__.py",
+    [ ( "test.py",
         {|
           class C: ...
           class D(C): pass
@@ -232,7 +224,12 @@ let test_register_aliases context =
           Twiddledee, Twiddledum = C, C
         |}
       ) ]
-    ["C", "C"; "D", "D"; "B", "D"; "A", "D"; "Twiddledee", "Twiddledee"; "Twiddledum", "Twiddledum"];
+    [ "test.C", "test.C";
+      "test.D", "test.D";
+      "test.B", "test.D";
+      "test.A", "test.D";
+      "test.Twiddledee", "test.Twiddledee";
+      "test.Twiddledum", "test.Twiddledum" ];
 
   assert_resolved
     [ ( "qualifier.py",
@@ -250,7 +247,7 @@ let test_register_aliases context =
 
   (* Non-explicit Alaises *)
   assert_resolved
-    [ ( "__init__.py",
+    [ ( "test.py",
         {|
           class C: ...
           class D(C): pass
@@ -259,7 +256,12 @@ let test_register_aliases context =
           Twiddledee, Twiddledum = C, C
         |}
       ) ]
-    ["C", "C"; "D", "D"; "B", "D"; "A", "D"; "Twiddledee", "Twiddledee"; "Twiddledum", "Twiddledum"];
+    [ "test.C", "test.C";
+      "test.D", "test.D";
+      "test.B", "test.D";
+      "test.A", "test.D";
+      "test.Twiddledee", "test.Twiddledee";
+      "test.Twiddledum", "test.Twiddledum" ];
 
   assert_resolved
     [ ( "qualifier.py",
@@ -274,36 +276,36 @@ let test_register_aliases context =
       "qualifier.D", "qualifier.D";
       "qualifier.B", "qualifier.D";
       "qualifier.A", "qualifier.D" ];
-  assert_resolved ["__init__.py", "X = None"] ["X", "None"];
+  assert_resolved ["test.py", "X = None"] ["test.X", "None"];
 
   (* Imports *)
   assert_resolved
-    [ ( "collections.py",
+    [ ( "collectionz.py",
         {|
           from typing import Iterator as TypingIterator
           from typing import Iterable
         |}
       ) ]
-    [ "collections.TypingIterator", "typing.Iterator[typing.Any]";
-      "collections.Iterable", "typing.Iterable[typing.Any]" ];
+    [ "collectionz.TypingIterator", "typing.Iterator[typing.Any]";
+      "collectionz.Iterable", "typing.Iterable[typing.Any]" ];
 
   (* Handle builtins correctly. *)
   assert_resolved
-    [ ( "collections.py",
+    [ ( "collectionz.py",
         {|
           from builtins import int
           from builtins import dict as CDict
         |}
       ) ]
-    ["collections.int", "int"; "collections.CDict", "typing.Dict[typing.Any, typing.Any]"];
+    ["collectionz.int", "int"; "collectionz.CDict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
-    [ ( "collections.py",
+    [ ( "collectionz.py",
         {|
           from future.builtins import int
           from future.builtins import dict as CDict
         |}
       ) ]
-    ["collections.int", "int"; "collections.CDict", "typing.Dict[typing.Any, typing.Any]"];
+    ["collectionz.int", "int"; "collectionz.CDict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
     [ ( "asyncio/tasks.py",
         {|
@@ -382,7 +384,7 @@ let test_register_aliases context =
         |}]
     ["x.C", "x.C"];
   assert_resolved
-    [ ( "__init__.py",
+    [ ( "test.py",
         {|
           A = int
           B: typing.Type[int] = int
@@ -394,7 +396,14 @@ let test_register_aliases context =
           H = 1
         |}
       ) ]
-    ["A", "int"; "B", "B"; "C", "C"; "D", "D"; "E", "typing.Any"; "F", "F"; "G", "int"; "H", "H"];
+    [ "test.A", "int";
+      "test.B", "test.B";
+      "test.C", "test.C";
+      "test.D", "test.D";
+      "test.E", "typing.Any";
+      "test.F", "test.F";
+      "test.G", "int";
+      "test.H", "test.H" ];
   assert_resolved
     ["a.py", {|
           class Foo: ...
@@ -444,18 +453,19 @@ let test_register_aliases context =
     List.iter aliases ~f:assert_alias
   in
   assert_resolved
-    [ ( "__init__.py",
+    [ ( "test.py",
         {|
           Tparams = pyre_extensions.ParameterSpecification('Tparams')
           Ts = pyre_extensions.ListVariadic('Ts')
       |}
       ) ]
-    [ ( "Tparams",
+    [ ( "test.Tparams",
         Type.VariableAlias
-          (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Tparams")) );
-      ( "Ts",
-        Type.VariableAlias (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "Ts")) )
-    ];
+          (Type.Variable.ParameterVariadic
+             (Type.Variable.Variadic.Parameters.create "test.Tparams")) );
+      ( "test.Ts",
+        Type.VariableAlias
+          (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "test.Ts")) ) ];
   ()
 
 
@@ -773,7 +783,7 @@ let test_populate context =
   let assert_global =
     populate
       ~context
-      [ ( "__init__.py",
+      [ ( "test.py",
           {|
       global_value_set = 1
       global_annotated: int
@@ -789,34 +799,34 @@ let test_populate context =
         ) ]
     |> assert_global_with_environment
   in
-  assert_global "global_value_set" (Annotation.create_immutable ~global:true Type.integer);
-  assert_global "global_annotated" (Annotation.create_immutable ~global:true Type.integer);
-  assert_global "global_both" (Annotation.create_immutable ~global:true Type.integer);
-  assert_global "global_unknown" (Annotation.create_immutable ~global:true Type.Top);
+  assert_global "test.global_value_set" (Annotation.create_immutable ~global:true Type.integer);
+  assert_global "test.global_annotated" (Annotation.create_immutable ~global:true Type.integer);
+  assert_global "test.global_both" (Annotation.create_immutable ~global:true Type.integer);
+  assert_global "test.global_unknown" (Annotation.create_immutable ~global:true Type.Top);
   assert_global
-    "function"
+    "test.function"
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:!&"function"
+          ~name:!&"test.function"
           ~parameters:(Type.Callable.Defined [])
           ~annotation:Type.Top
           ()));
   assert_global
-    "global_function"
+    "test.global_function"
     (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.Top);
   assert_global
-    "Class"
+    "test.Class"
     (Annotation.create_immutable
        ~global:true
        ~original:(Some Type.Top)
-       (Type.meta (Type.Primitive "Class")));
+       (Type.meta (Type.Primitive "test.Class")));
   assert_global
-    "Class.__init__"
+    "test.Class.__init__"
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:!&"Class.__init__"
+          ~name:!&"test.Class.__init__"
           ~parameters:
             (Type.Callable.Defined
                [ Type.Callable.Parameter.Named

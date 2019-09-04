@@ -13,19 +13,19 @@ open TestHelper
 
 let assert_taint ?models ~context source expect =
   let handle = "qualifier.py" in
-  let configuration, source =
-    let project = Test.ScratchProject.setup ~context [handle, source] in
-    let sources, _ = Test.ScratchProject.parse_sources project in
-    let source = List.hd_exn sources in
-    Test.ScratchProject.configuration_of project, source
+  let sources =
+    match models with
+    | Some models -> [handle, source; "models.py", models]
+    | None -> [handle, source]
   in
-  let environment =
-    let models = models >>| (fun model -> [Test.parse model]) |> Option.value ~default:[] in
-    let environment =
-      TestHelper.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
-    in
-    TestHelper.populate ~configuration environment [source];
-    environment
+  let configuration, ast_environment, environment =
+    let project = Test.ScratchProject.setup ~context sources in
+    let _, ast_environment, environment = Test.ScratchProject.build_environment project in
+    Test.ScratchProject.configuration_of project, ast_environment, environment
+  in
+  let source =
+    AstEnvironment.get_source ast_environment (Ast.Reference.create "qualifier")
+    |> fun option -> Option.value_exn option
   in
   let global_resolution = Environment.resolution environment () in
   models
@@ -83,13 +83,14 @@ let test_simple_source context =
   assert_taint
     ~context
     ~models:{|
-      def custom_source() -> TaintSource[Test]: ...
+      def models.custom_source() -> TaintSource[Test]: ...
     |}
     {|
       def simple_source():
-        return custom_source()
+        return models.custom_source()
     |}
-    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"]
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"];
+  ()
 
 
 let test_global_taint context =
@@ -734,8 +735,8 @@ let test_composed_models context =
     ~context
     ~models:
       {|
-      def composed_model(x: TaintSink[Test], y, z) -> TaintSource[UserControlled]: ...
-      def composed_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
+      def models.composed_model(x: TaintSink[Test], y, z) -> TaintSource[UserControlled]: ...
+      def models.composed_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
     |}
@@ -745,7 +746,7 @@ let test_composed_models context =
         ~sink_parameters:
           [{ name = "x"; sinks = [Taint.Sinks.Test] }; { name = "y"; sinks = [Taint.Sinks.Demo] }]
         ~tito_parameters:["z"]
-        "composed_model" ]
+        "models.composed_model" ]
 
 
 let test_tito_side_effects context =
@@ -753,34 +754,34 @@ let test_tito_side_effects context =
     ~context
     ~models:
       {|
-      def change_arg0(arg0, arg1: TaintInTaintOut[Updates[arg0]]): ...
-      def change_arg1(arg0: TaintInTaintOut[Updates[arg1]], arg1): ...
+      def models.change_arg0(arg0, arg1: TaintInTaintOut[Updates[arg0]]): ...
+      def models.change_arg1(arg0: TaintInTaintOut[Updates[arg1]], arg1): ...
       def qualifier.MyList.append(self, arg: TaintInTaintOut[Updates[self]]): ...
     |}
     {|
       def test_from_1_to_0():
         x = 0
-        change_arg0(x, __test_source())
+        models.change_arg0(x, __test_source())
         return x
 
       def test_from_0_to_1():
         y = 0
-        change_arg1(__test_source(), y)
+        models.change_arg1(__test_source(), y)
         return y
 
       def test_from_1_to_0_nested():
         x = {}
-        change_arg0(x.foo, __test_source())
+        models.change_arg0(x.foo, __test_source())
         return x.foo
 
       def test_from_1_to_0_nested_distinct():
         x = {}
-        change_arg0(x.foo, __test_source())
+        models.change_arg0(x.foo, __test_source())
         return x.bar
 
       def test_weak_assign():
         x = __test_source()
-        change_arg0(x, 'no taint')
+        models.change_arg0(x, 'no taint')
         return x
 
       class MyList:
@@ -801,29 +802,28 @@ let test_tito_side_effects context =
 
 
 let () =
-  "taint"
-  >::: [ "no_model" >:: test_no_model;
-         "simple" >:: test_simple_source;
-         "hardcoded" >:: test_hardcoded_source;
-         "copy" >:: test_local_copy;
-         "test_access_paths" >:: test_access_paths;
-         "class_model" >:: test_class_model;
-         "test_apply_method_model_at_call_site" >:: test_apply_method_model_at_call_site;
-         "test_taint_in_taint_out_application" >:: test_taint_in_taint_out_application;
-         "test_union" >:: test_taint_in_taint_out_application;
-         "test_dictionary" >:: test_dictionary;
-         "test_comprehensions" >:: test_comprehensions;
-         "test_list" >:: test_list;
-         "test_lambda" >:: test_lambda;
-         "test_set" >:: test_set;
-         "test_starred" >:: test_starred;
-         "test_string" >:: test_string;
-         "test_ternary" >:: test_ternary;
-         "test_tuple" >:: test_tuple;
-         "test_unary" >:: test_unary;
-         "test_yield" >:: test_yield;
-         "test_construction" >:: test_construction;
-         "test_composed_models" >:: test_composed_models;
-         "test_tito_side_effects" >:: test_tito_side_effects;
-         "test_global_taint" >:: test_global_taint ]
-  |> TestHelper.run_with_taint_models
+  [ "no_model", test_no_model;
+    "simple", test_simple_source;
+    "hardcoded", test_hardcoded_source;
+    "copy", test_local_copy;
+    "test_access_paths", test_access_paths;
+    "class_model", test_class_model;
+    "test_apply_method_model_at_call_site", test_apply_method_model_at_call_site;
+    "test_taint_in_taint_out_application", test_taint_in_taint_out_application;
+    "test_union", test_taint_in_taint_out_application;
+    "test_dictionary", test_dictionary;
+    "test_comprehensions", test_comprehensions;
+    "test_list", test_list;
+    "test_lambda", test_lambda;
+    "test_set", test_set;
+    "test_starred", test_starred;
+    "test_string", test_string;
+    "test_ternary", test_ternary;
+    "test_tuple", test_tuple;
+    "test_unary", test_unary;
+    "test_yield", test_yield;
+    "test_construction", test_construction;
+    "test_composed_models", test_composed_models;
+    "test_tito_side_effects", test_tito_side_effects;
+    "test_global_taint", test_global_taint ]
+  |> TestHelper.run_with_taint_models ~name:"taint"

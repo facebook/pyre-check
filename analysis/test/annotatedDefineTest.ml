@@ -74,10 +74,11 @@ let test_parent_definition context =
 let test_decorate context =
   let assert_decorated source ~expected =
     let source, environment =
-      let sources, _, environment =
+      let _, ast_environment, environment =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
       in
-      List.hd_exn sources, environment
+      ( Option.value_exn (AstEnvironment.get_source ast_environment (Reference.create "test")),
+        environment )
     in
     let resolution = Environment.resolution environment () in
     let take_define = function

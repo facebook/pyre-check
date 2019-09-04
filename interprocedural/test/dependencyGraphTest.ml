@@ -32,7 +32,7 @@ let create_call_graph
     source_text
   =
   let configuration, source, environment =
-    setup ~update_environment_with ~context ~handle:"__init__.py" source_text
+    setup ~update_environment_with ~context ~handle:"test.py" source_text
   in
   let global_resolution = Environment.resolution environment () in
   let errors = TypeCheck.run ~configuration ~global_resolution ~source in
@@ -100,7 +100,9 @@ let test_construction context =
         return self.bar()
     |}
     ~expected:
-      [`Method "Foo.__init__", []; `Method "Foo.bar", []; `Method "Foo.qux", [`Method "Foo.bar"]];
+      [ `Method "test.Foo.__init__", [];
+        `Method "test.Foo.bar", [];
+        `Method "test.Foo.qux", [`Method "test.Foo.bar"] ];
   assert_call_graph
     {|
     class Foo:
@@ -114,9 +116,9 @@ let test_construction context =
         return self.bar()
     |}
     ~expected:
-      [ `Method "Foo.__init__", [];
-        `Method "Foo.bar", [`Method "Foo.qux"];
-        `Method "Foo.qux", [`Method "Foo.bar"] ];
+      [ `Method "test.Foo.__init__", [];
+        `Method "test.Foo.bar", [`Method "test.Foo.qux"];
+        `Method "test.Foo.qux", [`Method "test.Foo.bar"] ];
   assert_call_graph
     {|
      class A:
@@ -127,7 +129,8 @@ let test_construction context =
        def __init__(self) -> None:
          a = A()
     |}
-    ~expected:[`Method "A.__init__", []; `Method "B.__init__", [`Method "A.__init__"]];
+    ~expected:
+      [`Method "test.A.__init__", []; `Method "test.B.__init__", [`Method "test.A.__init__"]];
   assert_call_graph
     ~update_environment_with:
       [{ handle = "foobar.pyi"; source = {|
@@ -137,7 +140,7 @@ let test_construction context =
      def foo():
        foobar.bar("foo")
     |}
-    ~expected:[`Function "foo", [`Function "foobar.bar"]];
+    ~expected:[`Function "test.foo", [`Function "foobar.bar"]];
   assert_call_graph
     ~update_environment_with:
       [{ handle = "bar/baz/qux.pyi"; source = {|
@@ -148,7 +151,7 @@ let test_construction context =
      def foo():
        qux.derp()
     |}
-    ~expected:[`Function "foo", [`Function "bar.baz.qux.derp"]]
+    ~expected:[`Function "test.foo", [`Function "bar.baz.qux.derp"]]
 
 
 let test_construction_reverse context =
@@ -165,7 +168,7 @@ let test_construction_reverse context =
       def qux(self):
         return self.bar()
     |}
-    ~expected:[`Method "Foo.bar", [`Method "Foo.qux"]];
+    ~expected:[`Method "test.Foo.bar", [`Method "test.Foo.qux"]];
   assert_reverse_call_graph
     ~context
     {|
@@ -183,16 +186,22 @@ let test_construction_reverse context =
         return self.qux()
     |}
     ~expected:
-      [ `Method "Foo.bar", [`Method "Foo.qux"; `Method "Foo.baz"];
-        `Method "Foo.qux", [`Method "Foo.bar"] ]
+      [ `Method "test.Foo.bar", [`Method "test.Foo.qux"; `Method "test.Foo.baz"];
+        `Method "test.Foo.qux", [`Method "test.Foo.bar"] ]
 
 
 let test_type_collection context =
   let assert_type_collection source ~handle ~expected =
     let configuration, source, environment =
       let project = ScratchProject.setup ~context [handle, source] in
-      let sources, _, environment = ScratchProject.build_environment project in
-      ScratchProject.configuration_of project, List.hd_exn sources, environment
+      let _, ast_environment, environment = ScratchProject.build_environment project in
+      let source =
+        AstEnvironment.get_source
+          ast_environment
+          (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
+        |> fun option -> Option.value_exn option
+      in
+      ScratchProject.configuration_of project, source, environment
     in
     let global_resolution = Environment.resolution environment () in
     TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
@@ -275,7 +284,7 @@ let test_type_collection context =
 let test_method_overrides context =
   let assert_method_overrides
       ?(update_environment_with = [])
-      ?(handle = "__init__.py")
+      ?(handle = "test.py")
       source
       ~expected
     =
@@ -310,7 +319,7 @@ let test_method_overrides context =
       class Qux(Foo):
         def foo(): pass
     |}
-    ~expected:["Bar.foo", ["Baz"]; "Foo.foo", ["Bar"; "Qux"]];
+    ~expected:["test.Bar.foo", ["test.Baz"]; "test.Foo.foo", ["test.Bar"; "test.Qux"]];
 
   (* We don't register any overrides at all for classes in test files. *)
   assert_method_overrides

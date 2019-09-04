@@ -8,12 +8,18 @@ open Test
 open Analysis
 open OUnit2
 
-let assert_static_analysis_errors ~context ~source ~check ~expected =
+let assert_static_analysis_errors ~context ~source ~check ~expected ~include_typeshed_stubs =
   Annotated.Class.AttributeCache.clear ();
   let descriptions =
     let errors =
       let configuration, source_paths, environment =
-        let project = ScratchProject.setup ~context ~external_sources:[] ["__init__.py", source] in
+        let project =
+          ScratchProject.setup
+            ~context
+            ~external_sources:[]
+            ~include_typeshed_stubs
+            ["test.py", source]
+        in
         let _, _, environment = ScratchProject.build_environment project in
         let configuration = ScratchProject.configuration_of project in
         let source_paths = ScratchProject.source_paths_of project in
@@ -49,16 +55,24 @@ let test_run_awaitable_check context =
        x = c.awaitable()
   |}
     ~check:"awaitable"
+    ~include_typeshed_stubs:true
     ~expected:["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+
   assert_static_analysis_errors
     ~context
     ~source:{|
     y = 1
     y
 |}
+    ~include_typeshed_stubs:false
     ~check:"deobfuscation"
     ~expected:["Deobfuscation [1002]: \n1\n"];
-  assert_static_analysis_errors ~context ~source:{|x = 1|} ~check:"nonexistent" ~expected:[]
+  assert_static_analysis_errors
+    ~context
+    ~source:{|x = 1|}
+    ~check:"nonexistent"
+    ~expected:[]
+    ~include_typeshed_stubs:true
 
 
 let () =

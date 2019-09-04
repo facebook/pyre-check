@@ -538,7 +538,12 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
             ],
@@ -559,7 +564,12 @@
         "port": "result",
         "taint": [
           {
-            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
             "leaves": [
               {
                 "kind": "Test",
@@ -616,7 +626,12 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
             ],
@@ -638,7 +653,12 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
             ],
@@ -659,7 +679,12 @@
         "port": "result",
         "taint": [
           {
-            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
             "leaves": [
               {
                 "kind": "Test",
@@ -716,7 +741,12 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
             "leaves": [
               { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
             ],

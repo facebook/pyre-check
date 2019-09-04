@@ -190,10 +190,10 @@ let test_create_overload context =
 
 let test_create context =
   let assert_callable ?expected_implicit ?parent ~expected source =
-    let resolution =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+    let _, ast_environment, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let resolution = Resolution.global_resolution resolution in
+    let resolution = Environment.resolution environment () in
     let expected =
       GlobalResolution.parse_annotation resolution (parse_single_expression expected)
     in
@@ -212,10 +212,13 @@ let test_create context =
     let callable =
       let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
       let parent = parent >>| Reference.create in
-      let defines = parse source |> Preprocessing.defines ~include_stubs:true |> List.rev in
-      let { Define.signature = { Define.Signature.name; _ }; _ } =
-        List.hd_exn defines |> Node.value
+      let defines =
+        AstEnvironment.get_source ast_environment (Reference.create "test")
+        |> (fun option -> Option.value_exn option)
+        |> Preprocessing.defines ~include_stubs:true
+        |> List.rev
       in
+      let { Define.signature = { name; _ }; _ } = List.hd_exn defines |> Node.value in
       let to_overload define =
         Define.is_overloaded_method define, Callable.create_overload ~resolution define
       in
@@ -233,28 +236,28 @@ let test_create context =
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal expected callable
   in
-  assert_callable "def foo() -> int: ..." ~expected:"typing.Callable('foo')[[], int]";
+  assert_callable "def foo() -> int: ..." ~expected:"typing.Callable('test.foo')[[], int]";
   assert_callable
     "async def foo() -> int: ..."
-    ~expected:"typing.Callable('foo')[[], typing.Coroutine[typing.Any, typing.Any, int]]";
+    ~expected:"typing.Callable('test.foo')[[], typing.Coroutine[typing.Any, typing.Any, int]]";
   assert_callable
     "def foo(a, b) -> str: ..."
-    ~expected:"typing.Callable('foo')[[Named(a, $unknown), Named(b, $unknown)], str]";
+    ~expected:"typing.Callable('test.foo')[[Named(a, $unknown), Named(b, $unknown)], str]";
   assert_callable
     "def foo(a: int, b) -> str: ..."
-    ~expected:"typing.Callable('foo')[[Named(a, int), Named(b, $unknown)], str]";
+    ~expected:"typing.Callable('test.foo')[[Named(a, int), Named(b, $unknown)], str]";
   assert_callable
     "def foo(a: int = 1) -> str: ..."
-    ~expected:"typing.Callable('foo')[[Named(a, int, default)], str]";
+    ~expected:"typing.Callable('test.foo')[[Named(a, int, default)], str]";
   assert_callable
     "def foo(__a: int, _b: str) -> str: ..."
-    ~expected:"typing.Callable('foo')[[int, Named(_b, str)], str]";
+    ~expected:"typing.Callable('test.foo')[[int, Named(_b, str)], str]";
   assert_callable
     "def foo(a, *args, **kwargs) -> str: ..."
-    ~expected:"typing.Callable('foo')[[Named(a, $unknown), Variable(), Keywords()], str]";
+    ~expected:"typing.Callable('test.foo')[[Named(a, $unknown), Variable(), Keywords()], str]";
   assert_callable
     "def foo(**kwargs: typing.Dict[str, typing.Any]) -> str: ..."
-    ~expected:"typing.Callable('foo')[[Keywords(typing.Dict[str, typing.Any])], str]";
+    ~expected:"typing.Callable('test.foo')[[Keywords(typing.Dict[str, typing.Any])], str]";
   assert_callable
     ~parent:"module.Foo"
     "def module.Foo.foo(a: int, b) -> str: ..."
@@ -290,32 +293,36 @@ let test_create context =
     ~expected:"typing.Callable('module.Foo.foo')[[Named(a, str)], str]";
   assert_callable
     ~parent:"module.Foo"
-    ~expected_implicit:{ implicit_annotation = Type.Primitive "module.Foo"; name = "self" }
+    ~expected_implicit:
+      { implicit_annotation = Type.Primitive "module.Foo"; name = "$parameter$self" }
     {|
       def module.Foo.foo(self, a: int) -> int: ...
     |}
     ~expected:"typing.Callable('module.Foo.foo')[[Named(a, int)], int]";
-  assert_callable "def foo(*) -> int: ..." ~expected:"typing.Callable('foo')[[], int]";
+  assert_callable "def foo(*) -> int: ..." ~expected:"typing.Callable('test.foo')[[], int]";
   assert_callable
     "def foo(*, a: int) -> int: ..."
-    ~expected:"typing.Callable('foo')[[KeywordOnly(a, int)], int]";
+    ~expected:"typing.Callable('test.foo')[[KeywordOnly($parameter$a, int)], int]";
   assert_callable
     "def foo(*, a: int = 7) -> int: ..."
-    ~expected:"typing.Callable('foo')[[KeywordOnly(a, int, default)], int]";
+    ~expected:"typing.Callable('test.foo')[[KeywordOnly($parameter$a, int, default)], int]";
   assert_callable
     "def foo(x: str, *, a: int = 7) -> int: ..."
-    ~expected:"typing.Callable('foo')[[Named(x, str), KeywordOnly(a, int, default)], int]";
+    ~expected:
+      "typing.Callable('test.foo')[[Named($parameter$x, str), KeywordOnly($parameter$a, int, \
+       default)], int]";
   assert_callable
     "def foo(*var: int, a: int = 7) -> int: ..."
-    ~expected:"typing.Callable('foo')[[Variable(int), KeywordOnly(a, int, default)], int]";
+    ~expected:
+      "typing.Callable('test.foo')[[Variable(int), KeywordOnly($parameter$a, int, default)], int]";
   assert_callable
     {|
       Ts = pyre_extensions.ListVariadic("Ts")
       def foo(x: str, y: int, *args: Ts, z: bool) -> typing.Tuple[Ts]: ...
     |}
     ~expected:
-      "typing.Callable('foo')[[Named(x, str), Named(y, int), Variable(Ts), KeywordOnly(z, bool)], \
-       typing.Tuple[Ts]]";
+      "typing.Callable('test.foo')[[Named($parameter$x, str), Named($parameter$y, int), \
+       Variable(test.Ts), KeywordOnly($parameter$z, bool)], typing.Tuple[test.Ts]]";
   ()
 
 

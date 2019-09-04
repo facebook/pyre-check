@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open OUnit2
 open Analysis
 open Pyre
 open Taint
@@ -13,19 +12,16 @@ open TestHelper
 
 let assert_taint ~context source expected =
   let handle = "qualifier.py" in
-  let configuration, source =
+  let configuration, environment, ast_environment =
     let project = Test.ScratchProject.setup ~context [handle, source] in
-    let sources, _ = Test.ScratchProject.parse_sources project in
-    let source = List.hd_exn sources in
-    Test.ScratchProject.configuration_of project, source
+    let _, ast_environment, environment = Test.ScratchProject.build_environment project in
+    Test.ScratchProject.configuration_of project, environment, ast_environment
   in
-  let environment = TestHelper.environment ~configuration () in
   let global_resolution = Environment.resolution environment () in
-  Service.Environment.populate
-    ~configuration
-    ~scheduler:(Test.mock_scheduler ())
-    environment
-    [source];
+  let source =
+    AstEnvironment.get_source ast_environment (Ast.Reference.create "qualifier")
+    |> fun option -> Option.value_exn option
+  in
   TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
@@ -1291,32 +1287,31 @@ let test_access_paths context =
 
 
 let () =
-  "taint"
-  >::: [ "plus_taint_in_taint_out" >:: test_plus_taint_in_taint_out;
-         "concatenate_taint_in_taint_out" >:: test_concatenate_taint_in_taint_out;
-         "rce_sink" >:: test_rce_sink;
-         "test_sink" >:: test_sink;
-         "rce_and_test_sink" >:: test_rce_and_test_sink;
-         "test_call_tito" >:: test_call_taint_in_taint_out;
-         "test_tito_sink" >:: test_tito_sink;
-         "test_tito_via_receiver" >:: test_tito_via_receiver;
-         "test_apply_method_model_at_call_site" >:: test_apply_method_model_at_call_site;
-         "test_seqential_call_path" >:: test_sequential_call_path;
-         "test_chained_call_path" >:: test_chained_call_path;
-         "test_dictionary" >:: test_dictionary;
-         "test_comprehensions" >:: test_comprehensions;
-         "test_list" >:: test_list;
-         "test_lambda" >:: test_lambda;
-         "test_set" >:: test_set;
-         "test_starred" >:: test_starred;
-         "test_ternary" >:: test_ternary;
-         "test_tuple" >:: test_tuple;
-         "test_unary" >:: test_unary;
-         "test_yield" >:: test_yield;
-         "test_named_arguments" >:: test_named_arguments;
-         "test_actual_parameter_matching" >:: test_actual_parameter_matching;
-         "test_constructor_argument_tito" >:: test_constructor_argument_tito;
-         "decorator" >:: test_decorator;
-         "assignment" >:: test_assignment;
-         "access_paths" >:: test_access_paths ]
-  |> TestHelper.run_with_taint_models
+  [ "plus_taint_in_taint_out", test_plus_taint_in_taint_out;
+    "concatenate_taint_in_taint_out", test_concatenate_taint_in_taint_out;
+    "rce_sink", test_rce_sink;
+    "test_sink", test_sink;
+    "rce_and_test_sink", test_rce_and_test_sink;
+    "test_call_tito", test_call_taint_in_taint_out;
+    "test_tito_sink", test_tito_sink;
+    "test_tito_via_receiver", test_tito_via_receiver;
+    "test_apply_method_model_at_call_site", test_apply_method_model_at_call_site;
+    "test_seqential_call_path", test_sequential_call_path;
+    "test_chained_call_path", test_chained_call_path;
+    "test_dictionary", test_dictionary;
+    "test_comprehensions", test_comprehensions;
+    "test_list", test_list;
+    "test_lambda", test_lambda;
+    "test_set", test_set;
+    "test_starred", test_starred;
+    "test_ternary", test_ternary;
+    "test_tuple", test_tuple;
+    "test_unary", test_unary;
+    "test_yield", test_yield;
+    "test_named_arguments", test_named_arguments;
+    "test_actual_parameter_matching", test_actual_parameter_matching;
+    "test_constructor_argument_tito", test_constructor_argument_tito;
+    "decorator", test_decorator;
+    "assignment", test_assignment;
+    "access_paths", test_access_paths ]
+  |> TestHelper.run_with_taint_models ~name:"taint"

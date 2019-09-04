@@ -110,11 +110,11 @@ let test_fixpoint context =
         x = [__test_source(), 5]
         list_sink(x)
 
-      def test_getattr_obj_no_match():
+      def getattr_obj_no_match():
         obj = __user_controlled()
         getattr(obj, 'foo')
 
-      def test_getattr_field_match(some_obj):
+      def getattr_field_match(some_obj):
         field = __user_controlled()
         return getattr(some_obj, field)
 
@@ -222,7 +222,7 @@ let test_fixpoint context =
                     pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
                   } ]
               "qualifier.list_match";
-            outcome ~kind:`Function ~errors:[] "qualifier.test_getattr_obj_no_match";
+            outcome ~kind:`Function ~errors:[] "qualifier.getattr_obj_no_match";
             outcome
               ~kind:`Function
               ~tito_parameters:["some_obj"]
@@ -231,7 +231,7 @@ let test_fixpoint context =
                     code = 5010;
                     pattern = ".*Attacker may control at least one argument to getattr(,)";
                   } ]
-              "qualifier.test_getattr_field_match";
+              "qualifier.getattr_field_match";
             outcome ~kind:`Function ~tito_parameters:["tito"] ~errors:[] "qualifier.deep_tito";
             outcome ~kind:`Function ~errors:[] "qualifier.test_deep_tito_no_match";
             outcome
@@ -463,12 +463,11 @@ let test_overrides context =
 
 
 let () =
-  "taint"
-  >::: [ "fixpoint" >:: test_fixpoint;
-         "combined_analysis" >:: test_combined_analysis;
-         "skipped_analysis" >:: test_skipped_analysis;
-         "sanitized_analysis" >:: test_sanitized_analysis;
-         "primed_source_analysis" >:: test_primed_source_analysis;
-         "primed_sink_analysis" >:: test_primed_sink_analysis;
-         "overrides" >:: test_overrides ]
-  |> TestHelper.run_with_taint_models
+  [ "fixpoint", test_fixpoint;
+    "combined_analysis", test_combined_analysis;
+    "skipped_analysis", test_skipped_analysis;
+    "sanitized_analysis", test_sanitized_analysis;
+    "primed_source_analysis", test_primed_source_analysis;
+    "primed_sink_analysis", test_primed_sink_analysis;
+    "overrides", test_overrides ]
+  |> TestHelper.run_with_taint_models ~name:"taint"

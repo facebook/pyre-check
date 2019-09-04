@@ -203,7 +203,12 @@
         "port": "result",
         "taint": [
           {
-            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -232,7 +237,12 @@
         "port": "result",
         "taint": [
           {
-            "root": { "filename": "*", "line": -1, "start": -1, "end": -1 },
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
             "leaves": [
               {
                 "kind": "UserControlled",

@@ -50,12 +50,11 @@ let make_errors ~context ?(handle = "test.py") source =
     in
     ScratchProject.setup
       ~context
+      ~include_typeshed_stubs:false
       ~external_sources:["builtins.pyi", builtins_source]
       [handle, source]
   in
-  let sources, _, environment =
-    ScratchProject.build_environment ~include_typeshed_stubs:false project
-  in
+  let sources, _, environment = ScratchProject.build_environment project in
   let source =
     List.find_exn sources ~f:(fun { Ast.Source.relative; _ } -> String.equal relative handle)
   in
@@ -150,25 +149,27 @@ module ScratchServer = struct
     =
     let configuration, module_tracker, ast_environment, environment, sources =
       let ({ ScratchProject.module_tracker; configuration; _ } as project) =
-        ScratchProject.setup ~context ~external_sources sources
+        ScratchProject.setup ~context ~external_sources ~include_helper_builtins:false sources
       in
-      let sources, ast_environment, environment =
-        ScratchProject.build_environment ~include_helper_builtins:false project
-      in
+      let sources, ast_environment, environment = ScratchProject.build_environment project in
       ( { configuration with incremental_style },
         module_tracker,
         ast_environment,
         environment,
         sources )
     in
-    let global_resolution = Environment.resolution environment () in
-    let errors =
-      let table = Ast.Reference.Table.create () in
-      List.iter sources ~f:(fun ({ Ast.Source.qualifier; _ } as source) ->
-          let errors = Analysis.TypeCheck.run ~configuration ~global_resolution ~source in
-          Hashtbl.set table ~key:qualifier ~data:errors);
-      table
+    let new_errors =
+      Service.Check.analyze_sources
+        ~scheduler:(mock_scheduler ())
+        ~configuration
+        ~environment
+        sources
     in
+    (* Associate the new errors with new files *)
+    let errors = Ast.Reference.Table.create () in
+    List.iter new_errors ~f:(fun error ->
+        let key = Error.path error in
+        Hashtbl.add_multi errors ~key ~data:error);
     let server_configuration =
       Server.Operations.create_configuration
         ~log_path:(Path.create_absolute "/dev/null")

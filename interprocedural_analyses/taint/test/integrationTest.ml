@@ -123,4 +123,4 @@ let test_integration context =
   List.iter test_paths ~f:run_test
 
 
-let () = "taint" >::: ["integration" >:: test_integration] |> TestHelper.run_with_taint_models
+let () = TestHelper.run_with_taint_models ["integration", test_integration] ~name:"taint"

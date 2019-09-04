@@ -185,9 +185,13 @@ let assert_infer
   in
   let configuration, source, environment =
     let project = ScratchProject.setup ~context ["test.py", source] in
-    let sources, _, environment = ScratchProject.build_environment project in
+    let _, ast_environment, environment = ScratchProject.build_environment project in
     let configuration = ScratchProject.configuration_of project in
-    { configuration with debug; infer }, List.hd_exn sources, environment
+    let source =
+      AstEnvironment.get_source ast_environment (Reference.create "test")
+      |> fun option -> Option.value_exn option
+    in
+    { configuration with debug; infer }, source, environment
   in
   let global_resolution = Environment.resolution environment () in
   let to_string json = Yojson.Safe.sort json |> Yojson.Safe.to_string in

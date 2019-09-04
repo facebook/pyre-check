@@ -30,10 +30,12 @@ let last_statement_exn = function
 
 let test_generics context =
   let assert_generics source generics =
-    let sources, _, environment =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    let _, ast_environment, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    match List.hd_exn sources |> last_statement_exn with
+    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source = Option.value_exn source in
+    match source |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
         let resolution = Environment.resolution environment () in
         let printer generics = Format.asprintf "%a" Type.OrderedTypes.pp_concise generics in
@@ -51,46 +53,46 @@ let test_generics context =
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]): pass
     |}
-    !![Type.variable "_T"];
+    !![Type.variable "test._T"];
   assert_generics
     {|
       _T = typing.TypeVar('_T')
       _S = typing.TypeVar('_S')
       class Foo(typing.Generic[_T, _S]): pass
     |}
-    !![Type.variable "_T"; Type.variable "_S"];
+    !![Type.variable "test._T"; Type.variable "test._S"];
   assert_generics
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Protocol[_T]): pass
     |}
-    !![Type.variable "_T"];
+    !![Type.variable "test._T"];
   assert_generics
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Iterable[_T]): pass
     |}
-    !![Type.variable "_T"];
+    !![Type.variable "test._T"];
   assert_generics
     {|
       _T1 = typing.TypeVar('_T1')
       _T2 = typing.TypeVar('_T2')
       class Foo(typing.Dict[_T1, _T2]): pass
     |}
-    !![Type.variable "_T1"; Type.variable "_T2"];
+    !![Type.variable "test._T1"; Type.variable "test._T2"];
   assert_generics
     {|
       _T1 = typing.TypeVar('_T1')
       _T2 = typing.TypeVar('_T2')
       class Foo(typing.Iterable[_T1], typing.AsyncIterable[_T2]): pass
     |}
-    !![Type.variable "_T1"; Type.variable "_T2"];
+    !![Type.variable "test._T1"; Type.variable "test._T2"];
   assert_generics
     {|
       _T1 = typing.TypeVar('_T1')
       class Foo(typing.Dict[_T1, _T1]): pass
     |}
-    !![Type.variable "_T1"];
+    !![Type.variable "test._T1"];
   ()
 
 
@@ -260,18 +262,19 @@ let test_get_decorator context =
 
 let test_constructors context =
   let assert_constructor source instantiated constructors =
+    let instantiated = "test." ^ instantiated in
     Class.AttributeCache.clear ();
-    let resolution =
-      let _, _, environment =
-        ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
-      in
-      Environment.resolution environment ()
+    let _, ast_environment, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
+    let resolution = Environment.resolution environment () in
+    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source = Option.value_exn source in
     let instantiated =
       parse_single_expression instantiated
       |> GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
     in
-    match parse_last_statement source with
+    match last_statement_exn source with
     | { Node.value = Statement.Class definition; _ } ->
         let callable =
           constructors
@@ -288,26 +291,34 @@ let test_constructors context =
     | _ -> assert_unreached ()
   in
   (* Undefined constructors. *)
-  assert_constructor "class Foo: pass" "Foo" (Some "typing.Callable('object.__init__')[[], Foo]");
-  assert_constructor "class Foo: ..." "Foo" (Some "typing.Callable('object.__init__')[[], Foo]");
+  assert_constructor
+    "class Foo: pass"
+    "Foo"
+    (Some "typing.Callable('object.__init__')[[], test.Foo]");
+  assert_constructor
+    "class Foo: ..."
+    "Foo"
+    (Some "typing.Callable('object.__init__')[[], test.Foo]");
 
   (* Statement.Defined constructors. *)
   assert_constructor
     {|
       class Foo:
-        def Foo.__init__(self, a: int) -> None: pass
+        def __init__(self, a: int) -> None: pass
     |}
     "Foo"
-    (Some "typing.Callable('Foo.__init__')[[Named(a, int)], Foo]");
+    (Some "typing.Callable('test.Foo.__init__')[[Named(a, int)], test.Foo]");
   assert_constructor
     {|
       class Foo:
-        def Foo.__init__(self, a: int) -> None: pass
+        def __init__(self, a: int) -> None: pass
         @typing.overload
-        def Foo.__init__(self, b: str) -> None: pass
+        def __init__(self, b: str) -> None: pass
     |}
     "Foo"
-    (Some ("typing.Callable('Foo.__init__')[[Named(a, int)], Foo]" ^ "[[[Named(b, str)], Foo]]"));
+    (Some
+       ( "typing.Callable('test.Foo.__init__')[[Named(a, int)], test.Foo]"
+       ^ "[[[Named(b, str)], test.Foo]]" ));
 
   (* Generic classes. *)
   assert_constructor
@@ -315,77 +326,72 @@ let test_constructors context =
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
-        def Foo.__init__(self) -> None: pass
+        def __init__(self) -> None: pass
     |}
     "Foo"
-    (Some "typing.Callable('Foo.__init__')[[], Foo[typing.TypeVar('_K'),typing.TypeVar('_V')]]");
+    (Some
+       "typing.Callable('test.Foo.__init__')[[], \
+        test.Foo[typing.TypeVar('test._K'),typing.TypeVar('test._V')]]");
   assert_constructor
     {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
-        def Foo.__init__(self, x:_K, y:_V) -> None: pass
+        def __init__(self, x:_K, y:_V) -> None: pass
     |}
     "Foo[int, str]"
-    (Some "typing.Callable('Foo.__init__')[[Named(x, int), Named(y, str)], Foo[int, str]]");
-
-  (* Tuples. *)
-  assert_constructor
-    {|
-      _T = typing.TypeVar('_T')
-      class tuple(typing.Generic[_T]):
-        def tuple.__init__(self) -> None: ...
-    |}
-    "tuple"
-    (Some "typing.Callable('tuple.__init__')[[], typing.Tuple[typing.TypeVar('_T'), ...]]");
+    (Some
+       "typing.Callable('test.Foo.__init__')[[Named(x, int), Named(y, str)], test.Foo[int, str]]");
 
   (* Constructors, both __init__ and __new__, are inherited from parents. *)
   assert_constructor
     {|
       class Parent:
-        def Parent.__init__(self, x: int) -> None:
+        def __init__(self, x: int) -> None:
           pass
       class C(Parent):
         pass
     |}
     "C"
-    (Some "typing.Callable('Parent.__init__')[[Named(x, int)], C]");
+    (Some "typing.Callable('test.Parent.__init__')[[Named(x, int)], test.C]");
   assert_constructor
     {|
       class Parent:
-        def Parent.__new__(self, x: str) -> None:
+        def __new__(self, x: str) -> None:
           pass
       class C(Parent):
         pass
     |}
     "C"
-    (Some "typing.Callable('Parent.__new__')[[Named(x, str)], C]");
+    (Some "typing.Callable('test.Parent.__new__')[[Named(x, str)], test.C]");
   assert_constructor
     {|
       T = typing.TypeVar('T', bound=C)
       class C:
-        def C.__init__(self, x: int) -> None: pass
+        def __init__(self, x: int) -> None: pass
     |}
     "T"
-    (Some "typing.Callable('C.__init__')[[Named(x, int)], T]");
+    (Some "typing.Callable('test.C.__init__')[[Named(x, int)], test.T]");
   assert_constructor
     {|
       from dataclasses import dataclass
       @dataclass(frozen=True)
       class A:
-          A.foo:int = 1
+          foo:int = 1
     |}
     "A"
-    (Some "typing.Callable('A.__init__')[[Named(foo, int, default)], A]");
+    (Some "typing.Callable('test.A.__init__')[[Named(foo, int, default)], test.A]");
   ()
 
 
 let test_methods context =
   let assert_methods source methods =
-    let sources, _ =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.parse_sources
+    let _, ast_environment, _ =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    match List.hd_exn sources |> last_statement_exn with
+    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source = Option.value_exn source in
+    match source |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
         let actuals =
           let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
@@ -474,11 +480,13 @@ let test_is_protocol _ =
 
 let test_class_attributes context =
   let setup source =
-    let sources, _, environment =
+    let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
+    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source = Option.value_exn source in
     let parent =
-      match List.hd_exn sources |> last_statement_exn with
+      match source |> last_statement_exn with
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
@@ -776,11 +784,15 @@ let test_class_attributes context =
 let test_fallback_attribute context =
   let assert_fallback_attribute ~name source annotation =
     Class.AttributeCache.clear ();
-    let resolution =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+    let _, ast_environment, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
+    let global_resolution = Environment.resolution environment () in
+    let resolution = TypeCheck.resolution global_resolution () in
     let attribute =
-      parse_last_statement source
+      let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+      let source = Option.value_exn source in
+      last_statement_exn source
       |> (function
            | { Node.location; value = Statement.Class definition; _ } ->
                Class.create (Node.create ~location definition)
@@ -833,7 +845,7 @@ let test_fallback_attribute context =
         def Foo.__add__(self, other: Foo) -> int:
           pass
     |}
-    (Some (parse_callable "typing.Callable('Foo.__add__')[[Named(other, Foo)], int]"));
+    (Some (parse_callable "typing.Callable('test.Foo.__add__')[[Named(other, test.Foo)], int]"));
   assert_fallback_attribute ~name:"__iadd__" {|
       class Foo:
         pass
@@ -891,14 +903,14 @@ let test_fallback_attribute context =
 
 let test_constraints context =
   let assert_constraints ~target ~instantiated ?parameters source expected =
-    let resolution =
-      let _, _, environment =
-        ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
-      in
-      Environment.resolution environment ()
+    let _, ast_environment, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
+    let resolution = Environment.resolution environment () in
+    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source = Option.value_exn source in
     let target =
-      let { Source.statements; _ } = parse source in
+      let { Source.statements; _ } = source in
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
           when Reference.show name = target ->
@@ -908,7 +920,7 @@ let test_constraints context =
       List.find_map ~f:target statements |> value
     in
     let constraints =
-      parse_last_statement source
+      last_statement_exn source
       |> (function
            | { Node.location; value = Statement.Class definition; _ } ->
                Class.create (Node.create ~location definition)
@@ -925,20 +937,20 @@ let test_constraints context =
       constraints
   in
   let int_and_foo_string_union =
-    Type.Union [Type.parametric "Foo" !![Type.string]; Type.integer]
+    Type.Union [Type.parametric "test.Foo" !![Type.string]; Type.integer]
   in
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![int_and_foo_string_union])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![int_and_foo_string_union])
     {|
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_V]):
         pass
     |}
-    [Type.Variable.Unary.create "_V", int_and_foo_string_union];
+    [Type.Variable.Unary.create "test._V", int_and_foo_string_union];
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.Primitive "Foo")
+    ~target:"test.Foo"
+    ~instantiated:(Type.Primitive "test.Foo")
     {|
       class Foo:
         pass
@@ -947,8 +959,8 @@ let test_constraints context =
 
   (* Consequence of the special case we need to remove *)
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![Type.Bottom])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.Bottom])
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
@@ -956,28 +968,30 @@ let test_constraints context =
     |}
     [];
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![Type.integer; Type.float])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
     {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [Type.Variable.Unary.create "_K", Type.integer; Type.Variable.Unary.create "_V", Type.float];
+    [ Type.Variable.Unary.create "test._K", Type.integer;
+      Type.Variable.Unary.create "test._V", Type.float ];
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![Type.integer; Type.float])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
     {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [Type.Variable.Unary.create "_K", Type.integer; Type.Variable.Unary.create "_V", Type.float];
+    [ Type.Variable.Unary.create "test._K", Type.integer;
+      Type.Variable.Unary.create "test._V", Type.float ];
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.Primitive "Foo")
+    ~target:"test.Foo"
+    ~instantiated:(Type.Primitive "test.Foo")
     {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
@@ -987,8 +1001,8 @@ let test_constraints context =
     |}
     [];
   assert_constraints
-    ~target:"Bar"
-    ~instantiated:(Type.Primitive "Foo")
+    ~target:"test.Bar"
+    ~instantiated:(Type.Primitive "test.Foo")
     {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
@@ -996,10 +1010,10 @@ let test_constraints context =
       class Foo(Bar[int]):
         pass
     |}
-    [Type.Variable.Unary.create "_T", Type.integer];
+    [Type.Variable.Unary.create "test._T", Type.integer];
   assert_constraints
-    ~target:"Bar"
-    ~instantiated:(Type.parametric "Foo" !![Type.integer])
+    ~target:"test.Bar"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.integer])
     {|
       _K = typing.TypeVar('_K')
       _V = typing.TypeVar('_V')
@@ -1008,10 +1022,10 @@ let test_constraints context =
       class Foo(typing.Generic[_K], Bar[_K]):
         pass
     |}
-    [Type.Variable.Unary.create "_V", Type.integer];
+    [Type.Variable.Unary.create "test._V", Type.integer];
   assert_constraints
-    ~target:"Bar"
-    ~instantiated:(Type.parametric "Foo" !![Type.integer; Type.float])
+    ~target:"test.Bar"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
     {|
       _T = typing.TypeVar('_T')
       _K = typing.TypeVar('_K')
@@ -1023,10 +1037,10 @@ let test_constraints context =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [Type.Variable.Unary.create "_T", Type.integer];
+    [Type.Variable.Unary.create "test._T", Type.integer];
   assert_constraints
-    ~target:"Baz"
-    ~instantiated:(Type.parametric "Foo" !![Type.integer; Type.float])
+    ~target:"test.Baz"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
     {|
       _T = typing.TypeVar('_T')
       _K = typing.TypeVar('_K')
@@ -1038,31 +1052,19 @@ let test_constraints context =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [Type.Variable.Unary.create "_T", Type.float];
+    [Type.Variable.Unary.create "test._T", Type.float];
   assert_constraints
-    ~target:"Iterator"
-    ~instantiated:(Type.parametric "Iterator" !![Type.integer])
+    ~target:"test.Iterator"
+    ~instantiated:(Type.parametric "test.Iterator" !![Type.integer])
     {|
       _T = typing.TypeVar('_T')
       class Iterator(typing.Protocol[_T]):
         pass
     |}
-    [Type.Variable.Unary.create "_T", Type.integer];
+    [Type.Variable.Unary.create "test._T", Type.integer];
   assert_constraints
-    ~target:"Iterator"
-    ~instantiated:(Type.parametric "Iterable" !![Type.integer])
-    {|
-      _T = typing.TypeVar('_T')
-      class Iterator(typing.Protocol[_T]):
-        pass
-      class Iterable(Iterator[_T]):
-        pass
-    |}
-    [Type.Variable.Unary.create "_T", Type.integer];
-  assert_constraints
-    ~target:"Iterator"
-    ~instantiated:(Type.parametric "Iterable" !![Type.parametric "Iterable" !![Type.integer]])
-    ~parameters:!![Type.parametric "Iterable" !![Type.variable "_T"]]
+    ~target:"test.Iterator"
+    ~instantiated:(Type.parametric "test.Iterable" !![Type.integer])
     {|
       _T = typing.TypeVar('_T')
       class Iterator(typing.Protocol[_T]):
@@ -1070,11 +1072,24 @@ let test_constraints context =
       class Iterable(Iterator[_T]):
         pass
     |}
-    [Type.Variable.Unary.create "_T", Type.integer];
+    [Type.Variable.Unary.create "test._T", Type.integer];
   assert_constraints
-    ~target:"Foo"
-    ~parameters:!![Type.parametric "Foo" !![Type.variable "_T"]]
-    ~instantiated:(Type.parametric "Bar" !![Type.parametric "Bar" !![Type.integer]])
+    ~target:"test.Iterator"
+    ~instantiated:
+      (Type.parametric "test.Iterable" !![Type.parametric "test.Iterable" !![Type.integer]])
+    ~parameters:!![Type.parametric "test.Iterable" !![Type.variable "test._T"]]
+    {|
+      _T = typing.TypeVar('_T')
+      class Iterator(typing.Protocol[_T]):
+        pass
+      class Iterable(Iterator[_T]):
+        pass
+    |}
+    [Type.Variable.Unary.create "test._T", Type.integer];
+  assert_constraints
+    ~target:"test.Foo"
+    ~parameters:!![Type.parametric "test.Foo" !![Type.variable "test._T"]]
+    ~instantiated:(Type.parametric "test.Bar" !![Type.parametric "test.Bar" !![Type.integer]])
     {|
       _V = typing.TypeVar('_V', covariant=True)
       class Foo(typing.Generic[_V]):
@@ -1083,15 +1098,15 @@ let test_constraints context =
       class Bar(Foo[_V2]):
         pass
     |}
-    [Type.Variable.Unary.create "_T", Type.integer];
+    [Type.Variable.Unary.create "test._T", Type.integer];
   let t_bound =
     Type.Variable.Unary.create
-      ~constraints:(Type.Variable.Bound (Type.Primitive "Bound"))
-      "T_Bound"
+      ~constraints:(Type.Variable.Bound (Type.Primitive "test.Bound"))
+      "test.T_Bound"
   in
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![Type.Primitive "Bound"])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.Bound"])
     {|
       class Bound:
         pass
@@ -1099,10 +1114,10 @@ let test_constraints context =
       class Foo(typing.Generic[T_Bound]):
         pass
     |}
-    [t_bound, Type.Primitive "Bound"];
+    [t_bound, Type.Primitive "test.Bound"];
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![Type.Primitive "UnderBound"])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.UnderBound"])
     {|
       class Bound:
         pass
@@ -1112,10 +1127,10 @@ let test_constraints context =
       class Foo(typing.Generic[T_Bound]):
         pass
     |}
-    [t_bound, Type.Primitive "UnderBound"];
+    [t_bound, Type.Primitive "test.UnderBound"];
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![Type.Primitive "OverBound"])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.Primitive "test.OverBound"])
     {|
       class Bound:
         pass
@@ -1129,11 +1144,11 @@ let test_constraints context =
   let t_explicit =
     Type.Variable.Unary.create
       ~constraints:(Type.Variable.Explicit [Type.integer; Type.string])
-      "T_Explicit"
+      "test.T_Explicit"
   in
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![Type.integer])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.integer])
     {|
       T_Explicit = typing.TypeVar('T_Explicit', int, str)
       class Foo(typing.Generic[T_Explicit]):
@@ -1141,8 +1156,8 @@ let test_constraints context =
     |}
     [t_explicit, Type.integer];
   assert_constraints
-    ~target:"Foo"
-    ~instantiated:(Type.parametric "Foo" !![Type.bool])
+    ~target:"test.Foo"
+    ~instantiated:(Type.parametric "test.Foo" !![Type.bool])
     {|
       T_Explicit = typing.TypeVar('T_Explicit', int, str)
       class Foo(typing.Generic[T_Explicit]):
@@ -1153,10 +1168,12 @@ let test_constraints context =
 
 let test_inferred_generic_base context =
   let assert_inferred_generic ~target source expected =
-    let sources, _, environment =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    let _, ast_environment, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let { Source.statements; _ } = List.hd_exn sources in
+    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source = Option.value_exn source in
+    let { Source.statements; _ } = source in
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
@@ -1173,7 +1190,7 @@ let test_inferred_generic_base context =
       (Annotated.Class.inferred_generic_base target ~resolution)
   in
   assert_inferred_generic
-    ~target:"C"
+    ~target:"test.C"
     {|
        _T = typing.TypeVar('_T')
        class C:
@@ -1181,7 +1198,7 @@ let test_inferred_generic_base context =
      |}
     [];
   assert_inferred_generic
-    ~target:"C"
+    ~target:"test.C"
     {|
        _T = typing.TypeVar("_T")
        class List(typing.Generic[_T]):
@@ -1191,10 +1208,10 @@ let test_inferred_generic_base context =
      |}
     [ {
         Argument.name = None;
-        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "_T"]);
+        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T"]);
       } ];
   assert_inferred_generic
-    ~target:"List"
+    ~target:"test.List"
     {|
        _T = TypeVar("_T")
        class Iterable(typing.Generic[_T]):
@@ -1204,7 +1221,7 @@ let test_inferred_generic_base context =
      |}
     [];
   assert_inferred_generic
-    ~target:"Foo"
+    ~target:"test.Foo"
     {|
       _T1 = typing.TypeVar('_T1')
       _T2 = typing.TypeVar('_T2')
@@ -1214,27 +1231,36 @@ let test_inferred_generic_base context =
         Argument.name = None;
         value =
           Type.expression
-            (Type.parametric "typing.Generic" !![Type.variable "_T1"; Type.variable "_T2"]);
+            (Type.parametric "typing.Generic" !![Type.variable "test._T1"; Type.variable "test._T2"]);
       } ];
   assert_inferred_generic
-    ~target:"Foo"
+    ~target:"test.Foo"
     {|
       _T1 = typing.TypeVar('_T1')
       class Foo(typing.Dict[_T1, _T1]): pass
     |}
     [ {
         Argument.name = None;
-        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "_T1"]);
+        value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T1"]);
       } ];
   ()
 
 
 let test_metaclasses context =
   let assert_metaclass ~source ~target metaclass =
-    let sources, _, environment =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    let target = "test." ^ target in
+    let metaclass =
+      if metaclass = "type" then
+        metaclass
+      else
+        "test." ^ metaclass
     in
-    let { Source.statements; _ } = List.hd_exn sources in
+    let _, ast_environment, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+    in
+    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source = Option.value_exn source in
+    let { Source.statements; _ } = source in
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
@@ -1352,15 +1378,15 @@ let test_overrides context =
     let _, _, environment =
       ScratchProject.setup
         ~context
-        [ ( "__init__.py",
+        [ ( "test.py",
             {|
       class Foo:
-        def Foo.foo(): pass
+        def foo(): pass
       class Bar(Foo):
         pass
       class Baz(Bar):
-        def Baz.foo(): pass
-        def Baz.baz(): pass
+        def foo(): pass
+        def baz(): pass
     |}
           ) ]
       |> ScratchProject.build_environment
@@ -1369,7 +1395,7 @@ let test_overrides context =
   in
   let definition =
     let definition =
-      GlobalResolution.class_definition resolution (Type.Primitive "Baz") >>| Class.create
+      GlobalResolution.class_definition resolution (Type.Primitive "test.Baz") >>| Class.create
     in
     Option.value_exn ~message:"Missing definition." definition
   in
@@ -1377,13 +1403,13 @@ let test_overrides context =
   let overrides = Class.overrides definition ~resolution ~name:"foo" in
   assert_is_some overrides;
   assert_equal ~cmp:String.equal (Attribute.name (Option.value_exn overrides)) "foo";
-  assert_equal (Option.value_exn overrides |> Attribute.parent |> Type.show) "Foo"
+  assert_equal (Option.value_exn overrides |> Attribute.parent |> Type.show) "test.Foo"
 
 
 let test_unimplemented_abstract_methods context =
   let assert_unimplemented_methods_equal ~source ~class_name ~expected =
     let _, _, environment =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
     let resolution = Environment.resolution environment () in
     let definition =
@@ -1409,7 +1435,7 @@ let test_unimplemented_abstract_methods context =
       class Bar(Foo):
         pass
     |}
-    ~class_name:"Bar";
+    ~class_name:"test.Bar";
   assert_unimplemented_methods_equal
     ~expected:[]
     ~source:
@@ -1422,13 +1448,13 @@ let test_unimplemented_abstract_methods context =
         def foo() -> None:
           pass
     |}
-    ~class_name:"Bar"
+    ~class_name:"test.Bar"
 
 
 let test_implicit_attributes context =
   let assert_unimplemented_attributes_equal ~source ~class_name ~expected =
     let _, _, environment =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
     let resolution = Environment.resolution environment () in
     let definition =
@@ -1454,7 +1480,7 @@ let test_implicit_attributes context =
             self.x = 1
             self.y = ""
     |}
-    ~class_name:"Foo"
+    ~class_name:"test.Foo"
 
 
 let () =

@@ -25,15 +25,10 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
     Service.Parser.parse_all ~configuration ~scheduler module_tracker
   in
   let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
-  let all_sources = List.append (typeshed_stubs ~include_helper_builtins:false ()) sources in
-  let all_qualifiers = List.map all_sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+  let all_qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
   let environment =
     let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-    Service.Environment.populate_shared_memory
-      ~configuration
-      ~scheduler
-      ~ast_environment
-      all_sources
+    Service.Environment.populate_shared_memory ~configuration ~scheduler ~ast_environment sources
   in
   let actual_errors =
     let ast_environment = Analysis.Environment.ast_environment environment in
@@ -59,12 +54,12 @@ let type_check_sources_list_test context =
       {|
         class object():
           def __sizeof__(self) -> int: pass
-        class typing.Sized: ...
+        class Sized: ...
         class float():
           pass
         class int(float):
           pass
-        class str(typing.Sized):
+        class str(Sized):
           pass
       |}
       |> trim_extra_indentation

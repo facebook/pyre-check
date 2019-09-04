@@ -56,7 +56,10 @@ let test_parse_stubs_modules_list context =
 
 let test_parse_source context =
   let sources, ast_environment =
-    ScratchProject.setup ~context ["x.py", "def foo()->int:\n    return 1\n"]
+    ScratchProject.setup
+      ~context
+      ~include_typeshed_stubs:false
+      ["x.py", "def foo()->int:\n    return 1\n"]
     |> ScratchProject.parse_sources
   in
   let handles = List.map sources ~f:(fun { Source.relative; _ } -> relative) in
@@ -518,7 +521,7 @@ let test_register_modules context =
 let test_parse_repository context =
   let assert_repository_parses_to repository ~expected =
     let actual =
-      ScratchProject.setup ~context repository
+      ScratchProject.setup ~context ~include_typeshed_stubs:false repository
       |> ScratchProject.parse_sources
       |> fun (sources, _) ->
       List.map sources ~f:(fun ({ Source.relative; _ } as source) -> relative, source)

@@ -424,6 +424,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         def __test_sink(arg: Any) -> None: ...
         def __test_source() -> Any: ...
+        def __tito( *x: Any, **kw: Any) -> Any: ...
+        __global_sink: Any
+        def copy(obj: object) -> object: ...
         def pyre_dump() -> None: ...
         def __user_controlled() -> Any: ...
         class ClassWithSinkAttribute():
@@ -721,18 +724,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     else
       builtin_stubs
   in
-  [ Source.create ~relative:"sys.py" [];
-    parse
-      ~handle:"hashlib.pyi"
+  [ "sys.py", "";
+    ( "hashlib.pyi",
       {|
         _DataType = typing.Union[int, str]
         class _Hash:
           digest_size: int
         def md5(input: _DataType) -> _Hash: ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"typing.pyi"
+        |}
+    );
+    ( "typing.pyi",
       {|
         import collections
         class _SpecialForm:
@@ -887,16 +888,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def _asdict(self) -> collections.OrderedDict[str, Any]: ...
             def _replace(self: _T, **kwargs: Any) -> _T: ...
       |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"asyncio/coroutines.pyi"
-      {|
+    );
+    "asyncio/coroutines.pyi", {|
         def coroutine(f: typing.Any) -> typing.Any: ...
-      |}
-    |> Preprocessing.preprocess;
-    parse ~handle:"asyncio/__init__.pyi" "import asyncio.coroutines" |> Preprocessing.preprocess;
-    parse
-      ~handle:"abc.pyi"
+        |};
+    "asyncio/__init__.pyi", "import asyncio.coroutines";
+    ( "abc.pyi",
       {|
         from typing import Type, TypeVar
         _T = TypeVar('_T')
@@ -905,48 +902,39 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def abstractmethod(callable: _FuncT) -> _FuncT: ...
         class abstractproperty(property): ...
         class ABC(metaclass=ABCMeta): ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"unittest/mock.pyi"
+        |}
+    );
+    ( "unittest/mock.pyi",
       {|
         class Base: ...
         class Mock(Base): ...
         class NonCallableMock: ...
-      |}
-    |> Preprocessing.preprocess;
-    parse ~handle:"builtins.pyi" builtins |> Preprocessing.preprocess;
-    parse
-      ~handle:"django/http.pyi"
+        |}
+    );
+    "builtins.pyi", builtins;
+    ( "django/http.pyi",
       {|
         class Request:
           GET: typing.Dict[str, typing.Any] = ...
           POST: typing.Dict[str, typing.Any] = ...
-      |}
-    |> Preprocessing.preprocess;
-    parse ~handle:"django/__init__.pyi" "import django.http" |> Preprocessing.preprocess;
-    parse
-      ~handle:"dataclasses.pyi"
+        |}
+    );
+    "django/__init__.pyi", "import django.http";
+    ( "dataclasses.pyi",
       {|
         _T = typing.TypeVar('_T')
         class InitVar(typing.Generic[_T]): ...
-      |}
-    |> Preprocessing.preprocess;
-    parse ~handle:"os.pyi" {|
-        environ: typing.Dict[str, str] = ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"subprocess.pyi"
+        |}
+    );
+    ( "subprocess.pyi",
       {|
         def run(command, shell): ...
         def call(command, shell): ...
         def check_call(command, shell): ...
         def check_output(command, shell): ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"enum.pyi"
+        |}
+    );
+    ( "enum.pyi",
       {|
         from abc import ABCMeta
         _T = typing.TypeVar('_T')
@@ -965,23 +953,20 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             pass
           class IntFlag(int, Flag):  # type: ignore
             pass
-      |}
-    |> Preprocessing.preprocess;
-    parse ~handle:"threading.pyi" {|
+        |}
+    );
+    "threading.pyi", {|
         class Thread:
           pass
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"typing_extensions.pyi"
+        |};
+    ( "typing_extensions.pyi",
       {|
         class _SpecialForm:
             def __getitem__(self, typeargs: Any) -> Any: ...
         Literal: _SpecialForm = ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"collections.pyi"
+        |}
+    );
+    ( "collections.pyi",
       {|
         from typing import (
             TypeVar,
@@ -1059,10 +1044,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
             def copy(self: _DefaultDictT) -> _DefaultDictT:
                 ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"contextlib.pyi"
+        |}
+    );
+    ( "contextlib.pyi",
       (* TODO (T41494196): Change the parameter and return type to AnyCallable *)
       {|
         from typing import Any, AsyncContextManager, AsyncIterator, Callable, Generic, Iterator, TypeVar
@@ -1077,39 +1061,34 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           pass
         def contextmanager(func: Callable[..., Iterator[_T]]) -> Callable[..., _GeneratorContextManager[_T]]: ...
         def asynccontextmanager(func: Callable[..., AsyncIterator[_T]]) -> Callable[..., AsyncContextManager[_T]]: ...
-      |}
-    |> Preprocessing.preprocess;
-    parse ~handle:"taint.pyi" {|
+        |}
+    );
+    "taint.pyi", {|
         __global_sink: Any = ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"unittest.pyi"
+        |};
+    ( "unittest.pyi",
       {|
         from unittest import case
         from unittest import mock
         from unittest.case import TestCase
-      |}
-    |> Preprocessing.preprocess;
-    parse ~handle:"os/__init__.pyi" "from . import path as path" |> Preprocessing.preprocess;
-    parse
-      ~handle:"os/path.pyi"
-      {|
         curdir: str
         pardir: str
         sep: str
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"unittest.pyi"
+        |}
+    );
+    ( "os/__init__.pyi",
       {|
+    from . import path as path
+    import typing
+    environ: typing.Dict[str, str] = ...
+        |}
+    );
+    "os/path.pyi", {|
         curdir: str
         pardir: str
         sep: str
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"unittest/case.pyi"
+        |};
+    ( "unittest/case.pyi",
       {|
         class TestCase:
             def assertIsNotNone(self, x: Any) -> Bool:
@@ -1118,10 +1097,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
               ...
             def assertFalse(self, x: Any) -> Bool:
               ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"pyre_extensions/__init__.pyi"
+        |}
+    );
+    ( "pyre_extensions/__init__.pyi",
       {|
         from typing import List, Optional, Type, TypeVar
         import type_variable_operators
@@ -1132,21 +1110,19 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
         def ParameterSpecification(__name: str) -> List[Type]: ...
         def ListVariadic(__name: str) -> Type: ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~handle:"pyre_extensions/type_variable_operators.pyi"
+        |}
+    );
+    ( "pyre_extensions/type_variable_operators.pyi",
       {|
         from typing import List, Optional, Type, TypeVar, _SpecialForm
         Map: _SpecialForm
         PositionalArgumentsOf: _SpecialForm
         ArgumentsOf: _SpecialForm
-      |}
-    |> Preprocessing.preprocess;
-    parse ~handle:"placeholder_stub.pyi" {|
+        |}
+    );
+    "placeholder_stub.pyi", {|
         # pyre-placeholder-stub
-      |}
-    |> Preprocessing.preprocess ]
+        |} ]
 
 
 let mock_signature =
@@ -1188,7 +1164,14 @@ module ScratchProject = struct
     AstEnvironment.remove_sources ast_environment qualifiers
 
 
-  let setup ?incremental_style ~context ?(external_sources = []) sources =
+  let setup
+      ?incremental_style
+      ~context
+      ?(external_sources = [])
+      ?(include_typeshed_stubs = true)
+      ?(include_helper_builtins = true)
+      sources
+    =
     let add_source ~root (relative, content) =
       let content = trim_extra_indentation content in
       let file = File.create ~content (Path.create_relative ~root ~relative) in
@@ -1204,6 +1187,12 @@ module ScratchProject = struct
         ~ignore_all_errors:[external_root]
         ?incremental_style
         ()
+    in
+    let external_sources =
+      if include_typeshed_stubs then
+        typeshed_stubs ~include_helper_builtins () @ external_sources
+      else
+        external_sources
     in
     List.iter sources ~f:(add_source ~root:local_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
@@ -1275,19 +1264,9 @@ module ScratchProject = struct
     List.filter_map parsed ~f:(AstEnvironment.get_source ast_environment), ast_environment
 
 
-  let build_environment
-      ?(include_typeshed_stubs = true)
-      ?(include_helper_builtins = true)
-      ({ configuration; _ } as project)
-    =
+  let build_environment ({ configuration; _ } as project) =
     let sources, ast_environment = parse_sources project in
     let environment =
-      let sources =
-        if include_typeshed_stubs then
-          typeshed_stubs ~include_helper_builtins () @ sources
-        else
-          sources
-      in
       let environment =
         Environment.shared_memory_handler (AstEnvironment.read_only ast_environment)
       in
@@ -1307,14 +1286,14 @@ module ScratchProject = struct
     sources, ast_environment, environment
 
 
-  let build_resolution ?(include_typeshed_stubs = true) ?imports project =
-    let _, _, environment = build_environment ~include_typeshed_stubs project in
+  let build_resolution ?imports project =
+    let _, _, environment = build_environment project in
     let global_resolution = Environment.resolution environment () in
     TypeCheck.resolution ?imports global_resolution ()
 
 
-  let build_global_resolution ?(include_typeshed_stubs = true) project =
-    let _, _, environment = build_environment ~include_typeshed_stubs project in
+  let build_global_resolution project =
+    let _, _, environment = build_environment project in
     Environment.resolution environment ()
 end
 

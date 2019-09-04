@@ -65,7 +65,7 @@ let test_parse_annotation context =
 
 
 let make_resolution ~context source =
-  ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_resolution
+  ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_resolution
 
 
 let test_parse_reference context =
@@ -84,8 +84,8 @@ let test_parse_reference context =
       (GlobalResolution.parse_reference resolution !&reference)
   in
   assert_parse_reference "undefined" Type.Top;
-  assert_parse_reference "MyType" Type.integer;
-  assert_parse_reference "Foo" (Type.Primitive "Foo");
+  assert_parse_reference "test.MyType" Type.integer;
+  assert_parse_reference "test.Foo" (Type.Primitive "test.Foo");
   assert_parse_reference "typing.List" (Type.Primitive "list")
 
 
@@ -232,42 +232,54 @@ let test_resolve_mutable_literals context =
       (parse_annotation expected_output)
       (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected)
   in
-  assert_resolve_mutable_literals ~source:"[D()]" ~against:"typing.List[C]" "typing.List[C]";
-  assert_resolve_mutable_literals ~source:"[Q()]" ~against:"typing.List[C]" "typing.List[Q]";
   assert_resolve_mutable_literals
-    ~source:"[y for y in [D()]]"
-    ~against:"typing.List[C]"
-    "typing.List[C]";
+    ~source:"[test.D()]"
+    ~against:"typing.List[test.C]"
+    "typing.List[test.C]";
   assert_resolve_mutable_literals
-    ~source:"[y for y in [Q()]]"
-    ~against:"typing.List[C]"
-    "typing.List[Q]";
+    ~source:"[test.Q()]"
+    ~against:"typing.List[test.C]"
+    "typing.List[test.Q]";
   assert_resolve_mutable_literals
-    ~source:"{ 's': D() }"
-    ~against:"typing.Dict[str, C]"
-    "typing.Dict[str, C]";
+    ~source:"[y for y in [test.D()]]"
+    ~against:"typing.List[test.C]"
+    "typing.List[test.C]";
   assert_resolve_mutable_literals
-    ~source:"{ 's': Q() }"
-    ~against:"typing.Dict[str, C]"
-    "typing.Dict[str, Q]";
+    ~source:"[y for y in [test.Q()]]"
+    ~against:"typing.List[test.C]"
+    "typing.List[test.Q]";
   assert_resolve_mutable_literals
-    ~source:"{ 's': y for y in [D()] }"
-    ~against:"typing.Dict[str, C]"
-    "typing.Dict[str, C]";
+    ~source:"{ 's': test.D() }"
+    ~against:"typing.Dict[str, test.C]"
+    "typing.Dict[str, test.C]";
   assert_resolve_mutable_literals
-    ~source:"{ 's': y for y in [Q()] }"
-    ~against:"typing.Dict[str, C]"
-    "typing.Dict[str, Q]";
-  assert_resolve_mutable_literals ~source:"{ D() }" ~against:"typing.Set[C]" "typing.Set[C]";
-  assert_resolve_mutable_literals ~source:"{ Q() }" ~against:"typing.Set[C]" "typing.Set[Q]";
+    ~source:"{ 's': test.Q() }"
+    ~against:"typing.Dict[str, test.C]"
+    "typing.Dict[str, test.Q]";
   assert_resolve_mutable_literals
-    "{ y for y in [D()] }"
-    ~source:"typing.Set[C]"
-    ~against:"typing.Set[C]";
+    ~source:"{ 's': y for y in [test.D()] }"
+    ~against:"typing.Dict[str, test.C]"
+    "typing.Dict[str, test.C]";
   assert_resolve_mutable_literals
-    "{ y for y in [Q()] }"
-    ~source:"typing.Set[C]"
-    ~against:"typing.Set[Q]"
+    ~source:"{ 's': y for y in [test.Q()] }"
+    ~against:"typing.Dict[str, test.C]"
+    "typing.Dict[str, test.Q]";
+  assert_resolve_mutable_literals
+    ~source:"{ test.D() }"
+    ~against:"typing.Set[test.C]"
+    "typing.Set[test.C]";
+  assert_resolve_mutable_literals
+    ~source:"{ test.Q() }"
+    ~against:"typing.Set[test.C]"
+    "typing.Set[test.Q]";
+  assert_resolve_mutable_literals
+    "{ y for y in [test.D()] }"
+    ~source:"typing.Set[test.C]"
+    ~against:"typing.Set[testg.C]";
+  assert_resolve_mutable_literals
+    "{ y for y in [test.Q()] }"
+    ~source:"typing.Set[test.C]"
+    ~against:"typing.Set[test.Q]"
 
 
 let test_function_definitions context =
@@ -335,11 +347,14 @@ let test_resolution_shared_memory _ =
 
 let test_source_is_unit_test context =
   let assert_is_unit_test ?(expected = true) source =
-    let sources, _, environment =
-      ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+    let _, ast_environment, environment =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
     let resolution = Environment.resolution environment () in
-    let source = List.hd_exn sources in
+    let source =
+      AstEnvironment.get_source ast_environment (Reference.create "test")
+      |> fun option -> Option.value_exn option
+    in
     assert_equal expected (GlobalResolution.source_is_unit_test resolution ~source)
   in
   let assert_not_unit_test = assert_is_unit_test ~expected:false in

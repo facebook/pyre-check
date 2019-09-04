@@ -54,7 +54,7 @@ let populate ~configuration environment sources =
 
 
 let environment
-    ?(sources = Test.typeshed_stubs ())
+    ~sources
     ?(configuration = Configuration.Analysis.create ())
     ?(ast_environment = AstEnvironment.ReadOnly.create ())
     ()
@@ -343,9 +343,10 @@ let check_expectation
   assert_errors errors actual_errors
 
 
-let run_with_taint_models tests =
-  let model_source =
-    {|
+let run_with_taint_models tests ~name =
+  let set_up_taint_models ~context =
+    let model_source =
+      {|
       def __test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
       def __test_source() -> TaintSource[Test, Via[special_source]]: ...
       def __tito( *x: TaintInTaintOut, **kw: TaintInTaintOut): ...
@@ -360,15 +361,14 @@ let run_with_taint_models tests =
       taint.__global_sink: TaintSink[Test] = ...
       ClassWithSinkAttribute.attribute: TaintSink[Test] = ...
 
-      def eval(arg: TaintSink[RemoteCodeExecution]): ...
-
       def copy(obj: TaintInTaintOut[Via[copy]]): ...
     |}
-    |> Test.trim_extra_indentation
-  in
-  let environment = environment ~sources:(Test.typeshed_stubs () @ [Test.parse model_source]) () in
-  let global_resolution = Environment.resolution environment () in
-  let () =
+      |> Test.trim_extra_indentation
+    in
+    let _, _, environment =
+      Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_environment
+    in
+    let global_resolution = Environment.resolution environment () in
     Model.parse
       ~resolution:(TypeCheck.resolution global_resolution ())
       ~source:model_source
@@ -377,7 +377,14 @@ let run_with_taint_models tests =
     |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
     |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[]
   in
-  Test.run tests
+  let decorated_tests =
+    List.map tests ~f:(fun (name, test) ->
+        name
+        >:: fun context ->
+        set_up_taint_models ~context;
+        test context)
+  in
+  Test.run (name >::: decorated_tests)
 
 
 type test_environment = {
@@ -388,14 +395,18 @@ type test_environment = {
 }
 
 let initialize ?(handle = "test.py") ?models ~context source_content =
-  let configuration, source, ast_environment =
+  let configuration, ast_environment, environment =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    let sources, ast_environment = Test.ScratchProject.parse_sources project in
-    let source = List.hd_exn sources in
-    Test.ScratchProject.configuration_of project, source, AstEnvironment.read_only ast_environment
+    let _, ast_environment, environment = Test.ScratchProject.build_environment project in
+    ( Test.ScratchProject.configuration_of project,
+      AstEnvironment.read_only ast_environment,
+      environment )
   in
-  let environment =
-    environment ~sources:(Test.typeshed_stubs () @ [source]) ~configuration ~ast_environment ()
+  let source =
+    AstEnvironment.ReadOnly.get_source
+      ast_environment
+      (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
+    |> fun option -> Option.value_exn option
   in
   let global_resolution = Environment.resolution environment () in
   let errors =
