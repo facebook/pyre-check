@@ -10,9 +10,40 @@ from typing import IO, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 import libcst as cst
 
 
+def _get_attribute_as_string(attribute: Union[cst.Attribute, cst.Name]) -> str:
+    names = []
+    while isinstance(attribute, cst.Attribute):
+        # pyre-fixme[16]: `BaseExpression` has no attribute `value`.
+        if isinstance(attribute.value.value, cst.Attribute):
+            value = _get_attribute_as_string(
+                # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 1st param but
+                #  got `BaseExpression`.
+                cst.ensure_type(attribute.value, cst.Attribute).value
+            )
+        else:
+            value = _get_name_as_string(attribute.value.value)
+        names.append(value)
+        attribute = attribute.attr
+    names.append(_get_name_as_string(attribute.value))
+    return ".".join(names)
+
+
+def _get_name_as_string(node: Union[cst.CSTNode, str]) -> str:
+    if isinstance(node, cst.Name):
+        return node.value
+    else:
+        # pyre-fixme[7]: Expected `str` but got `Union[CSTNode, str]`.
+        return node
+
+
 class FunctionAnnotation(NamedTuple):
     parameters: cst.Parameters
     returns: Optional[cst.Annotation]
+
+
+class ImportStatement(NamedTuple):
+    module: Union[cst.Name, cst.Attribute]
+    names: List[cst.CSTNode]
 
 
 class TypeCollector(cst.CSTVisitor):
@@ -22,7 +53,7 @@ class TypeCollector(cst.CSTVisitor):
         # Store the annotations.
         self.function_annotations: Dict[str, FunctionAnnotation] = {}
         self.attribute_annotations: Dict[str, cst.Annotation] = {}
-        self.imports: Dict[str, List[cst.ImportFrom]] = {}
+        self.imports: Dict[str, ImportStatement] = {}
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
@@ -32,9 +63,16 @@ class TypeCollector(cst.CSTVisitor):
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
         self.qualifier.append(node.name.value)
-        self.function_annotations[".".join(self.qualifier)] = FunctionAnnotation(
-            parameters=node.params, returns=node.returns
-        )
+        if node.returns is not None:
+            # pyre-fixme[6]: Expected `CSTNode` for 1st param but got
+            #  `Optional[Annotation]`.
+            return_annotation = self._create_import_from_annotation(node.returns)
+            self.function_annotations[".".join(self.qualifier)] = FunctionAnnotation(
+                parameters=node.params,
+                # pyre-fixme[6]: Expected `Optional[Annotation]` for 2nd param but got
+                #  `CSTNode`.
+                returns=return_annotation,
+            )
         # pyi files don't support inner functions, return False to stop the traversal.
         return False
 
@@ -53,16 +91,35 @@ class TypeCollector(cst.CSTVisitor):
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
         module = node.module
-        if module is None:
+        if module is None or isinstance(node, cst.ImportStar):
             return
-        if module.value not in self.imports:
-            # pyre-fixme[6]: Expected `str` for 1st param but got
-            #  `Union[BaseExpression, str]`.
-            self.imports[module.value] = node.names
+        # pyre-fixme[6]: Expected `List[CSTNode]` for 1st param but got
+        #  `Union[Sequence[ImportAlias], ImportStar]`.
+        # pyre-fixme[6]: Expected `str` for 1st param but got `Union[BaseExpression,
+        #  str]`.
+        self._add_to_imports(node.names, cst.Name(module.value), module.value)
+
+    def _create_import_from_annotation(self, returns: cst.CSTNode) -> cst.CSTNode:
+        # pyre-fixme[16]: `CSTNode` has no attribute `annotation`.
+        if isinstance(returns.annotation, cst.Attribute):
+            annotation = returns.annotation
+            key = _get_attribute_as_string(annotation.value)
+            self._add_to_imports(
+                [cst.ImportAlias(name=annotation.attr)], annotation.value, key
+            )
+            return cst.Annotation(annotation=returns.annotation.attr)
         else:
-            # pyre-fixme[6]: Expected `Iterable[ImportFrom]` for 1st param but got
-            #  `Union[Sequence[ImportAlias], ImportStar]`.
-            self.imports[module.value] += node.names
+            return returns
+
+    def _add_to_imports(
+        self, names: List[cst.CSTNode], module: Union[cst.Name, cst.Attribute], key: str
+    ) -> None:
+        if key not in self.imports:
+            self.imports[key] = ImportStatement(names=names, module=module)
+        else:
+            old_import = self.imports[key]
+            names = old_import.names + names
+            self.imports[key] = ImportStatement(names=names, module=module)
 
 
 class TypeTransformer(cst.CSTTransformer):
@@ -70,7 +127,7 @@ class TypeTransformer(cst.CSTTransformer):
         self,
         function_annotations: Dict[str, FunctionAnnotation],
         attribute_annotations: Dict[str, cst.Annotation],
-        imports: Dict[str, List[cst.ImportFrom]],
+        imports: Dict[str, ImportStatement],
     ) -> None:
         # Qualifier for storing the canonical name of the current function.
         self.qualifier: List[str] = []
@@ -229,10 +286,11 @@ class TypeTransformer(cst.CSTTransformer):
         if len(original_node.targets) > 1:
             for assign in original_node.targets:
                 if not isinstance(assign.target, cst.Subscript):
-                    # pyre-fixme[16]: `BaseAssignTargetExpression`
-                    # has no attribute `value`.
-                    value = self._get_name_as_string(assign.target.value)
-                    self._add_to_toplevel_annotations(value)
+                    self._add_to_toplevel_annotations(
+                        # pyre-fixme[16]: `BaseAssignTargetExpression` has no
+                        #  attribute `value`.
+                        self._get_name_as_string(assign.target.value)
+                    )
             return updated_node
         else:
             return self._annotate_single_target(original_node, updated_node)
@@ -241,14 +299,17 @@ class TypeTransformer(cst.CSTTransformer):
         self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
     ) -> cst.ImportFrom:
         self.import_statements.append(original_node)
+        # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 1st param but got
+        #  `Optional[Union[Attribute, Name]]`.
+        key = _get_attribute_as_string(original_node.module)
         if (
             original_node.module is not None
             # pyre-fixme[16]: `Optional` has no attribute `value`.
             and original_node.module.value in self.imports
         ):
-            names = list(updated_node.names) + self.imports[original_node.module.value]
+            names = list(updated_node.names) + self.imports[key].names
             updated_node = updated_node.with_changes(names=tuple(names))
-            del self.imports[original_node.module.value]
+            del self.imports[key]
         return updated_node
 
     def visit_ImportAlias(self, node: cst.ImportAlias) -> None:
@@ -273,17 +334,17 @@ class TypeTransformer(cst.CSTTransformer):
         # Make sure there's at least one empty line before the first non-import
         statements_after_imports = self._insert_empty_line(statements_after_imports)
 
-        for module_name, aliases in self.imports.items():
+        for _, import_statement in self.imports.items():
             import_statement = cst.ImportFrom(
-                module=cst.Name(module_name),
+                module=import_statement.module,
                 # pyre-fixme[6]: Expected `Union[Sequence[ImportAlias], ImportStar]`
                 #  for 2nd param but got `List[ImportFrom]`.
-                names=aliases,
+                names=import_statement.names,
             )
             # Add import statements to module body.
             # Need to assign an Iterable, and the argument to SimpleStatementLine
             # must be subscriptable.
-            toplevel_statements = [cst.SimpleStatementLine([import_statement])]
+            toplevel_statements.append(cst.SimpleStatementLine([import_statement]))
 
         for name, annotation in self.toplevel_annotations.items():
             annotated_assign = cst.AnnAssign(
