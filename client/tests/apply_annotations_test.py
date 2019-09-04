@@ -362,3 +362,17 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 return x
             """,
         )
+
+        self.assert_annotations(
+            """
+            FOO: a.b.Example = ...
+            """,
+            """
+            FOO = bar()
+            """,
+            """
+            from a.b import Example
+
+            FOO: Example = bar()
+            """,
+        )

@@ -89,7 +89,8 @@ class TypeCollector(cst.CSTVisitor):
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool:
         # pyre-fixme[16]: `BaseExpression` has no attribute `value`.
         self.qualifier.append(node.target.value)
-        annotation_value = node.annotation
+        annotation_value = self._create_import_from_annotation(node.annotation)
+        # pyre-fixme[6]: Expected `Annotation` for 2nd param but got `CSTNode`.
         self.attribute_annotations[".".join(self.qualifier)] = annotation_value
         return True
 
