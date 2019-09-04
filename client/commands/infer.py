@@ -343,6 +343,18 @@ def filter_paths(arguments, stubs, type_directory):
     ]
 
 
+def annotate_path(stub_path, file_path) -> None:
+    try:
+        annotated_content = apply_annotations.apply_stub_annotations(
+            stub_path, file_path
+        )
+        with open(file_path, "w") as source_file:
+            source_file.write(annotated_content)
+        LOG.info("Annotated {}".format(file_path))
+    except Exception:
+        LOG.warning("Failed to annotate {}".format(file_path))
+
+
 def annotate_paths(arguments, stubs, type_directory) -> None:
     if arguments.in_place != []:
         stubs = filter_paths(arguments, stubs, type_directory)
@@ -351,15 +363,24 @@ def annotate_paths(arguments, stubs, type_directory) -> None:
     for stub in stubs:
         stub_path = stub.path(type_directory)
         file_path = str(stub.path(project_directory)).rstrip("i")
-        try:
-            annotated_content = apply_annotations.apply_stub_annotations(
-                stub_path, file_path
-            )
-            with open(file_path, "w") as source_file:
-                source_file.write(annotated_content)
-            LOG.info("Annotated {}".format(file_path))
-        except Exception:
-            LOG.warning("Failed to annotate {}".format(file_path))
+        annotate_path(stub_path, file_path)
+
+
+def annotate_from_existing_stubs(arguments, type_directory: Path) -> None:
+    stub_files = []
+    for path, _, files in os.walk(type_directory):
+        for file in files:
+            stub_path = os.path.join(path, file)
+            if arguments.in_place != [] or any(
+                str(stub_path.replace(str(type_directory) + "/", "")).startswith(
+                    str(path)
+                )
+                for path in arguments.in_place
+            ):
+                stub_files.append(os.path.join(path, file))
+    for stub_path in stub_files:
+        file_path = str(stub_path).replace("/.pyre/types", "").rstrip("i")
+        annotate_path(stub_path, file_path)
     with open(os.devnull, "w") as FNULL:
         subprocess.call(
             ["arc", "lint", "--apply-patches", "--only-changed"],
@@ -391,9 +412,21 @@ class Infer(Reporting):
         self._print_errors = arguments.print_only
         self._local_configuration = arguments.local_configuration
         self._json = arguments.json
+        self._annotate_from_existing_stubs = arguments.annotate_from_existing_stubs
 
     def run(self) -> Command:
         self._analysis_directory.prepare()
+        if self._annotate_from_existing_stubs:
+            if self._arguments.in_place is None:
+                raise argparse.ArgumentTypeError(
+                    "--no-recheck cannot be used without the --in-place argument"
+                )
+
+            type_directory = pyre_configuration_directory(self._arguments) / Path(
+                ".pyre/types"
+            )
+            annotate_from_existing_stubs(self._arguments, type_directory)
+            return self
         if self._json:
             result = self._errors_from_stdin()
             errors = self._get_errors(result, bypass_filtering=True)

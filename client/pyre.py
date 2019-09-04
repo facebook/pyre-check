@@ -460,6 +460,11 @@ def main() -> int:
         action="store_true",
         help="Accept JSON input instead of running full check.",
     )
+    infer.add_argument(
+        "--annotate-from-existing-stubs",
+        action="store_true",
+        help="Add annotations from existing stubs.",
+    )
     infer.set_defaults(command=commands.Infer)
 
     arguments = parser.parse_args()

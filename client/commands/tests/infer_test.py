@@ -539,6 +539,7 @@ def mock_arguments() -> MagicMock:
     arguments.enable_profiling = None
     arguments.current_directory = "."
     arguments.json = False
+    arguments.annotate_from_existing_stubs = False
 
     return arguments
 
