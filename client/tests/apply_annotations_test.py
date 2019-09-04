@@ -348,3 +348,17 @@ class ApplyAnnotationsTest(unittest.TestCase):
             async def c(r: Request, z=None) -> HttpResponse: ...
             """,
         )
+
+        self.assert_annotations(
+            """
+            def foo(x: int) -> int: ...
+            """,
+            """
+            def foo(x) -> int:
+                return x
+            """,
+            """
+            def foo(x: int) -> int:
+                return x
+            """,
+        )
