@@ -2093,7 +2093,8 @@ module State (Context : Context) = struct
                 match Reference.prefix original_reference with
                 | Some parent_module_reference when is_exported_from parent_module_reference ->
                     state
-                | _ -> emit_error ~state ~location ~kind:(Error.UndefinedName original_reference)
+                | _ ->
+                    emit_error ~state ~location ~kind:(Error.UnimportedModule original_reference)
             in
             { state; resolved = Type.Top; resolved_annotation = None; base = None } )
     in

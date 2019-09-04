@@ -241,6 +241,7 @@ type kind =
       typed_dictionary_name: Identifier.t;
       missing_key: string;
     }
+  | UnimportedModule of Reference.t
   | UndefinedAttribute of {
       attribute: Identifier.t;
       origin: origin;

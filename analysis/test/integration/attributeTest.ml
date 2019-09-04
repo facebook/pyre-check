@@ -543,8 +543,8 @@ let test_check_attributes context =
     {|
       foo.bar.hello
     |}
-    [ "Undefined name [18]: Global name `foo` is not defined, or there is at least one control \
-       flow path that doesn't define `foo`." ];
+    [ "Unimported module [51]: Module `foo` is used without being imported.";
+      "Unimported module [51]: Module `foo.bar` is used without being imported." ];
   assert_type_errors
     ~update_environment_with:implicit_submodule_test_environment
     {|
@@ -558,8 +558,7 @@ let test_check_attributes context =
       import foo
       foo.bar.hello
     |}
-    [ "Undefined name [18]: Global name `foo.bar` is not defined, or there is at least one \
-       control flow path that doesn't define `foo.bar`." ];
+    ["Unimported module [51]: Module `foo.bar` is used without being imported."];
   assert_type_errors
     ~update_environment_with:implicit_submodule_test_environment
     {|

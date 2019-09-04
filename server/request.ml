@@ -820,12 +820,7 @@ let process_type_query_request
         let errors =
           let filter_use_unimported_module_error { Error.kind; _ } =
             match kind with
-            | UndefinedName reference ->
-                (* Drop the error if it refers to a module that actually exist but not imported,
-                   since type query does not let you import modules. *)
-                GlobalResolution.resolve_exports global_resolution ~reference
-                |> GlobalResolution.module_definition global_resolution
-                |> Option.is_none
+            | UnimportedModule _ -> false
             | _ -> true
           in
           List.filter (State.errors state) ~f:filter_use_unimported_module_error

@@ -84,8 +84,7 @@ let test_check_with_qualification context =
               return global_number
     |}
     (* FIXME: The first error is bogus *)
-    [ "Undefined name [18]: Global name `test` is not defined, or there is at least one control \
-       flow path that doesn't define `test`.";
+    [ "Unimported module [51]: Module `test` is used without being imported.";
       "Incompatible return type [7]: Expected `int` but got `str`." ];
   assert_type_errors
     {|
