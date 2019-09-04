@@ -2734,6 +2734,7 @@ let suppress ~mode ~resolution ({ location; _ } as error) =
     else
       match kind with
       | UndefinedImport _ -> due_to_builtin_import error
+      | UnimportedModule _ -> true
       | IncompleteType _ ->
           (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
           true
@@ -2769,6 +2770,7 @@ let suppress ~mode ~resolution ({ location; _ } as error) =
     | Unpack { unpack_problem = UnacceptableType Type.Any; _ }
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
         true
+    | UnimportedModule _ -> true
     | UndefinedImport _ -> false
     | UndefinedName name when String.equal (Reference.show name) "reveal_type" -> true
     | RevealedType _ -> false
