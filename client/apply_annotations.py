@@ -36,6 +36,13 @@ def _get_name_as_string(node: Union[cst.CSTNode, str]) -> str:
         return node
 
 
+def _is_in_list(list: List[cst.CSTNode], target: cst.CSTNode) -> bool:
+    for item in list:
+        if item.deep_equals(target):
+            return True
+    return False
+
+
 class FunctionAnnotation(NamedTuple):
     parameters: cst.Parameters
     returns: Optional[cst.Annotation]
@@ -117,9 +124,10 @@ class TypeCollector(cst.CSTVisitor):
         if key not in self.imports:
             self.imports[key] = ImportStatement(names=names, module=module)
         else:
-            old_import = self.imports[key]
-            names = old_import.names + names
-            self.imports[key] = ImportStatement(names=names, module=module)
+            import_statement = self.imports[key]
+            for name in names:
+                if not _is_in_list(import_statement.names, name):
+                    import_statement.names.append(name)
 
 
 class TypeTransformer(cst.CSTTransformer):
@@ -141,13 +149,6 @@ class TypeTransformer(cst.CSTTransformer):
     def _qualifier_name(self) -> str:
         return ".".join(self.qualifier)
 
-    def _get_name_as_string(self, node: Union[cst.CSTNode, str]) -> str:
-        if isinstance(node, cst.Name):
-            return node.value
-        else:
-            # pyre-fixme[7]: Expected `str` but got `Union[CSTNode, str]`.
-            return node
-
     def _annotate_single_target(
         self, node: cst.Assign, updated_node: cst.Assign
     ) -> Union[cst.Assign, cst.AnnAssign]:
@@ -156,13 +157,13 @@ class TypeTransformer(cst.CSTTransformer):
             # pyre-fixme[16]: `BaseAssignTargetExpression` has no attribute `elements`.
             for element in target.elements:
                 if not isinstance(element.value, cst.Subscript):
-                    name = self._get_name_as_string(element.value.value)
+                    name = _get_name_as_string(element.value.value)
                     self._add_to_toplevel_annotations(name)
             return updated_node
         else:
             target = node.targets[0].target
             # pyre-fixme[16]: `BaseAssignTargetExpression` has no attribute `value`.
-            name = self._get_name_as_string(target.value)
+            name = _get_name_as_string(target.value)
             self.qualifier.append(name)
             if self._qualifier_name() in self.attribute_annotations and not isinstance(
                 target, cst.Subscript
@@ -289,7 +290,7 @@ class TypeTransformer(cst.CSTTransformer):
                     self._add_to_toplevel_annotations(
                         # pyre-fixme[16]: `BaseAssignTargetExpression` has no
                         #  attribute `value`.
-                        self._get_name_as_string(assign.target.value)
+                        _get_name_as_string(assign.target.value)
                     )
             return updated_node
         else:
