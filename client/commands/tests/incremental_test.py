@@ -8,8 +8,7 @@ import unittest
 from unittest.mock import MagicMock, Mock, call, patch
 
 from ... import commands
-from ...commands import stop  # noqa
-from ...commands import incremental
+from ...commands import command, incremental, stop  # noqa
 from ...filesystem import AnalysisDirectory, SharedAnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
@@ -46,11 +45,11 @@ class IncrementalTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = incremental.Incremental(
+            test_command = incremental.Incremental(
                 arguments, configuration, analysis_directory
             )
             self.assertEqual(
-                command._flags(),
+                test_command._flags(),
                 [
                     "-logging-sections",
                     "parser",
@@ -63,7 +62,7 @@ class IncrementalTest(unittest.TestCase):
                 ],
             )
 
-            command.run()
+            test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             Monitor.is_alive.assert_called_once_with(".")
             Monitor.assert_called_once_with(
@@ -79,11 +78,11 @@ class IncrementalTest(unittest.TestCase):
         ):
             nonblocking_arguments = mock_arguments()
             nonblocking_arguments.nonblocking = True
-            command = incremental.Incremental(
+            test_command = incremental.Incremental(
                 nonblocking_arguments, configuration, analysis_directory
             )
             self.assertEqual(
-                command._flags(),
+                test_command._flags(),
                 [
                     "-logging-sections",
                     "parser",
@@ -97,7 +96,7 @@ class IncrementalTest(unittest.TestCase):
                 ],
             )
 
-            command.run()
+            test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             Monitor.is_alive.assert_called_once_with(".")
             Monitor.assert_not_called()
@@ -113,11 +112,11 @@ class IncrementalTest(unittest.TestCase):
             transitive_arguments.incremental_style = (
                 commands.IncrementalStyle.TRANSITIVE
             )
-            command = incremental.Incremental(
+            test_command = incremental.Incremental(
                 transitive_arguments, configuration, analysis_directory
             )
             self.assertEqual(
-                command._flags(),
+                test_command._flags(),
                 [
                     "-logging-sections",
                     "parser",
@@ -131,7 +130,7 @@ class IncrementalTest(unittest.TestCase):
                 ],
             )
 
-            command.run()
+            test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             Monitor.is_alive.assert_called_once_with(".")
             Monitor.assert_not_called()
@@ -143,9 +142,11 @@ class IncrementalTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Incremental(arguments, configuration, analysis_directory)
+            test_command = commands.Incremental(
+                arguments, configuration, analysis_directory
+            )
             self.assertEqual(
-                command._flags(),
+                test_command._flags(),
                 [
                     "-logging-sections",
                     "parser",
@@ -158,7 +159,7 @@ class IncrementalTest(unittest.TestCase):
                 ],
             )
 
-            command.run()
+            test_command.run()
             commands_Start.assert_called_with(
                 arguments, configuration, analysis_directory
             )
@@ -171,11 +172,11 @@ class IncrementalTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ), patch.object(SharedAnalysisDirectory, "prepare") as prepare:
-            command = incremental.Incremental(
+            test_command = incremental.Incremental(
                 arguments, configuration, analysis_directory
             )
             self.assertEqual(
-                command._flags(),
+                test_command._flags(),
                 [
                     "-logging-sections",
                     "parser",
@@ -188,7 +189,7 @@ class IncrementalTest(unittest.TestCase):
                 ],
             )
 
-            command.run()
+            test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
@@ -202,9 +203,11 @@ class IncrementalTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Incremental(arguments, configuration, analysis_directory)
+            test_command = commands.Incremental(
+                arguments, configuration, analysis_directory
+            )
             self.assertEqual(
-                command._flags(),
+                test_command._flags(),
                 [
                     "-logging-sections",
                     "parser",
@@ -217,7 +220,7 @@ class IncrementalTest(unittest.TestCase):
                 ],
             )
 
-            command.run()
+            test_command.run()
             commands_Start.assert_called_with(
                 arguments, configuration, analysis_directory
             )
@@ -251,11 +254,11 @@ class IncrementalTest(unittest.TestCase):
                 }
             ],
         ):
-            command = incremental.Incremental(
+            test_command = incremental.Incremental(
                 arguments, configuration, analysis_directory
             )
             self.assertEqual(
-                command._flags(),
+                test_command._flags(),
                 [
                     "-logging-sections",
                     "parser",
@@ -268,21 +271,21 @@ class IncrementalTest(unittest.TestCase):
                 ],
             )
 
-            command.run()
+            test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
-            self.assertEqual(command._exit_code, commands.ExitCode.FOUND_ERRORS)
+            self.assertEqual(test_command._exit_code, commands.ExitCode.FOUND_ERRORS)
 
         # If Start returns with an error, fail early
         start_exit_code.return_value = commands.ExitCode.FAILURE
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = incremental.Incremental(
+            test_command = incremental.Incremental(
                 arguments, configuration, analysis_directory
             )
-            command.run()
+            test_command.run()
             call_client.assert_not_called()
-            self.assertEqual(command._exit_code, commands.ExitCode.FAILURE)
+            self.assertEqual(test_command._exit_code, commands.ExitCode.FAILURE)
 
     def test_read_stderr(self) -> None:
         with patch("subprocess.Popen") as popen:
@@ -291,11 +294,11 @@ class IncrementalTest(unittest.TestCase):
             configuration = mock_configuration()
             configuration.version_hash = "hash"
             analysis_directory = AnalysisDirectory("/root")
-            command = incremental.Incremental(
+            test_command = incremental.Incremental(
                 arguments, configuration, analysis_directory
             )
             stream = MagicMock()
-            command._read_stderr(stream)
+            test_command._read_stderr(stream)
             popen.assert_called_once_with(
                 ["tail", "--follow", "--lines=0", "/root/.pyre/server/server.stdout"],
                 stdout=subprocess.PIPE,

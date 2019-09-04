@@ -7,11 +7,12 @@ import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands  # noqa
+from ...commands import check
 from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
-_typeshed_search_path = "{}.typeshed_search_path".format(commands.check.__name__)
+_typeshed_search_path = "{}.typeshed_search_path".format(check.__name__)
 
 
 class CheckTest(unittest.TestCase):

@@ -16,6 +16,7 @@ import subprocess
 import sys
 import traceback
 from collections import defaultdict
+from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple
 
 from ...client.commands import ExitCode
@@ -29,7 +30,7 @@ def json_to_errors(json_string: Optional[str]) -> List[Dict[str, Any]]:
     if json_string:
         try:
             return json.loads(json_string)
-        except json.decoder.JSONDecodeError:
+        except JSONDecodeError:
             LOG.error(
                 "Recevied invalid JSON as input."
                 "If piping from `pyre check` be sure to use `--output=json`."

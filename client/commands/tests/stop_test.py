@@ -9,6 +9,7 @@ from io import StringIO
 from unittest.mock import Mock, call, patch
 
 from ... import commands  # noqa
+from ...commands import command, stop  # noqa
 from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
@@ -52,7 +53,7 @@ class StopTest(unittest.TestCase):
         commands_Command_state.return_value = commands.command.State.RUNNING
         with patch.object(commands.Command, "_call_client") as call_client:
 
-            def fail_on_stop(command, flags=None):
+            def fail_on_stop(command, flags=None):  # noqa
                 flags = flags or []
                 if command == commands.Stop.NAME:
                     raise commands.ClientException

@@ -6,6 +6,7 @@
 # pyre-strict
 
 import json
+from json.decoder import JSONDecodeError
 from typing import Any, BinaryIO, Dict, Optional
 
 
@@ -63,7 +64,7 @@ def read_message(file: BinaryIO) -> Optional[LanguageServerProtocolMessage]:
                 parameters=payload.get("params"),
             )
         return None
-    except (ValueError, OSError, json.decoder.JSONDecodeError):
+    except (ValueError, OSError, JSONDecodeError):
         return None
 
 

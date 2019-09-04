@@ -27,7 +27,7 @@ from . import (
     switch_root,
     translate_arguments,
 )
-from .commands import Command, ExitCode, IncrementalStyle  # noqa
+from .commands import Command, ExitCode, IncrementalStyle, reporting  # noqa
 from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .filesystem import AnalysisDirectory
@@ -543,7 +543,7 @@ def main() -> int:
                     arguments, commands, configuration, isolate=isolate
                 )
 
-        command = arguments.command  # type: Type[Command]
+        command = arguments.command
         exit_code = (
             # pyre-fixme: need to disentangle the initialize command.
             command(arguments, configuration, analysis_directory)

@@ -10,10 +10,11 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
+from ...commands import command  # noqa
 from ...filesystem import AnalysisDirectory
 
 
-def mock_arguments(
+def mock_arguments(  # noqa
     build=False,
     changed_files_path=None,
     command=None,
@@ -131,15 +132,15 @@ class CommandTest(unittest.TestCase):
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
 
-        command = commands.Command(arguments, configuration, analysis_directory)
+        test_command = commands.Command(arguments, configuration, analysis_directory)
         self.assertEqual(
-            command._flags(), ["-logging-sections", "parser", "-project-root", "."]
+            test_command._flags(), ["-logging-sections", "parser", "-project-root", "."]
         )
 
         configuration.logger = "/foo/bar"
-        command = commands.Command(arguments, configuration, analysis_directory)
+        test_command = commands.Command(arguments, configuration, analysis_directory)
         self.assertEqual(
-            command._flags(),
+            test_command._flags(),
             [
                 "-logging-sections",
                 "parser",

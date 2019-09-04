@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 from collections import namedtuple
+from json.decoder import JSONDecodeError
 from typing import Dict, Iterable, List, Optional, Set, Tuple, cast  # noqa
 
 from .filesystem import BuckBuilder, find_root
@@ -317,7 +318,7 @@ def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
     except (
         subprocess.TimeoutExpired,
         subprocess.CalledProcessError,
-        json.decoder.JSONDecodeError,
+        JSONDecodeError,
     ) as error:
         raise BuckException("Querying buck for relative paths failed: {}".format(error))
     # TODO(T40580762) we should use the owner name to determine which files are a
