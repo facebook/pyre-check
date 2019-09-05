@@ -311,7 +311,7 @@ let test_register_aliases context =
       ) ]
     ["a._T", "Variable[a._T]"; "a._T2", "Variable[a._T2]"];
 
-  (* Type variable aliases in classes. *)
+  (* Type variable aliases in classes are not supported. *)
   assert_resolved
     [ ( "qualifier.py",
         {|
@@ -320,7 +320,7 @@ let test_register_aliases context =
             Int = int
         |}
       ) ]
-    ["qualifier.Class.T", "Variable[qualifier.Class.T]"; "qualifier.Class.Int", "int"];
+    ["qualifier.Class.T", "qualifier.Class.T"; "qualifier.Class.Int", "qualifier.Class.Int"];
 
   (* Stub-suppressed aliases show up as `Any`. *)
   assert_resolved

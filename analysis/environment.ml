@@ -723,13 +723,13 @@ let collect_aliases
     ({ unannotated_global_environment; _ } as environment)
     { Source.statements; qualifier; _ }
   =
-  let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
+  let rec visit_statement ~qualifier aliases { Node.value; _ } =
     match value with
     | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
       when Expression.is_simple_name target -> (
         let target =
           let target = Expression.name_to_reference_exn target |> Reference.sanitize_qualified in
-          if in_class_body then target else Reference.combine qualifier target
+          Reference.combine qualifier target
         in
         let target_annotation =
           Type.create
@@ -866,8 +866,6 @@ let collect_aliases
                 else
                   aliases )
         | _ -> aliases )
-    | Class { Class.name; body; _ } ->
-        List.fold body ~init:aliases ~f:(visit_statement ~qualifier:name ~in_class_body:true)
     | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
       when Reference.show name = "*" ->
         (* Don't register x.* as an alias when a user writes `from x import *`. *)
