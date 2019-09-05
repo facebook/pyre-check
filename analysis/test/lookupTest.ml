@@ -523,7 +523,7 @@ let test_lookup_definitions context =
       "test:12:4-12:7 -> test:8:0-9:8";
       "test:13:12-13:18 -> test:2:0-3:13";
       "test:13:4-13:11 -> test:5:0-6:8";
-      "test:2:16-2:19 -> :77:0-94:34" ];
+      "test:2:16-2:19 -> :77:0-95:32" ];
   assert_definition ~position:{ Location.line = 12; column = 0 } ~definition:None;
   assert_definition ~position:{ Location.line = 12; column = 4 } ~definition:(Some "test:8:0-9:8");
   assert_definition ~position:{ Location.line = 12; column = 7 } ~definition:None

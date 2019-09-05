@@ -9,7 +9,12 @@ open Analysis
 open Test
 open OUnit2
 
-let empty_environment () = AstEnvironment.ReadOnly.create () |> Environment.shared_memory_handler
+let empty_environment () =
+  AstEnvironment.ReadOnly.create ()
+  |> UnannotatedGlobalEnvironment.create
+  |> UnannotatedGlobalEnvironment.read_only
+  |> Environment.shared_memory_handler
+
 
 let test_normalize_dependencies _ =
   let qualifier = Reference.create "dummy" in
@@ -43,14 +48,7 @@ let test_normalize_dependencies _ =
     ~printer:(List.to_string ~f:Reference.show)
     (DependencyHandler.get_dependent_keys ~qualifier)
     [!&"aardvark"; !&"first.module"; !&"second.module"];
-  DependencyHandler.add_class_key ~qualifier "T1";
-  DependencyHandler.add_class_key ~qualifier "T3";
-  DependencyHandler.add_class_key ~qualifier "T2";
   DependencyHandler.normalize [qualifier];
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
-    (DependencyHandler.get_class_keys ~qualifier)
-    ["T1"; "T2"; "T3"];
   DependencyHandler.add_alias_key ~qualifier "C_Alias";
   DependencyHandler.add_alias_key ~qualifier "A_Alias";
   DependencyHandler.add_alias_key ~qualifier "B_Alias";
@@ -111,11 +109,21 @@ let test_populate context =
   assert_successors "a.C" ["a.D"; "object"];
 
   (* Ensure that the memory doesn't get clobbered on a re-write. *)
+  let scheduler = Test.mock_scheduler () in
   let _ =
+    let update_result =
+      UnannotatedGlobalEnvironment.update
+        (UnannotatedGlobalEnvironment.create ast_environment)
+        ~scheduler
+        ~configuration
+        (Reference.Set.singleton (Reference.create "a"))
+    in
     Service.Environment.populate
       environment
+      (UnannotatedGlobalEnvironment.read_only (UnannotatedGlobalEnvironment.create ast_environment))
       ~configuration
-      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler
+      ~update_result
       [Option.value_exn (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a"))]
   in
   assert_successors "a.C" ["a.D"; "object"]
@@ -133,7 +141,17 @@ let test_purge context =
   in
   let global_resolution = Analysis.Environment.resolution environment () in
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "x.D"));
-  Environment.purge environment [Reference.create "x"];
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (Environment.ast_environment environment)
+  in
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(Configuration.Analysis.create ())
+      (Reference.Set.singleton (Reference.create "x"))
+  in
+  Environment.purge environment [Reference.create "x"] ~update_result;
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "x.D"))
 
 

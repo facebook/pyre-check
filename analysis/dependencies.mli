@@ -23,8 +23,6 @@ type t = {
 module type Handler = sig
   val add_function_key : qualifier:Reference.t -> Reference.t -> unit
 
-  val add_class_key : qualifier:Reference.t -> Identifier.t -> unit
-
   val add_alias_key : qualifier:Reference.t -> Identifier.t -> unit
 
   val add_global_key : qualifier:Reference.t -> Reference.t -> unit
@@ -36,8 +34,6 @@ module type Handler = sig
   val dependents : Reference.t -> Reference.Set.Tree.t option
 
   val get_function_keys : qualifier:Reference.t -> Reference.t list
-
-  val get_class_keys : qualifier:Reference.t -> Identifier.t list
 
   val get_alias_keys : qualifier:Reference.t -> Identifier.t list
 

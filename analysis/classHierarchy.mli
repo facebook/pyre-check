@@ -57,6 +57,8 @@ module type Handler = sig
   val edges : IndexTracker.t -> Target.t list option
 
   val backedges : IndexTracker.t -> Target.Set.t option
+
+  val contains : Type.Primitive.t -> bool
 end
 
 (* Returns true if the class hierarchy contains the given class. *)

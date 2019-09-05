@@ -18,7 +18,7 @@ let test_enumeration_methods context =
     |}
     [ "Revealed type [-1]: Revealed type for `test.C.A` is `C`.";
       "Revealed type [-1]: Revealed type for `test.C.__members__` is \
-       `typing.Callable(enum.EnumMeta.__members__)[[], unknown]`." ];
+       `typing.Callable(enum.EnumMeta.__members__)[[], typing.Mapping[str, C]]`." ];
   assert_type_errors
     {|
       import enum
@@ -29,7 +29,7 @@ let test_enumeration_methods context =
     |}
     [ "Revealed type [-1]: Revealed type for `test.C.A` is `C`.";
       "Revealed type [-1]: Revealed type for `test.C.__members__` is \
-       `typing.Callable(enum.EnumMeta.__members__)[[], unknown]`." ];
+       `typing.Callable(enum.EnumMeta.__members__)[[], typing.Mapping[str, C]]`." ];
   assert_type_errors
     {|
       import enum

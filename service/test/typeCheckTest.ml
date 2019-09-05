@@ -8,12 +8,29 @@ open OUnit2
 open Pyre
 open Test
 
-let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~files errors =
+let assert_errors
+    ?filter_directories
+    ?(ignore_all_errors = [])
+    ?(search_path = [])
+    ~root
+    ~files
+    ~context
+    errors
+  =
+  let external_root = bracket_tmpdir context |> Path.create_absolute in
+  let add_source ~root (relative, content) =
+    let content = trim_extra_indentation content in
+    let file = File.create ~content (Path.create_relative ~root ~relative) in
+    File.write file
+  in
+  List.iter (typeshed_stubs ()) ~f:(add_source ~root:external_root);
+  let ignore_all_errors = external_root :: ignore_all_errors in
+  let search_path = SearchPath.Root external_root :: search_path in
   let configuration =
     Configuration.Analysis.create
       ?filter_directories
-      ?ignore_all_errors
-      ?search_path
+      ~ignore_all_errors
+      ~search_path
       ~project_root:root
       ~local_root:root
       ()
@@ -39,7 +56,18 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
              error
            |> Analysis.Error.Instantiated.description ~show_error_traces:false)
   in
-  Analysis.Environment.purge environment all_qualifiers;
+  let unannotated_global_environment =
+    Analysis.UnannotatedGlobalEnvironment.create
+      (Analysis.AstEnvironment.read_only ast_environment)
+  in
+  let update_result =
+    Analysis.UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(Configuration.Analysis.create ())
+      (Ast.Reference.Set.of_list qualifiers)
+  in
+  Analysis.Environment.purge environment all_qualifiers ~update_result;
   Analysis.AstEnvironment.remove_sources ast_environment qualifiers;
   assert_equal
     ~printer:(List.to_string ~f:ident)
@@ -59,8 +87,6 @@ let type_check_sources_list_test context =
           pass
         class int(float):
           pass
-        class str(Sized):
-          pass
       |}
       |> trim_extra_indentation
     in
@@ -78,12 +104,14 @@ let type_check_sources_list_test context =
       ~filter_directories:[root]
       ~root
       ~files
+      ~context
       ["Incompatible return type [7]: Expected `str` but got `int`."]
   in
   with_bracket_chdir context (bracket_tmpdir context) check
 
 
 let test_filter_directories context =
+  let assert_errors = assert_errors ~context in
   let content =
     {|
       class C:

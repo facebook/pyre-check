@@ -19,7 +19,7 @@ let class_hierarchy environment =
 
 let find_unsafe getter value = getter value |> fun optional -> Option.value_exn optional
 
-let create_environment_and_project
+let create_environments_and_project
     ~context
     ?(include_typeshed_stubs = true)
     ?(include_helpers = false)
@@ -33,27 +33,34 @@ let create_environment_and_project
       ~include_helper_builtins:include_helpers
       additional_sources
   in
-  let sources, _, environment = project |> ScratchProject.build_environment in
+  let sources, ast_environment, environment = project |> ScratchProject.build_environment in
   (* TODO (T47159596): This can be done in a more elegant way *)
   let () =
     let set_up_shared_memory _ = () in
     let tear_down_shared_memory () _ =
       let qualifiers = sources |> List.map ~f:(fun { Source.qualifier; _ } -> qualifier) in
-      Environment.purge environment qualifiers
+      let update_result =
+        UnannotatedGlobalEnvironment.update
+          (UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment))
+          ~scheduler:(mock_scheduler ())
+          ~configuration:(ScratchProject.configuration_of project)
+          (Reference.Set.of_list qualifiers)
+      in
+      Environment.purge environment qualifiers ~update_result
     in
     OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
   in
-  environment, project
+  environment, ast_environment, project
 
 
 let create_environment ~context ?include_typeshed_stubs ?include_helpers ?additional_sources () =
-  create_environment_and_project
+  create_environments_and_project
     ~context
     ?include_typeshed_stubs
     ?include_helpers
     ?additional_sources
     ()
-  |> fst
+  |> fst3
 
 
 let populate ?include_typeshed_stubs ?include_helpers sources =
@@ -89,59 +96,16 @@ let create_location path start_line start_column end_line end_column =
   { Location.path; start; stop }
 
 
-let test_register_class_definitions context =
-  let environment = create_environment ~context () in
-  Environment.register_class_definitions
-    environment
-    (parse
-       {|
-       class C:
-         ...
-       class D(C):
-         pass
-       B = D
-       A = B
-       def foo()->A:
-         return C()
-    |})
-  |> ignore;
-  assert_equal (parse_annotation environment !"C") (Type.Primitive "C");
-  assert_equal (parse_annotation environment !"D") (Type.Primitive "D");
-  assert_equal (parse_annotation environment !"B") (Type.Primitive "B");
-  assert_equal (parse_annotation environment !"A") (Type.Primitive "A");
-  let order = class_hierarchy environment in
-  assert_equal (ClassHierarchy.successors order "C") [];
-
-  (* Annotations for classes are returned even if they already exist in the handler. *)
-  let new_annotations =
-    Environment.register_class_definitions
-      environment
-      (parse {|
-         class C:
-           ...
-       |})
-  in
-  assert_equal
-    ~cmp:Type.Primitive.Set.equal
-    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ next))
-    (Type.Primitive.Set.singleton "C")
-    new_annotations;
-  let new_annotations =
-    Environment.register_class_definitions environment (parse "class int: pass")
-  in
-  assert_equal
-    ~cmp:Type.Primitive.Set.equal
-    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ next))
-    (Type.Primitive.Set.singleton "int")
-    new_annotations
-
-
 let test_register_class_metadata context =
-  let environment = create_environment ~context ~include_helpers:false () in
-  let source =
-    parse
-      ~handle:"test.py"
-      {|
+  let environment, ast_environment, project =
+    create_environments_and_project ~context ~include_helpers:false ()
+  in
+  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
+  AstEnvironment.add_source
+    ast_environment
+    ( parse
+        ~handle:"test.py"
+        {|
        from placeholder_stub import MadeUpClass
        class A: pass
        class B(A): pass
@@ -155,13 +119,31 @@ let test_register_class_metadata context =
        class E(D, A): pass
        class F(B, MadeUpClass, A): pass
       |}
-    |> Preprocessing.preprocess
+    |> Preprocessing.preprocess );
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
-  let all_annotations = Environment.register_class_definitions environment source |> Set.to_list in
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(ScratchProject.configuration_of project)
+      (Reference.Set.singleton (Reference.create "test"))
+  in
   let resolution = Environment.resolution environment () in
-  Environment.connect_type_order environment resolution source;
+  let connect annotation =
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+      annotation
+    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
+    |> Option.iter ~f:Fn.id
+  in
+  let all_annotations =
+    UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result |> Set.to_list
+  in
+  List.iter ~f:connect all_annotations;
   Environment.deduplicate_class_hierarchy ~annotations:all_annotations;
-  Environment.connect_annotations_to_object all_annotations;
+  Environment.connect_annotations_to_object environment all_annotations;
   Environment.remove_extra_edges_to_object all_annotations;
   Environment.register_class_metadata environment "test.A";
   Environment.register_class_metadata environment "test.B";
@@ -486,18 +468,30 @@ let test_register_implicit_submodules context =
 
 
 let test_connect_definition context =
-  let environment = create_environment ~context () in
+  let environment, ast_environment, project = create_environments_and_project ~context () in
   let resolution = Environment.resolution environment () in
   let (module TypeOrderHandler : ClassHierarchy.Handler) = class_hierarchy environment in
-  Environment.register_class_definitions
-    environment
-    (parse {|
+  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
+  AstEnvironment.add_source
+    ast_environment
+    (parse
+       ~handle:"test.py"
+       {|
        class C:
          pass
        class D:
          pass
-      |})
-  |> ignore;
+      |});
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+  in
+  let _ =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(ScratchProject.configuration_of project)
+      (Reference.Set.singleton (Reference.create "test"))
+  in
   let assert_edge ~predecessor ~successor =
     let predecessor_index = IndexTracker.index predecessor in
     let successor_index = IndexTracker.index successor in
@@ -512,7 +506,7 @@ let test_connect_definition context =
          { ClassHierarchy.Target.target = predecessor_index; parameters = Concrete [] })
   in
   let class_definition =
-    +{ Class.name = !&"C"; bases = []; body = []; decorators = []; docstring = None }
+    +{ Class.name = !&"test.C"; bases = []; body = []; decorators = []; docstring = None }
   in
   Environment.connect_definition environment ~resolution ~definition:class_definition;
   let definition = +Test.parse_single_class {|
@@ -605,11 +599,16 @@ let test_register_globals context =
 
 
 let test_connect_type_order context =
-  let environment = create_environment ~context ~include_helpers:false () in
+  let environment, ast_environment, project =
+    create_environments_and_project ~context ~include_helpers:false ()
+  in
   let resolution = Environment.resolution environment () in
-  let source =
-    parse
-      {|
+  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
+  AstEnvironment.add_source
+    ast_environment
+    (parse
+       ~handle:"test.py"
+       {|
        class C:
          ...
        class D(C):
@@ -621,12 +620,36 @@ let test_connect_type_order context =
        A = B
        def foo() -> A:
          return D()
-    |}
-  in
+        |});
   let order = class_hierarchy environment in
-  let all_annotations = Environment.register_class_definitions environment source |> Set.to_list in
-  Environment.register_aliases environment [source];
-  Environment.connect_type_order environment resolution source;
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+  in
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(ScratchProject.configuration_of project)
+      (Reference.Set.singleton (Reference.create "test"))
+  in
+  let all_annotations =
+    UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result |> Set.to_list
+  in
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.read_only unannotated_global_environment
+  in
+  Environment.register_aliases
+    environment
+    [ ( AstEnvironment.get_source ast_environment (Reference.create "test")
+      |> fun option -> Option.value_exn option ) ];
+  let connect annotation =
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      unannotated_global_environment
+      annotation
+    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
+    |> Option.iter ~f:Fn.id
+  in
+  List.iter ~f:connect all_annotations;
   let assert_successors annotation successors =
     assert_equal
       ~printer:(List.to_string ~f:Type.Primitive.show)
@@ -636,7 +659,7 @@ let test_connect_type_order context =
   (* Classes get connected to object via `connect_annotations_to_top`. *)
   assert_successors "C" [];
   assert_successors "D" ["C"];
-  Environment.connect_annotations_to_object all_annotations;
+  Environment.connect_annotations_to_object environment all_annotations;
   assert_successors "C" ["object"];
   assert_successors "D" ["C"; "object"];
   assert_successors "CallMe" ["typing.Callable"; "object"]
@@ -663,7 +686,6 @@ let test_populate context =
 
   (* Check custom class definitions. *)
   let global_resolution = Environment.resolution environment () in
-  assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "None"));
   assert_is_some
     (GlobalResolution.class_definition global_resolution (Primitive "typing.Optional"));
 
@@ -1217,7 +1239,7 @@ let test_import_dependencies context =
   assert_equal (dependencies "subdirectory.b") (Some ["test"]);
   assert_equal (dependencies "a") (Some ["test"]);
   assert_equal (dependencies "") (Some ["test"]);
-  assert_equal (dependencies "sys") (Some ["test"])
+  assert_equal (dependencies "sys") (Some ["numbers"; "test"])
 
 
 let test_register_dependencies context =
@@ -1240,6 +1262,20 @@ let test_register_dependencies context =
 
 
 let test_purge context =
+  let assert_type_errors = Test.assert_errors ~check:Analysis.TypeCheck.run ~debug:true in
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def expects_any(input: object) -> None: ...
+      def expects_string(inut: str) -> None: ...
+      def foo(input: T) -> None:
+        expects_any(input)
+        expects_string(input)
+    |}
+    [ "Incompatible parameter type [6]: "
+      ^ "Expected `str` for 1st anonymous parameter to call `expects_string` but got `Variable[T]`."
+    ];
   let source =
     {|
       import a
@@ -1250,8 +1286,13 @@ let test_purge context =
       def foo(): pass
     |}
   in
-  let handler =
-    populate ~include_typeshed_stubs:false ~include_helpers:false ~context ["test.py", source]
+  let handler, ast_environment, project =
+    create_environments_and_project
+      ~include_typeshed_stubs:false
+      ~include_helpers:false
+      ~context
+      ~additional_sources:["test.py", source; "module.py", ""; "baz.py", ""]
+      ()
   in
   let global_resolution = Environment.resolution handler () in
   assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
@@ -1265,15 +1306,21 @@ let test_purge context =
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_true (GlobalResolution.is_tracked global_resolution "test.P");
-  Environment.check_class_hierarchy_integrity ();
-  Environment.purge handler [Reference.create "test"];
-  assert_is_none (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
+  Environment.check_class_hierarchy_integrity handler;
+  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      (UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment))
+      ~scheduler:(Scheduler.mock ())
+      ~configuration:(ScratchProject.configuration_of project)
+      (Reference.Set.singleton (Reference.create "test"))
+  in
+  Environment.purge handler [Reference.create "test"] ~update_result;
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_is_none (GlobalResolution.aliases global_resolution "test._T");
-  assert_false (GlobalResolution.is_tracked global_resolution "test.P");
   assert_equal (dependencies "a.py") (Some []);
-  Environment.check_class_hierarchy_integrity ();
+  Environment.check_class_hierarchy_integrity handler;
   ()
 
 
@@ -1318,12 +1365,25 @@ let test_purge_hierarchy context =
     let index = IndexTracker.index annotation in
     assert_equal (Handler.edges index, Handler.backedges index) (None, None)
   in
+  let purge qualifiers ~handler =
+    let unannotated_global_environment =
+      UnannotatedGlobalEnvironment.create (Environment.ast_environment handler)
+    in
+    let update_result =
+      UnannotatedGlobalEnvironment.update
+        unannotated_global_environment
+        ~scheduler:(mock_scheduler ())
+        ~configuration:(Configuration.Analysis.create ())
+        (Reference.Set.of_list qualifiers)
+    in
+    Environment.purge handler qualifiers ~update_result
+  in
   let () =
     let handler = order () in
     let (module Handler) = class_hierarchy handler in
     let index key = IndexTracker.index key in
     let one_index = index "One.One" in
-    Environment.purge handler [Reference.create "One"];
+    purge [Reference.create "One"] ~handler;
     assert_node_completely_deleted (module Handler) "One.One";
     assert_backedges_equal (find_unsafe Handler.backedges (index "Two.Two")) [];
     assert_equal
@@ -1334,7 +1394,7 @@ let test_purge_hierarchy context =
     let handler = order () in
     let (module Handler) = class_hierarchy handler in
     let index key = IndexTracker.index key in
-    Environment.purge handler [Reference.create "A"];
+    purge [Reference.create "A"] ~handler;
     assert_node_completely_deleted (module Handler) "A.a";
     assert_backedges_equal
       (find_unsafe Handler.backedges (index "One.One"))
@@ -1344,7 +1404,7 @@ let test_purge_hierarchy context =
     let handler = order () in
     let (module Handler) = class_hierarchy handler in
     let index key = IndexTracker.index key in
-    Environment.purge handler [Reference.create "B"];
+    purge ~handler [Reference.create "B"];
     assert_node_completely_deleted (module Handler) "B.b";
     assert_backedges_equal
       (find_unsafe Handler.backedges (index "One.One"))
@@ -1354,7 +1414,7 @@ let test_purge_hierarchy context =
     let handler = order () in
     let (module Handler) = class_hierarchy handler in
     let index key = IndexTracker.index key in
-    Environment.purge handler [Reference.create "A"; Reference.create "B"];
+    purge ~handler [Reference.create "A"; Reference.create "B"];
     assert_node_completely_deleted (module Handler) "A.a";
     assert_node_completely_deleted (module Handler) "B.b";
     assert_backedges_equal (find_unsafe Handler.backedges (index "One.One")) []
@@ -1442,8 +1502,8 @@ let test_propagate_nested_classes context =
 
 
 let test_default_class_hierarchy context =
-  let order, _ = order_and_environment ~context [] in
-  Environment.fill_shared_memory_with_default_typeorder ();
+  let order, environment = order_and_environment ~context [] in
+  Environment.fill_shared_memory_with_default_typeorder environment;
   let open TypeOrder in
   let less_or_equal = always_less_or_equal in
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Bottom);
@@ -1456,7 +1516,6 @@ let test_default_class_hierarchy context =
   let assert_has_special_form primitive_name =
     assert_true (ClassHierarchy.contains order.handler primitive_name)
   in
-  assert_has_special_form "typing.Tuple";
   assert_has_special_form "typing.Generic";
   assert_has_special_form "typing.Protocol";
   assert_has_special_form "typing.Callable";
@@ -1513,10 +1572,13 @@ let test_connect_annotations_to_top context =
   (*  0 - 2                *)
   (*  |                    *)
   (*  1   object           *)
-  let environment = create_environment ~context () in
-  let source =
-    parse
-      {|
+  let environment, ast_environment, project = create_environments_and_project ~context () in
+  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
+  AstEnvironment.add_source
+    ast_environment
+    ( parse
+        ~handle:"test.py"
+        {|
        class One:
          pass
        class Two:
@@ -1524,28 +1586,49 @@ let test_connect_annotations_to_top context =
        class Zero(Two, One):
          pass
     |}
+    |> Preprocessing.preprocess );
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
-  Environment.register_class_definitions environment source |> ignore;
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(ScratchProject.configuration_of project)
+      (Reference.Set.singleton (Reference.create "test"))
+  in
+  Environment.purge environment [Reference.create "test"] ~update_result;
   let resolution = Environment.resolution environment () in
-  Environment.connect_type_order environment resolution source;
+  let connect annotation =
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+      annotation
+    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
+    |> Option.iter ~f:Fn.id
+  in
+  Set.iter ~f:connect (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result);
   let order = class_hierarchy environment in
-  assert_false (ClassHierarchy.least_upper_bound order "One" "Two" = ["object"]);
-  assert_false (ClassHierarchy.greatest_lower_bound order "One" "object" = ["One"]);
+  assert_false (ClassHierarchy.least_upper_bound order "test.One" "test.Two" = ["object"]);
+  assert_false (ClassHierarchy.greatest_lower_bound order "test.One" "object" = ["test.One"]);
 
-  Environment.connect_annotations_to_object ["One"; "Two"; "Zero"; "object"];
+  Environment.connect_annotations_to_object
+    environment
+    ["test.One"; "test.Two"; "test.Zero"; "object"];
 
-  assert_equal (ClassHierarchy.least_upper_bound order "One" "Two") ["object"];
+  assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"];
 
   (* Ensure that the backedge gets added as well *)
-  assert_equal (ClassHierarchy.greatest_lower_bound order "One" "object") ["One"]
+  assert_equal (ClassHierarchy.greatest_lower_bound order "test.One" "object") ["test.One"]
 
 
 let test_deduplicate context =
-  let environment = create_environment ~context () in
-  let source =
-    parse
-      ~handle:"test.py"
-      {|
+  let environment, ast_environment, project = create_environments_and_project ~context () in
+  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
+  AstEnvironment.add_source
+    ast_environment
+    ( parse
+        ~handle:"test.py"
+        {|
        class One:
          pass
        class Zero(One[int, int]):
@@ -1553,11 +1636,27 @@ let test_deduplicate context =
        class Zero(One[int]):
          pass
     |}
-    |> Preprocessing.preprocess
+    |> Preprocessing.preprocess );
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
-  Environment.register_class_definitions environment source |> ignore;
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(ScratchProject.configuration_of project)
+      (Reference.Set.singleton (Reference.create "test"))
+  in
+  Environment.purge environment [Reference.create "test"] ~update_result;
   let resolution = Environment.resolution environment () in
-  Environment.connect_type_order environment resolution source;
+  let connect annotation =
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+      annotation
+    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
+    |> Option.iter ~f:Fn.id
+  in
+  Set.iter ~f:connect (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result);
   Environment.deduplicate_class_hierarchy ~annotations:["test.One"; "test.Zero"];
   let (module Handler) = class_hierarchy environment in
   let index_of annotation = IndexTracker.index annotation in
@@ -1581,7 +1680,6 @@ let test_deduplicate context =
     "test.Zero"
     [Type.integer]
     (fun target -> ClassHierarchy.Target.Set.of_list [target]);
-  Environment.purge environment [Reference.create "test"];
   ()
 
 
@@ -1589,11 +1687,13 @@ let test_remove_extra_edges_to_object context =
   (*0 -> 1 -> 2 -> object*)
   (*|----^         ^     *)
   (*|--------------^     *)
-  let environment = create_environment ~context () in
-  let source =
-    parse
-      ~handle:"test.py"
-      {|
+  let environment, ast_environment, project = create_environments_and_project ~context () in
+  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
+  AstEnvironment.add_source
+    ast_environment
+    ( parse
+        ~handle:"test.py"
+        {|
        class Two(object):
          pass
        class One(Two):
@@ -1601,11 +1701,27 @@ let test_remove_extra_edges_to_object context =
        class Zero(One, object):
          pass
     |}
-    |> Preprocessing.preprocess
+    |> Preprocessing.preprocess );
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
-  Environment.register_class_definitions environment source |> ignore;
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(ScratchProject.configuration_of project)
+      (Reference.Set.singleton (Reference.create "test"))
+  in
+  Environment.purge environment [] ~update_result;
   let resolution = Environment.resolution environment () in
-  Environment.connect_type_order environment resolution source;
+  let connect annotation =
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+      annotation
+    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
+    |> Option.iter ~f:Fn.id
+  in
+  Set.iter ~f:connect (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result);
   Environment.remove_extra_edges_to_object ["test.Zero"; "test.One"; "test.Two"; "object"];
   let (module Handler) = class_hierarchy environment in
   let zero_index = IndexTracker.index "test.Zero" in
@@ -1631,8 +1747,8 @@ let test_remove_extra_edges_to_object context =
 
 let test_update_and_compute_dependencies context =
   (* Pre-test setup *)
-  let environment, project =
-    create_environment_and_project
+  let environment, ast_environment, project =
+    create_environments_and_project
       ~context
       ~additional_sources:
         [ "source.py", {|
@@ -1653,15 +1769,15 @@ let test_update_and_compute_dependencies context =
   let dependency_tracked_global_resolution_B =
     Environment.dependency_tracked_resolution environment ~dependency:dependency_B ()
   in
+  let edges resolution annotation =
+    let (module ClassHierarchy) = GlobalResolution.class_hierarchy resolution in
+    ClassHierarchy.edges (IndexTracker.index annotation)
+  in
   (* A read Foo *)
-  GlobalResolution.class_definition dependency_tracked_global_resolution_A (Primitive "source.Foo")
-  |> Option.is_some
-  |> assert_true;
+  edges dependency_tracked_global_resolution_A "source.Foo" |> Option.is_some |> assert_true;
 
   (* B read Bar *)
-  GlobalResolution.class_definition dependency_tracked_global_resolution_B (Primitive "other.Bar")
-  |> Option.is_some
-  |> assert_true;
+  edges dependency_tracked_global_resolution_B "other.Bar" |> Option.is_some |> assert_true;
 
   let assert_update
       ~repopulate_source_to
@@ -1669,27 +1785,48 @@ let test_update_and_compute_dependencies context =
       ~expected_state_after_update
       ~expected_dependencies
     =
-    let repopulate source =
-      let source = Test.parse ~handle:"source.py" source |> Preprocessing.preprocess in
+    let repopulate source ~update_result ~unannotated_global_environment =
       Service.Environment.populate
         ~configuration:(ScratchProject.configuration_of project)
         ~scheduler:(Test.mock_scheduler ())
+        ~update_result
         environment
+        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
         [source]
     in
     let assert_state (primitive, expected) =
-      GlobalResolution.class_definition untracked_global_resolution (Primitive primitive)
-      |> Option.is_some
-      |> assert_equal expected
+      edges untracked_global_resolution primitive |> Option.is_some |> assert_equal expected
     in
     let (), dependents =
+      let source =
+        Option.value repopulate_source_to ~default:""
+        |> Test.parse ~handle:"source.py"
+        |> Preprocessing.preprocess
+      in
+      AstEnvironment.remove_sources ast_environment [Reference.create "source"];
+      AstEnvironment.add_source ast_environment source;
+      let unannotated_global_environment =
+        UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+      in
+      let update_result =
+        UnannotatedGlobalEnvironment.update
+          unannotated_global_environment
+          ~scheduler:(mock_scheduler ())
+          ~configuration:(ScratchProject.configuration_of project)
+          (Reference.Set.singleton (Reference.create "source"))
+      in
       let update () =
         List.iter expected_state_in_update ~f:assert_state;
-        Option.iter repopulate_source_to ~f:repopulate
+        repopulate source ~update_result ~unannotated_global_environment
       in
-      Environment.update_and_compute_dependencies environment [Reference.create "source"] ~update
+      Environment.update_and_compute_dependencies
+        environment
+        [Reference.create "source"]
+        ~update
+        ~update_result
     in
     assert_equal
+      ~printer:(List.to_string ~f:Reference.show)
       (SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements dependents)
       expected_dependencies;
     List.iter expected_state_after_update ~f:assert_state
@@ -1718,7 +1855,7 @@ let test_update_and_compute_dependencies context =
   (* Removes source, but replaced it with something new, triggers dependency *)
   assert_update
     ~repopulate_source_to:(Some {|
-      class Foo:
+      class Foo(str):
         x: int
       |})
     ~expected_state_in_update:["source.Foo", false]
@@ -1729,7 +1866,7 @@ let test_update_and_compute_dependencies context =
   assert_update
     ~repopulate_source_to:
       (Some {|
-      class Foo:
+      class Foo(str):
         x: int
       class Irrelevant:
         x: str
@@ -1755,7 +1892,6 @@ let () =
          "purge" >:: test_purge;
          "register_class_metadata" >:: test_register_class_metadata;
          "register_aliases" >:: test_register_aliases;
-         "register_class_definitions" >:: test_register_class_definitions;
          "register_dependencies" >:: test_register_dependencies;
          "register_globals" >:: test_register_globals;
          "register_implicit_submodules" >:: test_register_implicit_submodules;

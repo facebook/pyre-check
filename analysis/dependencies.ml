@@ -24,8 +24,6 @@ type t = {
 module type Handler = sig
   val add_function_key : qualifier:Reference.t -> Reference.t -> unit
 
-  val add_class_key : qualifier:Reference.t -> Identifier.t -> unit
-
   val add_alias_key : qualifier:Reference.t -> Identifier.t -> unit
 
   val add_global_key : qualifier:Reference.t -> Reference.t -> unit
@@ -37,8 +35,6 @@ module type Handler = sig
   val dependents : Reference.t -> Reference.Set.Tree.t option
 
   val get_function_keys : qualifier:Reference.t -> Reference.t list
-
-  val get_class_keys : qualifier:Reference.t -> Identifier.t list
 
   val get_alias_keys : qualifier:Reference.t -> Identifier.t list
 
@@ -59,13 +55,6 @@ let handler
       match Hashtbl.find function_keys qualifier with
       | None -> Hashtbl.set function_keys ~key:qualifier ~data:(Reference.Hash_set.of_list [name])
       | Some hash_set -> Hash_set.add hash_set name
-
-
-    let add_class_key ~qualifier class_type =
-      match Hashtbl.find class_keys qualifier with
-      | None ->
-          Hashtbl.set class_keys ~key:qualifier ~data:(Identifier.Hash_set.of_list [class_type])
-      | Some hash_set -> Hash_set.add hash_set class_type
 
 
     let add_alias_key ~qualifier alias =
@@ -103,10 +92,6 @@ let handler
 
     let get_function_keys ~qualifier =
       Hashtbl.find function_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
-
-
-    let get_class_keys ~qualifier =
-      Hashtbl.find class_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
 
 
     let get_alias_keys ~qualifier =

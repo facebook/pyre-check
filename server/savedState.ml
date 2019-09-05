@@ -207,8 +207,12 @@ let load
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
   let module_tracker = ModuleTracker.SharedMemory.load () in
   let ast_environment = AstEnvironment.load module_tracker in
+  let pre_environment =
+    Analysis.UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+  in
   let environment =
-    Analysis.Environment.shared_memory_handler (AstEnvironment.read_only ast_environment)
+    Analysis.Environment.shared_memory_handler
+      (Analysis.UnannotatedGlobalEnvironment.read_only pre_environment)
   in
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then

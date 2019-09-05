@@ -667,7 +667,7 @@ let process_type_query_request
         in
         TypeQuery.Response (TypeQuery.References dependencies)
     | TypeQuery.DumpClassHierarchy ->
-        let all_classes = Environment.class_hierarchy_json () in
+        let all_classes = Environment.class_hierarchy_json environment in
         TypeQuery.Response (TypeQuery.ClassHierarchy all_classes)
     | TypeQuery.DumpDependencies path ->
         let () =

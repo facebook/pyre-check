@@ -83,33 +83,42 @@ let recheck
   (* Repopulate the environment. *)
   let invalidated_environment_qualifiers =
     match incremental_style with
-    | FineGrained -> invalidated_environment_qualifiers
+    | FineGrained -> Reference.Set.of_list invalidated_environment_qualifiers
     | Shallow ->
         Dependencies.of_list
           ~modules:invalidated_environment_qualifiers
           ~get_dependencies:(Environment.dependencies environment)
         |> Reference.Set.union (Reference.Set.of_list invalidated_environment_qualifiers)
-        |> Reference.Set.to_list
     | Transitive ->
         Dependencies.transitive_of_list
           ~modules:invalidated_environment_qualifiers
           ~get_dependencies:(Environment.dependencies environment)
         |> Reference.Set.union (Reference.Set.of_list invalidated_environment_qualifiers)
-        |> Reference.Set.to_list
   in
   Log.info
     "Repopulating the environment for %d modules."
-    (List.length invalidated_environment_qualifiers);
+    (Set.length invalidated_environment_qualifiers);
   StatusUpdate.warning
     ~message:"Repopulating the environment"
     ~short_message:(Some "[Repopulating]")
     ~state;
-  let re_environment_build_sources =
-    List.filter_map
-      invalidated_environment_qualifiers
-      ~f:(AstEnvironment.get_source ast_environment)
-  in
   let recheck_modules, recheck_sources =
+    let pre_environment =
+      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+    in
+    let update_result =
+      UnannotatedGlobalEnvironment.update
+        pre_environment
+        ~scheduler:(Scheduler.mock ())
+        ~configuration
+        invalidated_environment_qualifiers
+    in
+    let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
+    let re_environment_build_sources =
+      List.filter_map
+        invalidated_environment_qualifiers
+        ~f:(AstEnvironment.get_source ast_environment)
+    in
     match incremental_style with
     | FineGrained ->
         let (), invalidated_type_checking_keys =
@@ -117,15 +126,23 @@ let recheck
             Service.Environment.populate
               ~configuration
               ~scheduler
+              ~update_result
               environment
+              (UnannotatedGlobalEnvironment.read_only pre_environment)
               re_environment_build_sources;
             if debug then
-              Analysis.Environment.check_class_hierarchy_integrity ()
+              Analysis.Environment.check_class_hierarchy_integrity environment
           in
           Analysis.Environment.update_and_compute_dependencies
             environment
             invalidated_environment_qualifiers
             ~update
+            ~update_result
+        in
+        let invalidated_type_checking_keys =
+          SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
+            (UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies update_result)
+            invalidated_type_checking_keys
         in
         let invalidated_type_checking_keys =
           List.fold
@@ -147,11 +164,17 @@ let recheck
         recheck_modules, recheck_sources
     | _ ->
         let () =
-          Analysis.Environment.purge environment ~debug invalidated_environment_qualifiers;
+          Analysis.Environment.purge
+            environment
+            ~debug
+            invalidated_environment_qualifiers
+            ~update_result;
           Service.Environment.populate
             ~configuration
             ~scheduler
+            ~update_result
             environment
+            (UnannotatedGlobalEnvironment.read_only pre_environment)
             re_environment_build_sources
         in
         invalidated_environment_qualifiers, re_environment_build_sources
@@ -191,7 +214,7 @@ let recheck
     ~integers:
       [ "number of changed files", List.length paths;
         "number of module tracker updates", List.length module_updates;
-        "number of parser updates", List.length invalidated_environment_qualifiers;
+        "number of parser updates", Set.length invalidated_environment_qualifiers;
         "number of environment builder updates", List.length recheck_sources;
         ( "number of re-checked functions",
           List.sum (module Int) ~f:Preprocessing.count_defines recheck_sources ) ]

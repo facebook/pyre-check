@@ -133,6 +133,8 @@ let create
       let edges = edges
 
       let backedges key = backedges key >>| ClassHierarchy.Target.Set.of_tree
+
+      let contains key = class_definition key |> Option.is_some
     end : ClassHierarchy.Handler )
   in
   {

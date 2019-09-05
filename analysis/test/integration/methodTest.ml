@@ -163,7 +163,7 @@ let test_check_method_parameters context =
       import typing
       _T = typing.TypeVar('_T')
 
-      class EnumMeta:
+      class EnumMeta(type):
           def __getitem__(self: typing.Type[_T], name: str) -> _T: ...
 
       class Enum(metaclass=EnumMeta): ...

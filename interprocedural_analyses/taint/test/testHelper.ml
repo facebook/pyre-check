@@ -39,17 +39,18 @@ type expectation = {
   obscure: bool option;
 }
 
-let populate ~configuration environment sources =
+let populate ~configuration environment unannotated_global_environment sources ~update_result =
   let qualifiers = sources |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
-  Environment.purge environment qualifiers;
-  Environment.fill_shared_memory_with_default_typeorder ();
-  Environment.add_special_classes environment;
+  Environment.purge environment qualifiers ~update_result;
+  Environment.fill_shared_memory_with_default_typeorder environment;
   Environment.add_dummy_modules environment;
   Environment.add_special_globals environment;
   Service.Environment.populate
     ~configuration
     ~scheduler:(Test.mock_scheduler ())
+    ~update_result
     environment
+    unannotated_global_environment
     sources
 
 
@@ -59,8 +60,20 @@ let environment
     ?(ast_environment = AstEnvironment.ReadOnly.create ())
     ()
   =
-  let environment = Environment.shared_memory_handler ast_environment in
-  populate ~configuration environment sources;
+  let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
+  let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(Scheduler.mock ())
+      ~configuration
+      (Reference.Set.of_list qualifiers)
+  in
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.read_only unannotated_global_environment
+  in
+  let environment = Environment.shared_memory_handler unannotated_global_environment in
+  populate ~configuration ~update_result environment unannotated_global_environment sources;
   environment
 
 

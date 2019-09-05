@@ -90,15 +90,15 @@ module type Handler = sig
   val edges : IndexTracker.t -> Target.t list option
 
   val backedges : IndexTracker.t -> Target.Set.t option
+
+  val contains : Type.Primitive.t -> bool
 end
 
 let find_unsafe lookup key = lookup key |> fun option -> Option.value_exn option
 
 let index_of annotation = IndexTracker.index annotation
 
-let contains (module Handler : Handler) annotation =
-  Handler.edges (IndexTracker.index annotation) |> Option.is_some
-
+let contains (module Handler : Handler) = Handler.contains
 
 let is_instantiated (module Handler : Handler) annotation =
   let is_invalid = function

@@ -9,7 +9,7 @@ open Expression
 open Pyre
 open Statement
 
-type t = { ast_environment: AstEnvironment.ReadOnly.t }
+type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly.t }
 
 module UnresolvedAlias = struct
   type t = {
@@ -52,16 +52,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module ClassKeyValue = struct
-    type t = Identifier.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Class keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
   module DependentKeyValue = struct
     type t = Reference.t list
 
@@ -70,18 +60,6 @@ module SharedMemory = struct
     let description = "Dependent keys"
 
     let unmarshall value = Marshal.from_string value 0
-  end
-
-  module ClassValue = struct
-    type t = Class.t Node.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Class"
-
-    let unmarshall value = Marshal.from_string value 0
-
-    let compare = Node.compare Class.compare
   end
 
   module ClassMetadataValue = struct
@@ -182,11 +160,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module ClassDefinitions =
-    Memory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.StringKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (ClassValue)
   (** Shared memory maps *)
 
   module Modules =
@@ -219,7 +192,6 @@ module SharedMemory = struct
   module FunctionKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (FunctionKeyValue)
   (** Keys *)
 
-  module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
   module GlobalKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (GlobalKeyValue)
   module AliasKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (AliasKeyValue)
   module DependentKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentKeyValue)
@@ -257,33 +229,6 @@ module SharedMemoryClassHierarchyHandler = struct
     OrderBackedges.add key value
 
 
-  let add_key key =
-    match OrderKeys.get Memory.SingletonKey.key with
-    | None -> OrderKeys.add Memory.SingletonKey.key [key]
-    | Some keys ->
-        OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
-        OrderKeys.add Memory.SingletonKey.key (key :: keys)
-
-
-  let keys () = Option.value ~default:[] (OrderKeys.get Memory.SingletonKey.key)
-
-  let remove_keys removed =
-    match OrderKeys.get Memory.SingletonKey.key with
-    | None -> ()
-    | Some keys ->
-        OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
-        let remaining = OrderEdges.KeySet.diff (OrderEdges.KeySet.of_list keys) removed in
-        OrderKeys.add Memory.SingletonKey.key (OrderEdges.KeySet.elements remaining)
-
-
-  let insert annotation =
-    let index = IndexTracker.index annotation in
-    if edges index |> Option.is_none then (
-      add_key index;
-      set_edges ~key:index ~data:[];
-      set_backedges ~key:index ~data:ClassHierarchy.Target.Set.empty )
-
-
   let connect ?(parameters = Type.OrderedTypes.Concrete []) ~predecessor ~successor =
     let index_of annotation = IndexTracker.index annotation in
     let predecessor = index_of predecessor in
@@ -303,10 +248,7 @@ module SharedMemoryClassHierarchyHandler = struct
       ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
 
 
-  let disconnect_backedges purged_annotations =
-    let keys_to_remove =
-      List.map purged_annotations ~f:IndexTracker.index |> IndexTracker.Hash_set.of_list
-    in
+  let disconnect_backedges purged_indices =
     let all_successors =
       let all_successors = IndexTracker.Hash_set.create () in
       let add_successors key =
@@ -316,7 +258,7 @@ module SharedMemoryClassHierarchyHandler = struct
                 Hash_set.add all_successors target)
         | None -> ()
       in
-      Hash_set.iter keys_to_remove ~f:add_successors;
+      IndexTracker.Set.iter purged_indices ~f:add_successors;
       all_successors
     in
     let remove_backedges successor =
@@ -325,7 +267,7 @@ module SharedMemoryClassHierarchyHandler = struct
             let new_predecessors =
               Set.filter
                 ~f:(fun { ClassHierarchy.Target.target; _ } ->
-                  not (Hash_set.mem keys_to_remove target))
+                  not (IndexTracker.Set.mem purged_indices target))
                 current_predecessors
             in
             set_backedges ~key:successor ~data:new_predecessors)
@@ -407,10 +349,6 @@ module SharedMemoryDependencyHandler = struct
     add_new_key ~qualifier ~key:reference ~get:FunctionKeys.get ~add:FunctionKeys.add
 
 
-  let add_class_key ~qualifier class_type =
-    add_new_key ~qualifier ~key:class_type ~get:ClassKeys.get ~add:ClassKeys.add
-
-
   let add_alias_key ~qualifier alias =
     add_new_key ~qualifier ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
 
@@ -431,8 +369,6 @@ module SharedMemoryDependencyHandler = struct
 
 
   let get_function_keys ~qualifier = FunctionKeys.get qualifier |> Option.value ~default:[]
-
-  let get_class_keys ~qualifier = ClassKeys.get qualifier |> Option.value ~default:[]
 
   let get_alias_keys ~qualifier = AliasKeys.get qualifier |> Option.value ~default:[]
 
@@ -458,7 +394,6 @@ module SharedMemoryDependencyHandler = struct
 
   let clear_keys_batch qualifiers =
     FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list qualifiers);
-    ClassKeys.remove_batch (ClassKeys.KeySet.of_list qualifiers);
     AliasKeys.remove_batch (AliasKeys.KeySet.of_list qualifiers);
     GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list qualifiers);
     DependentKeys.remove_batch (DependentKeys.KeySet.of_list qualifiers)
@@ -472,11 +407,6 @@ module SharedMemoryDependencyHandler = struct
       | Some keys ->
           FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton qualifier);
           FunctionKeys.add qualifier (List.dedup_and_sort ~compare:Reference.compare keys)
-      | None -> () );
-      ( match ClassKeys.get qualifier with
-      | Some keys ->
-          ClassKeys.remove_batch (ClassKeys.KeySet.singleton qualifier);
-          ClassKeys.add qualifier (List.dedup_and_sort ~compare:Identifier.compare keys)
       | None -> () );
       ( match AliasKeys.get qualifier with
       | Some keys ->
@@ -513,18 +443,12 @@ module SharedMemoryDependencyHandler = struct
   type table_keys = {
     aliases: SharedMemory.Aliases.KeySet.t;
     modules: SharedMemory.Modules.KeySet.t;
-    class_definitions: SharedMemory.ClassDefinitions.KeySet.t;
-    class_metadata: SharedMemory.ClassMetadata.KeySet.t;
     undecorated_signatures: SharedMemory.UndecoratedFunctions.KeySet.t;
     globals: SharedMemory.Globals.KeySet.t;
-    edges: SharedMemory.OrderEdges.KeySet.t;
-    backedges: SharedMemory.OrderBackedges.KeySet.t;
   }
 
   let get_all_dependent_table_keys qualifiers =
     let alias_keys = List.concat_map ~f:(fun qualifier -> get_alias_keys ~qualifier) qualifiers in
-    let class_keys = List.concat_map ~f:(fun qualifier -> get_class_keys ~qualifier) qualifiers in
-    let index_keys = List.map class_keys ~f:IndexTracker.index in
     let global_keys =
       List.concat_map ~f:(fun qualifier -> get_global_keys ~qualifier) qualifiers
     in
@@ -535,13 +459,9 @@ module SharedMemoryDependencyHandler = struct
     {
       aliases = Aliases.KeySet.of_list alias_keys;
       modules = Modules.KeySet.of_list qualifiers;
-      class_definitions = ClassDefinitions.KeySet.of_list class_keys;
-      class_metadata = ClassMetadata.KeySet.of_list class_keys;
       undecorated_signatures = UndecoratedFunctions.KeySet.of_list global_keys;
       (* We add a global name for each function definition as well. *)
       globals = Globals.KeySet.of_list (global_keys @ function_keys);
-      edges = OrderEdges.KeySet.of_list index_keys;
-      backedges = OrderBackedges.KeySet.of_list index_keys;
     }
 
 
@@ -550,16 +470,11 @@ module SharedMemoryDependencyHandler = struct
     {
       aliases = Aliases.KeySet.diff new_keys.aliases old_keys.aliases;
       modules = Modules.KeySet.diff new_keys.modules old_keys.modules;
-      class_definitions =
-        ClassDefinitions.KeySet.diff new_keys.class_definitions old_keys.class_definitions;
-      class_metadata = ClassMetadata.KeySet.diff new_keys.class_metadata old_keys.class_metadata;
       undecorated_signatures =
         UndecoratedFunctions.KeySet.diff
           new_keys.undecorated_signatures
           old_keys.undecorated_signatures;
       globals = Globals.KeySet.diff new_keys.globals old_keys.globals;
-      edges = OrderEdges.KeySet.diff new_keys.edges old_keys.edges;
-      backedges = OrderBackedges.KeySet.diff new_keys.backedges old_keys.backedges;
     }
 end
 
@@ -580,7 +495,20 @@ module ResolvedAlias = struct
     register_alias environment ~qualifier ~key:name ~data:annotation
 end
 
-let connect_annotations_to_object annotations =
+let untracked_class_hierarchy_handler { unannotated_global_environment; _ } =
+  ( module struct
+    let edges = SharedMemory.OrderEdges.get ?dependency:None
+
+    let backedges key = SharedMemory.OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree
+
+    let contains =
+      UnannotatedGlobalEnvironment.ReadOnly.class_exists
+        ?dependency:None
+        unannotated_global_environment
+  end : ClassHierarchy.Handler )
+
+
+let connect_annotations_to_object environment annotations =
   let connect_to_top annotation =
     let index = IndexTracker.index annotation in
     let annotation = IndexTracker.annotation index in
@@ -588,7 +516,7 @@ let connect_annotations_to_object annotations =
     if
       not
         (ClassHierarchy.is_transitive_successor
-           (module SharedMemoryClassHierarchyHandler)
+           (untracked_class_hierarchy_handler environment)
            ~source:object_primitive
            ~target:annotation)
     then
@@ -603,21 +531,28 @@ let connect_annotations_to_object annotations =
   List.iter ~f:connect_to_top annotations
 
 
-let module_definition ?dependency { ast_environment } reference =
+let module_definition ?dependency { unannotated_global_environment; _ } reference =
   match SharedMemory.Modules.get ?dependency reference with
   | Some _ as result -> result
   | None -> (
-    match AstEnvironment.ReadOnly.is_module ast_environment reference with
-    | true -> Some (Module.create_implicit ())
-    | false -> None )
+      let ast_environment =
+        UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
+      in
+      match AstEnvironment.ReadOnly.is_module ast_environment reference with
+      | true -> Some (Module.create_implicit ())
+      | false -> None )
 
 
-let resolution_implementation ?dependency ({ ast_environment } as environment) () =
+let resolution_implementation ?dependency ({ unannotated_global_environment } as environment) () =
   GlobalResolution.create
-    ~ast_environment
+    ~ast_environment:
+      (UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment)
     ~aliases:(SharedMemory.Aliases.get ?dependency)
     ~module_definition:(module_definition ?dependency environment)
-    ~class_definition:(SharedMemory.ClassDefinitions.get ?dependency)
+    ~class_definition:
+      (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+         unannotated_global_environment
+         ?dependency)
     ~class_metadata:(SharedMemory.ClassMetadata.get ?dependency)
     ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
     ~global:(SharedMemory.Globals.get ?dependency)
@@ -632,10 +567,12 @@ let dependency_tracked_resolution environment ~dependency () =
   resolution_implementation ~dependency environment ()
 
 
-let ast_environment { ast_environment } = ast_environment
+let ast_environment { unannotated_global_environment; _ } =
+  UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
+
 
 let connect_definition
-    _
+    { unannotated_global_environment; _ }
     ~(resolution : GlobalResolution.t)
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
@@ -682,8 +619,10 @@ let connect_definition
               ~normals:["unresolved name", Expression.show value]
               ()
         | Type.Primitive primitive
-          when not (ClassHierarchy.contains (module SharedMemoryClassHierarchyHandler) primitive)
-          ->
+          when not
+                 (UnannotatedGlobalEnvironment.ReadOnly.class_exists
+                    unannotated_global_environment
+                    primitive) ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
         | Type.Primitive supertype ->
             connect ~predecessor:primitive ~successor:supertype ~parameters
@@ -692,29 +631,46 @@ let connect_definition
     | _ -> ()
   in
   let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
-  inferred_base @ bases
+  if not (SharedMemory.OrderBackedges.mem (IndexTracker.index primitive)) then
+    SharedMemoryClassHierarchyHandler.set_backedges
+      ~key:(IndexTracker.index primitive)
+      ~data:ClassHierarchy.Target.Set.empty;
+
   (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
+  inferred_base @ bases
   |> List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
-  |> List.iter ~f:register_supertype
+  |> List.iter ~f:register_supertype;
+  if not (SharedMemory.OrderEdges.mem (IndexTracker.index primitive)) then
+    SharedMemoryClassHierarchyHandler.set_edges ~key:(IndexTracker.index primitive) ~data:[]
 
 
-let register_class_metadata environment class_name =
+let register_class_metadata ({ unannotated_global_environment; _ } as environment) class_name =
   let open SharedMemory in
   let successors =
-    ClassHierarchy.successors (module SharedMemoryClassHierarchyHandler) class_name
+    ClassHierarchy.successors (untracked_class_hierarchy_handler environment) class_name
   in
   let is_final =
-    ClassDefinitions.get class_name
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      unannotated_global_environment
+      class_name
     >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
     |> Option.value ~default:false
   in
   let in_test =
     let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
-    let successor_classes = List.filter_map ~f:ClassDefinitions.get successors in
+    let successor_classes =
+      List.filter_map
+        ~f:
+          (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+             unannotated_global_environment)
+        successors
+    in
     List.exists ~f:is_unit_test successor_classes
   in
   let extends_placeholder_stub_class =
-    ClassDefinitions.get class_name
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      unannotated_global_environment
+      class_name
     >>| Annotated.Class.create
     >>| Annotated.Class.extends_placeholder_stub_class
           ~aliases:SharedMemory.Aliases.get
@@ -724,81 +680,6 @@ let register_class_metadata environment class_name =
   ClassMetadata.add
     class_name
     { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
-
-
-let set_class_definition _ ~name ~definition = SharedMemory.ClassDefinitions.add name definition
-
-let add_special_classes environment =
-  (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
-     the stubs. *)
-  let add_special_class ~name ~bases ~metaclasses ~body =
-    let definition =
-      let create_base annotation =
-        { Expression.Call.Argument.name = None; value = Type.expression annotation }
-      in
-      let create_metaclass annotation =
-        {
-          Expression.Call.Argument.name = Some (Node.create_with_default_location "metaclass");
-          value = Type.expression annotation;
-        }
-      in
-      {
-        Class.name = Reference.create name;
-        bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
-        body;
-        decorators = [];
-        docstring = None;
-      }
-    in
-    set_class_definition
-      ast_environment
-      ~name
-      ~definition:(Node.create_with_default_location definition);
-    SharedMemoryClassHierarchyHandler.insert name;
-    register_class_metadata environment name
-  in
-  let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
-  List.iter
-    ~f:(fun (name, bases, metaclasses, body) -> add_special_class ~name ~bases ~metaclasses ~body)
-    [ "None", [], [], [];
-      "typing.Optional", [], [], [];
-      "typing.Undeclared", [], [], [];
-      "typing.NoReturn", [], [], [];
-      ( "typing.Type",
-        [Type.parametric "typing.Generic" (Concrete [Type.variable "typing._T"])],
-        [],
-        [] );
-      ( "typing.GenericMeta",
-        [],
-        [],
-        [ Statement.Define
-            {
-              signature =
-                {
-                  name = Reference.create "typing.GenericMeta.__getitem__";
-                  parameters =
-                    [ { Parameter.name = "cls"; value = None; annotation = None }
-                      |> Node.create_with_default_location;
-                      { Parameter.name = "arg"; value = None; annotation = None }
-                      |> Node.create_with_default_location ];
-                  decorators = [];
-                  docstring = None;
-                  return_annotation = None;
-                  async = false;
-                  parent = Some (Reference.create "typing.GenericMeta");
-                };
-              body = [];
-            }
-          |> Node.create_with_default_location ] );
-      "typing.Generic", [], [Type.Primitive "typing.GenericMeta"], [];
-      ( "TypedDictionary",
-        [Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Any])],
-        [],
-        Type.TypedDictionary.defines ~t_self_expression ~total:true );
-      ( "NonTotalTypedDictionary",
-        [Type.Primitive "TypedDictionary"],
-        [],
-        Type.TypedDictionary.defines ~t_self_expression ~total:false ) ]
 
 
 let add_dummy_modules _ =
@@ -838,33 +719,10 @@ let register_module _ ({ Source.qualifier; _ } as source) =
   SharedMemory.Modules.add qualifier (Module.create source)
 
 
-let register_class_definitions environment source =
-  let order = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
-  let module Visit = Visit.MakeStatementVisitor (struct
-    type t = Type.Primitive.Set.t
-
-    let visit_children _ = true
-
-    let statement { Source.qualifier; _ } new_annotations = function
-      | { Node.location; value = Statement.Class ({ Class.name; _ } as definition) } ->
-          let name = Reference.show name in
-          let primitive = name in
-          SharedMemoryDependencyHandler.add_class_key ~qualifier name;
-          if not (String.equal name "typing.GenericMeta") then
-            set_class_definition
-              environment
-              ~name
-              ~definition:{ Node.location; value = definition };
-          if not (ClassHierarchy.contains order primitive) then
-            SharedMemoryClassHierarchyHandler.insert primitive;
-          Set.add new_annotations primitive
-      | _ -> new_annotations
-  end)
-  in
-  Visit.visit Type.Primitive.Set.empty source
-
-
-let collect_aliases environment { Source.statements; qualifier; _ } =
+let collect_aliases
+    ({ unannotated_global_environment; _ } as environment)
+    { Source.statements; qualifier; _ }
+  =
   let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
     match value with
     | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
@@ -1033,8 +891,8 @@ let collect_aliases environment { Source.statements; qualifier; _ } =
           (* A module might import T and define a T that shadows it. In this case, we do not want
              to create the alias. *)
           if
-            ClassHierarchy.contains
-              (module SharedMemoryClassHierarchyHandler)
+            UnannotatedGlobalEnvironment.ReadOnly.class_exists
+              unannotated_global_environment
               (Reference.show qualified_name)
           then
             []
@@ -1059,7 +917,7 @@ let collect_aliases environment { Source.statements; qualifier; _ } =
 
 
 let resolve_alias environment { UnresolvedAlias.qualifier; target; value } =
-  let order = (module SharedMemoryClassHierarchyHandler : ClassHierarchy.Handler) in
+  let order = untracked_class_hierarchy_handler environment in
   let target_primitive_name = Reference.show target in
   let value_annotation =
     match Type.create ~aliases:SharedMemory.Aliases.get value with
@@ -1351,21 +1209,6 @@ let register_values
   List.iter ~f:visit statements
 
 
-let connect_type_order environment resolution source =
-  let module Visit = Visit.MakeStatementVisitor (struct
-    type t = unit
-
-    let visit_children _ = true
-
-    let statement _ _ = function
-      | { Node.location; value = Statement.Class definition } ->
-          connect_definition environment ~resolution ~definition:(Node.create ~location definition)
-      | _ -> ()
-  end)
-  in
-  Visit.visit () source |> ignore
-
-
 let register_dependencies _ source =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
@@ -1406,7 +1249,7 @@ let register_dependencies _ source =
   Visit.visit () source
 
 
-let propagate_nested_classes environment source =
+let propagate_nested_classes ({ unannotated_global_environment; _ } as environment) source =
   let propagate ~qualifier ({ Class.name; _ } as definition) successors =
     let nested_class_names { Class.name; body; _ } =
       let extract_classes = function
@@ -1431,7 +1274,10 @@ let propagate_nested_classes environment source =
     in
     let own_nested_classes = nested_class_names definition |> List.map ~f:snd in
     successors
-    |> List.filter_map ~f:SharedMemory.ClassDefinitions.get
+    |> List.filter_map
+         ~f:
+           (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+              unannotated_global_environment)
     |> List.map ~f:Node.value
     |> List.concat_map ~f:nested_class_names
     |> List.fold ~f:create_alias ~init:own_nested_classes
@@ -1453,11 +1299,12 @@ let propagate_nested_classes environment source =
   Visit.visit () source
 
 
-let built_in_annotations =
-  ["TypedDictionary"; "NonTotalTypedDictionary"] |> Type.Primitive.Set.of_list
+let is_module { unannotated_global_environment; _ } =
+  let ast_environment =
+    UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
+  in
+  AstEnvironment.ReadOnly.is_module ast_environment
 
-
-let is_module { ast_environment } = AstEnvironment.ReadOnly.is_module ast_environment
 
 let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate
 
@@ -1472,12 +1319,10 @@ let transaction _ ?(only_global_keys = false) ~f () =
   else (
     Modules.LocalChanges.push_stack ();
     FunctionKeys.LocalChanges.push_stack ();
-    ClassKeys.LocalChanges.push_stack ();
     AliasKeys.LocalChanges.push_stack ();
     GlobalKeys.LocalChanges.push_stack ();
     DependentKeys.LocalChanges.push_stack ();
     Dependents.LocalChanges.push_stack ();
-    ClassDefinitions.LocalChanges.push_stack ();
     ClassMetadata.LocalChanges.push_stack ();
     Aliases.LocalChanges.push_stack ();
     OrderEdges.LocalChanges.push_stack ();
@@ -1490,12 +1335,10 @@ let transaction _ ?(only_global_keys = false) ~f () =
   else (
     Modules.LocalChanges.commit_all ();
     FunctionKeys.LocalChanges.commit_all ();
-    ClassKeys.LocalChanges.commit_all ();
     AliasKeys.LocalChanges.commit_all ();
     GlobalKeys.LocalChanges.commit_all ();
     DependentKeys.LocalChanges.commit_all ();
     Dependents.LocalChanges.commit_all ();
-    ClassDefinitions.LocalChanges.commit_all ();
     ClassMetadata.LocalChanges.commit_all ();
     Globals.LocalChanges.commit_all ();
     Aliases.LocalChanges.commit_all ();
@@ -1507,12 +1350,10 @@ let transaction _ ?(only_global_keys = false) ~f () =
   else (
     Modules.LocalChanges.pop_stack ();
     FunctionKeys.LocalChanges.pop_stack ();
-    ClassKeys.LocalChanges.pop_stack ();
     AliasKeys.LocalChanges.pop_stack ();
     GlobalKeys.LocalChanges.pop_stack ();
     DependentKeys.LocalChanges.pop_stack ();
     Dependents.LocalChanges.pop_stack ();
-    ClassDefinitions.LocalChanges.pop_stack ();
     ClassMetadata.LocalChanges.pop_stack ();
     Globals.LocalChanges.pop_stack ();
     Aliases.LocalChanges.pop_stack ();
@@ -1522,145 +1363,86 @@ let transaction _ ?(only_global_keys = false) ~f () =
   result
 
 
-let fill_shared_memory_with_default_typeorder () =
+let fill_shared_memory_with_default_typeorder _ =
   let object_primitive = "object" in
-  let generic_primitive = "typing.Generic" in
   let integer = "int" in
   let float = "float" in
-  let complex = "complex" in
   let default_annotations =
-    let singleton annotation = [annotation; object_primitive] in
-    [ [object_primitive];
-      (* Special forms *)
-      singleton "typing.Annotated";
-      singleton "typing.Tuple";
-      singleton "typing.NamedTuple";
-      singleton generic_primitive;
-      singleton "typing.GenericMeta";
-      singleton "typing.Protocol";
-      singleton "typing.Callable";
-      singleton "typing.FrozenSet";
-      singleton "typing.Optional";
-      singleton "typing.TypeVar";
-      singleton "typing.Undeclared";
-      singleton "typing.Union";
-      singleton "typing.NoReturn";
-      (* Ensure unittest.mock.Base is there because we check against it. *)
-      singleton "unittest.mock.Base";
-      singleton "unittest.mock.NonCallableMock";
-      singleton "typing.ClassVar";
-      singleton "typing.Final";
-      singleton "typing_extensions.Final";
-      singleton "typing_extensions.Literal";
-      ["dict"; "typing.Dict"; object_primitive];
-      singleton "None";
-      (* Numerical hierarchy. *)
-      [integer; float; complex; "numbers.Complex"; "numbers.Number"; object_primitive];
+    [ (* Numerical hierarchy. *)
+      [integer; float; "complex"; "numbers.Complex"; "numbers.Number"; object_primitive];
       [integer; "numbers.Integral"; object_primitive];
       [float; "numbers.Rational"; object_primitive];
       [float; "numbers.Real"; object_primitive] ]
   in
-  let builtin_types = List.concat default_annotations |> Type.Primitive.Set.of_list in
-  let insert = SharedMemoryClassHierarchyHandler.insert in
-  let connect = SharedMemoryClassHierarchyHandler.connect in
-  Set.iter builtin_types ~f:insert;
   let rec connect_primitive_chain annotations =
     match annotations with
     | predecessor :: successor :: rest ->
-        connect ?parameters:None ~predecessor ~successor;
+        SharedMemoryClassHierarchyHandler.connect ?parameters:None ~predecessor ~successor;
         connect_primitive_chain (successor :: rest)
     | _ -> ()
   in
-  List.iter ~f:connect_primitive_chain default_annotations;
-
-  (* Since the builtin type hierarchy is not primitive, it's special cased. *)
-  let type_builtin = "type" in
-  let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
-  insert type_builtin;
-  connect
-    ~predecessor:type_builtin
-    ~parameters:(Concrete [type_variable])
-    ~successor:generic_primitive;
-  let typed_dictionary = "TypedDictionary" in
-  let non_total_typed_dictionary = "NonTotalTypedDictionary" in
-  let typing_mapping = "typing.Mapping" in
-  insert non_total_typed_dictionary;
-  insert typed_dictionary;
-  insert typing_mapping;
-  connect ?parameters:None ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
-  connect
-    ~predecessor:typed_dictionary
-    ~parameters:(Concrete [Type.string; Type.Any])
-    ~successor:typing_mapping
+  List.iter ~f:connect_primitive_chain default_annotations
 
 
-let check_class_hierarchy_integrity () =
-  ClassHierarchy.check_integrity
-    (module SharedMemoryClassHierarchyHandler)
-    ~indices:(SharedMemoryClassHierarchyHandler.keys ())
+let check_class_hierarchy_integrity ({ unannotated_global_environment; _ } as environment) =
+  let indices =
+    UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
+    |> Type.Primitive.Set.of_list
+    |> IndexTracker.indices
+    |> IndexTracker.Set.to_list
+  in
+  ClassHierarchy.check_integrity (untracked_class_hierarchy_handler environment) ~indices
 
 
-let purge _ ?(debug = false) (qualifiers : Reference.t list) =
-  let {
-    SharedMemoryDependencyHandler.aliases;
-    modules;
-    class_definitions;
-    class_metadata;
-    undecorated_signatures;
-    globals;
-    edges;
-    backedges;
-  }
-    =
+let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_result =
+  let current_and_removed_classes =
+    UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
+  in
+  let { SharedMemoryDependencyHandler.aliases; modules; undecorated_signatures; globals } =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
   let open SharedMemory in
   (* Must disconnect backedges before deleting edges, since this relies on edges *)
-  SharedMemoryClassHierarchyHandler.disconnect_backedges
-    (ClassDefinitions.KeySet.elements class_definitions);
-
+  let index_keys = IndexTracker.indices current_and_removed_classes in
+  SharedMemoryClassHierarchyHandler.disconnect_backedges index_keys;
+  let caml_index_keys = IndexTracker.Set.to_list index_keys |> OrderEdges.KeySet.of_list in
+  let caml_current_and_removed_classes =
+    Type.Primitive.Set.to_list current_and_removed_classes |> ClassMetadata.KeySet.of_list
+  in
   Globals.remove_batch globals;
-  OrderEdges.remove_batch edges;
-  OrderBackedges.remove_batch backedges;
-  ClassDefinitions.remove_batch class_definitions;
-  ClassMetadata.remove_batch class_metadata;
+  OrderEdges.remove_batch caml_index_keys;
+  OrderBackedges.remove_batch caml_index_keys;
+  ClassMetadata.remove_batch caml_current_and_removed_classes;
   Aliases.remove_batch aliases;
   UndecoratedFunctions.remove_batch undecorated_signatures;
   Modules.remove_batch modules;
-
-  SharedMemoryClassHierarchyHandler.remove_keys edges;
 
   SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
 
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
-    check_class_hierarchy_integrity ()
+    check_class_hierarchy_integrity environment
 
 
-let update_and_compute_dependencies _ qualifiers ~update =
+let update_and_compute_dependencies _ qualifiers ~update ~update_result =
+  let current_and_removed_classes =
+    UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
+  in
   let old_dependent_table_keys =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
-  let {
-    SharedMemoryDependencyHandler.aliases;
-    modules;
-    class_definitions;
-    class_metadata;
-    undecorated_signatures;
-    globals;
-    edges;
-    backedges;
-  }
-    =
+  let { SharedMemoryDependencyHandler.aliases; modules; undecorated_signatures; globals } =
     old_dependent_table_keys
   in
   let open SharedMemory in
   (* Backedges are not tracked *)
-  SharedMemoryClassHierarchyHandler.disconnect_backedges
-    (ClassDefinitions.KeySet.elements class_definitions);
-  OrderBackedges.remove_batch backedges;
-
-  SharedMemoryClassHierarchyHandler.remove_keys edges;
+  let index_keys = IndexTracker.indices current_and_removed_classes in
+  SharedMemoryClassHierarchyHandler.disconnect_backedges index_keys;
+  let caml_index_keys = IndexTracker.Set.to_list index_keys |> OrderEdges.KeySet.of_list in
+  let caml_current_and_removed_classes =
+    Type.Primitive.Set.to_list current_and_removed_classes |> ClassMetadata.KeySet.of_list
+  in
+  OrderBackedges.remove_batch caml_index_keys;
 
   SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
@@ -1669,24 +1451,13 @@ let update_and_compute_dependencies _ qualifiers ~update =
     SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
     |> Aliases.add_to_transaction ~keys:aliases
     |> Modules.add_to_transaction ~keys:modules
-    |> ClassDefinitions.add_to_transaction ~keys:class_definitions
-    |> ClassMetadata.add_to_transaction ~keys:class_metadata
+    |> ClassMetadata.add_to_transaction ~keys:caml_current_and_removed_classes
     |> UndecoratedFunctions.add_to_transaction ~keys:undecorated_signatures
     |> Globals.add_to_transaction ~keys:globals
-    |> OrderEdges.add_to_transaction ~keys:edges
+    |> OrderEdges.add_to_transaction ~keys:caml_index_keys
     |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
   in
-  let {
-    SharedMemoryDependencyHandler.aliases;
-    modules;
-    class_definitions;
-    class_metadata;
-    undecorated_signatures;
-    globals;
-    edges;
-    backedges = _;
-  }
-    =
+  let { SharedMemoryDependencyHandler.aliases; modules; undecorated_signatures; globals } =
     SharedMemoryDependencyHandler.find_added_dependent_table_keys
       qualifiers
       ~old_keys:old_dependent_table_keys
@@ -1694,17 +1465,14 @@ let update_and_compute_dependencies _ qualifiers ~update =
   let mutation_and_addition_triggers =
     [ Aliases.get_all_dependents aliases;
       Modules.get_all_dependents modules;
-      ClassDefinitions.get_all_dependents class_definitions;
-      ClassMetadata.get_all_dependents class_metadata;
       UndecoratedFunctions.get_all_dependents undecorated_signatures;
-      Globals.get_all_dependents globals;
-      OrderEdges.get_all_dependents edges ]
+      Globals.get_all_dependents globals ]
     |> List.fold ~init:mutation_triggers ~f:SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
   in
   update, mutation_and_addition_triggers
 
 
-let shared_memory_handler ast_environment = { ast_environment }
+let shared_memory_handler unannotated_global_environment = { unannotated_global_environment }
 
 let normalize_shared_memory qualifiers =
   (* Since we don't provide an API to the raw order keys in the type order handler, handle it
@@ -1735,16 +1503,9 @@ let shared_memory_hash_to_key_map ~qualifiers () =
   let map =
     map
     |> extend_map ~new_map:(FunctionKeys.compute_hashes_to_keys ~keys:qualifiers)
-    |> extend_map ~new_map:(ClassKeys.compute_hashes_to_keys ~keys:qualifiers)
     |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:qualifiers)
     |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:qualifiers)
     |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:qualifiers)
-  in
-  (* Class definitions. *)
-  let map =
-    let keys = List.filter_map qualifiers ~f:ClassKeys.get |> List.concat in
-    extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
-    |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys)
   in
   (* Aliases. *)
   let map =
@@ -1772,16 +1533,6 @@ let serialize_decoded decoded =
   in
   let open SharedMemory in
   match decoded with
-  | ClassDefinitions.Decoded (key, value) ->
-      let value =
-        match value with
-        | Some { Node.value = definition; _ } ->
-            `Assoc ["class_definition", `String (Class.show definition)]
-            |> Yojson.to_string
-            |> Option.some
-        | None -> None
-      in
-      Some (ClassValue.description, key, value)
   | ClassMetadata.Decoded (key, value) ->
       let value =
         match value with
@@ -1816,8 +1567,6 @@ let serialize_decoded decoded =
         ( FunctionKeyValue.description,
           Reference.show key,
           value >>| List.to_string ~f:Reference.show )
-  | ClassKeys.Decoded (key, value) ->
-      Some (ClassKeyValue.description, Reference.show key, value >>| List.to_string ~f:Fn.id)
   | GlobalKeys.Decoded (key, value) ->
       Some
         (GlobalKeyValue.description, Reference.show key, value >>| List.to_string ~f:Reference.show)
@@ -1846,8 +1595,6 @@ let serialize_decoded decoded =
 let decoded_equal first second =
   let open SharedMemory in
   match first, second with
-  | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
-      Some (Option.equal (Node.equal Class.equal) first second)
   | ClassMetadata.Decoded (_, first), ClassMetadata.Decoded (_, second) ->
       Some (Option.equal GlobalResolution.equal_class_metadata first second)
   | Aliases.Decoded (_, first), Aliases.Decoded (_, second) ->
@@ -1860,8 +1607,6 @@ let decoded_equal first second =
       Some (Option.equal Reference.Set.Tree.equal first second)
   | FunctionKeys.Decoded (_, first), FunctionKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal Reference.equal) first second)
-  | ClassKeys.Decoded (_, first), ClassKeys.Decoded (_, second) ->
-      Some (Option.equal (List.equal Identifier.equal) first second)
   | GlobalKeys.Decoded (_, first), GlobalKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal Reference.equal) first second)
   | AliasKeys.Decoded (_, first), AliasKeys.Decoded (_, second) ->
@@ -1879,13 +1624,20 @@ let decoded_equal first second =
   | _ -> None
 
 
-let class_hierarchy_json () =
+let indices { unannotated_global_environment } =
+  UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
+  |> Type.Primitive.Set.of_list
+  |> IndexTracker.indices
+  |> IndexTracker.Set.to_list
+
+
+let class_hierarchy_json environment =
   ClassHierarchy.to_json
-    (module SharedMemoryClassHierarchyHandler)
-    ~indices:(SharedMemoryClassHierarchyHandler.keys ())
+    (untracked_class_hierarchy_handler environment)
+    ~indices:(indices environment)
 
 
-let class_hierarchy_dot () =
+let class_hierarchy_dot environment =
   ClassHierarchy.to_dot
-    (module SharedMemoryClassHierarchyHandler)
-    ~indices:(SharedMemoryClassHierarchyHandler.keys ())
+    (untracked_class_hierarchy_handler environment)
+    ~indices:(indices environment)

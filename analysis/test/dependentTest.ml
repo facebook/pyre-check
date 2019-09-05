@@ -27,11 +27,6 @@ let test_index context =
   let qualifier = Reference.create "test" in
   let (module DependencyHandler) = Environment.dependency_handler handler in
   assert_equal
-    ~cmp:(List.equal String.equal)
-    ~printer:(String.concat ~sep:", ")
-    (DependencyHandler.get_class_keys ~qualifier)
-    ["test.baz.baz"];
-  assert_equal
     ~cmp:(List.equal Reference.equal)
     ~printer:(List.to_string ~f:Reference.show)
     (DependencyHandler.get_function_keys ~qualifier)
@@ -62,9 +57,24 @@ let assert_dependencies ~environment ~modules ~expected function_to_test =
   assert_equal ~printer:(List.to_string ~f:ident) expected dependencies
 
 
+let purge environment qualifiers =
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (Environment.ast_environment environment)
+  in
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ~configuration:(Configuration.Analysis.create ())
+      (Reference.Set.of_list qualifiers)
+  in
+  Environment.purge environment qualifiers ~update_result
+
+
 let test_dependent_of_list context =
   let environment = default_environment context in
-  Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
+  let qualifiers = List.map ~f:Reference.create ["a"; "b"; "c"; "test"] in
+  purge environment qualifiers;
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
   add_dependent environment "c" "b";
@@ -80,7 +90,8 @@ let test_dependent_of_list context =
 
 let test_dependent_of_list_duplicates context =
   let environment = default_environment context in
-  Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
+  let qualifiers = List.map ~f:Reference.create ["a"; "b"; "c"; "test"] in
+  purge environment qualifiers;
   add_dependent environment "a" "b";
   add_dependent environment "a" "c";
   add_dependent environment "a" "b";
@@ -93,7 +104,8 @@ let test_dependent_of_list_duplicates context =
 
 let test_transitive_dependent_of_list context =
   let environment = default_environment context in
-  Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
+  let qualifiers = List.map ~f:Reference.create ["a"; "b"; "c"; "test"] in
+  purge environment qualifiers;
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
   add_dependent environment "c" "b";
@@ -108,7 +120,8 @@ let test_transitive_dependent_of_list context =
 
 let test_transitive_dependents context =
   let environment = default_environment context in
-  Environment.purge environment (List.map ~f:Reference.create ["a"; "b"; "c"; "test"]);
+  let qualifiers = List.map ~f:Reference.create ["a"; "b"; "c"; "test"] in
+  purge environment qualifiers;
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
   add_dependent environment "c" "b";

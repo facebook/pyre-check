@@ -48,10 +48,14 @@ let make_errors ~context ?(handle = "test.py") source =
           class str(object): pass
         |}
     in
+    let typing_source = {|
+          class Mapping:
+            pass
+    |} in
     ScratchProject.setup
       ~context
       ~include_typeshed_stubs:false
-      ~external_sources:["builtins.pyi", builtins_source]
+      ~external_sources:["builtins.pyi", builtins_source; "typing.pyi", typing_source]
       [handle, source]
   in
   let sources, _, environment = ScratchProject.build_environment project in

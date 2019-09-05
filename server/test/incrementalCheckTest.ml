@@ -111,7 +111,32 @@ let test_incremental_check context =
          class A:
            y: str = "A"
       |}]
-    ~expected:["Revealed type [-1]: Revealed type for `x.y` is `str`."]
+    ~expected:["Revealed type [-1]: Revealed type for `x.y` is `str`."];
+  assert_incremental_check_errors
+    ~context
+    ~initial_sources:
+      [ false, "a.py", {|
+         class A(int):
+          pass
+      |};
+        ( false,
+          "b.py",
+          {|
+          from a import A
+          def foo(x: int) -> None:
+            pass
+          foo(A())
+      |}
+        ) ]
+    ~updated_sources:[false, "a.py", {|
+         class A(str):
+          pass
+      |}]
+    ~expected:
+      [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+         `foo` but got `A`." ];
+
+  ()
 
 
 let () = "incremental_check" >::: ["incremental_check" >:: test_incremental_check] |> Test.run

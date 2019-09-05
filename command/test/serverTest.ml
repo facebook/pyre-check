@@ -301,7 +301,8 @@ let test_protocol_type_check context =
   assert_response ~sources:[handle, source] ~request:["wrong_handle.pyi"] [];
 
   let shadowed_handle = "test_protocol_type_check.py" in
-  assert_response ~sources:[handle, source; shadowed_handle, source] ~request:[shadowed_handle] []
+  assert_response ~sources:[handle, source; shadowed_handle, source] ~request:[shadowed_handle] [];
+  ()
 
 
 let test_query context =
@@ -361,12 +362,21 @@ let test_query context =
     ~source:"class C(int): ..."
     ~query:"meet(list[test.C], list[int])"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (Type.list Type.Bottom)));
+
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"superclasses(test.C)"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.Superclasses
-          [Type.integer; Type.float; Type.complex; Type.object_primitive]));
+          [ Type.integer;
+            Type.float;
+            Type.complex;
+            Primitive "numbers.Integral";
+            Primitive "numbers.Rational";
+            Primitive "numbers.Real";
+            Primitive "numbers.Complex";
+            Primitive "numbers.Number";
+            Type.object_primitive ]));
   let assert_compatibility_response ~source ~query ~actual ~expected result =
     assert_type_query_response
       ~source
