@@ -17,13 +17,17 @@ import sys
 import traceback
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from pyre_extensions import ListVariadic
 
 from ...client.commands import ExitCode
 from ...client.filesystem import get_filesystem
 
 
 LOG = logging.getLogger(__name__)
+
+Ts = ListVariadic("Ts")
 
 
 def json_to_errors(json_string: Optional[str]) -> List[Dict[str, Any]]:
@@ -57,6 +61,28 @@ def filter_errors(arguments, errors) -> List[Dict[str, Any]]:
     if arguments.only_fix_error_code:
         errors = list(filter(matches_error_code, errors))
     return errors
+
+
+def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], None]:
+    def wrapper(arguments: argparse.Namespace, filename: str, *args) -> None:
+        # AST before changes
+        path = pathlib.Path(filename)
+        text = path.read_text()
+        ast_before = ast.parse(text)
+
+        # AST after changes
+        file_modifier(arguments, filename, *args)
+        new_text = path.read_text()
+        ast_after = ast.parse(new_text)
+
+        # Undo changes if AST does not match
+        if not ast.dump(ast_before) == ast.dump(ast_after):
+            LOG.warning(
+                "Attempted upgrade changed the AST in file %s, undoing.", filename
+            )
+            path.write_text(text)
+
+    return wrapper
 
 
 class Configuration:
@@ -253,10 +279,7 @@ def _split_across_lines(
     return result
 
 
-def ast_equal(before_ast, after_ast):
-    return ast.dump(before_ast) == ast.dump(after_ast)
-
-
+@verify_stable_ast
 def fix_file(
     arguments: argparse.Namespace,
     filename: str,
@@ -271,7 +294,6 @@ def fix_file(
     if "@" "generated" in text:
         LOG.warning("Attempting to upgrade generated file %s, skipping.", filename)
         return
-    ast_before = ast.parse(text)
     lines = text.split("\n")  # type: List[str]
 
     # Replace lines in file.
@@ -326,10 +348,6 @@ def fix_file(
         new_lines.extend(comments)
         new_lines.append(line)
     new_text = "\n".join(new_lines)
-    ast_after = ast.parse(new_text)
-    if not ast_equal(ast_before, ast_after):
-        LOG.warning("Attempted upgrade changed the AST in file %s, skipping.", filename)
-        return
     path.write_text(new_text)
 
 
@@ -422,47 +440,33 @@ def fix(arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]) -> N
         fix_file(arguments, path, error_map)
 
 
-def add_local_unsafe(
-    arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]
-) -> None:
-    for filename, _ in result:
-        LOG.info("Processing `%s`", filename)
-        path = pathlib.Path(filename)
-        text = path.read_text()
-        if "@" "generated" in text:
-            LOG.warning("Attempting to edit generated file %s, skipping.", filename)
+@verify_stable_ast
+def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
+    LOG.info("Processing `%s`", filename)
+    path = pathlib.Path(filename)
+    text = path.read_text()
+    if "@" "generated" in text:
+        LOG.warning("Attempting to edit generated file %s, skipping.", filename)
+        return
+
+    lines = text.split("\n")  # type: List[str]
+
+    # Check if already locally strict.
+    for line in lines:
+        if re.match("^[ \t]*# *pyre-strict *$", line):
             return
 
-        ast_before = ast.parse(text)
-        lines = text.split("\n")  # type: List[str]
-
-        # Check if already locally strict.
-        is_local_strict = False
-        for line in lines:
-            if re.match("^[ \t]*# *pyre-strict *$", line):
-                is_local_strict = True
-                break
-
-        if is_local_strict:
-            break
-
-        # Add local unsafe.
-        new_lines = []
-        past_header = False
-        for line in lines:
-            if not past_header and not line.lstrip().startswith("#"):
-                past_header = True
-                new_lines.append("")
-                new_lines.append("# pyre-unsafe")
-            new_lines.append(line)
-        new_text = "\n".join(new_lines)
-        ast_after = ast.parse(new_text)
-        if not ast_equal(ast_before, ast_after):
-            LOG.warning(
-                "Attempted edit changed the AST in file %s, skipping.", filename
-            )
-            return
-        path.write_text(new_text)
+    # Add local unsafe.
+    new_lines = []
+    past_header = False
+    for line in lines:
+        if not past_header and not line.lstrip().startswith("#"):
+            past_header = True
+            new_lines.append("")
+            new_lines.append("# pyre-unsafe")
+        new_lines.append(line)
+    new_text = "\n".join(new_lines)
+    path.write_text(new_text)
 
 
 def run_global_version_update(arguments: argparse.Namespace) -> None:
@@ -601,7 +605,9 @@ def run_strict_default(arguments: argparse.Namespace) -> None:
         errors = configuration.get_errors()
 
         if len(errors) > 0:
-            add_local_unsafe(arguments, sort_errors(errors))
+            result = sort_errors(errors)
+            for filename, _ in result:
+                add_local_unsafe(arguments, filename)
 
             if arguments.lint:
                 lint_status = _get_lint_status()

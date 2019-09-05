@@ -7,6 +7,7 @@ import argparse
 import json
 import pathlib
 import subprocess
+import tempfile
 import unittest
 from unittest.mock import MagicMock, call, mock_open, patch
 
@@ -359,16 +360,15 @@ class FixmeAllTest(unittest.TestCase):
         ]
         subprocess.assert_has_calls(calls)
 
-    @patch.object(pathlib.Path, "read_text")
-    @patch.object(pathlib.Path, "write_text")
-    def test_preserve_ast(self, path_write, path_read) -> None:
+    def test_preserve_ast(self) -> None:
         mock_arguments = argparse.Namespace()
         # pyre-fixme[16]: `Namespace` has no attribute `max_line_length`.
         mock_arguments.max_line_length = 88
         # pyre-fixme[16]: `Namespace` has no attribute `truncate`.
         mock_arguments.truncate = True
         error_map = {7: [{"code": "6", "description": "Foo"}]}
-        path_read.return_value = """
+        with tempfile.NamedTemporaryFile(delete=False) as file:
+            contents = """
 def foo(x: int) -> str:
     return str(x)
 
@@ -377,10 +377,14 @@ def bar(x: str) -> str:
     first line
     second {foo(x)}
     \'\'\'
-        """
-        upgrade.fix_file(mock_arguments, "test.py", error_map)
+"""
+            file.write(contents.encode())
+            upgrade.fix_file(mock_arguments, file.name, error_map)
 
-        path_write.assert_not_called()
+            file.seek(0)
+            updated_contents = file.read().decode()
+            file.close()
+            self.assertEqual(updated_contents, contents)
 
     @patch("subprocess.run")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
@@ -1163,19 +1167,19 @@ class DefaultStrictTest(unittest.TestCase):
         arguments = MagicMock()
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
-            upgrade.add_local_unsafe(arguments, [("local.py", [])])
+            upgrade.add_local_unsafe(arguments, "local.py")
             path_write_text.assert_called_once_with("\n# pyre-unsafe\n1\n2")
 
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# comment\n1"
-            upgrade.add_local_unsafe(arguments, [("local.py", [])])
+            upgrade.add_local_unsafe(arguments, "local.py")
             path_write_text.assert_called_once_with(
                 "# comment\n# comment\n\n# pyre-unsafe\n1"
             )
 
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# pyre-strict\n1"
-            upgrade.add_local_unsafe(arguments, [("local.py", [])])
+            upgrade.add_local_unsafe(arguments, "local.py")
             path_write_text.assert_not_called()
 
     @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
