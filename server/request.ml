@@ -358,19 +358,22 @@ module AnnotationEdit = struct
   let create ~file ~error =
     error
     >>| (fun ({ Error.kind; _ } as error) ->
+          let format_type annotation =
+            Type.weaken_literals annotation |> Type.infer_transform |> Type.show
+          in
           let new_text =
             match kind with
             | Error.MissingReturnAnnotation { annotation = Some annotation; _ } ->
-                Some (" -> " ^ Type.show (Type.weaken_literals annotation))
+                Some (" -> " ^ format_type annotation)
             | Error.MissingAttributeAnnotation
                 { missing_annotation = { annotation = Some annotation; _ }; _ }
             | Error.MissingParameterAnnotation { annotation = Some annotation; _ }
             | Error.MissingGlobalAnnotation { annotation = Some annotation; _ } ->
-                Some (": " ^ Type.show (Type.weaken_literals annotation))
+                Some (": " ^ format_type annotation)
             | Error.IncompatibleReturnType { mismatch = { actual = annotation; _ }; _ } ->
-                Some (Format.asprintf "-> %s:" @@ Type.show (Type.weaken_literals annotation))
+                Some (Format.asprintf "-> %s:" @@ format_type annotation)
             | Error.IncompatibleVariableType { mismatch = { actual = annotation; _ }; _ } ->
-                Some (Format.asprintf ": %s " @@ Type.show (Type.weaken_literals annotation))
+                Some (Format.asprintf ": %s " @@ format_type annotation)
             | _ -> None
           in
           let range = create_range ~error ~file in
