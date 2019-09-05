@@ -600,7 +600,7 @@ let messages ~concise ~signature location kind =
         let callee =
           match callee with
           | Some callee -> Format.asprintf "call `%a`" pp_reference callee
-          | _ -> "anoynmous call"
+          | _ -> "anonymous call"
         in
         if concise then
           Format.asprintf "%s param" (ordinal position)
@@ -1329,7 +1329,7 @@ let messages ~concise ~signature location kind =
       let callee =
         match callee with
         | Some callee -> Format.asprintf "call `%a`" pp_reference callee
-        | _ -> "anoynmous call"
+        | _ -> "anonymous call"
       in
       [Format.asprintf "Solving type variables for %s led to infinite recursion." callee]
   | NotCallable

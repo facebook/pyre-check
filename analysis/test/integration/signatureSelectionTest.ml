@@ -17,7 +17,7 @@ let test_check_callables context =
         callable(1)
     |}
     [ "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to anoynmous call but got `int`." ];
+      ^ "Expected `str` for 1st anonymous parameter to anonymous call but got `int`." ];
 
   (* Type variables & callables. *)
   assert_type_errors

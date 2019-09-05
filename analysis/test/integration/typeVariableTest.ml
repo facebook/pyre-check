@@ -632,7 +632,7 @@ let test_distinguish context =
         return f(1)
     |}
     [ "Incompatible parameter type [6]: Expected `Variable[_T1]` for 1st anonymous parameter to "
-      ^ "anoynmous call but got `int`." ];
+      ^ "anonymous call but got `int`." ];
   assert_type_errors
     {|
       import typing
