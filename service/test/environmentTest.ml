@@ -77,13 +77,26 @@ let test_populate context =
     let sources, ast_environment = ScratchProject.parse_sources project in
     ScratchProject.configuration_of project, sources, AstEnvironment.read_only ast_environment
   in
-  let environment =
-    Service.Environment.populate_shared_memory
+  let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
+  let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+  let update_result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler:(Scheduler.mock ())
       ~configuration
-      ~scheduler:(Test.mock_scheduler ())
-      ~ast_environment
-      sources
+      (Reference.Set.of_list qualifiers)
   in
+  let environment =
+    Environment.shared_memory_handler
+      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
+  Service.Environment.populate
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    ~update_result
+    environment
+    (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+    sources;
   let global_resolution = Analysis.Environment.resolution environment () in
   let (module DependenciesHandler) = Environment.dependency_handler environment in
   assert_equal

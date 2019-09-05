@@ -95,7 +95,7 @@ let analyze_sources ?open_documents ~scheduler ~configuration ~environment sourc
 
 let check
     ~scheduler:original_scheduler
-    ~configuration:( { Configuration.Analysis.project_root; local_root; search_path; _ } as
+    ~configuration:( { Configuration.Analysis.project_root; local_root; search_path; debug; _ } as
                    configuration )
   =
   (* Sanity check environment. *)
@@ -122,8 +122,59 @@ let check
   (* Parse sources. *)
   let sources, ast_environment = Parser.parse_all ~scheduler ~configuration module_tracker in
   let environment =
-    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-    Environment.populate_shared_memory ~configuration ~scheduler ~ast_environment sources
+    let populate = Environment.populate in
+    let open Analysis in
+    let ast_environment = AstEnvironment.read_only ast_environment in
+    Log.info "Adding built-in environment information to shared memory...";
+    let timer = Timer.start () in
+    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
+    let environment =
+      Environment.shared_memory_handler
+        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+    in
+    Environment.fill_shared_memory_with_default_typeorder environment;
+    Environment.add_dummy_modules environment;
+    Environment.add_special_globals environment;
+    Statistics.performance ~name:"added environment to shared memory" ~timer ();
+    Log.info "Building type environment...";
+
+    (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
+       sequentially until we find a way to build the environment in parallel. *)
+    let timer = Timer.start () in
+    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
+    let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+    let update_result =
+      UnannotatedGlobalEnvironment.update
+        unannotated_global_environment
+        ~scheduler
+        ~configuration
+        (Ast.Reference.Set.of_list qualifiers)
+    in
+    populate
+      ~configuration
+      ~scheduler
+      ~update_result
+      environment
+      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+      sources;
+    Statistics.performance ~name:"full environment built" ~timer ();
+    if Log.is_enabled `Dotty then (
+      let type_order_file =
+        Path.create_relative
+          ~root:(Configuration.Analysis.pyre_root configuration)
+          ~relative:"type_order.dot"
+      in
+      Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
+      File.create ~content:(Environment.class_hierarchy_dot environment) type_order_file
+      |> File.write );
+    if debug then (
+      Analysis.Environment.check_class_hierarchy_integrity environment;
+      Statistics.event
+        ~section:`Memory
+        ~name:"shared memory size"
+        ~integers:["size", Memory.heap_size ()]
+        () );
+    environment
   in
   let errors = analyze_sources ~scheduler ~configuration ~environment sources in
   (* Log coverage results *)

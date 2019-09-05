@@ -103,12 +103,12 @@ let recheck
     ~short_message:(Some "[Repopulating]")
     ~state;
   let recheck_modules, recheck_sources =
-    let pre_environment =
+    let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
     in
     let update_result =
       UnannotatedGlobalEnvironment.update
-        pre_environment
+        unannotated_global_environment
         ~scheduler:(Scheduler.mock ())
         ~configuration
         invalidated_environment_qualifiers
@@ -128,7 +128,7 @@ let recheck
               ~scheduler
               ~update_result
               environment
-              (UnannotatedGlobalEnvironment.read_only pre_environment)
+              (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
               re_environment_build_sources;
             if debug then
               Analysis.Environment.check_class_hierarchy_integrity environment
@@ -174,7 +174,7 @@ let recheck
             ~scheduler
             ~update_result
             environment
-            (UnannotatedGlobalEnvironment.read_only pre_environment)
+            (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
             re_environment_build_sources
         in
         invalidated_environment_qualifiers, re_environment_build_sources

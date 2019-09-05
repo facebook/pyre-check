@@ -104,8 +104,7 @@ let test_dependent_of_list_duplicates context =
 
 let test_transitive_dependent_of_list context =
   let environment = default_environment context in
-  let qualifiers = List.map ~f:Reference.create ["a"; "b"; "c"; "test"] in
-  purge environment qualifiers;
+  List.map ~f:Reference.create ["a"; "b"; "c"; "test"] |> purge environment;
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
   add_dependent environment "c" "b";

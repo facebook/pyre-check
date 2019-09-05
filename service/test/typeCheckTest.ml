@@ -15,7 +15,7 @@ let assert_errors
     ~root
     ~files
     ~context
-    errors
+    expected_errors
   =
   let external_root = bracket_tmpdir context |> Path.create_absolute in
   let add_source ~root (relative, content) =
@@ -37,27 +37,15 @@ let assert_errors
   in
   let scheduler = Test.mock_scheduler () in
   List.iter ~f:File.write files;
-  let module_tracker = Analysis.ModuleTracker.create configuration in
-  let sources, ast_environment =
-    Service.Parser.parse_all ~configuration ~scheduler module_tracker
-  in
-  let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
-  let all_qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
-  let environment =
-    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-    Service.Environment.populate_shared_memory ~configuration ~scheduler ~ast_environment sources
-  in
-  let actual_errors =
-    let ast_environment = Analysis.Environment.ast_environment environment in
-    Service.Check.analyze_sources ~scheduler ~configuration ~environment sources
-    |> List.map ~f:(fun error ->
-           Analysis.Error.instantiate
-             ~lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
-             error
-           |> Analysis.Error.Instantiated.description ~show_error_traces:false)
+  let { Service.Check.ast_environment; environment; errors; _ } =
+    Service.Check.check ~scheduler:(Some scheduler) ~configuration
   in
   let unannotated_global_environment =
     Analysis.UnannotatedGlobalEnvironment.create
+      (Analysis.AstEnvironment.read_only ast_environment)
+  in
+  let all_qualifiers =
+    Analysis.AstEnvironment.ReadOnly.all_explicit_modules
       (Analysis.AstEnvironment.read_only ast_environment)
   in
   let update_result =
@@ -65,15 +53,25 @@ let assert_errors
       unannotated_global_environment
       ~scheduler:(mock_scheduler ())
       ~configuration:(Configuration.Analysis.create ())
-      (Ast.Reference.Set.of_list qualifiers)
+      (Ast.Reference.Set.of_list all_qualifiers)
+  in
+  let errors =
+    errors
+    |> List.map ~f:(fun error ->
+           Analysis.Error.instantiate
+             ~lookup:
+               (Analysis.AstEnvironment.ReadOnly.get_relative
+                  (Analysis.AstEnvironment.read_only ast_environment))
+             error
+           |> Analysis.Error.Instantiated.description ~show_error_traces:false)
   in
   Analysis.Environment.purge environment all_qualifiers ~update_result;
-  Analysis.AstEnvironment.remove_sources ast_environment qualifiers;
+  Analysis.AstEnvironment.remove_sources ast_environment all_qualifiers;
   assert_equal
     ~printer:(List.to_string ~f:ident)
     ~cmp:(List.equal String.equal)
+    expected_errors
     errors
-    actual_errors
 
 
 let type_check_sources_list_test context =

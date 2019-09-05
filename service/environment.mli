@@ -14,10 +14,3 @@ val populate
   update_result:UnannotatedGlobalEnvironment.UpdateResult.t ->
   Source.t list ->
   unit
-
-val populate_shared_memory
-  :  configuration:Configuration.Analysis.t ->
-  scheduler:Scheduler.t ->
-  ast_environment:AstEnvironment.ReadOnly.t ->
-  Source.t list ->
-  Environment.t
