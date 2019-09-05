@@ -1879,6 +1879,12 @@ let decoded_equal first second =
   | _ -> None
 
 
+let class_hierarchy_json () =
+  ClassHierarchy.to_json
+    (module SharedMemoryClassHierarchyHandler)
+    ~indices:(SharedMemoryClassHierarchyHandler.keys ())
+
+
 let class_hierarchy_dot () =
   ClassHierarchy.to_dot
     (module SharedMemoryClassHierarchyHandler)

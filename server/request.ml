@@ -663,6 +663,9 @@ let process_type_query_request
           |> List.map ~f:source_to_define_name
         in
         TypeQuery.Response (TypeQuery.References dependencies)
+    | TypeQuery.DumpClassHierarchy ->
+        let all_classes = Environment.class_hierarchy_json () in
+        TypeQuery.Response (TypeQuery.ClassHierarchy all_classes)
     | TypeQuery.DumpDependencies path ->
         let () =
           match ModuleTracker.lookup_path ~configuration module_tracker path with

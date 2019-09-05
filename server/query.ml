@@ -31,6 +31,10 @@ let help () =
         Some "coverage_in_file('path'): Gives detailed coverage information for the given path."
     | DecodeOcamlValues _ -> None
     | DependentDefines _ -> None
+    | DumpClassHierarchy ->
+        Some
+          "dump_class_hierarchy(): Prints out the entire class hierarchy as Pyre understands it, \
+           elides type variables."
     | DumpDependencies _ ->
         Some
           (Format.sprintf
@@ -191,6 +195,7 @@ let parse_query
           let create_path path = Path.create_relative ~root ~relative:(string path) in
           let paths = List.map paths ~f:create_path in
           Request.TypeQueryRequest (DependentDefines paths)
+      | "dump_class_hierarchy", [] -> Request.TypeQueryRequest DumpClassHierarchy
       | "dump_dependencies", [path] ->
           let path = Path.create_relative ~root ~relative:(string path) in
           Request.TypeQueryRequest (DumpDependencies path)

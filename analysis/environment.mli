@@ -82,4 +82,6 @@ val serialize_decoded : Memory.decodable -> (string * string * string sexp_optio
 
 val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
 
+val class_hierarchy_json : unit -> Yojson.Safe.t
+
 val class_hierarchy_dot : unit -> string

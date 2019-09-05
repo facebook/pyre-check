@@ -566,6 +566,24 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
   ReverseCheckInverse.check_inverse ~edges:Handler.backedges ~backedges:Handler.edges
 
 
+let to_json (module Handler : Handler) ~indices =
+  let add_node (index, annotation) =
+    match Handler.edges index with
+    | Some successors ->
+        List.map successors ~f:(fun { Target.target; _ } ->
+            `String (IndexTracker.annotation target))
+        |> (fun successors -> `Assoc ["name", `String annotation; "successors", `List successors])
+        |> Option.some
+    | None -> None
+  in
+  indices
+  |> List.map ~f:(fun index -> index, IndexTracker.annotation index)
+  |> List.sort ~compare:(fun (_, left_annotation) (_, right_annotation) ->
+         String.compare left_annotation right_annotation)
+  |> List.filter_map ~f:add_node
+  |> fun hierarchy -> `List hierarchy
+
+
 let to_dot (module Handler : Handler) ~indices =
   let indices = List.sort ~compare indices in
   let nodes = List.map indices ~f:(fun index -> index, IndexTracker.annotation index) in

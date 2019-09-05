@@ -56,6 +56,7 @@ module TypeQuery = struct
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
     | DependentDefines of Path.t list
+    | DumpClassHierarchy
     | DumpDependencies of Path.t
     | DumpMemoryToSqlite of Path.t
     | IsCompatibleWith of Expression.t * Expression.t
@@ -174,6 +175,7 @@ module TypeQuery = struct
     | Boolean of bool
     | Callees of Dependencies.Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
+    | ClassHierarchy of Yojson.Safe.t
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
@@ -201,6 +203,7 @@ module TypeQuery = struct
           Dependencies.Callgraph.callee_to_yojson ~locations callee
         in
         `Assoc ["callees", `List (List.map callees ~f:callee_to_yojson)]
+    | ClassHierarchy hierarchy -> hierarchy
     | Compatibility { actual; expected; result } ->
         `Assoc
           [ "actual", Type.to_yojson actual;

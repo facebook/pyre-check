@@ -56,6 +56,7 @@ module TypeQuery : sig
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
     | DependentDefines of Path.t list
+    | DumpClassHierarchy
     | DumpDependencies of Path.t
     | DumpMemoryToSqlite of Path.t
     | IsCompatibleWith of Expression.t * Expression.t
@@ -172,6 +173,7 @@ module TypeQuery : sig
     | Boolean of bool
     | Callees of Dependencies.Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
+    | ClassHierarchy of Yojson.Safe.t
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
