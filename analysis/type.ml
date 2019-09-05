@@ -3703,4 +3703,37 @@ let remove_undeclared annotation =
   | _ -> snd (RemoveUndeclared.visit () annotation)
 
 
+(* Transform tuples so they are printed succintly when running infer and click to fix. *)
+let infer_transform annotation =
+  let module InferTransform = Transform.Make (struct
+    type state = unit
+
+    let visit_children_before _ _ = true
+
+    let visit_children_after = false
+
+    let visit _ annotation =
+      let transformed_annotation =
+        match annotation with
+        | Tuple (Bounded (Concrete types)) when List.length types > 2 ->
+            let parameter = List.hd types |> Option.value ~default:Bottom in
+            let should_be_unbound =
+              List.fold types ~init:true ~f:(fun all_match next_parameter ->
+                  if equal parameter next_parameter then
+                    all_match
+                  else
+                    false)
+            in
+            if should_be_unbound then
+              Tuple (Unbounded parameter)
+            else
+              annotation
+        | _ -> annotation
+      in
+      { Transform.transformed_annotation; new_state = () }
+  end)
+  in
+  snd (InferTransform.visit () annotation)
+
+
 let to_yojson annotation = `String (show annotation)

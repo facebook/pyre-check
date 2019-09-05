@@ -783,4 +783,6 @@ end
 
 val remove_undeclared : t -> t
 
+val infer_transform : t -> t
+
 val to_yojson : t -> Yojson.Safe.json

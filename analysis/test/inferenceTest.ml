@@ -533,7 +533,39 @@ let test_infer context =
           def foo():
               pass
     |}
-    [{|{}|}]
+    [{|{}|}];
+
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+    def foo():
+        return ("", "", "", "", "", "")
+    |}
+    [{|"typing.Tuple[str, ...]"|}];
+
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+    def foo():
+        return ("", 2)
+    |}
+    [{|"typing.Tuple[str, int]"|}];
+
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+    def foo():
+        return ("", "", "", 2)
+    |}
+    [{|"typing.Tuple[str, str, str, int]"|}];
+
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+    def foo():
+        return ("", "")
+    |}
+    [{|"typing.Tuple[str, str]"|}]
 
 
 let test_infer_backward context =

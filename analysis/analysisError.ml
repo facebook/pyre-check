@@ -1637,7 +1637,9 @@ let inference_information
     kind
   =
   let print_annotation annotation =
-    let annotation = Type.Variable.convert_all_escaped_free_variables_to_anys annotation in
+    let annotation =
+      Type.Variable.convert_all_escaped_free_variables_to_anys annotation |> Type.infer_transform
+    in
     Format.asprintf "`%a`" Type.pp annotation |> String.strip ~drop:(Char.equal '`')
   in
   let parameters =
