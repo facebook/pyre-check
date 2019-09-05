@@ -7,7 +7,11 @@ open Core
 open Pyre
 open Sexplib.Conv
 
-type t = Identifier.t list [@@deriving compare, eq, sexp, hash, to_yojson]
+module T = struct
+  type t = Identifier.t list [@@deriving compare, eq, sexp, hash, to_yojson]
+end
+
+include T
 
 let create ?prefix name =
   let name =
@@ -29,45 +33,10 @@ let pp format reference = reference |> String.concat ~sep:"." |> Format.fprintf 
 
 let show reference = Format.asprintf "%a" pp reference
 
-module Map = Map.Make (struct
-  type nonrec t = t
-
-  let compare = compare
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
-end)
-
-module SerializableMap = SerializableMap.Make (struct
-  type nonrec t = t
-
-  let compare = compare
-end)
-
-module Set = Set.Make (struct
-  type nonrec t = t
-
-  let compare = compare
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
-end)
-
-include Hashable.Make (struct
-  type nonrec t = t
-
-  let compare = compare
-
-  let hash = hash
-
-  let hash_fold_t = hash_fold_t
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
-end)
+module Map = Map.Make (T)
+module SerializableMap = SerializableMap.Make (T)
+module Set = Set.Make (T)
+include Hashable.Make (T)
 
 let empty = []
 
