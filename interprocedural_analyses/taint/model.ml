@@ -627,7 +627,8 @@ let create ~resolution ?path ~configuration ~verify source =
                     match value with
                     | Statement.Define
                         {
-                          Define.signature = { Define.Signature.name; parameters; _ } as signature;
+                          Define.signature =
+                            { Define.Signature.name; parameters; decorators; _ } as signature;
                           _;
                         } ->
                         let signature =
@@ -646,10 +647,20 @@ let create ~resolution ?path ~configuration ~verify source =
                             in
                             List.map parameters ~f:sink_parameter
                           in
+                          let decorators =
+                            if
+                              Define.Signature.is_property signature
+                              || Define.Signature.is_property_setter signature
+                            then
+                              decorators
+                            else
+                              []
+                          in
                           {
                             signature with
                             Define.Signature.parameters;
                             return_annotation = source_annotation;
+                            decorators;
                           }
                         in
                         Some (signature, location, Callable.create_method name)

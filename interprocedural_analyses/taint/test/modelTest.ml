@@ -266,6 +266,26 @@ let test_class_models context =
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Test] }]
           "test.SourceWithDefault.method" ]
+    ();
+  assert_model
+    ~source:
+      {|
+         class Source:
+           @classmethod
+           def Source.method(cls, parameter: int) -> None: ...
+      |}
+    ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.Source.method"]
+    ();
+  assert_model
+    ~source:
+      {|
+         class Source:
+           @property
+           def Source.prop(self) -> int: ...
+      |}
+    ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.Source.prop"]
     ()
 
 
