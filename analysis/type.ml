@@ -361,88 +361,62 @@ module Primitive = struct
   type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
 
   include Hashable.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let hash = Hashtbl.hash
-
-    let hash_fold_t = hash_fold_t
-
-    let sexp_of_t = sexp_of_t
-
-    let t_of_sexp = t_of_sexp
+    type t = Identifier.t [@@deriving compare, hash, sexp]
   end)
 
   module Set = Set.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let sexp_of_t = sexp_of_t
-
-    let t_of_sexp = t_of_sexp
+    type t = Identifier.t [@@deriving compare, sexp]
   end)
 end
 
-type literal =
-  | Boolean of bool
-  | Integer of int
-  | String of string
+module T = struct
+  type literal =
+    | Boolean of bool
+    | Integer of int
+    | String of string
 
-and tuple =
-  | Bounded of t Record.OrderedTypes.record
-  | Unbounded of t
+  and tuple =
+    | Bounded of t Record.OrderedTypes.record
+    | Unbounded of t
 
-and typed_dictionary_field = {
-  name: string;
-  annotation: t;
-}
+  and typed_dictionary_field = {
+    name: string;
+    annotation: t;
+  }
 
-and t =
-  | Annotated of t
-  | Bottom
-  | Callable of t Record.Callable.record
-  | Any
-  | Literal of literal
-  | Optional of t
-  | Parametric of {
-      name: Identifier.t;
-      parameters: t Record.OrderedTypes.record;
-    }
-  | ParameterVariadicComponent of
-      Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
-  | Primitive of Primitive.t
-  | Top
-  | Tuple of tuple
-  | TypedDictionary of {
-      name: Identifier.t;
-      fields: typed_dictionary_field list;
-      total: bool;
-    }
-  | Union of t list
-  | Variable of t Record.Variable.RecordUnary.record
-[@@deriving compare, eq, sexp, show, hash]
+  and t =
+    | Annotated of t
+    | Bottom
+    | Callable of t Record.Callable.record
+    | Any
+    | Literal of literal
+    | Optional of t
+    | Parametric of {
+        name: Identifier.t;
+        parameters: t Record.OrderedTypes.record;
+      }
+    | ParameterVariadicComponent of
+        Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
+    | Primitive of Primitive.t
+    | Top
+    | Tuple of tuple
+    | TypedDictionary of {
+        name: Identifier.t;
+        fields: typed_dictionary_field list;
+        total: bool;
+      }
+    | Union of t list
+    | Variable of t Record.Variable.RecordUnary.record
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+include T
 
 let _ = show (* shadowed below *)
 
 type type_t = t [@@deriving compare, eq, sexp, show, hash]
 
-let type_compare = compare
-
-let type_sexp_of_t = sexp_of_t
-
-let type_t_of_sexp = t_of_sexp
-
-module Map = Map.Make (struct
-  type nonrec t = t
-
-  let compare = compare
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
-end)
+module Map = Map.Make (T)
 
 let default_to_bottom map keys =
   let to_bottom solution key =
@@ -453,43 +427,12 @@ let default_to_bottom map keys =
   List.fold keys ~f:to_bottom ~init:map
 
 
-module Set = Set.Make (struct
-  type nonrec t = t
-
-  let compare = compare
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
-end)
-
-include Hashable.Make (struct
-  type nonrec t = t
-
-  let compare = compare
-
-  let hash = Hashtbl.hash
-
-  let hash_fold_t = hash_fold_t
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
-end)
+module Set = Set.Make (T)
+include Hashable.Make (T)
 
 module Cache = struct
   include Hashable.Make (struct
-    type nonrec t = Expression.expression
-
-    let compare = Expression.compare_expression
-
-    let hash = Expression.hash_expression
-
-    let hash_fold_t = Expression.hash_fold_expression
-
-    let sexp_of_t = Expression.sexp_of_expression
-
-    let t_of_sexp = Expression.expression_of_sexp
+    type t = Expression.expression [@@deriving hash, compare, sexp]
   end)
 
   let cache = Table.create ~size:1023 ()
@@ -1385,13 +1328,7 @@ module Callable = struct
     type parameter = type_t t [@@deriving compare, eq, sexp, show, hash]
 
     module Map = Core.Map.Make (struct
-      type nonrec t = parameter
-
-      let compare = compare type_compare
-
-      let sexp_of_t = sexp_of_t type_sexp_of_t
-
-      let t_of_sexp = t_of_sexp type_t_of_sexp
+      type t = parameter [@@deriving compare, sexp]
     end)
 
     let create parameters =
@@ -2838,13 +2775,7 @@ end = struct
     type domain = type_t [@@deriving compare, eq, sexp, show, hash]
 
     module Map = Core.Map.Make (struct
-      type nonrec t = t
-
-      let compare = compare
-
-      let sexp_of_t = sexp_of_t
-
-      let t_of_sexp = t_of_sexp
+      type t = type_t record [@@deriving compare, sexp]
     end)
 
     let any = Any
@@ -2918,13 +2849,7 @@ end = struct
       type domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
 
       module Map = Core.Map.Make (struct
-        type nonrec t = t
-
-        let compare = compare
-
-        let sexp_of_t = sexp_of_t
-
-        let t_of_sexp = t_of_sexp
+        type t = type_t record [@@deriving compare, sexp]
       end)
 
       let name { name; _ } = name
@@ -3080,13 +3005,7 @@ end = struct
       type domain = OrderedTypes.t [@@deriving compare, eq, sexp, show, hash]
 
       module Map = Core.Map.Make (struct
-        type nonrec t = t
-
-        let compare = compare
-
-        let sexp_of_t = sexp_of_t
-
-        let t_of_sexp = t_of_sexp
+        type t = type_t record [@@deriving compare, sexp]
       end)
 
       let name { name; _ } = name
@@ -3330,13 +3249,7 @@ end = struct
   include Record.Variable
 
   module Set = Core.Set.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let sexp_of_t = sexp_of_t
-
-    let t_of_sexp = t_of_sexp
+    type t = type_t Record.Variable.record [@@deriving compare, sexp]
   end)
 
   let pp_concise format = function
