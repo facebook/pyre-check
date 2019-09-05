@@ -371,7 +371,7 @@ def annotate_from_existing_stubs(arguments, type_directory: Path) -> None:
     for path, _, files in os.walk(type_directory):
         for file in files:
             stub_path = os.path.join(path, file)
-            if arguments.in_place != [] or any(
+            if arguments.in_place == [] or any(
                 str(stub_path.replace(str(type_directory) + "/", "")).startswith(
                     str(path)
                 )
