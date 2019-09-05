@@ -20,3 +20,16 @@ class KeywordArgumentsOf(metaclass=ParameterSpecificationComponentMeta):
 
 class Map(Generic[_T1, _T2]):
     pass
+
+
+class GenericMeta(type):
+    def __getitem__(cls, *args):
+        return Any
+
+
+class Generic(metaclass=GenericMeta):
+    pass
+
+
+class Concatenation(Generic):
+    pass
