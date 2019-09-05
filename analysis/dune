@@ -70,6 +70,7 @@
   ppx_deriving
   pyrelib.ast
   pyrelib.memory
+  pyrelib.scheduler
   pyrelib.pyreParser
   pyrelib.recognized
   pyrelib.statistics

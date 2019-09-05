@@ -19,6 +19,7 @@ type t = {
   get_wildcard_exports: ?dependency:Reference.t -> Reference.t -> Reference.t list option;
   get_source_path: Reference.t -> SourcePath.t option;
   is_module: Reference.t -> bool;
+  all_explicit_modules: unit -> Reference.t list;
 }
 
 module RawSourceValue = struct
@@ -133,6 +134,7 @@ let create module_tracker =
         SharedMemoryKeys.ReferenceDependencyKey.KeySet.add qualifier sofar)
     |> SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements
   in
+  let all_explicit_modules () = ModuleTracker.tracked_explicit_modules module_tracker in
   {
     add_raw_source;
     add_source;
@@ -145,6 +147,7 @@ let create module_tracker =
     get_wildcard_exports = WildcardExports.get;
     get_source_path = ModuleTracker.lookup_source_path module_tracker;
     is_module = ModuleTracker.is_module_tracked module_tracker;
+    all_explicit_modules;
   }
 
 
@@ -231,6 +234,7 @@ module ReadOnly = struct
     get_wildcard_exports: Reference.t -> Reference.t list option;
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
+    all_explicit_modules: unit -> Reference.t list;
   }
 
   let create
@@ -238,9 +242,10 @@ module ReadOnly = struct
       ?(get_wildcard_exports = fun _ -> None)
       ?(get_source_path = fun _ -> None)
       ?(is_module = fun _ -> false)
+      ?(all_explicit_modules = fun _ -> [])
       ()
     =
-    { get_source; get_wildcard_exports; get_source_path; is_module }
+    { get_source; get_wildcard_exports; get_source_path; is_module; all_explicit_modules }
 
 
   let get_source { get_source; _ } = get_source
@@ -255,7 +260,11 @@ module ReadOnly = struct
 
 
   let is_module { is_module; _ } = is_module
+
+  let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
 end
 
-let read_only { get_source; get_wildcard_exports; get_source_path; is_module; _ } =
-  { ReadOnly.get_source; get_wildcard_exports; get_source_path; is_module }
+let read_only
+    { get_source; get_wildcard_exports; get_source_path; is_module; all_explicit_modules; _ }
+  =
+  { ReadOnly.get_source; get_wildcard_exports; get_source_path; is_module; all_explicit_modules }

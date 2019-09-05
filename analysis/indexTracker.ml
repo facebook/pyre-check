@@ -38,8 +38,6 @@ include Hashable.Make (struct
   let t_of_sexp = t_of_sexp
 end)
 
-open Core
-
 module OrderIndexValue = struct
   type t = int
 
@@ -86,6 +84,19 @@ let index annotation =
       match OrderIndices.get_no_cache annotation with
       | Some index -> index
       | None -> failwith "read-your-own-write consistency was violated" )
+
+
+let indices annotations =
+  let replace_if_new annotation = function
+    | Some got_in_batch -> got_in_batch
+    | None -> index annotation
+  in
+  Core.Set.to_list annotations
+  |> OrderIndices.KeySet.of_list
+  |> OrderIndices.get_batch
+  |> OrderIndices.KeyMap.mapi replace_if_new
+  |> OrderIndices.KeyMap.values
+  |> Set.of_list
 
 
 let annotation index =

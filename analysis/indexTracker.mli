@@ -10,4 +10,6 @@ include Hashable with type t := t
 
 val index : string -> t
 
+val indices : Type.Primitive.Set.t -> Set.t
+
 val annotation : t -> string

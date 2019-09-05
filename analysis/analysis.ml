@@ -42,3 +42,4 @@ module Inference = Inference
 module ResolutionSharedMemory = ResolutionSharedMemory
 module EnvironmentSharedMemory = EnvironmentSharedMemory
 module IndexTracker = IndexTracker
+module UnannotatedGlobalEnvironment = UnannotatedGlobalEnvironment
