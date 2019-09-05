@@ -83,9 +83,18 @@ module Callgraph : sig
         static_target: Reference.t;
         dispatch: dispatch;
       }
-  [@@deriving compare, eq, show, to_yojson]
+  [@@deriving compare, eq, show]
 
-  module CalleeValue : SharedMemory.ValueType with type t = callee list
+  type callee_with_locations = {
+    callee: callee;
+    locations: Location.Reference.t list;
+  }
+
+  val callee_to_yojson : ?locations:Location.Instantiated.t list -> callee -> Yojson.Safe.t
+
+  include Hashable with type t := callee
+
+  module CalleeValue : SharedMemory.ValueType with type t = callee_with_locations list
 
   module SharedMemory :
     Memory.WithCache.S
@@ -95,7 +104,7 @@ module Callgraph : sig
        and module KeySet = Caml.Set.Make(SharedMemoryKeys.ReferenceKey)
        and module KeyMap = MyMap.Make(SharedMemoryKeys.ReferenceKey)
 
-  val set : caller:Reference.t -> callees:callee list -> unit
+  val set : caller:Reference.t -> callees:callee_with_locations list -> unit
 
-  val get : caller:Reference.t -> callee list
+  val get : caller:Reference.t -> callee_with_locations list
 end

@@ -198,6 +198,33 @@ let test_process_type_query_request context =
             ]
         }
     }
+    |};
+  assert_response
+    (Protocol.TypeQuery.CalleesWithLocation (Reference.create "await.bar"))
+    {|
+    {
+        "response": {
+            "callees": [
+                {
+                    "locations": [
+                        {
+                            "path": "await.py",
+                            "start": {
+                                "line": 4,
+                                "column": 2
+                            },
+                            "stop": {
+                                "line": 4,
+                                "column": 12
+                            }
+                        }
+                    ],
+                    "kind": "function",
+                    "target": "await.await_me"
+                }
+            ]
+        }
+    }
     |}
 
 

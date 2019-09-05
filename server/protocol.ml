@@ -51,6 +51,7 @@ module TypeQuery = struct
       }
     | Attributes of Reference.t
     | Callees of Reference.t
+    | CalleesWithLocation of Reference.t
     | ComputeHashesToKeys
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
@@ -161,11 +162,18 @@ module TypeQuery = struct
   }
   [@@deriving eq, show]
 
+  type callee_with_instantiated_locations = {
+    callee: Dependencies.Callgraph.callee;
+    locations: Location.Instantiated.t list;
+  }
+  [@@deriving eq, show]
+
   let _ = show_compatibility (* unused, but pp is *)
 
   type base_response =
     | Boolean of bool
     | Callees of Dependencies.Callgraph.callee list
+    | CalleesWithLocation of callee_with_instantiated_locations list
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
@@ -188,6 +196,11 @@ module TypeQuery = struct
     | Boolean boolean -> `Assoc ["boolean", `Bool boolean]
     | Callees callees ->
         `Assoc ["callees", `List (List.map callees ~f:Dependencies.Callgraph.callee_to_yojson)]
+    | CalleesWithLocation callees ->
+        let callee_to_yojson { callee; locations } =
+          Dependencies.Callgraph.callee_to_yojson ~locations callee
+        in
+        `Assoc ["callees", `List (List.map callees ~f:callee_to_yojson)]
     | Compatibility { actual; expected; result } ->
         `Assoc
           [ "actual", Type.to_yojson actual;

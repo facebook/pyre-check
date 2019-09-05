@@ -1567,8 +1567,11 @@ let test_calls context =
         |> String.Set.of_list
       in
       let actual_callees =
+        let show { Dependencies.Callgraph.callee; _ } =
+          Dependencies.Callgraph.show_callee callee
+        in
         Dependencies.Callgraph.get ~caller:(Reference.create caller)
-        |> List.map ~f:Dependencies.Callgraph.show_callee
+        |> List.map ~f:show
         |> String.Set.of_list
       in
       assert_equal

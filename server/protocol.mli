@@ -51,6 +51,7 @@ module TypeQuery : sig
       }
     | Attributes of Reference.t
     | Callees of Reference.t
+    | CalleesWithLocation of Reference.t
     | ComputeHashesToKeys
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
@@ -161,9 +162,16 @@ module TypeQuery : sig
   }
   [@@deriving eq, show, to_yojson]
 
+  type callee_with_instantiated_locations = {
+    callee: Dependencies.Callgraph.callee;
+    locations: Location.Instantiated.t list;
+  }
+  [@@deriving eq, show]
+
   type base_response =
     | Boolean of bool
     | Callees of Dependencies.Callgraph.callee list
+    | CalleesWithLocation of callee_with_instantiated_locations list
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded

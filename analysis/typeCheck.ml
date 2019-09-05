@@ -4988,9 +4988,14 @@ let check_define
 
     (* Store calls in shared memory. *)
     let callees =
-      Hashtbl.data Context.calls
-      |> List.concat
-      |> List.dedup_and_sort ~compare:Dependencies.Callgraph.compare_callee
+      (* Sort the callees as a map from callee -> list of locations. *)
+      let callees = Dependencies.Callgraph.Table.create () in
+      let add_binding ~key ~data =
+        List.iter data ~f:(fun callee -> Hashtbl.add_multi callees ~key:callee ~data:key)
+      in
+      Hashtbl.iteri Context.calls ~f:add_binding;
+      Hashtbl.to_alist callees
+      |> List.map ~f:(fun (callee, locations) -> { Dependencies.Callgraph.callee; locations })
     in
     Dependencies.Callgraph.set ~caller:name ~callees;
 

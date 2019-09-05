@@ -22,6 +22,10 @@ let help () =
         Some
           "attributes(class_name): Returns a list of attributes, including functions, for a class."
     | Callees _ -> Some "callees(function): calls from a given function."
+    | CalleesWithLocation _ ->
+        Some
+          "callees_with_location(function): calls from a given function, including the locations \
+           at which they are called."
     | ComputeHashesToKeys -> None
     | CoverageInFile _ ->
         Some "coverage_in_file('path'): Gives detailed coverage information for the given path."
@@ -125,6 +129,8 @@ let parse_query
       match String.lowercase name, arguments with
       | "attributes", [name] -> Request.TypeQueryRequest (Attributes (reference name))
       | "callees", [name] -> Request.TypeQueryRequest (Callees (reference name))
+      | "callees_with_location", [name] ->
+          Request.TypeQueryRequest (CalleesWithLocation (reference name))
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
       | "coverage_in_file", [path] ->
           let path = Path.create_relative ~root ~relative:(string path) in

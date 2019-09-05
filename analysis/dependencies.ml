@@ -277,24 +277,46 @@ module Callgraph = struct
         static_target: Reference.t;
         dispatch: dispatch;
       }
-  [@@deriving compare, eq, show, to_yojson]
+  [@@deriving compare, hash, sexp, eq, show, to_yojson]
 
-  let callee_to_yojson = function
-    | Function name -> `Assoc ["kind", `String "function"; "target", `String (Reference.show name)]
+  type callee_with_locations = {
+    callee: callee;
+    locations: Location.Reference.t list;
+  }
+
+  include Hashable.Make (struct
+    type t = callee [@@deriving compare, hash, sexp]
+  end)
+
+  let callee_to_yojson ?locations callee =
+    let locations =
+      match locations with
+      | None -> []
+      | Some locations ->
+          ["locations", `List (List.map locations ~f:Location.Instantiated.to_yojson)]
+    in
+    match callee with
+    | Function name ->
+        `Assoc
+          (List.rev_append
+             locations
+             ["kind", `String "function"; "target", `String (Reference.show name)])
     | Method { direct_target; static_target; dispatch } ->
         `Assoc
-          [ "kind", `String "method";
-            "direct_target", `String (Reference.show direct_target);
-            "static_target", `String (Reference.show static_target);
-            ( "dispatch",
-              `String
-                ( match dispatch with
-                | Dynamic -> "dynamic"
-                | Static -> "static" ) ) ]
+          (List.rev_append
+             locations
+             [ "kind", `String "method";
+               "direct_target", `String (Reference.show direct_target);
+               "static_target", `String (Reference.show static_target);
+               ( "dispatch",
+                 `String
+                   ( match dispatch with
+                   | Dynamic -> "dynamic"
+                   | Static -> "static" ) ) ])
 
 
   module CalleeValue = struct
-    type t = callee list
+    type t = callee_with_locations list
 
     let prefix = Prefix.make ()
 

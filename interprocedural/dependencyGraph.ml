@@ -36,7 +36,11 @@ let type_checking_callgraph
     | Callgraph.Method { static_target; dispatch = Static; _ } ->
         Callable.create_method static_target
   in
-  let callees = Callgraph.get ~caller:name |> List.map ~f:callees in
+  let callees =
+    Callgraph.get ~caller:name
+    |> List.map ~f:(fun { Dependencies.Callgraph.callee; _ } -> callee)
+    |> List.map ~f:callees
+  in
   Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees
 
 
