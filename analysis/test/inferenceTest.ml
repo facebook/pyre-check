@@ -565,7 +565,27 @@ let test_infer context =
     def foo():
         return ("", "")
     |}
-    [{|"typing.Tuple[str, str]"|}]
+    [{|"typing.Tuple[str, str]"|}];
+
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+        def foo():
+          def bar(x: int) -> str:
+            return ""
+          return bar
+      |}
+    [{|"typing.Callable[[int], str]"|}];
+
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      def bar():
+        def foo(x: int, y: str) -> bool:
+            pass
+        return [foo]
+    |}
+    [{|"typing.List[typing.Callable[[int, str], bool]]"|}]
 
 
 let test_infer_backward context =

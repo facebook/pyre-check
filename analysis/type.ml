@@ -3703,7 +3703,8 @@ let remove_undeclared annotation =
   | _ -> snd (RemoveUndeclared.visit () annotation)
 
 
-(* Transform tuples so they are printed succintly when running infer and click to fix. *)
+(* Transform tuples and callables so they are printed correctly when running infer and click to
+   fix. *)
 let infer_transform annotation =
   let module InferTransform = Transform.Make (struct
     type state = unit
@@ -3728,6 +3729,23 @@ let infer_transform annotation =
               Tuple (Unbounded parameter)
             else
               annotation
+        | Callable
+            ( { implementation = { parameters = Defined parameters; _ } as implementation; _ } as
+            callable ) ->
+            let parameters =
+              let transform_parameter index parameter =
+                match parameter with
+                | Parameter.Anonymous { annotation; _ }
+                | Parameter.KeywordOnly { annotation; _ }
+                | Parameter.Named { annotation; _ }
+                | Parameter.Variable (Concrete annotation) ->
+                    Parameter.Anonymous { annotation; default = false; index }
+                | _ -> parameter
+              in
+              List.mapi parameters ~f:transform_parameter
+            in
+            let implementation = { implementation with parameters = Defined parameters } in
+            Callable { callable with implementation }
         | _ -> annotation
       in
       { Transform.transformed_annotation; new_state = () }
