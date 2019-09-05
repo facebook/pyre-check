@@ -5,8 +5,6 @@
 
 
 import argparse
-import ast
-import itertools
 import json
 import logging
 import os
@@ -17,72 +15,20 @@ import sys
 import traceback
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
-from pyre_extensions import ListVariadic
+from typing import Any, Dict, List, Optional, Tuple
 
 from ...client.commands import ExitCode
 from ...client.filesystem import get_filesystem
+from .ast import verify_stable_ast
+from .codemods import (
+    run_missing_global_annotations,
+    run_missing_overridden_return_annotations,
+)
+from .errors import errors_from_stdin, filter_errors, json_to_errors, sort_errors
+from .postprocess import apply_lint, get_lint_status
 
 
 LOG = logging.getLogger(__name__)
-
-Ts = ListVariadic("Ts")
-
-
-def json_to_errors(json_string: Optional[str]) -> List[Dict[str, Any]]:
-    if json_string:
-        try:
-            return json.loads(json_string)
-        except JSONDecodeError:
-            LOG.error(
-                "Recevied invalid JSON as input."
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
-    else:
-        LOG.error(
-            "Recevied no input."
-            "If piping from `pyre check` be sure to use `--output=json`."
-        )
-    return []
-
-
-def sort_errors(errors: List[Dict[str, Any]]) -> List[Tuple[str, List[Any]]]:
-    def error_path(error):
-        return error["path"]
-
-    return itertools.groupby(sorted(errors, key=error_path), error_path)
-
-
-def filter_errors(arguments, errors) -> List[Dict[str, Any]]:
-    def matches_error_code(error) -> bool:
-        return error["code"] == arguments.only_fix_error_code
-
-    if arguments.only_fix_error_code:
-        errors = list(filter(matches_error_code, errors))
-    return errors
-
-
-def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], None]:
-    def wrapper(arguments: argparse.Namespace, filename: str, *args) -> None:
-        # AST before changes
-        path = pathlib.Path(filename)
-        text = path.read_text()
-        ast_before = ast.parse(text)
-
-        # AST after changes
-        file_modifier(arguments, filename, *args)
-        new_text = path.read_text()
-        ast_after = ast.parse(new_text)
-
-        # Undo changes if AST does not match
-        if not ast.dump(ast_before) == ast.dump(ast_after):
-            LOG.warning(
-                "Attempted upgrade changed the AST in file %s, undoing.", filename
-            )
-            path.write_text(text)
-
-    return wrapper
 
 
 class Configuration:
@@ -202,12 +148,6 @@ class Configuration:
             return []
 
 
-def errors_from_stdin(_arguments) -> List[Dict[str, Any]]:
-    input = sys.stdin.read()
-    errors = json_to_errors(input)
-    return filter_errors(_arguments, errors)
-
-
 def errors_from_run(_arguments) -> List[Dict[str, Any]]:
     configuration_path = Configuration.find_project_configuration()
     if not configuration_path:
@@ -217,25 +157,6 @@ def errors_from_run(_arguments) -> List[Dict[str, Any]]:
         configuration = Configuration(configuration_path, json.load(configuration_file))
         errors = configuration.get_errors()
         return filter_errors(_arguments, errors)
-
-
-def _get_lint_status() -> int:
-    lint_status = subprocess.call(
-        [
-            "arc",
-            "lint",
-            "--never-apply-patches",
-            "--enforce-lint-clean",
-            "--output",
-            "none",
-        ]
-    )
-    return lint_status
-
-
-def _apply_lint() -> None:
-    LOG.info("Lint was dirty after adding fixmes. Cleaning lint and re-checking.")
-    subprocess.call(["arc", "lint", "--apply-patches", "--output", "none"])
 
 
 def remove_comment_preamble(lines: List[str]) -> None:
@@ -406,9 +327,9 @@ def _upgrade_project(
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            lint_status = _get_lint_status()
+            lint_status = get_lint_status()
             if lint_status:
-                _apply_lint()
+                apply_lint()
                 errors = configuration.get_errors(should_clean=False)
                 fix(arguments, sort_errors(errors))
     try:
@@ -532,66 +453,6 @@ def run_global_version_update(arguments: argparse.Namespace) -> None:
         LOG.info("Error while running hg.")
 
 
-def run_missing_overridden_return_annotations(arguments: argparse.Namespace) -> None:
-    errors = sort_errors(errors_from_stdin(arguments))
-    for path, errors in errors:
-        LOG.info("Patching errors in `%s`.", path)
-        errors = reversed(sorted(errors, key=lambda error: error["line"]))
-
-        path = pathlib.Path(path)
-        lines = path.read_text().split("\n")
-
-        for error in errors:
-            if error["code"] != 15:
-                continue
-            line = error["line"] - 1
-
-            match = re.match(r".*`(.*)`\.", error["description"])
-            if not match:
-                continue
-            annotation = match.groups()[0]
-
-            # Find last closing parenthesis in after line.
-            LOG.info("Looking at %d: %s", line, lines[line])
-            while True:
-                if "):" in lines[line]:
-                    lines[line] = lines[line].replace("):", ") -> %s:" % annotation)
-                    LOG.info("%d: %s", line, lines[line])
-                    break
-                else:
-                    line = line + 1
-
-        LOG.warn("Writing patched %s", str(path))
-        path.write_text("\n".join(lines))
-
-
-def run_missing_global_annotations(arguments: argparse.Namespace) -> None:
-    errors = sort_errors(errors_from_stdin(arguments))
-    for path, errors in errors:
-        LOG.info("Patching errors in `%s`", path)
-        errors = reversed(sorted(errors, key=lambda error: error["line"]))
-
-        path = pathlib.Path(path)
-        lines = path.read_text().split("\n")
-
-        for error in errors:
-            if error["code"] != 5:
-                continue
-            line = error["line"] - 1
-
-            match = re.match(r".*`.*`.*`(.*)`.*", error["description"])
-            if not match:
-                continue
-            annotation = match.groups()[0]
-
-            LOG.info("Looking at %d: %s", line, lines[line])
-            if " =" in lines[line]:
-                lines[line] = lines[line].replace(" =", ": %s =" % annotation)
-                LOG.info("%d: %s", line, lines[line])
-
-        path.write_text("\n".join(lines))
-
-
 def run_strict_default(arguments: argparse.Namespace) -> None:
     project_configuration = Configuration.find_project_configuration()
     if project_configuration is None:
@@ -610,9 +471,9 @@ def run_strict_default(arguments: argparse.Namespace) -> None:
                 add_local_unsafe(arguments, filename)
 
             if arguments.lint:
-                lint_status = _get_lint_status()
+                lint_status = get_lint_status()
                 if lint_status:
-                    _apply_lint()
+                    apply_lint()
 
 
 def run_fixme(arguments: argparse.Namespace) -> None:
@@ -621,9 +482,9 @@ def run_fixme(arguments: argparse.Namespace) -> None:
         fix(arguments, sort_errors(errors))
 
         if arguments.lint:
-            lint_status = _get_lint_status()
+            lint_status = get_lint_status()
             if lint_status:
-                _apply_lint()
+                apply_lint()
                 errors = errors_from_run(arguments)
                 fix(arguments, sort_errors(errors))
     else:

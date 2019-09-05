@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from .. import upgrade
+from .. import errors, postprocess, upgrade
 
 
 class FixmeAllTest(unittest.TestCase):
@@ -183,7 +183,7 @@ class FixmeAllTest(unittest.TestCase):
         fix.assert_not_called()
         subprocess.assert_not_called()
 
-        errors = [
+        pyre_errors = [
             {
                 "line": 2,
                 "column": 4,
@@ -196,14 +196,14 @@ class FixmeAllTest(unittest.TestCase):
                 "external_to_global_root": False,
             }
         ]
-        get_errors.return_value = errors
+        get_errors.return_value = pyre_errors
         configuration = upgrade.Configuration(
             "/root/local/.pyre_configuration.local", {"version": 123}
         )
         configuration.get_path()
         upgrade._upgrade_project(arguments, configuration, "/root")
         run_global_version_update.assert_not_called()
-        fix.called_once_with(arguments, upgrade.sort_errors(errors))
+        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
         subprocess.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
@@ -216,7 +216,7 @@ class FixmeAllTest(unittest.TestCase):
         upgrade._upgrade_project(arguments, configuration, "/root")
         errors_from_stdin.assert_not_called()
         run_global_version_update.assert_not_called()
-        fix.called_once_with(arguments, upgrade.sort_errors(errors))
+        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
         calls = [
             call(
                 [
@@ -240,15 +240,15 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.reset_mock()
         arguments.from_stdin = True
         arguments.lint = True
-        errors_from_stdin.return_value = errors
-        get_errors.return_value = errors
+        errors_from_stdin.return_value = pyre_errors
+        get_errors.return_value = pyre_errors
         upgrade._upgrade_project(arguments, configuration, "/root")
         # Called in the first round to get initial errors
         errors_from_stdin.assert_called()
         # Called in the second round to get new errors after applying lint.
         get_errors.assert_called_once()
         run_global_version_update.assert_not_called()
-        fix.called_once_with(arguments, upgrade.sort_errors(errors))
+        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
         calls = [
             call(
                 [
@@ -298,7 +298,7 @@ class FixmeAllTest(unittest.TestCase):
 
         fix.reset_mock()
         subprocess.reset_mock()
-        errors = [
+        pyre_errors = [
             {
                 "line": 2,
                 "column": 4,
@@ -311,10 +311,10 @@ class FixmeAllTest(unittest.TestCase):
                 "external_to_global_root": False,
             }
         ]
-        get_errors.return_value = errors
+        get_errors.return_value = pyre_errors
         upgrade.run_fixme_all(arguments)
         run_global_version_update.assert_not_called()
-        fix.called_once_with(arguments, upgrade.sort_errors(errors))
+        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
         subprocess.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
@@ -339,7 +339,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.submit = True
         upgrade.run_fixme_all(arguments)
         run_global_version_update.assert_called_once_with(arguments)
-        fix.called_once_with(arguments, upgrade.sort_errors(errors))
+        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
             call(["jf", "submit", "--update-fields"]),
@@ -353,7 +353,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = True
         upgrade.run_fixme_all(arguments)
         run_global_version_update.assert_called_once_with(arguments)
-        fix.called_once_with(arguments, upgrade.sort_errors(errors))
+        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
             call(["jf", "submit", "--update-fields"]),
@@ -475,7 +475,7 @@ class FixmeSingleTest(unittest.TestCase):
 
         fix.reset_mock()
         subprocess.reset_mock()
-        errors = [
+        pyre_errors = [
             {
                 "line": 2,
                 "column": 4,
@@ -488,10 +488,10 @@ class FixmeSingleTest(unittest.TestCase):
                 "external_to_global_root": False,
             }
         ]
-        get_errors.return_value = errors
+        get_errors.return_value = pyre_errors
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade.run_fixme_single(arguments)
-            fix.called_once_with(arguments, upgrade.sort_errors(errors))
+            fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
             calls = [
                 call(["hg", "commit", "--message", upgrade._commit_message("local")]),
                 call(["jf", "submit", "--update-fields"]),
@@ -519,15 +519,15 @@ class FixmeTest(unittest.TestCase):
 
         # Test single error.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
                     "concise_description": "Error [1]: description",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
@@ -536,15 +536,15 @@ class FixmeTest(unittest.TestCase):
 
         # Generated files.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 2,
                     "concise_description": "Error [1]: description",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "# @" "generated\n1\n2\n"
             upgrade.run_fixme(arguments)
             path_write_text.assert_not_called()
@@ -553,15 +553,15 @@ class FixmeTest(unittest.TestCase):
         arguments.run = True
         arguments.lint = True
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
                     "concise_description": "Error [1]: description",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             calls = [
@@ -589,15 +589,15 @@ class FixmeTest(unittest.TestCase):
 
         # Test error with comment.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
                     "concise_description": "Error [1]: description",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             arguments.comment = "T1234"
             upgrade.run_fixme(arguments)
@@ -606,7 +606,7 @@ class FixmeTest(unittest.TestCase):
 
         # Test multiple errors and multiple lines.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
@@ -623,8 +623,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [2]: description",
                 },
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
@@ -635,7 +635,7 @@ class FixmeTest(unittest.TestCase):
                 "2"
             )
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 2,
@@ -647,8 +647,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [11]: Description two.",
                 },
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
@@ -659,7 +659,7 @@ class FixmeTest(unittest.TestCase):
             )
         arguments.max_line_length = 40
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 2,
@@ -681,8 +681,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [4]: Description four.",
                 },
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
@@ -696,7 +696,7 @@ class FixmeTest(unittest.TestCase):
         arguments.max_line_length = 36
         arguments.truncate = False
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
@@ -708,8 +708,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [2]: Too many characters.",
                 },
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
@@ -723,7 +723,7 @@ class FixmeTest(unittest.TestCase):
         arguments.max_line_length = 40
         arguments.truncate = False
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 2,
@@ -745,8 +745,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [4]: Description four.",
                 },
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
@@ -764,7 +764,7 @@ class FixmeTest(unittest.TestCase):
         # Test errors in multiple files.
         arguments.max_line_length = 88
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
@@ -776,8 +776,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error [2]: description",
                 },
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.has_calls(
@@ -789,15 +789,15 @@ class FixmeTest(unittest.TestCase):
 
         # Test removal of extraneous ignore.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
                     "concise_description": "Error [0]: extraneous ignore",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "  # pyre-ignore[0]: [1, 2, 3]\n2"
             upgrade.run_fixme(arguments)
             arguments.comment = None
@@ -806,15 +806,15 @@ class FixmeTest(unittest.TestCase):
         # Test removal of extraneous ignore.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             arguments.max_line_length = 30
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
                     "concise_description": "Error [0]: extraneous",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = (
                 "  # pyre-ignore[0]: [1, 2, 3]\n#  continuation comment\n2"
             )
@@ -826,15 +826,15 @@ class FixmeTest(unittest.TestCase):
         # We don't remove legitimate comments.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             arguments.max_line_length = 30
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
                     "concise_description": "Error [0]: extraneous",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = (
                 "  # pyre-ignore[0]: [1, 2, 3]\n# user comment\n2"
             )
@@ -845,7 +845,7 @@ class FixmeTest(unittest.TestCase):
 
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             arguments.max_line_length = 30
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
@@ -853,8 +853,8 @@ class FixmeTest(unittest.TestCase):
                     "quite long",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = (
                 "  # pyre-ignore[0]:\n#  comment that doesn't fit on one line\n"
                 "# pyre-ignore[1]:\n2"
@@ -865,15 +865,15 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with("# pyre-ignore[1]:\n2")
 
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
                     "concise_description": "Error [0]: extraneous ignore",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "# pyre-fixme[1]\n# pyre-fixme[2]\n2"
             upgrade.run_fixme(arguments)
             arguments.comment = None
@@ -881,15 +881,15 @@ class FixmeTest(unittest.TestCase):
 
         # Test removal of extraneous ignore (trailing comment).
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
                     "concise_description": "Error [0]: extraneous ignore",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1# pyre-ignore[0]: [1, 2, 3]\n2"
             upgrade.run_fixme(arguments)
             arguments.comment = None
@@ -902,7 +902,7 @@ class FixmeTest(unittest.TestCase):
             arguments_short.max_line_length = 35
             arguments_short.run = False
 
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
@@ -916,8 +916,8 @@ class FixmeTest(unittest.TestCase):
                     "even-when-facing-adversities",
                 },
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "line = 1\nline = 2\nline = 3"
             upgrade.run_fixme(arguments_short)
             path_write_text.assert_called_once_with(
@@ -934,7 +934,7 @@ class FixmeTest(unittest.TestCase):
 
         # Fall back to normal description for backwards compatibility.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
@@ -942,8 +942,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
@@ -952,7 +952,7 @@ class FixmeTest(unittest.TestCase):
 
         # Ensure that we prefer concise descriptions.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
-            errors = [
+            pyre_errors = [
                 {
                     "path": "path.py",
                     "line": 1,
@@ -960,8 +960,8 @@ class FixmeTest(unittest.TestCase):
                     "concise_description": "Error[1]: Concise.",
                 }
             ]
-            stdin_errors.return_value = errors
-            run_errors.return_value = errors
+            stdin_errors.return_value = pyre_errors
+            run_errors.return_value = pyre_errors
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with("# pyre-fixme[1]: Concise.\n1\n2")
@@ -969,21 +969,21 @@ class FixmeTest(unittest.TestCase):
 
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:
-        with patch.object(upgrade.LOG, "error") as mock_error:
+        with patch.object(postprocess.LOG, "error") as mock_error:
             self.assertEqual(
-                upgrade.json_to_errors('[{ "key": "value" }]'), [{"key": "value"}]
+                errors.json_to_errors('[{ "key": "value" }]'), [{"key": "value"}]
             )
             mock_error.assert_not_called()
             mock_error.reset_mock()
 
-            self.assertEqual(upgrade.json_to_errors(None), [])
+            self.assertEqual(errors.json_to_errors(None), [])
             mock_error.assert_called_once_with(
                 "Recevied no input."
                 "If piping from `pyre check` be sure to use `--output=json`."
             )
             mock_error.reset_mock()
 
-            self.assertEqual(upgrade.json_to_errors('[{ "key": "value" }'), [])
+            self.assertEqual(errors.json_to_errors('[{ "key": "value" }'), [])
             mock_error.assert_called_once_with(
                 "Recevied invalid JSON as input."
                 "If piping from `pyre check` be sure to use `--output=json`."
@@ -1139,7 +1139,7 @@ class FilterErrorTest(unittest.TestCase):
     def test_filter_errors(self) -> None:
         arguments = MagicMock()
         arguments.only_fix_error_code = 44
-        errors = [
+        pyre_errors = [
             {
                 "line": 2,
                 "column": 4,
@@ -1152,13 +1152,13 @@ class FilterErrorTest(unittest.TestCase):
                 "external_to_global_root": False,
             }
         ]
-        self.assertEqual(upgrade.filter_errors(arguments, errors), [])
+        self.assertEqual(errors.filter_errors(arguments, pyre_errors), [])
 
         arguments.only_fix_error_code = 7
-        self.assertEqual(upgrade.filter_errors(arguments, errors), errors)
+        self.assertEqual(errors.filter_errors(arguments, pyre_errors), pyre_errors)
 
         arguments.only_fix_error_code = None
-        self.assertEqual(upgrade.filter_errors(arguments, errors), errors)
+        self.assertEqual(errors.filter_errors(arguments, pyre_errors), pyre_errors)
 
 
 class DefaultStrictTest(unittest.TestCase):
@@ -1205,7 +1205,7 @@ class DefaultStrictTest(unittest.TestCase):
 
         add_local_unsafe.reset_mock()
         get_errors.reset_mock()
-        errors = [
+        pyre_errors = [
             {
                 "line": 2,
                 "column": 4,
@@ -1218,7 +1218,7 @@ class DefaultStrictTest(unittest.TestCase):
                 "external_to_global_root": False,
             }
         ]
-        get_errors.return_value = errors
+        get_errors.return_value = pyre_errors
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade.run_strict_default(arguments)
