@@ -1736,23 +1736,7 @@ let inference_information
 
 
 include BaseError.Make (struct
-  type t = kind
-
-  let compare = compare_kind
-
-  let hash = hash_kind
-
-  let show = show_kind
-
-  let hash_fold_t = hash_fold_kind
-
-  let sexp_of_t = sexp_of_kind
-
-  let t_of_sexp = kind_of_sexp
-
-  let pp = pp_kind
-
-  let equal = equal_kind
+  type t = kind [@@deriving hash, compare, show, sexp, equal]
 
   let code = code
 
@@ -1764,23 +1748,13 @@ include BaseError.Make (struct
 end)
 
 module IntSet = Set.Make (struct
-  type nonrec t = Int.t
-
-  let compare = Int.compare
-
-  let sexp_of_t = Int.sexp_of_t
-
-  let t_of_sexp = Int.t_of_sexp
+  type t = Int.t [@@deriving compare, sexp]
 end)
 
 module Set = Set.Make (struct
-  type nonrec t = t
+  type error_t = t [@@deriving compare, sexp]
 
-  let compare = compare
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
+  type t = error_t [@@deriving compare, sexp]
 end)
 
 let due_to_analysis_limitations { kind; _ } =
