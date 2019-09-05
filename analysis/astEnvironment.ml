@@ -19,6 +19,7 @@ type t = {
   get_wildcard_exports: ?dependency:Reference.t -> Reference.t -> Reference.t list option;
   get_source_path: Reference.t -> SourcePath.t option;
   is_module: Reference.t -> bool;
+  get_module_metadata: ?dependency:Reference.t -> Reference.t -> Module.t option;
   all_explicit_modules: unit -> Reference.t list;
 }
 
@@ -94,6 +95,24 @@ module WildcardExports =
     (SharedMemoryKeys.ReferenceDependencyKey)
     (WildcardExportsValue)
 
+module ModuleMetadataValue = struct
+  type t = Module.t
+
+  let prefix = Prefix.make ()
+
+  let description = "Module"
+
+  let unmarshall value = Marshal.from_string value 0
+
+  let compare = Module.compare
+end
+
+module ModuleMetadata =
+  Memory.DependencyTrackedTableWithCache
+    (SharedMemoryKeys.ReferenceKey)
+    (SharedMemoryKeys.ReferenceDependencyKey)
+    (ModuleMetadataValue)
+
 let create module_tracker =
   let add_raw_source ({ Source.qualifier; _ } as source) =
     RawSources.add qualifier source;
@@ -101,14 +120,16 @@ let create module_tracker =
   in
   let add_source ({ Source.qualifier; _ } as source) =
     Sources.add qualifier source;
-    WildcardExports.write_through qualifier (Source.wildcard_exports_of source)
+    WildcardExports.write_through qualifier (Source.wildcard_exports_of source);
+    ModuleMetadata.add qualifier (Module.create source)
   in
   let remove_sources qualifiers =
     let keys = Sources.KeySet.of_list qualifiers in
     RawSources.remove_batch keys;
     Sources.remove_batch keys;
     RawWildcardExports.remove_batch keys;
-    WildcardExports.remove_batch keys
+    WildcardExports.remove_batch keys;
+    ModuleMetadata.remove_batch keys
   in
   let update_raw_and_compute_dependencies ~update qualifiers =
     let keys = RawSources.KeySet.of_list qualifiers in
@@ -128,6 +149,7 @@ let create module_tracker =
       SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
       |> Sources.add_to_transaction ~keys
       |> WildcardExports.add_to_transaction ~keys
+      |> ModuleMetadata.add_to_transaction ~keys
       |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
     in
     List.fold qualifiers ~init:dependency_set ~f:(fun sofar qualifier ->
@@ -135,6 +157,19 @@ let create module_tracker =
     |> SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements
   in
   let all_explicit_modules () = ModuleTracker.tracked_explicit_modules module_tracker in
+  let get_module_metadata ?dependency qualifier =
+    match Reference.as_list qualifier with
+    | ["future"; "builtins"]
+    | ["builtins"] ->
+        Some (Module.create_implicit ~empty_stub:true ())
+    | _ -> (
+      match ModuleMetadata.get ?dependency qualifier with
+      | Some _ as result -> result
+      | None -> (
+        match ModuleTracker.is_module_tracked module_tracker qualifier with
+        | true -> Some (Module.create_implicit ())
+        | false -> None ) )
+  in
   {
     add_raw_source;
     add_source;
@@ -147,6 +182,7 @@ let create module_tracker =
     get_wildcard_exports = WildcardExports.get;
     get_source_path = ModuleTracker.lookup_source_path module_tracker;
     is_module = ModuleTracker.is_module_tracked module_tracker;
+    get_module_metadata;
     all_explicit_modules;
   }
 
@@ -235,6 +271,7 @@ module ReadOnly = struct
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
+    get_module_metadata: ?dependency:Reference.t -> Reference.t -> Module.t option;
   }
 
   let create
@@ -243,9 +280,17 @@ module ReadOnly = struct
       ?(get_source_path = fun _ -> None)
       ?(is_module = fun _ -> false)
       ?(all_explicit_modules = fun _ -> [])
+      ?(get_module_metadata = fun ?dependency:_ _ -> None)
       ()
     =
-    { get_source; get_wildcard_exports; get_source_path; is_module; all_explicit_modules }
+    {
+      get_source;
+      get_wildcard_exports;
+      get_source_path;
+      is_module;
+      all_explicit_modules;
+      get_module_metadata;
+    }
 
 
   let get_source { get_source; _ } = get_source
@@ -262,9 +307,26 @@ module ReadOnly = struct
   let is_module { is_module; _ } = is_module
 
   let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
+
+  let get_module_metadata { get_module_metadata; _ } = get_module_metadata
 end
 
 let read_only
-    { get_source; get_wildcard_exports; get_source_path; is_module; all_explicit_modules; _ }
+    {
+      get_source;
+      get_wildcard_exports;
+      get_source_path;
+      is_module;
+      all_explicit_modules;
+      get_module_metadata;
+      _;
+    }
   =
-  { ReadOnly.get_source; get_wildcard_exports; get_source_path; is_module; all_explicit_modules }
+  {
+    ReadOnly.get_source;
+    get_wildcard_exports;
+    get_source_path;
+    is_module;
+    all_explicit_modules;
+    get_module_metadata;
+  }

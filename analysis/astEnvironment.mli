@@ -63,6 +63,7 @@ module ReadOnly : sig
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
     ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
+    ?get_module_metadata:(?dependency:Reference.t -> Reference.t -> Module.t option) ->
     unit ->
     t
 
@@ -77,6 +78,8 @@ module ReadOnly : sig
   val get_relative : t -> Reference.t -> string option
 
   val all_explicit_modules : t -> Reference.t list
+
+  val get_module_metadata : t -> ?dependency:Reference.t -> Reference.t -> Module.t option
 end
 
 val read_only : t -> ReadOnly.t

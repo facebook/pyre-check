@@ -1438,7 +1438,6 @@ module ScratchProject = struct
       let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
       Environment.purge environment qualifiers ~update_result;
       Environment.fill_shared_memory_with_default_typeorder environment;
-      Environment.add_dummy_modules environment;
       Environment.add_special_globals environment;
       Service.Environment.populate
         ~configuration

@@ -21,7 +21,6 @@ let populate
     let all_annotations =
       Set.to_list (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result)
     in
-    List.iter sources ~f:(Environment.register_module environment);
     Environment.register_aliases environment sources;
     List.iter ~f:(Environment.register_dependencies environment) sources;
 

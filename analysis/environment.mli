@@ -9,8 +9,6 @@ open Statement
 
 type t
 
-val add_dummy_modules : t -> unit
-
 val add_special_globals : t -> unit
 
 val ast_environment : t -> AstEnvironment.ReadOnly.t
@@ -23,8 +21,6 @@ val dependency_tracked_resolution : t -> dependency:Reference.t -> unit -> Globa
 val dependencies : t -> Reference.t -> Reference.Set.Tree.t option
 
 val connect_definition : t -> resolution:GlobalResolution.t -> definition:Class.t Node.t -> unit
-
-val register_module : t -> Source.t -> unit
 
 val register_aliases : t -> Source.t list -> unit
 

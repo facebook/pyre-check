@@ -133,7 +133,6 @@ let check
         (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
     in
     Environment.fill_shared_memory_with_default_typeorder environment;
-    Environment.add_dummy_modules environment;
     Environment.add_special_globals environment;
     Statistics.performance ~name:"added environment to shared memory" ~timer ();
     Log.info "Building type environment...";

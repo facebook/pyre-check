@@ -138,18 +138,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module ModuleValue = struct
-    type t = Module.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Module"
-
-    let unmarshall value = Marshal.from_string value 0
-
-    let compare = Module.compare
-  end
-
   module UndecoratedFunctionValue = struct
     type t = Type.t Type.Callable.overload [@@deriving compare]
 
@@ -162,11 +150,6 @@ module SharedMemory = struct
 
   (** Shared memory maps *)
 
-  module Modules =
-    Memory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.ReferenceKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (ModuleValue)
   module ClassMetadata =
     Memory.DependencyTrackedTableWithCache
       (SharedMemoryKeys.StringKey)
@@ -442,7 +425,6 @@ module SharedMemoryDependencyHandler = struct
 
   type table_keys = {
     aliases: SharedMemory.Aliases.KeySet.t;
-    modules: SharedMemory.Modules.KeySet.t;
     undecorated_signatures: SharedMemory.UndecoratedFunctions.KeySet.t;
     globals: SharedMemory.Globals.KeySet.t;
   }
@@ -458,7 +440,6 @@ module SharedMemoryDependencyHandler = struct
     let open SharedMemory in
     {
       aliases = Aliases.KeySet.of_list alias_keys;
-      modules = Modules.KeySet.of_list qualifiers;
       undecorated_signatures = UndecoratedFunctions.KeySet.of_list global_keys;
       (* We add a global name for each function definition as well. *)
       globals = Globals.KeySet.of_list (global_keys @ function_keys);
@@ -469,7 +450,6 @@ module SharedMemoryDependencyHandler = struct
     let new_keys = get_all_dependent_table_keys qualifiers in
     {
       aliases = Aliases.KeySet.diff new_keys.aliases old_keys.aliases;
-      modules = Modules.KeySet.diff new_keys.modules old_keys.modules;
       undecorated_signatures =
         UndecoratedFunctions.KeySet.diff
           new_keys.undecorated_signatures
@@ -531,24 +511,14 @@ let connect_annotations_to_object environment annotations =
   List.iter ~f:connect_to_top annotations
 
 
-let module_definition ?dependency { unannotated_global_environment; _ } reference =
-  match SharedMemory.Modules.get ?dependency reference with
-  | Some _ as result -> result
-  | None -> (
-      let ast_environment =
-        UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
-      in
-      match AstEnvironment.ReadOnly.is_module ast_environment reference with
-      | true -> Some (Module.create_implicit ())
-      | false -> None )
-
-
-let resolution_implementation ?dependency ({ unannotated_global_environment } as environment) () =
+let resolution_implementation ?dependency { unannotated_global_environment } () =
+  let ast_environment =
+    UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
+  in
   GlobalResolution.create
-    ~ast_environment:
-      (UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment)
+    ~ast_environment
     ~aliases:(SharedMemory.Aliases.get ?dependency)
-    ~module_definition:(module_definition ?dependency environment)
+    ~module_definition:(AstEnvironment.ReadOnly.get_module_metadata ?dependency ast_environment)
     ~class_definition:
       (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
          unannotated_global_environment
@@ -674,20 +644,13 @@ let register_class_metadata ({ unannotated_global_environment; _ } as environmen
     >>| Annotated.Class.create
     >>| Annotated.Class.extends_placeholder_stub_class
           ~aliases:SharedMemory.Aliases.get
-          ~module_definition:(module_definition environment)
+          ~module_definition:
+            (AstEnvironment.ReadOnly.get_module_metadata (ast_environment environment))
     |> Option.value ~default:false
   in
   ClassMetadata.add
     class_name
     { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
-
-
-let add_dummy_modules _ =
-  (* Register dummy module for `builtins` and `future.builtins`. *)
-  let builtins = Reference.create "builtins" in
-  SharedMemory.Modules.add builtins (Ast.Module.create_implicit ~empty_stub:true ());
-  let future_builtins = Reference.create "future.builtins" in
-  SharedMemory.Modules.add future_builtins (Ast.Module.create_implicit ~empty_stub:true ())
 
 
 let register_global _ ?qualifier ~reference ~global =
@@ -714,10 +677,6 @@ let add_special_globals environment =
 
 
 let dependencies _ = SharedMemory.Dependents.get
-
-let register_module _ ({ Source.qualifier; _ } as source) =
-  SharedMemory.Modules.add qualifier (Module.create source)
-
 
 let collect_aliases
     ({ unannotated_global_environment; _ } as environment)
@@ -948,12 +907,14 @@ let resolve_alias environment { UnresolvedAlias.qualifier; target; value } =
                   Expression.name_to_reference_exn name
               | _ -> Reference.create "typing.Any"
             in
-            let module_definition = module_definition environment in
+            let module_definition =
+              AstEnvironment.ReadOnly.get_module_metadata (ast_environment environment)
+            in
             if Module.from_empty_stub ~reference ~module_definition then
               (), Type.Any
             else if
               ClassHierarchy.contains order primitive
-              || SharedMemory.Modules.mem (Reference.create primitive)
+              || Option.is_some (module_definition (Reference.create primitive))
             then
               (), annotation
             else
@@ -1315,7 +1276,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
   if only_global_keys then
     GlobalKeys.LocalChanges.push_stack ()
   else (
-    Modules.LocalChanges.push_stack ();
     FunctionKeys.LocalChanges.push_stack ();
     AliasKeys.LocalChanges.push_stack ();
     GlobalKeys.LocalChanges.push_stack ();
@@ -1331,7 +1291,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
   if only_global_keys then
     GlobalKeys.LocalChanges.commit_all ()
   else (
-    Modules.LocalChanges.commit_all ();
     FunctionKeys.LocalChanges.commit_all ();
     AliasKeys.LocalChanges.commit_all ();
     GlobalKeys.LocalChanges.commit_all ();
@@ -1346,7 +1305,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
   if only_global_keys then
     GlobalKeys.LocalChanges.pop_stack ()
   else (
-    Modules.LocalChanges.pop_stack ();
     FunctionKeys.LocalChanges.pop_stack ();
     AliasKeys.LocalChanges.pop_stack ();
     GlobalKeys.LocalChanges.pop_stack ();
@@ -1396,7 +1354,7 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
   let current_and_removed_classes =
     UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
   in
-  let { SharedMemoryDependencyHandler.aliases; modules; undecorated_signatures; globals } =
+  let { SharedMemoryDependencyHandler.aliases; undecorated_signatures; globals } =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
   let open SharedMemory in
@@ -1413,7 +1371,6 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
   ClassMetadata.remove_batch caml_current_and_removed_classes;
   Aliases.remove_batch aliases;
   UndecoratedFunctions.remove_batch undecorated_signatures;
-  Modules.remove_batch modules;
 
   SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
@@ -1429,7 +1386,7 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
   let old_dependent_table_keys =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
-  let { SharedMemoryDependencyHandler.aliases; modules; undecorated_signatures; globals } =
+  let { SharedMemoryDependencyHandler.aliases; undecorated_signatures; globals } =
     old_dependent_table_keys
   in
   let open SharedMemory in
@@ -1448,21 +1405,19 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
   let update, mutation_triggers =
     SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
     |> Aliases.add_to_transaction ~keys:aliases
-    |> Modules.add_to_transaction ~keys:modules
     |> ClassMetadata.add_to_transaction ~keys:caml_current_and_removed_classes
     |> UndecoratedFunctions.add_to_transaction ~keys:undecorated_signatures
     |> Globals.add_to_transaction ~keys:globals
     |> OrderEdges.add_to_transaction ~keys:caml_index_keys
     |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
   in
-  let { SharedMemoryDependencyHandler.aliases; modules; undecorated_signatures; globals } =
+  let { SharedMemoryDependencyHandler.aliases; undecorated_signatures; globals } =
     SharedMemoryDependencyHandler.find_added_dependent_table_keys
       qualifiers
       ~old_keys:old_dependent_table_keys
   in
   let mutation_and_addition_triggers =
     [ Aliases.get_all_dependents aliases;
-      Modules.get_all_dependents modules;
       UndecoratedFunctions.get_all_dependents undecorated_signatures;
       Globals.get_all_dependents globals ]
     |> List.fold ~init:mutation_triggers ~f:SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
@@ -1496,7 +1451,6 @@ let shared_memory_hash_to_key_map ~qualifiers () =
     |> extend_map ~new_map:(OrderEdges.compute_hashes_to_keys ~keys:order_keys)
     |> extend_map ~new_map:(OrderBackedges.compute_hashes_to_keys ~keys:order_keys)
   in
-  let map = extend_map map ~new_map:(Modules.compute_hashes_to_keys ~keys:qualifiers) in
   (* Handle-based keys. *)
   let map =
     map
@@ -1584,9 +1538,6 @@ let serialize_decoded decoded =
           value >>| ClassHierarchy.Target.Set.Tree.to_list >>| List.to_string ~f:decode_target )
   | OrderKeys.Decoded (key, value) ->
       Some (OrderKeyValue.description, Int.to_string key, value >>| List.to_string ~f:decode)
-  | Modules.Decoded (key, value) ->
-      Some
-        (ModuleValue.description, Reference.show key, value >>| Module.sexp_of_t >>| Sexp.to_string)
   | _ -> None
 
 
@@ -1617,8 +1568,6 @@ let decoded_equal first second =
       Some (Option.equal ClassHierarchy.Target.Set.Tree.equal first second)
   | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal IndexTracker.equal) first second)
-  | Modules.Decoded (_, first), Modules.Decoded (_, second) ->
-      Some (Option.equal Module.equal first second)
   | _ -> None
 
 
