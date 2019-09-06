@@ -109,7 +109,7 @@ let recheck
     let update_result =
       UnannotatedGlobalEnvironment.update
         unannotated_global_environment
-        ~scheduler:(Scheduler.mock ())
+        ~scheduler
         ~configuration
         invalidated_environment_qualifiers
     in
