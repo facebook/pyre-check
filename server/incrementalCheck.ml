@@ -177,6 +177,10 @@ let recheck
             (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
             re_environment_build_sources
         in
+        Log.log
+          ~section:`Server
+          "(Old) Incremental Environment Builder Update %s"
+          (List.to_string ~f:Reference.show invalidated_environment_qualifiers);
         invalidated_environment_qualifiers, re_environment_build_sources
   in
   Statistics.event
