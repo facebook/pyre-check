@@ -389,6 +389,8 @@ let test_check_return_control_flow context =
         return __dict__
       def i() -> str:
         return ...
+      def doc() -> str:
+        return __doc__
     |}
     [];
   assert_type_errors
@@ -396,6 +398,12 @@ let test_check_return_control_flow context =
       import builtins
       def f() -> int:
         return builtins.__name__
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
+  assert_type_errors
+    {|
+      def f() -> int:
+        return __doc__
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
 

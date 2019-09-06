@@ -686,6 +686,7 @@ let global { global; _ } reference =
   (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic
      for module and for class *)
   match Reference.last reference with
+  | "__doc__"
   | "__file__"
   | "__name__" ->
       let annotation =
