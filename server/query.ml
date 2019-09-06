@@ -26,6 +26,8 @@ let help () =
         Some
           "callees_with_location(function): calls from a given function, including the locations \
            at which they are called."
+    | DumpCallGraph ->
+        Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
     | ComputeHashesToKeys -> None
     | CoverageInFile _ ->
         Some "coverage_in_file('path'): Gives detailed coverage information for the given path."
@@ -75,9 +77,12 @@ let help () =
     [ RunCheck { check_name = ""; paths = [] };
       Attributes (Reference.create "");
       Callees (Reference.create "");
+      CalleesWithLocation (Reference.create "");
       ComputeHashesToKeys;
       CoverageInFile path;
       DecodeOcamlValues [];
+      DumpCallGraph;
+      DumpClassHierarchy;
       DumpDependencies path;
       DumpMemoryToSqlite path;
       IsCompatibleWith (empty, empty);
@@ -135,6 +140,7 @@ let parse_query
       | "callees", [name] -> Request.TypeQueryRequest (Callees (reference name))
       | "callees_with_location", [name] ->
           Request.TypeQueryRequest (CalleesWithLocation (reference name))
+      | "dump_call_graph", [] -> Request.TypeQueryRequest DumpCallGraph
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
       | "coverage_in_file", [path] ->
           let path = Path.create_relative ~root ~relative:(string path) in

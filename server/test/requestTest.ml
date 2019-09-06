@@ -225,6 +225,42 @@ let test_process_type_query_request context =
             ]
         }
     }
+    |};
+  assert_response
+    Protocol.TypeQuery.DumpCallGraph
+    {|
+    {
+        "response": {
+            "contextlib.ContextManager.__enter__": [],
+            "await.bar": [
+                {
+                    "locations": [
+                        {
+                            "path": "await.py",
+                            "start": {
+                                "line": 4,
+                                "column": 2
+                            },
+                            "stop": {
+                                "line": 4,
+                                "column": 12
+                            }
+                        }
+                    ],
+                    "kind": "function",
+                    "target": "await.await_me"
+                }
+            ],
+            "dict.items": [],
+            "dict.add_both": [],
+            "dict.add_value": [],
+            "dict.add_key": [],
+            "str.substr": [],
+            "str.lower": [],
+            "typing.Iterable.__iter__": [],
+            "test.foo": []
+        }
+    }
     |}
 
 

@@ -666,6 +666,36 @@ let process_type_query_request
           |> List.map ~f:source_to_define_name
         in
         TypeQuery.Response (TypeQuery.References dependencies)
+    | TypeQuery.DumpCallGraph ->
+        let get_callgraph module_qualifier =
+          let callees
+              {
+                Node.value =
+                  {
+                    Statement.Define.signature = { Statement.Define.Signature.name = caller; _ };
+                    _;
+                  };
+                _;
+              }
+            =
+            let instantiate =
+              Location.instantiate
+                ~lookup:
+                  (AstEnvironment.ReadOnly.get_relative
+                     (AstEnvironment.read_only state.ast_environment))
+            in
+            Dependencies.Callgraph.get ~caller
+            |> List.map ~f:(fun { Dependencies.Callgraph.callee; locations } ->
+                   { TypeQuery.callee; locations = List.map locations ~f:instantiate })
+            |> fun callees -> { Protocol.TypeQuery.caller; callees }
+          in
+          AstEnvironment.get_source state.ast_environment module_qualifier
+          >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false
+          >>| List.map ~f:callees
+          |> Option.value ~default:[]
+        in
+        let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
+        TypeQuery.Response (TypeQuery.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | TypeQuery.DumpClassHierarchy ->
         let all_classes = Environment.class_hierarchy_json environment in
         TypeQuery.Response (TypeQuery.ClassHierarchy all_classes)

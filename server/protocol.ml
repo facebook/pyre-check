@@ -56,6 +56,7 @@ module TypeQuery = struct
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
     | DependentDefines of Path.t list
+    | DumpCallGraph
     | DumpClassHierarchy
     | DumpDependencies of Path.t
     | DumpMemoryToSqlite of Path.t
@@ -169,12 +170,19 @@ module TypeQuery = struct
   }
   [@@deriving eq, show]
 
+  type callees = {
+    caller: Reference.t;
+    callees: callee_with_instantiated_locations list;
+  }
+  [@@deriving eq, show]
+
   let _ = show_compatibility (* unused, but pp is *)
 
   type base_response =
     | Boolean of bool
     | Callees of Dependencies.Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
+    | Callgraph of callees list
     | ClassHierarchy of Yojson.Safe.t
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
@@ -203,6 +211,13 @@ module TypeQuery = struct
           Dependencies.Callgraph.callee_to_yojson ~locations callee
         in
         `Assoc ["callees", `List (List.map callees ~f:callee_to_yojson)]
+    | Callgraph callees ->
+        let callee_to_yojson { callee; locations } =
+          Dependencies.Callgraph.callee_to_yojson ~locations callee
+        in
+        `Assoc
+          (List.map callees ~f:(fun { caller; callees } ->
+               Reference.show caller, `List (List.map callees ~f:callee_to_yojson)))
     | ClassHierarchy hierarchy -> hierarchy
     | Compatibility { actual; expected; result } ->
         `Assoc

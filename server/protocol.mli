@@ -56,6 +56,7 @@ module TypeQuery : sig
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
     | DependentDefines of Path.t list
+    | DumpCallGraph
     | DumpClassHierarchy
     | DumpDependencies of Path.t
     | DumpMemoryToSqlite of Path.t
@@ -169,10 +170,17 @@ module TypeQuery : sig
   }
   [@@deriving eq, show]
 
+  type callees = {
+    caller: Reference.t;
+    callees: callee_with_instantiated_locations list;
+  }
+  [@@deriving eq, show]
+
   type base_response =
     | Boolean of bool
     | Callees of Dependencies.Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
+    | Callgraph of callees list
     | ClassHierarchy of Yojson.Safe.t
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
