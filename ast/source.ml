@@ -285,7 +285,7 @@ let wildcard_exports_of { qualifier; statements; _ } =
       | Statement.Assign
           {
             Assign.target = { Node.value = Name (Name.Identifier target); _ };
-            value = { Node.value = Expression.List names; _ };
+            value = { Node.value = Expression.(List names | Tuple names); _ };
             _;
           }
         when String.equal (Identifier.sanitized target) "__all__" ->

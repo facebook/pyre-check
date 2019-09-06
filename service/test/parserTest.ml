@@ -510,6 +510,30 @@ let test_register_modules context =
     ["b"];
   assert_module_exports
     {|
+      __all__ = ["b", "fuzz"]
+      from a import b
+      from x import y as z
+      def fuzz() -> int: pass
+    |}
+    ["b"; "fuzz"];
+  assert_module_exports
+    {|
+      __all__ = ("b",)
+      from a import b
+      from x import y as z
+      def fuzz() -> int: pass
+    |}
+    ["b"];
+  assert_module_exports
+    {|
+      __all__ = ("b", "fuzz")
+      from a import b
+      from x import y as z
+      def fuzz() -> int: pass
+    |}
+    ["b"; "fuzz"];
+  assert_module_exports
+    {|
       if sys.version_info >= (3, 7):
         def foo() -> int: pass
       if sys.platform != "win32":
