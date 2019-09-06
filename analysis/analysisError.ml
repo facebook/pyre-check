@@ -2600,7 +2600,7 @@ let deduplicate errors =
 
 
 let filter ~configuration ~resolution errors =
-  let should_filter error =
+  let should_filter ({ location; _ } as error) =
     let is_mock_error { kind; _ } =
       match kind with
       | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
@@ -2690,7 +2690,8 @@ let filter ~configuration ~resolution errors =
           | _ -> false )
       | _ -> false
     in
-    is_stub_error error
+    Location.equal Location.Reference.synthetic location
+    || is_stub_error error
     || is_mock_error error
     || is_unimplemented_return_error error
     || is_builtin_import_error error
@@ -2703,7 +2704,7 @@ let filter ~configuration ~resolution errors =
   | _ -> List.filter ~f:(fun error -> not (should_filter error)) errors
 
 
-let suppress ~mode ~resolution ({ location; _ } as error) =
+let suppress ~mode ~resolution error =
   let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
       true
@@ -2768,22 +2769,19 @@ let suppress ~mode ~resolution ({ location; _ } as error) =
         Type.is_untyped actual || Type.contains_unknown actual || Type.is_undeclared actual
     | _ -> true
   in
-  if Location.equal Location.Reference.synthetic location then
-    true
-  else
-    try
-      match mode with
-      | Source.Infer -> suppress_in_infer error
-      | Source.Strict -> suppress_in_strict error
-      | Source.Declare -> true
-      | Source.DefaultButDontCheck suppressed_codes
-        when List.exists suppressed_codes ~f:(( = ) (code error)) ->
-          true
-      | _ -> suppress_in_default ~resolution error
-    with
-    | ClassHierarchy.Untracked annotation ->
-        Log.warning "`%s` not found in the type order." (Type.show annotation);
-        false
+  try
+    match mode with
+    | Source.Infer -> suppress_in_infer error
+    | Source.Strict -> suppress_in_strict error
+    | Source.Declare -> true
+    | Source.DefaultButDontCheck suppressed_codes
+      when List.exists suppressed_codes ~f:(( = ) (code error)) ->
+        true
+    | _ -> suppress_in_default ~resolution error
+  with
+  | ClassHierarchy.Untracked annotation ->
+      Log.warning "`%s` not found in the type order." (Type.show annotation);
+      false
 
 
 let dequalify

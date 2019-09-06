@@ -1099,6 +1099,9 @@ let test_filter context =
   assert_filtered (unexpected_keyword "foo" (Some "unittest.mock.call"));
   assert_unfiltered (unexpected_keyword "foo" None);
 
+  (* Always filter synthetic locations. *)
+  assert_filtered ~location:Location.Reference.synthetic (missing_return Type.integer);
+
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
   assert_filtered (incompatible_return_type Type.integer Type.float ~is_unimplemented:true);
@@ -1195,23 +1198,6 @@ let test_suppress context =
   assert_not_suppressed suppress_missing_return (incompatible_return_type Type.integer Type.float);
   assert_suppressed suppress_missing_return (Error.UndefinedName !&"reveal_type");
 
-  (* Always suppress synthetic locations. *)
-  assert_suppressed
-    Source.Infer
-    ~location:Location.Reference.synthetic
-    (missing_return Type.integer);
-  assert_suppressed
-    Source.Declare
-    ~location:Location.Reference.synthetic
-    (missing_return Type.integer);
-  assert_suppressed
-    Source.Default
-    ~location:Location.Reference.synthetic
-    (missing_return Type.integer);
-  assert_suppressed
-    Source.Strict
-    ~location:Location.Reference.synthetic
-    (missing_return Type.integer);
   assert_suppressed
     Source.Declare
     (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
