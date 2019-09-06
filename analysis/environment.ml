@@ -1168,7 +1168,14 @@ let register_values
   List.iter ~f:visit statements
 
 
-let register_dependencies _ source =
+let is_module { unannotated_global_environment; _ } =
+  let ast_environment =
+    UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
+  in
+  AstEnvironment.ReadOnly.is_module ast_environment
+
+
+let register_dependencies environment source =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
@@ -1179,10 +1186,16 @@ let register_dependencies _ source =
           let imports =
             let imports =
               match from with
-              (* If analyzing from x import y, only add x to the dependencies. Otherwise, add all
-                 dependencies. *)
-              | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
-              | Some base_module -> [base_module]
+              | None ->
+                  (* If analyzing `import a, b, c`, add `a`, `b`, `c` to the dependencies. *)
+                  imports |> List.map ~f:(fun { Import.name; _ } -> name)
+              | Some base_module ->
+                  (* If analyzing `from x import a, b, c`, add `x`, `x.a`, `x.b`, `x.c` to the
+                     dependencies, if they are module names. *)
+                  base_module
+                  :: List.map imports ~f:(fun { Import.name; _ } ->
+                         Reference.combine base_module name)
+                  |> List.filter ~f:(is_module environment)
             in
             let qualify_builtins import =
               match Reference.single import with
@@ -1256,13 +1269,6 @@ let propagate_nested_classes ({ unannotated_global_environment; _ } as environme
   end)
   in
   Visit.visit () source
-
-
-let is_module { unannotated_global_environment; _ } =
-  let ast_environment =
-    UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
-  in
-  AstEnvironment.ReadOnly.is_module ast_environment
 
 
 let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate

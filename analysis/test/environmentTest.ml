@@ -1243,22 +1243,58 @@ let test_import_dependencies context =
 
 
 let test_register_dependencies context =
-  let environment = create_environment ~context () in
-  let source =
+  let environment =
+    create_environment
+      ~context
+      ~additional_sources:
+        [ "foo.py", "class Foo: ...";
+          "bar/a.py", "class A: ...";
+          "bar/b.py", "x = 42";
+          "bar/c.py", "";
+          "baz.py", "" ]
+      ()
+  in
+  let source_test1 =
     {|
-         import a # a is added here
-         from subdirectory.b import c # subdirectory.b is added here
-         from . import ignored # no dependency created here
+         import foo, baz
+         from bar.a import A
+         from bar import b
       |}
   in
-  Environment.register_dependencies environment (parse ~handle:"test.py" source);
-  let dependencies qualifier =
-    Environment.dependencies environment !&qualifier
-    >>| String.Set.Tree.map ~f:Reference.show
-    >>| String.Set.Tree.to_list
+  let source_test2 =
+    {|
+         import baz
+         from bar.b import x
+         from builtins import str
+      |}
   in
-  assert_equal (dependencies "subdirectory.b") (Some ["test"]);
-  assert_equal (dependencies "a") (Some ["test"])
+  Environment.register_dependencies environment (parse ~handle:"test1.py" source_test1);
+  Environment.register_dependencies environment (parse ~handle:"test2.py" source_test2);
+  let assert_dependency_equal ~expected qualifier =
+    let actual =
+      Environment.dependencies environment qualifier
+      >>| Reference.Set.Tree.to_list
+      |> Option.value ~default:[]
+    in
+    assert_equal
+      ~cmp:(List.equal Reference.equal)
+      ~printer:(List.to_string ~f:Reference.show)
+      expected
+      actual
+  in
+  assert_dependency_equal !&"foo" ~expected:[!&"test1"];
+  assert_dependency_equal !&"bar" ~expected:[!&"test1"];
+  assert_dependency_equal !&"bar.a" ~expected:[!&"test1"];
+  assert_dependency_equal !&"bar.b" ~expected:[!&"test1"; !&"test2"];
+  assert_dependency_equal !&"bar.c" ~expected:[];
+  assert_dependency_equal !&"baz" ~expected:[!&"test1"; !&"test2"];
+  assert_dependency_equal !&"foo.Foo" ~expected:[];
+  assert_dependency_equal !&"bar.a.A" ~expected:[];
+  assert_dependency_equal !&"bar.b.x" ~expected:[];
+  assert_dependency_equal !&"str" ~expected:[];
+
+  Memory.reset_shared_memory ();
+  ()
 
 
 let test_purge context =
