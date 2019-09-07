@@ -270,7 +270,7 @@ module Record = struct
       let equal equal_annotation left right =
         match left, right with
         | Named left, Named right ->
-            left.default = right.default
+            Bool.equal left.default right.default
             && Identifier.equal (Identifier.sanitized left.name) (Identifier.sanitized right.name)
             && equal_annotation left.annotation right.annotation
         | _ -> equal equal_annotation left right
@@ -2012,7 +2012,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               | _ -> Top )
           | Name (Name.Identifier identifier) ->
               let sanitized = Identifier.sanitized identifier in
-              if sanitized = "None" then
+              if String.equal sanitized "None" then
                 none
               else
                 Primitive sanitized |> resolve_aliases

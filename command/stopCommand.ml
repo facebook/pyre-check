@@ -30,7 +30,7 @@ let stop ~local_root =
     (* The timeout here is due to a race between the server's socket closing and the socket file
      * being read. If a connection to the socket is opened after the server closes its socket but
      * before the socket file is destroyed, the Socket.read will never get an EOF. *)
-    if readable = [] then
+    if List.is_empty readable then
       raise NotRunning;
     Socket.read socket
     |> fun (Handshake.ServerConnected _) ->

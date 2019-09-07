@@ -117,14 +117,15 @@ module Label = struct
   let common_prefix left right =
     let rec common_prefix_reversed left right so_far =
       match left, right with
-      | left_element :: left_rest, right_element :: right_rest when left_element = right_element ->
+      | left_element :: left_rest, right_element :: right_rest
+        when [%compare.equal: t] left_element right_element ->
           common_prefix_reversed left_rest right_rest (left_element :: so_far)
       | _ -> so_far
     in
     common_prefix_reversed left right [] |> List.rev
 
 
-  let is_prefix = List.is_prefix ~equal:( = )
+  let is_prefix = List.is_prefix ~equal:[%compare.equal: t]
 end
 
 module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct

@@ -1992,7 +1992,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                             Statement.Define { Define.signature = { Define.Signature.name; _ }; _ };
                           _;
                         } ->
-                          Reference.last name = "__new__"
+                          String.equal (Reference.last name) "__new__"
                       | _ -> false
                     in
                     if List.exists body ~f:is_dunder_new then

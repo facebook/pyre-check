@@ -83,7 +83,7 @@ let communicate server_socket all_uris =
         >>| Socket.write server_socket
         |> ignore
       in
-      if socket = Unix.stdin then
+      if Unix.File_descr.equal socket Unix.stdin then
         process_stdin_socket ()
       else
         try process_server_socket () with

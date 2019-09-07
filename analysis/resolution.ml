@@ -47,7 +47,7 @@ let add_import ({ imports; _ } as resolution) ~reference =
   let imports = Set.add imports reference in
   let add_with_parents_of_import (imports, parent_module_prefix) module_name =
     let parents_of_imports =
-      if parent_module_prefix = [] then
+      if List.is_empty parent_module_prefix then
         imports
       else
         parent_module_prefix |> Reference.create_from_list |> Set.add imports

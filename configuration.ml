@@ -46,12 +46,12 @@ module Analysis = struct
   [@@deriving show]
 
   let equal first second =
-    first.infer = second.infer
-    && first.additional_checks = second.additional_checks
-    && first.debug = second.debug
-    && first.expected_version = second.expected_version
-    && first.strict = second.strict
-    && first.declare = second.declare
+    Bool.equal first.infer second.infer
+    && [%compare.equal: string list] first.additional_checks second.additional_checks
+    && Bool.equal first.debug second.debug
+    && [%compare.equal: string option] first.expected_version second.expected_version
+    && Bool.equal first.strict second.strict
+    && Bool.equal first.declare second.declare
 
 
   let create

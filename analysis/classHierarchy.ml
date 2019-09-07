@@ -211,7 +211,7 @@ let variables ?(default = None) (module Handler : Handler) = function
         index_of node
         |> fun primitive_index ->
         Handler.edges primitive_index
-        >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
+        >>= List.find ~f:(fun { Target.target; _ } -> IndexTracker.equal target generic_index)
         >>| fun { Target.parameters; _ } -> parameters
       in
       match edges with
@@ -296,7 +296,7 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
       match Hash_set.strict_add visited current with
       | Error _ -> iterate worklist
       | Ok () ->
-          if current = index_of target then
+          if IndexTracker.equal current (index_of target) then
             true
           else (
             Option.iter (Handler.edges current) ~f:(Queue.enqueue_all worklist);
@@ -419,7 +419,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                 Handler.edges target_index
                 >>| get_instantiated_successors ~generic_index ~parameters
               in
-              if target_index = index_of target then
+              if IndexTracker.equal target_index (index_of target) then
                 match target with
                 | "typing.Callable" -> Some parameters
                 | _ -> instantiated_successors >>= get_generic_parameters ~generic_index
@@ -482,7 +482,7 @@ let instantiate_predecessors_parameters
               in
               List.filter_map predecessors ~f:instantiate
             in
-            if target_index = index_of target then
+            if IndexTracker.equal target_index (index_of target) then
               Some parameters
             else (
               Handler.backedges target_index
@@ -545,7 +545,9 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
           let has_backedge =
             match backedges target with
             | Some targets ->
-                Backedges.exists ~f:(fun { Target.target; _ } -> target = index) targets
+                Backedges.exists
+                  ~f:(fun { Target.target; _ } -> IndexTracker.equal target index)
+                  targets
             | None -> false
           in
           if not has_backedge then (

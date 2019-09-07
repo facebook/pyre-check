@@ -180,7 +180,7 @@ module State (Context : Context) = struct
       Annotation.equal
       (Resolution.annotations left.resolution)
       (Resolution.annotations right.resolution)
-    && left.bottom = right.bottom
+    && Bool.equal left.bottom right.bottom
 
 
   let create
@@ -2060,7 +2060,7 @@ module State (Context : Context) = struct
                    synthesized by earlier steps. For example, `except (Exception1, Exception2)`
                    will generate a typing.Union[Exception1, Exception2], and cause `typing.Union`
                    to be checked as a reference. *)
-                || Reference.show reference = "typing"
+                || String.equal (Reference.show reference) "typing"
               then
                 (* We enforce that only imported module and its parents or the current module and
                    its parents's attributes appear visible. *)
@@ -3770,7 +3770,7 @@ module State (Context : Context) = struct
                     | ( Name.Attribute
                           { base = { Node.value = Name (Name.Identifier self); _ }; attribute; _ },
                         Name _ )
-                      when Identifier.sanitized self = "self" ->
+                      when String.equal (Identifier.sanitized self) "self" ->
                         let sanitized = Expression.show_sanitized value in
                         is_immutable
                         && (not (Type.is_unknown expected))

@@ -14,7 +14,7 @@ let run_query serialized local_root () =
   let local_root = Path.create_absolute local_root in
   let configuration = Configuration.Analysis.create ~local_root () in
   (fun () ->
-    if serialized = "help" then
+    if String.equal serialized "help" then
       Log.print "%s" (Query.help ())
     else
       let response =

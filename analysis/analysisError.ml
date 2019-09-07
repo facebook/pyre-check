@@ -720,7 +720,7 @@ let messages ~concise ~signature location kind =
                 expected
             else if due_to_invariance then
               invariance_message
-            else if override_kind = Attribute then
+            else if equal_override_kind override_kind Attribute then
               Format.asprintf
                 "Type `%a` is not a subtype of the overridden attribute `%a`."
                 pp_type
@@ -920,14 +920,14 @@ let messages ~concise ~signature location kind =
           [Format.asprintf format (Type.show (Type.Variable variable))]
       | Type.Variable.ParameterVariadic variable ->
           let name = Type.Variable.Variadic.Parameters.name variable in
-          if origin = ClassToplevel then
+          if equal_type_variable_origin origin ClassToplevel then
             [ "Classes parameterized by callable parameter variadics are not supported at "
               ^ "this time." ]
           else
             [Format.asprintf format name]
       | Type.Variable.ListVariadic variable ->
           let name = Type.Variable.Variadic.List.name variable in
-          if origin = ClassToplevel then
+          if equal_type_variable_origin origin ClassToplevel then
             ["Classes parameterized by list variadics are not supported at this time."]
           else
             [Format.asprintf format name] )
@@ -946,7 +946,7 @@ let messages ~concise ~signature location kind =
           [Format.asprintf format (Type.show (Type.Variable variable))]
       | Type.Variable.ParameterVariadic variable ->
           let name = Type.Variable.Variadic.Parameters.name variable in
-          if origin = ClassToplevel then
+          if equal_type_variable_origin origin ClassToplevel then
             [ Format.asprintf
                 "Cannot propagate callable parameter variadic `%s`.  Classes parameterized by \
                  callable parameter variadics are not supported at this time."
@@ -955,7 +955,7 @@ let messages ~concise ~signature location kind =
             [Format.asprintf format name]
       | Type.Variable.ListVariadic variable ->
           let name = Type.Variable.Variadic.List.name variable in
-          if origin = ClassToplevel then
+          if equal_type_variable_origin origin ClassToplevel then
             [ Format.asprintf
                 "Cannot propagate list variadic `%s`.  Classes parameterized by list variadics \
                  are not supported at this time."
@@ -2091,7 +2091,7 @@ let less_or_equal ~resolution left right =
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
     match left.origin, right.origin with
-    | Class left, Class right when left.class_attribute = right.class_attribute ->
+    | Class left, Class right when Bool.equal left.class_attribute right.class_attribute ->
         GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | Module left, Module right -> Reference.equal_sanitized left right
     | _ -> false )
@@ -2264,7 +2264,7 @@ let join ~resolution left right =
         NotCallable (GlobalResolution.join resolution left right)
     | ( ProhibitedAny { is_type_alias = is_type_alias_left; missing_annotation = left },
         ProhibitedAny { is_type_alias = is_type_alias_right; missing_annotation = right } )
-      when is_type_alias_left = is_type_alias_right ->
+      when Bool.equal is_type_alias_left is_type_alias_right ->
         ProhibitedAny
           {
             is_type_alias = is_type_alias_left;

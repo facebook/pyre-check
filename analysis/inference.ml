@@ -99,7 +99,7 @@ module State (Context : Context) = struct
       Annotation.equal
       (Resolution.annotations left.resolution)
       (Resolution.annotations right.resolution)
-    && left.bottom = right.bottom
+    && Bool.equal left.bottom right.bottom
 
 
   let create ?(bottom = false) ~resolution () =

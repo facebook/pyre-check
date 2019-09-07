@@ -133,7 +133,9 @@ let start
     ()
   =
   let state =
-    let matches_configuration_version = Some (Version.version ()) = expected_version in
+    let matches_configuration_version =
+      [%compare.equal: string option] (Some (Version.version ())) expected_version
+    in
     match saved_state_action, matches_configuration_version with
     | Some (Load (LoadFromProject _)), true
     | Some (Load (LoadFromFiles _)), _
@@ -224,7 +226,7 @@ let connect
   |> fun (Handshake.ServerConnected server_version) ->
   Socket.write socket Handshake.ClientConnected;
   match expected_version with
-  | Some version when version = server_version -> socket
+  | Some version when String.equal version server_version -> socket
   | None -> socket
   | Some expected_version ->
       Unix.close socket;

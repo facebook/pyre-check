@@ -320,7 +320,7 @@ let expand_relative_import ~from { is_init; qualifier; _ } =
   | "builtins" -> Reference.empty
   | serialized ->
       (* Expand relative imports according to PEP 328 *)
-      let dots = String.take_while ~f:(fun dot -> dot = '.') serialized in
+      let dots = String.take_while ~f:(fun dot -> Char.equal dot '.') serialized in
       let postfix =
         match String.drop_prefix serialized (String.length dots) with
         (* Special case for single `.`, `..`, etc. in from clause. *)

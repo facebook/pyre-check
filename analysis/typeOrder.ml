@@ -407,7 +407,10 @@ module OrderImplementation = struct
           []
       | Type.Bottom, _ -> [constraints]
       | Type.Callable _, Type.Primitive protocol when is_protocol right ~protocol_assumptions ->
-          if instantiate_protocol_parameters order ~protocol ~candidate:left = Some (Concrete [])
+          if
+            [%compare.equal: Type.OrderedTypes.t option]
+              (instantiate_protocol_parameters order ~protocol ~candidate:left)
+              (Some (Concrete []))
           then
             [constraints]
           else
@@ -544,8 +547,9 @@ module OrderImplementation = struct
             [constraints]
           else if
             is_protocol right ~protocol_assumptions
-            && instantiate_protocol_parameters order ~candidate:left ~protocol:target
-               = Some (Concrete [])
+            && [%compare.equal: Type.OrderedTypes.t option]
+                 (instantiate_protocol_parameters order ~candidate:left ~protocol:target)
+                 (Some (Concrete []))
           then
             [constraints]
           else
@@ -628,7 +632,8 @@ module OrderImplementation = struct
           let field_not_found field =
             not (List.exists left.fields ~f:(Type.equal_typed_dictionary_field field))
           in
-          if left.total = right.total && not (List.exists right.fields ~f:field_not_found) then
+          if Bool.equal left.total right.total && not (List.exists right.fields ~f:field_not_found)
+          then
             [constraints]
           else
             []
@@ -842,7 +847,7 @@ module OrderImplementation = struct
                     if Type.Callable.Parameter.names_compatible left right then
                       match left, right with
                       | Parameter.Anonymous left, Parameter.Anonymous right
-                        when left.default = right.default ->
+                        when Bool.equal left.default right.default ->
                           Some
                             (Parameter.Anonymous
                                {
@@ -851,7 +856,7 @@ module OrderImplementation = struct
                                })
                       | Parameter.Anonymous anonymous, Parameter.Named named
                       | Parameter.Named named, Parameter.Anonymous anonymous
-                        when named.default = anonymous.default ->
+                        when Bool.equal named.default anonymous.default ->
                           Some
                             (Parameter.Anonymous
                                {
@@ -860,7 +865,7 @@ module OrderImplementation = struct
                                    parameter_join order named.annotation anonymous.annotation;
                                })
                       | Parameter.Named left, Parameter.Named right
-                        when left.default = right.default ->
+                        when Bool.equal left.default right.default ->
                           Some
                             (Parameter.Named
                                {

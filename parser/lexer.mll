@@ -35,7 +35,7 @@ let line_break buffer =
   }
 
 let line_breaks buffer string =
-  for _ = 1 to (String.count ~f:(fun character -> character = '\n') string) do
+  for _ = 1 to (String.count ~f:(fun character -> Char.equal character '\n') string) do
     line_break buffer
   done
 
@@ -79,14 +79,14 @@ let parse_signature_comment comment =
     |> String.rstrip ~drop:character
   in
   let return_annotation =
-    let quote char = char = '\'' || char = '"' in
+    let quote char = Char.equal char '\'' || Char.equal char '"' in
     comment
     |> Str.split (Str.regexp "-> *")
     |> fun elements -> List.nth_exn elements 1
                        |> strip quote
   in
   let parameter_annotations =
-    let space char = char = ' ' || char = ',' in
+    let space char = Char.equal char ' ' || Char.equal char ',' in
     let split_annotations annotations_string =
       let rec split ~sofar ~next ~open_brackets characters =
         let reverse_stringify character_list =
@@ -204,7 +204,7 @@ rule read state = parse
 and read_without_indent state = parse
   | (newline (whitespace* comment)?)+ {
       let lines =
-        String.filter (lexeme lexbuf) ~f:(fun char -> char = '\n')
+        String.filter (lexeme lexbuf) ~f:(fun char -> Char.equal char '\n')
         |> String.length in
       for _ = 1 to lines do line_break lexbuf done;
       if state.nesting <= 0 then

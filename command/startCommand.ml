@@ -158,7 +158,7 @@ let computation_thread
                     ~f:(fun () -> In_channel.input_all pid_file)
                     ~finally:(fun () -> In_channel.close pid_file)
                 in
-                if not (Pid.to_string (Unix.getpid ()) = pid) then
+                if not (String.equal (Pid.to_string (Unix.getpid ())) pid) then
                   raise (Failure "pid mismatch");
                 current_time
               with
@@ -254,7 +254,7 @@ let request_handler_thread
       |> fun { Unix.Select_fds.read; _ } -> read
     in
     let handle_socket socket =
-      if socket = server_socket then
+      if Unix.File_descr.equal socket server_socket then
         let new_socket, _ =
           Log.log ~section:`Server "New client connection";
           Unix.accept server_socket
@@ -272,7 +272,7 @@ let request_handler_thread
         | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
             Log.warning "ECONNRESET while reading from socket."
         | End_of_file -> Log.warning "New client socket unreadable"
-      else if socket = json_socket then
+      else if Unix.File_descr.equal socket json_socket then
         try
           let new_socket, _ =
             Log.log ~section:`Server "New json client connection";

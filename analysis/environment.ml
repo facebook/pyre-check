@@ -826,7 +826,7 @@ let collect_aliases
                   aliases )
         | _ -> aliases )
     | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
-      when Reference.show name = "*" ->
+      when String.equal (Reference.show name) "*" ->
         (* Don't register x.* as an alias when a user writes `from x import *`. *)
         aliases
     | Import { Import.from; imports } ->
