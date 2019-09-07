@@ -24,19 +24,23 @@ def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], Non
     def wrapper(arguments: argparse.Namespace, filename: str, *args):
         # AST before changes
         path = pathlib.Path(filename)
-        text = path.read_text()
-        ast_before = ast.parse(text)
+        try:
+            text = path.read_text()
+            ast_before = ast.parse(text)
 
-        # AST after changes
-        file_modifier(arguments, filename, *args)
-        new_text = path.read_text()
-        ast_after = ast.parse(new_text)
+            # AST after changes
+            file_modifier(arguments, filename, *args)
+            new_text = path.read_text()
+            ast_after = ast.parse(new_text)
 
-        # Undo changes if AST does not match
-        if not ast.dump(ast_before) == ast.dump(ast_after):
-            LOG.warning(
-                "Attempted file changes modified the AST in %s. Undoing.", filename
-            )
-            path.write_text(text)
+            # Undo changes if AST does not match
+            if not ast.dump(ast_before) == ast.dump(ast_after):
+                LOG.warning(
+                    "Attempted file changes modified the AST in %s. Undoing.", filename
+                )
+                path.write_text(text)
+        except FileNotFoundError:
+            LOG.warning("File %s cannot be found, skipping.", filename)
+            return
 
     return wrapper
