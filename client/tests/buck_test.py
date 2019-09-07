@@ -1,5 +1,7 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
+# pyre-unsafe
+
 import glob
 import json
 import subprocess

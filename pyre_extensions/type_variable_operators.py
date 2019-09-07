@@ -1,3 +1,4 @@
+# pyre-unsafe
 from typing import Any, Generic, TypeVar
 
 
