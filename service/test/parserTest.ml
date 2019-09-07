@@ -116,6 +116,13 @@ let test_parse_sources context =
     let sources, ast_environment =
       Service.Parser.parse_all ~scheduler ~configuration module_tracker
     in
+    let is_source_sorted =
+      let compare { Source.qualifier = left; _ } { Source.qualifier = right; _ } =
+        Reference.compare left right
+      in
+      List.is_sorted sources ~compare
+    in
+    assert_bool "Sources should be in sorted order" is_source_sorted;
     let sorted_handles =
       List.map sources ~f:(fun { Source.relative; _ } -> relative)
       |> List.sort ~compare:String.compare

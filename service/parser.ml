@@ -194,7 +194,7 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environmen
   in
   process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment parsed;
   SharedMem.invalidate_caches ();
-  { parsed; syntax_error; system_error }
+  { parsed = List.sort parsed ~compare:Reference.compare; syntax_error; system_error }
 
 
 let log_parse_errors ~syntax_error ~system_error =
