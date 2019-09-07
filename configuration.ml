@@ -48,7 +48,6 @@ module Analysis = struct
   let equal first second =
     Bool.equal first.infer second.infer
     && [%compare.equal: string list] first.additional_checks second.additional_checks
-    && Bool.equal first.debug second.debug
     && [%compare.equal: string option] first.expected_version second.expected_version
     && Bool.equal first.strict second.strict
     && Bool.equal first.declare second.declare

@@ -54,7 +54,7 @@ let test_equal _ =
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~declare:true ())
        (Configuration.Analysis.create ~declare:false ()));
-  assert_false
+  assert_true
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~debug:true ())
        (Configuration.Analysis.create ~debug:false ()))
