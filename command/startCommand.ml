@@ -79,6 +79,7 @@ let computation_thread
       | TypeCheckResponse errors -> errors_to_lsp_responses errors
       | LanguageServerProtocolResponse _ -> [response]
       | ClientExitResponse Persistent -> [response]
+      | ServerUuidResponse _ -> [response]
       | _ -> []
     in
     List.iter responses ~f:(fun response ->
@@ -96,6 +97,7 @@ let computation_thread
             let { Request.state; response } = process_request ~state ~request in
             ( match response with
             | Some (LanguageServerProtocolResponse _)
+            | Some (ServerUuidResponse _)
             | Some (ClientExitResponse Persistent) ->
                 response
                 >>| (fun response ->

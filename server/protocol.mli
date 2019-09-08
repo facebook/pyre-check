@@ -233,6 +233,7 @@ module Request : sig
     | RageRequest of LanguageServer.Types.RequestId.t
     | DocumentChange of File.t
     | SaveDocument of Path.t
+    | GetServerUuid
     | StopRequest
     | TypeCheckRequest of Path.t list
     | TypeCoverageRequest of {
@@ -262,4 +263,5 @@ type response =
   | StopResponse
   | GetDefinitionResponse of Location.Instantiated.t option
   | HoverResponse of Location.Instantiated.t option
+  | ServerUuidResponse of string
 [@@deriving eq, show]

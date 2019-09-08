@@ -56,6 +56,7 @@ let create_configuration ?(daemonize = true) ?log_path ?saved_state_action confi
     daemonize;
     saved_state_action;
     configuration;
+    server_uuid = Uuid_unix.create () |> Uuid.to_string;
   }
 
 

@@ -58,7 +58,7 @@ end
 module InitializeResponse : sig
   type t [@@deriving to_yojson]
 
-  val default : Types.RequestId.t -> t
+  val default : Types.RequestId.t -> server_uuid:string -> t
   (** default [id] [response] the server initialize response message *)
 end
 

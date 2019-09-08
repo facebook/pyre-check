@@ -15,7 +15,7 @@ type exit_code = int
 
 exception ClientExit of reason * exit_code
 
-let communicate server_socket all_uris =
+let communicate server_socket all_uris server_uuid =
   let display_nuclide_message message =
     ShowMessage.create LanguageServer.Types.ShowMessageParameters.InfoMessage message
     |> ShowMessage.to_yojson
@@ -37,7 +37,7 @@ let communicate server_socket all_uris =
             Log.info "%s" message;
             failwith message)
   (* Write the initialize response *)
-  >>| InitializeResponse.default
+  >>| InitializeResponse.default ~server_uuid
   >>| InitializeResponse.to_yojson
   >>| LanguageServer.Protocol.write_message Out_channel.stdout
   |> ignore;
@@ -154,7 +154,15 @@ let run_command expected_version log_identifier local_root () =
             raise (ClientExit ("unexpected json response", 1)) );
         server_socket
       in
-      communicate server_socket all_uris
+      let server_uuid =
+        Socket.write server_socket Protocol.Request.GetServerUuid;
+        match Socket.read server_socket with
+        | Protocol.ServerUuidResponse server_uuid -> server_uuid
+        | _ ->
+            Log.error "Exiting due to missing server uuid.";
+            raise (ClientExit ("Missing server UUID", 1))
+      in
+      communicate server_socket all_uris server_uuid
     with
     | ClientExit (reason, exit_code) ->
         Statistics.event

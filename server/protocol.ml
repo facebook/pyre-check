@@ -331,6 +331,7 @@ module Request = struct
     | RageRequest of LanguageServer.Types.RequestId.t
     | DocumentChange of File.t
     | SaveDocument of Path.t
+    | GetServerUuid
     | StopRequest
     | TypeCheckRequest of Path.t list
     | TypeCoverageRequest of {
@@ -374,6 +375,7 @@ module Request = struct
     | CodeActionRequest _ -> "CodeAction"
     | ExecuteCommandRequest _ -> "ExecuteCommandRequest"
     | TypeCoverageRequest _ -> "TypeCoverageRequest"
+    | GetServerUuid -> "GetServerUuid"
 end
 
 type response =
@@ -385,4 +387,5 @@ type response =
   | StopResponse
   | GetDefinitionResponse of Location.Instantiated.t option
   | HoverResponse of Location.Instantiated.t option
+  | ServerUuidResponse of string
 [@@deriving eq, show]

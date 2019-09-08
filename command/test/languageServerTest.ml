@@ -406,7 +406,7 @@ let test_initialize_request_parses _ =
 
 let test_initialize_response _ =
   assert_equal
-    ( InitializeResponse.default (int_request_id 1)
+    ( InitializeResponse.default (int_request_id 1) ~server_uuid:"1234"
     |> InitializeResponse.to_yojson
     |> Yojson.Safe.sort )
     ( {|
@@ -417,7 +417,7 @@ let test_initialize_response _ =
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
             "definitionProvider": true,
-            "executeCommandProvider": { "commands": [ "add_pyre_annotation" ] },
+            "executeCommandProvider": { "commands": [ "add_pyre_annotation_1234" ] },
             "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {
@@ -431,7 +431,9 @@ let test_initialize_response _ =
      |}
     |> Yojson.Safe.from_string );
   assert_equal
-    ( InitializeResponse.default (string_request_id "961810f9-ed94-4044-a7c8-82b4135925a7")
+    ( InitializeResponse.default
+        (string_request_id "961810f9-ed94-4044-a7c8-82b4135925a7")
+        ~server_uuid:"1234"
     |> InitializeResponse.to_yojson
     |> Yojson.Safe.sort )
     ( {|
@@ -442,7 +444,7 @@ let test_initialize_response _ =
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
             "definitionProvider": true,
-            "executeCommandProvider": { "commands": [ "add_pyre_annotation" ] },
+            "executeCommandProvider": { "commands": [ "add_pyre_annotation_1234" ] },
             "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {

@@ -169,6 +169,7 @@ module Server = struct
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
     configuration: Analysis.t;
+    server_uuid: string;
   }
 
   (* Required to appease the compiler. *)

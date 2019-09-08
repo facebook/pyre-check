@@ -146,7 +146,7 @@ end
 module InitializeResponse = struct
   include Types.InitializeResponse
 
-  let default id =
+  let default id ~server_uuid =
     let open TextDocumentSyncOptions in
     {
       jsonrpc = "2.0";
@@ -183,7 +183,8 @@ module InitializeResponse = struct
                     rename_provider = None;
                     document_link_provider = None;
                     execute_command_provider =
-                      Some ExecuteCommandOptions.{ commands = ["add_pyre_annotation"] };
+                      Some
+                        ExecuteCommandOptions.{ commands = ["add_pyre_annotation_" ^ server_uuid] };
                     experimental = None;
                     rage_provider = Some true;
                   };

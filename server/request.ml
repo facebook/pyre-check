@@ -1115,6 +1115,7 @@ let rec process
           in
           let response =
             let open LanguageServer.Protocol in
+            let { Configuration.Server.server_uuid; _ } = server_configuration in
             let code_actions =
               diagnostics
               |> List.filter_map
@@ -1133,7 +1134,7 @@ let rec process
                                  Some
                                    {
                                      title = "Fix it";
-                                     command = "add_pyre_annotation";
+                                     command = "add_pyre_annotation_" ^ server_uuid;
                                      arguments =
                                        [ {
                                            range = AnnotationEdit.range edit;
@@ -1251,6 +1252,9 @@ let rec process
             | _ -> None
           in
           { state; response }
+      | GetServerUuid ->
+          let { Configuration.Server.server_uuid; _ } = server_configuration in
+          { state; response = Some (ServerUuidResponse server_uuid) }
       (* Requests that cannot be fulfilled here. *)
       | ClientConnectionRequest _ ->
           Log.warning "Explicitly ignoring ClientConnectionRequest request";
