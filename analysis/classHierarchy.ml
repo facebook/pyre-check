@@ -574,7 +574,7 @@ let to_json (module Handler : Handler) ~indices =
     | Some successors ->
         List.map successors ~f:(fun { Target.target; _ } ->
             `String (IndexTracker.annotation target))
-        |> (fun successors -> `Assoc ["name", `String annotation; "successors", `List successors])
+        |> (fun successors -> `Assoc [annotation, `List successors])
         |> Option.some
     | None -> None
   in

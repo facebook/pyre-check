@@ -204,10 +204,10 @@ let test_to_json _ =
     (Yojson.Safe.from_string
        {|
         [
-         { "name": "0", "successors": [ "1", "2" ] },
-         { "name": "1", "successors": [ "object" ] },
-         { "name": "2", "successors": [ "object" ] },
-         { "name": "object", "successors": [] }
+         { "0": [ "1", "2" ] },
+         { "1": [ "object" ] },
+         { "2": [ "object" ] },
+         { "object": [] }
         ]
       |})
     (to_json order ~indices:keys)
