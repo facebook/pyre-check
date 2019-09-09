@@ -24,4 +24,4 @@ val to_path : t -> Path.t
 
 val create : string -> t
 
-val search_for_path : search_path:t list -> Path.t -> search_result option
+val search_for_path : search_paths:t list -> Path.t -> search_result option

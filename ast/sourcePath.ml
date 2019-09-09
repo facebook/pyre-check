@@ -63,8 +63,8 @@ let qualifier_of_relative relative =
       Reference.create_from_list qualifier
 
 
-let create_from_search_path ~is_external ~search_path path =
-  SearchPath.search_for_path ~search_path path
+let create_from_search_path ~is_external ~search_paths path =
+  SearchPath.search_for_path ~search_paths path
   >>= fun SearchPath.{ relative_path; priority } ->
   let relative = Path.RelativePath.relative relative_path in
   let qualifier = qualifier_of_relative relative in
@@ -94,9 +94,9 @@ let create
   match List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) with
   | true -> None
   | false ->
-      let search_path = List.append search_path [SearchPath.Root local_root] in
+      let search_paths = List.append search_path [SearchPath.Root local_root] in
       let is_external = not (should_type_check ~configuration path) in
-      create_from_search_path ~is_external ~search_path path
+      create_from_search_path ~is_external ~search_paths path
 
 
 let full_path ~configuration { relative; priority; _ } =

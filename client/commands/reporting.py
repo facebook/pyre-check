@@ -88,6 +88,9 @@ class Reporting(Command):
             external_to_global_root = True
             if full_path.startswith(self._current_directory):
                 external_to_global_root = False
+            if not os.path.exists(full_path):
+                # Nonexistent paths can be created when search path stubs are renamed.
+                external_to_global_root = True
             for absolute_ignore_path in self._ignore_all_errors_paths:
                 if fnmatch.fnmatch(full_path, (absolute_ignore_path + "*")):
                     ignore_error = True

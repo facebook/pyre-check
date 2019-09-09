@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import os
 import subprocess
 import unittest
 from unittest.mock import MagicMock, Mock, call, patch
@@ -19,13 +20,14 @@ _typeshed_search_path = "{}.typeshed_search_path".format(commands.incremental.__
 
 
 class IncrementalTest(unittest.TestCase):
+    @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(incremental, "Monitor")
     @patch.object(commands.Command, "_state")
     @patch.object(incremental, "Start")
     @patch.object(stop, "Stop")
     def test_incremental(
-        self, commands_Stop, commands_Start, commands_Command_state, Monitor
+        self, commands_Stop, commands_Start, commands_Command_state, Monitor, exists
     ) -> None:
         state = MagicMock()
         state.running = ["running"]

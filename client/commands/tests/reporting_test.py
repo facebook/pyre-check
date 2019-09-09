@@ -21,7 +21,8 @@ from .command_test import mock_arguments, mock_configuration
 class ReportingTest(unittest.TestCase):
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
     @patch.object(os.path, "isdir", side_effect=lambda path: True)
-    def test_get_errors(self, isdir, realpath) -> None:
+    @patch.object(os.path, "exists", side_effect=lambda path: True)
+    def test_get_errors(self, exists, isdir, realpath) -> None:
         arguments = mock_arguments()
         arguments.original_directory = "/test"  # called from
         arguments.current_directory = "/"  # project root

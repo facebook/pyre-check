@@ -41,15 +41,15 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
       (Yojson.Safe.pretty_to_string request)
   in
   let uri_to_path ~uri =
-    let search_path = Configuration.Analysis.search_path configuration in
+    let search_paths = Configuration.Analysis.search_path configuration in
     Path.from_uri uri
     >>= fun path ->
-    match SearchPath.search_for_path ~search_path path with
+    match SearchPath.search_for_path ~search_paths path with
     | Some SearchPath.{ relative_path; _ } -> Some (Path.Relative relative_path)
     | None ->
         Hashtbl.find symlink_targets_to_sources (Path.absolute path)
         >>= fun path ->
-        SearchPath.search_for_path ~search_path path
+        SearchPath.search_for_path ~search_paths path
         >>| fun SearchPath.{ relative_path; _ } -> Path.Relative relative_path
   in
   let string_to_path string_path = Path.create_absolute ~follow_symbolic_links:false string_path in

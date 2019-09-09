@@ -44,11 +44,11 @@ let create serialized =
   | _ -> failwith (Format.asprintf "Unable to create search path from %s" serialized)
 
 
-let search_for_path ~search_path path =
-  let under_root ~path root =
+let search_for_path ~search_paths path =
+  let under_root search_path =
     let open Option in
-    if Path.directory_contains ~directory:(to_path root) path then
-      let root = get_root root in
+    if Path.directory_contains ~directory:(to_path search_path) path then
+      let root = get_root search_path in
       Path.get_relative_to_root ~root ~path
       >>| (fun relative -> Path.create_relative ~root ~relative)
       >>= function
@@ -57,8 +57,8 @@ let search_for_path ~search_path path =
     else
       None
   in
-  let search_under_root index root =
-    under_root ~path root
+  let search_under_root index search_path =
+    under_root search_path
     |> Option.map ~f:(fun relative_path -> { relative_path; priority = index })
   in
-  List.find_mapi search_path ~f:search_under_root
+  List.find_mapi search_paths ~f:search_under_root
