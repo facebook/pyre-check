@@ -75,8 +75,29 @@ let test_union_of_callables context =
        typing.Any], typing.Callable[..., typing.Any]]`." ]
 
 
+let test_callable_attribute_access context =
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> int:
+        return 0
+      def bar() -> None:
+        foo.attr
+    |}
+    ["Undefined attribute [16]: Callable `test.foo` has no attribute `attr`."];
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> None:
+        anon = lambda x: 0
+        anon.attr
+    |}
+    ["Undefined attribute [16]: Anonymous callable has no attribute `attr`."]
+
+
 let () =
   "callable"
   >::: [ "higher_order_callables" >:: test_higher_order_callables;
-         "union_of_callables" >:: test_union_of_callables ]
+         "union_of_callables" >:: test_union_of_callables;
+         "callable_attribute_access" >:: test_callable_attribute_access ]
   |> Test.run

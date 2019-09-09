@@ -3004,7 +3004,18 @@ module State (Context : Context) = struct
                   resolved_annotation = Some annotation;
                   base = None;
                 }
-            | None -> { state; resolved = Type.Top; resolved_annotation = None; base = None }
+            | None ->
+                let state =
+                  let name =
+                    match resolved_base with
+                    | Type.Callable { Type.Callable.kind = Named name; _ } -> Some name
+                    | _ -> None
+                  in
+                  Error.UndefinedAttribute { attribute; origin = Error.Callable name }
+                  |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                  |> emit_raw_error ~state
+                in
+                { state; resolved = Type.Top; resolved_annotation = None; base = None }
           else (* Attribute access. *)
             match Annotated.Class.resolve_class ~resolution:global_resolution resolved_base with
             | None ->

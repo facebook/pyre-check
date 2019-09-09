@@ -262,7 +262,10 @@ let test_check_click_command context =
       run(x=1)
       run2()
     |}
-    [];
+    (* These errors are filtered in production. *)
+    [ "Undefined attribute [16]: Callable `test.main` has no attribute `command`.";
+      "Undefined attribute [16]: Callable `test.main` has no attribute `command`." ];
+
   assert_type_errors
     {|
       def main(flag: bool) -> bool:

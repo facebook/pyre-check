@@ -31,6 +31,7 @@ type class_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 type origin =
+  | Callable of Reference.t option
   | Class of {
       annotation: Type.t;
       class_attribute: bool;
@@ -1483,6 +1484,8 @@ let messages ~concise ~signature location kind =
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
+        | Callable None -> "Anonymous callable"
+        | Callable (Some name) -> Format.asprintf "Callable `%a`" pp_reference name
         | Class { annotation; _ } ->
             let annotation, _ = Type.split annotation in
             let name =
@@ -2680,6 +2683,12 @@ let filter ~configuration ~resolution errors =
         | _ -> false )
       | _ -> false
     in
+    let is_click_error { kind; _ } =
+      (* TODO(T53616545): Remove once our decorators are more expressive. *)
+      match kind with
+      | UndefinedAttribute { origin = Callable _; attribute = "command" } -> true
+      | _ -> false
+    in
     let is_stub_error { kind; location = { Location.path; _ }; _ } =
       match kind with
       | UninitializedAttribute _
@@ -2698,6 +2707,7 @@ let filter ~configuration ~resolution errors =
     || is_override_on_dunder_method error
     || is_unnecessary_missing_annotation_error error
     || is_unknown_callable_error error
+    || is_click_error error
   in
   match configuration with
   | { Configuration.Analysis.debug = true; _ } -> errors

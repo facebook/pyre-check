@@ -22,6 +22,7 @@ type class_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 type origin =
+  | Callable of Reference.t option
   | Class of {
       annotation: Type.t;
       class_attribute: bool;
