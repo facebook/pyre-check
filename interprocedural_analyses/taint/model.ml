@@ -933,16 +933,31 @@ let get_global_model ~resolution ~expression =
           in
           is_meta (Resolution.resolve resolution base)
         in
+        let global_resolution = Resolution.global_resolution resolution in
+        let parent =
+          let attribute =
+            GlobalResolution.class_definition global_resolution annotation
+            >>| Annotated.Class.create
+            >>| fun definition ->
+            Annotated.Class.attribute
+              ~transitive:true
+              definition
+              ~resolution:global_resolution
+              ~name:attribute
+              ~instantiated:annotation
+          in
+          match attribute with
+          | Some attribute when Annotated.Attribute.defined attribute ->
+              Annotated.Attribute.parent attribute |> Type.class_name
+          | _ -> Type.class_name annotation
+        in
         let attribute =
           if is_meta then
             Format.sprintf "__class__.%s" attribute
           else
             attribute
         in
-        annotation
-        |> Type.class_name
-        |> (fun class_name -> Reference.create ~prefix:class_name attribute)
-        |> Option.some
+        Some (Reference.create ~prefix:parent attribute)
     | _ -> None
   in
   match call_target with

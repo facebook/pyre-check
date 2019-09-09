@@ -3,7 +3,7 @@ Call dependencies
 class_flows.global_class_attribute_issue (fun) -> [__test_source (fun)]
 class_flows.tainted_attribute_flow_issue (fun) -> [__test_source (fun)]
 class_flows.tainted_attribute_for_class_not_issue (fun) -> [__test_source (fun)]
-class_flows.tainted_attribute_through_inheritance_not_issue (fun) -> [__test_source (fun)]
+class_flows.tainted_attribute_through_inheritance_issue (fun) -> [__test_source (fun)]
 class_flows.tainted_class_attribute_through_class_issue (fun) -> [__test_source (fun)]
 class_flows.tainted_class_attribute_through_double_underscore_class_issue (fun) -> [__test_source (fun) object::__class__ (method)]
 class_flows.tainted_class_attribute_through_instance_not_issue (fun) -> [__test_source (fun)]

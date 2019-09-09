@@ -25,8 +25,7 @@ def tainted_attribute_for_class_not_issue(c: Type[C]) -> None:
     c.tainted_attribute = __test_source()
 
 
-def tainted_attribute_through_inheritance_not_issue(d: D) -> None:
-    # TODO(T47337940): Support this.
+def tainted_attribute_through_inheritance_issue(d: D) -> None:
     d.tainted_attribute = __test_source()
 
 
