@@ -134,6 +134,11 @@ class TypeCollector(cst.CSTVisitor):
             if isinstance(value, cst.Subscript):
                 new_slice = slice.with_changes(value=self._handle_Subscript(value))
                 return node.with_changes(slice=new_slice)
+            elif isinstance(value, cst.Attribute):
+                new_slice = slice.with_changes(
+                    value=self._add_annotation_to_imports(value)
+                )
+                return node.with_changes(slice=new_slice)
             else:
                 return node
         else:

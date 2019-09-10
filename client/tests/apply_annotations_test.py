@@ -406,3 +406,19 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 return [barfoo(), ""]
             """,
         )
+
+        self.assert_annotations(
+            """
+            def foo(x: int) -> Optional[a.b.Example]: ...
+            """,
+            """
+            def foo(x: int):
+                pass
+            """,
+            """
+            from a.b import Example
+
+            def foo(x: int) -> Optional[Example]:
+                pass
+            """,
+        )
