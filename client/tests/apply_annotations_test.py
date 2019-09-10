@@ -422,3 +422,17 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 pass
             """,
         )
+
+        self.assert_annotations(
+            """
+            def foo(x: int) -> str: ...
+            """,
+            """
+            def foo(x: str):
+                pass
+            """,
+            """
+            def foo(x: str) -> str:
+                pass
+            """,
+        )

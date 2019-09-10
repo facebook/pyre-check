@@ -5,7 +5,7 @@
 
 # pyre-strict
 
-from typing import IO, Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import IO, Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 import libcst as cst
 
@@ -242,25 +242,36 @@ class TypeTransformer(cst.CSTTransformer):
             self.toplevel_annotations[name] = annotation
         self.qualifier.pop()
 
-    def _update_default_parameters(
+    def _update_parameters(
         self, annotations: FunctionAnnotation, updated_node: cst.FunctionDef
     ) -> cst.Parameters:
-        parameter_annotations = {}
-        annotated_default_parameters = []
-        for parameter in list(annotations.parameters.default_params):
-            if parameter.annotation:
-                parameter_annotations[parameter.name.value] = parameter.annotation
-        for parameter in list(updated_node.params.default_params):
-            if parameter.name.value in parameter_annotations:
-                annotated_default_parameters.append(
-                    parameter.with_changes(
-                        annotation=parameter_annotations[parameter.name.value]
+        # Update params and default params with annotations
+        # don't override existing annotations or default values
+        def update_annotation(
+            parameters: Sequence[cst.Param], annotations: Sequence[cst.Param]
+        ) -> List[cst.Param]:
+            parameter_annotations = {}
+            annotated_parameters = []
+            for parameter in list(annotations):
+                if parameter.annotation:
+                    parameter_annotations[parameter.name.value] = parameter.annotation
+            for parameter in list(parameters):
+                key = parameter.name.value
+                if key in parameter_annotations and not parameter.annotation:
+                    parameter = parameter.with_changes(
+                        annotation=parameter_annotations[key]
                     )
-                )
-            else:
-                annotated_default_parameters.append(parameter)
+                annotated_parameters.append(parameter)
+            return annotated_parameters
+
         return annotations.parameters.with_changes(
-            default_params=annotated_default_parameters
+            default_params=update_annotation(
+                updated_node.params.default_params,
+                annotations.parameters.default_params,
+            ),
+            params=update_annotation(
+                updated_node.params.params, annotations.parameters.params
+            ),
         )
 
     def _insert_empty_line(
@@ -312,7 +323,7 @@ class TypeTransformer(cst.CSTTransformer):
             if not updated_node.returns:
                 updated_node = updated_node.with_changes(returns=annotations.returns)
             # Don't override default values when annotating functions
-            new_parameters = self._update_default_parameters(annotations, updated_node)
+            new_parameters = self._update_parameters(annotations, updated_node)
             return updated_node.with_changes(params=new_parameters)
         return updated_node
 
