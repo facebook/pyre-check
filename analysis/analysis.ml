@@ -11,6 +11,7 @@ module AbstractMapDomain = AbstractMapDomain
 module AbstractPairDomain = AbstractPairDomain
 module AbstractProductDomain = AbstractProductDomain
 module AbstractTreeDomain = AbstractTreeDomain
+module AliasEnvironment = AliasEnvironment
 module AstEnvironment = AstEnvironment
 module AwaitableCheck = AwaitableCheck
 module Annotated = Annotated

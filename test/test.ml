@@ -1302,6 +1302,30 @@ let mock_scheduler () =
   Scheduler.mock ()
 
 
+let update_environments
+    ?(scheduler = mock_scheduler ())
+    ~configuration
+    ~ast_environment
+    ~qualifiers
+    ()
+  =
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+  in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
+  let result =
+    UnannotatedGlobalEnvironment.update
+      unannotated_global_environment
+      ~scheduler
+      ~configuration
+      qualifiers
+    |> AliasEnvironment.update alias_environment ~scheduler ~configuration
+  in
+  alias_environment, result
+
+
 module ScratchProject = struct
   type t = {
     context: test_ctxt;

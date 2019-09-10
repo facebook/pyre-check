@@ -1,6 +1,7 @@
 (tests
  (names
   abstractDomainTest
+  aliasEnvironmentTest
   analysisErrorTest
   annotatedCallableTest
   annotatedClassTest
