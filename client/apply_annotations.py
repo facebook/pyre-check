@@ -75,10 +75,7 @@ class TypeCollector(cst.CSTVisitor):
             #  `Optional[Annotation]`.
             return_annotation = self._create_import_from_annotation(node.returns)
             self.function_annotations[".".join(self.qualifier)] = FunctionAnnotation(
-                parameters=node.params,
-                # pyre-fixme[6]: Expected `Optional[Annotation]` for 2nd param but got
-                #  `CSTNode`.
-                returns=return_annotation,
+                parameters=node.params, returns=return_annotation
             )
         # pyi files don't support inner functions, return False to stop the traversal.
         return False
@@ -90,7 +87,6 @@ class TypeCollector(cst.CSTVisitor):
         # pyre-fixme[16]: `BaseExpression` has no attribute `value`.
         self.qualifier.append(node.target.value)
         annotation_value = self._create_import_from_annotation(node.annotation)
-        # pyre-fixme[6]: Expected `Annotation` for 2nd param but got `CSTNode`.
         self.attribute_annotations[".".join(self.qualifier)] = annotation_value
         return True
 
@@ -107,15 +103,49 @@ class TypeCollector(cst.CSTVisitor):
         #  str]`.
         self._add_to_imports(node.names, cst.Name(module.value), module.value)
 
-    def _create_import_from_annotation(self, returns: cst.CSTNode) -> cst.CSTNode:
-        # pyre-fixme[16]: `CSTNode` has no attribute `annotation`.
-        if isinstance(returns.annotation, cst.Attribute):
-            annotation = returns.annotation
-            key = _get_attribute_as_string(annotation.value)
-            self._add_to_imports(
-                [cst.ImportAlias(name=annotation.attr)], annotation.value, key
-            )
-            return cst.Annotation(annotation=returns.annotation.attr)
+    def _add_annotation_to_imports(self, annotation: cst.Attribute) -> cst.Name:
+        # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 1st param but got
+        #  `BaseExpression`.
+        key = _get_attribute_as_string(annotation.value)
+        self._add_to_imports(
+            [cst.ImportAlias(name=annotation.attr)],
+            # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 2nd param but got
+            #  `BaseExpression`.
+            annotation.value,
+            key,
+        )
+        return annotation.attr
+
+    def _handle_Subscript(self, node: cst.Subscript) -> cst.Subscript:
+        slice = node.slice
+        if isinstance(slice, list):
+            new_slice = []
+            for item in slice:
+                value = item.slice.value
+                if isinstance(value, cst.Attribute):
+                    name = self._add_annotation_to_imports(item.slice.value)
+                    new_index = item.slice.with_changes(value=name)
+                    new_slice.append(item.with_changes(slice=new_index))
+                else:
+                    new_slice.append(item)
+            return node.with_changes(slice=new_slice)
+        elif isinstance(slice, cst.Index):
+            value = slice.value
+            if isinstance(value, cst.Subscript):
+                new_slice = slice.with_changes(value=self._handle_Subscript(value))
+                return node.with_changes(slice=new_slice)
+            else:
+                return node
+        else:
+            return node
+
+    def _create_import_from_annotation(self, returns: cst.Annotation) -> cst.Annotation:
+        annotation = returns.annotation
+        if isinstance(annotation, cst.Attribute):
+            attr = self._add_annotation_to_imports(annotation)
+            return cst.Annotation(annotation=attr)
+        if isinstance(annotation, cst.Subscript):
+            return cst.Annotation(annotation=self._handle_Subscript(annotation))
         else:
             return returns
 

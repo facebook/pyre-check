@@ -376,3 +376,33 @@ class ApplyAnnotationsTest(unittest.TestCase):
             FOO: Example = bar()
             """,
         )
+
+        self.assert_annotations(
+            """
+            FOO: Union[a.b.Example, int] = ...
+            """,
+            """
+            FOO = bar()
+            """,
+            """
+            from a.b import Example
+
+            FOO: Union[Example, int] = bar()
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            def foo(x: int) -> List[Union[a.b.Example, str]]: ...
+            """,
+            """
+            def foo(x: int):
+                return [barfoo(), ""]
+            """,
+            """
+            from a.b import Example
+
+            def foo(x: int) -> List[Union[Example, str]]:
+                return [barfoo(), ""]
+            """,
+        )
