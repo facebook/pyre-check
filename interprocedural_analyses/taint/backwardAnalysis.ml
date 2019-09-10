@@ -114,7 +114,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       analyze_expression ~resolution ~taint ~state ~expression:argument
 
 
-    and apply_call_targets ~resolution _location arguments state call_taint call_targets =
+    and apply_call_targets
+        ~resolution
+        ~call_expression
+        location
+        arguments
+        state
+        call_taint
+        call_targets
+      =
       let analyze_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~call_target ~arguments in
         let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
@@ -237,8 +245,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           List.fold ~f:analyze_argument combined_matches ~init:state
         else (* obscure *)
           let obscure_taint =
+            let annotation =
+              Resolution.resolve resolution { Node.value = call_expression; location }
+            in
             collapsed_call_taint
             |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
+            |> BackwardTaint.transform
+                 BackwardTaint.simple_feature_set
+                 ~f:
+                   (Features.add_type_breadcrumb
+                      ~resolution:(Resolution.global_resolution resolution)
+                      (Some annotation))
             |> BackwardState.Tree.create_leaf
           in
           List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
@@ -294,7 +311,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_call ~resolution location ~taint ~state callee arguments =
-      let { Call.callee; arguments } =
+      let ({ Call.callee; arguments } as call_expression) =
         Annotated.Call.redirect_special_calls ~resolution { Call.callee; arguments }
       in
       match AccessPath.get_global ~resolution callee, Node.value callee with
@@ -313,7 +330,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             Interprocedural.CallResolution.normalize_global ~resolution global
           in
           let arguments = extra_arguments @ arguments in
-          apply_call_targets ~resolution location arguments state taint targets
+          apply_call_targets
+            ~resolution
+            ~call_expression:(Expression.Call call_expression)
+            location
+            arguments
+            state
+            taint
+            targets
       | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
           let taint =
             (* Specially handle super.__init__ calls in constructors for tito *)
@@ -332,7 +356,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~resolution
             ~receiver
             ~method_name:attribute
-          |> apply_call_targets ~resolution location arguments state taint
+          |> apply_call_targets
+               ~resolution
+               ~call_expression:(Expression.Call call_expression)
+               location
+               arguments
+               state
+               taint
       | None, Name (Name.Identifier _name) ->
           let arguments =
             let receiver = { Call.Argument.name = None; value = callee } in
@@ -342,7 +372,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~resolution
             ~receiver:callee
             ~method_name:"__init__"
-          |> apply_call_targets ~resolution location arguments state taint
+          |> apply_call_targets
+               ~resolution
+               ~call_expression:(Expression.Call call_expression)
+               location
+               arguments
+               state
+               taint
       | _ ->
           (* No targets, treat call as obscure *)
           let obscure_taint =
@@ -426,7 +462,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~taint ~state ~expression:base
         | Some targets ->
             let arguments = [{ Call.Argument.name = None; value = base }] in
-            apply_call_targets ~resolution location arguments state taint targets )
+            apply_call_targets
+              ~resolution
+              ~call_expression:expression
+              location
+              arguments
+              state
+              taint
+              targets )
       | Set set ->
           let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
           List.fold

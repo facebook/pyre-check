@@ -36,3 +36,7 @@ def tito_via_min_or_not(o: Any, b: bool):
         return min(o, 5)
     else:
         return o
+
+
+def tito_via_constructor(o: Any):
+    return int(o)

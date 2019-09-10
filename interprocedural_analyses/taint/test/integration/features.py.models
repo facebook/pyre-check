@@ -71,6 +71,29 @@
 {
   "kind": "model",
   "data": {
+    "callable": "features.tito_via_constructor",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [
+              { "always-type": "scalar" },
+              { "always-via": "obscure" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "features.tito_via_len",
     "sources": [],
     "sinks": [],
