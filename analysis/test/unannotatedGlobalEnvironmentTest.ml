@@ -70,12 +70,19 @@ let test_updates context =
     in
     let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
     let execute_action = function
-      | `Get (class_name, dependency) ->
+      | `Get (class_name, dependency, expected_number_of_statements) ->
+          let printer number =
+            number
+            >>| Format.sprintf "number of statements: %d"
+            |> Option.value ~default:"No class"
+          in
           UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
             read_only
             ~dependency
             class_name
-          |> ignore
+          >>| (fun { Node.value = { body; _ }; _ } -> body)
+          >>| List.length
+          |> assert_equal ~printer expected_number_of_statements
       | `Mem (class_name, dependency, expectation) ->
           UnannotatedGlobalEnvironment.ReadOnly.class_exists read_only ~dependency class_name
           |> assert_equal expectation
@@ -118,7 +125,7 @@ let test_updates context =
       class Foo:
         x: str
     |}
-    ~middle_actions:[`Get ("test.Foo", dependency)]
+    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
     ~expected_triggers:[dependency]
     ();
   assert_updates
@@ -130,7 +137,7 @@ let test_updates context =
       class Foo:
         x: str
     |}
-    ~middle_actions:[`Get ("test.Missing", dependency)]
+    ~middle_actions:[`Get ("test.Missing", dependency, None)]
     ~expected_triggers:[]
     ();
   assert_updates
@@ -144,7 +151,27 @@ let test_updates context =
       class Foo:
         x: int
     |}
-    ~middle_actions:[`Get ("test.Foo", dependency)]
+    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ~expected_triggers:[]
+    ();
+
+  (* First class definition wins *)
+  assert_updates
+    ~original_source:
+      {|
+      class Foo:
+        x: int
+      class Foo:
+        x: int
+        y: int
+    |}
+    ~new_source:{|
+      class Unrelated:
+        x: int
+      class Foo:
+        x: int
+    |}
+    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
     ~expected_triggers:[]
     ();
 

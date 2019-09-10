@@ -91,7 +91,7 @@ end = struct
       (SharedMemoryKeys.ReferenceDependencyKey)
       (ClassValue)
 
-  let set_class_definition ~name ~definition = ClassDefinitions.add name definition
+  let set_class_definition ~name ~definition = ClassDefinitions.write_through name definition
 
   let add_to_transaction txn ~keys =
     let keys = ClassDefinitions.KeySet.of_list keys in
