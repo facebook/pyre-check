@@ -60,7 +60,8 @@ let make_errors ~context ?(handle = "test.py") source =
   in
   let sources, _, environment = ScratchProject.build_environment project in
   let source =
-    List.find_exn sources ~f:(fun { Ast.Source.relative; _ } -> String.equal relative handle)
+    List.find_exn sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.relative; _ }; _ } ->
+        String.equal relative handle)
   in
   let configuration = ScratchProject.configuration_of project in
   let ast_environment = Environment.ast_environment environment in

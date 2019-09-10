@@ -114,11 +114,11 @@ module ModuleMetadata =
     (ModuleMetadataValue)
 
 let create module_tracker =
-  let add_raw_source ({ Source.qualifier; _ } as source) =
+  let add_raw_source ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
     RawSources.add qualifier source;
     RawWildcardExports.write_through qualifier (Source.wildcard_exports_of source)
   in
-  let add_source ({ Source.qualifier; _ } as source) =
+  let add_source ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
     Sources.add qualifier source;
     WildcardExports.write_through qualifier (Source.wildcard_exports_of source);
     ModuleMetadata.add qualifier (Module.create source)

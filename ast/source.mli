@@ -42,11 +42,7 @@ end
 type t = {
   docstring: string option;
   metadata: Metadata.t;
-  relative: string;
-  is_external: bool;
-  is_stub: bool;
-  is_init: bool;
-  qualifier: Reference.t;
+  source_path: SourcePath.t;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, hash, show, sexp]
@@ -63,6 +59,7 @@ val create
   ?metadata:Metadata.t ->
   ?relative:string ->
   ?is_external:bool ->
+  ?priority:int ->
   Statement.t list ->
   t
 

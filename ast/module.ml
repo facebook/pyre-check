@@ -75,8 +75,12 @@ let create_for_testing ~local_mode ~stub =
 
 
 let create
-    ( { Source.is_stub; qualifier; statements; metadata = { Source.Metadata.local_mode; _ }; _ } as
-    source )
+    ( {
+        Source.source_path = { SourcePath.is_stub; qualifier; _ };
+        statements;
+        metadata = { Source.Metadata.local_mode; _ };
+        _;
+      } as source )
   =
   let aliased_exports =
     let aliased_exports aliases { Node.value; _ } =

@@ -188,11 +188,7 @@ end
 type t = {
   docstring: string option; [@hash.ignore]
   metadata: Metadata.t;
-  relative: string;
-  is_external: bool;
-  is_stub: bool;
-  is_init: bool;
-  qualifier: Reference.t;
+  source_path: SourcePath.t;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, hash, sexp]
@@ -217,13 +213,8 @@ let mode ~configuration { metadata = { Metadata.local_mode; _ }; _ } =
   | _ -> Default
 
 
-let create_from_source_path
-    ~docstring
-    ~metadata
-    ~source_path:{ SourcePath.relative; qualifier; is_external; is_init; is_stub; _ }
-    statements
-  =
-  { docstring; metadata; is_external; is_stub; is_init; relative; qualifier; statements }
+let create_from_source_path ~docstring ~metadata ~source_path statements =
+  { docstring; metadata; source_path; statements }
 
 
 let create
@@ -231,19 +222,25 @@ let create
     ?(metadata = Metadata.create_for_testing ())
     ?(relative = "")
     ?(is_external = false)
+    ?(priority = 0)
     statements
   =
-  let is_stub = Path.is_path_python_stub relative in
-  let is_init = Path.is_path_python_init relative in
-  let qualifier = SourcePath.qualifier_of_relative relative in
-  { docstring; metadata; is_external; is_stub; is_init; relative; qualifier; statements }
+  let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority in
+  { docstring; metadata; source_path; statements }
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
 
 let statements { statements; _ } = statements
 
-let top_level_define { qualifier; statements; metadata = { Metadata.version; _ }; _ } =
+let top_level_define
+    {
+      source_path = { SourcePath.qualifier; _ };
+      statements;
+      metadata = { Metadata.version; _ };
+      _;
+    }
+  =
   let statements =
     if version < 3 then
       []
@@ -253,7 +250,7 @@ let top_level_define { qualifier; statements; metadata = { Metadata.version; _ }
   Statement.Define.create_toplevel ~qualifier:(Some qualifier) ~statements
 
 
-let top_level_define_node ({ qualifier; _ } as source) =
+let top_level_define_node ({ source_path = { SourcePath.qualifier; _ }; _ } as source) =
   let location =
     {
       Location.path = qualifier;
@@ -264,7 +261,7 @@ let top_level_define_node ({ qualifier; _ } as source) =
   Node.create ~location (top_level_define source)
 
 
-let wildcard_exports_of { qualifier; statements; _ } =
+let wildcard_exports_of { source_path = { SourcePath.qualifier; _ }; statements; _ } =
   let open Statement in
   let open Expression in
   let toplevel_public, dunder_all =
@@ -315,7 +312,7 @@ let wildcard_exports_of { qualifier; statements; _ } =
   |> List.dedup_and_sort ~compare:Reference.compare
 
 
-let expand_relative_import ~from { is_init; qualifier; _ } =
+let expand_relative_import ~from { source_path = { SourcePath.is_init; qualifier; _ }; _ } =
   match Reference.show from with
   | "builtins" -> Reference.empty
   | serialized ->

@@ -4910,7 +4910,7 @@ let name = "TypeCheck"
 let check_define
     ~configuration:({ Configuration.Analysis.include_hints; debug; _ } as configuration)
     ~global_resolution
-    ~source:({ Source.relative; qualifier; _ } as source)
+    ~source:({ Source.source_path = { SourcePath.qualifier; relative; _ }; _ } as source)
     ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
       resolution )
   =
@@ -5080,8 +5080,11 @@ let run_on_defines ~configuration ~global_resolution ~source defines =
 let run
     ~configuration
     ~environment
-    ~source:( { Source.relative; qualifier; metadata = { Source.Metadata.number_of_lines; _ }; _ }
-            as source )
+    ~source:( {
+                Source.source_path = { SourcePath.qualifier; relative; _ };
+                metadata = { Source.Metadata.number_of_lines; _ };
+                _;
+              } as source )
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%s`..." relative;

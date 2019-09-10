@@ -35,7 +35,10 @@ let run_check
   let map _ sources =
     Analysis.Annotated.Class.AttributeCache.clear ();
     Module.Cache.clear ();
-    let analyze_source { errors; number_files } ({ Source.qualifier; _ } as source) =
+    let analyze_source
+        { errors; number_files }
+        ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+      =
       let configuration =
         match open_documents with
         | Some predicate when predicate qualifier ->
@@ -76,7 +79,8 @@ let analyze_sources ?open_documents ~scheduler ~configuration ~environment sourc
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
   let checked_sources =
-    List.filter sources ~f:(fun { Source.is_external; _ } -> not is_external)
+    List.filter sources ~f:(fun { Source.source_path = { SourcePath.is_external; _ }; _ } ->
+        not is_external)
   in
   let number_of_sources = List.length checked_sources in
   Log.info "Checking %d sources..." number_of_sources;
@@ -135,7 +139,10 @@ let check
        sequentially until we find a way to build the environment in parallel. *)
     let timer = Timer.start () in
     let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-    let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+    let qualifiers =
+      List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
+          qualifier)
+    in
     let update_result =
       UnannotatedGlobalEnvironment.update
         unannotated_global_environment
@@ -180,7 +187,7 @@ let check
     Coverage.coverage ~configuration sources
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
-    let aggregate sofar { Source.qualifier; _ } =
+    let aggregate sofar { Source.source_path = { SourcePath.qualifier; _ }; _ } =
       match Coverage.get ~qualifier with
       | Some coverage -> Coverage.sum sofar coverage
       | _ -> sofar

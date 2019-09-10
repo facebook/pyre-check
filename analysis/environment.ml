@@ -683,7 +683,7 @@ let dependencies _ = SharedMemory.Dependents.get
 
 let collect_aliases
     ({ unannotated_global_environment; _ } as environment)
-    { Source.statements; qualifier; _ }
+    { Source.statements; source_path = { SourcePath.qualifier; _ }; _ }
   =
   let rec visit_statement ~qualifier aliases { Node.value; _ } =
     match value with
@@ -1018,7 +1018,7 @@ let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
 let register_values
     environment
     (resolution : GlobalResolution.t)
-    ({ Source.statements; qualifier; _ } as source)
+    ({ Source.statements; source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
   let qualified_reference reference =
     let reference =
@@ -1040,7 +1040,7 @@ let register_values
       | _ -> true
 
 
-    let statement { Source.qualifier; _ } callables statement =
+    let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } callables statement =
       let collect_callable ~name callables callable =
         SharedMemoryDependencyHandler.add_function_key ~qualifier name;
 
@@ -1091,7 +1091,7 @@ let register_values
 
     let visit_children _ = true
 
-    let statement { Source.qualifier; _ } _ = function
+    let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } _ = function
       | { Node.location; value = Statement.Class { Class.name; _ } } ->
           (* Register meta annotation. *)
           let primitive = Type.Primitive (Reference.show name) in
@@ -1184,7 +1184,7 @@ let register_dependencies environment source =
 
     let visit_children _ = true
 
-    let statement { Source.qualifier; _ } _ = function
+    let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } _ = function
       | { Node.value = Statement.Import { Import.from; imports }; _ } ->
           let imports =
             let imports =
@@ -1263,7 +1263,7 @@ let propagate_nested_classes ({ unannotated_global_environment; _ } as environme
 
     let visit_children _ = true
 
-    let statement { Source.qualifier; _ } _ = function
+    let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } _ = function
       | { Node.value = Statement.Class ({ Class.name; _ } as definition); _ } ->
           SharedMemory.ClassMetadata.get (Reference.show name)
           |> Option.iter ~f:(fun { GlobalResolution.successors; _ } ->

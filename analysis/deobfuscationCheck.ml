@@ -290,7 +290,11 @@ module Scheduler (State : State) (Context : Context) = struct
     Transform.transform () source |> Transform.source
 end
 
-let run ~configuration:_ ~environment ~source:({ Source.qualifier; _ } as source) =
+let run
+    ~configuration:_
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let module Context = struct
     let global_resolution = Environment.resolution environment ()
 

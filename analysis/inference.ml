@@ -534,7 +534,11 @@ end
 
 let name = "Inference"
 
-let run ~configuration ~environment ~source:({ Source.relative; is_stub; _ } as source) =
+let run
+    ~configuration
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.relative; is_stub; _ }; _ } as source)
+  =
   Log.debug "Checking %s..." relative;
   let global_resolution = Environment.resolution environment () in
   let resolution = TypeCheck.resolution global_resolution () in

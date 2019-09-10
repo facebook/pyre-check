@@ -14,7 +14,7 @@ type t = {
   is_external: bool;
   is_init: bool;
 }
-[@@deriving sexp, compare]
+[@@deriving compare, hash, sexp]
 
 let equal = [%compare.equal: t]
 
@@ -97,6 +97,13 @@ let create
       let search_paths = List.append search_path [SearchPath.Root local_root] in
       let is_external = not (should_type_check ~configuration path) in
       create_from_search_path ~is_external ~search_paths path
+
+
+let create_for_testing ~relative ~is_external ~priority =
+  let qualifier = qualifier_of_relative relative in
+  let is_stub = Path.is_path_python_stub relative in
+  let is_init = Path.is_path_python_init relative in
+  { relative; qualifier; priority; is_stub; is_external; is_init }
 
 
 let full_path ~configuration { relative; priority; _ } =

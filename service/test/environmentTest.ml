@@ -78,7 +78,10 @@ let test_populate context =
     ScratchProject.configuration_of project, sources, AstEnvironment.read_only ast_environment
   in
   let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-  let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+  let qualifiers =
+    List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
+        qualifier)
+  in
   let update_result =
     UnannotatedGlobalEnvironment.update
       unannotated_global_environment

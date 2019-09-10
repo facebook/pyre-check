@@ -40,7 +40,10 @@ type expectation = {
 }
 
 let populate ~configuration environment unannotated_global_environment sources ~update_result =
-  let qualifiers = sources |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+  let qualifiers =
+    sources
+    |> List.map ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
+  in
   Environment.purge environment qualifiers ~update_result;
   Environment.fill_shared_memory_with_default_typeorder environment;
   Environment.add_special_globals environment;
@@ -60,7 +63,10 @@ let environment
     ()
   =
   let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-  let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+  let qualifiers =
+    List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
+        qualifier)
+  in
   let update_result =
     UnannotatedGlobalEnvironment.update
       unannotated_global_environment

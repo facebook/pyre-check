@@ -68,7 +68,7 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
       source_path
     =
     match parse_source ~configuration source_path with
-    | Success ({ Source.qualifier; _ } as source) ->
+    | Success ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
         let source = Preprocessing.preprocess_phase0 source in
         AstEnvironment.Raw.add_source ast_environment source;
         { result with parsed = qualifier :: parsed }
@@ -89,7 +89,10 @@ let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
     ()
 
 
-let expand_wildcard_imports ~ast_environment ({ Source.qualifier; _ } as source) =
+let expand_wildcard_imports
+    ~ast_environment
+    ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let open Statement in
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity

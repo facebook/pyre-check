@@ -10,7 +10,7 @@ open Pyre
 open PyreParser
 open Statement
 
-let expand_relative_imports ({ Source.qualifier; _ } as source) =
+let expand_relative_imports ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer (struct
     type t = Reference.t
 
@@ -30,7 +30,7 @@ let expand_relative_imports ({ Source.qualifier; _ } as source) =
   Transform.transform qualifier source |> Transform.source
 
 
-let expand_string_annotations ({ Source.relative; _ } as source) =
+let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) =
   let module Transform = Transform.Make (struct
     type t = unit
 
@@ -191,7 +191,7 @@ let expand_string_annotations ({ Source.relative; _ } as source) =
   Transform.transform () source |> Transform.source
 
 
-let expand_format_string ({ Source.relative; _ } as source) =
+let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) =
   let module Transform = Transform.Make (struct
     include Transform.Identity
 
@@ -310,7 +310,13 @@ let qualify_local_identifier name ~qualifier =
   name |> Format.asprintf "$local_%s$%s" qualifier |> fun identifier -> Name.Identifier identifier
 
 
-let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as source) =
+let qualify
+    ( {
+        Source.source_path = { SourcePath.relative; qualifier = source_qualifier; _ };
+        statements;
+        _;
+      } as source )
+  =
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name = Identifier.split_star name in
     let renamed = Format.asprintf "$%s$%s" prefix name in
@@ -1449,7 +1455,7 @@ let classes source =
   Collector.collect source
 
 
-let dequalify_map source =
+let dequalify_map ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   let module ImportDequalifier = Transform.MakeStatementTransformer (struct
     include Transform.Identity
 
@@ -1480,11 +1486,13 @@ let dequalify_map source =
       | _ -> map, [statement]
   end)
   in
-  let map = Map.set ~key:source.Source.qualifier ~data:Reference.empty Reference.Map.empty in
+  let map = Map.set ~key:qualifier ~data:Reference.empty Reference.Map.empty in
   ImportDequalifier.transform map source |> fun { ImportDequalifier.state; _ } -> state
 
 
-let replace_mypy_extensions_stub ({ Source.relative; statements; _ } as source) =
+let replace_mypy_extensions_stub
+    ({ Source.source_path = { SourcePath.relative; _ }; statements; _ } as source)
+  =
   if String.is_suffix relative ~suffix:"mypy_extensions.pyi" then
     let typed_dictionary_stub ~location =
       let node value = Node.create ~location value in
@@ -1517,7 +1525,9 @@ let replace_mypy_extensions_stub ({ Source.relative; statements; _ } as source) 
     source
 
 
-let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as source) =
+let expand_typed_dictionary_declarations
+    ({ Source.statements; source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
       let typed_dictionary_declaration_assignment ~name ~fields ~target ~parent ~total =
@@ -2022,7 +2032,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map ~f:expand_named_tuples statements }
 
 
-let expand_new_types ({ Source.statements; qualifier; _ } as source) =
+let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let expand_new_type ({ Node.location; value } as statement) =
     let value =
       match value with

@@ -13,11 +13,13 @@ type t = private {
   is_external: bool;
   is_init: bool;
 }
-[@@deriving sexp, compare, eq]
+[@@deriving compare, eq, hash, sexp]
 
 val pp : Format.formatter -> t -> unit
 
 val create : configuration:Configuration.Analysis.t -> Path.t -> t option
+
+val create_for_testing : relative:string -> is_external:bool -> priority:int -> t
 
 val qualifier_of_relative : string -> Reference.t
 

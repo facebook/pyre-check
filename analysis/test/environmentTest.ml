@@ -38,7 +38,10 @@ let create_environments_and_project
   let () =
     let set_up_shared_memory _ = () in
     let tear_down_shared_memory () _ =
-      let qualifiers = sources |> List.map ~f:(fun { Source.qualifier; _ } -> qualifier) in
+      let qualifiers =
+        sources
+        |> List.map ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
+      in
       let update_result =
         UnannotatedGlobalEnvironment.update
           (UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment))

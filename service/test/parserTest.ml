@@ -62,11 +62,19 @@ let test_parse_source context =
       ["x.py", "def foo()->int:\n    return 1\n"]
     |> ScratchProject.parse_sources
   in
-  let handles = List.map sources ~f:(fun { Source.relative; _ } -> relative) in
+  let handles =
+    List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
+  in
   assert_equal handles ["x.py"];
   let source = Analysis.AstEnvironment.get_source ast_environment !&"x" in
   assert_equal (Option.is_some source) true;
-  let { Source.relative; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
+  let {
+    Source.source_path = { SourcePath.relative; _ };
+    statements;
+    metadata = { Source.Metadata.number_of_lines; _ };
+    _;
+  }
+    =
     Option.value_exn source
   in
   assert_equal relative "x.py";
@@ -117,14 +125,17 @@ let test_parse_sources context =
       Service.Parser.parse_all ~scheduler ~configuration module_tracker
     in
     let is_source_sorted =
-      let compare { Source.qualifier = left; _ } { Source.qualifier = right; _ } =
+      let compare
+          { Source.source_path = { SourcePath.qualifier = left; _ }; _ }
+          { Source.source_path = { SourcePath.qualifier = right; _ }; _ }
+        =
         Reference.compare left right
       in
       List.is_sorted sources ~compare
     in
     assert_bool "Sources should be in sorted order" is_source_sorted;
     let sorted_handles =
-      List.map sources ~f:(fun { Source.relative; _ } -> relative)
+      List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
       |> List.sort ~compare:String.compare
     in
     sorted_handles, ast_environment
@@ -155,7 +166,7 @@ let test_parse_sources context =
       [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Analysis.ModuleTracker.create configuration in
     let sources, _ = Service.Parser.parse_all ~scheduler ~configuration module_tracker in
-    List.map sources ~f:(fun { Source.relative; _ } -> relative)
+    List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)
@@ -555,7 +566,10 @@ let test_parse_repository context =
       ScratchProject.setup ~context ~include_typeshed_stubs:false repository
       |> ScratchProject.parse_sources
       |> fun (sources, _) ->
-      List.map sources ~f:(fun ({ Source.relative; _ } as source) -> relative, source)
+      List.map
+        sources
+        ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
+          relative, source)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)
     in

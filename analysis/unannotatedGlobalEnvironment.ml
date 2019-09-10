@@ -255,7 +255,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
   builtin_classes, typing_classes, typing_extension_classes
 
 
-let register_class_definitions ({ Source.qualifier; _ } as source) =
+let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   let module ClassCollector = Visit.MakeStatementVisitor (struct
     type t = Class.t Node.t list
 

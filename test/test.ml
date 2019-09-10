@@ -1447,7 +1447,10 @@ module ScratchProject = struct
       let unannotated_global_environment =
         UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
       in
-      let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+      let qualifiers =
+        List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
+            qualifier)
+      in
       let update_result =
         UnannotatedGlobalEnvironment.update
           unannotated_global_environment
@@ -1459,7 +1462,10 @@ module ScratchProject = struct
         Environment.shared_memory_handler
           (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
       in
-      let qualifiers = List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier) in
+      let qualifiers =
+        List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
+            qualifier)
+      in
       Environment.purge environment qualifiers ~update_result;
       Environment.fill_shared_memory_with_default_typeorder environment;
       Environment.add_special_globals environment;
@@ -1531,7 +1537,8 @@ let assert_errors
       let ast_environment = Environment.ast_environment environment in
       let configuration = { configuration with debug; strict; declare; infer } in
       let source =
-        List.find_exn sources ~f:(fun { Source.relative; _ } -> String.equal handle relative)
+        List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
+            String.equal handle relative)
       in
       check ~configuration ~environment ~source
       |> List.map
