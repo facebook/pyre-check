@@ -465,6 +465,11 @@ def main() -> int:
         action="store_true",
         help="Add annotations from existing stubs.",
     )
+    infer.add_argument(
+        "--debug-infer",
+        action="store_true",
+        help="Print error message when file fails to annotate.",
+    )
     infer.set_defaults(command=commands.Infer)
 
     arguments = parser.parse_args()

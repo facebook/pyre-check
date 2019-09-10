@@ -345,7 +345,7 @@ def filter_paths(arguments, stubs, type_directory):
     ]
 
 
-def annotate_path(stub_path, file_path) -> None:
+def annotate_path(arguments, stub_path, file_path) -> None:
     try:
         annotated_content = apply_annotations.apply_stub_annotations(
             stub_path, file_path
@@ -353,8 +353,10 @@ def annotate_path(stub_path, file_path) -> None:
         with open(file_path, "w") as source_file:
             source_file.write(annotated_content)
         LOG.info("Annotated {}".format(file_path))
-    except Exception:
+    except Exception as error:
         LOG.warning("Failed to annotate {}".format(file_path))
+        if arguments.debug_infer:
+            LOG.debug("Error: {}".format(error))
 
 
 def annotate_paths(arguments, stubs, type_directory) -> None:
@@ -365,7 +367,7 @@ def annotate_paths(arguments, stubs, type_directory) -> None:
     for stub in stubs:
         stub_path = stub.path(type_directory)
         file_path = str(stub.path(project_directory)).rstrip("i")
-        annotate_path(stub_path, file_path)
+        annotate_path(arguments, stub_path, file_path)
 
 
 def annotate_from_existing_stubs(arguments, type_directory: Path) -> None:
@@ -382,7 +384,7 @@ def annotate_from_existing_stubs(arguments, type_directory: Path) -> None:
                 stub_files.append(os.path.join(path, file))
     for stub_path in stub_files:
         file_path = str(stub_path).replace("/.pyre/types", "").rstrip("i")
-        annotate_path(stub_path, file_path)
+        annotate_path(arguments, stub_path, file_path)
     with open(os.devnull, "w") as FNULL:
         subprocess.call(
             ["arc", "lint", "--apply-patches", "--only-changed"],
