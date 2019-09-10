@@ -536,14 +536,14 @@ let rec sanitized ({ Node.value; location } as expression) =
            { base = sanitized base; attribute = Identifier.sanitized attribute; special })
       |> Node.create ~location
   | Call { callee; arguments } ->
-      let sanitize_argument ({ Call.Argument.name; _ } as argument) =
+      let sanitize_argument ({ Call.Argument.name; value } as argument) =
         let name =
           match name with
           | Some { Node.value; location } ->
               Some { Node.value = Identifier.sanitized value; location }
           | None -> None
         in
-        { argument with Call.Argument.name }
+        { argument with Call.Argument.name; value = sanitized value }
       in
       Call { callee = sanitized callee; arguments = List.map ~f:sanitize_argument arguments }
       |> Node.create ~location

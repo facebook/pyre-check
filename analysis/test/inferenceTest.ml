@@ -584,7 +584,15 @@ let test_infer context =
             pass
         return [foo]
     |}
-    [{|"typing.List[typing.Callable[[int, str], bool]]"|}]
+    [{|"typing.List[typing.Callable[[int, str], bool]]"|}];
+  assert_infer
+    ~fields:["inference.decorators"]
+    {|
+      @click.argument("config-path", type=click.Path(exists=True, readable=True))
+      def foo(x: bool):
+          return ""
+    |}
+    [{|["click.argument(\"config-path\",type = click.Path(exists = True,readable = True))"]|}]
 
 
 let test_infer_backward context =

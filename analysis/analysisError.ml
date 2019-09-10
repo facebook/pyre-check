@@ -1682,7 +1682,7 @@ let inference_information
     List.map parameters ~f:to_json
   in
   let decorators =
-    let decorator_to_json decorator = `String (Expression.show decorator) in
+    let decorator_to_json decorator = `String (Expression.show (Expression.sanitized decorator)) in
     List.map decorators ~f:decorator_to_json
   in
   let print_parent parent =
