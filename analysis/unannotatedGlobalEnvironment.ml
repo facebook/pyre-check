@@ -320,7 +320,8 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
   |> KeyTracker.ClassKeys.add qualifier
 
 
-let collect_unannotated_globals { Source.statements; qualifier; _ } =
+let collect_unannotated_globals { Source.statements; source_path = { SourcePath.qualifier; _ }; _ }
+  =
   let rec visit_statement ~qualifier globals { Node.value; _ } =
     match value with
     | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }

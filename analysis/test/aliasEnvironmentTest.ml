@@ -73,7 +73,9 @@ let test_harder_registrations context =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let sources, ast_environment = ScratchProject.parse_sources project in
     let qualifiers =
-      List.map sources ~f:(fun { Source.qualifier; _ } -> qualifier) |> Reference.Set.of_list
+      List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } ->
+          qualifier)
+      |> Reference.Set.of_list
     in
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
