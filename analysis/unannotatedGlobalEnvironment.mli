@@ -8,18 +8,37 @@ open Statement
 
 type t
 
+type unannotated_global =
+  | SimpleAssign of {
+      explicit_annotation: Expression.t option;
+      value: Expression.t;
+    }
+  | Imported of Reference.t
+[@@deriving compare, show]
+
+type dependency =
+  | AliasRegister of Reference.t
+  | TypeCheckSource of Reference.t
+[@@deriving show, compare, sexp]
+
+module DependencyKey : Memory.DependencyKey.S with type t = dependency
+
 module ReadOnly : sig
   type t
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
-  val get_class_definition : t -> ?dependency:Reference.t -> string -> Class.t Node.t option
+  val get_class_definition : t -> ?dependency:dependency -> string -> Class.t Node.t option
 
-  val class_exists : t -> ?dependency:Reference.t -> string -> bool
+  val class_exists : t -> ?dependency:dependency -> string -> bool
 
-  (* This should not be used for any analysis, since it is not dependency tracked. It is intended
-     for use for in debugging tasks like like validating and printing the class hierarchy *)
   val all_classes : t -> Type.Primitive.t list
+
+  val get_unannotated_global
+    :  t ->
+    ?dependency:dependency ->
+    Reference.t ->
+    unannotated_global option
 end
 
 val create : AstEnvironment.ReadOnly.t -> t
@@ -29,16 +48,22 @@ module UpdateResult : sig
      preenvironment updates *)
   type t
 
+  val added_unannotated_globals : t -> Reference.Set.t
+
   (* In principle we should only need to pass on those of these that are newly introduced, but we
      pass all current classes in the specified modules as a compatibility feature for downstream
      consumers not recording dependcies *)
   val current_classes : t -> Type.Primitive.Set.t
 
+  val current_unannotated_globals : t -> Reference.Set.t
+
   (* Purely a compatibility feature for downstream consumers that are tracking their own
      dependencies off of these names rather than recording them directly *)
   val current_classes_and_removed_classes : t -> Type.Primitive.Set.t
 
-  val triggered_dependencies : t -> SharedMemoryKeys.ReferenceDependencyKey.KeySet.t
+  val current_and_previous_unannotated_globals : t -> Reference.Set.t
+
+  val triggered_dependencies : t -> DependencyKey.KeySet.t
 end
 
 val update

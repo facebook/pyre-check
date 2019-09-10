@@ -515,6 +515,9 @@ let resolution_implementation ?dependency { unannotated_global_environment } () 
   let ast_environment =
     UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
   in
+  let unannotated_global_environment_dependency =
+    dependency >>| fun dependency -> UnannotatedGlobalEnvironment.TypeCheckSource dependency
+  in
   GlobalResolution.create
     ~ast_environment
     ~aliases:(SharedMemory.Aliases.get ?dependency)
@@ -522,7 +525,7 @@ let resolution_implementation ?dependency { unannotated_global_environment } () 
     ~class_definition:
       (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
          unannotated_global_environment
-         ?dependency)
+         ?dependency:unannotated_global_environment_dependency)
     ~class_metadata:(SharedMemory.ClassMetadata.get ?dependency)
     ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
     ~global:(SharedMemory.Globals.get ?dependency)

@@ -13,12 +13,38 @@ type t = { ast_environment: AstEnvironment.ReadOnly.t }
 
 let create ast_environment = { ast_environment }
 
+type unannotated_global =
+  | SimpleAssign of {
+      explicit_annotation: Expression.t option;
+      value: Expression.t;
+    }
+  | Imported of Reference.t
+[@@deriving compare, show]
+
+type dependency =
+  | AliasRegister of Reference.t
+  | TypeCheckSource of Reference.t
+[@@deriving show, compare, sexp]
+
+module DependencyKey = Memory.DependencyKey.Make (struct
+  type nonrec t = dependency
+
+  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
+
+  let compare = compare_dependency
+
+  type out = dependency
+
+  let from_string string = Sexp.of_string string |> dependency_of_sexp
+end)
+
 module ReadOnly = struct
   type t = {
     ast_environment: AstEnvironment.ReadOnly.t;
-    get_class_definition: ?dependency:Reference.t -> string -> Class.t Node.t option;
-    class_exists: ?dependency:Reference.t -> string -> bool;
+    get_class_definition: ?dependency:dependency -> string -> Class.t Node.t option;
+    class_exists: ?dependency:dependency -> string -> bool;
     all_classes: unit -> Type.Primitive.t list;
+    get_unannotated_global: ?dependency:dependency -> Reference.t -> unannotated_global option;
   }
 
   let ast_environment { ast_environment; _ } = ast_environment
@@ -28,6 +54,8 @@ module ReadOnly = struct
   let class_exists { class_exists; _ } = class_exists
 
   let all_classes { all_classes; _ } = all_classes ()
+
+  let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
 end
 
 (* The key tracking is necessary because there is no empirical way to determine which classes exist
@@ -47,12 +75,32 @@ module KeyTracker = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
+  module UnannotatedGlobalKeyValue = struct
+    type t = Reference.t list [@@deriving compare]
+
+    let prefix = Prefix.make ()
+
+    let description = "Class keys"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
   module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
+  module UnannotatedGlobalKeys =
+    Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UnannotatedGlobalKeyValue)
 
   let get_keys keys =
     ClassKeys.KeySet.of_list keys
     |> ClassKeys.get_batch
     |> ClassKeys.KeyMap.values
+    |> List.filter_map ~f:Fn.id
+    |> List.concat
+
+
+  let get_unannotated_global_keys keys =
+    UnannotatedGlobalKeys.KeySet.of_list keys
+    |> UnannotatedGlobalKeys.get_batch
+    |> UnannotatedGlobalKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
 end
@@ -63,13 +111,22 @@ module WriteOnly : sig
   val set_class_definition : name:string -> definition:Class.t Node.t -> unit
 
   val add_to_transaction
-    :  SharedMemoryKeys.ReferenceDependencyKey.Transaction.t ->
-    keys:string list ->
-    SharedMemoryKeys.ReferenceDependencyKey.Transaction.t
+    :  DependencyKey.Transaction.t ->
+    previous_classes_list:string list ->
+    previous_unannotated_globals_list:Reference.t list ->
+    DependencyKey.Transaction.t
 
-  val get_all_dependents : string list -> SharedMemoryKeys.ReferenceDependencyKey.KeySet.t
+  val get_all_dependents
+    :  class_additions:string list ->
+    unannotated_global_additions:Reference.t list ->
+    DependencyKey.KeySet.t
 
-  val direct_data_purge : Type.Primitive.t list -> unit
+  val direct_data_purge
+    :  previous_classes_list:Type.Primitive.t list ->
+    previous_unannotated_globals_list:Reference.t list ->
+    unit
+
+  val set_unannotated_global : target:Reference.t -> unannotated_global -> unit
 
   val read_only : ast_environment:AstEnvironment.ReadOnly.t -> ReadOnly.t
 end = struct
@@ -86,24 +143,49 @@ end = struct
   end
 
   module ClassDefinitions =
-    Memory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.StringKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
+    Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.StringKey) (DependencyKey)
       (ClassValue)
+
+  module UnannotatedGlobalValue = struct
+    type t = unannotated_global
+
+    let prefix = Prefix.make ()
+
+    let description = "UnannotatedGlobal"
+
+    let unmarshall value = Marshal.from_string value 0
+
+    let compare = compare_unannotated_global
+  end
+
+  module UnannotatedGlobals =
+    Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
+      (UnannotatedGlobalValue)
+
+  let set_unannotated_global ~target = UnannotatedGlobals.write_through target
 
   let set_class_definition ~name ~definition = ClassDefinitions.write_through name definition
 
-  let add_to_transaction txn ~keys =
-    let keys = ClassDefinitions.KeySet.of_list keys in
-    ClassDefinitions.add_to_transaction ~keys txn
+  let add_to_transaction txn ~previous_classes_list ~previous_unannotated_globals_list =
+    let class_keys = ClassDefinitions.KeySet.of_list previous_classes_list in
+    let unannotated_globals_keys =
+      UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
+    in
+    ClassDefinitions.add_to_transaction ~keys:class_keys txn
+    |> UnannotatedGlobals.add_to_transaction ~keys:unannotated_globals_keys
 
 
-  let get_all_dependents x =
-    ClassDefinitions.KeySet.of_list x |> ClassDefinitions.get_all_dependents
+  let get_all_dependents ~class_additions ~unannotated_global_additions =
+    DependencyKey.KeySet.union
+      (ClassDefinitions.KeySet.of_list class_additions |> ClassDefinitions.get_all_dependents)
+      ( UnannotatedGlobals.KeySet.of_list unannotated_global_additions
+      |> UnannotatedGlobals.get_all_dependents )
 
 
-  let direct_data_purge keys =
-    ClassDefinitions.KeySet.of_list keys |> ClassDefinitions.remove_batch
+  let direct_data_purge ~previous_classes_list ~previous_unannotated_globals_list =
+    ClassDefinitions.KeySet.of_list previous_classes_list |> ClassDefinitions.remove_batch;
+    UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
+    |> UnannotatedGlobals.remove_batch
 
 
   let read_only ~ast_environment =
@@ -119,6 +201,7 @@ end = struct
       ReadOnly.get_class_definition = ClassDefinitions.get;
       all_classes;
       class_exists;
+      get_unannotated_global = UnannotatedGlobals.get;
     }
 end
 
@@ -237,17 +320,77 @@ let register_class_definitions ({ Source.qualifier; _ } as source) =
   |> KeyTracker.ClassKeys.add qualifier
 
 
+let collect_unannotated_globals { Source.statements; qualifier; _ } =
+  let rec visit_statement ~qualifier globals { Node.value; _ } =
+    match value with
+    | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
+      when Expression.is_simple_name target ->
+        let qualified_name =
+          let target = Expression.name_to_reference_exn target |> Reference.sanitize_qualified in
+          Reference.combine qualifier target
+        in
+        (qualified_name, SimpleAssign { explicit_annotation = annotation; value }) :: globals
+    | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
+      when String.equal (Reference.show name) "*" ->
+        (* Don't register x.* as a global when a user writes `from x import *`. *)
+        globals
+    | Import { Import.from; imports } ->
+        let from =
+          match from >>| Reference.show with
+          | None
+          | Some "future.builtins"
+          | Some "builtins" ->
+              Reference.empty
+          | Some from -> Reference.create from
+        in
+        let import_to_global { Import.name; alias } =
+          let qualified_name =
+            match alias with
+            | None -> Reference.combine qualifier name
+            | Some alias -> Reference.combine qualifier alias
+          in
+          let original_name = Reference.combine from name in
+          qualified_name, Imported original_name
+        in
+        List.rev_append (List.map ~f:import_to_global imports) globals
+    | _ -> globals
+  in
+  let write (target, o) =
+    WriteOnly.set_unannotated_global ~target o;
+    target
+  in
+  List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
+  (* Preserve existing first alias wins semantics *)
+  |> List.rev
+  |> List.map ~f:write
+  |> KeyTracker.UnannotatedGlobalKeys.add qualifier
+
+
 module UpdateResult = struct
   type t = {
     current_classes: Type.Primitive.Set.t;
     previous_classes: Type.Primitive.Set.t;
-    triggered_dependencies: SharedMemoryKeys.ReferenceDependencyKey.KeySet.t;
+    current_unannotated_globals: Reference.Set.t;
+    previous_unannotated_globals: Reference.Set.t;
+    triggered_dependencies: DependencyKey.KeySet.t;
   }
+
+  let added_unannotated_globals { current_unannotated_globals; previous_unannotated_globals; _ } =
+    Reference.Set.diff current_unannotated_globals previous_unannotated_globals
+
 
   let current_classes { current_classes; _ } = current_classes
 
+  let current_unannotated_globals { current_unannotated_globals; _ } = current_unannotated_globals
+
   let current_classes_and_removed_classes { current_classes; previous_classes; _ } =
     Type.Primitive.Set.union current_classes previous_classes
+
+
+  let current_and_previous_unannotated_globals
+      { current_unannotated_globals; previous_unannotated_globals; _ }
+    =
+    Reference.Set.union current_unannotated_globals previous_unannotated_globals
 
 
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
@@ -257,7 +400,9 @@ let update { ast_environment; _ } ~scheduler ~configuration modified_qualifiers 
   let map sources =
     let register qualifier =
       AstEnvironment.ReadOnly.get_source ast_environment qualifier
-      >>| register_class_definitions
+      >>| (fun source ->
+            register_class_definitions source;
+            collect_unannotated_globals source)
       |> Option.value ~default:()
     in
     List.iter sources ~f:register
@@ -266,33 +411,62 @@ let update { ast_environment; _ } ~scheduler ~configuration modified_qualifiers 
   let update () = Scheduler.iter scheduler ~configuration ~f:map ~inputs:modified_qualifiers in
   let previous_classes_list = KeyTracker.get_keys modified_qualifiers in
   let previous_classes = Type.Primitive.Set.of_list previous_classes_list in
+  let previous_unannotated_globals_list =
+    KeyTracker.get_unannotated_global_keys modified_qualifiers
+  in
+  let previous_unannotated_globals = Reference.Set.of_list previous_unannotated_globals_list in
   KeyTracker.ClassKeys.KeySet.of_list modified_qualifiers |> KeyTracker.ClassKeys.remove_batch;
+  KeyTracker.UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers
+  |> KeyTracker.UnannotatedGlobalKeys.remove_batch;
   match configuration with
   | { incremental_style = FineGrained; _ } ->
       let (), mutation_triggers =
-        SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
-        |> WriteOnly.add_to_transaction ~keys:previous_classes_list
-        |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
+        DependencyKey.Transaction.empty
+        |> WriteOnly.add_to_transaction ~previous_classes_list ~previous_unannotated_globals_list
+        |> DependencyKey.Transaction.execute ~update
       in
       let current_classes =
         KeyTracker.get_keys modified_qualifiers |> Type.Primitive.Set.of_list
       in
-      let additions = Type.Primitive.Set.diff current_classes previous_classes in
+      let current_unannotated_globals =
+        KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list
+      in
+      let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
+      let unannotated_global_additions =
+        Reference.Set.diff current_unannotated_globals previous_unannotated_globals
+      in
       let addition_triggers =
-        WriteOnly.get_all_dependents (Type.Primitive.Set.to_list additions)
+        WriteOnly.get_all_dependents
+          ~class_additions:(Set.to_list class_additions)
+          ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
       in
       let triggered_dependencies =
-        SharedMemoryKeys.ReferenceDependencyKey.KeySet.union addition_triggers mutation_triggers
+        DependencyKey.KeySet.union addition_triggers mutation_triggers
       in
-      { UpdateResult.current_classes; previous_classes; triggered_dependencies }
+      {
+        UpdateResult.current_classes;
+        previous_classes;
+        current_unannotated_globals;
+        previous_unannotated_globals;
+        triggered_dependencies;
+      }
   | _ ->
-      WriteOnly.direct_data_purge previous_classes_list;
+      WriteOnly.direct_data_purge ~previous_classes_list ~previous_unannotated_globals_list;
       update ();
       let current_classes =
         KeyTracker.get_keys modified_qualifiers |> Type.Primitive.Set.of_list
       in
-      let triggered_dependencies = SharedMemoryKeys.ReferenceDependencyKey.KeySet.empty in
-      { current_classes; previous_classes; triggered_dependencies }
+      let current_unannotated_globals =
+        KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list
+      in
+      let triggered_dependencies = DependencyKey.KeySet.empty in
+      {
+        current_classes;
+        previous_classes;
+        current_unannotated_globals;
+        previous_unannotated_globals;
+        triggered_dependencies;
+      }
 
 
 let read_only { ast_environment; _ } = WriteOnly.read_only ~ast_environment

@@ -89,6 +89,20 @@ let test_updates context =
       | `AllClasses expectation ->
           UnannotatedGlobalEnvironment.ReadOnly.all_classes read_only
           |> assert_equal ~printer:(List.to_string ~f:Fn.id) expectation
+      | `Global (global_name, dependency, expectation) ->
+          let printer optional =
+            optional
+            >>| UnannotatedGlobalEnvironment.show_unannotated_global
+            |> Option.value ~default:"none"
+          in
+          let cmp left right =
+            Option.compare UnannotatedGlobalEnvironment.compare_unannotated_global left right = 0
+          in
+          UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+            read_only
+            global_name
+            ~dependency
+          |> assert_equal ~cmp ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;
     AstEnvironment.remove_sources ast_environment [Reference.create "test"];
@@ -105,16 +119,19 @@ let test_updates context =
         (Reference.Set.singleton (Reference.create "test"))
     in
     let printer set =
-      SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements set
-      |> List.to_string ~f:Reference.show
+      UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements set
+      |> List.to_string ~f:UnannotatedGlobalEnvironment.show_dependency
+    in
+    let expected_triggers =
+      UnannotatedGlobalEnvironment.DependencyKey.KeySet.of_list expected_triggers
     in
     assert_equal
       ~printer
-      (SharedMemoryKeys.ReferenceDependencyKey.KeySet.of_list expected_triggers)
+      expected_triggers
       (UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = Reference.create "dep" in
+  let dependency = UnannotatedGlobalEnvironment.TypeCheckSource (Reference.create "dep") in
   (* get_class_definition *)
   assert_updates
     ~original_source:{|
@@ -234,6 +251,146 @@ let test_updates context =
     ~middle_actions:[`AllClasses ["test.Bar"; "test.Foo"]]
     ~expected_triggers:[]
     ~post_actions:[`AllClasses ["test.Foo"]]
+    ();
+
+  (* get_unannotated_global *)
+  let dependency = UnannotatedGlobalEnvironment.AliasRegister (Reference.create "dep") in
+  assert_updates
+    ~original_source:{|
+      x: int = 7
+    |}
+    ~new_source:{|
+      x: int = 9
+    |}
+    ~middle_actions:
+      [ `Global
+          ( Reference.create "test.x",
+            dependency,
+            Some
+              (UnannotatedGlobalEnvironment.SimpleAssign
+                 {
+                   explicit_annotation = Some (parse_single_expression "int");
+                   value = parse_single_expression "7";
+                 }) ) ]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [ `Global
+          ( Reference.create "test.x",
+            dependency,
+            Some
+              (UnannotatedGlobalEnvironment.SimpleAssign
+                 {
+                   explicit_annotation = Some (parse_single_expression "int");
+                   value = parse_single_expression "9";
+                 }) ) ]
+    ();
+  assert_updates
+    ~original_source:{|
+      import target.member as alias
+    |}
+    ~new_source:{|
+      import target.member as new_alias
+    |}
+    ~middle_actions:
+      [ `Global
+          ( Reference.create "test.alias",
+            dependency,
+            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) ) ]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`Global (Reference.create "test.alias", dependency, None)]
+    ();
+  assert_updates
+    ~original_source:{|
+      from target import member, other_member
+    |}
+    ~new_source:{|
+      from target import other_member, member
+    |}
+    ~middle_actions:
+      [ `Global
+          ( Reference.create "test.member",
+            dependency,
+            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) );
+        `Global
+          ( Reference.create "test.other_member",
+            dependency,
+            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member"))
+          ) ]
+      (* Location insensitive *)
+    ~expected_triggers:[]
+    ~post_actions:
+      [ `Global
+          ( Reference.create "test.member",
+            dependency,
+            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) );
+        `Global
+          ( Reference.create "test.other_member",
+            dependency,
+            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member"))
+          ) ]
+    ();
+
+  (* Don't infer * as a real thing *)
+  assert_updates
+    ~original_source:{|
+      from target import *
+    |}
+    ~middle_actions:[`Global (Reference.create "test.*", dependency, None)]
+    ~expected_triggers:[]
+    ();
+
+  (* We do not pick up tuple assignments yet, as they are not relevant for aliases *)
+  assert_updates
+    ~original_source:{|
+      X, Y, Z = int, str, bool
+    |}
+    ~middle_actions:
+      [ `Global (Reference.create "test.X", dependency, None);
+        `Global (Reference.create "test.Y", dependency, None);
+        `Global (Reference.create "test.Z", dependency, None) ]
+    ~expected_triggers:[]
+    ();
+
+  (* First global wins. Kind of weird behavior, but that's the current approach so sticking with it
+     for now *)
+  assert_updates
+    ~original_source:{|
+      X = int
+      X = str
+    |}
+    ~new_source:{|
+      X = int
+      X = str
+    |}
+    ~middle_actions:
+      [ `Global
+          ( Reference.create "test.X",
+            dependency,
+            Some
+              (UnannotatedGlobalEnvironment.SimpleAssign
+                 { explicit_annotation = None; value = parse_single_expression "int" }) ) ]
+    ~expected_triggers:[]
+    ();
+
+  (* Keep different dependencies straight *)
+  let alias_dependency =
+    UnannotatedGlobalEnvironment.AliasRegister (Reference.create "same_dep")
+  in
+  let check_dependency =
+    UnannotatedGlobalEnvironment.TypeCheckSource (Reference.create "same_dep")
+  in
+  assert_updates
+    ~original_source:{|
+      class Foo:
+        x: int
+    |}
+    ~new_source:{|
+      class Foo:
+        x: str
+    |}
+    ~middle_actions:
+      [`Get ("test.Foo", alias_dependency, Some 1); `Get ("test.Foo", check_dependency, Some 1)]
+    ~expected_triggers:[check_dependency; alias_dependency]
     ();
   ()
 

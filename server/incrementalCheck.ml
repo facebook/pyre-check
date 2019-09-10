@@ -140,9 +140,18 @@ let recheck
             ~update_result
         in
         let invalidated_type_checking_keys =
-          SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
-            (UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies update_result)
-            invalidated_type_checking_keys
+          let unannotated_global_environment_dependencies =
+            UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies update_result
+            |> UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
+            |> List.filter_map ~f:(function
+                   | UnannotatedGlobalEnvironment.TypeCheckSource source -> Some source
+                   | _ -> None)
+          in
+          List.fold
+            unannotated_global_environment_dependencies
+            ~f:(fun sofar element ->
+              SharedMemoryKeys.ReferenceDependencyKey.KeySet.add element sofar)
+            ~init:invalidated_type_checking_keys
         in
         let invalidated_type_checking_keys =
           List.fold
