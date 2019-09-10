@@ -10,16 +10,16 @@ open Analysis
 open Test
 
 let assert_deobfuscation ~context source expected =
-  let configuration, global_resolution =
+  let configuration, environment =
     let project = ScratchProject.setup ~context [] in
     let _, _, environment = ScratchProject.build_environment project in
-    ScratchProject.configuration_of project, Environment.resolution environment ()
+    ScratchProject.configuration_of project, environment
   in
   let handle = "qualifier.py" in
   let actual =
     let source = parse ~handle source in
-    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
-    DeobfuscationCheck.run ~configuration ~global_resolution ~source
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
+    DeobfuscationCheck.run ~configuration ~environment ~source
     |> function
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"

@@ -1504,13 +1504,12 @@ let assert_errors
         let configuration = ScratchProject.configuration_of project in
         configuration, sources, environment
       in
-      let global_resolution = Environment.resolution environment () in
       let ast_environment = Environment.ast_environment environment in
       let configuration = { configuration with debug; strict; declare; infer } in
       let source =
         List.find_exn sources ~f:(fun { Source.relative; _ } -> String.equal handle relative)
       in
-      check ~configuration ~global_resolution ~source
+      check ~configuration ~environment ~source
       |> List.map
            ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
     in

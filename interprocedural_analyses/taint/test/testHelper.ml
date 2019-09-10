@@ -420,7 +420,6 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
     |> fun option -> Option.value_exn option
   in
-  let global_resolution = Environment.resolution environment () in
   let errors =
     let keep { AnalysisError.kind; _ } =
       match kind with
@@ -428,7 +427,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       | AnalysisError.NotCallable _ -> false
       | _ -> true
     in
-    TypeCheck.run ~configuration ~global_resolution ~source |> List.filter ~f:keep
+    TypeCheck.run ~configuration ~environment ~source |> List.filter ~f:keep
   in
   ( if not (List.is_empty errors) then
       let errors =
@@ -472,7 +471,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       | None -> Callable.Map.empty
       | Some source ->
           Model.parse
-            ~resolution:(TypeCheck.resolution global_resolution ())
+            ~resolution:(TypeCheck.resolution (Environment.resolution environment ()) ())
             ~source:(Test.trim_extra_indentation source)
             ~configuration:TaintConfiguration.default
             Callable.Map.empty

@@ -601,7 +601,8 @@ end
 
 let name = "Awaitable"
 
-let run ~configuration:_ ~global_resolution ~source =
+let run ~configuration:_ ~environment ~source =
+  let global_resolution = Environment.resolution environment () in
   let check define =
     let module Context = struct
       let define = define

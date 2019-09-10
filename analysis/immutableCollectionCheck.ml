@@ -67,12 +67,12 @@ module State (Context : Context) = struct
     failwith "Not implemented"
 end
 
-let run ~configuration:_ ~global_resolution ~source =
+let run ~configuration:_ ~environment ~source =
   let check define =
     let module Context = struct
       let define = define
 
-      let global_resolution = global_resolution
+      let global_resolution = Environment.resolution environment ()
     end
     in
     let module State = State (Context) in

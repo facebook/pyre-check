@@ -9,9 +9,9 @@ open Analysis
 open Test
 
 let assert_awaitable_errors ~context =
-  let check ~configuration ~global_resolution ~source =
-    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
-    AwaitableCheck.run ~configuration ~global_resolution ~source
+  let check ~configuration ~environment ~source =
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
+    AwaitableCheck.run ~configuration ~environment ~source
   in
   assert_errors ~context ~check
 

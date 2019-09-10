@@ -9,9 +9,9 @@ open Analysis
 open Test
 
 let assert_liveness_errors ~context =
-  let check ~configuration ~global_resolution ~source =
-    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
-    LivenessCheck.run ~configuration ~global_resolution ~source
+  let check ~configuration ~environment ~source =
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
+    LivenessCheck.run ~configuration ~environment ~source
   in
   assert_errors ~context ~check
 

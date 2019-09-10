@@ -17,12 +17,11 @@ let assert_taint ~context source expected =
     let _, ast_environment, environment = Test.ScratchProject.build_environment project in
     Test.ScratchProject.configuration_of project, environment, ast_environment
   in
-  let global_resolution = Environment.resolution environment () in
   let source =
     AstEnvironment.get_source ast_environment (Ast.Reference.create "qualifier")
     |> fun option -> Option.value_exn option
   in
-  TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
+  TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =

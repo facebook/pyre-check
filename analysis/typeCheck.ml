@@ -5079,7 +5079,7 @@ let run_on_defines ~configuration ~global_resolution ~source defines =
 
 let run
     ~configuration
-    ~global_resolution
+    ~environment
     ~source:( { Source.relative; qualifier; metadata = { Source.Metadata.number_of_lines; _ }; _ }
             as source )
   =
@@ -5087,6 +5087,12 @@ let run
   Log.log ~section:`Check "Checking `%s`..." relative;
   let results =
     let toplevel = Source.top_level_define_node source in
+    let global_resolution =
+      match configuration with
+      | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
+          Environment.dependency_tracked_resolution environment ~dependency:qualifier ()
+      | _ -> Environment.resolution environment ()
+    in
     check_defines ~configuration ~global_resolution ~source [toplevel]
   in
   let errors =

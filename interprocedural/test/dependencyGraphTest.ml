@@ -34,8 +34,7 @@ let create_call_graph
   let configuration, source, environment =
     setup ~update_environment_with ~context ~handle:"test.py" source_text
   in
-  let global_resolution = Environment.resolution environment () in
-  let errors = TypeCheck.run ~configuration ~global_resolution ~source in
+  let errors = TypeCheck.run ~configuration ~environment ~source in
   if not (List.is_empty errors) then
     Format.asprintf
       "Type errors in %s\n%a"
@@ -203,8 +202,7 @@ let test_type_collection context =
       in
       ScratchProject.configuration_of project, source, environment
     in
-    let global_resolution = Environment.resolution environment () in
-    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
     let defines =
       Preprocessing.defines ~include_toplevels:true source
       |> List.map ~f:(fun { Node.value; _ } -> value)
@@ -219,6 +217,7 @@ let test_type_collection context =
         Map.find_exn lookup key
         |> fun { ResolutionSharedMemory.precondition; _ } -> Reference.Map.of_tree precondition
       in
+      let global_resolution = Environment.resolution environment () in
       let resolution = TypeCheck.resolution global_resolution ~annotations () in
       let statement = List.nth_exn statements statement_index in
       Visit.collect_calls_and_names statement
@@ -358,8 +357,7 @@ let test_strongly_connected_components context =
   let assert_strongly_connected_components source ~handle ~expected =
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
     let configuration, source, environment = setup ~context ~handle source in
-    let global_resolution = Environment.resolution environment () in
-    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
     let partitions ~use_type_checking_callgraph =
       let edges =
         DependencyGraph.create_callgraph ~use_type_checking_callgraph ~environment ~source

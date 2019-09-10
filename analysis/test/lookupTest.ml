@@ -15,16 +15,17 @@ let show_location { Location.path; start; stop } =
 
 
 let generate_lookup ~context source =
-  let configuration, source, global_resolution =
+  let configuration, source, environment =
     let project = ScratchProject.setup ~context ["test.py", source] in
     let _, ast_environment, environment = ScratchProject.build_environment project in
     let source =
       AstEnvironment.get_source ast_environment (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
-    ScratchProject.configuration_of project, source, Environment.resolution environment ()
+    ScratchProject.configuration_of project, source, environment
   in
-  TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
+  TypeCheck.run ~configuration ~environment ~source |> ignore;
+  let global_resolution = Environment.resolution environment () in
   let lookup = Lookup.create_of_source global_resolution source in
   lookup
 

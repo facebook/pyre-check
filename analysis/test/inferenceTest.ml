@@ -162,9 +162,9 @@ let assert_infer
     source
     errors
   =
-  let check_errors configuration global_resolution source =
-    let ast_environment = GlobalResolution.ast_environment global_resolution in
-    Inference.run ~configuration ~global_resolution ~source
+  let check_errors configuration environment source =
+    let ast_environment = Environment.ast_environment environment in
+    Inference.run ~configuration ~environment ~source
     |> List.map
          ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
   in
@@ -193,7 +193,6 @@ let assert_infer
     in
     { configuration with debug; infer }, source, environment
   in
-  let global_resolution = Environment.resolution environment () in
   let to_string json = Yojson.Safe.sort json |> Yojson.Safe.to_string in
   assert_equal
     ~cmp:(List.equal String.equal)
@@ -202,7 +201,7 @@ let assert_infer
       (diff ~print:(fun format errors ->
            Format.fprintf format "%a" Sexp.pp [%message (errors : string list)]))
     (List.map ~f:(fun string -> Yojson.Safe.from_string string |> to_string) errors)
-    ( List.map ~f:fields_of_error (check_errors configuration global_resolution source)
+    ( List.map ~f:fields_of_error (check_errors configuration environment source)
     |> List.concat
     |> List.map ~f:to_string )
 

@@ -186,9 +186,9 @@ end
 
 let name = "Liveness"
 
-let run ~configuration:_ ~global_resolution ~source =
+let run ~configuration:_ ~environment ~source =
   let module Context = struct
-    let global_resolution = global_resolution
+    let global_resolution = Environment.resolution environment ()
 
     let errors = ErrorMap.Table.create ()
 

@@ -63,9 +63,8 @@ let make_errors ~context ?(handle = "test.py") source =
     List.find_exn sources ~f:(fun { Ast.Source.relative; _ } -> String.equal relative handle)
   in
   let configuration = ScratchProject.configuration_of project in
-  let global_resolution = Environment.resolution environment () in
-  let ast_environment = GlobalResolution.ast_environment global_resolution in
-  TypeCheck.run ~configuration ~global_resolution ~source
+  let ast_environment = Environment.ast_environment environment in
+  TypeCheck.run ~configuration ~environment ~source
   |> List.map ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
 
 

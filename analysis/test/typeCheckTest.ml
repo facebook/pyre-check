@@ -1493,8 +1493,7 @@ let test_coverage context =
       let source = AstEnvironment.get_source ast_environment (Reference.create "coverage_test") in
       let source = Option.value_exn source in
       let configuration = ScratchProject.configuration_of project in
-      let global_resolution = Environment.resolution environment () in
-      TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
+      TypeCheck.run ~configuration ~environment ~source |> ignore;
       Coverage.get ~qualifier:!&"coverage_test" |> fun coverage -> Option.value_exn coverage
     in
     assert_equal ~printer:Coverage.show expected coverage
@@ -1546,8 +1545,7 @@ let test_calls context =
     in
     Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
     |> List.iter ~f:clear_calls;
-    let global_resolution = Environment.resolution environment () in
-    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
 
     (* Check calls. *)
     let assert_calls (caller, callees) =

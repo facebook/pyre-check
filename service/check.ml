@@ -42,13 +42,7 @@ let run_check
             { configuration with Configuration.Analysis.store_type_check_resolution = true }
         | _ -> configuration
       in
-      let global_resolution =
-        match configuration with
-        | { incremental_style = FineGrained; _ } ->
-            Analysis.Environment.dependency_tracked_resolution environment ~dependency:qualifier ()
-        | _ -> Analysis.Environment.resolution environment ()
-      in
-      let new_errors = Check.run ~configuration ~global_resolution ~source in
+      let new_errors = Check.run ~configuration ~environment ~source in
       { errors = List.append new_errors errors; number_files = number_files + 1 }
     in
     List.fold sources ~init:empty_result ~f:analyze_source

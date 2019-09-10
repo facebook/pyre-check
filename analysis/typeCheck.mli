@@ -100,6 +100,6 @@ val run_on_defines
 
 val run
   :  configuration:Configuration.Analysis.t ->
-  global_resolution:GlobalResolution.t ->
+  environment:Environment.t ->
   source:Source.t ->
   Error.t list

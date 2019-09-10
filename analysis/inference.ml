@@ -534,8 +534,9 @@ end
 
 let name = "Inference"
 
-let run ~configuration ~global_resolution ~source:({ Source.relative; is_stub; _ } as source) =
+let run ~configuration ~environment ~source:({ Source.relative; is_stub; _ } as source) =
   Log.debug "Checking %s..." relative;
+  let global_resolution = Environment.resolution environment () in
   let resolution = TypeCheck.resolution global_resolution () in
   let dequalify_map = Preprocessing.dequalify_map source in
   let check

@@ -39,7 +39,7 @@ let assert_taint ?models ~context source expect =
         |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
         |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
-  TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
+  TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines = source |> Preprocessing.defines |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =

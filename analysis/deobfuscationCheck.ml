@@ -290,9 +290,9 @@ module Scheduler (State : State) (Context : Context) = struct
     Transform.transform () source |> Transform.source
 end
 
-let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as source) =
+let run ~configuration:_ ~environment ~source:({ Source.qualifier; _ } as source) =
   let module Context = struct
-    let global_resolution = global_resolution
+    let global_resolution = Environment.resolution environment ()
 
     let transformations = Location.Reference.Table.create ()
 
