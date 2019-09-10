@@ -9,14 +9,13 @@
 import argparse
 import json
 import logging
-import os
 import pathlib
 import re
 import subprocess
 import sys
 import traceback
 from collections import defaultdict
-from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from ...client.commands import ExitCode
@@ -34,34 +33,38 @@ LOG = logging.getLogger(__name__)
 
 
 class Configuration:
-    def __init__(self, path: str, json_contents: Dict[str, Any]):
+    def __init__(self, path: Path, json_contents: Dict[str, Any]):
         self._path = path
-        if path.endswith("/.pyre_configuration.local"):
+        if path.name == ".pyre_configuration.local":
             self.is_local = True
         else:
             self.is_local = False
-        self.root = os.path.dirname(path)
+        self.root = str(path.parent)
         self.targets = json_contents.get("targets")
         self.source_directories = json_contents.get("source_directories")
         self.push_blocking = bool(json_contents.get("push_blocking"))
         self.version = json_contents.get("version")
 
     @staticmethod
-    def find_project_configuration() -> Optional[str]:
-        directory = os.getcwd()
-        while directory != "/":
-            configuration_path = os.path.join(directory, ".pyre_configuration")
-            if os.path.isfile(configuration_path):
+    def find_project_configuration() -> Optional[Path]:
+        directory = Path.cwd()
+        root = directory.root
+        while directory != root:
+            configuration_path = directory / ".pyre_configuration"
+            if configuration_path.is_file():
                 return configuration_path
-            directory = os.path.dirname(directory)
+            directory = directory.parent
         return None
 
     @staticmethod
     def gather_local_configurations(arguments) -> List["Configuration"]:
         LOG.info("Finding configurations...")
-        configuration_paths = get_filesystem().list(
-            ".", patterns=[r"**\.pyre_configuration.local"]
-        )
+        configuration_paths = [
+            Path(path)
+            for path in get_filesystem().list(
+                ".", patterns=[r"**\.pyre_configuration.local"]
+            )
+        ]
         if not configuration_paths:
             LOG.info("No projects with local configurations found.")
             project_configuration = Configuration.find_project_configuration()
@@ -86,11 +89,11 @@ class Configuration:
         )
         return configurations
 
-    def get_path(self) -> str:
+    def get_path(self) -> Path:
         return self._path
 
-    def get_directory(self) -> str:
-        return os.path.dirname(self._path)
+    def get_directory(self) -> Path:
+        return self._path.parent
 
     def remove_version(self) -> None:
         with open(self._path) as configuration_file:
@@ -212,7 +215,7 @@ def fix_file(
     max_line_length = (
         arguments.max_line_length if arguments.max_line_length > 0 else None
     )
-    path = pathlib.Path(filename)
+    path = Path(filename)
     text = path.read_text()
     if "@" "generated" in text:
         LOG.warning("Attempting to upgrade generated file %s, skipping.", filename)
@@ -313,7 +316,7 @@ def _submit_changes(arguments, message):
 
 # Exposed for testing.
 def _upgrade_project(
-    arguments: argparse.Namespace, configuration: Configuration, root: str
+    arguments: argparse.Namespace, configuration: Configuration, root: Path
 ) -> None:
     LOG.info("Processing %s", configuration.get_directory())
     if not configuration.is_local or not configuration.version:
@@ -335,10 +338,10 @@ def _upgrade_project(
                 errors = configuration.get_errors(should_clean=False)
                 fix(arguments, sort_errors(errors))
     try:
-        project_root = os.path.realpath(root)
-        local_root = os.path.realpath(configuration.get_directory())
+        project_root = root.resolve()
+        local_root = configuration.get_directory().resolve()
         _submit_changes(
-            arguments, _commit_message(os.path.relpath(local_root, project_root))
+            arguments, _commit_message(str(local_root.relative_to(project_root)))
         )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
@@ -366,7 +369,7 @@ def fix(arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]) -> N
 @verify_stable_ast
 def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
     LOG.info("Processing `%s`", filename)
-    path = pathlib.Path(filename)
+    path = Path(filename)
     text = path.read_text()
     if "@" "generated" in text:
         LOG.warning("Attempting to edit generated file %s, skipping.", filename)
@@ -419,7 +422,7 @@ def run_global_version_update(arguments: argparse.Namespace) -> None:
 
     paths = arguments.paths
     configuration_paths = (
-        [os.path.join(path, ".pyre_configuration.local") for path in paths]
+        [path / ".pyre_configuration.local" for path in paths]
         if paths
         else [
             configuration.get_path()
@@ -428,7 +431,7 @@ def run_global_version_update(arguments: argparse.Namespace) -> None:
         ]
     )
     for configuration_path in configuration_paths:
-        if "mock_repository" in configuration_path:
+        if "mock_repository" in str(configuration_path):
             # Skip local configurations we have for testing.
             continue
         with open(configuration_path) as configuration_file:
@@ -460,7 +463,7 @@ def run_strict_default(arguments: argparse.Namespace) -> None:
     if project_configuration is None:
         LOG.info("No project configuration found for the given directory.")
         return
-    configuration_path = arguments.path + "/.pyre_configuration.local"
+    configuration_path = arguments.path / ".pyre_configuration.local"
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
         LOG.info("Processing %s", configuration.get_directory())
@@ -499,19 +502,17 @@ def run_fixme_single(arguments: argparse.Namespace) -> None:
     if project_configuration is None:
         LOG.info("No project configuration found for the given directory.")
         return
-    configuration_path = arguments.path + "/.pyre_configuration.local"
+    configuration_path = arguments.path / ".pyre_configuration.local"
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
-        _upgrade_project(
-            arguments, configuration, os.path.dirname(project_configuration)
-        )
+        _upgrade_project(arguments, configuration, project_configuration.parent)
 
 
 def run_fixme_all(arguments: argparse.Namespace) -> None:
     # Create sandcastle command.
     if arguments.sandcastle and isinstance(arguments.sandcastle, str):
         configurations = Configuration.gather_local_configurations(arguments)
-        paths = [configuration.get_directory() for configuration in configurations]
+        paths = [str(configuration.get_directory()) for configuration in configurations]
         with open(arguments.sandcastle) as sandcastle_file:
             sandcastle_command = json.load(sandcastle_file)
         if arguments.hash:
@@ -533,9 +534,7 @@ def run_fixme_all(arguments: argparse.Namespace) -> None:
 
     configurations = Configuration.gather_local_configurations(arguments)
     for configuration in configurations:
-        _upgrade_project(
-            arguments, configuration, os.path.dirname(project_configuration)
-        )
+        _upgrade_project(arguments, configuration, project_configuration.parent)
 
 
 def main():
@@ -581,7 +580,7 @@ def main():
     strict_default = commands.add_parser("strict-default")
     strict_default.set_defaults(function=run_strict_default)
     strict_default.add_argument(
-        "path", help="Path to project root with local configuration"
+        "path", help="Path to project root with local configuration", type=Path
     )
     strict_default.add_argument(
         # TODO(T53195818): Not implemented
@@ -600,7 +599,11 @@ def main():
         "-p", "--push-blocking-only", action="store_true"
     )
     update_global_version.add_argument(
-        "--paths", nargs="*", help="A list of paths to local Pyre projects.", default=[]
+        "--paths",
+        nargs="*",
+        help="A list of paths to local Pyre projects.",
+        default=[],
+        type=Path,
     )
     update_global_version.add_argument(
         "--submit", action="store_true", help=argparse.SUPPRESS

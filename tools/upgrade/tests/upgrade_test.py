@@ -7,10 +7,10 @@
 
 import argparse
 import json
-import pathlib
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
 from .. import errors, postprocess, upgrade
@@ -80,7 +80,8 @@ class FixmeAllTest(unittest.TestCase):
         configuration_contents = '{"targets":[]}'
         expected_configurations = [
             upgrade.Configuration(
-                "path/to/.pyre_configuration.local", json.loads(configuration_contents)
+                Path("path/to/.pyre_configuration.local"),
+                json.loads(configuration_contents),
             )
         ]
         with patch("subprocess.run", return_value=process) as subprocess_run:
@@ -105,10 +106,10 @@ class FixmeAllTest(unittest.TestCase):
         configuration_contents = '{"targets":[],\n"coverage":true}'
         expected_configurations = [
             upgrade.Configuration(
-                "a/.pyre_configuration.local", json.loads(configuration_contents)
+                Path("a/.pyre_configuration.local"), json.loads(configuration_contents)
             ),
             upgrade.Configuration(
-                "b/.pyre_configuration.local", json.loads(configuration_contents)
+                Path("b/.pyre_configuration.local"), json.loads(configuration_contents)
             ),
         ]
         with patch("subprocess.run", return_value=process):
@@ -128,10 +129,10 @@ class FixmeAllTest(unittest.TestCase):
         configuration_contents = '{"targets":[],\n"coverage":true}'
         expected_configurations = [
             upgrade.Configuration(
-                "a/.pyre_configuration.local", json.loads(configuration_contents)
+                Path("a/.pyre_configuration.local"), json.loads(configuration_contents)
             ),
             upgrade.Configuration(
-                "b/.pyre_configuration.local", json.loads(configuration_contents)
+                Path("b/.pyre_configuration.local"), json.loads(configuration_contents)
             ),
         ]
         with patch("subprocess.run", return_value=process):
@@ -147,7 +148,7 @@ class FixmeAllTest(unittest.TestCase):
     @patch("subprocess.call")
     @patch("subprocess.run", return_value=mock_completed_process)
     def test_get_errors(self, run, call) -> None:
-        configuration = upgrade.Configuration("path", {})
+        configuration = upgrade.Configuration(Path("path"), {})
         configuration.get_errors()
         call.assert_not_called()
         assert run.call_count == 1
@@ -200,10 +201,10 @@ class FixmeAllTest(unittest.TestCase):
         ]
         get_errors.return_value = pyre_errors
         configuration = upgrade.Configuration(
-            "/root/local/.pyre_configuration.local", {"version": 123}
+            Path("/root/local/.pyre_configuration.local"), {"version": 123}
         )
         configuration.get_path()
-        upgrade._upgrade_project(arguments, configuration, "/root")
+        upgrade._upgrade_project(arguments, configuration, Path("/root"))
         run_global_version_update.assert_not_called()
         fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
         subprocess.assert_called_once_with(
@@ -215,7 +216,7 @@ class FixmeAllTest(unittest.TestCase):
         fix.reset_mock()
         arguments.from_stdin = False
         arguments.lint = True
-        upgrade._upgrade_project(arguments, configuration, "/root")
+        upgrade._upgrade_project(arguments, configuration, Path("/root"))
         errors_from_stdin.assert_not_called()
         run_global_version_update.assert_not_called()
         fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
@@ -244,7 +245,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = True
         errors_from_stdin.return_value = pyre_errors
         get_errors.return_value = pyre_errors
-        upgrade._upgrade_project(arguments, configuration, "/root")
+        upgrade._upgrade_project(arguments, configuration, Path("/root"))
         # Called in the first round to get initial errors
         errors_from_stdin.assert_called()
         # Called in the second round to get new errors after applying lint.
@@ -270,7 +271,9 @@ class FixmeAllTest(unittest.TestCase):
 
     @patch("subprocess.call")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
-    @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
+    @patch.object(
+        upgrade.Configuration, "find_project_configuration", return_value=Path(".")
+    )
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch("%s.run_global_version_update" % upgrade.__name__)
@@ -288,7 +291,9 @@ class FixmeAllTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.lint = False
         gather.return_value = [
-            upgrade.Configuration("local/.pyre_configuration.local", {"version": 123})
+            upgrade.Configuration(
+                Path("local/.pyre_configuration.local"), {"version": 123}
+            )
         ]
         get_errors.return_value = []
         upgrade.run_fixme_all(arguments)
@@ -325,7 +330,7 @@ class FixmeAllTest(unittest.TestCase):
         fix.reset_mock()
         subprocess.reset_mock()
         gather.return_value = [
-            upgrade.Configuration("local/.pyre_configuration.local", {})
+            upgrade.Configuration(Path("local/.pyre_configuration.local"), {})
         ]
         upgrade.run_fixme_all(arguments)
         fix.assert_not_called()
@@ -335,7 +340,9 @@ class FixmeAllTest(unittest.TestCase):
         fix.reset_mock()
         subprocess.reset_mock()
         gather.return_value = [
-            upgrade.Configuration("local/.pyre_configuration.local", {"version": 123})
+            upgrade.Configuration(
+                Path("local/.pyre_configuration.local"), {"version": 123}
+            )
         ]
         arguments.hash = "abc"
         arguments.submit = True
@@ -420,8 +427,12 @@ def bar(x: str) -> str:
         with patch("builtins.open", mock_open(read_data=command_json)):
             arguments.hash = "abc"
             gather.return_value = [
-                upgrade.Configuration("a/.pyre_configuration.local", {"version": 123}),
-                upgrade.Configuration("b/.pyre_configuration.local", {"version": 123}),
+                upgrade.Configuration(
+                    Path("a/.pyre_configuration.local"), {"version": 123}
+                ),
+                upgrade.Configuration(
+                    Path("b/.pyre_configuration.local"), {"version": 123}
+                ),
             ]
             upgrade.run_fixme_all(arguments)
             find_configuration.assert_not_called()
@@ -435,7 +446,7 @@ def bar(x: str) -> str:
             arguments.hash = None
             gather.return_value = [
                 upgrade.Configuration(
-                    "local/.pyre_configuration.local", {"version": 123}
+                    Path("local/.pyre_configuration.local"), {"version": 123}
                 )
             ]
             upgrade.run_fixme_all(arguments)
@@ -448,7 +459,9 @@ def bar(x: str) -> str:
 
 class FixmeSingleTest(unittest.TestCase):
     @patch("subprocess.call")
-    @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
+    @patch.object(
+        upgrade.Configuration, "find_project_configuration", return_value=Path(".")
+    )
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch("%s.fix" % upgrade.__name__)
@@ -457,7 +470,7 @@ class FixmeSingleTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.submit = True
-        arguments.path = "local"
+        arguments.path = Path("local")
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
@@ -503,7 +516,7 @@ class FixmeSingleTest(unittest.TestCase):
 
 class FixmeTest(unittest.TestCase):
     @patch("subprocess.call")
-    @patch.object(pathlib.Path, "read_text")
+    @patch.object(Path, "read_text")
     @patch("%s.errors_from_run" % upgrade.__name__)
     @patch("%s.errors_from_stdin" % upgrade.__name__)
     def test_run_fixme(
@@ -520,7 +533,7 @@ class FixmeTest(unittest.TestCase):
         upgrade.run_fixme(arguments)
 
         # Test single error.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -537,7 +550,7 @@ class FixmeTest(unittest.TestCase):
             )
 
         # Generated files.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -554,7 +567,7 @@ class FixmeTest(unittest.TestCase):
         # Test single error with lint.
         arguments.run = True
         arguments.lint = True
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -590,7 +603,7 @@ class FixmeTest(unittest.TestCase):
         arguments.lint = False
 
         # Test error with comment.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -607,7 +620,7 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with("# pyre-fixme[1]: T1234\n1\n2")
 
         # Test multiple errors and multiple lines.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -636,7 +649,7 @@ class FixmeTest(unittest.TestCase):
                 "# pyre-fixme[2]: description\n"
                 "2"
             )
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -660,7 +673,7 @@ class FixmeTest(unittest.TestCase):
                 "2"
             )
         arguments.max_line_length = 40
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -697,7 +710,7 @@ class FixmeTest(unittest.TestCase):
             )
         arguments.max_line_length = 36
         arguments.truncate = False
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -724,7 +737,7 @@ class FixmeTest(unittest.TestCase):
 
         arguments.max_line_length = 40
         arguments.truncate = False
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -765,7 +778,7 @@ class FixmeTest(unittest.TestCase):
 
         # Test errors in multiple files.
         arguments.max_line_length = 88
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -790,7 +803,7 @@ class FixmeTest(unittest.TestCase):
             )
 
         # Test removal of extraneous ignore.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -806,7 +819,7 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with("2")
 
         # Test removal of extraneous ignore.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             arguments.max_line_length = 30
             pyre_errors = [
                 {
@@ -826,7 +839,7 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with("2")
 
         # We don't remove legitimate comments.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             arguments.max_line_length = 30
             pyre_errors = [
                 {
@@ -845,7 +858,7 @@ class FixmeTest(unittest.TestCase):
             arguments.truncate = True
             path_write_text.assert_called_once_with("# user comment\n2")
 
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             arguments.max_line_length = 30
             pyre_errors = [
                 {
@@ -866,7 +879,7 @@ class FixmeTest(unittest.TestCase):
             arguments.truncate = True
             path_write_text.assert_called_once_with("# pyre-ignore[1]:\n2")
 
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -882,7 +895,7 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with("# pyre-fixme[2]\n2")
 
         # Test removal of extraneous ignore (trailing comment).
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -898,7 +911,7 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with("1\n2")
 
         # Test long lines.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             arguments_short = MagicMock()
             arguments_short.comment = None
             arguments_short.max_line_length = 35
@@ -935,7 +948,7 @@ class FixmeTest(unittest.TestCase):
             )
 
         # Fall back to normal description for backwards compatibility.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -953,7 +966,7 @@ class FixmeTest(unittest.TestCase):
             )
 
         # Ensure that we prefer concise descriptions.
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             pyre_errors = [
                 {
                     "path": "path.py",
@@ -1003,10 +1016,10 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         "gather_local_configurations",
         return_value=[
             upgrade.Configuration(
-                "/root/a/.pyre_configuration.local", {"push_blocking": False}
+                Path("/root/a/.pyre_configuration.local"), {"push_blocking": False}
             ),
             upgrade.Configuration(
-                "/root/b/.pyre_configuration.local", {"push_blocking": True}
+                Path("/root/b/.pyre_configuration.local"), {"push_blocking": True}
             ),
         ],
     )
@@ -1116,7 +1129,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         # paths passed from arguments will override the local configuration list
         # Therefore, we only read the first json configuration.
         subprocess.reset_mock()
-        arguments.paths = ["foo/bar"]
+        arguments.paths = [Path("foo/bar")]
         arguments.push_blocking_only = False
         arguments.submit = False
         with patch("json.dump") as dump:
@@ -1164,27 +1177,29 @@ class FilterErrorTest(unittest.TestCase):
 
 
 class DefaultStrictTest(unittest.TestCase):
-    @patch.object(pathlib.Path, "read_text")
+    @patch.object(Path, "read_text")
     def test_add_local_unsafe(self, read_text) -> None:
         arguments = MagicMock()
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
             upgrade.add_local_unsafe(arguments, "local.py")
             path_write_text.assert_called_once_with("\n# pyre-unsafe\n1\n2")
 
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# comment\n1"
             upgrade.add_local_unsafe(arguments, "local.py")
             path_write_text.assert_called_once_with(
                 "# comment\n# comment\n\n# pyre-unsafe\n1"
             )
 
-        with patch.object(pathlib.Path, "write_text") as path_write_text:
+        with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "# comment\n# pyre-strict\n1"
             upgrade.add_local_unsafe(arguments, "local.py")
             path_write_text.assert_not_called()
 
-    @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
+    @patch.object(
+        upgrade.Configuration, "find_project_configuration", return_value=Path(".")
+    )
     @patch.object(upgrade.Configuration, "get_directory")
     @patch.object(upgrade.Configuration, "add_strict")
     @patch.object(upgrade.Configuration, "get_errors")
@@ -1198,7 +1213,7 @@ class DefaultStrictTest(unittest.TestCase):
         find_configuration,
     ) -> None:
         arguments = MagicMock()
-        arguments.path = "local"
+        arguments.path = Path("local")
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
