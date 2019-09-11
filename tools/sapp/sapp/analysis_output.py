@@ -24,6 +24,7 @@ class Metadata(NamedTuple):
     analysis_tool_version: Optional[str] = None
     commit_hash: Optional[str] = None
     job_instance: Optional[int] = None
+    project: Optional[str] = None
 
     @property
     def root(self) -> str:
@@ -108,6 +109,7 @@ class AnalysisOutput(object):
                 job_instance=metadata.get("job_instance"),
                 tool=metadata.get("tool"),
                 repository_name=metadata.get("repository_name"),
+                project=metadata.get("project"),
             ),
         )
 
