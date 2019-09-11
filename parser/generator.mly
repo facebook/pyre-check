@@ -1500,8 +1500,16 @@ atom:
 
   | operator = unary_operator; operand = expression {
       let start, operator = operator in
-      {
-        Node.location = location_create_with_stop ~start ~stop:(Node.stop operand);
+      let { Node.value; _ } = operand in
+      let location = location_create_with_stop ~start ~stop:(Node.stop operand)
+      in
+      match operator, value with
+      | UnaryOperator.Negative, Integer literal -> {
+        Node.location;
+        value = Integer (-1 * literal);
+      }
+      | _, _ -> {
+        Node.location;
         value = UnaryOperator {
           UnaryOperator.operator = operator;
           operand;
