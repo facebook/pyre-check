@@ -146,7 +146,6 @@ let test_register_class_metadata context =
     UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result |> Set.to_list
   in
   List.iter ~f:connect all_annotations;
-  Environment.remove_extra_edges_to_object all_annotations;
   Environment.register_class_metadata environment "test.A";
   Environment.register_class_metadata environment "test.B";
   Environment.register_class_metadata environment "test.C";
@@ -1743,7 +1742,6 @@ let test_remove_extra_edges_to_object context =
   AliasEnvironment.UpdateResult.upstream update_result
   |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
   |> Set.iter ~f:connect;
-  Environment.remove_extra_edges_to_object ["test.Zero"; "test.One"; "test.Two"; "object"];
   let (module Handler) = class_hierarchy environment in
   let zero_index = IndexTracker.index "test.Zero" in
   let one_index = IndexTracker.index "test.One" in

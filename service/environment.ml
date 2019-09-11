@@ -37,7 +37,6 @@ let populate
       (* Validate integrity of the type order built so far before moving forward. Further
          transformations might be incorrect or not terminate otherwise. *)
       Environment.check_class_hierarchy_integrity environment;
-    Environment.remove_extra_edges_to_object all_annotations;
     List.iter all_annotations ~f:(Environment.register_class_metadata environment)
   in
   Environment.transaction environment ~f:populate ();

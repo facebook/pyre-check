@@ -160,11 +160,6 @@ module SharedMemoryClassHierarchyHandler = struct
 
   let edges = OrderEdges.get ?dependency:None
 
-  let set_edges ~key ~data =
-    OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
-    OrderEdges.add key data
-
-
   let backedges key = OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree
 
   let set_backedges ~key ~data =
@@ -199,38 +194,6 @@ module SharedMemoryClassHierarchyHandler = struct
       |> ignore
     in
     Hash_set.iter all_successors ~f:remove_backedges
-
-
-  let remove_extra_edges_to_object annotations =
-    let index_of annotation = IndexTracker.index annotation in
-    let keys = List.map annotations ~f:index_of in
-    let object_index = index_of "object" in
-    let remove_extra_references key =
-      edges key
-      >>| (fun connected ->
-            let disconnected =
-              ClassHierarchy.Target.List.filter
-                connected
-                ~f:(fun { ClassHierarchy.Target.target; _ } -> target <> object_index)
-            in
-            if ClassHierarchy.Target.List.is_empty disconnected then
-              []
-            else (
-              set_edges ~key ~data:disconnected;
-              [key] ))
-      |> Option.value ~default:[]
-    in
-    let removed_indices =
-      List.concat_map ~f:remove_extra_references keys |> IndexTracker.Set.of_list
-    in
-    backedges object_index
-    >>| (fun edges ->
-          let edges =
-            ClassHierarchy.Target.Set.filter edges ~f:(fun { ClassHierarchy.Target.target; _ } ->
-                not (Set.mem removed_indices target))
-          in
-          set_backedges ~key:object_index ~data:edges)
-    |> Option.value ~default:()
 end
 
 module SharedMemoryDependencyHandler = struct
@@ -498,7 +461,19 @@ let connect_definition
       else
         Set.add visited target, edge :: sofar
     in
-    List.fold targets ~f:deduplicate ~init:(IndexTracker.Set.empty, []) |> snd |> List.rev
+    let remove_extra_edges_to_object targets =
+      let object_index = IndexTracker.index "object" in
+      let not_object_edge { ClassHierarchy.Target.target; _ } =
+        not (IndexTracker.equal target object_index)
+      in
+      match List.filter targets ~f:not_object_edge with
+      | [] -> targets
+      | filtered -> filtered
+    in
+    List.fold targets ~f:deduplicate ~init:(IndexTracker.Set.empty, [])
+    |> snd
+    |> List.rev
+    |> remove_extra_edges_to_object
   in
   let predecessor = IndexTracker.index primitive in
   let add_backedges () =
@@ -824,8 +799,6 @@ let register_dependencies environment source =
   in
   Visit.visit () source
 
-
-let remove_extra_edges_to_object = SharedMemoryClassHierarchyHandler.remove_extra_edges_to_object
 
 let dependency_handler _ = (module SharedMemoryDependencyHandler : Dependencies.Handler)
 
