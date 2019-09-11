@@ -201,33 +201,6 @@ module SharedMemoryClassHierarchyHandler = struct
     Hash_set.iter all_successors ~f:remove_backedges
 
 
-  let deduplicate ~annotations =
-    let deduplicate_annotation index =
-      let module Deduplicator (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
-        let deduplicate edges set_edges =
-          let keep_first (visited, edges) ({ ClassHierarchy.Target.target; _ } as edge) =
-            if Set.mem visited target then
-              visited, edges
-            else
-              Set.add visited target, ListOrSet.add edges edge
-          in
-          let deduplicate found =
-            ListOrSet.fold found ~f:keep_first ~init:(IndexTracker.Set.empty, ListOrSet.empty)
-            |> snd
-          in
-          match edges index with
-          | Some found -> set_edges ~key:index ~data:(deduplicate found)
-          | None -> ()
-      end
-      in
-      let module EdgeDeduplicator = Deduplicator (ClassHierarchy.Target.List) in
-      let module BackedgeDeduplicator = Deduplicator (ClassHierarchy.Target.Set) in
-      EdgeDeduplicator.deduplicate edges set_edges;
-      BackedgeDeduplicator.deduplicate backedges set_backedges
-    in
-    annotations |> List.map ~f:IndexTracker.index |> List.iter ~f:deduplicate_annotation
-
-
   let remove_extra_edges_to_object annotations =
     let index_of annotation = IndexTracker.index annotation in
     let keys = List.map annotations ~f:index_of in
@@ -513,11 +486,19 @@ let connect_definition
     |> List.filter_map ~f:extract_supertype
     |> add
     |> List.filter ~f:is_not_primitive_cycle
-    |> List.rev
   in
   let targets =
     List.map parents ~f:(fun (name, parameters) ->
         { ClassHierarchy.Target.target = IndexTracker.index name; parameters })
+  in
+  let targets =
+    let deduplicate (visited, sofar) ({ ClassHierarchy.Target.target; _ } as edge) =
+      if Set.mem visited target then
+        visited, sofar
+      else
+        Set.add visited target, edge :: sofar
+    in
+    List.fold targets ~f:deduplicate ~init:(IndexTracker.Set.empty, []) |> snd |> List.rev
   in
   let predecessor = IndexTracker.index primitive in
   let add_backedges () =
@@ -843,8 +824,6 @@ let register_dependencies environment source =
   in
   Visit.visit () source
 
-
-let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate
 
 let remove_extra_edges_to_object = SharedMemoryClassHierarchyHandler.remove_extra_edges_to_object
 

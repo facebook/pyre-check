@@ -146,7 +146,6 @@ let test_register_class_metadata context =
     UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result |> Set.to_list
   in
   List.iter ~f:connect all_annotations;
-  Environment.deduplicate_class_hierarchy ~annotations:all_annotations;
   Environment.remove_extra_edges_to_object all_annotations;
   Environment.register_class_metadata environment "test.A";
   Environment.register_class_metadata environment "test.B";
@@ -1673,7 +1672,6 @@ let test_deduplicate context =
   AliasEnvironment.UpdateResult.upstream update_result
   |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
   |> Set.iter ~f:connect;
-  Environment.deduplicate_class_hierarchy ~annotations:["test.One"; "test.Zero"];
   let (module Handler) = class_hierarchy environment in
   let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct

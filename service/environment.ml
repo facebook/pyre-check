@@ -33,7 +33,6 @@ let populate
       |> Option.iter ~f:Fn.id
     in
     List.iter ~f:connect all_annotations;
-    Environment.deduplicate_class_hierarchy ~annotations:all_annotations;
     if debug then
       (* Validate integrity of the type order built so far before moving forward. Further
          transformations might be incorrect or not terminate otherwise. *)

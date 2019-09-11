@@ -48,8 +48,6 @@ val update_and_compute_dependencies
   update_result:AliasEnvironment.UpdateResult.t ->
   'a * SharedMemoryKeys.ReferenceDependencyKey.KeySet.t
 
-val deduplicate_class_hierarchy : annotations:Type.Primitive.t list -> unit
-
 val remove_extra_edges_to_object : Type.Primitive.t list -> unit
 
 val dependency_handler : t -> (module Dependencies.Handler)
