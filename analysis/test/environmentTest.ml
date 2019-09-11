@@ -147,7 +147,6 @@ let test_register_class_metadata context =
   in
   List.iter ~f:connect all_annotations;
   Environment.deduplicate_class_hierarchy ~annotations:all_annotations;
-  Environment.connect_annotations_to_object environment all_annotations;
   Environment.remove_extra_edges_to_object all_annotations;
   Environment.register_class_metadata environment "test.A";
   Environment.register_class_metadata environment "test.B";
@@ -707,10 +706,7 @@ let test_connect_type_order context =
       successors
       (ClassHierarchy.successors order annotation)
   in
-  (* Classes get connected to object via `connect_annotations_to_top`. *)
-  assert_successors "C" [];
-  assert_successors "D" ["C"];
-  Environment.connect_annotations_to_object environment all_annotations;
+  (* Classes get connected to object via `connect_definition`. *)
   assert_successors "C" ["object"];
   assert_successors "D" ["C"; "object"];
   assert_successors "CallMe" ["object"]
@@ -1524,8 +1520,7 @@ let test_purge_hierarchy context =
 
 
 let test_default_class_hierarchy context =
-  let order, environment = order_and_environment ~context [] in
-  Environment.fill_shared_memory_with_default_typeorder environment;
+  let order, _ = order_and_environment ~context [] in
   let open TypeOrder in
   let less_or_equal = always_less_or_equal in
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Bottom);
@@ -1633,13 +1628,6 @@ let test_connect_annotations_to_top context =
   |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
   |> Set.iter ~f:connect;
   let order = class_hierarchy environment in
-  assert_false (ClassHierarchy.least_upper_bound order "test.One" "test.Two" = ["object"]);
-  assert_false (ClassHierarchy.greatest_lower_bound order "test.One" "object" = ["test.One"]);
-
-  Environment.connect_annotations_to_object
-    environment
-    ["test.One"; "test.Two"; "test.Zero"; "object"];
-
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"];
 
   (* Ensure that the backedge gets added as well *)

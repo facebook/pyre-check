@@ -52,8 +52,6 @@ val deduplicate_class_hierarchy : annotations:Type.Primitive.t list -> unit
 
 val remove_extra_edges_to_object : Type.Primitive.t list -> unit
 
-val connect_annotations_to_object : t -> Type.Primitive.t list -> unit
-
 val dependency_handler : t -> (module Dependencies.Handler)
 
 val register_class_metadata : t -> Identifier.t -> unit
@@ -63,8 +61,6 @@ val transaction : t -> ?only_global_keys:bool -> f:(unit -> 'a) -> unit -> 'a
 val shared_memory_handler : AliasEnvironment.ReadOnly.t -> t
 
 val normalize_shared_memory : Reference.t list -> unit
-
-val fill_shared_memory_with_default_typeorder : t -> unit
 
 val shared_memory_hash_to_key_map : qualifiers:Ast.Reference.t list -> unit -> string String.Map.t
 

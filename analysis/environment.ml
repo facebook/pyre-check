@@ -173,25 +173,6 @@ module SharedMemoryClassHierarchyHandler = struct
     OrderBackedges.add key value
 
 
-  let connect ?(parameters = Type.OrderedTypes.Concrete []) ~predecessor ~successor =
-    let index_of annotation = IndexTracker.index annotation in
-    let predecessor = index_of predecessor in
-    let successor = index_of successor in
-    (* Add edges. *)
-    let successors = edges predecessor |> Option.value ~default:[] in
-    set_edges
-      ~key:predecessor
-      ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors);
-
-    (* Add backedges. *)
-    let predecessors =
-      backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
-    in
-    set_backedges
-      ~key:successor
-      ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
-
-
   let disconnect_backedges purged_indices =
     let all_successors =
       let all_successors = IndexTracker.Hash_set.create () in
@@ -432,29 +413,6 @@ let untracked_class_hierarchy_handler environment =
   end : ClassHierarchy.Handler )
 
 
-let connect_annotations_to_object environment annotations =
-  let connect_to_top annotation =
-    let index = IndexTracker.index annotation in
-    let annotation = IndexTracker.annotation index in
-    let object_primitive = "object" in
-    if
-      not
-        (ClassHierarchy.is_transitive_successor
-           (untracked_class_hierarchy_handler environment)
-           ~source:object_primitive
-           ~target:annotation)
-    then
-      match SharedMemoryClassHierarchyHandler.edges index with
-      | Some targets when List.length targets > 0 -> ()
-      | _ ->
-          SharedMemoryClassHierarchyHandler.connect
-            ?parameters:None
-            ~predecessor:annotation
-            ~successor:object_primitive
-  in
-  List.iter ~f:connect_to_top annotations
-
-
 let ast_environment environment =
   unannotated_global_environment environment
   |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
@@ -496,17 +454,9 @@ let connect_definition
   let annotated = Annotated.Class.create definition in
   (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
      classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
-  let connect ~predecessor ~successor ~parameters =
-    let primitive_cycle =
-      (* Primitive cycles can be introduced by meta-programming. *)
-      String.equal predecessor successor
-    in
-    if not primitive_cycle then
-      SharedMemoryClassHierarchyHandler.connect ~predecessor ~successor ~parameters
-  in
   let primitive = Reference.show name in
   (* Register normal annotations. *)
-  let register_supertype { Expression.Call.Argument.value; _ } =
+  let extract_supertype { Expression.Call.Argument.value; _ } =
     let value = Expression.delocalize value in
     match Node.value value with
     | Call _
@@ -526,18 +476,18 @@ let connect_definition
               ~name:"superclass of top"
               ~section:`Environment
               ~normals:["unresolved name", Expression.show value]
-              ()
+              ();
+            None
         | Type.Primitive primitive
           when not
                  (UnannotatedGlobalEnvironment.ReadOnly.class_exists
                     (unannotated_global_environment environment)
                     primitive) ->
-            Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
-        | Type.Primitive supertype ->
-            connect ~predecessor:primitive ~successor:supertype ~parameters
-        | _ ->
-            Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype )
-    | _ -> ()
+            Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype;
+            None
+        | Type.Primitive supertype -> Some (supertype, parameters)
+        | _ -> None )
+    | _ -> None
   in
   let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
   if not (SharedMemory.OrderBackedges.mem (IndexTracker.index primitive)) then
@@ -546,11 +496,45 @@ let connect_definition
       ~data:ClassHierarchy.Target.Set.empty;
 
   (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-  inferred_base @ bases
-  |> List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
-  |> List.iter ~f:register_supertype;
-  if not (SharedMemory.OrderEdges.mem (IndexTracker.index primitive)) then
-    SharedMemoryClassHierarchyHandler.set_edges ~key:(IndexTracker.index primitive) ~data:[]
+  let add parents =
+    let simples = List.map ~f:(fun parent -> parent, Type.OrderedTypes.Concrete []) in
+    match parents, primitive with
+    | _, "int" -> simples ["float"; "numbers.Integral"]
+    | _, "float" -> simples ["complex"; "numbers.Rational"; "numbers.Real"]
+    | _, "complex" -> simples ["numbers.Complex"]
+    | _, "numbers.Complex" -> simples ["numbers.Number"]
+    | [], _ -> simples ["object"]
+    | _ -> parents
+  in
+  let parents =
+    let is_not_primitive_cycle (parent, _) = not (String.equal primitive parent) in
+    inferred_base @ bases
+    |> List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
+    |> List.filter_map ~f:extract_supertype
+    |> add
+    |> List.filter ~f:is_not_primitive_cycle
+    |> List.rev
+  in
+  let targets =
+    List.map parents ~f:(fun (name, parameters) ->
+        { ClassHierarchy.Target.target = IndexTracker.index name; parameters })
+  in
+  let predecessor = IndexTracker.index primitive in
+  let add_backedges () =
+    let add_backedge { ClassHierarchy.Target.target = successor; parameters } =
+      let predecessors =
+        SharedMemoryClassHierarchyHandler.backedges successor
+        |> Option.value ~default:ClassHierarchy.Target.Set.empty
+      in
+      SharedMemoryClassHierarchyHandler.set_backedges
+        ~key:successor
+        ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
+    in
+    List.iter targets ~f:add_backedge
+  in
+  SharedMemory.OrderEdges.add predecessor targets;
+  add_backedges ();
+  ()
 
 
 let register_class_metadata environment class_name =
@@ -906,29 +890,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
     OrderEdges.LocalChanges.pop_stack ();
     OrderBackedges.LocalChanges.pop_stack () );
   result
-
-
-let fill_shared_memory_with_default_typeorder _ =
-  let object_primitive = "object" in
-  let integer = "int" in
-  let float = "float" in
-  let default_annotations =
-    [
-      (* Numerical hierarchy. *)
-        [integer; float; "complex"; "numbers.Complex"; "numbers.Number"; object_primitive];
-      [integer; "numbers.Integral"; object_primitive];
-      [float; "numbers.Rational"; object_primitive];
-      [float; "numbers.Real"; object_primitive];
-    ]
-  in
-  let rec connect_primitive_chain annotations =
-    match annotations with
-    | predecessor :: successor :: rest ->
-        SharedMemoryClassHierarchyHandler.connect ?parameters:None ~predecessor ~successor;
-        connect_primitive_chain (successor :: rest)
-    | _ -> ()
-  in
-  List.iter ~f:connect_primitive_chain default_annotations
 
 
 let check_class_hierarchy_integrity environment =

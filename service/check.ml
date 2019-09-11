@@ -143,7 +143,6 @@ let check
     let environment =
       Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
     in
-    Environment.fill_shared_memory_with_default_typeorder environment;
     Environment.add_special_globals environment;
     Statistics.performance ~name:"added environment to shared memory" ~timer ();
     Log.info "Building type environment...";
