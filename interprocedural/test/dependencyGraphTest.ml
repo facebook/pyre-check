@@ -155,7 +155,17 @@ let test_construction context =
      def foo():
        qux.derp()
     |}
-    ~expected:[`Function "test.foo", [`Function "bar.baz.qux.derp"]]
+    ~expected:[`Function "test.foo", [`Function "bar.baz.qux.derp"]];
+  assert_call_graph
+    {|
+       class Base:
+         def foo(self) -> None: ...
+       class C(Base):
+         pass
+       def call_foo(c: C) -> None:
+         c.foo()
+    |}
+    ~expected:[`Function "test.call_foo", [`Method "test.Base.foo"]]
 
 
 let test_construction_reverse context =

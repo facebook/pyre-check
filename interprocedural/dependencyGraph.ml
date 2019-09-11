@@ -28,13 +28,13 @@ let type_checking_callgraph
   let module Callgraph = Analysis.Dependencies.Callgraph in
   let callees = function
     | Callgraph.Function name -> Callable.create_function name
-    | Callgraph.Method { static_target; dispatch = Dynamic; _ } ->
-        if DependencyGraphSharedMemory.overrides_exist static_target then
-          Callable.create_override static_target
+    | Callgraph.Method { direct_target; dispatch = Dynamic; _ } ->
+        if DependencyGraphSharedMemory.overrides_exist direct_target then
+          Callable.create_override direct_target
         else
-          Callable.create_method static_target
-    | Callgraph.Method { static_target; dispatch = Static; _ } ->
-        Callable.create_method static_target
+          Callable.create_method direct_target
+    | Callgraph.Method { direct_target; dispatch = Static; _ } ->
+        Callable.create_method direct_target
   in
   let callees =
     Callgraph.get ~caller:name
