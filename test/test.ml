@@ -1311,9 +1311,7 @@ let update_environments
     ~qualifiers
     ()
   =
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
+  let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
   let alias_environment =
     AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
   in
@@ -1449,6 +1447,10 @@ module ScratchProject = struct
       let unannotated_global_environment =
         UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
       in
+      let alias_environment =
+        AliasEnvironment.create
+          (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+      in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
             qualifier)
@@ -1459,10 +1461,10 @@ module ScratchProject = struct
           ~scheduler:(Scheduler.mock ())
           ~configuration
           (Reference.Set.of_list qualifiers)
+        |> AliasEnvironment.update alias_environment ~scheduler:(Scheduler.mock ()) ~configuration
       in
       let environment =
-        Environment.shared_memory_handler
-          (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+        Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
       in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->

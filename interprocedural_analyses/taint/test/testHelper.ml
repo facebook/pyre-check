@@ -62,22 +62,24 @@ let environment
     ?(ast_environment = AstEnvironment.ReadOnly.create ())
     ()
   =
-  let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
   let qualifiers =
     List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
         qualifier)
   in
-  let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
-      ~scheduler:(Scheduler.mock ())
+  let alias_environment, update_result =
+    Test.update_environments
+      ~ast_environment
       ~configuration
-      (Reference.Set.of_list qualifiers)
+      ~qualifiers:(Reference.Set.of_list qualifiers)
+      ()
+  in
+  let environment =
+    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
   in
   let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.read_only unannotated_global_environment
+    AliasEnvironment.ReadOnly.unannotated_global_environment
+      (AliasEnvironment.read_only alias_environment)
   in
-  let environment = Environment.shared_memory_handler unannotated_global_environment in
   populate ~configuration ~update_result environment unannotated_global_environment sources;
   environment
 

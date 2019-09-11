@@ -210,9 +210,13 @@ let load
   let unannotated_global_environment =
     Analysis.UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
+  let alias_environment =
+    Analysis.AliasEnvironment.create
+      (Analysis.UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
   let environment =
     Analysis.Environment.shared_memory_handler
-      (Analysis.UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+      (Analysis.AliasEnvironment.read_only alias_environment)
   in
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then

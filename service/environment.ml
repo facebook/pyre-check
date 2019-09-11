@@ -18,10 +18,10 @@ let populate
   =
   let resolution = Environment.resolution environment () in
   let populate () =
+    let update_result = AliasEnvironment.UpdateResult.upstream update_result in
     let all_annotations =
       Set.to_list (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result)
     in
-    Environment.register_aliases environment sources;
     List.iter ~f:(Environment.register_dependencies environment) sources;
 
     (* Build type order. *)

@@ -13,6 +13,8 @@ let empty_environment () =
   AstEnvironment.ReadOnly.create ()
   |> UnannotatedGlobalEnvironment.create
   |> UnannotatedGlobalEnvironment.read_only
+  |> AliasEnvironment.create
+  |> AliasEnvironment.read_only
   |> Environment.shared_memory_handler
 
 
@@ -80,6 +82,9 @@ let test_populate context =
     ScratchProject.configuration_of project, sources, AstEnvironment.read_only ast_environment
   in
   let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
   let qualifiers =
     List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
         qualifier)
@@ -90,10 +95,10 @@ let test_populate context =
       ~scheduler:(Scheduler.mock ())
       ~configuration
       (Reference.Set.of_list qualifiers)
+    |> AliasEnvironment.update alias_environment ~scheduler:(Scheduler.mock ()) ~configuration
   in
   let environment =
-    Environment.shared_memory_handler
-      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
   in
   Service.Environment.populate
     ~configuration
@@ -131,12 +136,12 @@ let test_populate context =
   (* Ensure that the memory doesn't get clobbered on a re-write. *)
   let scheduler = Test.mock_scheduler () in
   let _ =
-    let update_result =
-      UnannotatedGlobalEnvironment.update
-        (UnannotatedGlobalEnvironment.create ast_environment)
-        ~scheduler
+    let _, update_result =
+      Test.update_environments
+        ~ast_environment
         ~configuration
-        (Reference.Set.singleton (Reference.create "a"))
+        ~qualifiers:(Reference.Set.singleton (Reference.create "a"))
+        ()
     in
     Service.Environment.populate
       environment
@@ -166,12 +171,19 @@ let test_purge context =
   let unannotated_global_environment =
     UnannotatedGlobalEnvironment.create (Environment.ast_environment environment)
   in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
   let update_result =
     UnannotatedGlobalEnvironment.update
       unannotated_global_environment
       ~scheduler:(mock_scheduler ())
       ~configuration:(Configuration.Analysis.create ())
       (Reference.Set.singleton (Reference.create "x"))
+    |> AliasEnvironment.update
+         alias_environment
+         ~scheduler:(mock_scheduler ())
+         ~configuration:(Configuration.Analysis.create ())
   in
   Environment.purge environment [Reference.create "x"] ~update_result;
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "x.D"))

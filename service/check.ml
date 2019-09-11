@@ -136,9 +136,12 @@ let check
     Log.info "Adding built-in environment information to shared memory...";
     let timer = Timer.start () in
     let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-    let environment =
-      Environment.shared_memory_handler
+    let alias_environment =
+      AliasEnvironment.create
         (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+    in
+    let environment =
+      Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
     in
     Environment.fill_shared_memory_with_default_typeorder environment;
     Environment.add_special_globals environment;
@@ -159,6 +162,7 @@ let check
         ~scheduler
         ~configuration
         (Ast.Reference.Set.of_list qualifiers)
+      |> AliasEnvironment.update alias_environment ~scheduler ~configuration
     in
     populate
       ~configuration

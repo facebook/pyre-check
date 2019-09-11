@@ -164,7 +164,7 @@ let test_updates context =
     let update () =
       update_environments
         ~configuration
-        ~ast_environment
+        ~ast_environment:(AstEnvironment.read_only ast_environment)
         ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
         ()
     in

@@ -44,6 +44,10 @@ let assert_errors
     Analysis.UnannotatedGlobalEnvironment.create
       (Analysis.AstEnvironment.read_only ast_environment)
   in
+  let alias_environment =
+    Analysis.AliasEnvironment.create
+      (Analysis.UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
   let all_qualifiers =
     Analysis.AstEnvironment.ReadOnly.all_explicit_modules
       (Analysis.AstEnvironment.read_only ast_environment)
@@ -54,6 +58,10 @@ let assert_errors
       ~scheduler:(mock_scheduler ())
       ~configuration:(Configuration.Analysis.create ())
       (Ast.Reference.Set.of_list all_qualifiers)
+    |> Analysis.AliasEnvironment.update
+         alias_environment
+         ~scheduler:(mock_scheduler ())
+         ~configuration:(Configuration.Analysis.create ())
   in
   let errors =
     errors

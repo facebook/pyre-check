@@ -9,16 +9,9 @@ open Expression
 open Pyre
 open Statement
 
-type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly.t }
+type t = { alias_environment: AliasEnvironment.ReadOnly.t }
 
-module UnresolvedAlias = struct
-  type t = {
-    qualifier: Reference.t;
-    target: Reference.t;
-    value: Expression.expression_t;
-  }
-  [@@deriving sexp, compare, hash]
-end
+let alias_environment { alias_environment } = alias_environment
 
 module SharedMemory = struct
   (** Values *)
@@ -72,18 +65,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
 
     let compare = GlobalResolution.compare_class_metadata
-  end
-
-  module AliasValue = struct
-    type t = Type.alias
-
-    let prefix = Prefix.make ()
-
-    let description = "Alias"
-
-    let unmarshall value = Marshal.from_string value 0
-
-    let compare = Type.compare_alias
   end
 
   module GlobalValue = struct
@@ -155,11 +136,6 @@ module SharedMemory = struct
       (SharedMemoryKeys.StringKey)
       (SharedMemoryKeys.ReferenceDependencyKey)
       (ClassMetadataValue)
-  module Aliases =
-    Memory.DependencyTrackedTableNoCache
-      (SharedMemoryKeys.StringKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (AliasValue)
   module Globals =
     Memory.DependencyTrackedTableWithCache
       (SharedMemoryKeys.ReferenceKey)
@@ -424,13 +400,11 @@ module SharedMemoryDependencyHandler = struct
 
 
   type table_keys = {
-    aliases: SharedMemory.Aliases.KeySet.t;
     undecorated_signatures: SharedMemory.UndecoratedFunctions.KeySet.t;
     globals: SharedMemory.Globals.KeySet.t;
   }
 
   let get_all_dependent_table_keys qualifiers =
-    let alias_keys = List.concat_map ~f:(fun qualifier -> get_alias_keys ~qualifier) qualifiers in
     let global_keys =
       List.concat_map ~f:(fun qualifier -> get_global_keys ~qualifier) qualifiers
     in
@@ -439,7 +413,6 @@ module SharedMemoryDependencyHandler = struct
     in
     let open SharedMemory in
     {
-      aliases = Aliases.KeySet.of_list alias_keys;
       undecorated_signatures = UndecoratedFunctions.KeySet.of_list global_keys;
       (* We add a global name for each function definition as well. *)
       globals = Globals.KeySet.of_list (global_keys @ function_keys);
@@ -449,7 +422,6 @@ module SharedMemoryDependencyHandler = struct
   let find_added_dependent_table_keys qualifiers ~old_keys =
     let new_keys = get_all_dependent_table_keys qualifiers in
     {
-      aliases = Aliases.KeySet.diff new_keys.aliases old_keys.aliases;
       undecorated_signatures =
         UndecoratedFunctions.KeySet.diff
           new_keys.undecorated_signatures
@@ -458,24 +430,11 @@ module SharedMemoryDependencyHandler = struct
     }
 end
 
-let register_alias _ ~qualifier ~key ~data =
-  SharedMemoryDependencyHandler.add_alias_key ~qualifier key;
-  SharedMemory.Aliases.add key data
+let unannotated_global_environment { alias_environment } =
+  AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
 
 
-module ResolvedAlias = struct
-  type t = {
-    qualifier: Reference.t;
-    name: Type.Primitive.t;
-    annotation: Type.alias;
-  }
-  [@@deriving sexp, compare, hash]
-
-  let register environment { qualifier; name; annotation } =
-    register_alias environment ~qualifier ~key:name ~data:annotation
-end
-
-let untracked_class_hierarchy_handler { unannotated_global_environment; _ } =
+let untracked_class_hierarchy_handler environment =
   ( module struct
     let edges = SharedMemory.OrderEdges.get ?dependency:None
 
@@ -484,7 +443,7 @@ let untracked_class_hierarchy_handler { unannotated_global_environment; _ } =
     let contains =
       UnannotatedGlobalEnvironment.ReadOnly.class_exists
         ?dependency:None
-        unannotated_global_environment
+        (unannotated_global_environment environment)
   end : ClassHierarchy.Handler )
 
 
@@ -511,20 +470,24 @@ let connect_annotations_to_object environment annotations =
   List.iter ~f:connect_to_top annotations
 
 
-let resolution_implementation ?dependency { unannotated_global_environment } () =
-  let ast_environment =
-    UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
-  in
+let ast_environment environment =
+  unannotated_global_environment environment
+  |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+
+
+let resolution_implementation ?dependency environment () =
+  let ast_environment = ast_environment environment in
+  let alias_environment = alias_environment environment in
   let unannotated_global_environment_dependency =
     dependency >>| fun dependency -> UnannotatedGlobalEnvironment.TypeCheckSource dependency
   in
   GlobalResolution.create
     ~ast_environment
-    ~aliases:(SharedMemory.Aliases.get ?dependency)
+    ~aliases:(AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment)
     ~module_definition:(AstEnvironment.ReadOnly.get_module_metadata ?dependency ast_environment)
     ~class_definition:
       (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-         unannotated_global_environment
+         (unannotated_global_environment environment)
          ?dependency:unannotated_global_environment_dependency)
     ~class_metadata:(SharedMemory.ClassMetadata.get ?dependency)
     ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
@@ -540,12 +503,8 @@ let dependency_tracked_resolution environment ~dependency () =
   resolution_implementation ~dependency environment ()
 
 
-let ast_environment { unannotated_global_environment; _ } =
-  UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
-
-
 let connect_definition
-    { unannotated_global_environment; _ }
+    environment
     ~(resolution : GlobalResolution.t)
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
@@ -594,7 +553,7 @@ let connect_definition
         | Type.Primitive primitive
           when not
                  (UnannotatedGlobalEnvironment.ReadOnly.class_exists
-                    unannotated_global_environment
+                    (unannotated_global_environment environment)
                     primitive) ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
         | Type.Primitive supertype ->
@@ -617,14 +576,14 @@ let connect_definition
     SharedMemoryClassHierarchyHandler.set_edges ~key:(IndexTracker.index primitive) ~data:[]
 
 
-let register_class_metadata ({ unannotated_global_environment; _ } as environment) class_name =
+let register_class_metadata environment class_name =
   let open SharedMemory in
   let successors =
     ClassHierarchy.successors (untracked_class_hierarchy_handler environment) class_name
   in
   let is_final =
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      unannotated_global_environment
+      (unannotated_global_environment environment)
       class_name
     >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
     |> Option.value ~default:false
@@ -635,18 +594,18 @@ let register_class_metadata ({ unannotated_global_environment; _ } as environmen
       List.filter_map
         ~f:
           (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-             unannotated_global_environment)
+             (unannotated_global_environment environment))
         successors
     in
     List.exists ~f:is_unit_test successor_classes
   in
   let extends_placeholder_stub_class =
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      unannotated_global_environment
+      (unannotated_global_environment environment)
       class_name
     >>| Annotated.Class.create
     >>| Annotated.Class.extends_placeholder_stub_class
-          ~aliases:SharedMemory.Aliases.get
+          ~aliases:(AliasEnvironment.ReadOnly.get_alias (alias_environment environment))
           ~module_definition:
             (AstEnvironment.ReadOnly.get_module_metadata (ast_environment environment))
     |> Option.value ~default:false
@@ -680,306 +639,6 @@ let add_special_globals environment =
 
 
 let dependencies _ = SharedMemory.Dependents.get
-
-let collect_aliases
-    ({ unannotated_global_environment; _ } as environment)
-    { Source.statements; source_path = { SourcePath.qualifier; _ }; _ }
-  =
-  let rec visit_statement ~qualifier aliases { Node.value; _ } =
-    match value with
-    | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
-      when Expression.is_simple_name target -> (
-        let target =
-          let target = Expression.name_to_reference_exn target |> Reference.sanitize_qualified in
-          Reference.combine qualifier target
-        in
-        let target_annotation =
-          Type.create
-            ~aliases:SharedMemory.Aliases.get
-            (Expression.from_reference ~location:Location.Reference.any target)
-        in
-        match Node.value value, annotation with
-        | ( _,
-            Some
-              {
-                Node.value =
-                  Call
-                    {
-                      callee =
-                        {
-                          Node.value =
-                            Name
-                              (Name.Attribute
-                                {
-                                  base =
-                                    {
-                                      Node.value =
-                                        Name
-                                          (Name.Attribute
-                                            {
-                                              base =
-                                                { Node.value = Name (Name.Identifier "typing"); _ };
-                                              attribute = "Type";
-                                              _;
-                                            });
-                                      _;
-                                    };
-                                  attribute = "__getitem__";
-                                  _;
-                                });
-                          _;
-                        };
-                      arguments =
-                        [
-                          {
-                            Call.Argument.value =
-                              {
-                                Node.value =
-                                  Call
-                                    {
-                                      callee =
-                                        {
-                                          Node.value =
-                                            Name
-                                              (Name.Attribute
-                                                {
-                                                  base =
-                                                    {
-                                                      Node.value =
-                                                        Name
-                                                          (Name.Attribute
-                                                            {
-                                                              base =
-                                                                {
-                                                                  Node.value =
-                                                                    Name
-                                                                      (Name.Identifier
-                                                                        "mypy_extensions");
-                                                                  _;
-                                                                };
-                                                              attribute = "TypedDict";
-                                                              _;
-                                                            });
-                                                      _;
-                                                    };
-                                                  attribute = "__getitem__";
-                                                  _;
-                                                });
-                                          _;
-                                        };
-                                      _;
-                                    };
-                                _;
-                              };
-                            _;
-                          };
-                        ];
-                    };
-                _;
-              } ) ->
-            if not (Type.is_top target_annotation) then
-              { UnresolvedAlias.qualifier; target; value } :: aliases
-            else
-              aliases
-        | ( Call _,
-            Some
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "TypeAlias";
-                        _;
-                      });
-                _;
-              } )
-        | ( Name _,
-            Some
-              {
-                Node.value =
-                  Name
-                    (Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "TypeAlias";
-                        _;
-                      });
-                _;
-              } )
-        | Call _, None
-        | Name _, None -> (
-            let value = Expression.delocalize value in
-            match Type.Variable.parse_declaration value ~target with
-            | Some variable ->
-                register_alias
-                  environment
-                  ~qualifier
-                  ~key:(Reference.show target)
-                  ~data:(Type.VariableAlias variable);
-                aliases
-            | None ->
-                let value_annotation = Type.create ~aliases:SharedMemory.Aliases.get value in
-                if
-                  not
-                    ( Type.is_top target_annotation
-                    || Type.is_top value_annotation
-                    || Type.equal value_annotation target_annotation )
-                then
-                  { UnresolvedAlias.qualifier; target; value } :: aliases
-                else
-                  aliases )
-        | _ -> aliases )
-    | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
-      when String.equal (Reference.show name) "*" ->
-        (* Don't register x.* as an alias when a user writes `from x import *`. *)
-        aliases
-    | Import { Import.from; imports } ->
-        let from =
-          match from >>| Reference.show with
-          | None
-          | Some "future.builtins"
-          | Some "builtins" ->
-              Reference.empty
-          | Some from -> Reference.create from
-        in
-        let import_to_alias { Import.name; alias } =
-          let qualified_name =
-            match alias with
-            | None -> Reference.combine qualifier name
-            | Some alias -> Reference.combine qualifier alias
-          in
-          let original_name = Reference.combine from name in
-          (* A module might import T and define a T that shadows it. In this case, we do not want
-             to create the alias. *)
-          if
-            UnannotatedGlobalEnvironment.ReadOnly.class_exists
-              unannotated_global_environment
-              (Reference.show qualified_name)
-          then
-            []
-          else
-            match Reference.as_list qualified_name, Reference.as_list original_name with
-            | [single_identifier], [typing; identifier]
-              when String.equal typing "typing" && String.equal single_identifier identifier ->
-                (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
-                []
-            | _ ->
-                [
-                  {
-                    UnresolvedAlias.qualifier;
-                    target = qualified_name;
-                    value =
-                      Expression.from_reference ~location:Location.Reference.any original_name;
-                  };
-                ]
-        in
-        List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
-    | _ -> aliases
-  in
-  List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
-
-
-let resolve_alias environment { UnresolvedAlias.qualifier; target; value } =
-  let order = untracked_class_hierarchy_handler environment in
-  let target_primitive_name = Reference.show target in
-  let value_annotation =
-    match Type.create ~aliases:SharedMemory.Aliases.get value with
-    | Type.Variable variable ->
-        if Type.Variable.Unary.contains_subvariable variable then
-          Type.Any
-        else
-          Type.Variable { variable with variable = Reference.show target }
-    | annotation -> annotation
-  in
-  let dependencies = String.Hash_set.create () in
-  let module TrackedTransform = Type.Transform.Make (struct
-    type state = unit
-
-    let visit_children_before _ = function
-      | Type.Optional Bottom -> false
-      | _ -> true
-
-
-    let visit_children_after = false
-
-    let visit _ annotation =
-      let new_state, transformed_annotation =
-        match annotation with
-        | Type.Parametric { name = primitive; _ }
-        | Primitive primitive ->
-            let reference =
-              match Node.value (Type.expression (Type.Primitive primitive)) with
-              | Expression.Name name when Expression.is_simple_name name ->
-                  Expression.name_to_reference_exn name
-              | _ -> Reference.create "typing.Any"
-            in
-            let module_definition =
-              AstEnvironment.ReadOnly.get_module_metadata (ast_environment environment)
-            in
-            if Module.from_empty_stub ~reference ~module_definition then
-              (), Type.Any
-            else if
-              ClassHierarchy.contains order primitive
-              || Option.is_some (module_definition (Reference.create primitive))
-            then
-              (), annotation
-            else
-              let _ = Hash_set.add dependencies primitive in
-              (), annotation
-        | _ -> (), annotation
-      in
-      { Type.Transform.transformed_annotation; new_state }
-  end)
-  in
-  let _, annotation = TrackedTransform.visit () value_annotation in
-  if Hash_set.is_empty dependencies then
-    Result.Ok
-      {
-        ResolvedAlias.qualifier;
-        name = target_primitive_name;
-        annotation = Type.TypeAlias annotation;
-      }
-  else
-    Result.Error (Hash_set.to_list dependencies)
-
-
-let register_aliases environment sources =
-  Type.Cache.disable ();
-  let register_aliases unresolved =
-    let resolution_dependency = String.Table.create () in
-    let worklist = Queue.create () in
-    Queue.enqueue_all worklist unresolved;
-    let rec fixpoint () =
-      match Queue.dequeue worklist with
-      | None -> ()
-      | Some unresolved ->
-          let _ =
-            match resolve_alias environment unresolved with
-            | Result.Error dependencies ->
-                let add_dependency =
-                  let update_dependency = function
-                    | None -> [unresolved]
-                    | Some entries -> unresolved :: entries
-                  in
-                  String.Table.update resolution_dependency ~f:update_dependency
-                in
-                List.iter dependencies ~f:add_dependency
-            | Result.Ok ({ ResolvedAlias.name; _ } as resolved) -> (
-                ResolvedAlias.register environment resolved;
-                match Hashtbl.find resolution_dependency name with
-                | Some entries ->
-                    Queue.enqueue_all worklist entries;
-                    Hashtbl.remove resolution_dependency name
-                | None -> () )
-          in
-          fixpoint ()
-    in
-    fixpoint ()
-  in
-  List.concat_map ~f:(collect_aliases environment) sources |> register_aliases;
-  Type.Cache.enable ()
-
 
 let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
   let module Visit = Visit.MakeStatementVisitor (struct
@@ -1123,7 +782,8 @@ let register_values
         let annotation =
           annotation
           >>| Expression.delocalize
-          >>| Type.create ~aliases:SharedMemory.Aliases.get
+          >>| Type.create
+                ~aliases:(AliasEnvironment.ReadOnly.get_alias (alias_environment environment))
           >>= (fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation)
           |> Option.value ~default:literal_annotation
         in
@@ -1175,12 +835,7 @@ let register_values
   List.iter ~f:visit statements
 
 
-let is_module { unannotated_global_environment; _ } =
-  let ast_environment =
-    UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
-  in
-  AstEnvironment.ReadOnly.is_module ast_environment
-
+let is_module environment = AstEnvironment.ReadOnly.is_module (ast_environment environment)
 
 let register_dependencies environment source =
   let module Visit = Visit.MakeStatementVisitor (struct
@@ -1245,7 +900,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
     DependentKeys.LocalChanges.push_stack ();
     Dependents.LocalChanges.push_stack ();
     ClassMetadata.LocalChanges.push_stack ();
-    Aliases.LocalChanges.push_stack ();
     OrderEdges.LocalChanges.push_stack ();
     OrderBackedges.LocalChanges.push_stack ();
     OrderKeys.LocalChanges.push_stack ();
@@ -1261,7 +915,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
     Dependents.LocalChanges.commit_all ();
     ClassMetadata.LocalChanges.commit_all ();
     Globals.LocalChanges.commit_all ();
-    Aliases.LocalChanges.commit_all ();
     OrderEdges.LocalChanges.commit_all ();
     OrderBackedges.LocalChanges.commit_all ();
     OrderKeys.LocalChanges.commit_all () );
@@ -1275,7 +928,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
     Dependents.LocalChanges.pop_stack ();
     ClassMetadata.LocalChanges.pop_stack ();
     Globals.LocalChanges.pop_stack ();
-    Aliases.LocalChanges.pop_stack ();
     OrderEdges.LocalChanges.pop_stack ();
     OrderBackedges.LocalChanges.pop_stack ();
     OrderKeys.LocalChanges.pop_stack () );
@@ -1305,9 +957,9 @@ let fill_shared_memory_with_default_typeorder _ =
   List.iter ~f:connect_primitive_chain default_annotations
 
 
-let check_class_hierarchy_integrity ({ unannotated_global_environment; _ } as environment) =
+let check_class_hierarchy_integrity environment =
   let indices =
-    UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
+    UnannotatedGlobalEnvironment.ReadOnly.all_classes (unannotated_global_environment environment)
     |> Type.Primitive.Set.of_list
     |> IndexTracker.indices
     |> IndexTracker.Set.to_list
@@ -1316,10 +968,11 @@ let check_class_hierarchy_integrity ({ unannotated_global_environment; _ } as en
 
 
 let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_result =
+  let update_result = AliasEnvironment.UpdateResult.upstream update_result in
   let current_and_removed_classes =
     UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
   in
-  let { SharedMemoryDependencyHandler.aliases; undecorated_signatures; globals } =
+  let { SharedMemoryDependencyHandler.undecorated_signatures; globals } =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
   let open SharedMemory in
@@ -1334,7 +987,6 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
   OrderEdges.remove_batch caml_index_keys;
   OrderBackedges.remove_batch caml_index_keys;
   ClassMetadata.remove_batch caml_current_and_removed_classes;
-  Aliases.remove_batch aliases;
   UndecoratedFunctions.remove_batch undecorated_signatures;
 
   SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
@@ -1345,13 +997,14 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
 
 
 let update_and_compute_dependencies _ qualifiers ~update ~update_result =
+  let update_result = AliasEnvironment.UpdateResult.upstream update_result in
   let current_and_removed_classes =
     UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
   in
   let old_dependent_table_keys =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
-  let { SharedMemoryDependencyHandler.aliases; undecorated_signatures; globals } =
+  let { SharedMemoryDependencyHandler.undecorated_signatures; globals } =
     old_dependent_table_keys
   in
   let open SharedMemory in
@@ -1369,21 +1022,19 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
 
   let update, mutation_triggers =
     SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
-    |> Aliases.add_to_transaction ~keys:aliases
     |> ClassMetadata.add_to_transaction ~keys:caml_current_and_removed_classes
     |> UndecoratedFunctions.add_to_transaction ~keys:undecorated_signatures
     |> Globals.add_to_transaction ~keys:globals
     |> OrderEdges.add_to_transaction ~keys:caml_index_keys
     |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
   in
-  let { SharedMemoryDependencyHandler.aliases; undecorated_signatures; globals } =
+  let { SharedMemoryDependencyHandler.undecorated_signatures; globals } =
     SharedMemoryDependencyHandler.find_added_dependent_table_keys
       qualifiers
       ~old_keys:old_dependent_table_keys
   in
   let mutation_and_addition_triggers =
     [
-      Aliases.get_all_dependents aliases;
       UndecoratedFunctions.get_all_dependents undecorated_signatures;
       Globals.get_all_dependents globals;
     ]
@@ -1392,7 +1043,7 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
   update, mutation_and_addition_triggers
 
 
-let shared_memory_handler unannotated_global_environment = { unannotated_global_environment }
+let shared_memory_handler alias_environment = { alias_environment }
 
 let normalize_shared_memory qualifiers =
   (* Since we don't provide an API to the raw order keys in the type order handler, handle it
@@ -1425,11 +1076,6 @@ let shared_memory_hash_to_key_map ~qualifiers () =
     |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:qualifiers)
     |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:qualifiers)
     |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:qualifiers)
-  in
-  (* Aliases. *)
-  let map =
-    let keys = List.filter_map qualifiers ~f:AliasKeys.get |> List.concat in
-    extend_map map ~new_map:(Aliases.compute_hashes_to_keys ~keys)
   in
   (* Globals and undecorated functions. *)
   let map =
@@ -1469,7 +1115,6 @@ let serialize_decoded decoded =
         | None -> None
       in
       Some (ClassMetadataValue.description, key, value)
-  | Aliases.Decoded (key, value) -> Some (AliasValue.description, key, value >>| Type.show_alias)
   | Globals.Decoded (key, value) ->
       let value = value >>| Node.value >>| Annotation.sexp_of_t >>| Sexp.to_string in
       Some (GlobalValue.description, Reference.show key, value)
@@ -1515,8 +1160,6 @@ let decoded_equal first second =
   match first, second with
   | ClassMetadata.Decoded (_, first), ClassMetadata.Decoded (_, second) ->
       Some (Option.equal GlobalResolution.equal_class_metadata first second)
-  | Aliases.Decoded (_, first), Aliases.Decoded (_, second) ->
-      Some (Option.equal Type.equal_alias first second)
   | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
       Some (Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value))
   | UndecoratedFunctions.Decoded (_, first), UndecoratedFunctions.Decoded (_, second) ->
@@ -1540,8 +1183,9 @@ let decoded_equal first second =
   | _ -> None
 
 
-let indices { unannotated_global_environment } =
-  UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
+let indices environment =
+  unannotated_global_environment environment
+  |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   |> Type.Primitive.Set.of_list
   |> IndexTracker.indices
   |> IndexTracker.Set.to_list

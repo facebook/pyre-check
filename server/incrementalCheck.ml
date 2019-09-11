@@ -106,12 +106,23 @@ let recheck
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
     in
-    let update_result =
+    let unannotated_global_environment_update_result =
       UnannotatedGlobalEnvironment.update
         unannotated_global_environment
         ~scheduler
         ~configuration
         invalidated_environment_qualifiers
+    in
+    let alias_environment =
+      AliasEnvironment.create
+        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+    in
+    let alias_update_result =
+      AliasEnvironment.update
+        alias_environment
+        ~scheduler
+        ~configuration
+        unannotated_global_environment_update_result
     in
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     let re_environment_build_sources =
@@ -126,7 +137,7 @@ let recheck
             Service.Environment.populate
               ~configuration
               ~scheduler
-              ~update_result
+              ~update_result:alias_update_result
               environment
               (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
               re_environment_build_sources;
@@ -137,21 +148,27 @@ let recheck
             environment
             invalidated_environment_qualifiers
             ~update
-            ~update_result
+            ~update_result:alias_update_result
         in
         let invalidated_type_checking_keys =
           let unannotated_global_environment_dependencies =
-            UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies update_result
+            UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
+              unannotated_global_environment_update_result
             |> UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
             |> List.filter_map ~f:(function
                    | UnannotatedGlobalEnvironment.TypeCheckSource source -> Some source
                    | _ -> None)
           in
+          let init =
+            SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
+              (AliasEnvironment.UpdateResult.triggered_dependencies alias_update_result)
+              invalidated_type_checking_keys
+          in
           List.fold
             unannotated_global_environment_dependencies
             ~f:(fun sofar element ->
               SharedMemoryKeys.ReferenceDependencyKey.KeySet.add element sofar)
-            ~init:invalidated_type_checking_keys
+            ~init
         in
         let invalidated_type_checking_keys =
           List.fold
@@ -177,11 +194,11 @@ let recheck
             environment
             ~debug
             invalidated_environment_qualifiers
-            ~update_result;
+            ~update_result:alias_update_result;
           Service.Environment.populate
             ~configuration
             ~scheduler
-            ~update_result
+            ~update_result:alias_update_result
             environment
             (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
             re_environment_build_sources

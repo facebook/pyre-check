@@ -30,12 +30,7 @@ let test_index context =
     ~cmp:(List.equal Reference.equal)
     ~printer:(List.to_string ~f:Reference.show)
     (DependencyHandler.get_function_keys ~qualifier)
-    [!&"test.foo"];
-  assert_equal
-    ~cmp:(List.equal String.equal)
-    ~printer:(String.concat ~sep:", ")
-    (DependencyHandler.get_alias_keys ~qualifier)
-    ["test._T"]
+    [!&"test.foo"]
 
 
 let add_dependent environment handle dependent =
@@ -58,15 +53,13 @@ let assert_dependencies ~environment ~modules ~expected function_to_test =
 
 
 let purge environment qualifiers =
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (Environment.ast_environment environment)
-  in
   let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
+    update_environments
+      ~ast_environment:(Environment.ast_environment environment)
       ~configuration:(Configuration.Analysis.create ())
-      (Reference.Set.of_list qualifiers)
+      ~qualifiers:(Reference.Set.of_list qualifiers)
+      ()
+    |> snd
   in
   Environment.purge environment qualifiers ~update_result
 

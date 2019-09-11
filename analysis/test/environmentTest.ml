@@ -43,11 +43,12 @@ let create_environments_and_project
         |> List.map ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
       in
       let update_result =
-        UnannotatedGlobalEnvironment.update
-          (UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment))
-          ~scheduler:(mock_scheduler ())
+        update_environments
+          ~ast_environment:(AstEnvironment.read_only ast_environment)
           ~configuration:(ScratchProject.configuration_of project)
-          (Reference.Set.of_list qualifiers)
+          ~qualifiers:(Reference.Set.of_list qualifiers)
+          ()
+        |> snd
       in
       Environment.purge environment qualifiers ~update_result
     in
@@ -678,28 +679,20 @@ let test_connect_type_order context =
          return D()
         |});
   let order = class_hierarchy environment in
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
   let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
+    update_environments
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
-      (Reference.Set.singleton (Reference.create "test"))
+      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ()
+    |> snd
   in
   let all_annotations =
-    UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result |> Set.to_list
+    AliasEnvironment.UpdateResult.upstream update_result
+    |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
+    |> Set.to_list
   in
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.read_only unannotated_global_environment
-  in
-  Environment.register_aliases
-    environment
-    [
-      ( AstEnvironment.get_source ast_environment (Reference.create "test")
-      |> fun option -> Option.value_exn option );
-    ];
+  let unannotated_global_environment = Environment.unannotated_global_environment environment in
   let connect annotation =
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
       unannotated_global_environment
@@ -1432,11 +1425,12 @@ let test_purge context =
   Environment.check_class_hierarchy_integrity handler;
   AstEnvironment.remove_sources ast_environment [Reference.create "test"];
   let update_result =
-    UnannotatedGlobalEnvironment.update
-      (UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment))
-      ~scheduler:(Scheduler.mock ())
+    update_environments
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
-      (Reference.Set.singleton (Reference.create "test"))
+      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ()
+    |> snd
   in
   Environment.purge handler [Reference.create "test"] ~update_result;
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
@@ -1489,15 +1483,13 @@ let test_purge_hierarchy context =
     assert_equal (Handler.edges index, Handler.backedges index) (None, None)
   in
   let purge qualifiers ~handler =
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (Environment.ast_environment handler)
-    in
     let update_result =
-      UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
-        ~scheduler:(mock_scheduler ())
+      update_environments
+        ~ast_environment:(Environment.ast_environment handler)
         ~configuration:(Configuration.Analysis.create ())
-        (Reference.Set.of_list qualifiers)
+        ~qualifiers:(Reference.Set.of_list qualifiers)
+        ()
+      |> snd
     in
     Environment.purge handler qualifiers ~update_result
   in
@@ -1635,11 +1627,12 @@ let test_connect_annotations_to_top context =
     UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
   let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
+    update_environments
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
-      (Reference.Set.singleton (Reference.create "test"))
+      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ()
+    |> snd
   in
   Environment.purge environment [Reference.create "test"] ~update_result;
   let resolution = Environment.resolution environment () in
@@ -1650,7 +1643,9 @@ let test_connect_annotations_to_top context =
     >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
     |> Option.iter ~f:Fn.id
   in
-  Set.iter ~f:connect (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result);
+  AliasEnvironment.UpdateResult.upstream update_result
+  |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
+  |> Set.iter ~f:connect;
   let order = class_hierarchy environment in
   assert_false (ClassHierarchy.least_upper_bound order "test.One" "test.Two" = ["object"]);
   assert_false (ClassHierarchy.greatest_lower_bound order "test.One" "object" = ["test.One"]);
@@ -1685,11 +1680,12 @@ let test_deduplicate context =
     UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
   let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
+    update_environments
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
-      (Reference.Set.singleton (Reference.create "test"))
+      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ()
+    |> snd
   in
   Environment.purge environment [Reference.create "test"] ~update_result;
   let resolution = Environment.resolution environment () in
@@ -1700,7 +1696,9 @@ let test_deduplicate context =
     >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
     |> Option.iter ~f:Fn.id
   in
-  Set.iter ~f:connect (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result);
+  AliasEnvironment.UpdateResult.upstream update_result
+  |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
+  |> Set.iter ~f:connect;
   Environment.deduplicate_class_hierarchy ~annotations:["test.One"; "test.Zero"];
   let (module Handler) = class_hierarchy environment in
   let index_of annotation = IndexTracker.index annotation in
@@ -1754,11 +1752,12 @@ let test_remove_extra_edges_to_object context =
     UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
   let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
+    update_environments
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
-      (Reference.Set.singleton (Reference.create "test"))
+      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ()
+    |> snd
   in
   Environment.purge environment [] ~update_result;
   let resolution = Environment.resolution environment () in
@@ -1769,7 +1768,9 @@ let test_remove_extra_edges_to_object context =
     >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
     |> Option.iter ~f:Fn.id
   in
-  Set.iter ~f:connect (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result);
+  AliasEnvironment.UpdateResult.upstream update_result
+  |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
+  |> Set.iter ~f:connect;
   Environment.remove_extra_edges_to_object ["test.Zero"; "test.One"; "test.Two"; "object"];
   let (module Handler) = class_hierarchy environment in
   let zero_index = IndexTracker.index "test.Zero" in
@@ -1859,11 +1860,12 @@ let test_update_and_compute_dependencies context =
         UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
       in
       let update_result =
-        UnannotatedGlobalEnvironment.update
-          unannotated_global_environment
-          ~scheduler:(mock_scheduler ())
+        update_environments
+          ~ast_environment:(AstEnvironment.read_only ast_environment)
           ~configuration:(ScratchProject.configuration_of project)
-          (Reference.Set.singleton (Reference.create "source"))
+          ~qualifiers:(Reference.Set.singleton (Reference.create "source"))
+          ()
+        |> snd
       in
       let update () =
         List.iter expected_state_in_update ~f:assert_state;

@@ -11,6 +11,6 @@ val populate
   UnannotatedGlobalEnvironment.ReadOnly.t ->
   configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  update_result:UnannotatedGlobalEnvironment.UpdateResult.t ->
+  update_result:AliasEnvironment.UpdateResult.t ->
   Source.t list ->
   unit
