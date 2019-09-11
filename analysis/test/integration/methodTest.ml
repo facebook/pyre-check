@@ -815,7 +815,7 @@ let test_check_nested_class_inheritance context =
       class Y(X):
           pass
 
-      def foo() -> Y.Q:
+      def foo() -> X.Q:
           return Y.Q()
     |}
     [];
@@ -828,7 +828,7 @@ let test_check_nested_class_inheritance context =
       class Y(X):
           pass
 
-      def foo() -> Y.Q:
+      def foo() -> X.Q:
           return X.Q()
     |}
     [];
@@ -845,7 +845,7 @@ let test_check_nested_class_inheritance context =
           class Q():
               pass
 
-      def foo() -> Y.Q:
+      def foo() -> X.Q:
           return Z.Q()
     |}
     ["Incompatible return type [7]: Expected `X.Q` but got `Z.Q`."];
@@ -858,7 +858,7 @@ let test_check_nested_class_inheritance context =
               pass
       class Y(X):
         pass
-      def foo() -> Y.N.NN.NNN:
+      def foo() -> X.N.NN.NNN:
           return Y.N.NN.NNN()
     |}
     [];
@@ -872,7 +872,7 @@ let test_check_nested_class_inheritance context =
           pass
       class C(B1, B2):
         pass
-      def foo() -> C.N:
+      def foo() -> B1.N:
         return C.N()
     |}
     []

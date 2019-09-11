@@ -30,8 +30,6 @@ val register_values : t -> GlobalResolution.t -> Source.t -> unit
 
 val register_dependencies : t -> Source.t -> unit
 
-val propagate_nested_classes : t -> Source.t -> unit
-
 val is_module : t -> Reference.t -> bool
 
 val check_class_hierarchy_integrity : t -> unit

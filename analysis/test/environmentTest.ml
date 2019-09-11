@@ -1545,95 +1545,6 @@ let test_purge_hierarchy context =
   ()
 
 
-let test_propagate_nested_classes context =
-  let test_propagate sources aliases =
-    Type.Cache.disable ();
-    Type.Cache.enable ();
-    let handler = populate ~context ~include_helpers:false sources in
-    let assert_alias (alias, target) =
-      parse_single_expression alias
-      |> parse_annotation handler
-      |> Type.show
-      |> assert_equal ~printer:(fun string -> string) target
-    in
-    List.iter aliases ~f:assert_alias
-  in
-  test_propagate
-    [
-      ( "test.py",
-        {|
-          class B:
-            class N:
-              pass
-          class C(B):
-            pass
-        |}
-      );
-    ]
-    ["test.C.N", "test.B.N"];
-  test_propagate
-    [
-      ( "test.py",
-        {|
-          class B:
-            class N:
-              pass
-          class C(B):
-            class N:
-              pass
-        |}
-      );
-    ]
-    ["test.C.N", "test.C.N"];
-  test_propagate
-    [
-      ( "test.py",
-        {|
-          class B1:
-            class N:
-              pass
-          class B2:
-            class N:
-              pass
-          class C(B1, B2):
-            pass
-        |}
-      );
-    ]
-    ["test.C.N", "test.B1.N"];
-  test_propagate
-    [
-      "qual.py", {|
-          class B:
-            class N:
-              pass
-        |};
-      ( "importer.py",
-        {|
-          from qual import B
-          class C(B):
-            pass
-        |} );
-    ]
-    ["importer.C.N", "qual.B.N"];
-  test_propagate
-    [
-      ( "test.py",
-        {|
-          class B:
-            class N:
-              class NN:
-                class NNN:
-                  pass
-          class C(B):
-            pass
-        |}
-      );
-    ]
-    ["test.C.N.NN.NNN", "test.B.N.NN.NNN"];
-  ()
-
-
 let test_default_class_hierarchy context =
   let order, environment = order_and_environment ~context [] in
   Environment.fill_shared_memory_with_default_typeorder environment;
@@ -2035,7 +1946,6 @@ let () =
          "register_dependencies" >:: test_register_dependencies;
          "register_globals" >:: test_register_globals;
          "register_implicit_submodules" >:: test_register_implicit_submodules;
-         "propagate_nested_classes" >:: test_propagate_nested_classes;
          "default_class_hierarchy" >:: test_default_class_hierarchy;
          "connect_to_top" >:: test_connect_annotations_to_top;
          "deduplicate" >:: test_deduplicate;

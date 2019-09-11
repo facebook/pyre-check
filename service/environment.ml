@@ -40,8 +40,7 @@ let populate
       Environment.check_class_hierarchy_integrity environment;
     Environment.connect_annotations_to_object environment all_annotations;
     Environment.remove_extra_edges_to_object all_annotations;
-    List.iter all_annotations ~f:(Environment.register_class_metadata environment);
-    List.iter ~f:(Environment.propagate_nested_classes environment) sources
+    List.iter all_annotations ~f:(Environment.register_class_metadata environment)
   in
   Environment.transaction environment ~f:populate ();
   let register_undecorated_functions sources =

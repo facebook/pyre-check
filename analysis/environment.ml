@@ -1228,56 +1228,6 @@ let register_dependencies environment source =
   Visit.visit () source
 
 
-let propagate_nested_classes ({ unannotated_global_environment; _ } as environment) source =
-  let propagate ~qualifier ({ Class.name; _ } as definition) successors =
-    let nested_class_names { Class.name; body; _ } =
-      let extract_classes = function
-        | { Node.value = Statement.Class { name = nested_name; _ }; _ } ->
-            Some (Reference.drop_prefix nested_name ~prefix:name, nested_name)
-        | _ -> None
-      in
-      List.filter_map ~f:extract_classes body
-    in
-    let create_alias added_sofar (stripped_name, full_name) =
-      let alias = Reference.combine name stripped_name in
-      if List.exists added_sofar ~f:(Reference.equal alias) then
-        added_sofar
-      else
-        let primitive name = Type.Primitive (Reference.show name) in
-        register_alias
-          environment
-          ~qualifier
-          ~key:(Reference.show alias)
-          ~data:(Type.TypeAlias (primitive full_name));
-        alias :: added_sofar
-    in
-    let own_nested_classes = nested_class_names definition |> List.map ~f:snd in
-    successors
-    |> List.filter_map
-         ~f:
-           (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-              unannotated_global_environment)
-    |> List.map ~f:Node.value
-    |> List.concat_map ~f:nested_class_names
-    |> List.fold ~f:create_alias ~init:own_nested_classes
-    |> ignore
-  in
-  let module Visit = Visit.MakeStatementVisitor (struct
-    type t = unit
-
-    let visit_children _ = true
-
-    let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } _ = function
-      | { Node.value = Statement.Class ({ Class.name; _ } as definition); _ } ->
-          SharedMemory.ClassMetadata.get (Reference.show name)
-          |> Option.iter ~f:(fun { GlobalResolution.successors; _ } ->
-                 propagate ~qualifier definition successors)
-      | _ -> ()
-  end)
-  in
-  Visit.visit () source
-
-
 let deduplicate_class_hierarchy = SharedMemoryClassHierarchyHandler.deduplicate
 
 let remove_extra_edges_to_object = SharedMemoryClassHierarchyHandler.remove_extra_edges_to_object
