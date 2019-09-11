@@ -63,10 +63,12 @@ let test_source_models context =
   assert_model
     ~model_source:"os.environ: TaintSink[Test] = ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Object
           ~sink_parameters:[{ name = "$global"; sinks = [Sinks.Test] }]
-          "os.environ" ]
+          "os.environ";
+      ]
     ();
   assert_model
     ~source:"def f(x: int): ..."
@@ -120,75 +122,97 @@ let test_sink_models context =
           ...
       |}
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
-          "test.sink" ]
+          "test.sink";
+      ]
     ();
   assert_model
     ~model_source:"def test.sink(parameter0, parameter1: TaintSink[Test]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.Test] }]
-          "test.sink" ]
+          "test.sink";
+      ]
     ();
   assert_model
     ~model_source:"def test.sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:
-            [ { name = "parameter0"; sinks = [Sinks.Test] };
-              { name = "parameter1"; sinks = [Sinks.Test] } ]
-          "test.sink" ]
+            [
+              { name = "parameter0"; sinks = [Sinks.Test] };
+              { name = "parameter1"; sinks = [Sinks.Test] };
+            ]
+          "test.sink";
+      ]
     ();
   assert_model
     ~model_source:"def test.sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:
-            [ { name = "parameter0"; sinks = [Sinks.Test] };
-              { name = "parameter1"; sinks = [Sinks.Test] } ]
-          "test.sink" ]
+            [
+              { name = "parameter0"; sinks = [Sinks.Test] };
+              { name = "parameter1"; sinks = [Sinks.Test] };
+            ]
+          "test.sink";
+      ]
     ();
   assert_model
     ~model_source:"def test.both(parameter0: TaintSink[Demo]) -> TaintSource[Demo]: ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~returns:[Sources.Demo]
           ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.Demo] }]
-          "test.both" ]
+          "test.both";
+      ]
     ();
   assert_model
     ~model_source:
       "def test.sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test, \
        ViaValueOf[parameter0]]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:
-            [ { name = "parameter0"; sinks = [Sinks.Test] };
-              { name = "parameter1"; sinks = [Sinks.Test] } ]
-          "test.sink" ]
+            [
+              { name = "parameter0"; sinks = [Sinks.Test] };
+              { name = "parameter1"; sinks = [Sinks.Test] };
+            ]
+          "test.sink";
+      ]
     ();
   assert_model
     ~model_source:"def test.xss(parameter: TaintSink[XSS]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.XSS] }]
-          "test.xss" ]
+          "test.xss";
+      ]
     ();
   assert_model
     ~model_source:"def test.multiple(parameter: TaintSink[XSS, Demo]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Demo; Sinks.XSS] }]
-          "test.multiple" ]
+          "test.multiple";
+      ]
     ()
 
 
@@ -203,16 +227,20 @@ let test_class_models context =
       |}
     ~model_source:"class test.Sink(TaintSink[TestSink]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
           "test.Sink.method";
         outcome
           ~kind:`Method
           ~sink_parameters:
-            [ { name = "first"; sinks = [Sinks.NamedSink "TestSink"] };
-              { name = "second"; sinks = [Sinks.NamedSink "TestSink"] } ]
-          "test.Sink.method_with_multiple_parameters" ]
+            [
+              { name = "first"; sinks = [Sinks.NamedSink "TestSink"] };
+              { name = "second"; sinks = [Sinks.NamedSink "TestSink"] };
+            ]
+          "test.Sink.method_with_multiple_parameters";
+      ]
     ();
   assert_model
     ~source:
@@ -226,11 +254,13 @@ let test_class_models context =
         class test.Source(TaintSource[UserControlled]): ...
       |}
     ~expect:
-      [ outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.Source.method";
+      [
+        outcome ~kind:`Method ~returns:[Sources.UserControlled] "test.Source.method";
         outcome
           ~kind:`Method
           ~returns:[Sources.UserControlled]
-          "test.Source.method_with_multiple_parameters" ]
+          "test.Source.method_with_multiple_parameters";
+      ]
     ();
   assert_model
     ~source:
@@ -240,10 +270,12 @@ let test_class_models context =
       |}
     ~model_source:"class test.AnnotatedSink(TaintSink[TestSink]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
-          "test.AnnotatedSink.method" ]
+          "test.AnnotatedSink.method";
+      ]
     ();
   assert_model
     ~source:
@@ -262,10 +294,12 @@ let test_class_models context =
       |}
     ~model_source:"class test.SourceWithDefault(TaintSink[Test]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Test] }]
-          "test.SourceWithDefault.method" ]
+          "test.SourceWithDefault.method";
+      ]
     ();
   assert_model
     ~source:
@@ -314,10 +348,12 @@ let test_taint_in_taint_out_update_models context =
   assert_model
     ~model_source:"def test.update(self, arg1, arg2: TaintInTaintOut[Updates[self, arg1]]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~tito_parameters:["arg2 updates parameter 0"; "arg2 updates parameter 1"]
-          "test.update" ]
+          "test.update";
+      ]
     ();
   assert_model
     ~model_source:"def test.update(self: TaintInTaintOut[LocalReturn, Updates[arg1]], arg1): ..."
@@ -331,11 +367,13 @@ let test_union_models context =
     ~context
     ~model_source:"def test.both(parameter: Union[TaintInTaintOut, TaintSink[XSS]]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.XSS] }]
           ~tito_parameters:["parameter"]
-          "test.both" ]
+          "test.both";
+      ]
     ()
 
 
@@ -352,10 +390,12 @@ let test_sink_breadcrumbs context =
     ~context
     ~model_source:"def test.sink(parameter: TaintSink[Test, Via[special]]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Test] }]
-          "test.sink" ]
+          "test.sink";
+      ]
     ()
 
 
@@ -376,10 +416,12 @@ let test_attach_features context =
   assert_model
     ~model_source:"def test.sink(arg: AttachToSink[Via[special]]): ..."
     ~expect:
-      [ outcome
+      [
+        outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }]
-          "test.sink" ]
+          "test.sink";
+      ]
     ();
   assert_model
     ~model_source:"def test.tito(arg: AttachToTito[Via[special]]): ..."
@@ -738,7 +780,8 @@ let test_demangle_class_attributes _ =
 
 let () =
   "taint_model"
-  >::: [ "attach_features" >:: test_attach_features;
+  >::: [
+         "attach_features" >:: test_attach_features;
          "source_models" >:: test_source_models;
          "sink_models" >:: test_sink_models;
          "class_models" >:: test_class_models;
@@ -750,5 +793,6 @@ let () =
          "test_sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "test_tito_breadcrumbs" >:: test_tito_breadcrumbs;
          "invalid_models" >:: test_invalid_models;
-         "demangle_class_attributes" >:: test_demangle_class_attributes ]
+         "demangle_class_attributes" >:: test_demangle_class_attributes;
+       ]
   |> Test.run

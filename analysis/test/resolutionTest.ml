@@ -184,23 +184,29 @@ let test_resolve_exports context =
   assert_resolve ~sources:["a", "from b import foo"; "b", "foo = 1"] "a.foo" "b.foo";
   assert_resolve
     ~sources:
-      [ "a.py", "from b import foo";
+      [
+        "a.py", "from b import foo";
         "b.py", "from c import bar as foo";
         "c.py", "from d import cow as bar";
-        "d.py", "cow = 1" ]
+        "d.py", "cow = 1";
+      ]
     "a.foo"
     "d.cow";
   assert_resolve
     ~sources:
-      [ "qualifier.py", "from qualifier.foo import foo";
+      [
+        "qualifier.py", "from qualifier.foo import foo";
         (* __init__.py module. *)
-        "qualifier/foo/__init__.py", "foo = 1" ]
+          "qualifier/foo/__init__.py", "foo = 1";
+      ]
     "qualifier.foo.foo"
     "qualifier.foo.foo";
   assert_resolve
     ~sources:
-      [ "placeholder.py", "# pyre-placeholder-stub";
-        "a.py", "from placeholder.nonexistent import foo" ]
+      [
+        "placeholder.py", "# pyre-placeholder-stub";
+        "a.py", "from placeholder.nonexistent import foo";
+      ]
     "a.foo"
     "placeholder.nonexistent.foo"
 
@@ -297,13 +303,15 @@ let test_function_definitions context =
   in
   assert_functions ["foo.py", "def foo(): pass\n"] "foo.foo" ["foo.foo"];
   assert_functions
-    [ ( "bar.py",
+    [
+      ( "bar.py",
         {|
         @overload
         def bar(a: int) -> str: ...
         def bar(a: str) -> int: ...
       |}
-      ) ]
+      );
+    ]
     "bar.bar"
     ["bar.bar"; "bar.bar"];
   assert_functions
@@ -373,12 +381,14 @@ let test_source_is_unit_test context =
 
 let () =
   "resolution"
-  >::: [ "set_local" >:: test_set_local;
+  >::: [
+         "set_local" >:: test_set_local;
          "parse_annotation" >:: test_parse_annotation;
          "parse_reference" >:: test_parse_reference;
          "resolve_literal" >:: test_resolve_literal;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;
          "function_definitions" >:: test_function_definitions;
          "resolve_shared_memory" >:: test_resolution_shared_memory;
-         "source_is_unit_test" >:: test_source_is_unit_test ]
+         "source_is_unit_test" >:: test_source_is_unit_test;
+       ]
   |> Test.run

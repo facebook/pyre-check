@@ -69,8 +69,10 @@ let test_check_comprehensions context =
       def foo(d: typing.Dict[int, str]) -> typing.Dict[int, str]:
         return { k: v for k, v in d }
     |}
-    [ "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^ "`typing.Dict[]`.";
-      "Unable to unpack [23]: Unable to unpack `int` into 2 values." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^ "`typing.Dict[]`.";
+      "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -142,8 +144,10 @@ let test_check_comprehensions context =
       def foo(a: typing.Dict[str, int]) -> typing.Dict[str, int]:
         return { y:x for x, y in a.items() }
     |}
-    [ "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got "
-      ^ "`typing.Dict[int, str]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got "
+      ^ "`typing.Dict[int, str]`.";
+    ];
   assert_type_errors
     {|
       def f() -> None:
@@ -165,8 +169,10 @@ let test_check_comprehensions context =
       def foo(a: typing.Dict[str, typing.Optional[int]]) -> typing.Dict[str, int]:
         return { x: y for (x, y) in a.items() }
     |}
-    [ "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got `typing.Dict[str, \
-       typing.Optional[int]]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got `typing.Dict[str, \
+       typing.Optional[int]]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -192,9 +198,11 @@ let test_check_generators context =
       def foo() -> typing.Generator:
         return x
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `x` must be specified "
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` must be specified "
       ^ "as type that does not contain `Any`.";
-      "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters." ];
+      "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -202,9 +210,11 @@ let test_check_generators context =
       def foo() -> typing.Generator:
         return x
     |}
-    [ "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters.";
+    [
+      "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters.";
       "Incompatible return type [7]: Expected `typing.Generator[typing.Any, typing.Any, "
-      ^ "typing.Any]` but got `typing.Generator[int, int, int]`." ];
+      ^ "typing.Any]` but got `typing.Generator[int, int, int]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -225,18 +235,22 @@ let test_check_generators context =
       def foo(l: typing.List[typing.Optional[int]])->typing.Generator[str, None, None]:
         return (x for x in l if x is not None)
     |}
-    [ "Incompatible return type [7]: Expected `typing.Generator[str, None, None]` "
-      ^ "but got `typing.Generator[int, None, None]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[str, None, None]` "
+      ^ "but got `typing.Generator[int, None, None]`.";
+    ];
   assert_type_errors
     {|
       import typing
       def foo(l: typing.Iterable[typing.Any])->typing.Generator[typing.Any, None, None]:
         return (x for x in l)
     |}
-    [ "Missing return annotation [3]: Return type must be specified as type "
+    [
+      "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`.";
       "Missing parameter annotation [2]: Parameter `l` must have a type "
-      ^ "that does not contain `Any`." ];
+      ^ "that does not contain `Any`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -260,8 +274,10 @@ let test_check_generators context =
       def foo() -> typing.Generator[int, None, None]:
         yield 1.0
     |}
-    [ "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
-      ^ "but got `typing.Generator[float, None, None]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
+      ^ "but got `typing.Generator[float, None, None]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -275,8 +291,10 @@ let test_check_generators context =
       def foo() -> typing.Generator[int, None, None]:
         yield from [""]
     |}
-    [ "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
-      ^ "but got `typing.Generator[str, None, None]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[int, None, None]` "
+      ^ "but got `typing.Generator[str, None, None]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -353,12 +371,16 @@ let test_check_generators context =
         async for item in g:
           yield takes_int(item)
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-       `takes_int` but got `str`." ]
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `takes_int` but got `str`.";
+    ]
 
 
 let () =
   "generator"
-  >::: [ "check_comprehensions" >:: test_check_comprehensions;
-         "check_yield" >:: test_check_generators ]
+  >::: [
+         "check_comprehensions" >:: test_check_comprehensions;
+         "check_yield" >:: test_check_generators;
+       ]
   |> Test.run

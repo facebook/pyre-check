@@ -198,7 +198,8 @@ let check
     ~randomly_log_every:20
     ~path:path_to_files
     ~coverage:
-      [ "crashes", crashes;
+      [
+        "crashes", crashes;
         "declare_coverage", declare_coverage;
         "default_coverage", default_coverage;
         "full_type_coverage", full;
@@ -207,7 +208,8 @@ let check
         "partial_type_coverage", partial;
         "source_files", source_files;
         "strict_coverage", strict_coverage;
-        "total_errors", List.length errors ]
+        "total_errors", List.length errors;
+      ]
     ();
 
   (* Only destroy the scheduler if the check command created it. *)

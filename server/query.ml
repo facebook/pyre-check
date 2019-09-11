@@ -74,7 +74,8 @@ let help () =
   let empty = Name (Name.Identifier "") |> Node.create_with_default_location in
   List.filter_map
     ~f:help
-    [ RunCheck { check_name = ""; paths = [] };
+    [
+      RunCheck { check_name = ""; paths = [] };
       Attributes (Reference.create "");
       Callees (Reference.create "");
       CalleesWithLocation (Reference.create "");
@@ -98,7 +99,8 @@ let help () =
       Type (Node.create_with_default_location Expression.True);
       TypeAtPosition { path; position = Location.any_position };
       TypesInFiles [path];
-      ValidateTaintModels None ]
+      ValidateTaintModels None;
+    ]
   |> List.sort ~compare:String.compare
   |> String.concat ~sep:"\n  "
   |> Format.sprintf "Possible queries:\n  %s"
@@ -109,16 +111,18 @@ let parse_query
     query
   =
   match PyreParser.Parser.parse [query] with
-  | [ {
-        Node.value =
-          Expression
-            {
-              Node.value =
-                Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
-              _;
-            };
-        _;
-      } ] -> (
+  | [
+   {
+     Node.value =
+       Expression
+         {
+           Node.value =
+             Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
+           _;
+         };
+     _;
+   };
+  ] -> (
       let expression { Call.Argument.value; _ } = value in
       let access = function
         | { Call.Argument.value; _ } when Expression.has_identifier_base value -> value
@@ -245,9 +249,11 @@ let parse_query
       | "superclasses", [name] -> Request.TypeQueryRequest (Superclasses (access name))
       | "type", [argument] -> Request.TypeQueryRequest (Type (expression argument))
       | ( "type_at_position",
-          [ path;
+          [
+            path;
             { Call.Argument.value = { Node.value = Integer line; _ }; _ };
-            { Call.Argument.value = { Node.value = Integer column; _ }; _ } ] ) ->
+            { Call.Argument.value = { Node.value = Integer column; _ }; _ };
+          ] ) ->
           let path = Path.create_relative ~root ~relative:(string path) in
           let position = { Location.line; column } in
           Request.TypeQueryRequest (TypeAtPosition { path; position })

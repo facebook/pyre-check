@@ -575,9 +575,11 @@ let test_show_message_notification _ =
   in
   let expected_message =
     `Assoc
-      [ "jsonrpc", `String "2.0";
+      [
+        "jsonrpc", `String "2.0";
         "method", `String "window/showMessage";
-        "params", `Assoc ["message", `String "error"; "type", `Int 1] ]
+        "params", `Assoc ["message", `String "error"; "type", `Int 1];
+      ]
     |> Yojson.Safe.pretty_to_string
   in
   assert_equal ~printer:ident message expected_message
@@ -602,13 +604,16 @@ let test_did_save_notification context =
   in
   let expected_message =
     `Assoc
-      [ "jsonrpc", `String "2.0";
+      [
+        "jsonrpc", `String "2.0";
         "method", `String "textDocument/didSave";
         ( "params",
           `Assoc
-            [ ( "textDocument",
-                `Assoc ["uri", `String (Format.sprintf "file://%s" (Path.absolute source_path))] )
-            ] ) ]
+            [
+              ( "textDocument",
+                `Assoc ["uri", `String (Format.sprintf "file://%s" (Path.absolute source_path))] );
+            ] );
+      ]
     |> Yojson.Safe.pretty_to_string
   in
   let link_message =
@@ -659,32 +664,48 @@ let test_language_server_definition_response context =
       (Some { path = "a.py"; start = { line = 1; column = 0 }; stop = { line = 2; column = 0 } })
     ~expected:
       (`Assoc
-        [ "jsonrpc", `String "2.0";
+        [
+          "jsonrpc", `String "2.0";
           "id", `Int 1;
           ( "result",
             `List
-              [ `Assoc
-                  [ "uri", `String (Format.sprintf "file://%s" (Path.absolute file));
+              [
+                `Assoc
+                  [
+                    "uri", `String (Format.sprintf "file://%s" (Path.absolute file));
                     ( "range",
                       `Assoc
-                        [ "start", `Assoc ["line", `Int 0; "character", `Int 0];
-                          "end", `Assoc ["line", `Int 1; "character", `Int 0] ] ) ] ] ) ]);
+                        [
+                          "start", `Assoc ["line", `Int 0; "character", `Int 0];
+                          "end", `Assoc ["line", `Int 1; "character", `Int 0];
+                        ] );
+                  ];
+              ] );
+        ]);
   assert_response
     ~id:(string_request_id "abcd")
     ~location:
       (Some { path = "b.pyi"; start = { line = 1; column = 0 }; stop = { line = 2; column = 0 } })
     ~expected:
       (`Assoc
-        [ "jsonrpc", `String "2.0";
+        [
+          "jsonrpc", `String "2.0";
           "id", `String "abcd";
           ( "result",
             `List
-              [ `Assoc
-                  [ "uri", `String (Format.sprintf "file://%s" (Path.absolute stub));
+              [
+                `Assoc
+                  [
+                    "uri", `String (Format.sprintf "file://%s" (Path.absolute stub));
                     ( "range",
                       `Assoc
-                        [ "start", `Assoc ["line", `Int 0; "character", `Int 0];
-                          "end", `Assoc ["line", `Int 1; "character", `Int 0] ] ) ] ] ) ])
+                        [
+                          "start", `Assoc ["line", `Int 0; "character", `Int 0];
+                          "end", `Assoc ["line", `Int 1; "character", `Int 0];
+                        ] );
+                  ];
+              ] );
+        ])
 
 
 let test_language_server_hover_request _ =
@@ -743,16 +764,22 @@ let test_language_server_hover_response _ =
   in
   let expected_message =
     `Assoc
-      [ "id", `Int 1;
+      [
+        "id", `Int 1;
         "jsonrpc", `String "2.0";
         ( "result",
           `Assoc
-            [ ( "contents",
+            [
+              ( "contents",
                 `Assoc ["language", `String "python"; "value", `String "Hover response contents"] );
               ( "range",
                 `Assoc
-                  [ "end", `Assoc ["character", `Int (-1); "line", `Int (-2)];
-                    "start", `Assoc ["character", `Int (-1); "line", `Int (-2)] ] ) ] ) ]
+                  [
+                    "end", `Assoc ["character", `Int (-1); "line", `Int (-2)];
+                    "start", `Assoc ["character", `Int (-1); "line", `Int (-2)];
+                  ] );
+            ] );
+      ]
     |> Yojson.Safe.pretty_to_string
   in
   assert_equal ~printer:ident expected_message message
@@ -923,7 +950,8 @@ let test_publish_diagnostics _ =
 
 let () =
   "language_server"
-  >::: [ "language_server_protocol_message_format" >:: test_language_server_protocol_message_format;
+  >::: [
+         "language_server_protocol_message_format" >:: test_language_server_protocol_message_format;
          "language_server_protocol_read_message" >:: test_language_server_protocol_read_message;
          "language_server_protocol_read_message_eof"
          >:: test_language_server_protocol_read_message_eof;
@@ -937,5 +965,6 @@ let () =
          "show_message_notification" >:: test_show_message_notification;
          "did_save_notification" >:: test_did_save_notification;
          "request_parser" >:: test_request_parser;
-         "publish_diagnostics" >:: test_publish_diagnostics ]
+         "publish_diagnostics" >:: test_publish_diagnostics;
+       ]
   |> Test.run

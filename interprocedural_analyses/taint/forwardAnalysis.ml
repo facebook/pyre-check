@@ -128,8 +128,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     let global_model ~location reference =
       (* Fields are handled like methods *)
       let target_candidates =
-        [ Interprocedural.Callable.create_method reference;
-          Interprocedural.Callable.create_object reference ]
+        [
+          Interprocedural.Callable.create_method reference;
+          Interprocedural.Callable.create_object reference;
+        ]
       in
       let merge_models result candidate =
         let model =
@@ -210,8 +212,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     ~f:Features.gather_breadcrumbs
                     ~init:
                       Features.
-                        [ SimpleSet.element (Simple.Breadcrumb Breadcrumb.Tito);
-                          SimpleSet.element (Simple.TitoPosition location) ]
+                        [
+                          SimpleSet.element (Simple.Breadcrumb Breadcrumb.Tito);
+                          SimpleSet.element (Simple.TitoPosition location);
+                        ]
                 in
                 let add_features features = List.rev_append breadcrumbs features in
                 let taint_to_propagate =

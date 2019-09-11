@@ -497,11 +497,13 @@ end = struct
                                    });
                           };
                         arguments =
-                          [ {
+                          [
+                            {
                               Call.Argument.name = None;
                               value =
                                 Expression.from_reference ~location:Location.Reference.any name;
-                            } ];
+                            };
+                          ];
                       };
                 }
               in
@@ -1415,7 +1417,8 @@ end = struct
   let preamble { Handler.kind; name; _ } =
     let open Expression in
     let assume ~location ~target ~annotation =
-      [ {
+      [
+        {
           Node.location;
           value =
             Statement.Assign
@@ -1439,14 +1442,17 @@ end = struct
                         {
                           callee = { Node.location; value = Name (Name.Identifier "isinstance") };
                           arguments =
-                            [ { Call.Argument.name = None; value = target };
-                              { Call.Argument.name = None; value = annotation } ];
+                            [
+                              { Call.Argument.name = None; value = target };
+                              { Call.Argument.name = None; value = annotation };
+                            ];
                         };
                   };
                 message = None;
                 origin = Assert.Origin.Assertion;
               };
-        } ]
+        };
+      ]
     in
     match kind, name with
     | Some ({ Node.location; value = Name _; _ } as annotation), Some name ->
@@ -1486,7 +1492,9 @@ end = struct
                              });
                     };
                   arguments =
-                    [{ Call.Argument.name = None; value = { Node.location; value = Tuple values } }];
+                    [
+                      { Call.Argument.name = None; value = { Node.location; value = Tuple values } };
+                    ];
                 };
           }
         in

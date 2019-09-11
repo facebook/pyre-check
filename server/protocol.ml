@@ -221,9 +221,11 @@ module TypeQuery = struct
     | ClassHierarchy hierarchy -> hierarchy
     | Compatibility { actual; expected; result } ->
         `Assoc
-          [ "actual", Type.to_yojson actual;
+          [
+            "actual", Type.to_yojson actual;
             "expected", Type.to_yojson expected;
-            "boolean", `Bool result ]
+            "boolean", `Bool result;
+          ]
     | CoverageAtLocations annotations ->
         `Assoc ["types", `List (List.map annotations ~f:coverage_at_location_to_yojson)]
     | Decoded { decoded; undecodable_keys } ->
@@ -236,9 +238,11 @@ module TypeQuery = struct
                 | None -> []
               in
               `Assoc
-                ( [ "serialized_key", `String serialized_key;
+                ( [
+                    "serialized_key", `String serialized_key;
                     "kind", `String kind;
-                    "key", `String actual_key ]
+                    "key", `String actual_key;
+                  ]
                 @ value )
           | DecodedPair { serialized_key; kind; actual_key; first_value; second_value; equal } ->
               let first_value =
@@ -252,24 +256,30 @@ module TypeQuery = struct
                 | None -> []
               in
               `Assoc
-                ( [ "serialized_key", `String serialized_key;
+                ( [
+                    "serialized_key", `String serialized_key;
                     "kind", `String kind;
                     "key", `String actual_key;
-                    "equal", `Bool equal ]
+                    "equal", `Bool equal;
+                  ]
                 @ first_value
                 @ second_value )
         in
         `Assoc
-          [ "decoded", `List (List.map decoded ~f:to_json);
-            "undecodable_keys", `List (List.map undecodable_keys ~f:(fun key -> `String key)) ]
+          [
+            "decoded", `List (List.map decoded ~f:to_json);
+            "undecodable_keys", `List (List.map undecodable_keys ~f:(fun key -> `String key));
+          ]
     | Errors errors ->
         `Assoc
-          [ ( "errors",
+          [
+            ( "errors",
               `List
                 (List.map
                    ~f:(fun error ->
                      Analysis.Error.Instantiated.to_json ~show_error_traces:true error)
-                   errors) ) ]
+                   errors) );
+          ]
     | Path path -> `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]

@@ -183,11 +183,15 @@ let test_create _ =
   let assert_alias source resolved =
     let aliases primitive =
       Identifier.Table.of_alist_exn
-        [ "Alias", Type.Primitive "Aliased";
+        [
+          "Alias", Type.Primitive "Aliased";
           ( "_Future",
             Type.union
-              [ Type.parametric "Future" ![Type.integer; Type.variable "_T"];
-                Type.awaitable (Type.variable "_T") ] ) ]
+              [
+                Type.parametric "Future" ![Type.integer; Type.variable "_T"];
+                Type.awaitable (Type.variable "_T");
+              ] );
+        ]
       |> (fun table -> Identifier.Table.find table primitive)
       >>| fun alias -> Type.TypeAlias alias
     in
@@ -314,8 +318,10 @@ let test_create _ =
              annotation = Type.integer;
              parameters =
                Defined
-                 [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
-                   Parameter.Anonymous { index = 1; annotation = Type.string; default = false } ];
+                 [
+                   Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
+                   Parameter.Anonymous { index = 1; annotation = Type.string; default = false };
+                 ];
              define_location = None;
            };
          overloads = [];
@@ -331,10 +337,12 @@ let test_create _ =
              annotation = Type.integer;
              parameters =
                Defined
-                 [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
+                 [
+                   Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
                    Parameter.Named { name = "a"; annotation = Type.integer; default = false };
                    Parameter.Variable (Concrete Type.Top);
-                   Parameter.Keywords Type.Top ];
+                   Parameter.Keywords Type.Top;
+                 ];
              define_location = None;
            };
          overloads = [];
@@ -350,9 +358,11 @@ let test_create _ =
              annotation = Type.integer;
              parameters =
                Defined
-                 [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
+                 [
+                   Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
                    Parameter.Variable (Concrete Type.integer);
-                   Parameter.Keywords Type.string ];
+                   Parameter.Keywords Type.string;
+                 ];
              define_location = None;
            };
          overloads = [];
@@ -384,8 +394,10 @@ let test_create _ =
        {
          name = "Movie";
          fields =
-           [ { name = "year"; annotation = Type.integer };
-             { name = "name"; annotation = Type.string } ];
+           [
+             { name = "year"; annotation = Type.integer };
+             { name = "name"; annotation = Type.string };
+           ];
          total = true;
        });
   assert_create
@@ -394,8 +406,10 @@ let test_create _ =
        {
          name = "Movie";
          fields =
-           [ { name = "year"; annotation = Type.integer };
-             { name = "name"; annotation = Type.string } ];
+           [
+             { name = "year"; annotation = Type.integer };
+             { name = "name"; annotation = Type.string };
+           ];
          total = false;
        });
   assert_create
@@ -414,8 +428,10 @@ let test_create _ =
     (Type.Callable.create
        ~parameters:
          (Defined
-            [ Variable
-                (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts"))) ])
+            [
+              Variable
+                (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts")));
+            ])
        ~annotation:Type.integer
        ());
   assert_create
@@ -426,9 +442,11 @@ let test_create _ =
     (Type.Callable.create
        ~parameters:
          (Defined
-            [ Anonymous { index = 0; annotation = Type.integer; default = false };
+            [
+              Anonymous { index = 0; annotation = Type.integer; default = false };
               Variable
-                (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts"))) ])
+                (Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts")));
+            ])
        ~annotation:Type.integer
        ());
   assert_create
@@ -517,7 +535,8 @@ let test_expression _ =
   assert_expression
     (Type.Callable.create
        ~overloads:
-         [ {
+         [
+           {
              Type.Callable.annotation = Type.string;
              parameters = Type.Callable.Undefined;
              define_location = None;
@@ -526,7 +545,8 @@ let test_expression _ =
              Type.Callable.annotation = Type.integer;
              parameters = Type.Callable.Undefined;
              define_location = None;
-           } ]
+           };
+         ]
        ~annotation:Type.integer
        ())
     "typing.Callable[(..., int)].__getitem__(__getitem__((..., str))[(..., int)])";
@@ -534,8 +554,10 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:
          (Type.Callable.Defined
-            [ Parameter.Named { name = "__0"; annotation = Type.integer; default = false };
-              Parameter.Named { name = "__1"; annotation = Type.string; default = false } ])
+            [
+              Parameter.Named { name = "__0"; annotation = Type.integer; default = false };
+              Parameter.Named { name = "__1"; annotation = Type.string; default = false };
+            ])
        ~annotation:Type.integer
        ())
     "typing.Callable.__getitem__(([Named(__0, int), Named(__1, str)], int))";
@@ -543,8 +565,10 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:
          (Type.Callable.Defined
-            [ Parameter.Named { name = "a"; annotation = Type.integer; default = false };
-              Parameter.Named { name = "b"; annotation = Type.string; default = false } ])
+            [
+              Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+              Parameter.Named { name = "b"; annotation = Type.string; default = false };
+            ])
        ~annotation:Type.integer
        ())
     "typing.Callable.__getitem__(([Named(a, int), Named(b, str)], int))";
@@ -560,9 +584,11 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:
          (Defined
-            [ Parameter.Named { name = "$0"; annotation = Type.integer; default = false };
+            [
+              Parameter.Named { name = "$0"; annotation = Type.integer; default = false };
               Parameter.Variable (Concrete Type.integer);
-              Parameter.Keywords Type.string ])
+              Parameter.Keywords Type.string;
+            ])
        ~annotation:Type.integer
        ())
     ("typing.Callable.__getitem__(([Named($0, int), Variable(int), " ^ "Keywords(str)], int))");
@@ -571,8 +597,10 @@ let test_expression _ =
        {
          name = "Movie";
          fields =
-           [ { name = "title"; annotation = Type.string };
-             { name = "year"; annotation = Type.integer } ];
+           [
+             { name = "title"; annotation = Type.string };
+             { name = "year"; annotation = Type.integer };
+           ];
          total = true;
        })
     "mypy_extensions.TypedDict[(\"Movie\", True, (\"title\", str), (\"year\", int))]";
@@ -581,8 +609,10 @@ let test_expression _ =
        {
          name = "Movie";
          fields =
-           [ { name = "title"; annotation = Type.string };
-             { name = "year"; annotation = Type.integer } ];
+           [
+             { name = "title"; annotation = Type.string };
+             { name = "year"; annotation = Type.integer };
+           ];
          total = false;
        })
     "mypy_extensions.TypedDict[(\"Movie\", False, (\"title\", str), (\"year\", int))]"
@@ -607,9 +637,11 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
-            [ Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = false };
+            [
+              Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = false };
               Type.Callable.Parameter.Named
-                { name = "y"; annotation = Type.float; default = false } ])
+                { name = "y"; annotation = Type.float; default = false };
+            ])
        ())
     "(x: Any, y: float) -> int";
   assert_concise
@@ -618,7 +650,9 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
-            [Type.Callable.Parameter.Anonymous { index = 0; annotation = Type.Any; default = true }])
+            [
+              Type.Callable.Parameter.Anonymous { index = 0; annotation = Type.Any; default = true };
+            ])
        ())
     "(Any=...) -> int";
   assert_concise
@@ -636,7 +670,8 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
-            [ Type.Callable.Parameter.Named
+            [
+              Type.Callable.Parameter.Named
                 {
                   name = "callable";
                   default = false;
@@ -646,10 +681,13 @@ let test_concise _ =
                       ~annotation:Type.float
                       ~parameters:
                         (Type.Callable.Defined
-                           [ Type.Callable.Parameter.Named
-                               { name = "x"; annotation = Type.integer; default = false } ])
+                           [
+                             Type.Callable.Parameter.Named
+                               { name = "x"; annotation = Type.integer; default = false };
+                           ])
                       ();
-                } ])
+                };
+            ])
        ())
     "(callable: (x: int) -> float) -> int";
   assert_concise Type.Any "Any";
@@ -667,8 +705,10 @@ let test_concise _ =
        {
          name = "Movie";
          fields =
-           [ { name = "year"; annotation = Type.integer };
-             { name = "name"; annotation = Type.string } ];
+           [
+             { name = "year"; annotation = Type.integer };
+             { name = "name"; annotation = Type.string };
+           ];
          total = true;
        })
     "Movie";
@@ -677,8 +717,10 @@ let test_concise _ =
        {
          name = "$anonymous";
          fields =
-           [ { name = "year"; annotation = Type.integer };
-             { name = "name"; annotation = Type.string } ];
+           [
+             { name = "year"; annotation = Type.integer };
+             { name = "name"; annotation = Type.string };
+           ];
          total = true;
        })
     "TypedDict(year: int, name: str)";
@@ -754,8 +796,10 @@ let test_primitives _ =
         {
           name = "Movie";
           fields =
-            [ { name = "year"; annotation = Type.integer };
-              { name = "name"; annotation = Type.string } ];
+            [
+              { name = "year"; annotation = Type.integer };
+              { name = "name"; annotation = Type.string };
+            ];
           total = true;
         }
     |> Type.primitives )
@@ -797,8 +841,10 @@ let test_elements _ =
         {
           name = "Movie";
           fields =
-            [ { name = "year"; annotation = Type.integer };
-              { name = "name"; annotation = Type.string } ];
+            [
+              { name = "year"; annotation = Type.integer };
+              { name = "name"; annotation = Type.string };
+            ];
           total = true;
         }
     |> Type.elements )
@@ -1058,14 +1104,18 @@ let test_from_overloads _ =
     ["typing.Callable('foo')[..., int]"; "typing.Callable('foo')[..., str]"]
     "typing.Callable('foo')[..., str]";
   assert_create
-    [ "typing.Callable('foo')[..., int]";
+    [
+      "typing.Callable('foo')[..., int]";
       "typing.Callable('foo')[[int, str], str]";
-      "typing.Callable('foo')[[int, str, str], int]" ]
+      "typing.Callable('foo')[[int, str, str], int]";
+    ]
     "typing.Callable('foo')[[int, str, str], int]";
   assert_create
-    [ "typing.Callable('foo')[..., $unknown][[[int], int]]";
+    [
+      "typing.Callable('foo')[..., $unknown][[[int], int]]";
       "typing.Callable('foo')[[str], str]";
-      "typing.Callable('foo')[[int], int][[[str], str]]" ]
+      "typing.Callable('foo')[[int], int][[[str], str]]";
+    ]
     "typing.Callable('foo')[[int], int][[[int], int][[str], str]]"
 
 
@@ -1385,8 +1435,10 @@ let test_mark_all_variables_as_bound _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1471,8 +1523,10 @@ let test_namespace_all_free_variables _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1483,8 +1537,10 @@ let test_namespace_all_free_variables _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1499,8 +1555,10 @@ let test_namespace_all_free_variables _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1595,8 +1653,10 @@ let test_mark_all_free_variables_as_escaped _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1607,8 +1667,10 @@ let test_mark_all_free_variables_as_escaped _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1626,8 +1688,10 @@ let test_mark_all_free_variables_as_escaped _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1683,8 +1747,10 @@ let test_contains_escaped_free_variable _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1696,8 +1762,10 @@ let test_contains_escaped_free_variable _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1765,8 +1833,10 @@ let test_convert_all_escaped_free_variables_to_anys _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1780,8 +1850,10 @@ let test_convert_all_escaped_free_variables_to_anys _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concatenation (create_concatenation list_variadic)) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concatenation (create_concatenation list_variadic));
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1789,8 +1861,10 @@ let test_convert_all_escaped_free_variables_to_anys _ =
     Type.Callable.create
       ~parameters:
         (Defined
-           [ Anonymous { index = 0; annotation = Type.bool; default = false };
-             Variable (Concrete Type.Any) ])
+           [
+             Anonymous { index = 0; annotation = Type.bool; default = false };
+             Variable (Concrete Type.Any);
+           ])
       ~annotation:Type.integer
       ()
   in
@@ -1837,9 +1911,11 @@ let test_replace_all _ =
        ![Type.integer; Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))]);
   let replaced =
     Type.Callable.Parameter.create
-      [ { name = "__x"; annotation = Type.bool; default = false };
+      [
+        { name = "__x"; annotation = Type.bool; default = false };
         { name = "__a"; annotation = Type.integer; default = false };
-        { name = "__b"; annotation = Type.string; default = false } ]
+        { name = "__b"; annotation = Type.string; default = false };
+      ]
   in
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all
@@ -1847,8 +1923,10 @@ let test_replace_all _ =
        (Type.Callable.create
           ~parameters:
             (Defined
-               [ Anonymous { index = 0; annotation = Type.bool; default = false };
-                 Variable (Concatenation (create_concatenation list_variadic)) ])
+               [
+                 Anonymous { index = 0; annotation = Type.bool; default = false };
+                 Variable (Concatenation (create_concatenation list_variadic));
+               ])
           ~annotation:Type.integer
           ()))
     (Type.Callable.create ~parameters:(Defined replaced) ~annotation:Type.integer ());
@@ -1860,7 +1938,8 @@ let test_replace_all _ =
     (Tuple
        (Bounded
           (Concrete
-             [ Parametric
+             [
+               Parametric
                  {
                    name = "Foo";
                    parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.integer] }];
@@ -1869,7 +1948,8 @@ let test_replace_all _ =
                  {
                    name = "Foo";
                    parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.string] }];
-                 } ])));
+                 };
+             ])));
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all
        (fun _ -> Some (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
@@ -1910,8 +1990,10 @@ let test_collect_all _ =
        (Type.Callable.create
           ~parameters:
             (Defined
-               [ Anonymous { index = 0; annotation = Type.bool; default = false };
-                 Variable (Concatenation (create_concatenation list_variadic)) ])
+               [
+                 Anonymous { index = 0; annotation = Type.bool; default = false };
+                 Variable (Concatenation (create_concatenation list_variadic));
+               ])
           ~annotation:Type.integer
           ()))
     [Type.Variable.Variadic.List.create "Ts"];
@@ -2039,18 +2121,21 @@ let test_concatenation_operator_replace_variable _ =
     ~replacement:(fun _ -> Some (Concrete [Type.integer]))
     (Some
        (Concrete
-          [ Parametric
+          [
+            Parametric
               {
                 name = "Foo";
                 parameters =
                   Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }];
-              } ]));
+              };
+          ]));
   assert_replaces_into
     ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"; "Bar"] ~variable)
     ~replacement:(fun _ -> Some (Concrete [Type.integer; Type.string]))
     (Some
        (Concrete
-          [ Parametric
+          [
+            Parametric
               {
                 name = "Foo";
                 parameters =
@@ -2060,7 +2145,8 @@ let test_concatenation_operator_replace_variable _ =
               {
                 name = "Foo";
                 parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.string] }];
-              } ]));
+              };
+          ]));
   assert_replaces_into
     ~middle:(Type.OrderedTypes.Concatenation.Middle.create ~mappers:["Foo"] ~variable)
     ~replacement:(fun _ -> Some (Concatenation (create_concatenation ~mappers:["Bar"] variable)))
@@ -2111,7 +2197,8 @@ let test_concatenation_zip _ =
 
 let () =
   "type"
-  >::: [ "create" >:: test_create;
+  >::: [
+         "create" >:: test_create;
          "instantiate" >:: test_instantiate;
          "expression" >:: test_expression;
          "concise" >:: test_concise;
@@ -2153,10 +2240,13 @@ let () =
          "union_upper_bound" >:: test_union_upper_bound;
          "concatenation_operator_variable" >:: test_concatenation_operator_variable;
          "concatenation_operator_replace_variable" >:: test_concatenation_operator_replace_variable;
-         "concatenation_zip" >:: test_concatenation_zip ]
+         "concatenation_zip" >:: test_concatenation_zip;
+       ]
   |> Test.run;
   "callable"
-  >::: [ "from_overloads" >:: test_from_overloads;
+  >::: [
+         "from_overloads" >:: test_from_overloads;
          "with_return_annotation" >:: test_with_return_annotation;
-         "overload_parameters" >:: test_overload_parameters ]
+         "overload_parameters" >:: test_overload_parameters;
+       ]
   |> Test.run

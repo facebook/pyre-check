@@ -124,9 +124,11 @@ let run_analysis
       ~name:"analyze"
       ~timer
       ~integers:
-        [ "gc_minor_collections", minor_collections;
+        [
+          "gc_minor_collections", minor_collections;
           "gc_major_collections", major_collections;
-          "gc_compactions", compactions ]
+          "gc_compactions", compactions;
+        ]
       ();
 
     (* Print results. *)

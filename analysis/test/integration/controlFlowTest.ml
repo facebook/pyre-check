@@ -11,8 +11,10 @@ let test_scheduling context =
   (* Top-level is scheduled. *)
   assert_type_errors
     "'string' + 1"
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+    ];
 
   (* Functions are scheduled. *)
   assert_type_errors
@@ -21,16 +23,20 @@ let test_scheduling context =
       def foo() -> None:
         'string' + 1
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+    ];
   assert_type_errors
     {|
       def bar() -> None:
         def foo() -> None:
           'string' + 1
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+    ];
 
   (* Class bodies are scheduled. *)
   assert_type_errors
@@ -38,8 +44,10 @@ let test_scheduling context =
       class Foo:
         'string' + 1
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+    ];
 
   (* Methods are scheduled. *)
   assert_type_errors
@@ -48,8 +56,10 @@ let test_scheduling context =
         def foo(self) -> None:
           'string' + 1
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
+    ];
 
   (* Entry states are propagated. *)
   assert_type_errors
@@ -64,10 +74,12 @@ let test_scheduling context =
       def bar() -> str:
         return variable
     |}
-    [ "Incompatible return type [7]: Expected `str` but got `int`.";
+    [
+      "Incompatible return type [7]: Expected `str` but got `int`.";
       "Incompatible variable type [9]: variable is declared to have type `int` "
       ^ "but is used as type `str`.";
-      "Incompatible return type [7]: Expected `str` but got `int`." ];
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ];
 
   assert_type_errors
     {|
@@ -91,8 +103,10 @@ let test_scheduling context =
       def foo() -> None:
         expect_string(1)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`.";
+    ];
   assert_type_errors
     {|
       try:
@@ -105,8 +119,10 @@ let test_scheduling context =
       def foo() -> None:
         expect_string(1)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`." ]
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`.";
+    ]
 
 
 let test_check_excepts context =
@@ -143,8 +159,10 @@ let test_check_excepts context =
           if x:
             use("error")
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `use` "
-      ^ "but got `str`." ]
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `use` "
+      ^ "but got `str`.";
+    ]
 
 
 let test_check_ternary context =
@@ -249,10 +267,12 @@ let test_check_unbound_variables context =
           other = 1
         return result
     |}
-    [ "Incompatible return type [7]: Expected `int` but got "
+    [
+      "Incompatible return type [7]: Expected `int` but got "
       ^ "`typing.Union[int, typing.Undeclared]`.";
       "Undefined name [18]: Global name `result` is not defined, or there is at least one control \
-       flow path that doesn't define `result`." ];
+       flow path that doesn't define `result`.";
+    ];
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -260,12 +280,14 @@ let test_check_unbound_variables context =
           result = narnia()
         return result
     |}
-    [ "Undefined name [18]: Global name `narnia` is not defined, or there is at least one control \
+    [
+      "Undefined name [18]: Global name `narnia` is not defined, or there is at least one control \
        flow path that doesn't define `narnia`.";
       "Incompatible return type [7]: Expected `int` but got "
       ^ "`typing.Union[typing.Undeclared, unknown]`.";
       "Undefined name [18]: Global name `result` is not defined, or there is at least one control \
-       flow path that doesn't define `result`." ];
+       flow path that doesn't define `result`.";
+    ];
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -275,21 +297,25 @@ let test_check_unbound_variables context =
           other = 1
         return result
     |}
-    [ "Undefined name [18]: Global name `narnia` is not defined, or there is at least one control \
+    [
+      "Undefined name [18]: Global name `narnia` is not defined, or there is at least one control \
        flow path that doesn't define `narnia`.";
       "Incompatible return type [7]: Expected `int` but got "
       ^ "`typing.Union[typing.Undeclared, unknown]`.";
       "Undefined name [18]: Global name `result` is not defined, or there is at least one control \
-       flow path that doesn't define `result`." ];
+       flow path that doesn't define `result`.";
+    ];
   assert_type_errors
     {|
       def foo() -> int:
         assert unknown is None or 1
         return unknown
     |}
-    [ "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
+    [
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
        control flow path that doesn't define `unknown`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`." ];
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -311,10 +337,12 @@ let test_check_nested context =
           int_to_int(1.0)
         int_to_int(1.0)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`." ];
+      ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -329,13 +357,15 @@ let test_check_nested context =
           Word = collections.namedtuple("word", ("verb", "noun"))
       def foo() -> Derp.Word: pass
     |}
-    [ "Missing attribute annotation [4]: Attribute `verb` of class `Derp.Word` must have a type \
+    [
+      "Missing attribute annotation [4]: Attribute `verb` of class `Derp.Word` must have a type \
        other than `Any`.";
       "Missing parameter annotation [2]: Parameter `verb` must have a type other than `Any`.";
       "Undefined error [1]: Problem with analysis.";
       "Undefined error [1]: Problem with analysis.";
       "Incompatible return type [7]: Expected `Derp.Word` but got "
-      ^ "implicit return value of `None`." ];
+      ^ "implicit return value of `None`.";
+    ];
 
   (* Nesting behaves differently for the toplevel function. *)
   assert_type_errors
@@ -344,8 +374,10 @@ let test_check_nested context =
       def shadowing(i: int) -> None: ...
       shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `shadowing` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `shadowing` but got `str`.";
+    ];
   assert_type_errors
     {|
       def can_fail() -> None:
@@ -362,9 +394,11 @@ let test_check_nested context =
 
 let () =
   "controlFlow"
-  >::: [ "scheduling" >:: test_scheduling;
+  >::: [
+         "scheduling" >:: test_scheduling;
          "check_excepts" >:: test_check_excepts;
          "check_ternary" >:: test_check_ternary;
          "check_unbound_variables" >:: test_check_unbound_variables;
-         "check_nested" >:: test_check_nested ]
+         "check_nested" >:: test_check_nested;
+       ]
   |> Test.run

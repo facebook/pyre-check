@@ -653,4 +653,6 @@ let run
   in
   (* Create error. *)
   let { Node.location; value = define } = Source.top_level_define_node source in
-  [Error.create ~location ~kind:(Error.Deobfuscation source) ~define:(Node.create define ~location)]
+  [
+    Error.create ~location ~kind:(Error.Deobfuscation source) ~define:(Node.create define ~location);
+  ]

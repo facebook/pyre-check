@@ -57,8 +57,10 @@ let stop ~local_root =
     in
     try
       let socket_paths =
-        [ Operations.socket_path configuration;
-          Operations.socket_path ~name:"json_server" configuration ]
+        [
+          Operations.socket_path configuration;
+          Operations.socket_path ~name:"json_server" configuration;
+        ]
       in
       match poll_for_deletion socket_paths with
       | exit_code -> exit_code

@@ -29,9 +29,11 @@ let test_restore_symbolic_links context =
     let get_old_link_path =
       let map =
         Path.Map.of_alist_exn
-          [ path "a.py", Path.create_relative ~root:local_root ~relative:"a.py";
+          [
+            path "a.py", Path.create_relative ~root:local_root ~relative:"a.py";
             path "b.py", Path.create_relative ~root:local_root ~relative:"unused_link.py";
-            path "removed.py", Path.create_relative ~root:local_root ~relative:"removed.py" ]
+            path "removed.py", Path.create_relative ~root:local_root ~relative:"removed.py";
+          ]
       in
       Map.find map
     in
@@ -45,8 +47,10 @@ let test_restore_symbolic_links context =
   assert_restored
     ~names:[path "a.py"; path "b.py"]
     ~expected:
-      [ Path.create_relative ~root:local_root ~relative:"a.py";
-        Path.create_relative ~root:local_root ~relative:"b.py" ];
+      [
+        Path.create_relative ~root:local_root ~relative:"a.py";
+        Path.create_relative ~root:local_root ~relative:"b.py";
+      ];
 
   (* We only get paths that are passed in. *)
   assert_restored
@@ -57,8 +61,10 @@ let test_restore_symbolic_links context =
   assert_restored
     ~names:[path "a.py"; path "removed.py"]
     ~expected:
-      [ Path.create_relative ~root:local_root ~relative:"a.py";
-        Path.create_relative ~root:local_root ~relative:"removed.py" ];
+      [
+        Path.create_relative ~root:local_root ~relative:"a.py";
+        Path.create_relative ~root:local_root ~relative:"removed.py";
+      ];
   assert_restored
     ~names:[Path.create_relative ~root:local_root ~relative:"unlinked.py"]
     ~expected:[Path.create_relative ~root:local_root ~relative:"unlinked.py"]
@@ -122,33 +128,45 @@ let test_compute_locally_changed_files context =
 
   assert_changed_files
     ~files:
-      [ { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" };
-        { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" } ]
+      [
+        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" };
+        { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" };
+      ]
     ~expected:[];
   assert_changed_files
     ~files:
-      [ { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 3" };
-        { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" } ]
+      [
+        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 3" };
+        { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" };
+      ]
     ~expected:["a.pyi"];
   assert_changed_files
     ~files:
-      [ { relative = "a.pyi"; old_content = None; new_content = Some "a = 2" };
-        { relative = "a.py"; old_content = Some "a = 1"; new_content = None } ]
+      [
+        { relative = "a.pyi"; old_content = None; new_content = Some "a = 2" };
+        { relative = "a.py"; old_content = Some "a = 1"; new_content = None };
+      ]
     ~expected:["a.py"; "a.pyi"];
   assert_changed_files
     ~files:
-      [ { relative = "a.pyi"; old_content = Some "a: int"; new_content = None };
-        { relative = "a.py"; old_content = None; new_content = Some "a = 1" } ]
+      [
+        { relative = "a.pyi"; old_content = Some "a: int"; new_content = None };
+        { relative = "a.py"; old_content = None; new_content = Some "a = 1" };
+      ]
     ~expected:["a.py"; "a.pyi"];
   assert_changed_files
     ~files:
-      [ { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" };
-        { relative = "b.py"; old_content = Some "a = 1"; new_content = Some "new" } ]
+      [
+        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" };
+        { relative = "b.py"; old_content = Some "a = 1"; new_content = Some "new" };
+      ]
     ~expected:["b.py"]
 
 
 let () =
   "saved_state"
-  >::: [ "restore_symbolic_links" >:: test_restore_symbolic_links;
-         "compute_locally_changed_files" >:: test_compute_locally_changed_files ]
+  >::: [
+         "restore_symbolic_links" >:: test_restore_symbolic_links;
+         "compute_locally_changed_files" >:: test_compute_locally_changed_files;
+       ]
   |> Test.run

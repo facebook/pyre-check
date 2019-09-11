@@ -140,7 +140,8 @@ module Make (Kind : Kind) = struct
           } as error )
       =
       `Assoc
-        [ "line", `Int start_line;
+        [
+          "line", `Int start_line;
           "column", `Int start_column;
           "path", `String path;
           "code", `Int (Kind.code kind);
@@ -150,7 +151,8 @@ module Make (Kind : Kind) = struct
           ( "concise_description",
             `String (description error ~show_error_traces ~concise:true ~separator:"\n") );
           "inference", Kind.inference_information ~signature:signature_node kind;
-          "define", `String (Reference.show_sanitized signature.name) ]
+          "define", `String (Reference.show_sanitized signature.name);
+        ]
   end
 
   let instantiate ~lookup { location; kind; signature } =

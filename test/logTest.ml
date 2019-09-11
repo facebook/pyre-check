@@ -54,7 +54,9 @@ let test_initialize_default_on _ =
 
 let () =
   "log"
-  >::: [ "rotate" >:: test_rotate;
+  >::: [
+         "rotate" >:: test_rotate;
          "initialize_default_off" >:: test_initialize_default_off;
-         "initialize_default_on" >:: test_initialize_default_on ]
+         "initialize_default_on" >:: test_initialize_default_on;
+       ]
   |> run_test_tt_main

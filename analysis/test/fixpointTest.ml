@@ -87,34 +87,40 @@ let test_forward _ =
 
 let test_join _ =
   assert_fixpoint
-    [ +Statement.If
-         { If.test = +Expression.True; body = [+Statement.Pass]; orelse = [+Statement.Pass] } ]
+    [
+      +Statement.If
+         { If.test = +Expression.True; body = [+Statement.Pass]; orelse = [+Statement.Pass] };
+    ]
     (Int.Table.of_alist_exn
-       [ 0, 0;
+       [
+         0, 0;
          (* Entry *)
-         1, 1;
+           1, 1;
          (* Exit *)
-         3, 1;
+           3, 1;
          (* Final *)
-         5, 0;
+           5, 0;
          (* If *)
-         6, 1;
+           6, 1;
          (* Join *)
-         7, 0;
+           7, 0;
          (* Body *)
-         8, 0
-         (* Orelse *)
-        ]);
+           8, 0;
+           (* Orelse *)
+         
+       ]);
   assert_fixpoint
     [+Statement.If { If.test = +Expression.True; body = [+Statement.Pass]; orelse = [] }]
     (Int.Table.of_alist_exn [5, 0; 6, 1; 0, 0; 8, 0; 1, 1; 3, 1; 7, 0]);
   assert_fixpoint
-    [ +Statement.If
+    [
+      +Statement.If
          {
            If.test = +Expression.True;
            body = [+Statement.Pass; +Statement.Pass];
            orelse = [+Statement.Pass];
-         } ]
+         };
+    ]
     (Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0; 6, 2; 7, 0; 8, 0])
 
 
@@ -122,19 +128,21 @@ let test_widening _ =
   assert_fixpoint
     [+Statement.While { While.test = +Expression.True; body = [+Statement.Pass]; orelse = [] }]
     (Int.Table.of_alist_exn
-       [ 0, 0;
+       [
+         0, 0;
          (* Entry *)
-         1, Int.max_value;
+           1, Int.max_value;
          (* Exit *)
-         3, Int.max_value;
+           3, Int.max_value;
          (* Final *)
-         5, Int.max_value;
+           5, Int.max_value;
          (* Split *)
-         6, Int.max_value;
+           6, Int.max_value;
          (* Join *)
-         7, Int.max_value
-         (* Pass *)
-        ])
+           7, Int.max_value;
+           (* Pass *)
+         
+       ])
 
 
 let () =

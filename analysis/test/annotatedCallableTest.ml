@@ -183,7 +183,9 @@ let test_create_overload context =
       Type.Callable.annotation = Type.none;
       parameters =
         Type.Callable.Defined
-          [Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer }];
+          [
+            Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer };
+          ];
       define_location = None;
     }
 
@@ -328,8 +330,10 @@ let test_create context =
 
 let () =
   "define"
-  >::: [ "return_annotation" >:: test_return_annotation;
+  >::: [
+         "return_annotation" >:: test_return_annotation;
          "apply_decorators" >:: test_apply_decorators;
          "create_ovelroad" >:: test_create_overload;
-         "create" >:: test_create ]
+         "create" >:: test_create;
+       ]
   |> Test.run

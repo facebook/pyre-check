@@ -106,8 +106,10 @@ let test_parse_query context =
   assert_parses
     "dependent_defines('basic1.py', 'basic2.py')"
     (DependentDefines
-       [ Path.create_relative ~root:local_root ~relative:"basic1.py";
-         Path.create_relative ~root:local_root ~relative:"basic2.py" ]);
+       [
+         Path.create_relative ~root:local_root ~relative:"basic1.py";
+         Path.create_relative ~root:local_root ~relative:"basic2.py";
+       ]);
   assert_fails_to_parse "dependent_defines(unquoted.py)";
   assert_fails_to_parse "dependent_defines('quoted,py', unquoted.py)";
   assert_parses
@@ -141,20 +143,24 @@ let test_parse_query context =
   assert_parses
     "decode_ocaml_values(('first_key', 'first_value'))"
     (DecodeOcamlValues
-       [ TypeQuery.SerializedValue
-           { serialized_key = "first_key"; serialized_value = "first_value" } ]);
+       [
+         TypeQuery.SerializedValue
+           { serialized_key = "first_key"; serialized_value = "first_value" };
+       ]);
   assert_parses
     "decode_ocaml_values(('first_key', 'first_value'), ('second_key', 'second_value', \
      'third_value'))"
     (DecodeOcamlValues
-       [ TypeQuery.SerializedValue
+       [
+         TypeQuery.SerializedValue
            { serialized_key = "first_key"; serialized_value = "first_value" };
          TypeQuery.SerializedPair
            {
              serialized_key = "second_key";
              first_serialized_value = "second_value";
              second_serialized_value = "third_value";
-           } ]);
+           };
+       ]);
   assert_fails_to_parse "decode_ocaml_values('a', 'b')";
   let path =
     let path = Path.create_relative ~root:local_root ~relative:"decode.me" in
@@ -164,13 +170,15 @@ let test_parse_query context =
   assert_parses
     (Format.sprintf "decode_ocaml_values_from_file('%s')" (Path.absolute path))
     (DecodeOcamlValues
-       [ TypeQuery.SerializedValue { serialized_key = "key"; serialized_value = "value" };
+       [
+         TypeQuery.SerializedValue { serialized_key = "key"; serialized_value = "value" };
          TypeQuery.SerializedPair
            {
              serialized_key = "second_key";
              first_serialized_value = "second_value";
              second_serialized_value = "third_value";
-           } ]);
+           };
+       ]);
   assert_parses "validate_taint_models()" (ValidateTaintModels None);
   assert_parses
     (Format.sprintf "validate_taint_models('%s')" (Path.absolute path))
@@ -193,7 +201,8 @@ let test_to_yojson _ =
        (TypeQuery.Decoded
           {
             decoded =
-              [ TypeQuery.DecodedValue
+              [
+                TypeQuery.DecodedValue
                   {
                     serialized_key = "first_encoded";
                     kind = "Type";
@@ -233,7 +242,8 @@ let test_to_yojson _ =
                     first_value = Some "str";
                     second_value = None;
                     equal = false;
-                  } ];
+                  };
+              ];
             undecodable_keys = ["no"];
           }))
     {|

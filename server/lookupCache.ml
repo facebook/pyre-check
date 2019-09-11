@@ -117,8 +117,10 @@ let find_annotation ~state ~configuration ~path ~position =
         let normals =
           annotation
           >>| fun (location, annotation) ->
-          [ "resolved location", Location.Instantiated.show location;
-            "resolved annotation", Type.show annotation ]
+          [
+            "resolved location", Location.Instantiated.show location;
+            "resolved annotation", Type.show annotation;
+          ]
         in
         log_lookup ~handle ~position ~timer ~name:"find annotation" ?normals ()
     | _ -> ()

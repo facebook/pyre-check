@@ -122,8 +122,10 @@ let test_meet context =
 
 let () =
   "annotation"
-  >::: [ "refine" >:: test_refine;
+  >::: [
+         "refine" >:: test_refine;
          "less_or_equal" >:: test_less_or_equal;
          "join" >:: test_join;
-         "meet" >:: test_meet ]
+         "meet" >:: test_meet;
+       ]
   |> Test.run

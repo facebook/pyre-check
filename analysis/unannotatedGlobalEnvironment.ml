@@ -226,7 +226,8 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     |> Node.create_with_default_location
   in
   let typing_classes =
-    [ make "typing.Optional";
+    [
+      make "typing.Optional";
       make "typing.Undeclared";
       make "typing.NoReturn";
       make "typing.Annotated";
@@ -236,21 +237,24 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       make "typing.ClassVar";
       make "typing.Final";
       make "typing.Union";
-      make ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic" ]
+      make ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic";
+    ]
   in
   let typing_extension_classes =
     [make "typing_extensions.Final"; make "typing_extensions.Literal"]
   in
   let builtin_classes =
     let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
-    [ make
+    [
+      make
         ~bases:[Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Any])]
         ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:true)
         "TypedDictionary";
       make
         ~bases:[Type.Primitive "TypedDictionary"]
         ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:false)
-        "NonTotalTypedDictionary" ]
+        "NonTotalTypedDictionary";
+    ]
   in
   builtin_classes, typing_classes, typing_extension_classes
 
@@ -287,16 +291,19 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
           { definition with Class.bases = [{ name = None; value }] }
       | "typing.GenericMeta" ->
           let body =
-            [ Statement.Define
+            [
+              Statement.Define
                 {
                   signature =
                     {
                       name = Reference.create "typing.GenericMeta.__getitem__";
                       parameters =
-                        [ { Parameter.name = "cls"; value = None; annotation = None }
+                        [
+                          { Parameter.name = "cls"; value = None; annotation = None }
                           |> Node.create_with_default_location;
                           { Parameter.name = "arg"; value = None; annotation = None }
-                          |> Node.create_with_default_location ];
+                          |> Node.create_with_default_location;
+                        ];
                       decorators = [];
                       docstring = None;
                       return_annotation = None;
@@ -305,7 +312,8 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
                     };
                   body = [];
                 }
-              |> Node.create_with_default_location ]
+              |> Node.create_with_default_location;
+            ]
           in
           { definition with body }
       | _ -> definition

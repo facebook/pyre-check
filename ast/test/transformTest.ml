@@ -67,57 +67,73 @@ let test_transform _ =
     [+Statement.Expression (+Integer 2); +Statement.Expression (+Integer 3)]
     0;
   assert_modifying_source
-    [ +Statement.If
+    [
+      +Statement.If
          {
            If.test = +Integer 1;
            body =
-             [ +Statement.If
+             [
+               +Statement.If
                   {
                     If.test = +Integer 2;
                     body = [+Statement.Expression (+Integer 3)];
                     orelse = [+Statement.Expression (+Integer 4)];
-                  } ];
+                  };
+             ];
            orelse = [+Statement.Expression (+Integer 5)];
-         } ]
-    [ +Statement.If
+         };
+    ]
+    [
+      +Statement.If
          {
            If.test = +Integer 2;
            body =
-             [ +Statement.If
+             [
+               +Statement.If
                   {
                     If.test = +Integer 3;
                     body = [+Statement.Expression (+Integer 4)];
                     orelse = [+Statement.Expression (+Integer 5)];
-                  } ];
+                  };
+             ];
            orelse = [+Statement.Expression (+Integer 6)];
-         } ]
+         };
+    ]
     0;
   assert_modifying_source
     ~shallow:true
-    [ +Statement.If
+    [
+      +Statement.If
          {
            If.test = +Integer 1;
            body =
-             [ +Statement.If
+             [
+               +Statement.If
                   {
                     If.test = +Integer 2;
                     body = [+Statement.Expression (+Integer 3)];
                     orelse = [+Statement.Expression (+Integer 4)];
-                  } ];
+                  };
+             ];
            orelse = [+Statement.Expression (+Integer 5)];
-         } ]
-    [ +Statement.If
+         };
+    ]
+    [
+      +Statement.If
          {
            If.test = +Integer 1;
            body =
-             [ +Statement.If
+             [
+               +Statement.If
                   {
                     If.test = +Integer 2;
                     body = [+Statement.Expression (+Integer 3)];
                     orelse = [+Statement.Expression (+Integer 4)];
-                  } ];
+                  };
+             ];
            orelse = [+Statement.Expression (+Integer 5)];
-         } ]
+         };
+    ]
     0
 
 
@@ -161,25 +177,32 @@ let assert_expanded_source ?(shallow = false) statements expected_statements =
 let test_expansion _ =
   assert_expanded_source
     [+Statement.Expression (+Float 1.0); +Statement.Expression (+Float 2.0)]
-    [ +Statement.Expression (+Float 1.0);
+    [
+      +Statement.Expression (+Float 1.0);
       +Statement.Expression (+Float 1.0);
       +Statement.Expression (+Float 2.0);
-      +Statement.Expression (+Float 2.0) ];
+      +Statement.Expression (+Float 2.0);
+    ];
   assert_expanded_source
     ~shallow:true
     [+Statement.Expression (+Float 1.0); +Statement.Expression (+Float 2.0)]
-    [ +Statement.Expression (+Float 1.0);
+    [
+      +Statement.Expression (+Float 1.0);
       +Statement.Expression (+Float 1.0);
       +Statement.Expression (+Float 2.0);
-      +Statement.Expression (+Float 2.0) ];
+      +Statement.Expression (+Float 2.0);
+    ];
   assert_expanded_source
-    [ +Statement.If
+    [
+      +Statement.If
          {
            If.test = +Integer 1;
            body = [+Statement.Expression (+Integer 3)];
            orelse = [+Statement.Expression (+Integer 5)];
-         } ]
-    [ +Statement.If
+         };
+    ]
+    [
+      +Statement.If
          {
            If.test = +Integer 1;
            body = [+Statement.Expression (+Integer 3); +Statement.Expression (+Integer 3)];
@@ -190,16 +213,20 @@ let test_expansion _ =
            If.test = +Integer 1;
            body = [+Statement.Expression (+Integer 3); +Statement.Expression (+Integer 3)];
            orelse = [+Statement.Expression (+Integer 5); +Statement.Expression (+Integer 5)];
-         } ];
+         };
+    ];
   assert_expanded_source
     ~shallow:true
-    [ +Statement.If
+    [
+      +Statement.If
          {
            If.test = +Integer 1;
            body = [+Statement.Expression (+Integer 3)];
            orelse = [+Statement.Expression (+Integer 5)];
-         } ]
-    [ +Statement.If
+         };
+    ]
+    [
+      +Statement.If
          {
            If.test = +Integer 1;
            body = [+Statement.Expression (+Integer 3)];
@@ -210,7 +237,8 @@ let test_expansion _ =
            If.test = +Integer 1;
            body = [+Statement.Expression (+Integer 3)];
            orelse = [+Statement.Expression (+Integer 5)];
-         } ]
+         };
+    ]
 
 
 let test_expansion_with_stop _ =
@@ -431,9 +459,11 @@ let test_statement_transformer _ =
 
 let () =
   "transform"
-  >::: [ "transform" >:: test_transform;
+  >::: [
+         "transform" >:: test_transform;
          "expansion" >:: test_expansion;
          "expansion_with_stop" >:: test_expansion_with_stop;
          "statement_double_counter" >:: test_double_count;
-         "statement_transformer" >:: test_statement_transformer ]
+         "statement_transformer" >:: test_statement_transformer;
+       ]
   |> Test.run

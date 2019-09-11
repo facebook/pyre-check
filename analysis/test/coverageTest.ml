@@ -15,15 +15,19 @@ let test_coverage context =
     Coverage.coverage ~configuration sources |> assert_equal expected
   in
   assert_coverage
-    [ "a.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
+    [
+      "a.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
       "b.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
-      "c.py", "#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n" ]
+      "c.py", "#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n";
+    ]
     { Coverage.strict_coverage = 2; declare_coverage = 1; default_coverage = 0; source_files = 3 };
   assert_coverage
     ~external_sources:
-      [ "external_a.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
+      [
+        "external_a.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
         "external_b.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
-        "external_c.py", "#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n" ]
+        "external_c.py", "#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n";
+      ]
     ["a.py", "#pyre-strict\ndef foo()->int:\n    return 1\n"]
     { Coverage.strict_coverage = 1; declare_coverage = 0; default_coverage = 0; source_files = 1 }
 

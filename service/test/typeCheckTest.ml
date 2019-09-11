@@ -88,9 +88,11 @@ let type_check_sources_list_test context =
       |}
       |> trim_extra_indentation
     in
-    [ File.create
+    [
+      File.create
         ~content:(default_content ^ "\n" ^ (content |> trim_extra_indentation))
-        (Path.create_relative ~root ~relative:"test.py") ]
+        (Path.create_relative ~root ~relative:"test.py");
+    ]
   in
   let check _ =
     let root = Path.current_working_directory () in
@@ -131,8 +133,10 @@ let test_filter_directories context =
       [Path.create_relative ~root ~relative:"check"; Path.create_relative ~root ~relative:"ignore"]
     ~root
     ~files
-    [ "Incompatible return type [7]: Expected `C` but got `D`.";
-      "Incompatible return type [7]: Expected `C` but got `D`." ];
+    [
+      "Incompatible return type [7]: Expected `C` but got `D`.";
+      "Incompatible return type [7]: Expected `C` but got `D`.";
+    ];
 
   let root = Path.create_absolute (bracket_tmpdir context) in
   let check_path = Path.create_relative ~root ~relative:"check/a.py" in
@@ -156,8 +160,10 @@ let test_filter_directories context =
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
     ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/search"]
     ~files:
-      [ File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
-        File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py") ]
+      [
+        File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
+        File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py");
+      ]
     ["Incompatible return type [7]: Expected `C` but got `D`."];
   let root = Path.create_absolute (bracket_tmpdir context) in
   assert_errors
@@ -170,6 +176,8 @@ let test_filter_directories context =
 
 let () =
   "typeChecker"
-  >::: [ "type_check_sources_list" >:: type_check_sources_list_test;
-         "filter_directories" >:: test_filter_directories ]
+  >::: [
+         "type_check_sources_list" >:: type_check_sources_list_test;
+         "filter_directories" >:: test_filter_directories;
+       ]
   |> Test.run

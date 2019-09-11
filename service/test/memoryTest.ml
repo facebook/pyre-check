@@ -293,47 +293,60 @@ let test_update_dependency_table _ =
     [{ key = "A"; old_value = Some "AVal"; new_value = Some "AVal"; dependencies = ["dep_a"] }]
     ~expected:[];
   UpdateDependencyTest.assert_dependencies
-    [ {
+    [
+      {
         key = "A";
         old_value = Some "AVal";
         new_value = Some "NewAVal";
         dependencies = ["dep_a"; "dep_b"];
-      } ]
+      };
+    ]
     ~expected:["dep_a"; "dep_b"];
 
   UpdateDependencyTest.assert_dependencies
-    [ { key = "A"; old_value = None; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
-      { key = "B"; old_value = None; new_value = Some "NewBVal"; dependencies = ["dep_b"] } ]
+    [
+      { key = "A"; old_value = None; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
+      { key = "B"; old_value = None; new_value = Some "NewBVal"; dependencies = ["dep_b"] };
+    ]
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
-    [ { key = "A"; old_value = Some "AVal"; new_value = None; dependencies = ["dep_a"] };
-      { key = "B"; old_value = Some "BVal"; new_value = None; dependencies = ["dep_b"] } ]
+    [
+      { key = "A"; old_value = Some "AVal"; new_value = None; dependencies = ["dep_a"] };
+      { key = "B"; old_value = Some "BVal"; new_value = None; dependencies = ["dep_b"] };
+    ]
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
-    [ { key = "A"; old_value = None; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
-      { key = "B"; old_value = Some "BVal"; new_value = None; dependencies = ["dep_b"] } ]
+    [
+      { key = "A"; old_value = None; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
+      { key = "B"; old_value = Some "BVal"; new_value = None; dependencies = ["dep_b"] };
+    ]
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
-    [ {
+    [
+      {
         key = "A1";
         old_value = Some "A1Val";
         new_value = Some "NewA1Val";
         dependencies = ["dep_a"];
       };
-      { key = "A2"; old_value = Some "A2Val"; new_value = Some "A2Val"; dependencies = ["dep_a"] }
+      { key = "A2"; old_value = Some "A2Val"; new_value = Some "A2Val"; dependencies = ["dep_a"] };
     ]
     ~expected:["dep_a"];
   UpdateDependencyTest.assert_dependencies
-    [ { key = "A"; old_value = Some "AVal"; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
-      { key = "B"; old_value = Some "BVal"; new_value = Some "NewBVal"; dependencies = ["dep_b"] }
+    [
+      { key = "A"; old_value = Some "AVal"; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
+      { key = "B"; old_value = Some "BVal"; new_value = Some "NewBVal"; dependencies = ["dep_b"] };
     ]
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
-    [ { key = "A"; old_value = Some "AVal"; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
-      { key = "B"; old_value = Some "BVal"; new_value = Some "BVal"; dependencies = ["dep_b"] } ]
+    [
+      { key = "A"; old_value = Some "AVal"; new_value = Some "NewAVal"; dependencies = ["dep_a"] };
+      { key = "B"; old_value = Some "BVal"; new_value = Some "BVal"; dependencies = ["dep_b"] };
+    ]
     ~expected:["dep_a"];
   UpdateDependencyTest.assert_dependencies
-    [ {
+    [
+      {
         key = "A";
         old_value = Some "AVal";
         new_value = Some "AVal";
@@ -344,11 +357,13 @@ let test_update_dependency_table _ =
         old_value = Some "BVal";
         new_value = Some "NewBVal";
         dependencies = ["dep_b"; "dep_c"];
-      } ]
+      };
+    ]
     ~expected:["dep_b"; "dep_c"];
 
   UpdateDependencyTest.assert_dependencies
-    [ {
+    [
+      {
         key = "A";
         old_value = Some "AVal";
         new_value = Some "AVal";
@@ -365,10 +380,12 @@ let test_update_dependency_table _ =
         old_value = Some "CVal";
         new_value = Some "CVal";
         dependencies = ["dep_a_c"; "dep_b_c"];
-      } ]
+      };
+    ]
     ~expected:[];
   UpdateDependencyTest.assert_dependencies
-    [ {
+    [
+      {
         key = "A";
         old_value = Some "AVal";
         new_value = Some "NewAVal";
@@ -385,10 +402,12 @@ let test_update_dependency_table _ =
         old_value = Some "CVal";
         new_value = Some "CVal";
         dependencies = ["dep_a_c"; "dep_b_c"];
-      } ]
+      };
+    ]
     ~expected:["dep_a_b"; "dep_a_c"];
   UpdateDependencyTest.assert_dependencies
-    [ {
+    [
+      {
         key = "A";
         old_value = Some "AVal";
         new_value = Some "NewAVal";
@@ -405,11 +424,13 @@ let test_update_dependency_table _ =
         old_value = Some "CVal";
         new_value = Some "CVal";
         dependencies = ["dep_a_c"; "dep_b_c"];
-      } ]
+      };
+    ]
     ~expected:["dep_a_b"; "dep_a_c"; "dep_b_c"];
 
   UpdateDependencyTest.assert_dependencies
-    [ {
+    [
+      {
         key = "A";
         old_value = Some "AVal";
         new_value = Some "NewAVal";
@@ -426,18 +447,21 @@ let test_update_dependency_table _ =
         old_value = Some "CVal";
         new_value = Some "NewCVal";
         dependencies = ["dep_a_c"; "dep_b_c"];
-      } ]
+      };
+    ]
     ~expected:["dep_a_b"; "dep_a_c"; "dep_b_c"];
   ()
 
 
 let () =
   "memory"
-  >::: [ "little_endian_representation" >:: test_little_endian_representation;
+  >::: [
+         "little_endian_representation" >:: test_little_endian_representation;
          "decodable" >:: test_decodable;
          "serialize_key" >:: test_serialize_key;
          "hash_of_key" >:: test_hash_of_key;
          "test_reset" >:: test_reset;
          "dependencies" >:: test_dependency_table;
-         "update_dependencies" >:: test_update_dependency_table ]
+         "update_dependencies" >:: test_update_dependency_table;
+       ]
   |> Test.run

@@ -79,9 +79,11 @@ let run_check
       ~name:"check"
       ~timer
       ~integers:
-        [ "gc_minor_collections", minor_collections;
+        [
+          "gc_minor_collections", minor_collections;
           "gc_major_collections", major_collections;
-          "gc_compactions", compactions ]
+          "gc_compactions", compactions;
+        ]
       ~normals:["request kind", "FullCheck"]
       ();
     if debug then
@@ -96,11 +98,13 @@ let run_check
     in
     Yojson.Safe.to_string
       (`Assoc
-        [ ( "errors",
+        [
+          ( "errors",
             `List
               (List.map
                  ~f:(fun error -> Error.Instantiated.to_json ~show_error_traces error)
-                 errors) ) ])
+                 errors) );
+        ])
     |> Log.print "%s")
   |> Scheduler.run_process ~configuration
 

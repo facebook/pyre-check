@@ -121,8 +121,10 @@ let test_check_global_refinement context =
           reveal_type(MY_GLOBAL)
     |}
     (* TODO(T47870649): Refinement should not work. *)
-    [ "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Optional[int]` (inferred: \
-       `int`)." ];
+    [
+      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Optional[int]` (inferred: \
+       `int`).";
+    ];
 
   assert_type_errors
     {|
@@ -135,8 +137,10 @@ let test_check_global_refinement context =
           reveal_type(x)
     |}
     (* TODO(T47870649): Refinement should not work. *)
-    [ "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: \
-       `typing_extensions.Literal[1]`)." ]
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`).";
+    ]
 
 
 let test_check_local_refinement context =
@@ -218,8 +222,10 @@ let test_check_isinstance context =
 
 let () =
   "assert_is_not_none"
-  >::: [ "check_assert_is_none" >:: test_assert_is_none;
+  >::: [
+         "check_assert_is_none" >:: test_assert_is_none;
          "check_global_refinement" >:: test_check_global_refinement;
          "check_local_refinement" >:: test_check_local_refinement;
-         "check_isinstance" >:: test_check_isinstance ]
+         "check_isinstance" >:: test_check_isinstance;
+       ]
   |> Test.run

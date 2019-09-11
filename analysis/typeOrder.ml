@@ -773,7 +773,9 @@ module OrderImplementation = struct
               List.fold ~init:constraints ~f:solve_pair pairs
             in
             let middle, middle_bound = Type.OrderedTypes.Concatenation.middle paired in
-            concrete_vs_concretes ~pairs:(Type.OrderedTypes.Concatenation.head paired) [constraints]
+            concrete_vs_concretes
+              ~pairs:(Type.OrderedTypes.Concatenation.head paired)
+              [constraints]
             |> middle_vs_concrete ~concrete:middle_bound ~middle
             |> concrete_vs_concretes ~pairs:(Type.OrderedTypes.Concatenation.tail paired)
           in
@@ -1460,7 +1462,8 @@ module OrderImplementation = struct
                 match candidate with
                 | Type.Callable _ as callable ->
                     let attributes =
-                      [ Ast.Node.create_with_default_location
+                      [
+                        Ast.Node.create_with_default_location
                           {
                             AnnotatedAttribute.annotation = Annotation.create callable;
                             async = false;
@@ -1473,7 +1476,8 @@ module OrderImplementation = struct
                             parent = callable;
                             static = false;
                             value = Ast.Node.create_with_default_location Expression.Ellipsis;
-                          } ]
+                          };
+                      ]
                       |> Option.some
                     in
                     attributes, []

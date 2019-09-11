@@ -141,10 +141,12 @@ module TraceInfo = struct
           let port_json = AccessPath.create port path |> AccessPath.to_json in
           let call_json =
             `Assoc
-              [ "position", location_json;
+              [
+                "position", location_json;
                 "resolves_to", `List callee_json;
                 "port", port_json;
-                "length", `Int trace_length ]
+                "length", `Int trace_length;
+              ]
           in
           Some ("call", call_json)
         else
@@ -223,8 +225,10 @@ module FlowDetails = struct
 
   let initial =
     product
-      [ Element (Slots.TraceInfo, TraceInfoSet.singleton TraceInfo.Declaration);
-        Element (Slots.SimpleFeature, Features.SimpleSet.empty) ]
+      [
+        Element (Slots.TraceInfo, TraceInfoSet.singleton TraceInfo.Declaration);
+        Element (Slots.SimpleFeature, Features.SimpleSet.empty);
+      ]
 
 
   let trace_info = ProductSlot (Slots.TraceInfo, TraceInfoSet.Element)
@@ -566,10 +570,12 @@ module BackwardState = MakeTaintEnvironment (BackwardTaint) ()
 (* Special sink as it needs the return access path *)
 let local_return_taint =
   BackwardTaint.create
-    [ Part (BackwardTaint.leaf, Sinks.LocalReturn);
+    [
+      Part (BackwardTaint.leaf, Sinks.LocalReturn);
       Part (BackwardTaint.trace_info, TraceInfo.Declaration);
       Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath []);
-      Part (BackwardTaint.simple_feature_set, []) ]
+      Part (BackwardTaint.simple_feature_set, []);
+    ]
 
 
 let add_format_string_feature set =

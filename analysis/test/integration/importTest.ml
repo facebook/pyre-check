@@ -35,16 +35,20 @@ let test_check_imports context =
     {|
       a = durp.x
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
+    [
+      "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
       "Undefined name [18]: Global name `durp` is not defined, or there is at least one control \
-       flow path that doesn't define `durp`." ];
+       flow path that doesn't define `durp`.";
+    ];
   assert_type_errors
     {|
       import durp
       a = durp.x
     |}
-    [ "Undefined import [21]: Could not find a module corresponding to import `durp`.";
-      "Missing global annotation [5]: Globally accessible variable `a` has no type specified." ];
+    [
+      "Undefined import [21]: Could not find a module corresponding to import `durp`.";
+      "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
+    ];
   assert_type_errors
     {|
       from typing import Optional

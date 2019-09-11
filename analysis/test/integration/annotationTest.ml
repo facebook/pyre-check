@@ -15,8 +15,10 @@ let test_check_undefined_type context =
       def foo(x: Derp) -> Herp:
         pass
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined." ];
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
 
   (* Don't crash when returning a bad type. *)
   assert_default_type_errors
@@ -37,8 +39,10 @@ let test_check_undefined_type context =
       def foo(x: Derp, y: Herp) -> None:
         pass
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined." ];
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
   assert_default_type_errors
     {|
       def foo(x: int) -> Herp:
@@ -52,8 +56,10 @@ let test_check_undefined_type context =
       def foo(x: typing.Union[Derp, Herp]) -> typing.List[Herp]:
         pass
     |}
-    [ "Undefined type [11]: Type `Herp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined." ];
+    [
+      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
   assert_default_type_errors
     {|
       def foo(x: Derp[int]) -> None:
@@ -71,8 +77,10 @@ let test_check_undefined_type context =
       def foo(x: typing.Optional[Derp[int]]) -> typing.List[Herp]:
         pass
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined." ];
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
   assert_default_type_errors
     {|
       def foo(x: Optional) -> None:
@@ -106,8 +114,10 @@ let test_check_undefined_type context =
         y: undefined = 1
         return
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `undefined` is not defined." ];
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `undefined` is not defined.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -128,11 +138,13 @@ let test_check_undefined_type context =
           async def undefined(self, x: Herp) -> Herp:
               return x
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Derp` is not defined.";
       "Incompatible return type [7]: Expected `int` but got `None`.";
       "Undefined type [11]: Type `Herp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined." ];
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
   assert_strict_type_errors
     {|
       def foo() -> typing.Optional["Herp"]:
@@ -147,9 +159,11 @@ let test_check_undefined_type context =
       def foo() -> Foo["Herp"]:
         return 1
     |}
-    [ "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `other` has no type specified.";
-      "Undefined type [11]: Type `Herp` is not defined." ];
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
 
   (* Attributes *)
   assert_type_errors
@@ -161,8 +175,10 @@ let test_check_undefined_type context =
         def __init__(self) -> None:
           self.z: Herp = 1
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined." ];
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
 
   (* Class bases *)
   assert_type_errors
@@ -175,26 +191,32 @@ let test_check_undefined_type context =
       _T = typing.TypeVar('_T')
       class Foo(Generic[_T]): ...
     |}
-    [ "Invalid type variable [34]: The current class isn't generic with respect to the type \
+    [
+      "Invalid type variable [34]: The current class isn't generic with respect to the type \
        variable `Variable[_T]`.";
-      "Undefined type [11]: Type `Generic` is not defined." ];
+      "Undefined type [11]: Type `Generic` is not defined.";
+    ];
   assert_type_errors
     {|
       class AA: ...
       class CC: ...
       class Foo(AA, BB, CC, DD): ...
     |}
-    [ "Undefined type [11]: Type `BB` is not defined.";
-      "Undefined type [11]: Type `DD` is not defined." ];
+    [
+      "Undefined type [11]: Type `BB` is not defined.";
+      "Undefined type [11]: Type `DD` is not defined.";
+    ];
   assert_type_errors
     {|
       class AA: ...
       class CC(BB): ...
       class Foo(AA, BB, CC, DD): ...
     |}
-    [ "Undefined type [11]: Type `BB` is not defined.";
+    [
       "Undefined type [11]: Type `BB` is not defined.";
-      "Undefined type [11]: Type `DD` is not defined." ];
+      "Undefined type [11]: Type `BB` is not defined.";
+      "Undefined type [11]: Type `DD` is not defined.";
+    ];
 
   (* Globals *)
   assert_type_errors
@@ -203,9 +225,11 @@ let test_check_undefined_type context =
       y: typing.List[Derp] = 1
       z: Derp
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
+    [
       "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Derp` is not defined." ];
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Derp` is not defined.";
+    ];
 
   (* Assigns *)
   assert_type_errors
@@ -215,9 +239,11 @@ let test_check_undefined_type context =
         y: typing.List[Derp] = 1
         z: Derp
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
+    [
       "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Derp` is not defined." ];
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Derp` is not defined.";
+    ];
 
   (* cast, isinstance *)
   assert_type_errors
@@ -236,8 +262,10 @@ let test_check_undefined_type context =
         typing.cast(Derp, x)
         typing.cast(Herp, x)
     |}
-    [ "Prohibited any [33]: `Derp` cannot alias to `Any`.";
-      "Prohibited any [33]: `Herp` cannot alias to a type containing `Any`." ];
+    [
+      "Prohibited any [33]: `Derp` cannot alias to `Any`.";
+      "Prohibited any [33]: `Herp` cannot alias to a type containing `Any`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -247,9 +275,11 @@ let test_check_undefined_type context =
         return
 
     |}
-    [ "Undefined name [18]: Global name `Derp` is not defined, or there is at least one control \
+    [
+      "Undefined name [18]: Global name `Derp` is not defined, or there is at least one control \
        flow path that doesn't define `Derp`.";
-      "Incompatible return type [7]: Expected `None` but got `int`." ]
+      "Incompatible return type [7]: Expected `None` but got `int`.";
+    ]
 
 
 let test_check_invalid_type context =
@@ -294,9 +324,11 @@ let test_check_invalid_type context =
       MyType: typing.Any
       x: MyType = 1
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `MyType` "
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyType` "
       ^ "must be specified as type other than `Any`.";
-      "Invalid type [31]: Expression `MyType` is not a valid type." ];
+      "Invalid type [31]: Expression `MyType` is not a valid type.";
+    ];
   assert_type_errors
     {|
       MyType = typing.Any
@@ -369,8 +401,10 @@ let test_check_illegal_annotation_target context =
           x.a: int = 1
           reveal_type(x.a)
     |}
-    [ "Illegal annotation target [35]: Target `x.a` cannot be annotated.";
-      "Revealed type [-1]: Revealed type for `x.a` is `str`." ];
+    [
+      "Illegal annotation target [35]: Target `x.a` cannot be annotated.";
+      "Revealed type [-1]: Revealed type for `x.a` is `str`.";
+    ];
   assert_type_errors
     {|
       class Bar: ...
@@ -387,9 +421,11 @@ let test_check_illegal_annotation_target context =
           self.a: int = 1
           x.a: int = 1
     |}
-    [ "Undefined attribute [16]: `Foo` has no attribute `a`.";
+    [
+      "Undefined attribute [16]: `Foo` has no attribute `a`.";
       "Illegal annotation target [35]: Target `x.a` cannot be annotated.";
-      "Undefined attribute [16]: `Bar` has no attribute `a`." ];
+      "Undefined attribute [16]: `Bar` has no attribute `a`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -398,8 +434,10 @@ let test_check_illegal_annotation_target context =
       Foo.a: str = "string"
       reveal_type(Foo.a)
     |}
-    [ "Illegal annotation target [35]: Target `test.Foo.a` cannot be annotated.";
-      "Revealed type [-1]: Revealed type for `test.Foo.a` is `int`." ]
+    [
+      "Illegal annotation target [35]: Target `test.Foo.a` cannot be annotated.";
+      "Revealed type [-1]: Revealed type for `test.Foo.a` is `int`.";
+    ]
 
 
 let test_check_missing_type_parameters context =
@@ -449,9 +487,11 @@ let test_check_analysis_failure context =
       def bar(x: int = foo()) -> int:
         return x
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
       "Incompatible variable type [9]: x is declared to have type `int` "
-      ^ "but is used as type `unknown`." ];
+      ^ "but is used as type `unknown`.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -461,9 +501,11 @@ let test_check_analysis_failure context =
       def bar(x: Derp) -> None:
         test = foo( **x )
     |}
-    [ "Undefined type [11]: Type `Derp` is not defined.";
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
       "Invalid argument [32]: Keyword argument `x` has type `unknown` "
-      ^ "but must be a mapping with string keys." ]
+      ^ "but must be a mapping with string keys.";
+    ]
 
 
 let test_check_immutable_annotations context =
@@ -476,10 +518,12 @@ let test_check_immutable_annotations context =
       def foobar() -> None:
           b: int = None
     |}
-    [ "Incompatible variable type [9]: a is declared to have type `int` "
+    [
+      "Incompatible variable type [9]: a is declared to have type `int` "
       ^ "but is used as type `None`.";
       "Incompatible variable type [9]: b is declared to have type `int` "
-      ^ "but is used as type `None`." ];
+      ^ "but is used as type `None`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -498,8 +542,10 @@ let test_check_immutable_annotations context =
       global constant
       constant = "hi"
     |}
-    [ "Incompatible variable type [9]: constant is declared to have type `int` but is used as "
-      ^ "type `str`." ];
+    [
+      "Incompatible variable type [9]: constant is declared to have type `int` but is used as "
+      ^ "type `str`.";
+    ];
   assert_default_type_errors
     {|
       def expects_str(x: str) -> None:
@@ -509,15 +555,19 @@ let test_check_immutable_annotations context =
         x = y
         expects_str(x)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expects_str` but got `int`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `str` for 1st anonymous parameter to call `expects_str` but got `int`.";
+    ];
   assert_type_errors
     {|
       def foo(x: str = 1) -> str:
         return x
     |}
-    [ "Incompatible variable type [9]: x is declared to have type `str` but is used as "
-      ^ "type `int`." ];
+    [
+      "Incompatible variable type [9]: x is declared to have type `str` but is used as "
+      ^ "type `int`.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -538,8 +588,10 @@ let test_check_immutable_annotations context =
       def foo(x: T = "str") -> T:
         return x
     |}
-    [ "Incompatible variable type [9]: "
-      ^ "x is declared to have type `Variable[T <: [int, float]]` but is used as type `str`." ];
+    [
+      "Incompatible variable type [9]: "
+      ^ "x is declared to have type `Variable[T <: [int, float]]` but is used as type `str`.";
+    ];
   assert_type_errors
     {|
       class B: pass
@@ -558,8 +610,10 @@ let test_check_immutable_annotations context =
       def foo(x: T = O()) -> T:
         return x
     |}
-    [ "Incompatible variable type [9]: "
-      ^ "x is declared to have type `Variable[T (bound to B)]` but is used as type `O`." ];
+    [
+      "Incompatible variable type [9]: "
+      ^ "x is declared to have type `Variable[T (bound to B)]` but is used as type `O`.";
+    ];
   assert_type_errors
     {|
       def bar() -> typing.Any:
@@ -625,8 +679,10 @@ let test_check_immutable_annotations context =
         global constant
         constant = 1
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
-      ^ "no type is specified." ];
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
+      ^ "no type is specified.";
+    ];
 
   assert_type_errors
     {|
@@ -635,10 +691,12 @@ let test_check_immutable_annotations context =
         global constant
         constant = 1
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` must be specified \
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` must be specified \
        as type other than `Any`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
-       type `Any` is specified." ];
+       type `Any` is specified.";
+    ];
   assert_type_errors
     {|
       def foo() -> int:
@@ -646,8 +704,10 @@ let test_check_immutable_annotations context =
         constant = 1
         return constant
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
-      ^ "no type is specified." ];
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
+      ^ "no type is specified.";
+    ];
   assert_type_errors
     {|
       constant: int
@@ -663,8 +723,10 @@ let test_check_immutable_annotations context =
       def foo(x: int) -> None:
         x = "hi"
     |}
-    [ "Incompatible variable type [9]: x is declared to have type `int` but is used as "
-      ^ "type `str`." ];
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as "
+      ^ "type `str`.";
+    ];
   assert_type_errors {|
       def foo(x: typing.Optional[int]) -> None:
         x = 1
@@ -682,16 +744,20 @@ let test_check_immutable_annotations context =
         y = x
         x = y
     |}
-    [ "Incompatible variable type [9]: y is declared to have type `str` but is used as "
-      ^ "type `int`." ];
+    [
+      "Incompatible variable type [9]: y is declared to have type `str` but is used as "
+      ^ "type `int`.";
+    ];
   assert_type_errors
     {|
       def foo(any: typing.Any) -> None:
         x: int = any
     |}
-    [ "Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`.";
+    [
+      "Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`.";
       "Incompatible variable type [9]: x is declared to have type `int` "
-      ^ "but is used as type `typing.Any`." ];
+      ^ "but is used as type `typing.Any`.";
+    ];
   assert_strict_type_errors
     {|
       def foo(any: typing.Any) -> None:
@@ -728,9 +794,11 @@ let test_check_immutable_annotations context =
         foo.attribute = 1
         return foo.attribute
     |}
-    [ "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
+    [
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but \
-       no type is specified." ];
+       no type is specified.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -755,10 +823,12 @@ let test_check_immutable_annotations context =
         global constant
         constant = "hi"
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
        no type is specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but \
-       no type is specified." ];
+       no type is specified.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -768,10 +838,12 @@ let test_check_immutable_annotations context =
         global constant
         constant = None
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
        no type is specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `None` but \
-       no type is specified." ];
+       no type is specified.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -781,10 +853,12 @@ let test_check_immutable_annotations context =
         global constant
         constant = 1.0
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
        no type is specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `float` \
-       but no type is specified." ];
+       but no type is specified.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -794,10 +868,12 @@ let test_check_immutable_annotations context =
         global constant
         constant = B()
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but no \
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but no \
        type is specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `B` but no \
-       type is specified." ];
+       type is specified.";
+    ];
   assert_type_errors
     {|
       class Foo():
@@ -809,11 +885,13 @@ let test_check_immutable_annotations context =
         global constant
         constant = "hi"
     |}
-    [ "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified.";
+    [
+      "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified.";
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but \
        no type is specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but "
-      ^ "no type is specified." ];
+      ^ "no type is specified.";
+    ];
   assert_type_errors
     {|
       x = 1
@@ -826,14 +904,16 @@ let test_check_immutable_annotations context =
         a = 1
         return a
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `y` has type `int` "
+    [
+      "Missing global annotation [5]: Globally accessible variable `y` has type `int` "
       ^ "but type `Any` is specified.";
       "Missing global annotation [5]: Globally accessible variable `z` must be specified "
       ^ "as type that does not contain `Any`.";
       "Missing global annotation [5]: Globally accessible variable `a` must be specified as type \
        other than `Any`.";
       "Missing global annotation [5]: Globally accessible variable `a` has type `int` but type \
-       `Any` is specified." ];
+       `Any` is specified.";
+    ];
   assert_type_errors
     {|
       class Foo():
@@ -849,8 +929,10 @@ let test_check_immutable_annotations context =
         def foo(self) -> str:
           return self.name + self.attribute + self.constant
     |}
-    [ "Incompatible return type [7]: Expected `str` but got `unknown`.";
-      "Undefined attribute [16]: `Foo` has no attribute `constant`." ];
+    [
+      "Incompatible return type [7]: Expected `str` but got `unknown`.";
+      "Undefined attribute [16]: `Foo` has no attribute `constant`.";
+    ];
   assert_type_errors
     {|
       class Foo():
@@ -871,8 +953,10 @@ let test_check_incomplete_annotations context =
       def foo() -> None:
         x: typing.Any = 1
     |}
-    [ "Prohibited any [33]: Expression `x` has type `int`; "
-      ^ "given explicit type cannot be `Any`." ];
+    [
+      "Prohibited any [33]: Expression `x` has type `int`; "
+      ^ "given explicit type cannot be `Any`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -947,18 +1031,22 @@ let test_check_refinement context =
         l: typing.List[int] = []
         l.append('a')
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
         l: typing.List[int] = None
         l.append('a')
     |}
-    [ "Incompatible variable type [9]: l is declared to have type `typing.List[int]` "
+    [
+      "Incompatible variable type [9]: l is declared to have type `typing.List[int]` "
       ^ "but is used as type `None`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`." ];
+      ^ "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`.";
+    ];
   assert_type_errors
     {|
       def foo(x: typing.Optional[int]) -> int:
@@ -1017,9 +1105,11 @@ let test_check_refinement context =
             input = not_annotated()
           return input
     |}
-    [ "Incompatible variable type [9]: input is declared to have type `typing.Optional[int]` "
+    [
+      "Incompatible variable type [9]: input is declared to have type `typing.Optional[int]` "
       ^ "but is used as type `unknown`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`." ]
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ]
 
 
 let test_check_invalid_type_variables context =
@@ -1037,23 +1127,29 @@ let test_check_invalid_type_variables context =
       def f() -> T:
         return T
     |}
-    [ "Invalid type variable [34]: The type variable `Variable[T]` isn't present in the \
-       function's parameters." ];
+    [
+      "Invalid type variable [34]: The type variable `Variable[T]` isn't present in the \
+       function's parameters.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar("T")
       class C:
         x: T = 1
     |}
-    [ "Invalid type variable [34]: The current class isn't generic with respect to the type \
-       variable `Variable[T]`." ];
+    [
+      "Invalid type variable [34]: The current class isn't generic with respect to the type \
+       variable `Variable[T]`.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar("T")
       x: T = ...
     |}
-    [ "Invalid type variable [34]: The type variable `Variable[T]` can only be used to annotate \
-       generic classes or functions." ];
+    [
+      "Invalid type variable [34]: The type variable `Variable[T]` can only be used to annotate \
+       generic classes or functions.";
+    ];
 
   (* We don't error for inferred generics. *)
   assert_type_errors
@@ -1087,8 +1183,10 @@ let test_check_invalid_type_variables context =
         def foo(self, x: T) -> T:
           return x
     |}
-    [ "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant "
-      ^ "and cannot be a parameter type." ];
+    [
+      "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant "
+      ^ "and cannot be a parameter type.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar("T", covariant=True)
@@ -1112,8 +1210,10 @@ let test_check_invalid_type_variables context =
         def foo(self, x: T) -> T:
           return x
     |}
-    [ "Invalid type variance [46]: The type variable `Variable[T](contravariant)` is "
-      ^ "contravariant and cannot be a return type." ];
+    [
+      "Invalid type variance [46]: The type variable `Variable[T](contravariant)` is "
+      ^ "contravariant and cannot be a return type.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar("T", contravariant=True)
@@ -1128,8 +1228,10 @@ let test_check_invalid_type_variables context =
       def foo(x: T) -> T:
         return x
     |}
-    [ "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant "
-      ^ "and cannot be a parameter type." ]
+    [
+      "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant "
+      ^ "and cannot be a parameter type.";
+    ]
 
 
 let test_check_aliases context =
@@ -1156,11 +1258,13 @@ let test_check_aliases context =
         return a.x
       foo(FOO())
     |}
-    [ "Redefined class [50]: Class `FOO` conflicts with an imported class.";
+    [
+      "Redefined class [50]: Class `FOO` conflicts with an imported class.";
       "Illegal annotation target [35]: Target `test.FOO.x` cannot be annotated.";
       "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `BAR` has no attribute `x`." ];
+      "Undefined attribute [16]: `BAR` has no attribute `x`.";
+    ];
 
   (* Locals are not aliases *)
   assert_type_errors
@@ -1184,9 +1288,11 @@ let test_check_aliases context =
       import typing
       MyAlias = typing.Union[int, UndefinedName]
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified.";
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified.";
       "Undefined name [18]: Global name `UndefinedName` is not defined, or there is at least one \
-       control flow path that doesn't define `UndefinedName`." ];
+       control flow path that doesn't define `UndefinedName`.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -1209,7 +1315,9 @@ let test_check_aliases context =
       import typing
       MyAlias = typing.Union[int, 3]
     |}
-    ["Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified."];
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyAlias` has no type specified.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -1260,8 +1368,10 @@ let test_check_safe_cast context =
       def foo(input: float) -> int:
         return pyre_extensions.safe_cast(int, input)
     |}
-    [ "Unsafe cast [49]: `safe_cast` is only permitted to loosen the type of `input`. `float` is \
-       not a super type of `input`." ];
+    [
+      "Unsafe cast [49]: `safe_cast` is only permitted to loosen the type of `input`. `float` is \
+       not a super type of `input`.";
+    ];
   assert_type_errors
     ~context
     {|
@@ -1273,7 +1383,8 @@ let test_check_safe_cast context =
 
 let () =
   "annotation"
-  >::: [ "check_undefined_type" >:: test_check_undefined_type;
+  >::: [
+         "check_undefined_type" >:: test_check_undefined_type;
          "check_invalid_type" >:: test_check_invalid_type;
          "check_illegal_annotation_target" >:: test_check_illegal_annotation_target;
          "check_invalid_type_variables" >:: test_check_invalid_type_variables;
@@ -1285,5 +1396,6 @@ let () =
          "check_aliases" >:: test_check_aliases;
          "check_final_type" >:: test_final_type;
          "check_invalid_inheritance" >:: test_check_invalid_inheritance;
-         "check_safe_cast" >:: test_check_safe_cast ]
+         "check_safe_cast" >:: test_check_safe_cast;
+       ]
   |> Test.run

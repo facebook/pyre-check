@@ -95,15 +95,18 @@ let default =
     sources = [];
     sinks = [];
     features =
-      [ "copy";
+      [
+        "copy";
         "default";
         "object";
         "special_source";
         "special_sink";
         "string_concat_lhs";
-        "string_concat_rhs" ];
+        "string_concat_rhs";
+      ];
     rules =
-      [ {
+      [
+        {
           sources = [Sources.UserControlled];
           sinks = [Sinks.RemoteCodeExecution];
           code = 5001;
@@ -158,7 +161,8 @@ let default =
           code = 5010;
           name = "User data to getattr.";
           message_format = "Attacker may control at least one argument to getattr(,).";
-        } ];
+        };
+      ];
   }
 
 

@@ -1136,11 +1136,13 @@ let rec process
                                      title = "Fix it";
                                      command = "add_pyre_annotation_" ^ server_uuid;
                                      arguments =
-                                       [ {
+                                       [
+                                         {
                                            range = AnnotationEdit.range edit;
                                            newText = AnnotationEdit.new_text edit;
                                            uri;
-                                         } ];
+                                         };
+                                       ];
                                    };
                                title = AnnotationEdit.title edit;
                                kind = Some "refactor.rewrite";

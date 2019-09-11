@@ -727,7 +727,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     else
       builtin_stubs
   in
-  [ "sys.py", "";
+  [
+    "sys.py", "";
     ( "hashlib.pyi",
       {|
         _DataType = typing.Union[int, str]
@@ -1275,7 +1276,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     );
     "placeholder_stub.pyi", {|
         # pyre-placeholder-stub
-        |} ]
+        |};
+  ]
 
 
 let mock_signature =

@@ -103,8 +103,10 @@ let test_empty _ =
 
 let () =
   "test_configuration"
-  >::: [ "test_simple" >:: test_simple;
+  >::: [
+         "test_simple" >:: test_simple;
          "test_invalid_source" >:: test_invalid_source;
          "test_invalid_sink" >:: test_invalid_sink;
-         "test_empty" >:: test_empty ]
+         "test_empty" >:: test_empty;
+       ]
   |> Test.run

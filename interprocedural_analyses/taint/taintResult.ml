@@ -209,10 +209,12 @@ module ResultArgument = struct
     let callable_name = Interprocedural.Callable.external_target_name callable in
     let model_json =
       `Assoc
-        [ "callable", `String callable_name;
+        [
+          "callable", `String callable_name;
           "sources", Forward.to_json ~environment model.forward;
           "sinks", Backward.to_json_sinks ~environment model.backward;
-          "tito", Backward.to_json_tito ~environment model.backward ]
+          "tito", Backward.to_json_tito ~environment model.backward;
+        ]
     in
     `Assoc ["kind", `String "model"; "data", model_json]
 

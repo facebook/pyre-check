@@ -52,10 +52,12 @@ let test_check_return context =
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
-    [ "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
+    [
+      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
        `typing.Dict` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`." ];
+      ^ "that does not contain `Any`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -64,12 +66,14 @@ let test_check_return context =
       def foo() -> typing.Dict[typing.Any]:
         return f()
     |}
-    [ "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
+    [
+      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
        `typing.Dict` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type that does "
       ^ "not contain `Any`.";
       "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, received 1, \
-       use `typing.Dict` to avoid runtime subscripting errors." ];
+       use `typing.Dict` to avoid runtime subscripting errors.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -77,10 +81,12 @@ let test_check_return context =
       def foo() -> typing.Type[typing.Any]:
         return x
     |}
-    [ "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
+    [
+      "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
        `typing.Type` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`." ];
+      ^ "that does not contain `Any`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -90,8 +96,10 @@ let test_check_return context =
     [];
   assert_type_errors
     "def foo() -> str: return 1.0\ndef bar() -> int: return ''"
-    [ "Incompatible return type [7]: Expected `str` but got `float`.";
-      "Incompatible return type [7]: Expected `int` but got `str`." ];
+    [
+      "Incompatible return type [7]: Expected `str` but got `float`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
+    ];
   assert_type_errors "class A: pass\ndef foo() -> A: return A()" [];
   assert_type_errors
     "class A: pass\ndef foo() -> A: return 1"
@@ -128,8 +136,10 @@ let test_check_return context =
         else:
           return 2
     |}
-    [ "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible return type [7]: Expected `str` but got `int`." ];
+    [
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -207,8 +217,10 @@ let test_check_return context =
       def bar(x: typing.Union[int, typing.Any, None]) -> int:
           return x
     |}
-    [ "Incompatible return type [7]: Expected `int` but got \
-       `typing.Optional[typing.Union[typing.Any, int]]`." ];
+    [
+      "Incompatible return type [7]: Expected `int` but got \
+       `typing.Optional[typing.Union[typing.Any, int]]`.";
+    ];
   ()
 
 
@@ -221,9 +233,11 @@ let test_check_return_control_flow context =
         if unknown_condition:
           return 1
     |}
-    [ "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
+    [
+      "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
        one control flow path that doesn't define `unknown_condition`.";
-      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`." ];
+      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
+    ];
   assert_type_errors
     {|
       def foo() -> int:
@@ -232,9 +246,11 @@ let test_check_return_control_flow context =
         else:
           x = 1
     |}
-    [ "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
+    [
+      "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
        one control flow path that doesn't define `unknown_condition`.";
-      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`." ];
+      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -242,9 +258,10 @@ let test_check_return_control_flow context =
       def foo() -> list:
         return x
     |}
-    [ "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
+    [
+      "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
        `typing.List` to avoid runtime subscripting errors.";
-      "Incompatible return type [7]: Expected `typing.List[typing.Any]` but got `typing.List[int]`."
+      "Incompatible return type [7]: Expected `typing.List[typing.Any]` but got `typing.List[int]`.";
     ];
   assert_type_errors
     {|
@@ -253,10 +270,12 @@ let test_check_return_control_flow context =
       def foo() -> list:
         return x
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `x` must be specified "
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` must be specified "
       ^ "as type that does not contain `Any`.";
       "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
-       `typing.List` to avoid runtime subscripting errors." ];
+       `typing.List` to avoid runtime subscripting errors.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -428,10 +447,12 @@ let test_check_return_control_flow context =
       def f(meta: type) -> typing.Type[int]:
         return meta
     |}
-    [ "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
+    [
+      "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
        `typing.Type` to avoid runtime subscripting errors.";
       "Incompatible return type [7]: Expected `typing.Type[int]` but got "
-      ^ "`typing.Type[typing.Any]`." ];
+      ^ "`typing.Type[typing.Any]`.";
+    ];
   assert_type_errors
     {|
       class other(): pass
@@ -452,8 +473,10 @@ let test_check_return_control_flow context =
         }
         return y
     |}
-    [ "Missing parameter annotation [2]: Parameter `x` has no type specified.";
-      "Incompatible return type [7]: Expected `None` but got `typing.Dict[str, typing.Any]`." ]
+    [
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+      "Incompatible return type [7]: Expected `None` but got `typing.Dict[str, typing.Any]`.";
+    ]
 
 
 let test_check_collections context =
@@ -556,9 +579,11 @@ let test_check_noreturn context =
 
 let () =
   "return"
-  >::: [ "check_return" >:: test_check_return;
+  >::: [
+         "check_return" >:: test_check_return;
          "check_return_control_flow" >:: test_check_return_control_flow;
          "check_collections" >:: test_check_collections;
          "check_meta_annotations" >:: test_check_meta_annotations;
-         "check_noreturn" >:: test_check_noreturn ]
+         "check_noreturn" >:: test_check_noreturn;
+       ]
   |> Test.run

@@ -26,24 +26,29 @@ let run_query serialized local_root () =
           | TypeQueryResponse response -> response_to_yojson response
           | TypeCheckResponse errors ->
               `Assoc
-                [ ( "response",
+                [
+                  ( "response",
                     `List
                       (List.map
                          ~f:(Analysis.Error.Instantiated.to_json ~show_error_traces:false)
-                         errors) ) ]
+                         errors) );
+                ]
           | response ->
               `Assoc
-                [ ( "response",
+                [
+                  ( "response",
                     `String
                       (Format.sprintf
                          "Unexpected response %s from server"
-                         (Server.Protocol.show_response response)) ) ]
+                         (Server.Protocol.show_response response)) );
+                ]
         with
         | Query.InvalidQuery reason ->
             Log.info "%s" (Query.help ());
             `Assoc
-              [ ( "error",
-                  `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized reason) )
+              [
+                ( "error",
+                  `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized reason) );
               ]
         | PyreParser.Parser.Error error ->
             Log.info "%s" (Query.help ());
@@ -53,8 +58,9 @@ let run_query serialized local_root () =
               |> String.concat ~sep:"\n"
             in
             `Assoc
-              [ ( "error",
-                  `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized error) )
+              [
+                ( "error",
+                  `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized error) );
               ]
       in
       Yojson.Safe.to_string response |> Log.print "%s")

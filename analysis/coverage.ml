@@ -59,12 +59,14 @@ let log { full; partial; untyped; ignore; crashes } ~total_errors ~path =
   Statistics.coverage
     ~path
     ~coverage:
-      [ "full_type_coverage", full;
+      [
+        "full_type_coverage", full;
         "partial_type_coverage", partial;
         "no_type_coverage", untyped;
         "ignore_coverage", ignore;
         "total_errors", total_errors;
-        "crashes", crashes ]
+        "crashes", crashes;
+      ]
     ()
 
 

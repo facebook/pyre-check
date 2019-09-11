@@ -150,7 +150,8 @@ let test_get_completion_items context =
         a = A()
         a.
     |})
-    [ create_completion_item
+    [
+      create_completion_item
         ~cursor_position
         ~label:"bar() -> int"
         ~kind:Types.CompletionItems.Kind.Function
@@ -161,7 +162,8 @@ let test_get_completion_items context =
         ~label:"foo"
         ~kind:Types.CompletionItems.Kind.Variable
         ~detail:"bool"
-        ~new_text:"foo" ];
+        ~new_text:"foo";
+    ];
 
   (* Module members completion *)
   let cursor_position = { Location.line = 4; column = 7 } in
@@ -180,7 +182,8 @@ let test_get_completion_items context =
       def bar() -> None:
         pass
     |}]
-    [ create_completion_item
+    [
+      create_completion_item
         ~cursor_position
         ~label:"Foo"
         ~kind:Types.CompletionItems.Kind.Variable
@@ -191,7 +194,8 @@ let test_get_completion_items context =
         ~label:"bar() -> None"
         ~kind:Types.CompletionItems.Kind.Function
         ~detail:"() -> None"
-        ~new_text:"bar()" ]
+        ~new_text:"bar()";
+    ]
 
 
 let test_untracked_path context =
@@ -237,8 +241,10 @@ let test_untracked_path context =
 
 let () =
   "autoComplete"
-  >::: [ "remove_dot" >:: test_remove_dot;
+  >::: [
+         "remove_dot" >:: test_remove_dot;
          "find_module_reference" >:: test_find_module_reference;
          "get_completion_items" >:: test_get_completion_items;
-         "untracked_path" >:: test_untracked_path ]
+         "untracked_path" >:: test_untracked_path;
+       ]
   |> Test.run

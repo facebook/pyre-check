@@ -614,15 +614,18 @@ let run
         Statistics.event
           ~name:"undefined type"
           ~integers:[]
-          ~normals:["handle", relative; "define", Reference.show name; "type", Type.show annotation]
+          ~normals:
+            ["handle", relative; "define", Reference.show name; "type", Type.show annotation]
           ();
         {
           SingleSourceResult.errors =
             ( if configuration.debug then
-                [ Error.create
+                [
+                  Error.create
                     ~location
                     ~kind:(Error.AnalysisFailure annotation)
-                    ~define:define_node ]
+                    ~define:define_node;
+                ]
             else
               [] );
           coverage = Coverage.create ~crashes:1 ();

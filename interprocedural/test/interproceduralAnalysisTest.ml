@@ -41,11 +41,15 @@ module ResultA = Interprocedural.Result.Make (struct
       | None -> `Null
       | Some result -> `String result
     in
-    [ `Assoc
-        [ "analysis", `String name;
+    [
+      `Assoc
+        [
+          "analysis", `String name;
           "name", `String (Callable.show callable);
           "model", `Int model;
-          "result", result_json ] ]
+          "result", result_json;
+        ];
+    ]
 
 
   let metadata () = `Assoc ["codes", `List [`String "A"]]
@@ -84,11 +88,15 @@ module ResultB = Interprocedural.Result.Make (struct
       | None -> `Null
       | Some result -> `Int result
     in
-    [ `Assoc
-        [ "analysis", `String name;
+    [
+      `Assoc
+        [
+          "analysis", `String name;
           "name", `String (Callable.show callable);
           "model", `String model;
-          "result", result_json ] ]
+          "result", result_json;
+        ];
+    ]
 
 
   let metadata () = `Assoc ["codes", `List [`String "B"]]
@@ -136,15 +144,19 @@ let test_unknown_function_analysis context =
   assert_summaries
     externalized_A
     ~expected:
-      [ {| {"analysis":"analysisA","name":"fun_a (fun)","model":-1,"result":null} |};
+      [
+        {| {"analysis":"analysisA","name":"fun_a (fun)","model":-1,"result":null} |};
         {| {"analysis":"analysisA","name":"fun_b (fun)","model":-1,"result":null} |};
-        {| {"analysis":"analysisA","name":"fun_c (fun)","model":-1,"result":null} |} ];
+        {| {"analysis":"analysisA","name":"fun_c (fun)","model":-1,"result":null} |};
+      ];
   assert_summaries
     externalized_B
     ~expected:
-      [ {| {"analysis":"analysisB","name":"fun_a (fun)","model":"obscure","result":null} |};
+      [
+        {| {"analysis":"analysisB","name":"fun_a (fun)","model":"obscure","result":null} |};
         {| {"analysis":"analysisB","name":"fun_b (fun)","model":"obscure","result":null} |};
-        {| {"analysis":"analysisB","name":"fun_c (fun)","model":"obscure","result":null} |} ]
+        {| {"analysis":"analysisB","name":"fun_c (fun)","model":"obscure","result":null} |};
+      ]
 
 
 let check_meta_data ~step ~is_partial target =

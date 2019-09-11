@@ -1063,14 +1063,16 @@ let test_filter context =
     let _, _, environment =
       ScratchProject.setup
         ~context
-        [ ( "test.py",
+        [
+          ( "test.py",
             {|
             class Foo: ...
             class MockChild(unittest.mock.Mock): ...
             class NonCallableChild(unittest.mock.NonCallableMock): ...
             class NonMockChild(Foo): ...
           |}
-          ) ]
+          );
+        ]
       |> ScratchProject.build_environment
     in
     Environment.resolution environment ()
@@ -1233,11 +1235,13 @@ let test_namespace_insensitive_set _ =
 
 let () =
   "error"
-  >::: [ "due_to_analysis_limitations" >:: test_due_to_analysis_limitations;
+  >::: [
+         "due_to_analysis_limitations" >:: test_due_to_analysis_limitations;
          "due_to_mismatch_with_any" >:: test_due_to_mismatch_with_any;
          "join" >:: test_join;
          "less_or_equal" >:: test_less_or_equal;
          "filter" >:: test_filter;
          "suppress" >:: test_suppress;
-         "namespace_insensitive_set" >:: test_namespace_insensitive_set ]
+         "namespace_insensitive_set" >:: test_namespace_insensitive_set;
+       ]
   |> Test.run

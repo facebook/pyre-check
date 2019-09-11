@@ -47,10 +47,12 @@ let test_plus_taint_in_taint_out context =
       tainted_value = tainted_parameter1 + 5
       return tainted_value
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~tito_parameters:["tainted_parameter1"]
-        "qualifier.test_plus_taint_in_taint_out" ]
+        "qualifier.test_plus_taint_in_taint_out";
+    ]
 
 
 let test_concatenate_taint_in_taint_out context =
@@ -62,10 +64,12 @@ let test_concatenate_taint_in_taint_out context =
         command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
         return command_unsafe
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~tito_parameters:["tainted_parameter1"]
-        "qualifier.test_concatenate_taint_in_taint_out" ]
+        "qualifier.test_concatenate_taint_in_taint_out";
+    ]
 
 
 let test_call_taint_in_taint_out context =
@@ -78,8 +82,9 @@ let test_call_taint_in_taint_out context =
       def test_called_tito(tainted_parameter0, parameter1):
         return test_base_tito(parameter1, tainted_parameter0)
     |}
-    [ outcome ~kind:`Function ~tito_parameters:["tainted_parameter1"] "qualifier.test_base_tito";
-      outcome ~kind:`Function ~tito_parameters:["tainted_parameter0"] "qualifier.test_called_tito"
+    [
+      outcome ~kind:`Function ~tito_parameters:["tainted_parameter1"] "qualifier.test_base_tito";
+      outcome ~kind:`Function ~tito_parameters:["tainted_parameter0"] "qualifier.test_called_tito";
     ]
 
 
@@ -92,10 +97,12 @@ let test_sink context =
         command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
         __test_sink(command_unsafe)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.Test] }]
-        "qualifier.test_sink" ]
+        "qualifier.test_sink";
+    ]
 
 
 let test_rce_sink context =
@@ -107,10 +114,12 @@ let test_rce_sink context =
         command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
         eval(command_unsafe)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.RemoteCodeExecution] }]
-        "qualifier.test_rce_sink" ]
+        "qualifier.test_rce_sink";
+    ]
 
 
 let test_rce_and_test_sink context =
@@ -125,13 +134,17 @@ let test_rce_and_test_sink context =
         else:
           eval(both)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:
-          [ { name = "test_only"; sinks = [Sinks.Test] };
+          [
+            { name = "test_only"; sinks = [Sinks.Test] };
             { name = "rce_only"; sinks = [Sinks.RemoteCodeExecution] };
-            { name = "both"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] } ]
-        "qualifier.test_rce_and_test_sink" ]
+            { name = "both"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] };
+          ]
+        "qualifier.test_rce_and_test_sink";
+    ]
 
 
 let test_tito_sink context =
@@ -148,10 +161,12 @@ let test_tito_sink context =
         tainted = test_called_tito(tainted_parameter1, parameter0)
         __test_sink(tainted)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.Test] }]
-        "qualifier.test_tito_sink" ]
+        "qualifier.test_tito_sink";
+    ]
 
 
 let test_apply_method_model_at_call_site context =
@@ -171,10 +186,12 @@ let test_apply_method_model_at_call_site context =
         f = Foo()
         return f.qux(tainted_parameter)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
-        "qualifier.taint_across_methods" ];
+        "qualifier.taint_across_methods";
+    ];
   assert_taint
     ~context
     {|
@@ -207,10 +224,12 @@ let test_apply_method_model_at_call_site context =
       def taint_across_methods(f: Foo, tainted_parameter):
         return f.qux(tainted_parameter)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
-        "qualifier.taint_across_methods" ];
+        "qualifier.taint_across_methods";
+    ];
   assert_taint
     ~context
     {|
@@ -247,10 +266,12 @@ let test_apply_method_model_at_call_site context =
 
         return f.qux(tainted_parameter)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
-        "qualifier.taint_across_union_receiver_types" ];
+        "qualifier.taint_across_union_receiver_types";
+    ];
   assert_taint
     ~context
     {|
@@ -277,7 +298,8 @@ let test_apply_method_model_at_call_site context =
 
         return f.qux(tainted_parameter)
     |}
-    [ outcome ~kind:`Method ~sink_parameters:[] "qualifier.Foo.qux";
+    [
+      outcome ~kind:`Method ~sink_parameters:[] "qualifier.Foo.qux";
       outcome
         ~kind:`Method
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
@@ -285,7 +307,8 @@ let test_apply_method_model_at_call_site context =
       outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
-        "qualifier.taint_across_union_receiver_types" ]
+        "qualifier.taint_across_union_receiver_types";
+    ]
 
 
 let test_tito_via_receiver context =
@@ -302,8 +325,10 @@ let test_tito_via_receiver context =
         x.f = parameter
         return x.tito('')
     |}
-    [ outcome ~kind:`Method ~tito_parameters:["self"] "qualifier.TitoClass.tito";
-      outcome ~kind:`Function ~tito_parameters:["parameter"] "qualifier.tito_via_receiver" ]
+    [
+      outcome ~kind:`Method ~tito_parameters:["self"] "qualifier.TitoClass.tito";
+      outcome ~kind:`Function ~tito_parameters:["parameter"] "qualifier.tito_via_receiver";
+    ]
 
 
 let test_sequential_call_path context =
@@ -316,11 +341,13 @@ let test_sequential_call_path context =
             __test_sink(argument)
             return self
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Method
         ~sink_parameters:[{ name = "argument"; sinks = [Sinks.Test] }]
         ~tito_parameters:["self"]
-        "qualifier.Foo.sink" ];
+        "qualifier.Foo.sink";
+    ];
   assert_taint
     ~context
     {|
@@ -333,10 +360,12 @@ let test_sequential_call_path context =
         x = Foo()
         x.sink(first)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "first"; sinks = [Sinks.Test] }]
-        "qualifier.sequential_with_single_sink" ];
+        "qualifier.sequential_with_single_sink";
+    ];
   assert_taint
     ~context
     {|
@@ -350,11 +379,13 @@ let test_sequential_call_path context =
         x.sink(first)
         x.sink(second)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:
           [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
-        "qualifier.sequential_with_two_sinks" ];
+        "qualifier.sequential_with_two_sinks";
+    ];
   assert_taint
     ~context
     {|
@@ -369,11 +400,13 @@ let test_sequential_call_path context =
         x = Foo()
         x.sink(second)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:
           [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
-        "qualifier.sequential_with_redefine" ];
+        "qualifier.sequential_with_redefine";
+    ];
   assert_taint
     ~context
     {|
@@ -388,11 +421,13 @@ let test_sequential_call_path context =
         a = Foo()
         a.sink(second)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:
           [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
-        "qualifier.sequential_with_distinct_sinks" ];
+        "qualifier.sequential_with_distinct_sinks";
+    ];
   assert_taint
     ~context
     {|
@@ -406,11 +441,13 @@ let test_sequential_call_path context =
         x = x.sink(first)
         x.sink(second)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:
           [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
-        "qualifier.sequential_with_self_propagation" ]
+        "qualifier.sequential_with_self_propagation";
+    ]
 
 
 let test_chained_call_path context =
@@ -426,12 +463,16 @@ let test_chained_call_path context =
         x = Foo()
         x.sink(parameter0).sink(parameter2)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:
-          [ { name = "parameter0"; sinks = [Sinks.Test] };
-            { name = "parameter2"; sinks = [Sinks.Test] } ]
-        "qualifier.chained" ];
+          [
+            { name = "parameter0"; sinks = [Sinks.Test] };
+            { name = "parameter2"; sinks = [Sinks.Test] };
+          ]
+        "qualifier.chained";
+    ];
   assert_taint
     ~context
     {|
@@ -447,12 +488,16 @@ let test_chained_call_path context =
         x = Foo()
         x.sink(parameter0).tito(parameter1).sink(parameter2)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:
-          [ { name = "parameter0"; sinks = [Sinks.Test] };
-            { name = "parameter2"; sinks = [Sinks.Test] } ]
-        "qualifier.chained_with_tito" ]
+          [
+            { name = "parameter0"; sinks = [Sinks.Test] };
+            { name = "parameter2"; sinks = [Sinks.Test] };
+          ]
+        "qualifier.chained_with_tito";
+    ]
 
 
 let test_dictionary context =
@@ -493,7 +538,8 @@ let test_dictionary context =
         }
         return dict["a"]
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.dictionary_sink";
@@ -521,7 +567,8 @@ let test_dictionary context =
         ~kind:`Function
         ~sink_parameters:[]
         ~tito_parameters:["arg"]
-        "qualifier.dictionary_unknown_write_index" ]
+        "qualifier.dictionary_unknown_write_index";
+    ]
 
 
 let test_comprehensions context =
@@ -555,7 +602,8 @@ let test_comprehensions context =
       def tito_generator(data):
           return (x for x in data)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_iterator";
@@ -581,7 +629,8 @@ let test_comprehensions context =
         ~kind:`Function
         ~sink_parameters:[{ name = "data"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_generator_expression";
-      outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito_generator" ]
+      outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito_generator";
+    ]
 
 
 let test_list context =
@@ -645,7 +694,8 @@ let test_list context =
         l[0][1] = arg
         return l[1]
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_list";
@@ -663,7 +713,8 @@ let test_list context =
         "qualifier.list_index_assignment_return_list";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_nested_assignment_1";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_nested_assignment_2";
-      outcome ~kind:`Function ~tito_parameters:[] "qualifier.list_nested_assignment_non_tito" ]
+      outcome ~kind:`Function ~tito_parameters:[] "qualifier.list_nested_assignment_non_tito";
+    ]
 
 
 let test_tuple context =
@@ -693,7 +744,8 @@ let test_tuple context =
           (_, _, result) = ( 1, arg, "foo" )
           return result
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_tuple";
@@ -701,7 +753,8 @@ let test_tuple context =
       outcome ~kind:`Function "qualifier.tuple_different_index";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tuple_unknown_index";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tuple_pattern_same_index";
-      outcome ~kind:`Function "qualifier.tuple_pattern_different_index" ]
+      outcome ~kind:`Function "qualifier.tuple_pattern_different_index";
+    ]
 
 
 let test_lambda context =
@@ -715,11 +768,13 @@ let test_lambda context =
           f = lambda x : x + arg
           return f
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_lambda";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.lambda_tito" ]
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.lambda_tito";
+    ]
 
 
 let test_set context =
@@ -737,12 +792,14 @@ let test_set context =
           set = { 1, arg, "foo" }
           return set[index]
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_set";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.set_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.set_unknown_index" ]
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.set_unknown_index";
+    ]
 
 
 let test_starred context =
@@ -769,7 +826,8 @@ let test_starred context =
               "c": "foo",
           })
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_starred";
@@ -778,7 +836,8 @@ let test_starred context =
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_starred_starred";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_starred";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_starred_starred" ]
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_starred_starred";
+    ]
 
 
 let test_ternary context =
@@ -806,7 +865,8 @@ let test_ternary context =
       def tito_in_both(arg1, arg2, cond):
           return arg1 if cond else arg2
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_then";
@@ -825,7 +885,8 @@ let test_ternary context =
         "qualifier.sink_in_cond";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_then";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_else";
-      outcome ~kind:`Function ~tito_parameters:["arg1"; "arg2"] "qualifier.tito_in_both" ]
+      outcome ~kind:`Function ~tito_parameters:["arg1"; "arg2"] "qualifier.tito_in_both";
+    ]
 
 
 let test_unary context =
@@ -838,11 +899,13 @@ let test_unary context =
       def tito_via_unary(arg):
           return not arg
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_unary";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_unary" ]
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_unary";
+    ]
 
 
 let test_yield context =
@@ -861,7 +924,8 @@ let test_yield context =
       def tito_via_yield_from(arg):
           yield from arg
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_yield";
@@ -870,7 +934,8 @@ let test_yield context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.sink_in_yield_from";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_yield_from" ]
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_yield_from";
+    ]
 
 
 let test_named_arguments context =
@@ -892,11 +957,13 @@ let test_named_arguments context =
       def kw_tito_with_dict(arg0, dict):
           return with_kw(b = arg0, c = 5, **dict)
     |}
-    [ outcome ~kind:`Function ~tito_parameters:["**"] "qualifier.with_kw";
+    [
+      outcome ~kind:`Function ~tito_parameters:["**"] "qualifier.with_kw";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.no_kw_tito";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.no_kw_tito_with_named_args";
       outcome ~kind:`Function ~tito_parameters:["arg1"] "qualifier.kw_tito_with_named_args";
-      outcome ~kind:`Function ~tito_parameters:["dict"] "qualifier.kw_tito_with_dict" ]
+      outcome ~kind:`Function ~tito_parameters:["dict"] "qualifier.kw_tito_with_dict";
+    ]
 
 
 let test_actual_parameter_matching context =
@@ -1064,7 +1131,8 @@ let test_actual_parameter_matching context =
             r = no_tito,
           )
     |}
-    [ outcome ~kind:`Function ~tito_parameters:["b"] "qualifier.before_star";
+    [
+      outcome ~kind:`Function ~tito_parameters:["b"] "qualifier.before_star";
       outcome ~kind:`Function ~tito_parameters:["*"] "qualifier.at_star";
       outcome ~kind:`Function ~tito_parameters:["c"] "qualifier.after_star";
       outcome ~kind:`Function ~tito_parameters:["**"] "qualifier.star_star_q";
@@ -1099,7 +1167,8 @@ let test_actual_parameter_matching context =
       outcome
         ~kind:`Function
         ~tito_parameters:["approximate"; "listarg_one"; "listarg_two"]
-        "qualifier.pass_list_at_star" ]
+        "qualifier.pass_list_at_star";
+    ]
 
 
 let test_constructor_argument_tito context =
@@ -1175,7 +1244,8 @@ let test_constructor_argument_tito context =
           super(Data, self).__init__(tito, no_tito)
 
     |}
-    [ outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.Data.__init__";
+    [
+      outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.Data.__init__";
       outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.tito_via_construction";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.no_tito_via_construction";
       outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.precise_tito_via_construction";
@@ -1196,7 +1266,8 @@ let test_constructor_argument_tito context =
         ~tito_parameters:["tito"]
         "qualifier.test_tito_via_multiple_some_more";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.test_tito_via_multiple_none";
-      outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.DerivedData.__init__" ]
+      outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.DerivedData.__init__";
+    ]
 
 
 let test_decorator context =
@@ -1210,14 +1281,16 @@ let test_decorator context =
       def using_decorated(into_decorated):
         decorated(into_decorated)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "into_sink"; sinks = [Sinks.Test] }]
         "qualifier.decorated";
       outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "into_decorated"; sinks = [Sinks.Test] }]
-        "qualifier.using_decorated" ]
+        "qualifier.using_decorated";
+    ]
 
 
 let test_assignment context =
@@ -1227,10 +1300,12 @@ let test_assignment context =
       def assigns_to_sink(assigned_to_sink):
         taint.__global_sink = assigned_to_sink
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
-        "qualifier.assigns_to_sink" ];
+        "qualifier.assigns_to_sink";
+    ];
   assert_taint
     ~context
     {|
@@ -1238,20 +1313,24 @@ let test_assignment context =
         sink = ClassWithSinkAttribute()
         sink.attribute = assigned_to_sink
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
-        "qualifier.assigns_to_sink" ];
+        "qualifier.assigns_to_sink";
+    ];
   assert_taint
     ~context
     {|
       def assigns_to_sink(optional_sink: typing.Optional[ClassWithSinkAttribute], assigned_to_sink):
         optional_sink.attribute = assigned_to_sink
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
-        "qualifier.assigns_to_sink" ]
+        "qualifier.assigns_to_sink";
+    ]
 
 
 let test_access_paths context =
@@ -1268,25 +1347,30 @@ let test_access_paths context =
         x = o.b
         __test_sink(x.g)
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.access_downward_closed";
-      outcome ~kind:`Function ~sink_parameters:[] "qualifier.access_non_taint" ];
+      outcome ~kind:`Function ~sink_parameters:[] "qualifier.access_non_taint";
+    ];
   assert_taint
     ~context
     {|
       def access_through_expression(arg):
         __test_sink(" ".join(arg))
     |}
-    [ outcome
+    [
+      outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
-        "qualifier.access_through_expression" ]
+        "qualifier.access_through_expression";
+    ]
 
 
 let () =
-  [ "plus_taint_in_taint_out", test_plus_taint_in_taint_out;
+  [
+    "plus_taint_in_taint_out", test_plus_taint_in_taint_out;
     "concatenate_taint_in_taint_out", test_concatenate_taint_in_taint_out;
     "rce_sink", test_rce_sink;
     "test_sink", test_sink;
@@ -1312,5 +1396,6 @@ let () =
     "test_constructor_argument_tito", test_constructor_argument_tito;
     "decorator", test_decorator;
     "assignment", test_assignment;
-    "access_paths", test_access_paths ]
+    "access_paths", test_access_paths;
+  ]
   |> TestHelper.run_with_taint_models ~name:"taint"

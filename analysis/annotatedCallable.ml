@@ -87,8 +87,10 @@ let create_overload ?location ~resolution ({ Define.signature = { parameters; _ 
         | Keywords annotation -> Keywords (parse_as_annotation annotation)
       in
       match parameters with
-      | [ Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation));
-          Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation) ] -> (
+      | [
+       Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation));
+       Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation);
+      ] -> (
         match
           GlobalResolution.parse_as_parameter_specification_instance_annotation
             resolution
@@ -191,8 +193,10 @@ let apply_decorators
              generic parameter list. *)
           let parameters =
             Type.Callable.Defined
-              [ Type.Callable.Parameter.Variable (Concrete Type.Any);
-                Type.Callable.Parameter.Keywords Type.Any ]
+              [
+                Type.Callable.Parameter.Variable (Concrete Type.Any);
+                Type.Callable.Parameter.Keywords Type.Any;
+              ]
           in
           { overload with Type.Callable.parameters }
       | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->

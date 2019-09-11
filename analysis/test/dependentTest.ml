@@ -189,10 +189,12 @@ let test_normalize context =
 
 let () =
   "dependencies"
-  >::: [ "index" >:: test_index;
+  >::: [
+         "index" >:: test_index;
          "transitive_dependents" >:: test_transitive_dependents;
          "transitive_dependent_of_list" >:: test_transitive_dependent_of_list;
          "dependent_of_list" >:: test_dependent_of_list;
          "dependent_of_list_duplicates" >:: test_dependent_of_list_duplicates;
-         "normalize" >:: test_normalize ]
+         "normalize" >:: test_normalize;
+       ]
   |> Test.run

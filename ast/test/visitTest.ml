@@ -60,45 +60,56 @@ let test_collect _ =
     ( [+Float 2.0; +Float 1.0],
       [+Statement.Expression (+Float 2.0); +Statement.Expression (+Float 1.0)] );
   assert_collect
-    [ +Statement.If
+    [
+      +Statement.If
          {
            If.test = +Float 2.0;
            body = [+Statement.Expression (+Float 3.0)];
            orelse = [+Statement.Expression (+Float 4.0)];
-         } ]
+         };
+    ]
     ( [+Float 4.0; +Float 3.0; +Float 2.0],
-      [ +Statement.If
+      [
+        +Statement.If
            {
              If.test = +Float 2.0;
              body = [+Statement.Expression (+Float 3.0)];
              orelse = [+Statement.Expression (+Float 4.0)];
            };
         +Statement.Expression (+Float 4.0);
-        +Statement.Expression (+Float 3.0) ] );
+        +Statement.Expression (+Float 3.0);
+      ] );
   assert_collect
-    [ +Statement.If
+    [
+      +Statement.If
          {
            If.test = +Float 1.0;
            body =
-             [ +Statement.If
+             [
+               +Statement.If
                   {
                     If.test = +Float 2.0;
                     body = [+Statement.Expression (+Float 3.0)];
                     orelse = [+Statement.Expression (+Float 4.0)];
-                  } ];
+                  };
+             ];
            orelse = [+Statement.Expression (+Float 5.0)];
-         } ]
+         };
+    ]
     ( [+Float 5.0; +Float 4.0; +Float 3.0; +Float 2.0; +Float 1.0],
-      [ +Statement.If
+      [
+        +Statement.If
            {
              If.test = +Float 1.0;
              body =
-               [ +Statement.If
+               [
+                 +Statement.If
                     {
                       If.test = +Float 2.0;
                       body = [+Statement.Expression (+Float 3.0)];
                       orelse = [+Statement.Expression (+Float 4.0)];
-                    } ];
+                    };
+               ];
              orelse = [+Statement.Expression (+Float 5.0)];
            };
         +Statement.Expression (+Float 5.0);
@@ -109,7 +120,8 @@ let test_collect _ =
              orelse = [+Statement.Expression (+Float 4.0)];
            };
         +Statement.Expression (+Float 4.0);
-        +Statement.Expression (+Float 3.0) ] )
+        +Statement.Expression (+Float 3.0);
+      ] )
 
 
 let test_collect_location _ =
@@ -139,18 +151,20 @@ let test_collect_location _ =
       else:
         2
     |}
-    [ (* Entire if statement. *)
-      2, 0, 5, 3;
+    [
+      (* Entire if statement. *)
+        2, 0, 5, 3;
       (* Integer 2 expression *)
-      5, 2, 5, 3;
+        5, 2, 5, 3;
       (* orelse statement *)
-      5, 2, 5, 3;
+        5, 2, 5, 3;
       (* Integer 1 expression *)
-      3, 2, 3, 3;
+        3, 2, 3, 3;
       (* body statement *)
-      3, 2, 3, 3;
+        3, 2, 3, 3;
       (* test expression *)
-      2, 3, 2, 7 ]
+        2, 3, 2, 7;
+    ]
 
 
 let test_node_visitor _ =
@@ -277,9 +291,11 @@ let test_statement_visitor_source _ =
 
 let () =
   "visit"
-  >::: [ "collect" >:: test_collect;
+  >::: [
+         "collect" >:: test_collect;
          "collect_location" >:: test_collect_location;
          "node_visitor" >:: test_node_visitor;
          "statement_visitor" >:: test_statement_visitor;
-         "statement_visitor_source" >:: test_statement_visitor_source ]
+         "statement_visitor_source" >:: test_statement_visitor_source;
+       ]
   |> Test.run

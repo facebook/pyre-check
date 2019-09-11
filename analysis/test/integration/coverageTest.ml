@@ -50,13 +50,17 @@ let test_check_coverage context =
   (* Yield. *)
   assert_covered
     ~additional_errors:
-      [ "Incompatible return type [7]: Expected `None` but got "
-        ^ "`typing.Generator[unknown, None, None]`." ]
+      [
+        "Incompatible return type [7]: Expected `None` but got "
+        ^ "`typing.Generator[unknown, None, None]`.";
+      ]
     "yield ERROR";
   assert_covered
     ~additional_errors:
-      [ "Incompatible return type [7]: Expected `None` but got "
-        ^ "`typing.Generator[unknown, None, None]`." ]
+      [
+        "Incompatible return type [7]: Expected `None` but got "
+        ^ "`typing.Generator[unknown, None, None]`.";
+      ]
     "yield from ERROR";
 
   (* Control statements. *)
@@ -67,8 +71,10 @@ let test_check_coverage context =
   (* Raise. *)
   assert_covered
     ~additional_errors:
-      [ "Invalid Exception [48]: Expression `a.undefined` has type `unknown` but must extend \
-         BaseException." ]
+      [
+        "Invalid Exception [48]: Expression `a.undefined` has type `unknown` but must extend \
+         BaseException.";
+      ]
     "raise ERROR";
   assert_covered {|
       try:

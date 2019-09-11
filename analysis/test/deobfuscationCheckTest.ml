@@ -525,8 +525,10 @@ let test_fixup context =
 
 let () =
   "deobfuscation"
-  >::: [ "forward" >:: test_forward;
+  >::: [
+         "forward" >:: test_forward;
          "scheduling" >:: test_scheduling;
          "dead_store_elimination" >:: test_dead_store_elimination;
-         "fixup" >:: test_fixup ]
+         "fixup" >:: test_fixup;
+       ]
   |> Test.run

@@ -267,25 +267,31 @@ let rec parse_annotations ~configuration ~parameters annotation =
             get_taint_in_taint_out expression
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
           when base_matches "AttachToSink" callee ->
-            [ Sink
+            [
+              Sink
                 {
                   sink = Sinks.Attach;
                   breadcrumbs = extract_attach_features ~name:"AttachToSink" expression;
-                } ]
+                };
+            ]
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
           when base_matches "AttachToTito" callee ->
-            [ Tito
+            [
+              Tito
                 {
                   tito = Sinks.Attach;
                   breadcrumbs = extract_attach_features ~name:"AttachToTito" expression;
-                } ]
+                };
+            ]
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
           when base_matches "AttachToSource" callee ->
-            [ Source
+            [
+              Source
                 {
                   source = Sources.Attach;
                   breadcrumbs = extract_attach_features ~name:"AttachToSource" expression;
-                } ]
+                };
+            ]
         | Name (Name.Identifier "TaintInTaintOut") ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
         | Name (Name.Identifier "SkipAnalysis") -> [SkipAnalysis]
@@ -595,8 +601,9 @@ let create ~resolution ?path ~configuration ~verify source =
       | { Node.value = Class { Class.name; bases; body; _ }; _ } ->
           begin
             match body with
-            | [{ Node.value = Statement.Expression { Node.value = Ast.Expression.Ellipsis; _ }; _ }]
-              ->
+            | [
+             { Node.value = Statement.Expression { Node.value = Ast.Expression.Ellipsis; _ }; _ };
+            ] ->
                 ()
             | _ -> raise_invalid_model "Class models must have a body of `...`."
           end;

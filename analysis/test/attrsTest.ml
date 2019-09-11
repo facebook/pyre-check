@@ -15,7 +15,8 @@ let test_transform_environment context =
       class Foo:
         ...
     |}
-    [ {|
+    [
+      {|
         class Foo:
           def __init__(self) -> None:
             pass
@@ -31,7 +32,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -40,7 +41,8 @@ let test_transform_environment context =
         class Foo:
           ...
     |}
-    [ {|
+    [
+      {|
         class Foo:
           def __init__(self) -> None:
             pass
@@ -56,7 +58,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -65,7 +67,8 @@ let test_transform_environment context =
         def foo() -> None:
           pass
     |}
-    [ {|
+    [
+      {|
         # spacer
         class Foo:
           def foo() -> None:
@@ -84,7 +87,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -95,7 +98,8 @@ let test_transform_environment context =
         def __repr__(self) -> str:
           pass
     |}
-    [ {|
+    [
+      {|
        # spacer
        class Foo:
          def __init__(self) -> None:
@@ -112,7 +116,7 @@ let test_transform_environment context =
            pass
          def __ge__(self, o: object) -> bool:
            pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -120,7 +124,8 @@ let test_transform_environment context =
       class Foo:
         name = 'abc'
     |}
-    [ {|
+    [
+      {|
         class Foo:
           name = 'abc'
           def __init__(self, name: str ='abc') -> None:
@@ -137,7 +142,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -145,7 +150,8 @@ let test_transform_environment context =
       class Foo:
         name: str
     |}
-    [ {|
+    [
+      {|
         class Foo:
           name: str
           def __init__(self, name: str) -> None:
@@ -162,7 +168,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -173,7 +179,8 @@ let test_transform_environment context =
         def __init__(self) -> None:
           pass
     |}
-    [ {|
+    [
+      {|
         class Foo:
           name: str
           age: int
@@ -191,7 +198,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
 
   (* Boolean arguments *)
@@ -202,7 +209,8 @@ let test_transform_environment context =
         def foo(self) -> None:
           pass
     |}
-    [ {|
+    [
+      {|
         class Foo:
           def foo(self) -> None:
             pass
@@ -218,7 +226,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -227,7 +235,8 @@ let test_transform_environment context =
         def foo(self) -> None:
           pass
     |}
-    [ {|
+    [
+      {|
         class Foo:
           def foo(self) -> None:
             pass
@@ -243,7 +252,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -252,7 +261,8 @@ let test_transform_environment context =
         def foo(self) -> None:
           pass
     |}
-    [ {|
+    [
+      {|
         class Foo:
           def foo(self) -> None:
             pass
@@ -260,7 +270,7 @@ let test_transform_environment context =
             pass
           def __repr__(self) -> str:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -269,7 +279,8 @@ let test_transform_environment context =
         def foo(self) -> None:
           pass
     |}
-    [ {|
+    [
+      {|
         class Foo:
           def foo(self) -> None:
             pass
@@ -287,7 +298,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
 
   (* Inheritance *)
@@ -303,7 +314,8 @@ let test_transform_environment context =
         y: int = 0
         z: str = "a"
     |}
-    [ {|
+    [
+      {|
         class C(Base):
           z: int = 10
           x: int = 15
@@ -341,7 +353,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -355,7 +367,8 @@ let test_transform_environment context =
         y: int = 0
         z: str = "a"
     |}
-    [ {|
+    [
+      {|
         class C(Base):
           z: int = 10
           x: int = 15
@@ -393,7 +406,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -406,7 +419,8 @@ let test_transform_environment context =
         x: str = "a"
         y: int = 0
     |}
-    [ {|
+    [
+      {|
         class C(Base):
           z: int = 10
           x: int
@@ -443,7 +457,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -459,7 +473,8 @@ let test_transform_environment context =
         x: typing.Any = 15.0
         y: int = 0
     |}
-    [ {|
+    [
+      {|
         class C(B):
           z: int = 10
           x: int = 15
@@ -501,7 +516,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -515,7 +530,8 @@ let test_transform_environment context =
       class A1:
         x: int = 15
     |}
-    [ {|
+    [
+      {|
         class C1(B1, A1):
           z: int = 10
           def __init__(self, x: int = 15, y: int = 5, z: int = 10) -> None:
@@ -568,7 +584,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ];
   assert_equivalent_attributes
     {|
@@ -578,7 +594,8 @@ let test_transform_environment context =
       class WithAttr(NoAttr):
         y: int = 5
     |}
-    [ {|
+    [
+      {|
         class NoAttr:
           x: int = 15
       |};
@@ -599,7 +616,7 @@ let test_transform_environment context =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |}
+      |};
     ]
 
 

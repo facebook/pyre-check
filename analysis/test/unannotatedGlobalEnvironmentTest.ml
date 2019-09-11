@@ -263,7 +263,8 @@ let test_updates context =
       x: int = 9
     |}
     ~middle_actions:
-      [ `Global
+      [
+        `Global
           ( Reference.create "test.x",
             dependency,
             Some
@@ -271,10 +272,12 @@ let test_updates context =
                  {
                    explicit_annotation = Some (parse_single_expression "int");
                    value = parse_single_expression "7";
-                 }) ) ]
+                 }) );
+      ]
     ~expected_triggers:[dependency]
     ~post_actions:
-      [ `Global
+      [
+        `Global
           ( Reference.create "test.x",
             dependency,
             Some
@@ -282,7 +285,8 @@ let test_updates context =
                  {
                    explicit_annotation = Some (parse_single_expression "int");
                    value = parse_single_expression "9";
-                 }) ) ]
+                 }) );
+      ]
     ();
   assert_updates
     ~original_source:{|
@@ -292,10 +296,12 @@ let test_updates context =
       import target.member as new_alias
     |}
     ~middle_actions:
-      [ `Global
+      [
+        `Global
           ( Reference.create "test.alias",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) ) ]
+            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) );
+      ]
     ~expected_triggers:[dependency]
     ~post_actions:[`Global (Reference.create "test.alias", dependency, None)]
     ();
@@ -307,7 +313,8 @@ let test_updates context =
       from target import other_member, member
     |}
     ~middle_actions:
-      [ `Global
+      [
+        `Global
           ( Reference.create "test.member",
             dependency,
             Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) );
@@ -315,11 +322,13 @@ let test_updates context =
           ( Reference.create "test.other_member",
             dependency,
             Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member"))
-          ) ]
+          );
+      ]
       (* Location insensitive *)
     ~expected_triggers:[]
     ~post_actions:
-      [ `Global
+      [
+        `Global
           ( Reference.create "test.member",
             dependency,
             Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.member")) );
@@ -327,7 +336,8 @@ let test_updates context =
           ( Reference.create "test.other_member",
             dependency,
             Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member"))
-          ) ]
+          );
+      ]
     ();
 
   (* Don't infer * as a real thing *)
@@ -345,9 +355,11 @@ let test_updates context =
       X, Y, Z = int, str, bool
     |}
     ~middle_actions:
-      [ `Global (Reference.create "test.X", dependency, None);
+      [
+        `Global (Reference.create "test.X", dependency, None);
         `Global (Reference.create "test.Y", dependency, None);
-        `Global (Reference.create "test.Z", dependency, None) ]
+        `Global (Reference.create "test.Z", dependency, None);
+      ]
     ~expected_triggers:[]
     ();
 
@@ -363,12 +375,14 @@ let test_updates context =
       X = str
     |}
     ~middle_actions:
-      [ `Global
+      [
+        `Global
           ( Reference.create "test.X",
             dependency,
             Some
               (UnannotatedGlobalEnvironment.SimpleAssign
-                 { explicit_annotation = None; value = parse_single_expression "int" }) ) ]
+                 { explicit_annotation = None; value = parse_single_expression "int" }) );
+      ]
     ~expected_triggers:[]
     ();
 

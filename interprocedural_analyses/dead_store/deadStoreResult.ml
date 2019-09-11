@@ -31,11 +31,15 @@ module ResultArgument = struct
       | None -> `Null
       | Some result -> `String result
     in
-    [ `Assoc
-        [ "analysis", `String name;
+    [
+      `Assoc
+        [
+          "analysis", `String name;
           "name", `String (Callable.show callable);
           "model", `Int model;
-          "result", result_json ] ]
+          "result", result_json;
+        ];
+    ]
 
 
   let metadata () = `Assoc ["codes", `List [`String "A"]]

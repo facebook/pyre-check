@@ -171,10 +171,14 @@ let analyze
       |> List.map ~f:(fun directory -> `String directory)
     in
     `Assoc
-      [ ( "taint",
+      [
+        ( "taint",
           `Assoc
-            [ "model_directories", `List taint_models_directories;
-              "verify_models", `Bool verify_models ] ) ]
+            [
+              "model_directories", `List taint_models_directories;
+              "verify_models", `Bool verify_models;
+            ] );
+      ]
   in
   let analyses = [analysis_kind] in
   (* Initialize and add initial models of analyses to shared mem. *)

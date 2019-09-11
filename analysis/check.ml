@@ -19,12 +19,14 @@ end
 
 let checks : (module Signature) String.Map.t =
   let checks : (string * (module Signature)) list =
-    [ "awaitable", (module AwaitableCheck);
+    [
+      "awaitable", (module AwaitableCheck);
       "deobfuscation", (module DeobfuscationCheck);
       "immutable_collection", (module ImmutableCollectionCheck);
       "inference", (module Inference);
       "liveness", (module LivenessCheck);
-      "typeCheck", (module TypeCheck) ]
+      "typeCheck", (module TypeCheck);
+    ]
   in
   String.Map.of_alist_exn checks
 

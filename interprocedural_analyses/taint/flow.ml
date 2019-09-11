@@ -100,8 +100,10 @@ let partition_flow ?sources ?sinks flow =
         {
           matched;
           rest =
-            [ { source_taint = excluded_source_taint; sink_taint = included_sink_taint };
-              { flow with sink_taint = excluded_sink_taint } ];
+            [
+              { source_taint = excluded_source_taint; sink_taint = included_sink_taint };
+              { flow with sink_taint = excluded_sink_taint };
+            ];
         }
 
 
@@ -190,8 +192,10 @@ let to_json ~environment callable issue =
   let sink_traces = Domains.BackwardTaint.to_external_json ~environment issue.flow.sink_taint in
   let traces =
     `List
-      [ `Assoc ["name", `String "forward"; "roots", source_traces];
-        `Assoc ["name", `String "backward"; "roots", sink_traces] ]
+      [
+        `Assoc ["name", `String "forward"; "roots", source_traces];
+        `Assoc ["name", `String "backward"; "roots", sink_traces];
+      ]
   in
   let issue_location =
     let ast_environment = Analysis.Environment.ast_environment environment in
@@ -200,7 +204,8 @@ let to_json ~environment callable issue =
   in
   let callable_line = Ast.(Location.line issue.define.location) in
   `Assoc
-    [ "callable", `String callable_name;
+    [
+      "callable", `String callable_name;
       "callable_line", `Int callable_line;
       "code", `Int issue.code;
       "line", `Int (Location.line issue_location);
@@ -208,7 +213,8 @@ let to_json ~environment callable issue =
       "end", `Int (Location.stop_column issue_location);
       "filename", `String (Location.path issue_location);
       "message", `String message;
-      "traces", traces ]
+      "traces", traces;
+    ]
 
 
 let code_metadata () =

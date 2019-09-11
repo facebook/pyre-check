@@ -1390,7 +1390,8 @@ module State (Context : Context) = struct
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
             in
             state, Resolution.annotations resolution
-        | ( [ {
+        | ( [
+              {
                 Node.value = { name = first_name; value = None; annotation = Some first_annotation };
                 _;
               };
@@ -1398,7 +1399,8 @@ module State (Context : Context) = struct
                 Node.value =
                   { name = second_name; value = None; annotation = Some second_annotation };
                 _;
-              } ],
+              };
+            ],
             _ )
           when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
           match
@@ -2172,12 +2174,14 @@ module State (Context : Context) = struct
                 Reference.as_list class_name @ [Reference.last direct_target]
                 |> Reference.create_from_list
                 |> fun name ->
-                [ Dependencies.Callgraph.Method
+                [
+                  Dependencies.Callgraph.Method
                     {
                       direct_target;
                       static_target = name;
                       dispatch = (if dynamic then Dynamic else Static);
-                    } ]
+                    };
+                ]
             | _ -> []
           in
           match target, callables with
@@ -2814,10 +2818,12 @@ module State (Context : Context) = struct
                                  { base = right; attribute = "__getitem__"; special = true });
                         };
                       arguments =
-                        [ {
+                        [
+                          {
                             Call.Argument.name = None;
                             value = { Node.location; value = Expression.Integer 0 };
-                          } ];
+                          };
+                        ];
                     };
               }
             in
@@ -3314,8 +3320,10 @@ module State (Context : Context) = struct
           && not (Type.is_none actual && Type.is_noreturn return_annotation)
         then
           let rec check_unimplemented = function
-            | [ { Node.value = Statement.Pass; _ };
-                { Node.value = Statement.Return { Return.expression = None; _ }; _ } ] ->
+            | [
+                { Node.value = Statement.Pass; _ };
+                { Node.value = Statement.Return { Return.expression = None; _ }; _ };
+              ] ->
                 true
             | { Node.value = Statement.Expression { Node.value = Expression.String _; _ }; _ }
               :: tail ->
@@ -4227,8 +4235,10 @@ module State (Context : Context) = struct
             {
               callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
               arguments =
-                [ { Call.Argument.name = None; value = { Node.value = Name name; _ } };
-                  { Call.Argument.name = None; value = annotation } ];
+                [
+                  { Call.Argument.name = None; value = { Node.value = Name name; _ } };
+                  { Call.Argument.name = None; value = annotation };
+                ];
             }
           when Expression.is_simple_name name ->
             let reference = Expression.name_to_reference_exn name in
@@ -4298,8 +4308,10 @@ module State (Context : Context) = struct
                             _;
                           };
                         arguments =
-                          [ { Call.Argument.name = None; value };
-                            { Call.Argument.name = None; value = annotation_expression } ];
+                          [
+                            { Call.Argument.name = None; value };
+                            { Call.Argument.name = None; value = annotation_expression };
+                          ];
                       };
                   _;
                 };
@@ -4799,8 +4811,10 @@ module State (Context : Context) = struct
                 | ClassHierarchy.Unaries unaries -> unarize unaries
                 | ClassHierarchy.Concatenation concatenation ->
                     unarize (Type.OrderedTypes.Concatenation.head concatenation)
-                    @ [ Type.Variable.ListVariadic
-                          (Type.OrderedTypes.Concatenation.middle concatenation) ]
+                    @ [
+                        Type.Variable.ListVariadic
+                          (Type.OrderedTypes.Concatenation.middle concatenation);
+                      ]
                     @ unarize (Type.OrderedTypes.Concatenation.tail concatenation)
               in
               Reference.show name

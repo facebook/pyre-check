@@ -168,9 +168,11 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
 
     let expression _ expression =
       let transform_arguments = function
-        | [ ( { Call.Argument.name = None; value = { Node.value = String _; _ } as value } as
+        | [
+            ( { Call.Argument.name = None; value = { Node.value = String _; _ } as value } as
             type_argument );
-            value_argument ] ->
+            value_argument;
+          ] ->
             let annotation = transform_string_annotation_expression relative value in
             [{ type_argument with value = annotation }; value_argument]
         | arguments -> arguments
@@ -1303,7 +1305,8 @@ let expand_implicit_returns source =
     let statement state statement =
       match statement with
       (* Insert implicit return statements at the end of function bodies. *)
-      | { Node.value = Statement.Define define; _ } when Define.is_stub define -> state, [statement]
+      | { Node.value = Statement.Define define; _ } when Define.is_stub define ->
+          state, [statement]
       | { Node.location; value = Define define } ->
           let define =
             let has_yield =
@@ -1369,10 +1372,12 @@ let expand_implicit_returns source =
                     define with
                     Define.body =
                       define.Define.body
-                      @ [ {
+                      @ [
+                          {
                             Node.location = last_statement.Node.location;
                             value = Return { Return.expression = None; is_implicit = true };
-                          } ];
+                          };
+                        ];
                   }
               | _ -> define
           in
@@ -1539,10 +1544,12 @@ let expand_typed_dictionary_declarations
           let total =
             Node.create (if total then Expression.True else Expression.False) ~location
           in
-          [ {
+          [
+            {
               Call.Argument.name = None;
               value = Node.create (Expression.Tuple (name :: total :: fields)) ~location;
-            } ]
+            };
+          ]
         in
         let name =
           Call
@@ -1799,12 +1806,13 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           in
           let attributes =
             match arguments with
-            | [ _;
-                {
-                  Call.Argument.value =
-                    { value = String { StringLiteral.value = serialized; _ }; _ };
-                  _;
-                } ] ->
+            | [
+             _;
+             {
+               Call.Argument.value = { value = String { StringLiteral.value = serialized; _ }; _ };
+               _;
+             };
+            ] ->
                 String.split serialized ~on:' '
                 |> List.map ~f:(fun name -> name, any_annotation, None)
             | [_; { Call.Argument.value = { Node.value = List arguments; _ }; _ }]
@@ -1812,8 +1820,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 let get_name ({ Node.value; _ } as expression) =
                   match value with
                   | String { StringLiteral.value = name; _ } -> name, any_annotation, None
-                  | Tuple [{ Node.value = String { StringLiteral.value = name; _ }; _ }; annotation]
-                    ->
+                  | Tuple
+                      [{ Node.value = String { StringLiteral.value = name; _ }; _ }; annotation] ->
                       name, annotation, None
                   | _ -> Expression.show expression, any_annotation, None
                 in
@@ -1909,9 +1917,11 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               parent = Some parent;
             };
           body =
-            [ Node.create
+            [
+              Node.create
                 ~location
-                (Statement.Expression (Node.create ~location Expression.Ellipsis)) ];
+                (Statement.Expression (Node.create ~location Expression.Ellipsis));
+            ];
         }
       |> Node.create ~location
     in
@@ -2057,7 +2067,8 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                           _;
                         };
                       arguments =
-                        [ {
+                        [
+                          {
                             Call.Argument.value =
                               { Node.value = String { StringLiteral.value = name; _ }; _ };
                             _;
@@ -2066,7 +2077,8 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                               (* TODO (T44209017): Error on invalid annotation expression *)
                               Call.Argument.value = base;
                               _;
-                            } as base_argument ) ];
+                            } as base_argument );
+                        ];
                     };
                 _;
               };
@@ -2080,8 +2092,10 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                   {
                     name = Reference.create ~prefix:name "__init__";
                     parameters =
-                      [ Parameter.create ~location ~name:"self" ();
-                        Parameter.create ~location ~annotation:base ~name:"input" () ];
+                      [
+                        Parameter.create ~location ~name:"self" ();
+                        Parameter.create ~location ~annotation:base ~name:"input" ();
+                      ];
                     decorators = [];
                     docstring = None;
                     return_annotation =

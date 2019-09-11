@@ -202,8 +202,9 @@ let resolve_target ~resolution ?receiver_type callee =
             let resolution = Resolution.global_resolution resolution in
             Callable.resolve_method ~resolution ~class_type ~method_name:"__init__"
             >>| (fun callable ->
-                  [ ( callable,
-                      Some { Type.Callable.implicit_annotation = callable_type; name = "self" } )
+                  [
+                    ( callable,
+                      Some { Type.Callable.implicit_annotation = callable_type; name = "self" } );
                   ])
             |> Option.value ~default:[]
         | _ -> [] )

@@ -83,7 +83,8 @@ let test_final_attributes context =
       from typing import List, Final
       x: List[Final[int]] = []
     |}
-    [ "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be nested."
+    [
+      "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be nested.";
     ];
   assert_type_errors
     {|
@@ -108,7 +109,8 @@ let test_final_attributes context =
       from typing import List, Final
       x: List[Final[int]] = []
     |}
-    [ "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be nested."
+    [
+      "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be nested.";
     ];
   assert_type_errors
     ~concise:true
@@ -129,8 +131,10 @@ let test_final_attributes context =
           def foo(self) -> None:
               self.x = 100
     |}
-    [ "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
-      "Undefined error [1]: Problem with analysis." ];
+    [
+      "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
+      "Undefined error [1]: Problem with analysis.";
+    ];
   assert_type_errors
     {|
       from typing import Final
@@ -145,7 +149,9 @@ let test_final_attributes context =
 
 let () =
   "final"
-  >::: [ "final_methods" >:: test_final_methods;
+  >::: [
+         "final_methods" >:: test_final_methods;
          "final_classes" >:: test_final_class;
-         "final_attributes" >:: test_final_attributes ]
+         "final_attributes" >:: test_final_attributes;
+       ]
   |> Test.run

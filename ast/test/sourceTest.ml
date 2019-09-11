@@ -65,11 +65,13 @@ let test_parse _ =
     ["def foo() -> str: return bar()  # pyre-ignore"]
     [create_ignore 1 [] PyreIgnore 1 34 1 45];
   assert_ignore
-    [ "def foo() -> other:  # pyre-ignore";
+    [
+      "def foo() -> other:  # pyre-ignore";
       "result = 0";
       "if True:";
       "result = durp()";
-      "return result" ]
+      "return result";
+    ]
     [create_ignore 1 [] PyreIgnore 1 23 1 34];
   assert_ignore
     ["def foo() -> int: return 1.0  # type: ignore"]
@@ -87,8 +89,10 @@ let test_parse _ =
     ["def foo() -> typing.List[str]: return 1  # pyre-ignore[7]"]
     [create_ignore 1 [7] PyreIgnore 1 43 1 57];
   assert_ignore
-    [ "def foo() -> str: return 1.0  # pyre-ignore[7]";
-      "def bar() -> int: return ''  # pyre-ignore[7]" ]
+    [
+      "def foo() -> str: return 1.0  # pyre-ignore[7]";
+      "def bar() -> int: return ''  # pyre-ignore[7]";
+    ]
     [create_ignore 2 [7] PyreIgnore 2 31 2 45; create_ignore 1 [7] PyreIgnore 1 32 1 46];
   assert_ignore
     ["def foo() -> str: return 1  # pyre-ignore[7, 1, 2]"]
@@ -123,14 +127,18 @@ let test_parse _ =
     ["# pyre-ignore[6]"; "# pyre-ignore[7]"; "def foo() -> str: return"]
     [create_ignore 3 [6] PyreIgnore 1 2 1 16; create_ignore 3 [7] PyreIgnore 2 2 2 16];
   assert_ignore
-    [ "# pyre-fixme[3]";
+    [
+      "# pyre-fixme[3]";
       "# pyre-fixme[2]";
       "# pyre-fixme[2]";
       "def foo(x: typing.Any, y:typing.Any) -> typing.Any";
-      " return x" ]
-    [ create_ignore 4 [3] PyreFixme 1 2 1 15;
+      " return x";
+    ]
+    [
+      create_ignore 4 [3] PyreFixme 1 2 1 15;
       create_ignore 4 [2] PyreFixme 2 2 2 15;
-      create_ignore 4 [2] PyreFixme 3 2 3 15 ]
+      create_ignore 4 [2] PyreFixme 3 2 3 15;
+    ]
 
 
 let test_qualifier _ =
@@ -200,7 +208,9 @@ let test_localize_configuration _ =
 let () =
   "metadata" >::: ["parse" >:: test_parse] |> Test.run;
   "source"
-  >::: [ "qualifier" >:: test_qualifier;
+  >::: [
+         "qualifier" >:: test_qualifier;
          "expand_relative_import" >:: test_expand_relative_import;
-         "localize_configuration" >:: test_localize_configuration ]
+         "localize_configuration" >:: test_localize_configuration;
+       ]
   |> Test.run

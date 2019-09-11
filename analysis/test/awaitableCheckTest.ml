@@ -332,9 +332,11 @@ let test_forward context =
       if True > False:
         unawaited = other_unawaited
     |}
-    [ "Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited.";
+    [
+      "Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited.";
       "Unawaited awaitable [1001]: Awaitable assigned to `unawaited`, `other_unawaited` is never \
-       awaited." ];
+       awaited.";
+    ];
   assert_awaitable_errors
     {|
       def awaitable() -> typing.Awaitable[int]: ...
@@ -427,11 +429,13 @@ let test_forward context =
       async def foo():
         [a, (b, [c, d], e)] = (awaitable(), (awaitable(), (awaitable(), awaitable()), awaitable()))
     |}
-    [ "Unawaited awaitable [1001]: Awaitable assigned to `a` is never awaited.";
+    [
+      "Unawaited awaitable [1001]: Awaitable assigned to `a` is never awaited.";
       "Unawaited awaitable [1001]: Awaitable assigned to `b` is never awaited.";
       "Unawaited awaitable [1001]: Awaitable assigned to `c` is never awaited.";
       "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited.";
-      "Unawaited awaitable [1001]: Awaitable assigned to `e` is never awaited." ];
+      "Unawaited awaitable [1001]: Awaitable assigned to `e` is never awaited.";
+    ];
   assert_awaitable_errors
     {|
       async def awaitable() -> int: ...
@@ -439,8 +443,10 @@ let test_forward context =
         a, *b, c = awaitable(), awaitable(), awaitable()
         await a
     |}
-    [ "Unawaited awaitable [1001]: `test.awaitable()` is never awaited.";
-      "Unawaited awaitable [1001]: Awaitable assigned to `c` is never awaited." ];
+    [
+      "Unawaited awaitable [1001]: `test.awaitable()` is never awaited.";
+      "Unawaited awaitable [1001]: Awaitable assigned to `c` is never awaited.";
+    ];
 
   (* We don't validate that every expression in a starred one is awaited. *)
   assert_awaitable_errors
@@ -488,8 +494,10 @@ let test_forward context =
           3: awaitable(),
         }
     |}
-    [ "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited.";
-      "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited." ];
+    [
+      "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited.";
+      "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited.";
+    ];
   assert_awaitable_errors
     {|
       import typing
@@ -818,8 +826,10 @@ let test_assign context =
         d["bar"] = awaitable()
         d["foo"] = awaitable()
     |}
-    [ "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited.";
-      "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited." ];
+    [
+      "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited.";
+      "Unawaited awaitable [1001]: Awaitable assigned to `d` is never awaited.";
+    ];
   assert_awaitable_errors
     ~context
     {|
@@ -849,11 +859,13 @@ let test_assign context =
 
 let () =
   "awaitableCheck"
-  >::: [ "aliases" >:: test_aliases;
+  >::: [
+         "aliases" >:: test_aliases;
          "assign" >:: test_assign;
          "attribute_access" >:: test_attribute_access;
          "forward" >:: test_forward;
          "initial" >:: test_initial;
          "return" >:: test_return;
-         "state" >:: test_state ]
+         "state" >:: test_state;
+       ]
   |> Test.run

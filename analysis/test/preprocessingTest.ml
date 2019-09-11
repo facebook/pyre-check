@@ -190,12 +190,14 @@ let test_expand_format_string _ =
   assert_format_string
     "f'foo{1+2}'"
     "foo{1+2}"
-    [ +Call
+    [
+      +Call
          {
            callee =
              +Name (Name.Attribute { base = +Integer 1; attribute = "__add__"; special = true });
            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
-         } ];
+         };
+    ];
 
   (* Ensure we fix up locations. *)
   let assert_locations source statements =
@@ -205,7 +207,8 @@ let test_expand_format_string _ =
   in
   assert_locations
     "f'foo{1}'"
-    [ +Statement.Expression
+    [
+      +Statement.Expression
          (node
             ~start:(1, 0)
             ~stop:(1, 9)
@@ -214,10 +217,12 @@ let test_expand_format_string _ =
                  StringLiteral.kind =
                    StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Integer 1)];
                  value = "foo{1}";
-               })) ];
+               }));
+    ];
   assert_locations
     "f'foo{123}a{456}'"
-    [ +Statement.Expression
+    [
+      +Statement.Expression
          (node
             ~start:(1, 0)
             ~stop:(1, 17)
@@ -225,13 +230,17 @@ let test_expand_format_string _ =
                {
                  StringLiteral.kind =
                    StringLiteral.Format
-                     [ node ~start:(1, 6) ~stop:(1, 9) (Integer 123);
-                       node ~start:(1, 12) ~stop:(1, 15) (Integer 456) ];
+                     [
+                       node ~start:(1, 6) ~stop:(1, 9) (Integer 123);
+                       node ~start:(1, 12) ~stop:(1, 15) (Integer 456);
+                     ];
                  value = "foo{123}a{456}";
-               })) ];
+               }));
+    ];
   assert_locations
     "return f'foo{123}a{456}'"
-    [ +Statement.Return
+    [
+      +Statement.Return
          {
            is_implicit = false;
            expression =
@@ -243,11 +252,14 @@ let test_expand_format_string _ =
                      {
                        StringLiteral.kind =
                          StringLiteral.Format
-                           [ node ~start:(1, 13) ~stop:(1, 16) (Integer 123);
-                             node ~start:(1, 19) ~stop:(1, 22) (Integer 456) ];
+                           [
+                             node ~start:(1, 13) ~stop:(1, 16) (Integer 123);
+                             node ~start:(1, 19) ~stop:(1, 22) (Integer 456);
+                           ];
                        value = "foo{123}a{456}";
                      }));
-         } ];
+         };
+    ];
   assert_locations
     {|
        f'''
@@ -255,7 +267,8 @@ let test_expand_format_string _ =
        b{789}
        '''
      |}
-    [ +Statement.Expression
+    [
+      +Statement.Expression
          (node
             ~start:(2, 0)
             ~stop:(5, 3)
@@ -263,11 +276,14 @@ let test_expand_format_string _ =
                {
                  StringLiteral.kind =
                    StringLiteral.Format
-                     [ node ~start:(3, 4) ~stop:(3, 7) (Integer 123);
+                     [
+                       node ~start:(3, 4) ~stop:(3, 7) (Integer 123);
                        node ~start:(3, 10) ~stop:(3, 13) (Integer 456);
-                       node ~start:(4, 2) ~stop:(4, 5) (Integer 789) ];
+                       node ~start:(4, 2) ~stop:(4, 5) (Integer 789);
+                     ];
                  value = "\nfoo{123}a{456}\nb{789}\n";
-               })) ]
+               }));
+    ]
 
 
 let test_qualify _ =
@@ -1645,14 +1661,16 @@ let test_expand_wildcard_imports context =
       from b import bar
     |};
   assert_expanded
-    [ ( "a.py",
+    [
+      ( "a.py",
         {|
         from x import y
         def foo(): pass
         def bar(): pass
         def _private(): pass
       |}
-      ) ]
+      );
+    ]
     {|
       from a import *
     |}
@@ -1660,14 +1678,16 @@ let test_expand_wildcard_imports context =
       from a import bar, foo, y
     |};
   assert_expanded
-    [ ( "a.py",
+    [
+      ( "a.py",
         {|
         from x import y
         def foo(): pass
         def bar(): pass
         __all__ = ["bar"]
       |}
-      ) ]
+      );
+    ]
     {|
       from a import *
     |}
@@ -1686,7 +1706,8 @@ let test_expand_implicit_returns _ =
       (Preprocessing.expand_implicit_returns (parse ~handle source))
       (Source.create
          ~relative:handle
-         [ +Statement.Define
+         [
+           +Statement.Define
               {
                 signature =
                   {
@@ -1699,7 +1720,8 @@ let test_expand_implicit_returns _ =
                     parent = None;
                   };
                 body = expected_body;
-              } ])
+              };
+         ])
   in
   assert_expand_implicit_returns
     {|
@@ -1724,9 +1746,11 @@ let test_expand_implicit_returns _ =
         finally:
           pass
     |}
-    [ +Statement.Try
+    [
+      +Statement.Try
          { Try.body = [+Statement.Pass]; handlers = []; orelse = []; finally = [+Statement.Pass] };
-      +Statement.Return { Return.expression = None; is_implicit = true } ];
+      +Statement.Return { Return.expression = None; is_implicit = true };
+    ];
 
   (* Lol termination analysis. *)
   assert_expand_implicit_returns
@@ -1735,9 +1759,11 @@ let test_expand_implicit_returns _ =
         while derp:
           pass
     |}
-    [ +Statement.While
+    [
+      +Statement.While
          { While.test = +Name (Name.Identifier "derp"); body = [+Statement.Pass]; orelse = [] };
-      +Statement.Return { Return.expression = None; is_implicit = true } ];
+      +Statement.Return { Return.expression = None; is_implicit = true };
+    ];
   assert_expand
     {|
       def foo():
@@ -1949,10 +1975,12 @@ let test_defines _ =
   let parent = { Class.name = !&"Foo"; bases = []; body; decorators = []; docstring = None } in
   assert_defines
     [+Statement.Class parent]
-    [ create_toplevel [+Statement.Class parent];
+    [
+      create_toplevel [+Statement.Class parent];
       create_class_toplevel ~parent:"Foo" ~body;
       define_bar;
-      define_foo ]
+      define_foo;
+    ]
 
 
 let test_classes _ =
@@ -1967,7 +1995,8 @@ let test_classes _ =
       Class.name = !&"foo";
       bases = [];
       body =
-        [ +Statement.Define
+        [
+          +Statement.Define
              {
                signature =
                  {
@@ -1980,7 +2009,8 @@ let test_classes _ =
                    parent = Some !&"foo";
                  };
                body = [+Statement.Pass];
-             } ];
+             };
+        ];
       decorators = [];
       docstring = None;
     }
@@ -2188,7 +2218,8 @@ let test_expand_typed_dictionaries _ =
 
 let () =
   "preprocessing"
-  >::: [ "expand_string_annotations" >:: test_expand_string_annotations;
+  >::: [
+         "expand_string_annotations" >:: test_expand_string_annotations;
          "expand_format_string" >:: test_expand_format_string;
          "qualify" >:: test_qualify;
          "replace_version_specific_code" >:: test_replace_version_specific_code;
@@ -2199,5 +2230,6 @@ let () =
          "defines" >:: test_defines;
          "classes" >:: test_classes;
          "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
-         "typed_dictionaries" >:: test_expand_typed_dictionaries ]
+         "typed_dictionaries" >:: test_expand_typed_dictionaries;
+       ]
   |> Test.run

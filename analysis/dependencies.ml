@@ -290,14 +290,16 @@ module Callgraph = struct
         `Assoc
           (List.rev_append
              locations
-             [ "kind", `String "method";
+             [
+               "kind", `String "method";
                "direct_target", `String (Reference.show direct_target);
                "static_target", `String (Reference.show static_target);
                ( "dispatch",
                  `String
                    ( match dispatch with
                    | Dynamic -> "dynamic"
-                   | Static -> "static" ) ) ])
+                   | Static -> "static" ) );
+             ])
 
 
   module CalleeValue = struct

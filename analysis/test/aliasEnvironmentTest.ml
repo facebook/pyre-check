@@ -256,7 +256,9 @@ let test_updates context =
 
 let () =
   "environment"
-  >::: [ "simple_registration" >:: test_simple_registration;
+  >::: [
+         "simple_registration" >:: test_simple_registration;
          "compounds" >:: test_harder_registrations;
-         "updates" >:: test_updates ]
+         "updates" >:: test_updates;
+       ]
   |> Test.run

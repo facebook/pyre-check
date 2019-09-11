@@ -745,10 +745,12 @@ let save_results ~configuration ~environment ~analyses all_callables =
         let filename_spec = models_path Analysis.name in
         let toplevel_metadata =
           `Assoc
-            [ "filename_spec", `String filename_spec;
+            [
+              "filename_spec", `String filename_spec;
               "root", `String root;
               "tool", `String "pysa";
-              "version", `String (Version.version ()) ]
+              "version", `String (Version.version ());
+            ]
         in
         let analysis_metadata = Analysis.metadata () in
         Json.Util.combine toplevel_metadata analysis_metadata |> Json.to_outbuf out_buffer;

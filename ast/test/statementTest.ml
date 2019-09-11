@@ -400,9 +400,11 @@ let test_attributes _ =
           if False:
             self.nested = value
     |}
-    [ "attribute", None, Some "value", true;
+    [
+      "attribute", None, Some "value", true;
       "nested", None, Some "value", false;
-      "other", None, Some "value", false ];
+      "other", None, Some "value", false;
+    ];
 
   (* `self` isn't special cased if a self parameter is passed into the function. *)
   assert_implicit_attributes
@@ -548,10 +550,12 @@ let test_attributes _ =
         Foo.attribute: int = value
         whatever()['asdf'] = 5
     |}
-    [ attribute ~name:"__init__" ~number_of_defines:1 ();
+    [
+      attribute ~name:"__init__" ~number_of_defines:1 ();
       attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
       attribute ~name:"ignored" ~value:"ignored" ();
-      attribute ~name:"implicit" ~value:"implicit" () ];
+      attribute ~name:"implicit" ~value:"implicit" ();
+    ];
   assert_attributes
     {|
       class Foo:
@@ -567,8 +571,10 @@ let test_attributes _ =
           self.attribute = value  # Prioritize explicit declaration
         Foo.attribute: int = value
     |}
-    [ attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" () ];
+    [
+      attribute ~name:"__init__" ~number_of_defines:1 ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
+    ];
   assert_attributes
     {|
       class Foo:
@@ -579,10 +585,12 @@ let test_attributes _ =
         def Foo.not_inlined(self):
           self.other: int = 1
     |}
-    [ attribute ~name:"__init__" ~number_of_defines:1 ();
+    [
+      attribute ~name:"__init__" ~number_of_defines:1 ();
       attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
       attribute ~name:"init" ~number_of_defines:1 ();
-      attribute ~name:"not_inlined" ~number_of_defines:1 () ];
+      attribute ~name:"not_inlined" ~number_of_defines:1 ();
+    ];
   assert_attributes
     {|
       class Foo:
@@ -604,10 +612,12 @@ let test_attributes _ =
         class Foo.Bar:  # no preprocessing in tests
           ...
     |}
-    [ attribute
+    [
+      attribute
         ~name:"Bar"
         ~annotation:(Type.class_variable (Type.meta (Type.Primitive "Foo.Bar")))
-        () ];
+        ();
+    ];
   assert_attributes
     {|
       class Foo:
@@ -637,8 +647,10 @@ let test_attributes _ =
       class Foo:
         Foo.a, Foo.b = list(range(2))
     |}
-    [ "a", None, None, Some "list(range(2))[0]", false, 0;
-      "b", None, None, Some "list(range(2))[1]", false, 0 ];
+    [
+      "a", None, None, Some "list(range(2))[0]", false, 0;
+      "b", None, None, Some "list(range(2))[1]", false, 0;
+    ];
 
   (* Implicit attributes in tests. *)
   assert_attributes
@@ -648,7 +660,10 @@ let test_attributes _ =
         def Test.setUp(self):
           self.attribute = value
     |}
-    [attribute ~name:"attribute" ~value:"value" (); attribute ~name:"setUp" ~number_of_defines:1 ()];
+    [
+      attribute ~name:"attribute" ~value:"value" ();
+      attribute ~name:"setUp" ~number_of_defines:1 ();
+    ];
   assert_attributes
     ~in_test:true
     {|
@@ -658,10 +673,12 @@ let test_attributes _ =
         def Test.with_context(self):
           self.context = value
     |}
-    [ attribute ~name:"attribute" ~value:"value" ();
+    [
+      attribute ~name:"attribute" ~value:"value" ();
       attribute ~name:"context" ~value:"value" ();
       attribute ~name:"setUp" ~number_of_defines:1 ();
-      attribute ~name:"with_context" ~number_of_defines:1 () ];
+      attribute ~name:"with_context" ~number_of_defines:1 ();
+    ];
 
   (* __slot__ attributes *)
   assert_attributes
@@ -681,8 +698,10 @@ let test_attributes _ =
       class Foo:
         Foo.x, Foo.y = 1, 2
     |}
-    [ attribute ~location:((3, 2), (3, 7)) ~name:"x" ~value:"1" ();
-      attribute ~location:((3, 9), (3, 14)) ~name:"y" ~value:"2" () ]
+    [
+      attribute ~location:((3, 2), (3, 7)) ~name:"x" ~value:"1" ();
+      attribute ~location:((3, 9), (3, 14)) ~name:"y" ~value:"2" ();
+    ]
 
 
 let test_preamble _ =
@@ -769,8 +788,10 @@ let test_preamble _ =
       except Exception as error:
         pass
     |}
-    [ "error = ...\nassert isinstance(error, IOError)";
-      "error = ...\nassert isinstance(error, Exception)" ];
+    [
+      "error = ...\nassert isinstance(error, IOError)";
+      "error = ...\nassert isinstance(error, Exception)";
+    ];
   assert_preamble
     {|
       try:
@@ -992,23 +1013,29 @@ let test_pp _ =
 
 let () =
   "define"
-  >::: [ "is_method" >:: test_is_method;
+  >::: [
+         "is_method" >:: test_is_method;
          "classmethod" >:: test_is_classmethod;
          "is_class_property" >:: test_is_class_property;
          "decorator" >:: test_decorator;
          "is_constructor" >:: test_is_constructor;
-         "dump" >:: test_dump ]
+         "dump" >:: test_dump;
+       ]
   |> Test.run;
   "class"
-  >::: [ "constructor" >:: test_constructor;
+  >::: [
+         "constructor" >:: test_constructor;
          "defines" >:: test_defines;
          "attributes" >:: test_attributes;
-         "is_unit_test" >:: test_is_unit_test ]
+         "is_unit_test" >:: test_is_unit_test;
+       ]
   |> Test.run;
 
   "statement"
-  >::: [ "assume" >:: test_assume;
+  >::: [
+         "assume" >:: test_assume;
          "preamble" >:: test_preamble;
          "terminates" >:: test_terminates;
-         "pp" >:: test_pp ]
+         "pp" >:: test_pp;
+       ]
   |> Test.run

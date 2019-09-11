@@ -129,13 +129,17 @@ let test_initial context =
   assert_initial
     "def foo(x: int = 1.0) -> None: ..."
     ~errors:
-      [ "Incompatible variable type [9]: x is declared to have type `int` but is used as type "
-        ^ "`float`." ]
+      [
+        "Incompatible variable type [9]: x is declared to have type `int` but is used as type "
+        ^ "`float`.";
+      ]
     ~immutables:["x", (false, Type.integer)]
     ~annotations:["x", Type.integer];
   assert_initial
     ~errors:
-      ["Missing parameter annotation [2]: Parameter `x` has type `float` but no type is specified."]
+      [
+        "Missing parameter annotation [2]: Parameter `x` has type `float` but no type is specified.";
+      ]
     ~annotations:["x", Type.float]
     "def foo(x = 1.0) -> None: ...";
   assert_initial
@@ -368,7 +372,8 @@ let assert_resolved ~context sources expression expected =
 let test_module_exports context =
   let assert_exports_resolved expression expected =
     let sources =
-      [ ( "implementing.py",
+      [
+        ( "implementing.py",
           {|
         def implementing.function() -> int: ...
         constant: int = 1
@@ -395,7 +400,8 @@ let test_module_exports context =
         );
         "wildcard_default.py", {|
         from exporting_wildcard_default import *
-      |} ]
+      |};
+      ]
     in
     assert_resolved ~context sources expression expected
   in
@@ -416,7 +422,8 @@ let test_module_exports context =
   let assert_fixpoint_stop =
     assert_resolved
       ~context
-      [ "loop/b.py", {|
+      [
+        "loop/b.py", {|
             b: int = 1
           |};
         "loop/a.py", {|
@@ -433,7 +440,8 @@ let test_module_exports context =
           |};
         "no_loop/__init__.py", {|
             from no_loop.a import c
-          |} ]
+          |};
+      ]
   in
   assert_fixpoint_stop "loop.b" Type.Top;
   assert_fixpoint_stop "no_loop.c" Type.integer
@@ -443,7 +451,8 @@ let test_object_callables context =
   let assert_resolved expression annotation =
     assert_resolved
       ~context
-      [ ( "module.py",
+      [
+        ( "module.py",
           {|
             _K = typing.TypeVar('_K')
             _V = typing.TypeVar('_V')
@@ -465,7 +474,8 @@ let test_object_callables context =
             callable: typing.Callable[..., unknown][[..., int][..., str]] = ...
             submodule: Submodule[int] = ...
           |}
-        ) ]
+        );
+      ]
       expression
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
   in
@@ -560,9 +570,11 @@ let test_forward_expression context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+        [
+          "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
           "Undefined name [18]: Global name `undefined` is not defined, or there is at least one \
-           control flow path that doesn't define `undefined`." ])
+           control flow path that doesn't define `undefined`.";
+        ])
     "await undefined"
     Type.Top;
 
@@ -588,8 +600,10 @@ let test_forward_expression context =
     ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~errors:
       (`Specific
-        [ "Incompatible parameter type [6]: "
-          ^ "Expected `int` for 1st anonymous parameter to call `dict.add_key` but got `str`." ])
+        [
+          "Incompatible parameter type [6]: "
+          ^ "Expected `int` for 1st anonymous parameter to call `dict.add_key` but got `str`.";
+        ])
     "x.add_key('string')"
     Type.none;
   assert_forward
@@ -604,9 +618,11 @@ let test_forward_expression context =
       |}
     ~errors:
       (`Specific
-        [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+        [
+          "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
            `test.foo` but got `unknown`.";
-          "Undefined attribute [16]: Optional type has no attribute `attribute`." ])
+          "Undefined attribute [16]: Optional type has no attribute `attribute`.";
+        ])
     "test.foo(unknown).attribute"
     Type.Top;
   assert_forward
@@ -614,8 +630,10 @@ let test_forward_expression context =
     ~postcondition:["undefined", Type.Union [Type.integer; Type.undeclared]]
     ~errors:
       (`Specific
-        [ "Undefined name [18]: Global name `undefined` is not defined, or there is at least one "
-          ^ "control flow path that doesn't define `undefined`." ])
+        [
+          "Undefined name [18]: Global name `undefined` is not defined, or there is at least one "
+          ^ "control flow path that doesn't define `undefined`.";
+        ])
     "undefined()"
     Type.Top;
   assert_forward
@@ -643,8 +661,10 @@ let test_forward_expression context =
       |}
     ~errors:
       (`Specific
-        [ "Undefined attribute [16]: `test.Foo` has no attribute `unknown`.";
-          "Undefined attribute [16]: `test.Foo` has no attribute `another_unknown`." ])
+        [
+          "Undefined attribute [16]: `test.Foo` has no attribute `unknown`.";
+          "Undefined attribute [16]: `test.Foo` has no attribute `another_unknown`.";
+        ])
     "test.foo(foo_instance.unknown).another_unknown"
     Type.Top;
 
@@ -748,9 +768,11 @@ let test_forward_expression context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `[]` is "
+        [
+          "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `[]` is "
           ^ "incomplete, so attribute `__iter__` cannot be accessed. Separate the expression into "
-          ^ "an assignment and give it an explicit annotation." ])
+          ^ "an assignment and give it an explicit annotation.";
+        ])
     "(element for element in [])"
     (Type.generator Type.Any);
   assert_forward
@@ -830,8 +852,10 @@ let test_forward_expression context =
     ~postcondition:["x", Type.undeclared]
     ~errors:
       (`Specific
-        [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-           flow path that doesn't define `x`." ])
+        [
+          "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+           flow path that doesn't define `x`.";
+        ])
     "[x]"
     (Type.list Type.undeclared);
 
@@ -1045,32 +1069,40 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
-           flow path that doesn't define `y`." ])
+        [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
+           flow path that doesn't define `y`.";
+        ])
     ["y", Type.undeclared]
     "x = y"
     ["x", Type.Any; "y", Type.undeclared];
   assert_forward
     ~errors:
       (`Specific
-        [ "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
-           flow path that doesn't define `y`." ])
+        [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
+           flow path that doesn't define `y`.";
+        ])
     ["y", Type.Union [Type.integer; Type.undeclared]]
     "x = y"
     ["x", Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
   assert_forward
     ~errors:
       (`Specific
-        [ "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
-           flow path that doesn't define `y`." ])
+        [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
+           flow path that doesn't define `y`.";
+        ])
     ["y", Type.undeclared]
     "x = [y]"
     ["x", Type.list Type.Any; "y", Type.undeclared];
   assert_forward
     ~errors:
       (`Specific
-        [ "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
-           flow path that doesn't define `y`." ])
+        [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one control \
+           flow path that doesn't define `y`.";
+        ])
     ["y", Type.Union [Type.integer; Type.undeclared]]
     "x = [y]"
     ["x", Type.list Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
@@ -1083,8 +1115,10 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Incompatible variable type [9]: x is declared to have type `str` "
-          ^ "but is used as type `int`." ])
+        [
+          "Incompatible variable type [9]: x is declared to have type `str` "
+          ^ "but is used as type `int`.";
+        ])
     ~postcondition_immutables:["x", (false, Type.string)]
     []
     "x: str = 1"
@@ -1118,8 +1152,10 @@ let test_forward_statement context =
     ~postcondition_immutables:["x", (false, Type.tuple [Type.Any; Type.Any])]
     ~errors:
       (`Specific
-        [ "Prohibited any [33]: Expression `x` is used as type `typing.Tuple[int, int]`; "
-          ^ "given explicit type cannot contain `Any`." ])
+        [
+          "Prohibited any [33]: Expression `x` is used as type `typing.Tuple[int, int]`; "
+          ^ "given explicit type cannot contain `Any`.";
+        ])
     []
     "x: typing.Tuple[typing.Any, typing.Any] = 1, 2"
     ["x", Type.tuple [Type.literal_integer 1; Type.literal_integer 2]];
@@ -1175,22 +1211,28 @@ let test_forward_statement context =
   assert_forward
     ["x", Type.tuple [Type.integer; Type.string; Type.float]]
     "*a, b = x"
-    [ "x", Type.tuple [Type.integer; Type.string; Type.float];
+    [
+      "x", Type.tuple [Type.integer; Type.string; Type.float];
       "a", Type.list (Type.union [Type.integer; Type.string]);
-      "b", Type.float ];
+      "b", Type.float;
+    ];
   assert_forward
     ["x", Type.tuple [Type.integer; Type.string; Type.float]]
     "a, *b = x"
-    [ "x", Type.tuple [Type.integer; Type.string; Type.float];
+    [
+      "x", Type.tuple [Type.integer; Type.string; Type.float];
       "a", Type.integer;
-      "b", Type.list (Type.union [Type.string; Type.float]) ];
+      "b", Type.list (Type.union [Type.string; Type.float]);
+    ];
   assert_forward
     ["x", Type.tuple [Type.integer; Type.string; Type.integer; Type.float]]
     "a, *b, c = x"
-    [ "x", Type.tuple [Type.integer; Type.string; Type.integer; Type.float];
+    [
+      "x", Type.tuple [Type.integer; Type.string; Type.integer; Type.float];
       "a", Type.integer;
       "b", Type.list (Type.union [Type.string; Type.integer]);
-      "c", Type.float ];
+      "c", Type.float;
+    ];
   assert_forward
     ["x", Type.tuple [Type.integer]]
     "a, *b = x"
@@ -1202,10 +1244,12 @@ let test_forward_statement context =
   assert_forward
     ["x", Type.tuple [Type.integer; Type.float]]
     "a, *b, c = x"
-    [ "x", Type.tuple [Type.integer; Type.float];
+    [
+      "x", Type.tuple [Type.integer; Type.float];
       "a", Type.integer;
       "b", Type.tuple [];
-      "c", Type.float ];
+      "c", Type.float;
+    ];
 
   (* Assignments with immutables. *)
   assert_forward ~postcondition_immutables:["x", (true, Type.Top)] [] "global x" ["x", Type.Top];
@@ -1217,10 +1261,12 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Incompatible variable type [9]: y is declared to have type `int` "
+        [
+          "Incompatible variable type [9]: y is declared to have type `int` "
           ^ "but is used as type `unknown`.";
           "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-           flow path that doesn't define `x`." ])
+           flow path that doesn't define `x`.";
+        ])
     ~postcondition_immutables:["y", (false, Type.integer)]
     []
     "y: int = x"
@@ -1242,8 +1288,10 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter to call \
-           `dict.__getitem__` but got `int`." ])
+        [
+          "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter to call \
+           `dict.__getitem__` but got `int`.";
+        ])
     ["d", Type.dictionary ~key:Type.string ~value:Type.integer]
     "del d[0]"
     ["d", Type.dictionary ~key:Type.string ~value:Type.integer];
@@ -1346,17 +1394,21 @@ let test_forward_statement context =
     ~bottom:false
     ~errors:
       (`Specific
-        [ "Incompatible parameter type [6]: "
+        [
+          "Incompatible parameter type [6]: "
           ^ "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` "
-          ^ "but got `int`." ])
+          ^ "but got `int`.";
+        ])
     ["x", Type.integer]
     "assert isinstance(x, 1)"
     ["x", Type.integer];
   assert_forward
     ~errors:
       (`Specific
-        [ "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x,int)` will \
-           always fail." ])
+        [
+          "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x,int)` will \
+           always fail.";
+        ])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x, int)"
@@ -1364,8 +1416,10 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x,float)` \
-           will always fail." ])
+        [
+          "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x,float)` \
+           will always fail.";
+        ])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x, float)"
@@ -1382,8 +1436,10 @@ let test_forward_statement context =
   assert_forward
     ["my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string]; "x", Type.Top]
     "assert isinstance(x, my_type)"
-    [ "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
-      "x", Type.union [Type.integer; Type.string] ];
+    [
+      "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
+      "x", Type.union [Type.integer; Type.string];
+    ];
   assert_forward
     ["my_type", Type.Tuple (Type.Unbounded (Type.meta Type.integer)); "x", Type.Top]
     "assert isinstance(x, my_type)"
@@ -1393,13 +1449,19 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Impossible assertion [25]: `x.__add__(1)` has type `int`, assertion `not \
-           isinstance(x.__add__(1),int)` will always fail." ])
+        [
+          "Impossible assertion [25]: `x.__add__(1)` has type `int`, assertion `not \
+           isinstance(x.__add__(1),int)` will always fail.";
+        ])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x + 1, int)"
     ["x", Type.integer];
-  assert_forward ~bottom:false ["x", Type.Bottom] "assert not isinstance(x, int)" ["x", Type.Bottom];
+  assert_forward
+    ~bottom:false
+    ["x", Type.Bottom]
+    "assert not isinstance(x, int)"
+    ["x", Type.Bottom];
   assert_forward ~bottom:true [] "assert False" [];
   assert_forward ~bottom:false [] "assert (not True)" [];
 
@@ -1407,8 +1469,10 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Invalid Exception [48]: Expression `1` has type `typing_extensions.Literal[1]` but \
-           must extend BaseException." ])
+        [
+          "Invalid Exception [48]: Expression `1` has type `typing_extensions.Literal[1]` but \
+           must extend BaseException.";
+        ])
     []
     "raise 1"
     [];
@@ -1417,10 +1481,12 @@ let test_forward_statement context =
   assert_forward
     ~errors:
       (`Specific
-        [ "Undefined name [18]: Global name `undefined` is not defined, or there is at least one \
+        [
+          "Undefined name [18]: Global name `undefined` is not defined, or there is at least one \
            control flow path that doesn't define `undefined`.";
           "Invalid Exception [48]: Expression `undefined` has type `unknown` but must extend \
-           BaseException." ])
+           BaseException.";
+        ])
     []
     "raise undefined"
     [];
@@ -1604,13 +1670,17 @@ let test_calls context =
      def calls_method(c: Class):
        c.method()
    |}
-    [ ( "qualifier.calls_method",
-        [ `Method
+    [
+      ( "qualifier.calls_method",
+        [
+          `Method
             {
               direct_target = "qualifier.Class.method";
               static_target = "qualifier.Class.method";
               dispatch = Dynamic;
-            } ] ) ];
+            };
+        ] );
+    ];
 
   (* Constructors and `super`. *)
   assert_calls
@@ -1626,34 +1696,44 @@ let test_calls context =
      def calls_ClassWithInit__init__(object: object):
        ClassWithInit.__init__(object)
    |}
-    [ ( "qualifier.ClassWithInit.__init__",
-        [ `Method
+    [
+      ( "qualifier.ClassWithInit.__init__",
+        [
+          `Method
             {
               direct_target = "object.__init__";
               static_target = "object.__init__";
               dispatch = Static;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_Class",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "object.__init__";
               static_target = "qualifier.Class.__init__";
               dispatch = Static;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_ClassWithInit",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.ClassWithInit.__init__";
               static_target = "qualifier.ClassWithInit.__init__";
               dispatch = Static;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_ClassWithInit__init__",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.ClassWithInit.__init__";
               static_target = "qualifier.ClassWithInit.__init__";
               dispatch = Static;
-            } ] ) ];
+            };
+        ] );
+    ];
   assert_calls
     {|
      class Class:
@@ -1662,13 +1742,17 @@ let test_calls context =
      def calls_class_method():
        Class.classmethod()
    |}
-    [ ( "qualifier.calls_class_method",
-        [ `Method
+    [
+      ( "qualifier.calls_class_method",
+        [
+          `Method
             {
               direct_target = "qualifier.Class.classmethod";
               static_target = "qualifier.Class.classmethod";
               dispatch = Static;
-            } ] ) ];
+            };
+        ] );
+    ];
 
   (* Inheritance. *)
   assert_calls
@@ -1690,34 +1774,44 @@ let test_calls context =
       def calls_OverridingSubclass_method(o: OverridingSubclass):
         o.method()
     |}
-    [ ( "qualifier.calls_Class_method",
-        [ `Method
+    [
+      ( "qualifier.calls_Class_method",
+        [
+          `Method
             {
               direct_target = "qualifier.Class.method";
               static_target = "qualifier.Class.method";
               dispatch = Dynamic;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_Indirect_method",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.Class.method";
               static_target = "qualifier.Indirect.method";
               dispatch = Dynamic;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_Subclass_method",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.Class.method";
               static_target = "qualifier.Subclass.method";
               dispatch = Dynamic;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_OverridingSubclass_method",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.OverridingSubclass.method";
               static_target = "qualifier.OverridingSubclass.method";
               dispatch = Dynamic;
-            } ] ) ];
+            };
+        ] );
+    ];
 
   (* Classmethods. *)
   assert_calls
@@ -1743,48 +1837,62 @@ let test_calls context =
       def calls_Type_Subclass_class_method(c: typing.Type[Subclass]):
         c.class_method()
     |}
-    [ ( "qualifier.calls_Class_class_method",
-        [ `Method
+    [
+      ( "qualifier.calls_Class_class_method",
+        [
+          `Method
             {
               direct_target = "qualifier.Class.class_method";
               static_target = "qualifier.Class.class_method";
               dispatch = Static;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_Indirect_class_method",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.Class.class_method";
               static_target = "qualifier.Indirect.class_method";
               dispatch = Static;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_Subclass_class_method",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.Subclass.class_method";
               static_target = "qualifier.Subclass.class_method";
               dispatch = Static;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_Type_Class_class_method",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.Class.class_method";
               static_target = "qualifier.Class.class_method";
               dispatch = Dynamic;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_Type_Indirect_class_method",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.Class.class_method";
               static_target = "qualifier.Indirect.class_method";
               dispatch = Dynamic;
-            } ] );
+            };
+        ] );
       ( "qualifier.calls_Type_Subclass_class_method",
-        [ `Method
+        [
+          `Method
             {
               direct_target = "qualifier.Subclass.class_method";
               static_target = "qualifier.Subclass.class_method";
               dispatch = Dynamic;
-            } ] ) ];
+            };
+        ] );
+    ];
 
   (* Unions. *)
   assert_calls
@@ -1796,8 +1904,10 @@ let test_calls context =
      def calls_method_on_union(union: typing.Union[Class, OtherClass]):
        union.method()
    |}
-    [ ( "qualifier.calls_method_on_union",
-        [ `Method
+    [
+      ( "qualifier.calls_method_on_union",
+        [
+          `Method
             {
               direct_target = "qualifier.Class.method";
               static_target = "qualifier.Class.method";
@@ -1808,7 +1918,9 @@ let test_calls context =
               direct_target = "qualifier.OtherClass.method";
               static_target = "qualifier.OtherClass.method";
               dispatch = Dynamic;
-            } ] ) ];
+            };
+        ] );
+    ];
 
   (* We deduplicate calls. *)
   assert_calls
@@ -1820,13 +1932,17 @@ let test_calls context =
       bar = foo
       bar.method()
   |}
-    [ ( "qualifier.call_twice",
-        [ `Method
+    [
+      ( "qualifier.call_twice",
+        [
+          `Method
             {
               direct_target = "qualifier.Foo.method";
               static_target = "qualifier.Foo.method";
               dispatch = Dynamic;
-            } ] ) ];
+            };
+        ] );
+    ];
 
   (* Properties. *)
   assert_calls
@@ -1837,13 +1953,17 @@ let test_calls context =
       def call_property(foo: Foo):
         x = foo.method
     |}
-    [ ( "qualifier.call_property",
-        [ `Method
+    [
+      ( "qualifier.call_property",
+        [
+          `Method
             {
               direct_target = "qualifier.Foo.method";
               static_target = "qualifier.Foo.method";
               dispatch = Dynamic;
-            } ] ) ];
+            };
+        ] );
+    ];
   assert_calls
     {|
       class Foo:
@@ -1854,13 +1974,17 @@ let test_calls context =
       def call_property(bar: Bar):
         x = bar.method
     |}
-    [ ( "qualifier.call_property",
-        [ `Method
+    [
+      ( "qualifier.call_property",
+        [
+          `Method
             {
               direct_target = "qualifier.Foo.method";
               static_target = "qualifier.Bar.method";
               dispatch = Dynamic;
-            } ] ) ];
+            };
+        ] );
+    ];
 
   (* Don't attempt to register calls for non-property attribute accesses. *)
   assert_calls
@@ -1884,8 +2008,10 @@ let test_calls context =
       def call_property(parameter: typing.Union[Foo, Bar]):
         x = parameter.method
     |}
-    [ ( "qualifier.call_property",
-        [ `Method
+    [
+      ( "qualifier.call_property",
+        [
+          `Method
             {
               direct_target = "qualifier.Foo.method";
               static_target = "qualifier.Foo.method";
@@ -1896,7 +2022,9 @@ let test_calls context =
               direct_target = "qualifier.Bar.method";
               static_target = "qualifier.Bar.method";
               dispatch = Dynamic;
-            } ] ) ];
+            };
+        ] );
+    ];
 
   (* Statically invoking properties is illegal in the runtime - we default to dynamic dispatch, but
      this should be a type error, really. *)
@@ -1908,18 +2036,23 @@ let test_calls context =
       def call_property():
         x = Foo.method
     |}
-    [ ( "qualifier.call_property",
-        [ `Method
+    [
+      ( "qualifier.call_property",
+        [
+          `Method
             {
               direct_target = "qualifier.Foo.method";
               static_target = "qualifier.Foo.method";
               dispatch = Dynamic;
-            } ] ) ]
+            };
+        ] );
+    ]
 
 
 let () =
   "type"
-  >::: [ "initial" >:: test_initial;
+  >::: [
+         "initial" >:: test_initial;
          "less_or_equal" >:: test_less_or_equal;
          "join" >:: test_join;
          "widen" >:: test_widen;
@@ -1931,5 +2064,6 @@ let () =
          "module_exports" >:: test_module_exports;
          "object_callables" >:: test_object_callables;
          "callable_selection" >:: test_callable_selection;
-         "calls" >:: test_calls ]
+         "calls" >:: test_calls;
+       ]
   |> Test.run

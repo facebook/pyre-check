@@ -100,9 +100,11 @@ let test_construction context =
         return self.bar()
     |}
     ~expected:
-      [ `Method "test.Foo.__init__", [];
+      [
+        `Method "test.Foo.__init__", [];
         `Method "test.Foo.bar", [];
-        `Method "test.Foo.qux", [`Method "test.Foo.bar"] ];
+        `Method "test.Foo.qux", [`Method "test.Foo.bar"];
+      ];
   assert_call_graph
     {|
     class Foo:
@@ -116,9 +118,11 @@ let test_construction context =
         return self.bar()
     |}
     ~expected:
-      [ `Method "test.Foo.__init__", [];
+      [
+        `Method "test.Foo.__init__", [];
         `Method "test.Foo.bar", [`Method "test.Foo.qux"];
-        `Method "test.Foo.qux", [`Method "test.Foo.bar"] ];
+        `Method "test.Foo.qux", [`Method "test.Foo.bar"];
+      ];
   assert_call_graph
     {|
      class A:
@@ -186,8 +190,10 @@ let test_construction_reverse context =
         return self.qux()
     |}
     ~expected:
-      [ `Method "test.Foo.bar", [`Method "test.Foo.qux"; `Method "test.Foo.baz"];
-        `Method "test.Foo.qux", [`Method "test.Foo.bar"] ]
+      [
+        `Method "test.Foo.bar", [`Method "test.Foo.qux"; `Method "test.Foo.baz"];
+        `Method "test.Foo.qux", [`Method "test.Foo.bar"];
+      ]
 
 
 let test_type_collection context =
@@ -335,7 +341,8 @@ let test_method_overrides context =
     ~expected:[];
   assert_method_overrides
     ~update_environment_with:
-      [ {
+      [
+        {
           handle = "module.py";
           source =
             {|
@@ -343,7 +350,8 @@ let test_method_overrides context =
         class Baz(module.Foo):
           def foo(): pass
       |};
-        } ]
+        };
+      ]
     ~handle:"test_module.py"
     {|
       import module
@@ -407,10 +415,12 @@ let test_strongly_connected_components context =
     |}
     ~handle:"s1.py"
     ~expected:
-      [ [`Method "s1.Foo.__init__"];
+      [
+        [`Method "s1.Foo.__init__"];
         [`Method "s1.Foo.c1"; `Method "s1.Foo.c2"];
         [`Method "s1.Foo.c3"; `Method "s1.Foo.c4"];
-        [`Method "s1.Foo.c5"] ];
+        [`Method "s1.Foo.c5"];
+      ];
   assert_strongly_connected_components
     {|
     class Foo:
@@ -441,19 +451,23 @@ let test_strongly_connected_components context =
     |}
     ~handle:"s2.py"
     ~expected:
-      [ [`Method "s2.Foo.__init__"];
+      [
+        [`Method "s2.Foo.__init__"];
         [`Method "s2.Bar.__init__"];
         [`Method "s2.Foo.c1"; `Method "s2.Foo.c2"];
         [`Method "s2.Bar.c1"];
-        [`Method "s2.Bar.c2"; `Method "s2.Foo.c3"] ]
+        [`Method "s2.Bar.c2"; `Method "s2.Foo.c3"];
+      ]
 
 
 let () =
   Scheduler.Daemon.check_entry_point ();
   "callGraph"
-  >::: [ "type_collection" >:: test_type_collection;
+  >::: [
+         "type_collection" >:: test_type_collection;
          "build" >:: test_construction;
          "build_reverse" >:: test_construction_reverse;
          "overrides" >:: test_method_overrides;
-         "strongly_connected_components" >:: test_strongly_connected_components ]
+         "strongly_connected_components" >:: test_strongly_connected_components;
+       ]
   |> Test.run

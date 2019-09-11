@@ -136,12 +136,14 @@ let test_pp _ =
         {
           Comprehension.element = !"element";
           Comprehension.generators =
-            [ {
+            [
+              {
                 Comprehension.target = !"x";
                 Comprehension.iterator = !"x";
                 Comprehension.conditions = [simple_expression; simple_expression];
                 async = false;
-              } ];
+              };
+            ];
         })
     "comprehension(element for generators(generator(x in x if False and not True, False and not \
      True)))";
@@ -149,8 +151,10 @@ let test_pp _ =
     (+Lambda
         {
           Lambda.parameters =
-            [ +{ Parameter.name = "x"; Parameter.value = Some (+Integer 1); annotation = None };
-              +{ Parameter.name = "y"; Parameter.value = Some (+Integer 2); annotation = None } ];
+            [
+              +{ Parameter.name = "x"; Parameter.value = Some (+Integer 1); annotation = None };
+              +{ Parameter.name = "y"; Parameter.value = Some (+Integer 2); annotation = None };
+            ];
           Lambda.body = +Tuple [!"x"; +String (StringLiteral.create "y")];
         })
     {|lambda (x=1, y=2) ((x, "y"))|};
@@ -187,7 +191,8 @@ let test_pp _ =
                     special = true;
                   });
           arguments =
-            [ {
+            [
+              {
                 Call.Argument.name = None;
                 value =
                   +Call
@@ -202,7 +207,8 @@ let test_pp _ =
                                });
                        arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
                      };
-              } ];
+              };
+            ];
         })
     "a.b[c[1]]";
   assert_pp_equal
@@ -474,7 +480,8 @@ let test_arguments_location _ =
 
 let () =
   "expression"
-  >::: [ "negate" >:: test_negate;
+  >::: [
+         "negate" >:: test_negate;
          "normalize" >:: test_normalize;
          "pp" >:: test_pp;
          "equality" >:: test_equality;
@@ -484,5 +491,6 @@ let () =
          "create_name" >:: test_create_name;
          "name_to_identifiers" >:: test_name_to_identifiers;
          "name_equals" >:: test_name_equals;
-         "arguments_location" >:: test_arguments_location ]
+         "arguments_location" >:: test_arguments_location;
+       ]
   |> Test.run

@@ -269,8 +269,10 @@ let test_infer context =
           else:
               return "Hello"
     |}
-    [ "\"Missing return annotation [3]: Returning `typing.Union[int, str]` but no return type is "
-      ^ "specified.\"" ];
+    [
+      "\"Missing return annotation [3]: Returning `typing.Union[int, str]` but no return type is "
+      ^ "specified.\"";
+    ];
   assert_infer
     {|
       def return_none ():
@@ -480,8 +482,10 @@ let test_infer context =
         if b > x:
             x = b
     |}
-    [ {|[{"name":"a","type":null,"value":null},{"name":"x","type":null,"value":"15"}]|};
-      {|[{"name":"a","type":null,"value":null},{"name":"x","type":"int","value":"15"}]|} ];
+    [
+      {|[{"name":"a","type":null,"value":null},{"name":"x","type":null,"value":"15"}]|};
+      {|[{"name":"a","type":null,"value":null},{"name":"x","type":"int","value":"15"}]|};
+    ];
 
   assert_infer
     ~fields:["inference.parameters"]
@@ -491,8 +495,10 @@ let test_infer context =
               x = ""
 
     |}
-    [ {|[{"name":"x","type":null,"value":"None"}]|};
-      {|[{"name":"x","type":"typing.Optional[str]","value":"None"}]|} ];
+    [
+      {|[{"name":"x","type":null,"value":"None"}]|};
+      {|[{"name":"x","type":"typing.Optional[str]","value":"None"}]|};
+    ];
   assert_infer
     ~fields:["inference.parameters"]
     {|
@@ -503,8 +509,10 @@ let test_infer context =
       def foo(x = None):
         bar(x)
     |}
-    [ {|[{"name":"x","type":null,"value":"None"}]|};
-      {|[{"name":"x","type":"Optional[str]","value":"None"}]|} ];
+    [
+      {|[{"name":"x","type":null,"value":"None"}]|};
+      {|[{"name":"x","type":"Optional[str]","value":"None"}]|};
+    ];
 
   (* Don't infer default of None to be None *)
   assert_infer
@@ -632,15 +640,19 @@ let test_infer_backward context =
           a += b
           return a
     |}
-    [ {|[{"name":"x","type":"int","value":null},{"name":"y","type":null,"value":null}]|};
-      {|[{"name":"x","type":null,"value":null},{"name":"y","type":"int","value":null}]|} ];
+    [
+      {|[{"name":"x","type":"int","value":null},{"name":"y","type":null,"value":null}]|};
+      {|[{"name":"x","type":null,"value":null},{"name":"y","type":"int","value":null}]|};
+    ];
   ()
 
 
 let () =
   "inference"
-  >::: [ "backward" >:: test_backward;
+  >::: [
+         "backward" >:: test_backward;
          "missing_parameter" >:: test_check_missing_parameter;
          "infer" >:: test_infer;
-         "infer_backward" >:: test_infer_backward ]
+         "infer_backward" >:: test_infer_backward;
+       ]
   |> Test.run

@@ -57,11 +57,13 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   in
   let normals =
     if metadata then
-      [ "binary", Sys.argv.(0);
+      [
+        "binary", Sys.argv.(0);
         "root", local_root;
         "username", username;
         "hostname", hostname;
-        "identifier", log_identifier ]
+        "identifier", log_identifier;
+      ]
       @ server_configuration_metadata
       @ normals
     else
@@ -75,8 +77,10 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   in
   Yojson.Safe.to_string
     (`Assoc
-      [ "int", `Assoc (List.map ~f:(fun (label, data) -> label, `Int data) integers);
-        "normal", `Assoc (List.map ~f:(fun (label, data) -> label, `String data) normals) ])
+      [
+        "int", `Assoc (List.map ~f:(fun (label, data) -> label, `Int data) integers);
+        "normal", `Assoc (List.map ~f:(fun (label, data) -> label, `String data) normals);
+      ])
 
 
 let last_flush_timestamp = ref (Unix.time ())
@@ -185,8 +189,10 @@ let log_exception caught_exception ~fatal ~origin =
     ~name:"uncaught exception"
     ~integers:[]
     ~normals:
-      [ "exception", Exn.to_string caught_exception;
+      [
+        "exception", Exn.to_string caught_exception;
         "exception backtrace", Printexc.get_backtrace ();
         "exception origin", origin;
-        ("fatal", if fatal then "true" else "false") ]
+        ("fatal", if fatal then "true" else "false");
+      ]
     ()

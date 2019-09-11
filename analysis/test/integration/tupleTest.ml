@@ -27,8 +27,9 @@ let test_check_tuple context =
       def foo(a: typing.Tuple[int, int]) -> None:
         a.tuple_method(1.0)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `tuple.tuple_method` but got `float`."
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `tuple.tuple_method` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -41,15 +42,19 @@ let test_check_tuple context =
       def foo() -> typing.Tuple[int, str]:
         return (1, "string", 3)
     |}
-    [ "Incompatible return type [7]: Expected `typing.Tuple[int, str]` but got "
-      ^ "`typing.Tuple[int, str, int]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Tuple[int, str]` but got "
+      ^ "`typing.Tuple[int, str, int]`.";
+    ];
   assert_type_errors
     {|
       def foo() -> typing.Tuple[int, ...]:
         return (1, "string", 3)
     |}
-    [ "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got "
-      ^ "`typing.Tuple[int, str, int]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got "
+      ^ "`typing.Tuple[int, str, int]`.";
+    ];
   assert_type_errors
     {|
       def foo()-> typing.Tuple[int, ...]:
@@ -61,8 +66,10 @@ let test_check_tuple context =
       def foo() -> typing.Tuple[int, ...]:
         return tuple([""])
     |}
-    [ "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got "
-      ^ "`typing.Tuple[str, ...]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got "
+      ^ "`typing.Tuple[str, ...]`.";
+    ];
   assert_type_errors
     {|
       def foo() -> typing.Tuple[float, ...]:
@@ -93,8 +100,10 @@ let test_check_tuple context =
         a, *b = x
         return b
     |}
-    [ "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but got "
-      ^ "`typing.List[typing.Union[int, str]]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but got "
+      ^ "`typing.List[typing.Union[int, str]]`.";
+    ];
   assert_type_errors
     {|
       def derp() -> int:
@@ -108,18 +117,22 @@ let test_check_tuple context =
         (x, y), z = 0
         return x + y + z
     |}
-    [ "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`." ];
+    [
+      "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
   assert_type_errors
     {|
       class Foo:
         def __init__(self, coord: typing.Tuple[int, int]) -> None:
             self.xxx, self.yyy = coord
     |}
-    [ "Missing attribute annotation [4]: Attribute `xxx` of class `Foo` "
+    [
+      "Missing attribute annotation [4]: Attribute `xxx` of class `Foo` "
       ^ "has type `int` but no type is specified.";
       "Missing attribute annotation [4]: Attribute `yyy` of class `Foo` "
-      ^ "has type `int` but no type is specified." ];
+      ^ "has type `int` but no type is specified.";
+    ];
   assert_type_errors {|
       def foo() -> typing.Sized:
         return (1,)
@@ -133,8 +146,10 @@ let test_check_tuple context =
       def foo() -> typing.Tuple:
         return ()
     |}
-    [ "Missing return annotation [3]: Returning `typing.Tuple[]` but return type "
-      ^ "must be specified as type that does not contain `Any`." ];
+    [
+      "Missing return annotation [3]: Returning `typing.Tuple[]` but return type "
+      ^ "must be specified as type that does not contain `Any`.";
+    ];
   assert_type_errors {|
       def foo() -> typing.Tuple[()]:
         return ()
@@ -164,20 +179,24 @@ let test_check_tuple context =
       def foo( *args: int) -> typing.Iterable[str]:
         return args
     |}
-    [ "Incompatible return type [7]: Expected `typing.Iterable[str]` but "
-      ^ "got `typing.Tuple[int, ...]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Iterable[str]` but "
+      ^ "got `typing.Tuple[int, ...]`.";
+    ];
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a b c')
       def b(d: T) -> None:
         a = d.a + d.d
     |}
-    [ "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
        `Any`.";
       "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
       "Undefined error [1]: Problem with analysis.";
       "Undefined error [1]: Problem with analysis.";
-      "Undefined attribute [16]: `T` has no attribute `d`." ];
+      "Undefined attribute [16]: `T` has no attribute `d`.";
+    ];
   assert_type_errors
     {|
       class C(collections.namedtuple('T', 'a b')):
@@ -194,13 +213,15 @@ let test_check_tuple context =
         x, y, z = t
         x, y, z, other = t
     |}
-    [ "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
        `Any`.";
       "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
       "Undefined error [1]: Problem with analysis.";
       "Undefined error [1]: Problem with analysis.";
       "Unable to unpack [23]: Unable to unpack 3 values, 2 were expected.";
-      "Unable to unpack [23]: Unable to unpack 3 values, 4 were expected." ];
+      "Unable to unpack [23]: Unable to unpack 3 values, 4 were expected.";
+    ];
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a')
@@ -208,9 +229,11 @@ let test_check_tuple context =
       def foo() -> None:
         T(a=2)
     |}
-    [ "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
        `Any`.";
-      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`." ];
+      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
+    ];
   assert_type_errors
     {|
       T = typing.NamedTuple('T', [('a', str), ('b', int)])
@@ -221,8 +244,10 @@ let test_check_tuple context =
           reveal_type(a)
           reveal_type(b)
     |}
-    [ "Revealed type [-1]: Revealed type for `a` is `str`.";
-      "Revealed type [-1]: Revealed type for `b` is `int`." ];
+    [
+      "Revealed type [-1]: Revealed type for `a` is `str`.";
+      "Revealed type [-1]: Revealed type for `b` is `int`.";
+    ];
   assert_type_errors
     {|
       def foo(input: int) -> None:
@@ -284,8 +309,10 @@ let test_tuple_literal_access context =
         x = (0, 1, "two")
         return x[0:2]
     |}
-    [ "Incompatible return type [7]: Expected `typing.Tuple[int, int]` but got "
-      ^ "`typing.Tuple[typing.Union[int, str], ...]`." ];
+    [
+      "Incompatible return type [7]: Expected `typing.Tuple[int, int]` but got "
+      ^ "`typing.Tuple[typing.Union[int, str], ...]`.";
+    ];
   ()
 
 

@@ -16,8 +16,10 @@ let test_check_data_class context =
       def boo() -> None:
           b = Foo('a')
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
+    ];
   assert_type_errors
     {|
       @dataclass
@@ -26,8 +28,10 @@ let test_check_data_class context =
       def boo() -> None:
           b = Foo(4,5)
     |}
-    [ "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, "
-      ^ "2 were provided." ];
+    [
+      "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, "
+      ^ "2 were provided.";
+    ];
   assert_type_errors
     {|
       @dataclasses.dataclass
@@ -36,8 +40,10 @@ let test_check_data_class context =
       def boo() -> None:
           b = Foo(4,5)
     |}
-    [ "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, "
-      ^ "2 were provided." ];
+    [
+      "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, "
+      ^ "2 were provided.";
+    ];
   assert_type_errors
     {|
       @dataclass
@@ -46,10 +52,12 @@ let test_check_data_class context =
       def boo() -> None:
           b = Foo(2)
     |}
-    [ "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` "
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` "
       ^ "but no type is specified.";
       "Too many arguments [19]: Call `Foo.__init__` expects 0 positional arguments, 1 was"
-      ^ " provided." ];
+      ^ " provided.";
+    ];
   assert_type_errors
     {|
       @dataclass
@@ -86,7 +94,8 @@ let test_check_attr context =
   assert_type_errors
     ~context
     ~update_environment_with:
-      [ {
+      [
+        {
           handle = "attr/__init__.pyi";
           source =
             {|
@@ -98,7 +107,8 @@ let test_check_attr context =
         def s( *args, **kwargs) -> typing.Any: ...
         def ib(default: _T) -> _T: ...
       |};
-        } ]
+        };
+      ]
     {|
       import attr
       @attr.s

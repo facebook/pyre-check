@@ -1954,8 +1954,10 @@ let test_join context =
        Type.string
        (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"))
     (Type.union
-       [ Type.string;
-         Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T" ]);
+       [
+         Type.string;
+         Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T";
+       ]);
   assert_type_equal
     (join order Type.string (Type.variable ~constraints:Type.Variable.LiteralIntegers "T"))
     (Type.union [Type.string; Type.variable ~constraints:Type.Variable.LiteralIntegers "T"]);
@@ -2042,9 +2044,11 @@ let test_join context =
     (Type.parametric "LinkedList" ![Type.Any]);
   let variance_aliases =
     Identifier.Table.of_alist_exn
-      [ "_T", Type.variable "_T";
+      [
+        "_T", Type.variable "_T";
         "_T_co", Type.variable "_T_co" ~variance:Covariant;
-        "_T_contra", Type.variable "_T_contra" ~variance:Contravariant ]
+        "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
+      ]
     |> Identifier.Table.find
   in
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
@@ -2427,7 +2431,8 @@ let test_solve_less_or_equal context =
   let prep annotation =
     let aliases a =
       let s =
-        [ "C";
+        [
+          "C";
           "D";
           "Q";
           "T_Unconstrained";
@@ -2453,7 +2458,8 @@ let test_solve_less_or_equal context =
           "Constructable";
           "UserDefinedVariadic";
           "UserDefinedVariadicSimpleChild";
-          "UserDefinedVariadicMapChild" ]
+          "UserDefinedVariadicMapChild";
+        ]
         |> Type.Primitive.Set.of_list
       in
       if Type.Primitive.Set.mem s a then
@@ -2807,9 +2813,11 @@ let test_solve_less_or_equal context =
       ( "typing.Callable[[typing.Union[int, str]], typing.Union[int, str]]"
       ^ "[[[int], str][[str], int]]" )
     ~right:"typing.Callable[[test.T3], test.T4]"
-    [ ["test.T3", "int"; "test.T4", "str"];
+    [
+      ["test.T3", "int"; "test.T4", "str"];
       ["test.T3", "str"; "test.T4", "int"];
-      ["test.T3", "typing.Union[int, str]"; "test.T4", "typing.Union[int, str]"] ];
+      ["test.T3", "typing.Union[int, str]"; "test.T4", "typing.Union[int, str]"];
+    ];
 
   (* Free Variable <-> Free Variable constraints *)
   assert_solve
@@ -3325,7 +3333,9 @@ let test_instantiate_protocol_parameters context =
     ~source:"class P(): pass"
     ~classes:["A", ["method", "typing.Callable[[int], str]"]]
     ~protocols:
-      ["P", ["method", "typing.Callable[[int], str]"; "othermethod", "typing.Callable[[int], str]"]]
+      [
+        "P", ["method", "typing.Callable[[int], str]"; "othermethod", "typing.Callable[[int], str]"];
+      ]
     ~candidate:"A"
     ~protocol:"P"
     None;
@@ -3466,7 +3476,8 @@ let test_mark_escaped_as_escaped context =
 
 let () =
   "order"
-  >::: [ "join" >:: test_join;
+  >::: [
+         "join" >:: test_join;
          "less_or_equal" >:: test_less_or_equal;
          "less_or_equal_variance" >:: test_less_or_equal_variance;
          "is_compatible_with" >:: test_is_compatible_with;
@@ -3474,5 +3485,6 @@ let () =
          "solve_less_or_equal" >:: test_solve_less_or_equal;
          "is_consistent_with" >:: test_is_consistent_with;
          "instantiate_protocol_parameters" >:: test_instantiate_protocol_parameters;
-         "marks_escaped_as_escaped" >:: test_mark_escaped_as_escaped ]
+         "marks_escaped_as_escaped" >:: test_mark_escaped_as_escaped;
+       ]
   |> Test.run

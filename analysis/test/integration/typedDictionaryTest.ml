@@ -73,8 +73,10 @@ let test_check_typed_dictionaries context =
         movie: Movie
         a = foo(movie['name'])
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -85,9 +87,11 @@ let test_check_typed_dictionaries context =
         movie: Movie
         a = foo(movie['yar'])
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
       ^ "to call `foo` but got `str`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`." ];
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -110,10 +114,12 @@ let test_check_typed_dictionaries context =
         movie: Movie
         a = foo(movie[key])
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
       ^ "to call `foo` but got `str`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
-      ^ "Expected one of ('name', 'year')." ];
+      ^ "Expected one of ('name', 'year').";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -137,9 +143,11 @@ let test_check_typed_dictionaries context =
         actor: Actor
         a = foo(actor)
     |}
-    [ "Incompatible parameter type [6]: Expected `TypedDict `Movie` with "
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Movie` with "
       ^ "fields (name: str, year: int)` for 1st anonymous parameter to call `foo` "
-      ^ "but got `TypedDict `Actor` with fields (name: str, birthyear: int)`." ];
+      ^ "but got `TypedDict `Actor` with fields (name: str, birthyear: int)`.";
+    ];
   assert_test_typed_dictionary
     {|
       from mypy_extensions import TypedDict
@@ -168,8 +176,10 @@ let test_check_typed_dictionaries context =
               q = b
           return q["year"]
     |}
-    [ "Incompatible return type [7]: Expected `int` but got `str`.";
-      "TypedDict accessed with a missing key [27]: TypedDict has no key `year`." ];
+    [
+      "Incompatible return type [7]: Expected `int` but got `str`.";
+      "TypedDict accessed with a missing key [27]: TypedDict has no key `year`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -197,9 +207,11 @@ let test_check_typed_dictionaries context =
         baz: Baz
         a = foo(baz)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `Mapping[str, A]` for 1st anonymous parameter to call `foo` but got "
-      ^ "`TypedDict `Baz` with fields (foo: A, bar: B)`." ];
+      ^ "`TypedDict `Baz` with fields (foo: A, bar: B)`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -218,7 +230,9 @@ let test_check_typed_dictionaries context =
             q = b
         return q
     |}
-    ["Incompatible return type [7]: Expected `Mapping[str, A]` but got `Mapping[str, typing.Any]`."];
+    [
+      "Incompatible return type [7]: Expected `Mapping[str, A]` but got `Mapping[str, typing.Any]`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -282,8 +296,10 @@ let test_check_typed_dictionaries context =
       def bar( **kwargs: int) -> None:
         foo(kwargs)
     |}
-    [ "Incompatible parameter type [6]: Expected `TypedDict `Baz`` for 1st anonymous parameter to \
-       call `foo` but got `typing.Dict[str, int]`." ];
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Baz`` for 1st anonymous parameter to \
+       call `foo` but got `typing.Dict[str, int]`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -310,8 +326,10 @@ let test_check_typed_dictionaries context =
         movie = Movie(name=1982, year='Blade Runner')
         return movie['year']
     |}
-    [ "Incompatible parameter type [6]: Expected `str` for 1st parameter `name` "
-      ^ "to call `__init__` but got `int`." ];
+    [
+      "Incompatible parameter type [6]: Expected `str` for 1st parameter `name` "
+      ^ "to call `__init__` but got `int`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -329,8 +347,10 @@ let test_check_typed_dictionaries context =
         movie = Movie('Blade Runner')
         return movie['year']
     |}
-    [ "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields (name: str, year: \
-       int)` for 1st anonymous parameter to call `__init__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields (name: str, year: \
+       int)` for 1st anonymous parameter to call `__init__` but got `str`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -348,9 +368,11 @@ let test_check_typed_dictionaries context =
         movie = Movie({ "name": 1982, "year": "Blade Runner" })
         return movie['year']
     |}
-    [ "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields (name: str, year: \
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields (name: str, year: \
        int)` for 1st anonymous parameter to call `__init__` but got `TypedDict with fields (name: \
-       int, year: str)`." ];
+       int, year: str)`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -395,9 +417,11 @@ let test_check_typed_dictionaries context =
         movie: Movie
         movie['name'] = 7
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `str` for 2nd anonymous parameter to call `TypedDictionary.__setitem__` but got "
-      ^ "`int`." ];
+      ^ "`int`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -431,9 +455,11 @@ let test_check_typed_dictionaries context =
         movie: Movie
         movie['something'] = A()
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `B` for 2nd anonymous parameter to call `TypedDictionary.__setitem__` but got \
-         `A`." ];
+         `A`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -486,11 +512,13 @@ let test_check_typed_dictionaries context =
         reveal_type(v)
         v = movie.get('nae', True)
     |}
-    [ "Revealed type [-1]: Revealed type for `v` is `str`.";
+    [
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
       "Revealed type [-1]: Revealed type for `v` is `typing.Optional[str]`.";
       "Revealed type [-1]: Revealed type for `v` is "
       ^ "`typing.Union[typing_extensions.Literal[True], str]`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`." ];
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -504,10 +532,12 @@ let test_check_typed_dictionaries context =
         v = movie.items()
         reveal_type(v)
     |}
-    [ "Revealed type [-1]: Revealed type for `v` is `typing.AbstractSet[str]`.";
+    [
+      "Revealed type [-1]: Revealed type for `v` is `typing.AbstractSet[str]`.";
       "Revealed type [-1]: Revealed type for `v` is `typing.ValuesView[typing.Any]`.";
       "Revealed type [-1]: Revealed type for `v` is "
-      ^ "`typing.AbstractSet[typing.Tuple[str, typing.Any]]`." ];
+      ^ "`typing.AbstractSet[typing.Tuple[str, typing.Any]]`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -517,8 +547,10 @@ let test_check_typed_dictionaries context =
         v = movie.copy()
         reveal_type(v)
     |}
-    [ "Revealed type [-1]: Revealed type for `v` is "
-      ^ "`TypedDict `Movie` with fields (name: str, year: int)`." ];
+    [
+      "Revealed type [-1]: Revealed type for `v` is "
+      ^ "`TypedDict `Movie` with fields (name: str, year: int)`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -530,10 +562,12 @@ let test_check_typed_dictionaries context =
         v = movie.setdefault('name', 7)
         v = movie.setdefault('nme', 'newname')
     |}
-    [ "Revealed type [-1]: Revealed type for `v` is `str`.";
+    [
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
       "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter to "
       ^ "call `TypedDictionary.setdefault` but got `int`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`." ];
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -555,10 +589,12 @@ let test_check_typed_dictionaries context =
         movie.update(name = 15, year = "backwards")
         movie.update(yar = "missing")
     |}
-    [ "Incompatible parameter type [6]: Expected `str` for 1st parameter `name` to call "
+    [
+      "Incompatible parameter type [6]: Expected `str` for 1st parameter `name` to call "
       ^ "`TypedDictionary.update` but got `int`.";
       "Unexpected keyword [28]: Unexpected keyword argument `yar` to call "
-      ^ "`TypedDictionary.update`." ];
+      ^ "`TypedDictionary.update`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -571,10 +607,12 @@ let test_check_typed_dictionaries context =
         reveal_type(v)
         v = movieNonTotal.pop("nae", False)
     |}
-    [ "Revealed type [-1]: Revealed type for `v` is `str`.";
+    [
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
       "Revealed type [-1]: Revealed type for `v` is "
       ^ "`typing.Union[typing_extensions.Literal[False], str]`.";
-      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`." ];
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
+    ];
 
   (* You can't pop an item from a total typeddict *)
   assert_test_typed_dictionary
@@ -624,10 +662,12 @@ let test_check_typed_dictionaries context =
         v = movieNonTotal.setdefault('name', "n")
         reveal_type(v)
     |}
-    [ "Revealed type [-1]: Revealed type for `v` is "
+    [
+      "Revealed type [-1]: Revealed type for `v` is "
       ^ "`typing.Union[typing_extensions.Literal[False], str]`.";
       "Revealed type [-1]: Revealed type for `v` is `int`.";
-      "Revealed type [-1]: Revealed type for `v` is `str`." ];
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -636,10 +676,12 @@ let test_check_typed_dictionaries context =
         movie: Movie
         movie['name'] += 7
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
       "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter "
-      ^ "to call `TypedDictionary.__setitem__` but got `int`." ];
+      ^ "to call `TypedDictionary.__setitem__` but got `int`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -651,10 +693,12 @@ let test_check_typed_dictionaries context =
         reversedMovie: ReversedMovie
         reversedMovie['name'] = 7
     |}
-    [ "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter "
+    [
+      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter "
       ^ "to call `TypedDictionary.__setitem__` but got `int`.";
       "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter "
-      ^ "to call `TypedDictionary.__setitem__` but got `int`." ];
+      ^ "to call `TypedDictionary.__setitem__` but got `int`.";
+    ];
   assert_test_typed_dictionary
     {|
       from foo.bar.baz import ClassBasedTypedDictGreekLetters
@@ -699,12 +743,14 @@ let test_check_typed_dictionaries context =
         movie: NamelessTypedDict
         a = foo(movie['year'])
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `NamelessTypedDict` "
+    [
+      "Missing global annotation [5]: Globally accessible variable `NamelessTypedDict` "
       ^ "has no type specified.";
       "Missing argument [20]: Call `mypy_extensions.TypedDict` expects argument `fields`.";
       "Undefined type [11]: Type `NamelessTypedDict` is not defined.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` "
-      ^ "but got `unknown`." ];
+      ^ "but got `unknown`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -734,9 +780,11 @@ let test_check_typed_dictionaries context =
       def f() -> None:
         foo({'name' : 'Blade Runner', 'year' : '1982'})
     |}
-    [ "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields "
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields "
       ^ "(name: str, year: int)` for 1st anonymous parameter to call `foo` but got "
-      ^ "`TypedDict with fields (name: str, year: str)`." ];
+      ^ "`TypedDict with fields (name: str, year: str)`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -746,9 +794,11 @@ let test_check_typed_dictionaries context =
       def f(x: str, y: int) -> None:
         foo({'name' : 'Blade Runner', x: y})
     |}
-    [ "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields "
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields "
       ^ "(name: str, year: int)` for 1st anonymous parameter to call `foo` but got "
-      ^ "`typing.Dict[str, typing.Union[int, str]]`." ];
+      ^ "`typing.Dict[str, typing.Union[int, str]]`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -777,8 +827,9 @@ let test_check_typed_dictionaries context =
         reveal_type(movie)
         return movie['name']
     |}
-    [ "Revealed type [-1]: Revealed type for `movie` is `TypedDict `Movie` with fields (name: \
-       str, year: int)` (inferred: `TypedDict with fields (name: str, year: int, bonus: bool)`)."
+    [
+      "Revealed type [-1]: Revealed type for `movie` is `TypedDict `Movie` with fields (name: \
+       str, year: int)` (inferred: `TypedDict with fields (name: str, year: int, bonus: bool)`).";
     ];
   assert_test_typed_dictionary
     {|
@@ -788,9 +839,11 @@ let test_check_typed_dictionaries context =
         movie: Movie = {'name' : "Blade Runner", 'year' : '1982'}
         return movie['name']
     |}
-    [ "Incompatible variable type [9]: movie is declared to have type "
+    [
+      "Incompatible variable type [9]: movie is declared to have type "
       ^ "`TypedDict `Movie` with fields (name: str, year: int)` but is used as type "
-      ^ "`TypedDict with fields (name: str, year: str)`." ];
+      ^ "`TypedDict with fields (name: str, year: str)`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -814,9 +867,11 @@ let test_check_typed_dictionaries context =
         movie: Movie = {'name' : 1982}
         return movie['year']
     |}
-    [ "Incompatible variable type [9]: movie is declared to have type `TypedDict (non-total) \
+    [
+      "Incompatible variable type [9]: movie is declared to have type `TypedDict (non-total) \
        `Movie` with fields (name: str, year: int)` but is used as type `TypedDict (non-total) \
-       with fields (name: int, year: int)`." ];
+       with fields (name: int, year: int)`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -832,9 +887,11 @@ let test_check_typed_dictionaries context =
       def f() -> Movie:
         return {'name' : "Blade Runner", 'year' : '1982'}
     |}
-    [ "Incompatible return type [7]: Expected "
+    [
+      "Incompatible return type [7]: Expected "
       ^ "`TypedDict `Movie` with fields (name: str, year: int)` but got "
-      ^ "`TypedDict with fields (name: str, year: str)`." ];
+      ^ "`TypedDict with fields (name: str, year: str)`.";
+    ];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -853,10 +910,12 @@ let test_check_typed_dictionaries context =
       class ChildTypedDict(BaseTypedDict, total=False):
         optional: str
     |}
-    [ "Invalid inheritance [39]: Building TypedDicts up through inheritance is not yet supported.";
+    [
+      "Invalid inheritance [39]: Building TypedDicts up through inheritance is not yet supported.";
       "Invalid type [31]: Expression `False` is not a valid type.";
       "Uninitialized attribute [13]: Attribute `optional` is declared in class `ChildTypedDict` \
-       to have type `str` but is never initialized." ];
+       to have type `str` but is never initialized.";
+    ];
   ()
 
 

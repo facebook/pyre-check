@@ -141,11 +141,13 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
     |> List.rev_append (test_widens ~iteration:1)
     |> List.rev_append (test_widens ~iteration:100)
     |> List.rev_append
-         [ "test_fold" >:: Domain.test_fold;
+         [
+           "test_fold" >:: Domain.test_fold;
            "test_transform" >:: Domain.test_transform;
            "test_partition" >:: Domain.test_partition;
            "test_create" >:: Domain.test_create;
-           "test_additional" >:: Domain.test_additional ]
+           "test_additional" >:: Domain.test_additional;
+         ]
 end
 
 (* Build up abstract domains to test. *)
@@ -385,14 +387,16 @@ module IntToStringSet = struct
     assert_equal
       (build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []])
       (create
-         [ Part (Key, 0);
+         [
+           Part (Key, 0);
            Part (StringSet.Set, ["a"; "b"]);
            Part (Key, 1);
            Part (StringSet.Set, ["b"; "c"]);
            Part (Key, 2);
            Part (StringSet.Set, ["c"; "d"]);
            Part (Key, 3);
-           Part (StringSet.Set, []) ])
+           Part (StringSet.Set, []);
+         ])
       ~printer:show
 
 
@@ -423,14 +427,16 @@ module StrictIntToStringSet = struct
 
 
   let unrelated =
-    [ build_map [3, []];
+    [
+      build_map [3, []];
       build_map [4, []];
       build_map [5, []];
       build_map [0, ["a"]];
       build_map [1, ["a"]];
       build_map [2, ["a"]];
       build_map [0, ["x"; "y"]];
-      build_map [1, ["foo"; "bar"]] ]
+      build_map [1, ["foo"; "bar"]];
+    ]
 
 
   let values = []
@@ -509,14 +515,16 @@ module StrictIntToStringSet = struct
     assert_equal
       (build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []])
       (create
-         [ Part (Key, 0);
+         [
+           Part (Key, 0);
            Part (StringSet.Set, ["a"; "b"]);
            Part (Key, 1);
            Part (StringSet.Set, ["b"; "c"]);
            Part (Key, 2);
            Part (StringSet.Set, ["c"; "d"]);
            Part (Key, 3);
-           Part (StringSet.Set, []) ])
+           Part (StringSet.Set, []);
+         ])
       ~printer:show
 
 
@@ -677,13 +685,15 @@ module PairStringMapIntToString = struct
     assert_equal
       (build [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]])
       (create
-         [ Part (left_set, ["left.a"; "left.b"; "left.c"; "left.d"]);
+         [
+           Part (left_set, ["left.a"; "left.b"; "left.c"; "left.d"]);
            Part (right_key, 0);
            Part (right_set, ["a"; "b"]);
            Part (right_key, 1);
            Part (right_set, ["b"; "c"]);
            Part (right_key, 2);
-           Part (right_set, ["c"; "d"]) ])
+           Part (right_set, ["c"; "d"]);
+         ])
       ~printer:show
 
 
@@ -740,7 +750,12 @@ module AbstractElementSet = struct
 
   let values =
     let open AbstractElement in
-    [singleton (C ("x", 0)); singleton (C ("x", 6)); singleton (C ("y", 0)); singleton (C ("y", 6))]
+    [
+      singleton (C ("x", 0));
+      singleton (C ("x", 6));
+      singleton (C ("y", 0));
+      singleton (C ("y", 6));
+    ]
 
 
   let accumulate_elements_as_strings list element = AbstractElement.show_short element :: list
@@ -828,10 +843,12 @@ module AbstractElementSet = struct
     assert_equal
       (of_list [A; B; C ("x", 5); C ("y", 5)])
       (create
-         [ Part (Element, A);
+         [
+           Part (Element, A);
            Part (Element, B);
            Part (Element, C ("x", 5));
-           Part (Element, C ("y", 5)) ])
+           Part (Element, C ("y", 5));
+         ])
       ~printer:show
       ~cmp:compare
 
@@ -887,7 +904,10 @@ module PairStringString = struct
 
   let build left right =
     product
-      [Element (Slots.Left, StringSet.of_list left); Element (Slots.Right, StringSet.of_list right)]
+      [
+        Element (Slots.Left, StringSet.of_list left);
+        Element (Slots.Right, StringSet.of_list right);
+      ]
 
 
   let unrelated = [build ["a"; "b"] ["c"; "d"]; build ["c"; "d"] []; build [] ["e"]]
@@ -952,12 +972,14 @@ module PairStringString = struct
       ~initial:(["a"; "b"], ["b"; "c"])
       ~by:(ProductSlot (Left, StringSet.Element))
       ~f:Fn.id
-      ~expected:["a", "left: (set(a)), right: (set(b c))"; "b", "left: (set(b)), right: (set(b c))"];
+      ~expected:
+        ["a", "left: (set(a)), right: (set(b c))"; "b", "left: (set(b)), right: (set(b c))"];
     test
       ~initial:(["a"; "b"], ["b"; "c"])
       ~by:(ProductSlot (Right, StringSet.Element))
       ~f:Fn.id
-      ~expected:["b", "left: (set(a b)), right: (set(b))"; "c", "left: (set(a b)), right: (set(c))"]
+      ~expected:
+        ["b", "left: (set(a b)), right: (set(b))"; "c", "left: (set(a b)), right: (set(c))"]
 
 
   let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
@@ -966,8 +988,10 @@ module PairStringString = struct
     assert_equal
       (build ["a"; "b"] ["a"; "b"])
       (create
-         [ Part (ProductSlot (Slots.Left, StringSet.Set), ["a"; "b"]);
-           Part (ProductSlot (Slots.Right, StringSet.Set), ["a"; "b"]) ])
+         [
+           Part (ProductSlot (Slots.Left, StringSet.Set), ["a"; "b"]);
+           Part (ProductSlot (Slots.Right, StringSet.Set), ["a"; "b"]);
+         ])
       ~printer:show
       ~cmp:compare
 
@@ -1010,15 +1034,19 @@ module ProductDomain = struct
 
   let build (cities, years, rivers) =
     product
-      [ Element (Cities, CitySet.of_list cities);
+      [
+        Element (Cities, CitySet.of_list cities);
         Element (Years, YearSet.of_list years);
-        Element (Rivers, RiverSet.of_list rivers) ]
+        Element (Rivers, RiverSet.of_list rivers);
+      ]
 
 
   let unrelated =
-    [ build (["Bern"], [1191], ["Aare"]);
+    [
+      build (["Bern"], [1191], ["Aare"]);
       build (["Neuchatel"], [1214], ["Thielle"]);
-      build (["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]) ]
+      build (["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]);
+    ]
 
 
   let values = []
@@ -1087,31 +1115,36 @@ module ProductDomain = struct
       ~by:(ProductSlot (Cities, CitySet.Element))
       ~f:Fn.id
       ~expected:
-        [ ( "Fribourg",
+        [
+          ( "Fribourg",
             "Cities: (set(Fribourg)), Rivers: (set(Flon Louve Sarine)), Years: (set(280 1157))" );
           ( "Lausanne",
-            "Cities: (set(Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(280 1157))" )
+            "Cities: (set(Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(280 1157))" );
         ];
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
       ~by:(ProductSlot (Years, YearSet.Element))
       ~f:Int.to_string
       ~expected:
-        [ ( "1157",
+        [
+          ( "1157",
             "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(1157))"
           );
           ( "280",
             "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(280))"
-          ) ];
+          );
+        ];
     test
       ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
       ~by:(ProductSlot (Rivers, RiverSet.Element))
       ~f:Fn.id
       ~expected:
-        [ "Flon", "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon)), Years: (set(280 1157))";
+        [
+          "Flon", "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon)), Years: (set(280 1157))";
           "Louve", "Cities: (set(Fribourg Lausanne)), Rivers: (set(Louve)), Years: (set(280 1157))";
           ( "Sarine",
-            "Cities: (set(Fribourg Lausanne)), Rivers: (set(Sarine)), Years: (set(280 1157))" ) ]
+            "Cities: (set(Fribourg Lausanne)), Rivers: (set(Sarine)), Years: (set(280 1157))" );
+        ]
 
 
   let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
@@ -1120,9 +1153,11 @@ module ProductDomain = struct
     assert_equal
       (build (["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]))
       (create
-         [ Part (ProductSlot (Cities, CitySet.Set), ["Lausanne"; "Fribourg"]);
+         [
+           Part (ProductSlot (Cities, CitySet.Set), ["Lausanne"; "Fribourg"]);
            Part (ProductSlot (Years, YearSet.Set), [280; 1157]);
-           Part (ProductSlot (Rivers, RiverSet.Set), ["Flon"; "Louve"; "Sarine"]) ])
+           Part (ProductSlot (Rivers, RiverSet.Set), ["Flon"; "Louve"; "Sarine"]);
+         ])
       ~printer:show
       ~cmp:compare
 
@@ -1157,18 +1192,24 @@ module TreeOfStringSets = struct
   let make_path path = List.map path ~f:AbstractTreeDomain.Label.create_name_field
 
   let unrelated =
-    [ create [Part (Path, (make_path ["a"], StringSet.of_list ["aa"]))];
+    [
+      create [Part (Path, (make_path ["a"], StringSet.of_list ["aa"]))];
       create [Part (Path, (make_path ["b"], StringSet.of_list ["bb"]))];
       create
-        [ Part (Path, (make_path ["a"; "b"], StringSet.of_list ["ab"]));
-          Part (Path, (make_path ["c"; "d"], StringSet.of_list ["cd"])) ] ]
+        [
+          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["ab"]));
+          Part (Path, (make_path ["c"; "d"], StringSet.of_list ["cd"]));
+        ];
+    ]
 
 
   let values =
-    [ create [Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"]))];
+    [
+      create [Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"]))];
       create [Part (Path, (make_path ["b"; "c"], StringSet.of_list ["bb"]))];
       create [Part (Path, (make_path [], StringSet.of_list ["ab"]))];
-      create [Part (Path, (make_path [], StringSet.of_list ["cd"]))] ]
+      create [Part (Path, (make_path [], StringSet.of_list ["cd"]))];
+    ]
 
 
   let show_path_element { path; ancestors; tip } =
@@ -1198,13 +1239,17 @@ module TreeOfStringSets = struct
       ~expected:["bb"; "aa"];
     test
       ~initial:
-        [ Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"])) ]
+        [
+          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+        ]
       ~by:RawPath
       ~f:show_path_element
       ~expected:
-        [ "path:[a][b]; ancestors:(set(a)); tip:(set(aa bb))";
-          "path:[a]; ancestors:(set()); tip:(set(a))" ]
+        [
+          "path:[a][b]; ancestors:(set(a)); tip:(set(aa bb))";
+          "path:[a]; ancestors:(set()); tip:(set(a))";
+        ]
 
 
   let test_transform _ =
@@ -1219,24 +1264,32 @@ module TreeOfStringSets = struct
     in
     test
       ~initial:
-        [ Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"])) ]
+        [
+          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+        ]
       ~by:StringSet.Element
       ~f:(fun x -> "t." ^ x)
       ~to_result:show_path_element
       ~expected:
-        [ "path:[a][b]; ancestors:(set(t.a)); tip:(set(t.aa t.bb))";
-          "path:[a]; ancestors:(set()); tip:(set(t.a))" ];
+        [
+          "path:[a][b]; ancestors:(set(t.a)); tip:(set(t.aa t.bb))";
+          "path:[a]; ancestors:(set()); tip:(set(t.a))";
+        ];
     test
       ~initial:
-        [ Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"])) ]
+        [
+          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+        ]
       ~by:Path
       ~f:(fun (path, element) -> AbstractTreeDomain.Label.Field "prefix" :: path, element)
       ~to_result:show_path_element
       ~expected:
-        [ "path:[prefix][a][b]; ancestors:(set(a)); tip:(set(aa bb))";
-          "path:[prefix][a]; ancestors:(set()); tip:(set(a))" ]
+        [
+          "path:[prefix][a][b]; ancestors:(set(a)); tip:(set(aa bb))";
+          "path:[prefix][a]; ancestors:(set()); tip:(set(a))";
+        ]
 
 
   let test_partition _ =
@@ -1252,18 +1305,24 @@ module TreeOfStringSets = struct
     in
     test
       ~initial:
-        [ Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"])) ]
+        [
+          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+        ]
       ~by:StringSet.Element
       ~f:Fn.id
       ~expected:
-        [ "a", "(set())\n  [a] -> (set(a))\n";
+        [
+          "a", "(set())\n  [a] -> (set(a))\n";
           "aa", "(set())\n  [a] -> (set())\n    [b] -> (set(aa))\n";
-          "bb", "(set())\n  [a] -> (set())\n    [b] -> (set(bb))\n" ];
+          "bb", "(set())\n  [a] -> (set())\n    [b] -> (set(bb))\n";
+        ];
     test
       ~initial:
-        [ Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
-          Part (Path, (make_path ["a"], StringSet.of_list ["a"])) ]
+        [
+          Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+          Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+        ]
       ~by:Path
       ~f:(fun (path, _) -> List.take path 1 |> AbstractTreeDomain.Label.show_path)
       ~expected:["[a]", "(set())\n  [a] -> (set(a))\n    [b] -> (set(aa bb))\n"]
@@ -1303,20 +1362,26 @@ module TreeOfStringSets = struct
     let () =
       let tree =
         create
-          [ Part (Path, (make_path ["a"; "b"], StringSet.of_list ["x"; "y"]));
+          [
+            Part (Path, (make_path ["a"; "b"], StringSet.of_list ["x"; "y"]));
             Part (Path, (make_path ["c"], StringSet.of_list ["z"]));
-            Part (Path, (make_path ["d"], StringSet.of_list ["q"])) ]
+            Part (Path, (make_path ["d"], StringSet.of_list ["q"]));
+          ]
       in
       let mold =
         create
-          [ Part (Path, (make_path ["a"], StringSet.of_list ["x"; "z"]));
-            Part (Path, (make_path ["c"], StringSet.of_list ["p"])) ]
+          [
+            Part (Path, (make_path ["a"], StringSet.of_list ["x"; "z"]));
+            Part (Path, (make_path ["c"], StringSet.of_list ["p"]));
+          ]
       in
       let expected =
         create
-          [ Part (Path, (make_path ["a"], StringSet.of_list ["x"; "y"; "z"]));
+          [
+            Part (Path, (make_path ["a"], StringSet.of_list ["x"; "y"; "z"]));
             Part (Path, (make_path ["c"], StringSet.of_list ["p"; "z"]));
-            Part (Path, (make_path [], StringSet.of_list ["q"])) ]
+            Part (Path, (make_path [], StringSet.of_list ["q"]));
+          ]
       in
       assert_equal expected (shape tree ~mold) ~msg:"molded tree" ~printer:show ~cmp:compare
     in
@@ -1331,9 +1396,11 @@ module OverUnderStringSet = struct
   let top = None
 
   let unrelated =
-    [ of_list [{ element = "a"; in_under = true }; { element = "b"; in_under = true }];
+    [
+      of_list [{ element = "a"; in_under = true }; { element = "b"; in_under = true }];
       of_list [{ element = "a"; in_under = true }; { element = "c"; in_under = true }];
-      of_list [{ element = "b"; in_under = true }; { element = "c"; in_under = true }] ]
+      of_list [{ element = "b"; in_under = true }; { element = "c"; in_under = true }];
+    ]
 
 
   let values = List.cartesian_product unrelated unrelated |> List.map ~f:(Tuple2.uncurry join)
@@ -1389,7 +1456,11 @@ module OverUnderStringSet = struct
       assert_equal expected actual ~printer:(fun elements ->
           Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
     in
-    test ~initial:["a"; "b"] ~by:Element ~f:(fun element -> "t." ^ element) ~expected:["t.a"; "t.b"];
+    test
+      ~initial:["a"; "b"]
+      ~by:Element
+      ~f:(fun element -> "t." ^ element)
+      ~expected:["t.a"; "t.b"];
     test ~initial:["a"; "b"] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["a"; "b"; "c"];
     test ~initial:[] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["c"];
     test_elements
@@ -1449,25 +1520,35 @@ module OverUnderStringSet = struct
   let test_create _ =
     assert_equal
       (of_list
-         [ { element = "a"; in_under = true };
+         [
+           { element = "a"; in_under = true };
            { element = "b"; in_under = true };
-           { element = "c"; in_under = false } ])
+           { element = "c"; in_under = false };
+         ])
       (create
-         [ Part
+         [
+           Part
              ( SetAndUnder,
-               [ { element = "a"; in_under = true };
+               [
+                 { element = "a"; in_under = true };
                  { element = "b"; in_under = true };
-                 { element = "c"; in_under = false } ] ) ])
+                 { element = "c"; in_under = false };
+               ] );
+         ])
       ~printer:show;
     assert_equal
       (of_list
-         [ { element = "a"; in_under = true };
+         [
+           { element = "a"; in_under = true };
            { element = "b"; in_under = true };
-           { element = "c"; in_under = false } ])
+           { element = "c"; in_under = false };
+         ])
       (create
-         [ Part (ElementAndUnder, { element = "a"; in_under = true });
+         [
+           Part (ElementAndUnder, { element = "a"; in_under = true });
            Part (ElementAndUnder, { element = "b"; in_under = true });
-           Part (ElementAndUnder, { element = "c"; in_under = false }) ])
+           Part (ElementAndUnder, { element = "c"; in_under = false });
+         ])
       ~printer:show;
     assert_equal (from ["a"; "b"; "c"]) (create [Part (Set, ["a"; "b"; "c"])]) ~printer:show;
     assert_equal
@@ -1481,9 +1562,11 @@ module OverUnderStringSet = struct
   let test_additional _ =
     let set_a =
       of_list
-        [ { element = "a"; in_under = true };
+        [
+          { element = "a"; in_under = true };
           { element = "b"; in_under = true };
-          { element = "c"; in_under = true } ]
+          { element = "c"; in_under = true };
+        ]
     in
     let set_b = of_list [{ element = "a"; in_under = true }; { element = "b"; in_under = true }] in
     let set_c = join set_a set_b in
@@ -1491,25 +1574,31 @@ module OverUnderStringSet = struct
     let set_e = join set_a empty in
     assert_equal
       (of_list
-         [ { element = "a"; in_under = true };
+         [
+           { element = "a"; in_under = true };
            { element = "b"; in_under = true };
-           { element = "c"; in_under = false } ])
+           { element = "c"; in_under = false };
+         ])
       set_c
       ~printer:show
       ~cmp:compare;
     assert_equal
       (of_list
-         [ { element = "a"; in_under = false };
+         [
+           { element = "a"; in_under = false };
            { element = "b"; in_under = false };
-           { element = "c"; in_under = false } ])
+           { element = "c"; in_under = false };
+         ])
       set_d
       ~printer:show
       ~cmp:compare;
     assert_equal
       (of_list
-         [ { element = "a"; in_under = false };
+         [
+           { element = "a"; in_under = false };
            { element = "b"; in_under = false };
-           { element = "c"; in_under = false } ])
+           { element = "c"; in_under = false };
+         ])
       set_e
       ~printer:show
       ~cmp:compare
@@ -1519,7 +1608,8 @@ module TestOverUnderStringSet = TestAbstractDomain (OverUnderStringSet)
 
 let () =
   "abstractDomainTest"
-  >::: [ "string_set" >::: TestStringSet.suite ();
+  >::: [
+         "string_set" >::: TestStringSet.suite ();
          "map_int_to_string_set" >::: TestIntToStringSet.suite ();
          "strict_int_to_string_set" >::: TestStrictIntToStringSet.suite ();
          "string_x_maps_int_to_string_set" >::: TestPair.suite ();
@@ -1527,5 +1617,6 @@ let () =
          "abstract_element" >::: TestAbstractElement.suite ();
          "product" >::: TestProductDomain.suite ();
          "tree" >::: TestTreeDomain.suite ();
-         "string_biset" >::: TestOverUnderStringSet.suite () ]
+         "string_biset" >::: TestOverUnderStringSet.suite ();
+       ]
   |> Test.run

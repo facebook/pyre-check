@@ -302,8 +302,10 @@ let select
           |> Option.value ~default:false
         in
         match ordered_arguments () with
-        | [ { kind = SingleStar; resolved = positional_component; _ };
-            { kind = DoubleStar; resolved = keyword_component; _ } ]
+        | [
+         { kind = SingleStar; resolved = positional_component; _ };
+         { kind = DoubleStar; resolved = keyword_component; _ };
+        ]
           when combines_into_variable ~positional_component ~keyword_component ->
             base_signature_match
         | _ ->

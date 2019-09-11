@@ -23,11 +23,13 @@ let test_check_assign context =
         reveal_type(x)
         x = 1
     |}
-    [ "Incompatible variable type [9]: x is declared to have type `str` "
+    [
+      "Incompatible variable type [9]: x is declared to have type `str` "
       ^ "but is used as type `int`.";
       "Revealed type [-1]: Revealed type for `x` is `str`.";
       "Incompatible variable type [9]: x is declared to have type `str` "
-      ^ "but is used as type `int`." ];
+      ^ "but is used as type `int`.";
+    ];
   assert_default_type_errors
     {|
       import typing
@@ -41,8 +43,10 @@ let test_check_assign context =
         x = 1
         x += 'asdf'
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`.";
+    ];
 
   (* Prune `undeclared` from assignments. *)
   assert_type_errors
@@ -51,8 +55,10 @@ let test_check_assign context =
         y = x
         z = y
     |}
-    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       def foo(a: bool) -> None:
@@ -61,16 +67,20 @@ let test_check_assign context =
         y = x
         z = y
     |}
-    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
         y = [x]
         z = y
     |}
-    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       def foo(a: bool) -> None:
@@ -79,8 +89,10 @@ let test_check_assign context =
         y = [x]
         z = y
     |}
-    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -115,8 +127,10 @@ let test_check_assign context =
       b = Base()
       b.y = 12 # error
     |}
-    [ "Invalid assignment [41]: Assigning to class variable through instance, did you mean to \
-       assign to `Base.y` instead?" ];
+    [
+      "Invalid assignment [41]: Assigning to class variable through instance, did you mean to \
+       assign to `Base.y` instead?";
+    ];
   assert_type_errors
     {|
       from typing import ClassVar
@@ -169,16 +183,20 @@ let test_check_assign context =
       y = typing.Mapping[int, str]
       reveal_type(y)
     |}
-    [ "Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.List[int]]`.";
-      "Revealed type [-1]: Revealed type for `y` is `typing.Type[typing.Mapping[int, str]]`." ];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.List[int]]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Type[typing.Mapping[int, str]]`.";
+    ];
   assert_type_errors
     {|
       import typing
       x = typing.List["foo"]
       reveal_type(x)
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Revealed type [-1]: Revealed type for `x` is `unknown`." ]
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
+      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+    ]
 
 
 let () = "assign" >::: ["check_assign" >:: test_check_assign] |> Test.run

@@ -22,8 +22,10 @@ let test_check_invalid_constructor context =
         def __init__(self) -> int:
           return 0
     |}
-    [ "Incompatible constructor annotation [17]: `__init__` is annotated as "
-      ^ "returning `int`, but it should return `None`." ];
+    [
+      "Incompatible constructor annotation [17]: `__init__` is annotated as "
+      ^ "returning `int`, but it should return `None`.";
+    ];
 
   (* TODO(T45018328): We should error here. *)
   assert_type_errors
@@ -45,15 +47,19 @@ let test_check_init context =
         def __init__(self) -> None:
           pass
     |}
-    [ "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
-      ^ "type `int` but is never initialized." ];
+    [
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
+      ^ "type `int` but is never initialized.";
+    ];
   assert_type_errors
     {|
       class Foo:
         attribute: int
     |}
-    [ "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
-      ^ "type `int` but is never initialized." ];
+    [
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
+      ^ "type `int` but is never initialized.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -78,10 +84,12 @@ let test_check_init context =
           self.y = self.x
           self.z = 1
     |}
-    [ "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type `int` "
+    [
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type `int` "
       ^ "but is used as type `str`.";
       "Missing attribute annotation [4]: Attribute `y` of class `Foo` has type "
-      ^ "`int` but no type is specified." ];
+      ^ "`int` but no type is specified.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -105,10 +113,12 @@ let test_check_init context =
         def __init__(self) -> None:
           pass
     |}
-    [ "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
+    [
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
       ^ "type `int` but is never initialized.";
       "Uninitialized attribute [13]: Attribute `attribute_two` is declared in class `Foo` to "
-      ^ "have type `str` but is never initialized." ];
+      ^ "have type `str` but is never initialized.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -173,12 +183,14 @@ let test_check_init context =
         def __init__(self) -> None:
           self.attribute = unknown if condition() else unknown2
     |}
-    [ "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` "
+    [
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` "
       ^ "has type `int` but is used as type `unknown`.";
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
        control flow path that doesn't define `unknown`.";
       "Undefined name [18]: Global name `unknown2` is not defined, or there is at least one \
-       control flow path that doesn't define `unknown2`." ];
+       control flow path that doesn't define `unknown2`.";
+    ];
 
   (* No need to initialize properties. *)
   assert_type_errors
@@ -198,8 +210,10 @@ let test_check_init context =
         def __init__(self) -> None:
           attribute = 0
     |}
-    [ "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
-      ^ "type `int` but is never initialized." ];
+    [
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
+      ^ "type `int` but is never initialized.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -214,8 +228,10 @@ let test_check_init context =
         def __init__(self) -> None:
           pass
     |}
-    [ "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
-      ^ "type `typing.Optional[int]` but is never initialized." ];
+    [
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
+      ^ "type `typing.Optional[int]` but is never initialized.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -232,8 +248,10 @@ let test_check_init context =
         def __init__(self) -> None:
           self.attribute = ""
     |}
-    [ "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
-      ^ "`int` but is used as type `str`." ];
+    [
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
+      ^ "`int` but is used as type `str`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -241,8 +259,10 @@ let test_check_init context =
           pass
       a = Foo("")
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
+    ];
   assert_type_errors
     {|
       class C:
@@ -251,9 +271,11 @@ let test_check_init context =
         def a(self) -> int:
           return self.a
     |}
-    [ "Missing attribute annotation [4]: Attribute `a` of class `C` has type `int` "
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `C` has type `int` "
       ^ "but no type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`." ];
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
   assert_type_errors
     {|
       class C:
@@ -271,10 +293,12 @@ let test_check_init context =
           if test:
             self.y = y
     |}
-    [ "Missing attribute annotation [4]: Attribute `attribute` of class `C` has type `int` "
+    [
+      "Missing attribute annotation [4]: Attribute `attribute` of class `C` has type `int` "
       ^ "but no type is specified.";
       "Missing attribute annotation [4]: Attribute `y` of class `C` has type `int` "
-      ^ "but no type is specified." ];
+      ^ "but no type is specified.";
+    ];
   assert_type_errors
     {|
       def identity(x: int) -> int:
@@ -285,9 +309,11 @@ let test_check_init context =
         def a(self) -> int:
           return self.a
     |}
-    [ "Missing attribute annotation [4]: Attribute `a`"
+    [
+      "Missing attribute annotation [4]: Attribute `a`"
       ^ " of class `C` has type `int` but no type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`." ];
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
   assert_type_errors {|
        alias = int
     |} [];
@@ -307,8 +333,10 @@ let test_check_init context =
           pass
       a: Foo = Foo("")
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__new__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__new__` but got `str`.";
+    ];
 
   (* Prefer init over new if both exist. *)
   assert_type_errors
@@ -330,8 +358,10 @@ let test_check_init context =
         pass
       c: C = C("")
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Super.__new__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `Super.__new__` but got `str`.";
+    ];
 
   (* We look at both __init__ and __new__ in the inheritance structure. *)
   assert_type_errors
@@ -344,8 +374,10 @@ let test_check_init context =
         pass
       c: C = C("")
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-       `Super.__new__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Super.__new__` but got `str`.";
+    ];
   assert_type_errors
     {|
       class SuperSuper:
@@ -356,8 +388,10 @@ let test_check_init context =
         pass
       c: C = C("")
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`.";
+    ];
   assert_type_errors
     {|
       class A:
@@ -365,8 +399,10 @@ let test_check_init context =
       class B(A):
         foo = "string"
     |}
-    [ "Inconsistent override [15]: `foo` overrides attribute defined in `A` inconsistently. "
-      ^ "Type `str` is not a subtype of the overridden attribute `int`." ];
+    [
+      "Inconsistent override [15]: `foo` overrides attribute defined in `A` inconsistently. "
+      ^ "Type `str` is not a subtype of the overridden attribute `int`.";
+    ];
   assert_type_errors
     {|
       class A:
@@ -384,8 +420,10 @@ let test_check_init context =
       class B(A):
           x = example()
     |}
-    [ "Missing attribute annotation [4]:"
-      ^ " Attribute `x` of class `B` has type `int` but no type is specified." ];
+    [
+      "Missing attribute annotation [4]:"
+      ^ " Attribute `x` of class `B` has type `int` but no type is specified.";
+    ];
   assert_type_errors
     {|
       from abc import ABCMeta
@@ -394,8 +432,10 @@ let test_check_init context =
         def __init__(self) -> None:
            pass
       |}
-    [ "Uninitialized attribute [13]: Attribute `foo` is declared in class `A` to have type `int` \
-       but is never initialized." ];
+    [
+      "Uninitialized attribute [13]: Attribute `foo` is declared in class `A` to have type `int` \
+       but is never initialized.";
+    ];
   assert_type_errors
     {|
       from abc import ABCMeta
@@ -404,8 +444,10 @@ let test_check_init context =
       class B(A):
         pass
       |}
-    [ "Uninitialized attribute [13]: Attribute `foo` inherited from abstract class `A` in class \
-       `B` to have type `int` but is never initialized." ];
+    [
+      "Uninitialized attribute [13]: Attribute `foo` inherited from abstract class `A` in class \
+       `B` to have type `int` but is never initialized.";
+    ];
   assert_type_errors
     {|
       from abc import ABCMeta
@@ -459,8 +501,10 @@ let test_check_constructors context =
       def foo() -> Foo:
         return Foo('asdf')
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -470,11 +514,13 @@ let test_check_constructors context =
         Foo('asdf')
         Foo(1, 2)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
       "Incompatible parameter type [6]: "
       ^ "Expected `typing.Optional[str]` for 2nd anonymous parameter to call `Foo.__init__` "
-      ^ "but got `int`." ];
+      ^ "but got `int`.";
+    ];
 
   (* Check abstract methods *)
   assert_type_errors
@@ -527,8 +573,10 @@ let test_check_constructors context =
       class B(A):
          pass
     |}
-    [ "Abstract class [38]: Class `B` does not implement abstract methods `a`, `b`, `c` and 3 \
-       others." ];
+    [
+      "Abstract class [38]: Class `B` does not implement abstract methods `a`, `b`, `c` and 3 \
+       others.";
+    ];
   assert_type_errors
     {|
       from abc import abstractmethod
@@ -539,8 +587,10 @@ let test_check_constructors context =
       def foo() -> None:
         Foo()
       |}
-    [ "Invalid class [44]: `Foo` is a non-abstract class with abstract methods. Did you mean to \
-       make this class abstract?" ];
+    [
+      "Invalid class [44]: `Foo` is a non-abstract class with abstract methods. Did you mean to \
+       make this class abstract?";
+    ];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -593,8 +643,10 @@ let test_check_constructors context =
       class C(B):
           pass
     |}
-    [ "Abstract class [38]: Class `B` does not implement abstract method `h`.";
-      "Abstract class [38]: Class `C` does not implement abstract method `h`." ];
+    [
+      "Abstract class [38]: Class `B` does not implement abstract method `h`.";
+      "Abstract class [38]: Class `C` does not implement abstract method `h`.";
+    ];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -614,8 +666,10 @@ let test_check_constructors context =
         B()
         C()
     |}
-    [ "Abstract class [38]: Class `B` does not implement abstract method `h`.";
-      "Abstract class [38]: Class `C` does not implement abstract method `h`." ];
+    [
+      "Abstract class [38]: Class `B` does not implement abstract method `h`.";
+      "Abstract class [38]: Class `C` does not implement abstract method `h`.";
+    ];
   assert_type_errors
     {|
       from abc import ABCMeta, abstractmethod
@@ -652,8 +706,10 @@ let test_check_constructors context =
         def foo(self) -> None:
           Foo.__init__(self, 'asdf')
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
-       `Foo.__init__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
+       `Foo.__init__` but got `str`.";
+    ];
 
   (* Super calls. *)
   assert_type_errors
@@ -665,8 +721,10 @@ let test_check_constructors context =
         def foo(self, i: int) -> None:
           super().foo('asdf')
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Super.foo` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `Super.foo` but got `str`.";
+    ];
   assert_type_errors
     {|
       class Super:
@@ -676,8 +734,10 @@ let test_check_constructors context =
         def __init__(self, i: int) -> None:
           super().__init__('asdf')
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`.";
+    ];
   assert_type_errors
     {|
       from placeholder_stub import MadeUpClass
@@ -722,8 +782,10 @@ let test_check_constructors context =
       def foo(x: typing.Type[Clss]) -> Class:
         return x(7)
     |}
-    [ "Undefined type [11]: Type `Clss` is not defined.";
-      "Incompatible return type [7]: Expected `Class` but got `unknown`." ];
+    [
+      "Undefined type [11]: Type `Clss` is not defined.";
+      "Incompatible return type [7]: Expected `Class` but got `unknown`.";
+    ];
   assert_default_type_errors
     {|
       def foo(x: typing.Type[typing.Any]) -> typing.Any:
@@ -761,8 +823,10 @@ let test_check_constructors context =
       def foo(x: typing.Callable[[str], Class]) -> None: ...
       foo(Class)
     |}
-    [ "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st \
-       anonymous parameter to call `foo` but got `typing.Type[Class]`." ]
+    [
+      "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st \
+       anonymous parameter to call `foo` but got `typing.Type[Class]`.";
+    ]
 
 
 let test_infer_constructor_attributes context =
@@ -791,9 +855,11 @@ let test_infer_constructor_attributes context =
         def foo(self) -> int:
           return self.x
     |}
-    [ "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 4 were"
+    [
+      "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 4 were"
       ^ " provided.";
-      "Incompatible return type [7]: Expected `int` but got `C`." ]
+      "Incompatible return type [7]: Expected `int` but got `C`.";
+    ]
 
 
 let test_newtype context =
@@ -822,9 +888,11 @@ let test_newtype context =
 
 let () =
   "constructor"
-  >::: [ "check_invalid_constructor" >:: test_check_invalid_constructor;
+  >::: [
+         "check_invalid_constructor" >:: test_check_invalid_constructor;
          "check_init" >:: test_check_init;
          "check_constructors" >:: test_check_constructors;
          "check_infer_constructor_attributes" >:: test_infer_constructor_attributes;
-         "newtype" >:: test_newtype ]
+         "newtype" >:: test_newtype;
+       ]
   |> Test.run

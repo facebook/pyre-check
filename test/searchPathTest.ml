@@ -41,10 +41,12 @@ let test_search_for_path context =
       >>| fun SearchPath.{ relative_path; _ } -> Path.RelativePath.relative relative_path )
   in
   let search_paths =
-    [ SearchPath.Subdirectory { root; subdirectory = "a" };
+    [
+      SearchPath.Subdirectory { root; subdirectory = "a" };
       SearchPath.Subdirectory
         { root = Path.create_relative ~root ~relative:"b"; subdirectory = "c" };
-      SearchPath.Subdirectory { root; subdirectory = "b" } ]
+      SearchPath.Subdirectory { root; subdirectory = "b" };
+    ]
   in
   assert_path
     ~search_paths
@@ -62,6 +64,8 @@ let test_search_for_path context =
 
 let () =
   "searchPath"
-  >::: [ "create_search_path" >:: test_create_search_path;
-         "search_for_path" >:: test_search_for_path ]
+  >::: [
+         "create_search_path" >:: test_create_search_path;
+         "search_for_path" >:: test_search_for_path;
+       ]
   |> Test.run

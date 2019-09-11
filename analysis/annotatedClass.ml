@@ -135,11 +135,13 @@ let resolve_class ~resolution annotation =
       match GlobalResolution.class_definition resolution annotation with
       | Some class_definition ->
           Some
-            [ {
+            [
+              {
                 instantiated = original_annotation;
                 class_attributes = is_meta;
                 class_definition = create class_definition;
-              } ]
+              };
+            ]
       | None -> None )
   in
   extract ~is_meta:false annotation
@@ -247,10 +249,12 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
     if Type.OrderedTypes.equal variables (Concrete []) then
       []
     else
-      [ {
+      [
+        {
           Expression.Call.Argument.name = None;
           value = Type.parametric "typing.Generic" variables |> Type.expression;
-        } ]
+        };
+      ]
 
 
 let constraints ?target ?parameters definition ~instantiated ~resolution =
@@ -928,11 +932,13 @@ module ClassDecorators = struct
                         let rec override_existing_parameters unchecked_parameters =
                           match unchecked_parameters with
                           | [] ->
-                              [ {
+                              [
+                                {
                                   Type.Callable.Parameter.name;
                                   annotation;
                                   default = Option.is_some value;
-                                } ]
+                                };
+                              ]
                           | { Type.Callable.Parameter.name = old_name; default = old_default; _ }
                             :: tail
                             when Identifier.equal old_name name ->

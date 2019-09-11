@@ -378,11 +378,13 @@ let variadic_order =
     ~successor:"list"
     ~parameters:
       (Concrete
-         [ Type.Tuple
+         [
+           Type.Tuple
              (Bounded
                 (Concatenation
                    (Type.OrderedTypes.Concatenation.create
-                      (Type.OrderedTypes.Concatenation.Middle.create_bare variadic)))) ]);
+                      (Type.OrderedTypes.Concatenation.Middle.create_bare variadic))));
+         ]);
   insert order "SimpleTupleChild";
   connect
     order
@@ -614,7 +616,8 @@ let test_instantiate_predecessors_parameters _ =
 
 let () =
   "order"
-  >::: [ "check_integrity" >:: test_check_integrity;
+  >::: [
+         "check_integrity" >:: test_check_integrity;
          "greatest_lower_bound" >:: test_greatest_lower_bound;
          "is_instantiated" >:: test_is_instantiated;
          "least_upper_bound" >:: test_least_upper_bound;
@@ -623,5 +626,6 @@ let () =
          "to_json" >:: test_to_json;
          "variables" >:: test_variables;
          "instantiate_successors_parameters" >:: test_instantiate_successors_parameters;
-         "instantiate_predecessors_parameters" >:: test_instantiate_predecessors_parameters ]
+         "instantiate_predecessors_parameters" >:: test_instantiate_predecessors_parameters;
+       ]
   |> Test.run

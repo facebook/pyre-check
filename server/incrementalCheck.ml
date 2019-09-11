@@ -225,12 +225,14 @@ let recheck
     ~name:"incremental check"
     ~timer
     ~integers:
-      [ "number of changed files", List.length paths;
+      [
+        "number of changed files", List.length paths;
         "number of module tracker updates", List.length module_updates;
         "number of parser updates", Set.length invalidated_environment_qualifiers;
         "number of environment builder updates", List.length recheck_sources;
         ( "number of re-checked functions",
-          List.sum (module Int) ~f:Preprocessing.count_defines recheck_sources ) ]
+          List.sum (module Int) ~f:Preprocessing.count_defines recheck_sources );
+      ]
     ();
   StatusUpdate.information ~message:"Done recheck." ~short_message:(Some "Done recheck.") ~state;
   state, new_errors

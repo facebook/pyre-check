@@ -19,6 +19,8 @@ let get_logs configuration =
   in
   List.filter_map
     ~f:get_log
-    [ "server", Constants.Server.log_path configuration;
+    [
+      "server", Constants.Server.log_path configuration;
       "watchman", Constants.Watchman.log_path configuration;
-      "persistent", Constants.Persistent.log_path configuration ]
+      "persistent", Constants.Persistent.log_path configuration;
+    ]

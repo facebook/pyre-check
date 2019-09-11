@@ -153,9 +153,11 @@ let test_file_notifiers _ =
 
 let () =
   "connections"
-  >::: [ "broadcast_response" >:: test_broadcast_response;
+  >::: [
+         "broadcast_response" >:: test_broadcast_response;
          "write_to_persistent_client" >:: test_write_to_persistent_client;
          "add_persistent_client" >:: test_add_persistent_client;
          "remove_persistent_client" >:: test_remove_persistent_client;
-         "file_notifiers" >:: test_file_notifiers ]
+         "file_notifiers" >:: test_file_notifiers;
+       ]
   |> Test.run

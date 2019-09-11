@@ -7,14 +7,16 @@ open Core
 open Commands
 
 let commands =
-  [ "analyze", Analyze.command;
+  [
+    "analyze", Analyze.command;
     "check", Check.check_command;
     "query", Query.command;
     "rage", Rage.command;
     "incremental", Incremental.command;
     "persistent", Persistent.command;
     "start", Start.command;
-    "stop", Stop.command ]
+    "stop", Stop.command;
+  ]
 
 
 let () =

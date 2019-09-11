@@ -16,8 +16,10 @@ let test_check_callables context =
       def foo(callable: typing.Callable[[str], None]) -> None:
         callable(1)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to anonymous call but got `int`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `str` for 1st anonymous parameter to anonymous call but got `int`.";
+    ];
 
   (* Type variables & callables. *)
   assert_type_errors
@@ -55,9 +57,11 @@ let test_check_callables context =
         return ""
       foo(i2s)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Callable[[int], int]` for 1st anonymous parameter to call `foo` but got "
-      ^ "`typing.Callable(i2s)[[Named(x, int)], str]`." ];
+      ^ "`typing.Callable(i2s)[[Named(x, int)], str]`.";
+    ];
 
   (* Classes with __call__ are callables. *)
   assert_type_errors
@@ -91,14 +95,16 @@ let test_check_callables context =
         particular_map(x, [])
         particular_map(y, [])
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call \
          `particular_map` but got "
       ^ "`CallMe`.";
       "Incompatible parameter type [6]: "
       ^ "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call \
          `particular_map` but got "
-      ^ "`CallMeToo`." ];
+      ^ "`CallMeToo`.";
+    ];
 
   (* Sanity check: Callables do not subclass classes. *)
   assert_type_errors
@@ -112,9 +118,11 @@ let test_check_callables context =
       def apply(f: typing.Callable[[int], str]) -> None:
         particular_map(f, 1)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `CallMe` for 1st anonymous parameter to call `particular_map` but got "
-      ^ "`typing.Callable[[int], str]`." ];
+      ^ "`typing.Callable[[int], str]`.";
+    ];
 
   (* The annotation for callable gets expanded automatically. *)
   assert_type_errors
@@ -127,9 +135,11 @@ let test_check_callables context =
       hof(i2i)
       hof(1)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Callable[[int], int]` for 1st anonymous parameter to call `hof` but got "
-      ^ "`int`." ];
+      ^ "`int`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -150,11 +160,13 @@ let test_check_callables context =
         return 0
       takes_callable(lambda y: 0)
     |}
-    [ "Missing parameter annotation [2]: Parameter `f` must have a type "
+    [
+      "Missing parameter annotation [2]: Parameter `f` must have a type "
       ^ "that does not contain `Any`.";
       "Incompatible parameter type [6]: "
       ^ "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st anonymous parameter "
-      ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], int]`." ];
+      ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], int]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -162,11 +174,13 @@ let test_check_callables context =
         return 0
       takes_callable(lambda y: "")
     |}
-    [ "Missing parameter annotation [2]: Parameter `f` must have a type "
+    [
+      "Missing parameter annotation [2]: Parameter `f` must have a type "
       ^ "that does not contain `Any`.";
       "Incompatible parameter type [6]: "
       ^ "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st anonymous parameter "
-      ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`." ];
+      ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`.";
+    ];
   assert_default_type_errors
     {|
       import typing
@@ -211,15 +225,19 @@ let test_check_function_parameters context =
     |} [];
   assert_type_errors
     "int_to_int(1.0)"
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-       `int_to_int` but got `float`." ];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `int_to_int` but got `float`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
         int_to_int(1.0)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
+    ];
   assert_type_errors
     {|
       def preprocessed($renamed_i: str) -> None:
@@ -227,30 +245,38 @@ let test_check_function_parameters context =
       def foo() -> None:
         preprocessed(1.0)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `preprocessed` but got `float`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `str` for 1st anonymous parameter to call `preprocessed` but got `float`.";
+    ];
   assert_type_errors
     {|
       def foo() -> int:
         return int_to_int(1.0)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
+    ];
   assert_type_errors
     {|
       def foo(i) -> None:
         int_to_int(i)
     |}
-    [ "Missing parameter annotation [2]: Parameter `i` has no type specified.";
+    [
+      "Missing parameter annotation [2]: Parameter `i` has no type specified.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
-      ^ "to call `int_to_int` but got `typing.Any`." ];
+      ^ "to call `int_to_int` but got `typing.Any`.";
+    ];
 
   (* Type aliases in signatures are resolved. *)
   assert_type_errors
     "import hashlib; hashlib.md5(1.0)"
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Union[int, str]` for 1st anonymous parameter to call `hashlib.md5` "
-      ^ "but got `float`." ];
+      ^ "but got `float`.";
+    ];
   assert_type_errors {|
       def foo(i: int, *, j: int) -> None:
         pass
@@ -260,17 +286,21 @@ let test_check_function_parameters context =
       def foo( *args, **kwargs) -> None:
         pass
     |}
-    [ "Missing parameter annotation [2]: Parameter `*args` has no type specified.";
-      "Missing parameter annotation [2]: Parameter `**kwargs` has no type specified." ];
+    [
+      "Missing parameter annotation [2]: Parameter `*args` has no type specified.";
+      "Missing parameter annotation [2]: Parameter `**kwargs` has no type specified.";
+    ];
   assert_type_errors
     {|
       class A:
         def foo(self) -> None:
           int_to_int(self.attribute)
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
       ^ "to call `int_to_int` but got `unknown`.";
-      "Undefined attribute [16]: `A` has no attribute `attribute`." ];
+      "Undefined attribute [16]: `A` has no attribute `attribute`.";
+    ];
   assert_type_errors
     {|
       class C:
@@ -281,8 +311,10 @@ let test_check_function_parameters context =
         pass
       x.attribute
     |}
-    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -311,9 +343,11 @@ let test_check_function_parameters context =
       def foo(a: typing.Optional[int]) -> int:
         return to_int(a or int_to_str(a))
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `int_to_str` but got "
-      ^ "`typing.Optional[int]`." ];
+      ^ "`typing.Optional[int]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -356,9 +390,11 @@ let test_check_function_parameters context =
       def foo(x) -> None:
         takes_iterable(x)
     |}
-    [ "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+    [
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
       "Incompatible parameter type [6]: Expected `typing.Iterable[Variable[_T]]` "
-      ^ "for 1st anonymous parameter to call `takes_iterable` but got `typing.Any`." ];
+      ^ "for 1st anonymous parameter to call `takes_iterable` but got `typing.Any`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -374,8 +410,9 @@ let test_check_function_parameters context =
         pass
       foo("hello")
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[int]` for 1st anonymous parameter to call `foo` but got `str`."
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `typing.Optional[int]` for 1st anonymous parameter to call `foo` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -385,8 +422,9 @@ let test_check_function_parameters context =
         pass
       foo("hello")
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[int]` for 1st anonymous parameter to call `foo` but got `str`."
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `typing.Optional[int]` for 1st anonymous parameter to call `foo` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -405,8 +443,10 @@ let test_check_function_parameters context =
         pass
       foo(1, 1)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`.";
+    ];
   assert_default_type_errors
     {|
       import typing
@@ -428,8 +468,10 @@ let test_check_function_parameters context =
         a = {"key": set()}
         b = a.get("key", set())
     |}
-    [ "Incomplete type [37]: Type `typing.Dict[str, typing.Set[Variable[_T]]]` inferred for "
-      ^ "`a` is incomplete, add an explicit annotation." ];
+    [
+      "Incomplete type [37]: Type `typing.Dict[str, typing.Set[Variable[_T]]]` inferred for "
+      ^ "`a` is incomplete, add an explicit annotation.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -564,9 +606,11 @@ let test_check_function_parameter_errors context =
       def foo(input: Foo) -> None:
         str_float_to_int(input.attribute, input.undefined)
     |}
-    [ "Incompatible parameter type [6]: Expected `float` for 2nd anonymous parameter "
+    [
+      "Incompatible parameter type [6]: Expected `float` for 2nd anonymous parameter "
       ^ "to call `str_float_to_int` but got `unknown`.";
-      "Undefined attribute [16]: `Foo` has no attribute `undefined`." ];
+      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -574,9 +618,11 @@ let test_check_function_parameter_errors context =
       def foo(input: Foo) -> None:
         str_float_to_int(input.undefined, input.undefined)
     |}
-    [ "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter "
+    [
+      "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter "
       ^ "to call `str_float_to_int` but got `unknown`.";
-      "Undefined attribute [16]: `Foo` has no attribute `undefined`." ];
+      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -585,9 +631,11 @@ let test_check_function_parameter_errors context =
       def foo(input: typing.Optional[Foo]) -> None:
         optional_str_to_int(input and input.attribute)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Optional[str]` for 1st anonymous parameter to call `optional_str_to_int` "
-      ^ "but got `typing.Optional[int]`." ];
+      ^ "but got `typing.Optional[int]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -596,10 +644,12 @@ let test_check_function_parameter_errors context =
       def foo(input: typing.Optional[Foo]) -> None:
         optional_str_to_int(input and input.undefined)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Optional[str]` for 1st anonymous parameter to call `optional_str_to_int` "
       ^ "but got `unknown`.";
-      "Undefined attribute [16]: `Foo` has no attribute `undefined`." ];
+      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
+    ];
   assert_type_errors
     {|
       class attribute:
@@ -617,9 +667,11 @@ let test_check_function_parameter_errors context =
       def meta(x: typing.Type[_T]) -> None: ...
       meta(typing.Dict)
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Type[Variable[_T]]` for 1st anonymous parameter to call `meta` but got "
-      ^ "`typing.TypeAlias`." ]
+      ^ "`typing.TypeAlias`.";
+    ]
 
 
 let test_check_function_overloads context =
@@ -662,10 +714,12 @@ let test_check_function_overloads context =
       def herp(x: Foo) -> int:
         return x.derp(5)
     |}
-    [ "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
+    [
+      "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
        implementation.";
       "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
-       implementation." ];
+       implementation.";
+    ];
   assert_type_errors
     {|
       from typing import overload
@@ -681,11 +735,13 @@ let test_check_function_overloads context =
       def herp(x: Foo) -> int:
         return x.derp(True)
     |}
-    [ "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
+    [
+      "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
        implementation.";
       "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
        implementation.";
-      "Missing argument [20]: Call `Foo.derp` expects argument `y`." ];
+      "Missing argument [20]: Call `Foo.derp` expects argument `y`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -723,11 +779,13 @@ let test_check_function_overloads context =
 
       reveal_type(derp)
     |}
-    [ "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
+    [
+      "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
       "Missing overload implementation [42]: Overloaded function `derp` must have an \
        implementation.";
       "Revealed type [-1]: Revealed type for `test.derp` is "
-      ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`." ];
+      ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`.";
+    ];
   assert_type_errors
     {|
       from typing import overload
@@ -739,11 +797,13 @@ let test_check_function_overloads context =
 
       reveal_type(derp)
     |}
-    [ "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
+    [
+      "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
       "Missing overload implementation [42]: Overloaded function `derp` must have an \
        implementation.";
       "Revealed type [-1]: Revealed type for `test.derp` is "
-      ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`." ];
+      ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`.";
+    ];
 
   (* The overloaded stub will override the implementation *)
   assert_type_errors
@@ -757,11 +817,13 @@ let test_check_function_overloads context =
 
       reveal_type(derp)
     |}
-    [ "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
+    [
+      "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
       "Missing overload implementation [42]: Overloaded function `derp` must have an \
        implementation.";
       "Revealed type [-1]: Revealed type for `test.derp` is "
-      ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`." ];
+      ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -772,9 +834,11 @@ let test_check_function_overloads context =
 
       reveal_type(derp)
     |}
-    [ "Missing return annotation [3]: Return type is not specified.";
+    [
+      "Missing return annotation [3]: Return type is not specified.";
       "Revealed type [-1]: Revealed type for `test.derp` is "
-      ^ "`typing.Callable(derp)[[Named(x, object)], unknown][[[Named(x, int)], int]]`." ]
+      ^ "`typing.Callable(derp)[[Named(x, object)], unknown][[[Named(x, int)], int]]`.";
+    ]
 
 
 let test_check_constructor_overloads context =
@@ -792,10 +856,12 @@ let test_check_constructor_overloads context =
         Class(1)
         Class('asdf')
     |}
-    [ "Missing overload implementation [42]: Overloaded function `Class.__init__` must have an \
+    [
+      "Missing overload implementation [42]: Overloaded function `Class.__init__` must have an \
        implementation.";
       "Missing overload implementation [42]: Overloaded function `Class.__init__` must have an \
-       implementation." ]
+       implementation.";
+    ]
 
 
 let test_check_variable_arguments context =
@@ -820,8 +886,10 @@ let test_check_variable_arguments context =
       def g(collection: typing.Collection[str]) -> None:
         return f( *collection)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `f` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `f` but got `str`.";
+    ];
   assert_type_errors
     {|
       def foo(a: int, b: int) -> int:
@@ -829,10 +897,12 @@ let test_check_variable_arguments context =
       def bar(b) -> str:
         return foo ( *b )
     |}
-    [ "Missing parameter annotation [2]: Parameter `b` has no type specified.";
+    [
+      "Missing parameter annotation [2]: Parameter `b` has no type specified.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
       "Invalid argument [32]: Variable argument `b` has type `typing.Any` "
-      ^ "but must be an iterable." ];
+      ^ "but must be an iterable.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -841,8 +911,9 @@ let test_check_variable_arguments context =
       def bar(b: typing.Any) -> int:
         return foo ( *b )
     |}
-    [ "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
-      "Invalid argument [32]: Variable argument `b` has type `typing.Any` but must be an iterable."
+    [
+      "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
+      "Invalid argument [32]: Variable argument `b` has type `typing.Any` but must be an iterable.";
     ];
   assert_type_errors
     {|
@@ -852,10 +923,12 @@ let test_check_variable_arguments context =
       def bar(b: typing.List[typing.Any]) -> int:
         return foo ( *b )
     |}
-    [ "Missing parameter annotation [2]: Parameter `b` must have a type that "
+    [
+      "Missing parameter annotation [2]: Parameter `b` must have a type that "
       ^ "does not contain `Any`.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` "
-      ^ "but got `typing.Any`." ];
+      ^ "but got `typing.Any`.";
+    ];
   assert_strict_type_errors
     {|
       import typing
@@ -873,8 +946,10 @@ let test_check_variable_arguments context =
       def bar(b: typing.List[str]) -> int:
         return foo ( *b )
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -883,8 +958,10 @@ let test_check_variable_arguments context =
       def bar(b: typing.List[str]) -> None:
         foo('asdf', *b)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -929,8 +1006,10 @@ let test_check_variable_arguments context =
       def bar(b: typing.List[str]) -> int:
         return foo('asdf', *b)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `foo` but got `str`.";
+    ];
   assert_type_errors
     {|
      import typing
@@ -946,8 +1025,10 @@ let test_check_variable_arguments context =
      def foo(a: typing.Tuple[int, str]) -> typing.Set[int]:
        return set(a)
    |}
-    [ "Incompatible return type [7]: "
-      ^ "Expected `typing.Set[int]` but got `typing.Set[typing.Union[int, str]]`." ]
+    [
+      "Incompatible return type [7]: "
+      ^ "Expected `typing.Set[int]` but got `typing.Set[typing.Union[int, str]]`.";
+    ]
 
 
 let test_check_variable_restrictions context =
@@ -969,8 +1050,10 @@ let test_check_variable_restrictions context =
        def f(x: float) -> str:
          return variable_restricted_identity(x)
     |}
-    [ "Incompatible parameter type [6]: Expected `Variable[_VR <: [str, int]]` "
-      ^ "for 1st anonymous parameter to call `variable_restricted_identity` but got `float`." ];
+    [
+      "Incompatible parameter type [6]: Expected `Variable[_VR <: [str, int]]` "
+      ^ "for 1st anonymous parameter to call `variable_restricted_identity` but got `float`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -1009,8 +1092,10 @@ let test_check_keyword_arguments context =
       def bar(x: typing.Dict[str, str]) -> None:
         test = foo( **x )
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
-      ^ "to call `foo` but got `str`." ];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      ^ "to call `foo` but got `str`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -1021,8 +1106,10 @@ let test_check_keyword_arguments context =
       def bar(x: typing.Dict[int, str]) -> None:
         test = foo( **x )
     |}
-    [ "Invalid argument [32]: Keyword argument `x` has type `typing.Dict[int, str]` "
-      ^ "but must be a mapping with string keys." ];
+    [
+      "Invalid argument [32]: Keyword argument `x` has type `typing.Dict[int, str]` "
+      ^ "but must be a mapping with string keys.";
+    ];
   assert_type_errors
     {|
       def foo(x: int, y: str) -> None:
@@ -1031,8 +1118,10 @@ let test_check_keyword_arguments context =
       def bar(x: int) -> None:
         test = foo( **x )
     |}
-    [ "Invalid argument [32]: Keyword argument `x` has type `int` "
-      ^ "but must be a mapping with string keys." ];
+    [
+      "Invalid argument [32]: Keyword argument `x` has type `int` "
+      ^ "but must be a mapping with string keys.";
+    ];
   assert_default_type_errors
     {|
       import typing
@@ -1054,8 +1143,10 @@ let test_check_keyword_arguments context =
       def bar(x: typing.Dict[str, typing.Union[int, str]]) -> None:
         test = foo( **x )
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
-      ^ "to call `foo` but got `typing.Union[int, str]`." ];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      ^ "to call `foo` but got `typing.Union[int, str]`.";
+    ];
   assert_type_errors
     {|
       import typing
@@ -1077,8 +1168,10 @@ let test_check_keyword_arguments context =
       def bar(x: typing.Union[typing.Dict[str, int], typing.Dict[str, float]]) -> None:
         test = foo( **x )
     |}
-    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` \
-       but got `float`." ];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` \
+       but got `float`.";
+    ];
   ()
 
 
@@ -1121,10 +1214,12 @@ let test_check_named_arguments context =
       def foo() -> int:
         return str_float_to_int(f="No",i="Hi")
     |}
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `str` for 1st parameter `i` to call `str_float_to_int` but got `float`.";
       "Incompatible parameter type [6]: "
-      ^ "Expected `float` for 1st parameter `f` to call `str_float_to_int` but got `str`." ]
+      ^ "Expected `float` for 1st parameter `f` to call `str_float_to_int` but got `str`.";
+    ]
 
 
 let test_check_literals context =
@@ -1155,16 +1250,19 @@ let test_check_literals context =
         d = foo("also_give_me_int")
         reveal_type(d)
     |}
-    [ "Revealed type [-1]: Revealed type for `a` is `str`.";
+    [
+      "Revealed type [-1]: Revealed type for `a` is `str`.";
       "Revealed type [-1]: Revealed type for `b` is `int`.";
       "Revealed type [-1]: Revealed type for `c` is `typing.Union[bool, int, str]`.";
-      "Revealed type [-1]: Revealed type for `d` is `int`." ];
+      "Revealed type [-1]: Revealed type for `d` is `int`.";
+    ];
   ()
 
 
 let () =
   "signatureSelection"
-  >::: [ "check_callables" >:: test_check_callables;
+  >::: [
+         "check_callables" >:: test_check_callables;
          "check_function_redirects" >:: test_check_function_redirects;
          "check_function_parameters_with_backups" >:: test_check_function_parameters_with_backups;
          "check_function_parameters" >:: test_check_function_parameters;
@@ -1175,5 +1273,6 @@ let () =
          "check_variable_restrictions" >:: test_check_variable_restrictions;
          "check_keyword_arguments" >:: test_check_keyword_arguments;
          "check_named_arguments" >:: test_check_named_arguments;
-         "check_literals" >:: test_check_literals ]
+         "check_literals" >:: test_check_literals;
+       ]
   |> Test.run

@@ -43,8 +43,10 @@ let test_higher_order_callables context =
 
       reveal_type(foo(callme))
     |}
-    [ "Revealed type [-1]: Revealed type for `test.foo(test.callme)` is `typing.Callable[[str], \
-       str]`." ];
+    [
+      "Revealed type [-1]: Revealed type for `test.foo(test.callme)` is `typing.Callable[[str], \
+       str]`.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar("T")
@@ -58,7 +60,8 @@ let test_higher_order_callables context =
 
       reveal_type(foo(callme))
     |}
-    [ "Revealed type [-1]: Revealed type for `test.foo(test.callme)` is `typing.Callable[..., str]`."
+    [
+      "Revealed type [-1]: Revealed type for `test.foo(test.callme)` is `typing.Callable[..., str]`.";
     ]
 
 
@@ -70,9 +73,11 @@ let test_union_of_callables context =
           reveal_type(x)
           x(1)
     |}
-    [ "Missing parameter annotation [2]: Parameter `x` must have a type that does not contain `Any`.";
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type that does not contain `Any`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Union[typing.Callable[[int], \
-       typing.Any], typing.Callable[..., typing.Any]]`." ]
+       typing.Any], typing.Callable[..., typing.Any]]`.";
+    ]
 
 
 let test_callable_attribute_access context =
@@ -97,7 +102,9 @@ let test_callable_attribute_access context =
 
 let () =
   "callable"
-  >::: [ "higher_order_callables" >:: test_higher_order_callables;
+  >::: [
+         "higher_order_callables" >:: test_higher_order_callables;
          "union_of_callables" >:: test_union_of_callables;
-         "callable_attribute_access" >:: test_callable_attribute_access ]
+         "callable_attribute_access" >:: test_callable_attribute_access;
+       ]
   |> Test.run

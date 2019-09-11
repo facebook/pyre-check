@@ -29,8 +29,10 @@ let test_check_isinstance context =
     {|
       isinstance(1, NonexistentClass)
     |}
-    [ "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
-       one control flow path that doesn't define `NonexistentClass`." ];
+    [
+      "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
+       one control flow path that doesn't define `NonexistentClass`.";
+    ];
   assert_type_errors
     {|
       def foo(x: int) -> None:
@@ -38,8 +40,10 @@ let test_check_isinstance context =
           reveal_type(x)
         reveal_type(x)
     |}
-    [ "Revealed type [-1]: Revealed type for `x` is `str`.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`." ];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
+    ];
   assert_type_errors
     {|
       def foo(x: int) -> None:
@@ -47,10 +51,12 @@ let test_check_isinstance context =
           reveal_type(x)
         reveal_type(x)
     |}
-    [ "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
+    [
+      "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
        one control flow path that doesn't define `NonexistentClass`.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `x` is `int`." ];
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
   assert_type_errors
     {|
       def foo(x: typing.Union[int, typing.List[int]]) -> None:
@@ -59,8 +65,10 @@ let test_check_isinstance context =
         else:
           reveal_type(x)
     |}
-    [ "Revealed type [-1]: Revealed type for `x` is `typing.List[int]`.";
-      "Revealed type [-1]: Revealed type for `x` is `int`." ];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.List[int]`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
   assert_type_errors
     {|
       def foo(x: typing.Union[int, typing.List[str], str, typing.List[int]]) -> None:
@@ -69,9 +77,11 @@ let test_check_isinstance context =
         else:
           reveal_type(x)
     |}
-    [ "Revealed type [-1]: Revealed type for `x` is "
+    [
+      "Revealed type [-1]: Revealed type for `x` is "
       ^ "`typing.Union[typing.List[int], typing.List[str]]`.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`." ];
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
+    ];
   assert_type_errors
     {|
       def foo(x: typing.Union[int, typing.Set[str], str, typing.Set[int]]) -> None:
@@ -80,9 +90,11 @@ let test_check_isinstance context =
         else:
           reveal_type(x)
     |}
-    [ "Revealed type [-1]: Revealed type for `x` is "
+    [
+      "Revealed type [-1]: Revealed type for `x` is "
       ^ "`typing.Union[typing.Set[int], typing.Set[str]]`.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`." ];
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
+    ];
   assert_type_errors
     {|
       class CommonBase(): pass
@@ -95,8 +107,10 @@ let test_check_isinstance context =
         else:
           reveal_type(x)
     |}
-    [ "Revealed type [-1]: Revealed type for `x` is `typing.Union[ChildA, ChildB]`.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Union[Unrelated, int]`." ];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[ChildA, ChildB]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[Unrelated, int]`.";
+    ];
   assert_type_errors
     {|
       def foo(x: typing.Union[int, float, bool]) -> None:
@@ -105,20 +119,26 @@ let test_check_isinstance context =
         else:
           reveal_type(x)
     |}
-    [ "Revealed type [-1]: Revealed type for `x` is `str`.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Union[bool, float, int]`." ];
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[bool, float, int]`.";
+    ];
   assert_type_errors "isinstance(1, (int, str))" [];
   assert_type_errors "isinstance(1, (int, (int, str)))" [];
   assert_type_errors
     "isinstance(str, '')"
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` "
-      ^ "but got `str`." ];
+      ^ "but got `str`.";
+    ];
   assert_type_errors
     "isinstance(1, (int, ('', str)))"
-    [ "Incompatible parameter type [6]: "
+    [
+      "Incompatible parameter type [6]: "
       ^ "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` "
-      ^ "but got `str`." ]
+      ^ "but got `str`.";
+    ]
 
 
 let () = "isinstance" >::: ["check_isinstance" >:: test_check_isinstance] |> Test.run

@@ -401,8 +401,10 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                               List.map ~f:(fun variable -> Type.Variable.UnaryPair (variable, Any))
                             in
                             pair_all_with_any (Type.OrderedTypes.Concatenation.head concatenation)
-                            @ [ Type.Variable.ListVariadicPair
-                                  (Type.OrderedTypes.Concatenation.middle concatenation, Any) ]
+                            @ [
+                                Type.Variable.ListVariadicPair
+                                  (Type.OrderedTypes.Concatenation.middle concatenation, Any);
+                              ]
                             @ pair_all_with_any
                                 (Type.OrderedTypes.Concatenation.tail concatenation) )
                   in

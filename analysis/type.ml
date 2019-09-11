@@ -925,7 +925,8 @@ let variable ?constraints ?variance name =
 let yield parameter = Parametric { name = "Yield"; parameters = Concrete [parameter] }
 
 let parametric_substitution_map =
-  [ "typing.ChainMap", "collections.ChainMap";
+  [
+    "typing.ChainMap", "collections.ChainMap";
     "typing.Counter", "collections.Counter";
     "typing.DefaultDict", "collections.defaultdict";
     "typing.Deque", "collections.deque";
@@ -934,7 +935,8 @@ let parametric_substitution_map =
     "typing.List", "list";
     "typing.Set", "set";
     "typing.Type", "type";
-    "typing_extensions.Protocol", "typing.Protocol" ]
+    "typing_extensions.Protocol", "typing.Protocol";
+  ]
   |> Identifier.Table.of_alist_exn
 
 
@@ -957,20 +959,24 @@ let rec expression annotation =
                       let annotation = [{ Call.Argument.name = None; value = annotation }] in
                       let default =
                         if default then
-                          [ {
+                          [
+                            {
                               Call.Argument.name = None;
                               value = Node.create ~location (create_name "default");
-                            } ]
+                            };
+                          ]
                         else
                           []
                       in
                       let name =
                         name
                         >>| (fun name ->
-                              [ {
+                              [
+                                {
                                   Call.Argument.name = None;
                                   value = Node.create ~location (create_name name);
-                                } ])
+                                };
+                              ])
                         |> Option.value ~default:[]
                       in
                       name @ annotation @ default
@@ -1112,9 +1118,11 @@ let rec expression annotation =
             let field_to_tuple { name; annotation } =
               Node.create_with_default_location
                 (Expression.Tuple
-                   [ Node.create_with_default_location
+                   [
+                     Node.create_with_default_location
                        (Expression.String { value = name; kind = StringLiteral.String });
-                     expression annotation ])
+                     expression annotation;
+                   ])
             in
             List.map fields ~f:field_to_tuple
           in
@@ -1498,7 +1506,8 @@ let lambda ~parameters ~return_annotation =
 
 
 let primitive_substitution_map =
-  [ "$bottom", Bottom;
+  [
+    "$bottom", Bottom;
     "$unknown", Top;
     "None", none;
     "function", Callable.create ~annotation:Any ();
@@ -1516,8 +1525,9 @@ let primitive_substitution_map =
     "typing_extensions.Protocol", Primitive "typing.Protocol";
     (* This is broken in typeshed:
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
-    "PathLike", Primitive "_PathLike";
-    "TSelf", variable "_PathLike" ]
+      "PathLike", Primitive "_PathLike";
+    "TSelf", variable "_PathLike";
+  ]
   |> Identifier.Table.of_alist_exn
 
 
@@ -1912,10 +1922,12 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               {
                 callee;
                 arguments =
-                  [ {
+                  [
+                    {
                       Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
                       _;
-                    } ];
+                    };
+                  ];
               }
             when Expression.name_is ~name:"typing_extensions.IntVar" callee ->
               variable value ~constraints:LiteralIntegers
@@ -1923,7 +1935,8 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               {
                 callee;
                 arguments =
-                  [ {
+                  [
+                    {
                       Call.Argument.name = None;
                       value =
                         {
@@ -1937,7 +1950,8 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                               :: { Node.value = true_or_false; _ } :: fields);
                           _;
                         };
-                    } ];
+                    };
+                  ];
               }
             when Expression.name_is ~name:"mypy_extensions.TypedDict.__getitem__" callee ->
               let total =
@@ -1952,8 +1966,10 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                     | {
                         Node.value =
                           Expression.Tuple
-                            [ { Node.value = Expression.String { value = field_name; _ }; _ };
-                              field_annotation ];
+                            [
+                              { Node.value = Expression.String { value = field_name; _ }; _ };
+                              field_annotation;
+                            ];
                         _;
                       } ->
                         Some { name = field_name; annotation = create_logic field_annotation }
@@ -1971,10 +1987,12 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
             when Expression.name_is ~name:"typing_extensions.Literal.__getitem__" callee ->
               let arguments =
                 match arguments with
-                | [ {
-                      Call.Argument.name = None;
-                      value = { Node.value = Expression.Tuple arguments; _ };
-                    } ] ->
+                | [
+                 {
+                   Call.Argument.name = None;
+                   value = { Node.value = Expression.Tuple arguments; _ };
+                 };
+                ] ->
                     Some (List.map arguments ~f:Node.value)
                 | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] ->
                     Some [argument]
@@ -3492,7 +3510,8 @@ module TypedDictionary = struct
       Callable.kind = Named (Reference.create "__init__");
       implementation = { annotation = Top; parameters = Undefined; define_location = None };
       overloads =
-        [ {
+        [
+          {
             annotation;
             parameters = field_named_parameters ~default:(not total) fields;
             define_location = None;
@@ -3501,10 +3520,13 @@ module TypedDictionary = struct
             annotation;
             parameters =
               Defined
-                [ Record.Callable.RecordParameter.Anonymous
-                    { index = 0; annotation; default = false } ];
+                [
+                  Record.Callable.RecordParameter.Anonymous
+                    { index = 0; annotation; default = false };
+                ];
             define_location = None;
-          } ];
+          };
+        ];
       implicit = None;
     }
 
@@ -3539,7 +3561,8 @@ module TypedDictionary = struct
     in
     let get_overloads =
       let overloads { name; annotation } =
-        [ {
+        [
+          {
             annotation = Optional annotation;
             parameters = Defined [key_parameter name];
             define_location = None;
@@ -3548,15 +3571,18 @@ module TypedDictionary = struct
             annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
               Defined
-                [ key_parameter name;
+                [
+                  key_parameter name;
                   Named
                     {
                       name = "default";
                       annotation = Variable (Variable.Unary.create "_T");
                       default = false;
-                    } ];
+                    };
+                ];
             define_location = None;
-          } ]
+          };
+        ]
       in
       List.concat_map ~f:overloads
     in
@@ -3572,36 +3598,44 @@ module TypedDictionary = struct
       List.map ~f:overload
     in
     let update_overloads fields =
-      [ {
+      [
+        {
           annotation = none;
           parameters = field_named_parameters fields ~default:true;
           define_location = None;
-        } ]
+        };
+      ]
     in
-    [ { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
+    [
+      { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
       { name = "__setitem__"; special_index = Some 1; overloads = setitem_overloads };
       { name = "get"; special_index = Some 1; overloads = get_overloads };
       { name = "setdefault"; special_index = Some 1; overloads = setdefault_overloads };
-      { name = "update"; special_index = None; overloads = update_overloads } ]
+      { name = "update"; special_index = None; overloads = update_overloads };
+    ]
 
 
   let non_total_special_methods =
     let pop_overloads =
       let overloads { name; annotation } =
-        [ { annotation; parameters = Defined [key_parameter name]; define_location = None };
+        [
+          { annotation; parameters = Defined [key_parameter name]; define_location = None };
           {
             annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
               Defined
-                [ key_parameter name;
+                [
+                  key_parameter name;
                   Named
                     {
                       name = "default";
                       annotation = Variable (Variable.Unary.create "_T");
                       default = false;
-                    } ];
+                    };
+                ];
             define_location = None;
-          } ]
+          };
+        ]
       in
       List.concat_map ~f:overloads
     in
@@ -3611,8 +3645,10 @@ module TypedDictionary = struct
       in
       List.map ~f:overload fields
     in
-    [ { name = "pop"; special_index = Some 1; overloads = pop_overloads };
-      { name = "__delitem__"; special_index = Some 1; overloads = delitem_overloads } ]
+    [
+      { name = "pop"; special_index = Some 1; overloads = pop_overloads };
+      { name = "__delitem__"; special_index = Some 1; overloads = delitem_overloads };
+    ]
 
 
   let special_overloads ~fields ~method_name ~total =
@@ -3643,8 +3679,10 @@ module TypedDictionary = struct
             {
               name = Reference.create_from_list [class_name; name];
               parameters =
-                [ { Ast.Parameter.name = "self"; value = None; annotation = self_parameter }
-                  |> Node.create_with_default_location ];
+                [
+                  { Ast.Parameter.name = "self"; value = None; annotation = self_parameter }
+                  |> Node.create_with_default_location;
+                ];
               decorators = [];
               docstring = None;
               return_annotation;

@@ -11,36 +11,48 @@ let test_show_error_traces context =
   let assert_type_errors = assert_type_errors ~context ~show_error_traces:true ~handle:"test.py" in
   assert_type_errors
     "def foo() -> int: return 1.0"
-    [ "Incompatible return type [7]: Expected `int` but got `float`. Type `int` expected on line "
-      ^ "1, specified on line 1." ];
+    [
+      "Incompatible return type [7]: Expected `int` but got `float`. Type `int` expected on line "
+      ^ "1, specified on line 1.";
+    ];
   assert_type_errors
     "def foo() -> str: return"
-    [ "Incompatible return type [7]: Expected `str` but got `None`. "
-      ^ "Type `str` expected on line 1, specified on line 1." ];
+    [
+      "Incompatible return type [7]: Expected `str` but got `None`. "
+      ^ "Type `str` expected on line 1, specified on line 1.";
+    ];
   assert_type_errors
     "def foo() -> typing.List[str]: return 1"
-    [ "Incompatible return type [7]: Expected `typing.List[str]` but got `int`. Type "
-      ^ "`typing.List[str]` expected on line 1, specified on line 1." ];
+    [
+      "Incompatible return type [7]: Expected `typing.List[str]` but got `int`. Type "
+      ^ "`typing.List[str]` expected on line 1, specified on line 1.";
+    ];
   assert_type_errors
     {|
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
-    [ "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
+    [
+      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
        `typing.Dict` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`." ];
+      ^ "that does not contain `Any`.";
+    ];
   assert_type_errors
     "def foo(): pass"
-    [ "Missing return annotation [3]: Returning `None` but no return type is specified. "
-      ^ "Type `None` was returned on line 1, return type should be specified on line 1." ];
+    [
+      "Missing return annotation [3]: Returning `None` but no return type is specified. "
+      ^ "Type `None` was returned on line 1, return type should be specified on line 1.";
+    ];
   assert_type_errors
     {|
       def foo():
         return None
     |}
-    [ "Missing return annotation [3]: Returning `None` but no return type is specified. "
-      ^ "Type `None` was returned on line 3, return type should be specified on line 2." ];
+    [
+      "Missing return annotation [3]: Returning `None` but no return type is specified. "
+      ^ "Type `None` was returned on line 3, return type should be specified on line 2.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -48,9 +60,11 @@ let test_show_error_traces context =
         def __init__(self) -> None:
           self.attribute = ""
     |}
-    [ "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
+    [
+      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
       ^ "`int` but is used as type `str`. Attribute `attribute` declared on line 3, incorrectly "
-      ^ "used on line 5." ];
+      ^ "used on line 5.";
+    ];
   assert_type_errors
     {|
       constant: int
@@ -58,9 +72,11 @@ let test_show_error_traces context =
         global constant
         constant = "hi"
     |}
-    [ "Incompatible variable type [9]: constant is declared to have type `int` but is used as "
+    [
+      "Incompatible variable type [9]: constant is declared to have type `int` but is used as "
       ^ "type `str`. Redeclare `constant` on line 5 if you wish to override the previously "
-      ^ "declared type." ];
+      ^ "declared type.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -76,9 +92,11 @@ let test_show_error_traces context =
         def __init__(self) -> None:
           attribute = 0
     |}
-    [ "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
+    [
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
       ^ "type `int` but is never initialized. Attribute `attribute` is declared on "
-      ^ "line 3, never initialized and therefore must be `typing.Optional[int]`." ];
+      ^ "line 3, never initialized and therefore must be `typing.Optional[int]`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -89,12 +107,14 @@ let test_show_error_traces context =
           foo.attribute = 'string'
           return foo.attribute
     |}
-    [ "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
+    [
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `str` but \
        no type is specified. Attribute `attribute` declared on line 3, type `str` deduced from \
        test.py:7:4.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       constant = x
@@ -102,12 +122,14 @@ let test_show_error_traces context =
         global constant
         constant = 1
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has no type specified.";
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has no type specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
        no type is specified. Global variable `constant` declared on line 2, type `int` deduced \
        from test.py:5:2.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       constant = x
@@ -116,12 +138,14 @@ let test_show_error_traces context =
         constant = "hi"
         constant = 1
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has no type specified.";
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has no type specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type \
        `typing.Union[int, str]` but no type is specified. Global variable `constant` declared on \
        line 2, type `typing.Union[int, str]` deduced from test.py:5:2, test.py:6:2.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       class Other():
@@ -129,13 +153,15 @@ let test_show_error_traces context =
         def foo(self) -> None:
           self.attribute = 1
     |}
-    [ "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has no type \
+    [
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has no type \
        specified.";
       "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type `int` \
        but no type is specified. Attribute `attribute` declared on line 3, type `int` deduced \
        from test.py:5:4.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
-       path that doesn't define `x`." ];
+       path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -145,10 +171,11 @@ let test_show_error_traces context =
         global x
         x = "str"
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `x` has type `int` but no type \
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` has type `int` but no type \
        is specified. Global variable `x` declared on line 4, type `int` deduced from test.py:4:2.";
       "Missing global annotation [5]: Globally accessible variable `x` has type `str` but no type \
-       is specified. Global variable `x` declared on line 7, type `str` deduced from test.py:7:2."
+       is specified. Global variable `x` declared on line 7, type `str` deduced from test.py:7:2.";
     ];
   assert_type_errors
     {|
@@ -156,21 +183,25 @@ let test_show_error_traces context =
       b: typing.List[int] = [2]
       a = b
     |}
-    [ "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is \
+    [
+      "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is \
        used as type `typing.List[int]`. Redeclare `a` on line 4 if you wish to override the \
        previously declared type. See \
        https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches-with-subclassing \
-       for mutable container errors." ];
+       for mutable container errors.";
+    ];
   assert_type_errors
     {|
       def foo() -> typing.List[float]:
         l = [1]
         return l
     |}
-    [ "Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`. \
+    [
+      "Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`. \
        Type `typing.List[float]` expected on line 4, specified on line 2. See \
        https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches-with-subclassing \
-       for mutable container errors." ]
+       for mutable container errors.";
+    ]
 
 
 let test_concise context =
@@ -181,8 +212,10 @@ let test_concise context =
       class Foo: ...
       Foo().a: int = 1
     |}
-    [ "Illegal annotation target [35]: Target cannot be annotated.";
-      "Undefined attribute [16]: `Foo` has no attribute `a`." ];
+    [
+      "Illegal annotation target [35]: Target cannot be annotated.";
+      "Undefined attribute [16]: `Foo` has no attribute `a`.";
+    ];
 
   (* Impossible Isinstance *)
   assert_type_errors
@@ -275,7 +308,8 @@ let test_concise context =
   (* Inconsistent Override *)
   assert_type_errors
     ~update_environment_with:
-      [ {
+      [
+        {
           handle = "export.py";
           source =
             {|
@@ -283,7 +317,8 @@ let test_concise context =
             def foo(self, x: int) -> None:
               return
         |};
-        } ]
+        };
+      ]
     {|
       from export import Foo
       class Bar(Foo):

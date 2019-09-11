@@ -27,7 +27,8 @@ let test_select context =
       let _, ast_environment, environment =
         ScratchProject.setup
           ~context
-          [ ( "test.py",
+          [
+            ( "test.py",
               Format.sprintf
                 {|
                   _T = typing.TypeVar('_T')
@@ -62,7 +63,8 @@ let test_select context =
                   call%s
                 |}
                 callable
-                arguments ) ]
+                arguments );
+          ]
         |> ScratchProject.build_environment
       in
       let global_resolution = Environment.resolution environment () in
@@ -368,8 +370,10 @@ let test_select context =
         Type.Callable.create
           ~parameters:
             (Type.Callable.Defined
-               [ Type.Callable.Parameter.Anonymous
-                   { index = 0; annotation = Type.Any; default = false } ])
+               [
+                 Type.Callable.Parameter.Anonymous
+                   { index = 0; annotation = Type.Any; default = false };
+               ])
           ~annotation:Type.integer
           (),
         None,

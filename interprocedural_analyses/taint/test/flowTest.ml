@@ -73,19 +73,23 @@ let test_partition_match_some_sinks_and_sources _ =
   assert_equal
     ~msg:"Matching"
     ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
-    [ {
+    [
+      {
         source_taint = ForwardTaint.singleton Sources.UserControlled;
         sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
-      } ]
+      };
+    ]
     matched;
   assert_equal
     ~msg:"Rest"
     ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
-    [ {
+    [
+      {
         source_taint = ForwardTaint.singleton Sources.Test;
         sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
       };
-      { source_taint; sink_taint = BackwardTaint.singleton Sinks.Test } ]
+      { source_taint; sink_taint = BackwardTaint.singleton Sinks.Test };
+    ]
     rest
 
 
@@ -198,10 +202,12 @@ let test_errors _ =
 
 let () =
   "test_taint_flow"
-  >::: [ "partition_match_all" >:: test_partition_match_all;
+  >::: [
+         "partition_match_all" >:: test_partition_match_all;
          "partition_match_some_sources" >:: test_partition_match_some_sources;
          "partition_match_some_sinks" >:: test_partition_match_some_sinks;
          "partition_match_some_sinks_and_sources" >:: test_partition_match_some_sinks_and_sources;
          "test_no_errors" >:: test_no_errors;
-         "test_errors" >:: test_errors ]
+         "test_errors" >:: test_errors;
+       ]
   |> Test.run

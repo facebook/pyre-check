@@ -238,7 +238,8 @@ let test_build_symlink_map context =
 
 let () =
   "path"
-  >::: [ "create" >:: test_create;
+  >::: [
+         "create" >:: test_create;
          "relative" >:: test_relative;
          "absolute" >:: test_absolute;
          "directory_contains" >:: test_directory_contains;
@@ -253,5 +254,6 @@ let () =
          "get_directory" >:: test_get_directory;
          "link" >:: test_link;
          "remove" >:: test_remove;
-         "build_symlink_map" >:: test_build_symlink_map ]
+         "build_symlink_map" >:: test_build_symlink_map;
+       ]
   |> Test.run

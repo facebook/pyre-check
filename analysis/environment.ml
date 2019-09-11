@@ -730,7 +730,8 @@ let collect_aliases
                           _;
                         };
                       arguments =
-                        [ {
+                        [
+                          {
                             Call.Argument.value =
                               {
                                 Node.value =
@@ -771,7 +772,8 @@ let collect_aliases
                                 _;
                               };
                             _;
-                          } ];
+                          };
+                        ];
                     };
                 _;
               } ) ->
@@ -863,12 +865,14 @@ let collect_aliases
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
-                [ {
+                [
+                  {
                     UnresolvedAlias.qualifier;
                     target = qualified_name;
                     value =
                       Expression.from_reference ~location:Location.Reference.any original_name;
-                  } ]
+                  };
+                ]
         in
         List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
     | _ -> aliases
@@ -1333,11 +1337,13 @@ let fill_shared_memory_with_default_typeorder _ =
   let integer = "int" in
   let float = "float" in
   let default_annotations =
-    [ (* Numerical hierarchy. *)
-      [integer; float; "complex"; "numbers.Complex"; "numbers.Number"; object_primitive];
+    [
+      (* Numerical hierarchy. *)
+        [integer; float; "complex"; "numbers.Complex"; "numbers.Number"; object_primitive];
       [integer; "numbers.Integral"; object_primitive];
       [float; "numbers.Rational"; object_primitive];
-      [float; "numbers.Real"; object_primitive] ]
+      [float; "numbers.Real"; object_primitive];
+    ]
   in
   let rec connect_primitive_chain annotations =
     match annotations with
@@ -1426,9 +1432,11 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
       ~old_keys:old_dependent_table_keys
   in
   let mutation_and_addition_triggers =
-    [ Aliases.get_all_dependents aliases;
+    [
+      Aliases.get_all_dependents aliases;
       UndecoratedFunctions.get_all_dependents undecorated_signatures;
-      Globals.get_all_dependents globals ]
+      Globals.get_all_dependents globals;
+    ]
     |> List.fold ~init:mutation_triggers ~f:SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
   in
   update, mutation_and_addition_triggers
@@ -1500,10 +1508,12 @@ let serialize_decoded decoded =
         | Some { GlobalResolution.successors; is_test; is_final; extends_placeholder_stub_class }
           ->
             `Assoc
-              [ "successors", `String (List.to_string ~f:Type.Primitive.show successors);
+              [
+                "successors", `String (List.to_string ~f:Type.Primitive.show successors);
                 "is_test", `Bool is_test;
                 "is_final", `Bool is_final;
-                "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class ]
+                "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class;
+              ]
             |> Yojson.to_string
             |> Option.some
         | None -> None

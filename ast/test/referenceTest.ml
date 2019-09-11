@@ -187,9 +187,11 @@ let test_prefix _ =
 
 let () =
   "reference"
-  >::: [ "create" >:: test_create;
+  >::: [
+         "create" >:: test_create;
          "expression" >:: test_expression;
          "name" >:: test_name;
          "delocalize" >:: test_delocalize;
-         "prefix" >:: test_prefix ]
+         "prefix" >:: test_prefix;
+       ]
   |> Test.run

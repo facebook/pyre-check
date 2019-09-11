@@ -170,7 +170,8 @@ let extract_alias { unannotated_global_environment } name ~dependency =
                           _;
                         };
                       arguments =
-                        [ {
+                        [
+                          {
                             Call.Argument.value =
                               {
                                 Node.value =
@@ -211,7 +212,8 @@ let extract_alias { unannotated_global_environment } name ~dependency =
                                 _;
                               };
                             _;
-                          } ];
+                          };
+                        ];
                     };
                 _;
               } ) ->

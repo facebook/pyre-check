@@ -64,7 +64,8 @@ let test_populate context =
     let project =
       ScratchProject.setup
         ~context
-        [ ( "a.py",
+        [
+          ( "a.py",
             {|
             class D: pass
             class C(D): pass
@@ -72,7 +73,8 @@ let test_populate context =
             def foo(x: T) -> T: pass
             def bar(): pass
           |}
-          ) ]
+          );
+        ]
     in
     let sources, ast_environment = ScratchProject.parse_sources project in
     ScratchProject.configuration_of project, sources, AstEnvironment.read_only ast_environment
@@ -113,8 +115,10 @@ let test_populate context =
          Type.Callable.annotation = Type.variable "a.T";
          parameters =
            Type.Callable.Defined
-             [ Type.Callable.Parameter.Named
-                 { name = "$parameter$x"; annotation = Type.variable "a.T"; default = false } ];
+             [
+               Type.Callable.Parameter.Named
+                 { name = "$parameter$x"; annotation = Type.variable "a.T"; default = false };
+             ];
          define_location = None;
        });
   let assert_successors name expected_successors =
@@ -140,7 +144,9 @@ let test_populate context =
       ~configuration
       ~scheduler
       ~update_result
-      [Option.value_exn (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a"))]
+      [
+        Option.value_exn (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a"));
+      ]
   in
   assert_successors "a.C" ["a.D"; "object"]
 
@@ -173,7 +179,9 @@ let test_purge context =
 
 let () =
   "environment"
-  >::: [ "normalize_dependencies" >:: test_normalize_dependencies;
+  >::: [
+         "normalize_dependencies" >:: test_normalize_dependencies;
          "populate" >:: test_populate;
-         "purge" >:: test_purge ]
+         "purge" >:: test_purge;
+       ]
   |> Test.run

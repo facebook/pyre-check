@@ -100,7 +100,8 @@ let test_superclasses context =
   let _, _, environment =
     ScratchProject.setup
       ~context
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
       class Foo: pass
       class Bar: pass
@@ -109,7 +110,8 @@ let test_superclasses context =
       class SubRecurse(SubFooBar): pass
       class SubRedundant(Foo, SubFooBar): pass
     |}
-        ) ]
+        );
+      ]
     |> ScratchProject.build_environment
   in
   let ( ! ) name =
@@ -223,13 +225,17 @@ let test_get_decorator context =
         pass
     |}
     "decorator"
-    [ {
+    [
+      {
         name = "decorator";
         arguments =
           Some
-            [ { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
-              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") } ];
-      } ];
+            [
+              { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
+              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") };
+            ];
+      };
+    ];
   assert_get_decorator
     {|
       @decorator(a=b)
@@ -238,7 +244,8 @@ let test_get_decorator context =
         pass
     |}
     "decorator"
-    [ {
+    [
+      {
         name = "decorator";
         arguments = Some [{ Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") }];
       };
@@ -246,9 +253,12 @@ let test_get_decorator context =
         name = "decorator";
         arguments =
           Some
-            [ { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
-              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") } ];
-      } ];
+            [
+              { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
+              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") };
+            ];
+      };
+    ];
   assert_get_decorator
     (* `enum` imports `ABCMeta` from `abc`. *)
     {|
@@ -568,12 +578,14 @@ let test_class_attributes context =
   in
   assert_attributes
     parent
-    [ Class.create_attribute ~resolution ~parent (create_attribute "__init__");
+    [
+      Class.create_attribute ~resolution ~parent (create_attribute "__init__");
       Class.create_attribute ~resolution ~parent (create_attribute "class_attribute");
       Class.create_attribute ~resolution ~parent (create_attribute "first");
       Class.create_attribute ~resolution ~parent (create_attribute "implicit");
       Class.create_attribute ~resolution ~parent (create_attribute "second");
-      Class.create_attribute ~resolution ~parent (create_attribute "third" ~value:(+Integer 1)) ];
+      Class.create_attribute ~resolution ~parent (create_attribute "third" ~value:(+Integer 1));
+    ];
 
   (* Test `Attribute`. *)
   let attribute =
@@ -627,7 +639,8 @@ let test_class_attributes context =
         third: int = 1
         class_attribute: typing.ClassVar[int]
     |}
-    [ "class_attribute";
+    [
+      "class_attribute";
       "first";
       "implicit";
       "second";
@@ -648,7 +661,8 @@ let test_class_attributes context =
       "__repr__";
       "__setattr__";
       "__sizeof__";
-      "__str__" ];
+      "__str__";
+    ];
   assert_fold
     ~class_attributes:true
     {|
@@ -658,7 +672,8 @@ let test_class_attributes context =
         __static__: typing.ClassVar[int]
         __instance__: int
     |}
-    [ "__instance__";
+    [
+      "__instance__";
       "__static__";
       "__meta__";
       "__call__";
@@ -677,7 +692,8 @@ let test_class_attributes context =
       "__repr__";
       "__setattr__";
       "__sizeof__";
-      "__str__" ];
+      "__str__";
+    ];
   assert_fold
     {|
       @dataclass
@@ -976,8 +992,10 @@ let test_constraints context =
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [ Type.Variable.Unary.create "test._K", Type.integer;
-      Type.Variable.Unary.create "test._V", Type.float ];
+    [
+      Type.Variable.Unary.create "test._K", Type.integer;
+      Type.Variable.Unary.create "test._V", Type.float;
+    ];
   assert_constraints
     ~target:"test.Foo"
     ~instantiated:(Type.parametric "test.Foo" !![Type.integer; Type.float])
@@ -987,8 +1005,10 @@ let test_constraints context =
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [ Type.Variable.Unary.create "test._K", Type.integer;
-      Type.Variable.Unary.create "test._V", Type.float ];
+    [
+      Type.Variable.Unary.create "test._K", Type.integer;
+      Type.Variable.Unary.create "test._V", Type.float;
+    ];
   assert_constraints
     ~target:"test.Foo"
     ~instantiated:(Type.Primitive "test.Foo")
@@ -1206,10 +1226,12 @@ let test_inferred_generic_base context =
        class C(List[_T]):
          pass
      |}
-    [ {
+    [
+      {
         Argument.name = None;
         value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T"]);
-      } ];
+      };
+    ];
   assert_inferred_generic
     ~target:"test.List"
     {|
@@ -1227,22 +1249,28 @@ let test_inferred_generic_base context =
       _T2 = typing.TypeVar('_T2')
       class Foo(typing.Dict[_T1, _T2]): pass
     |}
-    [ {
+    [
+      {
         Argument.name = None;
         value =
           Type.expression
-            (Type.parametric "typing.Generic" !![Type.variable "test._T1"; Type.variable "test._T2"]);
-      } ];
+            (Type.parametric
+               "typing.Generic"
+               !![Type.variable "test._T1"; Type.variable "test._T2"]);
+      };
+    ];
   assert_inferred_generic
     ~target:"test.Foo"
     {|
       _T1 = typing.TypeVar('_T1')
       class Foo(typing.Dict[_T1, _T1]): pass
     |}
-    [ {
+    [
+      {
         Argument.name = None;
         value = Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T1"]);
-      } ];
+      };
+    ];
   ()
 
 
@@ -1378,7 +1406,8 @@ let test_overrides context =
     let _, _, environment =
       ScratchProject.setup
         ~context
-        [ ( "test.py",
+        [
+          ( "test.py",
             {|
       class Foo:
         def foo(): pass
@@ -1388,7 +1417,8 @@ let test_overrides context =
         def foo(): pass
         def baz(): pass
     |}
-          ) ]
+          );
+        ]
       |> ScratchProject.build_environment
     in
     Environment.resolution environment ()
@@ -1485,7 +1515,8 @@ let test_implicit_attributes context =
 
 let () =
   "class"
-  >::: [ "attributes" >:: test_class_attributes;
+  >::: [
+         "attributes" >:: test_class_attributes;
          "constraints" >:: test_constraints;
          "constructors" >:: test_constructors;
          "fallback_attribute" >:: test_fallback_attribute;
@@ -1498,5 +1529,6 @@ let () =
          "overrides" >:: test_overrides;
          "superclasses" >:: test_superclasses;
          "unimplemented_abstract_methods" >:: test_unimplemented_abstract_methods;
-         "implicit_attributes" >:: test_implicit_attributes ]
+         "implicit_attributes" >:: test_implicit_attributes;
+       ]
   |> Test.run

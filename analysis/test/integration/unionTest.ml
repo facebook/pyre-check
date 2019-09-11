@@ -77,15 +77,19 @@ let test_check_union context =
       def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
         return x.str_attribute
     |}
-    [ "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`." ];
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
+    ];
   assert_type_errors
     {|
       def foo(x: typing.Union[OtherAttributes, Attributes]) -> int:
         return x.str_attribute
     |}
-    [ "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`." ];
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -105,8 +109,10 @@ let test_check_union context =
       def baz(x: typing.Union[Foo, Bar]) -> int:
         return x.derp()
     |}
-    [ "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Bar` has no attribute `derp`." ];
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `Bar` has no attribute `derp`.";
+    ];
 
   (* We require that all elements in a union have the same method for `in`. *)
   assert_type_errors
@@ -197,8 +203,9 @@ let test_check_union context =
       x: typing.Union[int, typing.Optional[str]] = ...
       f(x)
     |}
-    [ "Incompatible parameter type [6]: Expected `typing.Union[int, str, typing.Tuple[int, int]]` \
-       for 1st anonymous parameter to call `f` but got `typing.Optional[typing.Union[int, str]]`."
+    [
+      "Incompatible parameter type [6]: Expected `typing.Union[int, str, typing.Tuple[int, int]]` \
+       for 1st anonymous parameter to call `f` but got `typing.Optional[typing.Union[int, str]]`.";
     ];
   assert_type_errors
     {|

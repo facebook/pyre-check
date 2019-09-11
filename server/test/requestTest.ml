@@ -64,7 +64,8 @@ let test_process_type_query_request context =
   let { ScratchServer.configuration; state; _ } =
     ScratchServer.start
       ~context
-      [ "test.py", {|
+      [
+        "test.py", {|
         def foo(a: int) -> int:
           return a
       |};
@@ -74,7 +75,8 @@ let test_process_type_query_request context =
         async def bar():
           await_me()
        |}
-        ) ]
+        );
+      ]
   in
   let assert_response request expected_response =
     let actual_response =
@@ -380,9 +382,11 @@ let test_process_type_check_request context =
   (* Multiple depedencies. *)
   assert_response
     ~sources:
-      [ "library.py", "def function() -> int: ...";
+      [
+        "library.py", "def function() -> int: ...";
         "client.py", "from library import function";
-        "other.py", "from library import function" ]
+        "other.py", "from library import function";
+      ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:[]
     ();
@@ -391,13 +395,15 @@ let test_process_type_check_request context =
   assert_response
     ~incremental_style:Transitive
     ~sources:
-      [ "library.py", "def function() -> int: ...";
+      [
+        "library.py", "def function() -> int: ...";
         ( "client.py",
           {|
         from library import function
         def function() -> int: ...
       |} );
-        "indirect.py", "from client import function" ]
+        "indirect.py", "from client import function";
+      ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:[]
     ();
@@ -466,14 +472,16 @@ let test_process_get_definition_request context =
     =
     ScratchServer.start
       ~context
-      [ "library.py", "def function() -> int: ...";
+      [
+        "library.py", "def function() -> int: ...";
         ( "client.py",
           {|
         from library import function
         def foo() -> int:
           return function()
         |}
-        ) ]
+        );
+      ]
   in
   let assert_response ?filename ~line ~column response =
     let position = { Location.line; column } in
@@ -775,7 +783,8 @@ let test_resolution_shared_memory_added_for_open_documents context =
 
 let () =
   "request"
-  >::: [ "generate_lsp_response" >:: test_generate_lsp_response;
+  >::: [
+         "generate_lsp_response" >:: test_generate_lsp_response;
          "process_client_shutdown_request" >:: test_process_client_shutdown_request;
          "process_type_query_request" >:: test_process_type_query_request;
          "process_display_type_errors_request" >:: test_process_display_type_errors_request;
@@ -784,5 +793,6 @@ let () =
          "open_document_state" >:: test_open_document_state;
          "create_annotation_edit" >:: test_create_annotation_edit;
          "test_resolution_shared_memory_added_for_open_documents"
-         >:: test_resolution_shared_memory_added_for_open_documents ]
+         >:: test_resolution_shared_memory_added_for_open_documents;
+       ]
   |> Test.run

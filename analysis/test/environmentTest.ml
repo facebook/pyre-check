@@ -198,7 +198,8 @@ let test_register_aliases context =
   in
   (* Explicit Aliases *)
   assert_resolved
-    [ ( "test.py",
+    [
+      ( "test.py",
         {|
           class C: ...
           class D(C): pass
@@ -208,31 +209,39 @@ let test_register_aliases context =
           Twiddledum: typing.TypeAlias
           Twiddledee, Twiddledum = C, C
         |}
-      ) ]
-    [ "test.C", "test.C";
+      );
+    ]
+    [
+      "test.C", "test.C";
       "test.D", "test.D";
       "test.B", "test.D";
       "test.A", "test.D";
       "test.Twiddledee", "test.Twiddledee";
-      "test.Twiddledum", "test.Twiddledum" ];
+      "test.Twiddledum", "test.Twiddledum";
+    ];
 
   assert_resolved
-    [ ( "qualifier.py",
+    [
+      ( "qualifier.py",
         {|
           class C: ...
           class D(C): pass
           B: typing.TypeAlias = D
           A: typing.TypeAlias = B
         |}
-      ) ]
-    [ "qualifier.C", "qualifier.C";
+      );
+    ]
+    [
+      "qualifier.C", "qualifier.C";
       "qualifier.D", "qualifier.D";
       "qualifier.B", "qualifier.D";
-      "qualifier.A", "qualifier.D" ];
+      "qualifier.A", "qualifier.D";
+    ];
 
   (* Non-explicit Alaises *)
   assert_resolved
-    [ ( "test.py",
+    [
+      ( "test.py",
         {|
           class C: ...
           class D(C): pass
@@ -240,59 +249,75 @@ let test_register_aliases context =
           A = B
           Twiddledee, Twiddledum = C, C
         |}
-      ) ]
-    [ "test.C", "test.C";
+      );
+    ]
+    [
+      "test.C", "test.C";
       "test.D", "test.D";
       "test.B", "test.D";
       "test.A", "test.D";
       "test.Twiddledee", "test.Twiddledee";
-      "test.Twiddledum", "test.Twiddledum" ];
+      "test.Twiddledum", "test.Twiddledum";
+    ];
 
   assert_resolved
-    [ ( "qualifier.py",
+    [
+      ( "qualifier.py",
         {|
           class C: ...
           class D(C): pass
           B = D
           A = B
         |}
-      ) ]
-    [ "qualifier.C", "qualifier.C";
+      );
+    ]
+    [
+      "qualifier.C", "qualifier.C";
       "qualifier.D", "qualifier.D";
       "qualifier.B", "qualifier.D";
-      "qualifier.A", "qualifier.D" ];
+      "qualifier.A", "qualifier.D";
+    ];
   assert_resolved ["test.py", "X = None"] ["test.X", "None"];
 
   (* Imports *)
   assert_resolved
-    [ ( "collectionz.py",
+    [
+      ( "collectionz.py",
         {|
           from typing import Iterator as TypingIterator
           from typing import Iterable
         |}
-      ) ]
-    [ "collectionz.TypingIterator", "typing.Iterator[typing.Any]";
-      "collectionz.Iterable", "typing.Iterable[typing.Any]" ];
+      );
+    ]
+    [
+      "collectionz.TypingIterator", "typing.Iterator[typing.Any]";
+      "collectionz.Iterable", "typing.Iterable[typing.Any]";
+    ];
 
   (* Handle builtins correctly. *)
   assert_resolved
-    [ ( "collectionz.py",
+    [
+      ( "collectionz.py",
         {|
           from builtins import int
           from builtins import dict as CDict
         |}
-      ) ]
+      );
+    ]
     ["collectionz.int", "int"; "collectionz.CDict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
-    [ ( "collectionz.py",
+    [
+      ( "collectionz.py",
         {|
           from future.builtins import int
           from future.builtins import dict as CDict
         |}
-      ) ]
+      );
+    ]
     ["collectionz.int", "int"; "collectionz.CDict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
-    [ ( "asyncio/tasks.py",
+    [
+      ( "asyncio/tasks.py",
         {|
            from typing import TypeVar, Generic, Union
            _T = typing.TypeVar('_T')
@@ -300,44 +325,54 @@ let test_register_aliases context =
            class Awaitable(Generic[_T]): ...
            _FutureT = Union[Future[_T], Awaitable[_T]]
         |}
-      ) ]
-    [ "asyncio.tasks.Future[int]", "asyncio.tasks.Future[int]";
+      );
+    ]
+    [
+      "asyncio.tasks.Future[int]", "asyncio.tasks.Future[int]";
       ( "asyncio.tasks._FutureT[int]",
-        "typing.Union[asyncio.tasks.Awaitable[int], asyncio.tasks.Future[int]]" ) ];
+        "typing.Union[asyncio.tasks.Awaitable[int], asyncio.tasks.Future[int]]" );
+    ];
   assert_resolved
-    [ ( "a.py",
+    [
+      ( "a.py",
         {|
           import typing
           _T = typing.TypeVar("_T")
           _T2 = typing.TypeVar("UnrelatedName")
         |}
-      ) ]
+      );
+    ]
     ["a._T", "Variable[a._T]"; "a._T2", "Variable[a._T2]"];
 
   (* Type variable aliases in classes are not supported. *)
   assert_resolved
-    [ ( "qualifier.py",
+    [
+      ( "qualifier.py",
         {|
           class Class:
             T = typing.TypeVar('T')
             Int = int
         |}
-      ) ]
+      );
+    ]
     ["qualifier.Class.T", "qualifier.Class.T"; "qualifier.Class.Int", "qualifier.Class.Int"];
 
   (* Stub-suppressed aliases show up as `Any`. *)
   assert_resolved
-    [ "stubbed.pyi", "# pyre-placeholder-stub";
+    [
+      "stubbed.pyi", "# pyre-placeholder-stub";
       ( "qualifier.py",
         {|
           class str: ...
           T = stubbed.Something
           Q = typing.Union[stubbed.Something, str]
         |}
-      ) ]
+      );
+    ]
     ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Union[typing.Any, qualifier.str]"];
   assert_resolved
-    [ ( "t.py",
+    [
+      ( "t.py",
         {|
           import x
           X = typing.Dict[int, int]
@@ -352,16 +387,21 @@ let test_register_aliases context =
           T = typing.Dict[int, t.X]
           C = typing.Callable[[T], int]
         |}
-      ) ]
-    [ "x.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
-      "t.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]" ];
+      );
+    ]
+    [
+      "x.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
+      "t.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
+    ];
   assert_resolved
-    [ "t.py", {|
+    [
+      "t.py", {|
           from typing import Dict
         |};
       "x.py", {|
           from t import *
-        |} ]
+        |};
+    ]
     ["x.Dict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
     ["x.py", {|
@@ -369,7 +409,8 @@ let test_register_aliases context =
         |}]
     ["x.C", "x.C"];
   assert_resolved
-    [ ( "test.py",
+    [
+      ( "test.py",
         {|
           A = int
           B: typing.Type[int] = int
@@ -380,15 +421,18 @@ let test_register_aliases context =
           G = A
           H = 1
         |}
-      ) ]
-    [ "test.A", "int";
+      );
+    ]
+    [
+      "test.A", "int";
       "test.B", "test.B";
       "test.C", "test.C";
       "test.D", "test.D";
       "test.E", "typing.Any";
       "test.F", "test.F";
       "test.G", "int";
-      "test.H", "test.H" ];
+      "test.H", "test.H";
+    ];
   assert_resolved
     ["a.py", {|
           class Foo: ...
@@ -397,34 +441,39 @@ let test_register_aliases context =
         |}]
     ["b.a.Foo", "a.Foo"];
   assert_resolved
-    [ "a.py", {|
+    [
+      "a.py", {|
           class Foo: ...
         |};
       "b.py", {|
           from a import Foo
           class Foo:
             ...
-        |} ]
+        |};
+    ]
     ["b.Foo", "b.Foo"];
   assert_resolved
-    [ "a.py", {|
+    [
+      "a.py", {|
           class Bar: ...
         |};
       "b.py", {|
           from a import Bar as Foo
           class Foo:
             ...
-        |}
+        |};
     ]
     ["b.Foo", "b.Foo"];
   assert_resolved
-    [ "a.py", {|
+    [
+      "a.py", {|
           class Foo: ...
         |};
       "b.py", {|
           from a import Foo as Bar
           class Foo: ...
-        |} ]
+        |};
+    ]
     ["b.Foo", "b.Foo"; "b.Bar", "a.Foo"];
 
   let assert_resolved sources aliases =
@@ -438,19 +487,23 @@ let test_register_aliases context =
     List.iter aliases ~f:assert_alias
   in
   assert_resolved
-    [ ( "test.py",
+    [
+      ( "test.py",
         {|
           Tparams = pyre_extensions.ParameterSpecification('Tparams')
           Ts = pyre_extensions.ListVariadic('Ts')
       |}
-      ) ]
-    [ ( "test.Tparams",
+      );
+    ]
+    [
+      ( "test.Tparams",
         Type.VariableAlias
           (Type.Variable.ParameterVariadic
              (Type.Variable.Variadic.Parameters.create "test.Tparams")) );
       ( "test.Ts",
         Type.VariableAlias
-          (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "test.Ts")) ) ];
+          (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "test.Ts")) );
+    ];
   ()
 
 
@@ -643,8 +696,10 @@ let test_connect_type_order context =
   in
   Environment.register_aliases
     environment
-    [ ( AstEnvironment.get_source ast_environment (Reference.create "test")
-      |> fun option -> Option.value_exn option ) ];
+    [
+      ( AstEnvironment.get_source ast_environment (Reference.create "test")
+      |> fun option -> Option.value_exn option );
+    ];
   let connect annotation =
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
       unannotated_global_environment
@@ -752,14 +807,16 @@ let test_populate context =
     populate
       ~context
       ~include_helpers:false
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
         def foo() -> int:
           return 1
         class C(foo()):
           pass
       |}
-        ) ]
+        );
+      ]
   in
   assert_superclasses ~environment "test.C" ~superclasses:["object"];
 
@@ -777,7 +834,8 @@ let test_populate context =
   let assert_global =
     populate
       ~context
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
       class int(): pass
       A: int = 0
@@ -789,7 +847,8 @@ let test_populate context =
       G: Foo = ...
       H: alias = ...
     |}
-        ) ]
+        );
+      ]
     |> assert_global_with_environment
   in
   assert_global
@@ -808,7 +867,8 @@ let test_populate context =
   let assert_global =
     populate
       ~context
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
       global_value_set = 1
       global_annotated: int
@@ -821,7 +881,8 @@ let test_populate context =
       def function():
         pass
     |}
-        ) ]
+        );
+      ]
     |> assert_global_with_environment
   in
   assert_global "test.global_value_set" (Annotation.create_immutable ~global:true Type.integer);
@@ -854,8 +915,10 @@ let test_populate context =
           ~name:!&"test.Class.__init__"
           ~parameters:
             (Type.Callable.Defined
-               [ Type.Callable.Parameter.Named
-                   { name = "self"; annotation = Type.Top; default = false } ])
+               [
+                 Type.Callable.Parameter.Named
+                   { name = "self"; annotation = Type.Top; default = false };
+               ])
           ~annotation:Type.Top
           ()));
 
@@ -863,13 +926,15 @@ let test_populate context =
   let assert_global =
     populate
       ~context
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
       class Class:
         @property
         def Class.property(self) -> int: ...
     |}
-        ) ]
+        );
+      ]
     |> assert_global_with_environment
   in
   assert_global
@@ -880,8 +945,10 @@ let test_populate context =
           ~name:!&"test.Class.property"
           ~parameters:
             (Type.Callable.Defined
-               [ Type.Callable.Parameter.Named
-                   { name = "self"; annotation = Type.Top; default = false } ])
+               [
+                 Type.Callable.Parameter.Named
+                   { name = "self"; annotation = Type.Top; default = false };
+               ])
           ~annotation:Type.integer
           ()));
 
@@ -915,7 +982,8 @@ let test_populate context =
   let environment =
     populate
       ~context
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
       class CallMe:
         def CallMe.__call__(self, x: int) -> str:
@@ -923,14 +991,17 @@ let test_populate context =
       class AlsoCallable(CallMe):
         pass
   |}
-        ) ]
+        );
+      ]
   in
   let type_parameters annotation =
     match annotation with
     | "typing.Callable" ->
         Type.OrderedTypes.Concrete
-          [ parse_single_expression "typing.Callable('test.CallMe.__call__')[[Named(x, int)], str]"
-            |> Type.create ~aliases:(fun _ -> None) ]
+          [
+            parse_single_expression "typing.Callable('test.CallMe.__call__')[[Named(x, int)], str]"
+            |> Type.create ~aliases:(fun _ -> None);
+          ]
     | _ -> Type.OrderedTypes.Concrete []
   in
   assert_superclasses
@@ -954,8 +1025,10 @@ let test_populate context =
          Type.Callable.annotation = Type.string;
          parameters =
            Type.Callable.Defined
-             [ Type.Callable.Parameter.Named
-                 { annotation = Type.integer; name = "x"; default = false } ];
+             [
+               Type.Callable.Parameter.Named
+                 { annotation = Type.integer; name = "x"; default = false };
+             ];
          define_location = None;
        });
   ()
@@ -981,13 +1054,15 @@ let test_less_or_equal_type_order context =
   let order, environment =
     order_and_environment
       ~context
-      [ ( "module.py",
+      [
+        ( "module.py",
           {|
         class sub(super): pass
         class super(top): pass
         class top(): pass
     |}
-        ) ]
+        );
+      ]
   in
   let super = parse_annotation environment (parse_single_expression "module.super") in
   assert_equal super (Type.Primitive "module.super");
@@ -1001,13 +1076,15 @@ let test_less_or_equal_type_order context =
   let order, _ =
     order_and_environment
       ~context
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
       class A: ...
       class B(A): ...
       class C(typing.Optional[A]): ...
     |}
-        ) ]
+        );
+      ]
   in
   assert_true
     (TypeOrder.always_less_or_equal
@@ -1041,14 +1118,16 @@ let test_less_or_equal_type_order context =
   let order, _ =
     order_and_environment
       ~context
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
       class A: ...
       class B(A): ...
       class int(): ...
       class float(): ...
     |}
-        ) ]
+        );
+      ]
   in
   assert_true
     (TypeOrder.always_less_or_equal
@@ -1137,7 +1216,8 @@ let test_meet_type_order context =
   let order, _ =
     order_and_environment
       ~context
-      [ ( "test.py",
+      [
+        ( "test.py",
           {|
       class foo(): ...
       class bar(L[T]): ...
@@ -1146,7 +1226,8 @@ let test_meet_type_order context =
       class C(A): ...
       class D(B,C): ...
     |}
-        ) ]
+        );
+      ]
   in
   let assert_meet left right expected =
     assert_equal
@@ -1250,11 +1331,13 @@ let test_register_dependencies context =
     create_environment
       ~context
       ~additional_sources:
-        [ "foo.py", "class Foo: ...";
+        [
+          "foo.py", "class Foo: ...";
           "bar/a.py", "class A: ...";
           "bar/b.py", "x = 42";
           "bar/c.py", "";
-          "baz.py", "" ]
+          "baz.py", "";
+        ]
       ()
   in
   let source_test1 =
@@ -1312,8 +1395,9 @@ let test_purge context =
         expects_any(input)
         expects_string(input)
     |}
-    [ "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expects_string` but got `Variable[T]`."
+    [
+      "Incompatible parameter type [6]: "
+      ^ "Expected `str` for 1st anonymous parameter to call `expects_string` but got `Variable[T]`.";
     ];
   let source =
     {|
@@ -1475,7 +1559,8 @@ let test_propagate_nested_classes context =
     List.iter aliases ~f:assert_alias
   in
   test_propagate
-    [ ( "test.py",
+    [
+      ( "test.py",
         {|
           class B:
             class N:
@@ -1483,10 +1568,12 @@ let test_propagate_nested_classes context =
           class C(B):
             pass
         |}
-      ) ]
+      );
+    ]
     ["test.C.N", "test.B.N"];
   test_propagate
-    [ ( "test.py",
+    [
+      ( "test.py",
         {|
           class B:
             class N:
@@ -1495,10 +1582,12 @@ let test_propagate_nested_classes context =
             class N:
               pass
         |}
-      ) ]
+      );
+    ]
     ["test.C.N", "test.C.N"];
   test_propagate
-    [ ( "test.py",
+    [
+      ( "test.py",
         {|
           class B1:
             class N:
@@ -1509,10 +1598,12 @@ let test_propagate_nested_classes context =
           class C(B1, B2):
             pass
         |}
-      ) ]
+      );
+    ]
     ["test.C.N", "test.B1.N"];
   test_propagate
-    [ "qual.py", {|
+    [
+      "qual.py", {|
           class B:
             class N:
               pass
@@ -1522,10 +1613,12 @@ let test_propagate_nested_classes context =
           from qual import B
           class C(B):
             pass
-        |} ) ]
+        |} );
+    ]
     ["importer.C.N", "qual.B.N"];
   test_propagate
-    [ ( "test.py",
+    [
+      ( "test.py",
         {|
           class B:
             class N:
@@ -1535,7 +1628,8 @@ let test_propagate_nested_classes context =
           class C(B):
             pass
         |}
-      ) ]
+      );
+    ]
     ["test.C.N.NN.NNN", "test.B.N.NN.NNN"];
   ()
 
@@ -1794,12 +1888,14 @@ let test_update_and_compute_dependencies context =
     create_environments_and_project
       ~context
       ~additional_sources:
-        [ "source.py", {|
+        [
+          "source.py", {|
       class Foo(): ...
       |};
           "other.py", {|
       class Bar(): ...
-      |} ]
+      |};
+        ]
       ()
   in
   let dependency_A = Reference.create "A" in
@@ -1922,7 +2018,8 @@ let test_update_and_compute_dependencies context =
 
 let () =
   "environment"
-  >::: [ "connect_type_order" >:: test_connect_type_order;
+  >::: [
+         "connect_type_order" >:: test_connect_type_order;
          "join_type_order" >:: test_join_type_order;
          "less_or_equal_type_order" >:: test_less_or_equal_type_order;
          "meet_type_order" >:: test_meet_type_order;
@@ -1944,5 +2041,6 @@ let () =
          "deduplicate" >:: test_deduplicate;
          "remove_extra" >:: test_remove_extra_edges_to_object;
          "purge_hierarchy" >:: test_purge_hierarchy;
-         "update_and_compute_dependencies" >:: test_update_and_compute_dependencies ]
+         "update_and_compute_dependencies" >:: test_update_and_compute_dependencies;
+       ]
   |> Test.run

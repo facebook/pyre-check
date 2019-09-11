@@ -84,12 +84,14 @@ let run
         match Socket.read socket with
         | Protocol.TypeCheckResponse errors ->
             `Assoc
-              [ ( "errors",
+              [
+                ( "errors",
                   `List
                     (List.map
                        ~f:(fun error ->
                          Analysis.Error.Instantiated.to_json ~show_error_traces error)
-                       errors) ) ]
+                       errors) );
+              ]
         | _ -> failwith "Unexpected response in incremental check."
       in
       Log.print "%s" (Yojson.Safe.to_string response_json))

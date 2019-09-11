@@ -155,48 +155,59 @@ let test_fixpoint context =
       {
         iterations = 4;
         expect =
-          [ outcome
+          [
+            outcome
               ~kind:`Function
               ~errors:
-                [ {
+                [
+                  {
                     code = 5001;
                     pattern =
                       ".*Possible shell injection.*Data from \
                        \\[UserControlled\\].*\\[RemoteCodeExecution\\].*";
-                  } ]
+                  };
+                ]
               "qualifier.rce_problem";
             outcome
               ~kind:`Function
               ~errors:
-                [ {
+                [
+                  {
                     code = 5002;
                     pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-                  } ]
+                  };
+                ]
               "qualifier.match_flows";
             outcome
               ~kind:`Function
               ~errors:
-                [ {
+                [
+                  {
                     code = 5002;
                     pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-                  } ]
+                  };
+                ]
               "qualifier.match_flows_multiple";
             outcome
               ~kind:`Function
               ~errors:
-                [ {
+                [
+                  {
                     code = 5002;
                     pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-                  } ]
+                  };
+                ]
               "qualifier.match_via_methods";
             outcome ~kind:`Function ~errors:[] "qualifier.no_match_via_methods";
             outcome
               ~kind:`Function
               ~errors:
-                [ {
+                [
+                  {
                     code = 5002;
                     pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-                  } ]
+                  };
+                ]
               "qualifier.match_via_receiver";
             outcome
               ~kind:`Function
@@ -217,30 +228,36 @@ let test_fixpoint context =
             outcome
               ~kind:`Function
               ~errors:
-                [ {
+                [
+                  {
                     code = 5002;
                     pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-                  } ]
+                  };
+                ]
               "qualifier.list_match";
             outcome ~kind:`Function ~errors:[] "qualifier.getattr_obj_no_match";
             outcome
               ~kind:`Function
               ~tito_parameters:["some_obj"]
               ~errors:
-                [ {
+                [
+                  {
                     code = 5010;
                     pattern = ".*Attacker may control at least one argument to getattr(,)";
-                  } ]
+                  };
+                ]
               "qualifier.getattr_field_match";
             outcome ~kind:`Function ~tito_parameters:["tito"] ~errors:[] "qualifier.deep_tito";
             outcome ~kind:`Function ~errors:[] "qualifier.test_deep_tito_no_match";
             outcome
               ~kind:`Function
               ~errors:
-                [ {
+                [
+                  {
                     code = 5010;
                     pattern = ".*Attacker may control at least one argument to getattr(,)";
-                  } ]
+                  };
+                ]
               "qualifier.test_deep_tito_match";
             outcome
               ~kind:`Function
@@ -256,7 +273,8 @@ let test_fixpoint context =
               ~kind:`Function
               ~tito_parameters:["c"]
               ~returns:[]
-              "qualifier.uses_property_but_no_taint" ];
+              "qualifier.uses_property_but_no_taint";
+          ];
       }
 
 
@@ -275,13 +293,15 @@ let test_combined_analysis context =
     ~expect:
       {
         expect =
-          [ outcome
+          [
+            outcome
               ~kind:`Function
               ~returns:[Sources.UserControlled]
               ~sink_parameters:
                 [{ name = "x"; sinks = [Sinks.Test] }; { name = "y"; sinks = [Sinks.Demo] }]
               ~tito_parameters:["x"; "z"]
-              "qualifier.combined_model" ];
+              "qualifier.combined_model";
+          ];
         iterations = 2;
       }
 
@@ -301,11 +321,13 @@ let test_skipped_analysis context =
     ~expect:
       {
         expect =
-          [ outcome
+          [
+            outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.Demo] }]
               ~tito_parameters:["z"]
-              "qualifier.skipped_model" ];
+              "qualifier.skipped_model";
+          ];
         iterations = 1;
       }
 
@@ -326,12 +348,14 @@ let test_sanitized_analysis context =
     ~expect:
       {
         expect =
-          [ outcome
+          [
+            outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.Demo] }]
               ~tito_parameters:["z"]
               ~errors:[{ code = 5001; pattern = ".*" }]
-              "qualifier.sanitized_model" ];
+              "qualifier.sanitized_model";
+          ];
         iterations = 1;
       }
 
@@ -349,12 +373,14 @@ let test_primed_source_analysis context =
     ~expect:
       {
         expect =
-          [ outcome
+          [
+            outcome
               ~kind:`Function
               ~source_parameters:[{ name = "y"; sources = [Sources.UserControlled] }]
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.RemoteCodeExecution] }]
               ~errors:[{ code = 5001; pattern = ".*Possible shell injection.*" }]
-              "qualifier.primed_model" ];
+              "qualifier.primed_model";
+          ];
         iterations = 2;
       }
 
@@ -376,14 +402,16 @@ let test_primed_sink_analysis context =
     ~expect:
       {
         expect =
-          [ outcome
+          [
+            outcome
               ~kind:`Function
               ~returns:[Sources.Test]
               ~source_parameters:[{ name = "y"; sources = [Sources.Test] }]
               ~sink_parameters:[] (* No backward prop on return sinks *)
               ~tito_parameters:["y"]
               ~errors:[{ code = 5002; pattern = ".*Test.*" }]
-              "qualifier.primed_model" ];
+              "qualifier.primed_model";
+          ];
         iterations = 2;
       }
 
@@ -429,7 +457,8 @@ let test_overrides context =
       {
         iterations = 4;
         expect =
-          [ outcome ~kind:`Override ~obscure:true "qualifier.Base.split";
+          [
+            outcome ~kind:`Override ~obscure:true "qualifier.Base.split";
             outcome
               ~kind:`Function
               ~tito_parameters:["b"]
@@ -458,16 +487,19 @@ let test_overrides context =
               ~sink_parameters:[{ name = "arg"; sinks = [Sinks.RemoteCodeExecution] }]
               "qualifier.D.some_sink";
             outcome ~kind:`Method ~returns:[Sources.Test] "qualifier.D.some_source";
-            outcome ~kind:`Method ~returns:[Sources.UserControlled] "qualifier.E.some_source" ];
+            outcome ~kind:`Method ~returns:[Sources.UserControlled] "qualifier.E.some_source";
+          ];
       }
 
 
 let () =
-  [ "fixpoint", test_fixpoint;
+  [
+    "fixpoint", test_fixpoint;
     "combined_analysis", test_combined_analysis;
     "skipped_analysis", test_skipped_analysis;
     "sanitized_analysis", test_sanitized_analysis;
     "primed_source_analysis", test_primed_source_analysis;
     "primed_sink_analysis", test_primed_sink_analysis;
-    "overrides", test_overrides ]
+    "overrides", test_overrides;
+  ]
   |> TestHelper.run_with_taint_models ~name:"taint"

@@ -52,51 +52,60 @@ let test_incremental_check context =
   assert_incremental_check_errors
     ~context
     ~initial_sources:
-      [ ( false,
+      [
+        ( false,
           "a.py",
           {|
         # pyre-ignore
         def unused_pyre_ignore() -> int:
           return 0
       |}
-        ) ]
+        );
+      ]
     ~updated_sources:
-      [ ( false,
+      [
+        ( false,
           "a.py",
           {|
         # pyre-ignore
         def still_unused_pyre_ignore() -> int:
           return 0
       |}
-        ) ]
+        );
+      ]
     ~expected:["Unused ignore [0]: Pyre ignore is extraneous."];
 
   (* If an external source is updated, it is filtered properly. *)
   assert_incremental_check_errors
     ~context
     ~initial_sources:
-      [ ( true,
+      [
+        ( true,
           "external.py",
           {|
         # pyre-ignore
         def unused_pyre_ignore() -> int:
           return 0
       |}
-        ) ]
+        );
+      ]
     ~updated_sources:
-      [ ( true,
+      [
+        ( true,
           "external.py",
           {|
         # pyre-ignore
         def still_unused_pyre_ignore() -> int:
           return 0
       |}
-        ) ]
+        );
+      ]
     ~expected:[];
   assert_incremental_check_errors
     ~context
     ~initial_sources:
-      [ false, "a.py", {|
+      [
+        false, "a.py", {|
          class A:
            y: int = 7
       |};
@@ -106,7 +115,8 @@ let test_incremental_check context =
           from a import A
           x = A()
           reveal_type(x.y)
-      |} ) ]
+      |} );
+      ]
     ~updated_sources:[false, "a.py", {|
          class A:
            y: str = "A"
@@ -115,7 +125,8 @@ let test_incremental_check context =
   assert_incremental_check_errors
     ~context
     ~initial_sources:
-      [ false, "a.py", {|
+      [
+        false, "a.py", {|
          class A(int):
           pass
       |};
@@ -127,14 +138,17 @@ let test_incremental_check context =
             pass
           foo(A())
       |}
-        ) ]
+        );
+      ]
     ~updated_sources:[false, "a.py", {|
          class A(str):
           pass
       |}]
     ~expected:
-      [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-         `foo` but got `A`." ];
+      [
+        "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+         `foo` but got `A`.";
+      ];
 
   ()
 

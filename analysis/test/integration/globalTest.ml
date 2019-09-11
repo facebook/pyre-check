@@ -84,8 +84,10 @@ let test_check_with_qualification context =
               return global_number
     |}
     (* FIXME: The first error is bogus *)
-    [ "Unimported module [51]: Module `test` is used without being imported.";
-      "Incompatible return type [7]: Expected `int` but got `str`." ];
+    [
+      "Unimported module [51]: Module `test` is used without being imported.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
+    ];
   assert_type_errors
     {|
       global_number: int = 1
@@ -176,9 +178,11 @@ let test_check_globals context =
       def foo() -> str:
         return constant
     |}
-    [ "Incompatible variable type [9]: constant is declared to have type `int` "
+    [
+      "Incompatible variable type [9]: constant is declared to have type `int` "
       ^ "but is used as type `str`.";
-      "Incompatible return type [7]: Expected `str` but got `int`." ];
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ];
   assert_type_errors
     {|
       x = 1
@@ -186,9 +190,11 @@ let test_check_globals context =
       def foo() -> str:
         return constant
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` "
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` "
       ^ "but no type is specified.";
-      "Incompatible return type [7]: Expected `str` but got `unknown`." ];
+      "Incompatible return type [7]: Expected `str` but got `unknown`.";
+    ];
   assert_type_errors
     {|
       nasty_global = foo()
@@ -196,8 +202,10 @@ let test_check_globals context =
         a = nasty_global
         return 0
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `nasty_global` "
-      ^ "has type `int` but no type is specified." ];
+    [
+      "Missing global annotation [5]: Globally accessible variable `nasty_global` "
+      ^ "has type `int` but no type is specified.";
+    ];
   assert_type_errors
     {|
       a, b = 1, 2
@@ -246,10 +254,12 @@ let test_check_globals context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     ~update_environment_with:
-      [ {
+      [
+        {
           handle = "export.py";
           source = "(a, b), (c, d): typing.Tuple[typing.Tuple[int, int], ...] = ...";
-        } ]
+        };
+      ]
     {|
       from export import b
       def foo() -> str:
@@ -258,13 +268,15 @@ let test_check_globals context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     ~update_environment_with:
-      [ {
+      [
+        {
           handle = "export.py";
           source = {|
           class Foo:
             a, b = 1, 2
         |};
-        } ]
+        };
+      ]
     {|
       from export.Foo import a
       def foo() -> str:
@@ -293,10 +305,12 @@ let test_check_globals context =
         x = ""
         return x
     |}
-    [ "Incompatible return type [7]: Expected `str` but got `int`.";
+    [
+      "Incompatible return type [7]: Expected `str` but got `int`.";
       "Incompatible variable type [9]: export.x is declared to have type `int` "
       ^ "but is used as type `str`.";
-      "Incompatible return type [7]: Expected `str` but got `int`." ];
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ];
   assert_type_errors
     {|
       x = None
@@ -310,14 +324,16 @@ let test_check_globals context =
         y.append(1)
         return y
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `x` has type `str` but no type \
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` has type `str` but no type \
        is specified.";
       "Missing global annotation [5]: Globally accessible variable `x` has type `None` but no \
        type is specified.";
       "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, "
       ^ "add an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
-      "Incompatible return type [7]: Expected `typing.List[int]` but got `unknown`." ];
+      "Incompatible return type [7]: Expected `typing.List[int]` but got `unknown`.";
+    ];
   assert_type_errors {|
       A = typing.Mapping[int, str]
     |} [];
@@ -325,9 +341,11 @@ let test_check_globals context =
     {|
       A = MappBoo[int, str]
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
+    [
+      "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
       "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least one \
-       control flow path that doesn't define `MappBoo`." ];
+       control flow path that doesn't define `MappBoo`.";
+    ];
   assert_type_errors
     {|
       MyType = typing.List[typing.Any]
@@ -337,6 +355,8 @@ let test_check_globals context =
 
 let () =
   "global"
-  >::: [ "check_with_qualification" >:: test_check_with_qualification;
-         "check_globals" >:: test_check_globals ]
+  >::: [
+         "check_with_qualification" >:: test_check_with_qualification;
+         "check_globals" >:: test_check_globals;
+       ]
   |> Test.run
