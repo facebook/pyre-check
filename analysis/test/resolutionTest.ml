@@ -340,11 +340,11 @@ let test_resolution_shared_memory _ =
   ResolutionSharedMemory.add
     ~qualifier:(Reference.create "a")
     (Reference.create "name")
-    Int.Map.Tree.empty;
+    LocalAnnotationMap.empty;
   ResolutionSharedMemory.add
     ~qualifier:(Reference.create "a")
     (Reference.create "other")
-    Int.Map.Tree.empty;
+    LocalAnnotationMap.empty;
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
     (ResolutionSharedMemory.get_keys ~qualifiers:[Reference.create "a"])

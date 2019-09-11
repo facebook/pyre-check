@@ -580,7 +580,7 @@ let process_type_query_request
               Some
                 ( ResolutionSharedMemory.TypeAnnotationsValue.description,
                   Reference.show key,
-                  value >>| ResolutionSharedMemory.show_annotations )
+                  value >>| LocalAnnotationMap.show )
           | ResolutionSharedMemory.Keys.Decoded (key, value) ->
               Some
                 ( ResolutionSharedMemory.AnnotationsKeyValue.description,
@@ -615,7 +615,7 @@ let process_type_query_request
                         Option.equal Coverage.equal first second
                     | ( ResolutionSharedMemory.Decoded (_, first),
                         ResolutionSharedMemory.Decoded (_, second) ) ->
-                        Option.equal ResolutionSharedMemory.equal_annotations first second
+                        Option.equal LocalAnnotationMap.equal first second
                     | _ when Option.is_some (AstEnvironment.decoded_equal first second) ->
                         Option.value_exn (AstEnvironment.decoded_equal first second)
                     | _ when Option.is_some (Environment.decoded_equal first second) ->

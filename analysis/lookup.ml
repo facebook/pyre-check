@@ -167,15 +167,16 @@ let create_of_source global_resolution source =
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
     let annotation_lookup =
-      ResolutionSharedMemory.get name >>| Int.Map.of_tree |> Option.value ~default:Int.Map.empty
+      ResolutionSharedMemory.get name |> Option.value ~default:LocalAnnotationMap.empty
     in
     let cfg = Cfg.create define in
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
-        Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
-        >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
-              Reference.Map.of_tree precondition, Reference.Map.of_tree postcondition)
-        |> Option.value ~default:(Reference.Map.empty, Reference.Map.empty)
+        let key = [%hash: int * int] (node_id, statement_index) in
+        ( LocalAnnotationMap.get_postcondition annotation_lookup key
+          |> Option.value ~default:Reference.Map.empty,
+          LocalAnnotationMap.get_postcondition annotation_lookup key
+          |> Option.value ~default:Reference.Map.empty )
       in
       let pre_resolution =
         TypeCheck.resolution global_resolution ~annotations:pre_annotations ()

@@ -7,41 +7,8 @@ open Core
 open Ast
 module SharedMemory = Memory
 
-type annotation_map = {
-  precondition: Annotation.t Reference.Map.Tree.t;
-  postcondition: Annotation.t Reference.Map.Tree.t;
-}
-[@@deriving eq]
-
-type annotations = annotation_map Int.Map.Tree.t [@@deriving eq]
-
-let pp_annotations formatter map =
-  Format.fprintf formatter "{";
-  let pp_annotation_map ~key ~data:{ precondition; postcondition } =
-    let pp_state formatter map =
-      let pp_element ~key ~data =
-        Format.fprintf formatter "\"%a\": \"%a\", " Reference.pp key Annotation.pp data
-      in
-      Format.fprintf formatter "{";
-      Reference.Map.Tree.iteri map ~f:pp_element;
-      Format.fprintf formatter "}"
-    in
-    Format.fprintf
-      formatter
-      "%d: { \"Precondition\": %a, \"Postcondition\": %a}"
-      key
-      pp_state
-      precondition
-      pp_state
-      postcondition
-  in
-  Int.Map.Tree.iteri map ~f:pp_annotation_map
-
-
-let show_annotations map = Format.asprintf "%a" pp_annotations map
-
 module TypeAnnotationsValue = struct
-  type t = annotations
+  type t = LocalAnnotationMap.t
 
   let prefix = Prefix.make ()
 

@@ -6,18 +6,8 @@
 open Core
 open Ast
 
-type annotation_map = {
-  precondition: Annotation.t Reference.Map.Tree.t;
-  postcondition: Annotation.t Reference.Map.Tree.t;
-}
-[@@deriving eq]
-(** Maps a key, unique to each statement for a function CFG, to type annotations. They key is
-    computed from a tuple CFG node ID and and statement index (see Fixpoint.forward) *)
-
-type annotations = annotation_map Int.Map.Tree.t [@@deriving eq, show]
-
 module TypeAnnotationsValue : sig
-  type t = annotations
+  type t = LocalAnnotationMap.t
 
   val prefix : Prefix.t
 
@@ -52,10 +42,10 @@ module Keys :
      and module KeySet = Caml.Set.Make(SharedMemoryKeys.ReferenceKey)
      and module KeyMap = MyMap.Make(SharedMemoryKeys.ReferenceKey)
 
-val add : qualifier:Reference.t -> Reference.t -> annotations -> unit
+val add : qualifier:Reference.t -> Reference.t -> LocalAnnotationMap.t -> unit
 
 val remove : Reference.t list -> unit
 
-val get : Reference.t -> annotations option
+val get : Reference.t -> LocalAnnotationMap.t option
 
 val get_keys : qualifiers:Reference.t list -> Reference.t list

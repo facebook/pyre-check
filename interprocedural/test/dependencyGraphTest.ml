@@ -225,14 +225,11 @@ let test_type_collection context =
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
-    let lookup =
-      ResolutionSharedMemory.get name |> (fun value -> Option.value_exn value) |> Int.Map.of_tree
-    in
+    let lookup = ResolutionSharedMemory.get name |> fun value -> Option.value_exn value in
     let test_expect (node_id, statement_index, test_expression, expected_type) =
       let key = [%hash: int * int] (node_id, statement_index) in
       let annotations =
-        Map.find_exn lookup key
-        |> fun { ResolutionSharedMemory.precondition; _ } -> Reference.Map.of_tree precondition
+        LocalAnnotationMap.get_precondition lookup key |> fun value -> Option.value_exn value
       in
       let global_resolution = Environment.resolution environment () in
       let resolution = TypeCheck.resolution global_resolution ~annotations () in

@@ -49,7 +49,7 @@ module type Signature = sig
     :  ?bottom:bool ->
     ?errors:ErrorMap.t ->
     resolution:Resolution.t ->
-    ?resolution_fixpoint:ResolutionSharedMemory.annotation_map Int.Map.Tree.t ->
+    ?resolution_fixpoint:LocalAnnotationMap.t ->
     unit ->
     t
 
@@ -107,7 +107,7 @@ module State (Context : Context) = struct
     check_return: bool;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
-    resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t;
+    resolution_fixpoint: LocalAnnotationMap.t;
   }
 
   let pp_nested_define format { nested = { Define.signature = { name; _ }; _ }; _ } =
@@ -187,7 +187,7 @@ module State (Context : Context) = struct
       ?(bottom = false)
       ?(errors = ErrorMap.Map.empty)
       ~resolution
-      ?(resolution_fixpoint = Int.Map.Tree.empty)
+      ?(resolution_fixpoint = LocalAnnotationMap.empty)
       ()
     =
     {
@@ -934,17 +934,8 @@ module State (Context : Context) = struct
           (Resolution.annotations previous.resolution)
           (Resolution.annotations next.resolution)
       in
-      let join_resolution_fixpoints ~key:_ = function
-        | `Left next_resolution
-        | `Right next_resolution
-        | `Both (_, next_resolution) ->
-            Some next_resolution
-      in
       let resolution_fixpoint =
-        Int.Map.Tree.merge
-          ~f:join_resolution_fixpoints
-          previous.resolution_fixpoint
-          next.resolution_fixpoint
+        LocalAnnotationMap.merge previous.resolution_fixpoint next.resolution_fixpoint
       in
       let combine_errors ~key:_ left_error right_error =
         if iteration > widening_threshold then
@@ -1463,10 +1454,9 @@ module State (Context : Context) = struct
       in
       let resolution = Resolution.with_annotations resolution ~annotations in
       let resolution_fixpoint =
-        let precondition = Reference.Map.Tree.empty in
-        let postcondition = Resolution.annotations resolution |> Reference.Map.to_tree in
+        let postcondition = Resolution.annotations resolution in
         let key = [%hash: int * int] (Cfg.entry_index, 0) in
-        Int.Map.Tree.set resolution_fixpoint ~key ~data:{ precondition; postcondition }
+        LocalAnnotationMap.set resolution_fixpoint ~key ~postcondition
       in
       { state with resolution; resolution_fixpoint }
     in
@@ -4831,9 +4821,9 @@ module State (Context : Context) = struct
       let resolution_fixpoint =
         match key, state with
         | Some key, { resolution = post_resolution; _ } ->
-            let precondition = Resolution.annotations resolution |> Reference.Map.to_tree in
-            let postcondition = Resolution.annotations post_resolution |> Reference.Map.to_tree in
-            Int.Map.Tree.set resolution_fixpoint ~key ~data:{ precondition; postcondition }
+            let precondition = Resolution.annotations resolution in
+            let postcondition = Resolution.annotations post_resolution in
+            LocalAnnotationMap.set resolution_fixpoint ~key ~precondition ~postcondition
         | None, _ -> resolution_fixpoint
       in
       { state with resolution_fixpoint }
@@ -4880,7 +4870,7 @@ let resolution
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom = false;
-      resolution_fixpoint = Int.Map.Tree.empty;
+      resolution_fixpoint = LocalAnnotationMap.empty;
       resolution = empty_resolution;
     }
   in
@@ -4897,12 +4887,7 @@ let resolution_with_key ~global_resolution ~parent ~name ~key =
   let annotations =
     match key, ResolutionSharedMemory.get name with
     | Some key, Some map ->
-        map
-        |> Int.Map.of_tree
-        |> (fun map -> Int.Map.find map key)
-        >>| (fun { precondition; _ } -> precondition)
-        >>| Reference.Map.of_tree
-        |> Option.value ~default:Reference.Map.empty
+        LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty
     | _ -> Reference.Map.empty
   in
   resolution global_resolution ~annotations () |> Resolution.with_parent ~parent

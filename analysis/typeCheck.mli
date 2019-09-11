@@ -37,7 +37,7 @@ module type Signature = sig
     :  ?bottom:bool ->
     ?errors:ErrorMap.t ->
     resolution:Resolution.t ->
-    ?resolution_fixpoint:ResolutionSharedMemory.annotation_map Int.Map.Tree.t ->
+    ?resolution_fixpoint:LocalAnnotationMap.t ->
     unit ->
     t
 
