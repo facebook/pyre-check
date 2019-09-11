@@ -23,6 +23,7 @@ val run_check
 
 val analyze_sources
   :  ?open_documents:(Ast.Reference.t -> bool) ->
+  ?filter_external_sources:bool ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:Environment.t ->

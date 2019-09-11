@@ -100,8 +100,23 @@ let run_analysis
     let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
     let errors, ast_environment =
       Service.Check.check ~scheduler:(Some scheduler) ~configuration
-      |> fun { module_tracker; environment; _ } ->
+      |> fun { module_tracker; environment; ast_environment; _ } ->
+      (* In order to get an accurate call graph and type information, we need to ensure that we
+         schedule a type check for external files as well. *)
       let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in
+      let external_sources =
+        List.filter_map qualifiers ~f:(Analysis.AstEnvironment.get_source ast_environment)
+        |> List.filter ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.is_external; _ }; _ } ->
+               is_external)
+      in
+      Log.info "Analyzing %d external sources..." (List.length external_sources);
+      Service.Check.analyze_sources
+        ~filter_external_sources:false
+        ~scheduler
+        ~configuration
+        ~environment
+        external_sources
+      |> ignore;
       let errors =
         Service.StaticAnalysis.analyze
           ~scheduler

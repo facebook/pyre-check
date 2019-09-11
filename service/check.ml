@@ -75,12 +75,22 @@ let run_check
   errors
 
 
-let analyze_sources ?open_documents ~scheduler ~configuration ~environment sources =
+let analyze_sources
+    ?open_documents
+    ?(filter_external_sources = true)
+    ~scheduler
+    ~configuration
+    ~environment
+    sources
+  =
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
   let checked_sources =
-    List.filter sources ~f:(fun { Source.source_path = { SourcePath.is_external; _ }; _ } ->
-        not is_external)
+    if filter_external_sources then
+      List.filter sources ~f:(fun { Source.source_path = { SourcePath.is_external; _ }; _ } ->
+          not is_external)
+    else
+      sources
   in
   let number_of_sources = List.length checked_sources in
   Log.info "Checking %d sources..." number_of_sources;
