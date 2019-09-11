@@ -1492,7 +1492,7 @@ module State (Context : Context) = struct
               state
           | Top
           (* There's some other problem we already errored on *)
-          
+
           | Primitive _
           | Parametric _ ->
               state_with_errors
@@ -2171,16 +2171,8 @@ module State (Context : Context) = struct
                     annotation )
                   |> Type.class_name
                 in
-                Reference.as_list class_name @ [Reference.last direct_target]
-                |> Reference.create_from_list
-                |> fun name ->
-                [
-                  Dependencies.Callgraph.Method
-                    {
-                      direct_target;
-                      static_target = name;
-                      dispatch = (if dynamic then Dynamic else Static);
-                    };
+                [ Dependencies.Callgraph.Method
+                    { direct_target; class_name; dispatch = (if dynamic then Dynamic else Static) }
                 ]
             | _ -> []
           in
@@ -3078,10 +3070,7 @@ module State (Context : Context) = struct
                             Dependencies.Callgraph.Method
                               {
                                 direct_target;
-                                static_target =
-                                  Reference.create
-                                    ~prefix:(Annotated.Class.name class_definition)
-                                    name;
+                                class_name = Annotated.Class.name class_definition;
                                 dispatch = Dynamic;
                               }
                             :: !property_callables

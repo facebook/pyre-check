@@ -1589,7 +1589,7 @@ let test_coverage context =
 
 type method_call = {
   direct_target: string;
-  static_target: string;
+  class_name: string;
   dispatch: Dependencies.Callgraph.dispatch;
 }
 
@@ -1617,11 +1617,11 @@ let test_calls context =
     let assert_calls (caller, callees) =
       let expected_callees =
         let callee = function
-          | `Method { direct_target; static_target; dispatch } ->
+          | `Method { direct_target; class_name; dispatch } ->
               Dependencies.Callgraph.Method
                 {
                   direct_target = Reference.create direct_target;
-                  static_target = Reference.create static_target;
+                  class_name = Reference.create class_name;
                   dispatch;
                 }
           | `Function name -> Dependencies.Callgraph.Function (Reference.create name)
@@ -1676,7 +1676,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.method";
-              static_target = "qualifier.Class.method";
+              class_name = "qualifier.Class";
               dispatch = Dynamic;
             };
         ] );
@@ -1696,22 +1696,14 @@ let test_calls context =
      def calls_ClassWithInit__init__(object: object):
        ClassWithInit.__init__(object)
    |}
-    [
-      ( "qualifier.ClassWithInit.__init__",
-        [
-          `Method
-            {
-              direct_target = "object.__init__";
-              static_target = "object.__init__";
-              dispatch = Static;
-            };
-        ] );
+    [ ( "qualifier.ClassWithInit.__init__",
+        [`Method { direct_target = "object.__init__"; class_name = "object"; dispatch = Static }] );
       ( "qualifier.calls_Class",
         [
           `Method
             {
               direct_target = "object.__init__";
-              static_target = "qualifier.Class.__init__";
+              class_name = "qualifier.Class";
               dispatch = Static;
             };
         ] );
@@ -1720,7 +1712,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.ClassWithInit.__init__";
-              static_target = "qualifier.ClassWithInit.__init__";
+              class_name = "qualifier.ClassWithInit";
               dispatch = Static;
             };
         ] );
@@ -1729,7 +1721,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.ClassWithInit.__init__";
-              static_target = "qualifier.ClassWithInit.__init__";
+              class_name = "qualifier.ClassWithInit";
               dispatch = Static;
             };
         ] );
@@ -1748,7 +1740,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.classmethod";
-              static_target = "qualifier.Class.classmethod";
+              class_name = "qualifier.Class";
               dispatch = Static;
             };
         ] );
@@ -1780,7 +1772,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.method";
-              static_target = "qualifier.Class.method";
+              class_name = "qualifier.Class";
               dispatch = Dynamic;
             };
         ] );
@@ -1789,7 +1781,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.method";
-              static_target = "qualifier.Indirect.method";
+              class_name = "qualifier.Indirect";
               dispatch = Dynamic;
             };
         ] );
@@ -1798,7 +1790,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.method";
-              static_target = "qualifier.Subclass.method";
+              class_name = "qualifier.Subclass";
               dispatch = Dynamic;
             };
         ] );
@@ -1807,7 +1799,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.OverridingSubclass.method";
-              static_target = "qualifier.OverridingSubclass.method";
+              class_name = "qualifier.OverridingSubclass";
               dispatch = Dynamic;
             };
         ] );
@@ -1843,7 +1835,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.class_method";
-              static_target = "qualifier.Class.class_method";
+              class_name = "qualifier.Class";
               dispatch = Static;
             };
         ] );
@@ -1852,7 +1844,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.class_method";
-              static_target = "qualifier.Indirect.class_method";
+              class_name = "qualifier.Indirect";
               dispatch = Static;
             };
         ] );
@@ -1861,7 +1853,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Subclass.class_method";
-              static_target = "qualifier.Subclass.class_method";
+              class_name = "qualifier.Subclass";
               dispatch = Static;
             };
         ] );
@@ -1870,7 +1862,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.class_method";
-              static_target = "qualifier.Class.class_method";
+              class_name = "qualifier.Class";
               dispatch = Dynamic;
             };
         ] );
@@ -1879,7 +1871,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.class_method";
-              static_target = "qualifier.Indirect.class_method";
+              class_name = "qualifier.Indirect";
               dispatch = Dynamic;
             };
         ] );
@@ -1888,7 +1880,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Subclass.class_method";
-              static_target = "qualifier.Subclass.class_method";
+              class_name = "qualifier.Subclass";
               dispatch = Dynamic;
             };
         ] );
@@ -1910,13 +1902,13 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Class.method";
-              static_target = "qualifier.Class.method";
+              class_name = "qualifier.Class";
               dispatch = Dynamic;
             };
           `Method
             {
               direct_target = "qualifier.OtherClass.method";
-              static_target = "qualifier.OtherClass.method";
+              class_name = "qualifier.OtherClass";
               dispatch = Dynamic;
             };
         ] );
@@ -1938,7 +1930,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Foo.method";
-              static_target = "qualifier.Foo.method";
+              class_name = "qualifier.Foo";
               dispatch = Dynamic;
             };
         ] );
@@ -1959,7 +1951,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Foo.method";
-              static_target = "qualifier.Foo.method";
+              class_name = "qualifier.Foo";
               dispatch = Dynamic;
             };
         ] );
@@ -1980,7 +1972,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Foo.method";
-              static_target = "qualifier.Bar.method";
+              class_name = "qualifier.Bar";
               dispatch = Dynamic;
             };
         ] );
@@ -2014,13 +2006,13 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Foo.method";
-              static_target = "qualifier.Foo.method";
+              class_name = "qualifier.Foo";
               dispatch = Dynamic;
             };
           `Method
             {
               direct_target = "qualifier.Bar.method";
-              static_target = "qualifier.Bar.method";
+              class_name = "qualifier.Bar";
               dispatch = Dynamic;
             };
         ] );
@@ -2042,7 +2034,7 @@ let test_calls context =
           `Method
             {
               direct_target = "qualifier.Foo.method";
-              static_target = "qualifier.Foo.method";
+              class_name = "qualifier.Foo";
               dispatch = Dynamic;
             };
         ] );

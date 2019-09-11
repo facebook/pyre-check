@@ -75,8 +75,8 @@ module Callgraph : sig
   and callee =
     | Function of Reference.t
     | Method of {
+        class_name: Reference.t;
         direct_target: Reference.t;
-        static_target: Reference.t;
         dispatch: dispatch;
       }
   [@@deriving compare, eq, show]

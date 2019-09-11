@@ -258,8 +258,8 @@ module Callgraph = struct
   and callee =
     | Function of Reference.t
     | Method of {
+        class_name: Reference.t;
         direct_target: Reference.t;
-        static_target: Reference.t;
         dispatch: dispatch;
       }
   [@@deriving compare, hash, sexp, eq, show, to_yojson]
@@ -286,14 +286,14 @@ module Callgraph = struct
           (List.rev_append
              locations
              ["kind", `String "function"; "target", `String (Reference.show name)])
-    | Method { direct_target; static_target; dispatch } ->
+    | Method { direct_target; class_name; dispatch } ->
         `Assoc
           (List.rev_append
              locations
              [
                "kind", `String "method";
                "direct_target", `String (Reference.show direct_target);
-               "static_target", `String (Reference.show static_target);
+               "class_name", `String (Reference.show class_name);
                ( "dispatch",
                  `String
                    ( match dispatch with
