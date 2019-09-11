@@ -109,16 +109,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module OrderKeyValue = struct
-    type t = IndexTracker.t list [@@deriving compare]
-
-    let prefix = Prefix.make ()
-
-    let description = "Order keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
   module UndecoratedFunctionValue = struct
     type t = Type.t Type.Callable.overload [@@deriving compare]
 
@@ -163,11 +153,6 @@ module SharedMemory = struct
       (SharedMemoryKeys.ReferenceDependencyKey)
       (EdgeValue)
   module OrderBackedges = Memory.WithCache.Make (IndexTracker.IndexKey) (BackedgeValue)
-  module OrderKeys =
-    Memory.DependencyTrackedTableWithCache
-      (Memory.SingletonKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (OrderKeyValue)
 end
 
 module SharedMemoryClassHierarchyHandler = struct
@@ -902,7 +887,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
     ClassMetadata.LocalChanges.push_stack ();
     OrderEdges.LocalChanges.push_stack ();
     OrderBackedges.LocalChanges.push_stack ();
-    OrderKeys.LocalChanges.push_stack ();
     Globals.LocalChanges.push_stack () );
   let result = f () in
   if only_global_keys then
@@ -916,8 +900,7 @@ let transaction _ ?(only_global_keys = false) ~f () =
     ClassMetadata.LocalChanges.commit_all ();
     Globals.LocalChanges.commit_all ();
     OrderEdges.LocalChanges.commit_all ();
-    OrderBackedges.LocalChanges.commit_all ();
-    OrderKeys.LocalChanges.commit_all () );
+    OrderBackedges.LocalChanges.commit_all () );
   if only_global_keys then
     GlobalKeys.LocalChanges.pop_stack ()
   else (
@@ -929,8 +912,7 @@ let transaction _ ?(only_global_keys = false) ~f () =
     ClassMetadata.LocalChanges.pop_stack ();
     Globals.LocalChanges.pop_stack ();
     OrderEdges.LocalChanges.pop_stack ();
-    OrderBackedges.LocalChanges.pop_stack ();
-    OrderKeys.LocalChanges.pop_stack () );
+    OrderBackedges.LocalChanges.pop_stack () );
   result
 
 
@@ -1045,34 +1027,16 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
 
 let shared_memory_handler alias_environment = { alias_environment }
 
-let normalize_shared_memory qualifiers =
-  (* Since we don't provide an API to the raw order keys in the type order handler, handle it
-     inline here. *)
-  let open SharedMemory in
-  ( match OrderKeys.get Memory.SingletonKey.key with
-  | None -> ()
-  | Some keys ->
-      OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
-      List.sort ~compare:IndexTracker.compare keys |> OrderKeys.add Memory.SingletonKey.key );
-  SharedMemoryDependencyHandler.normalize qualifiers
-
+let normalize_shared_memory qualifiers = SharedMemoryDependencyHandler.normalize qualifiers
 
 let shared_memory_hash_to_key_map ~qualifiers () =
   let extend_map map ~new_map =
     Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
   in
   let open SharedMemory in
-  (* Type order. *)
-  let map =
-    let order_keys = OrderKeys.find_unsafe Memory.SingletonKey.key in
-    OrderKeys.compute_hashes_to_keys ~keys:[Memory.SingletonKey.key]
-    |> extend_map ~new_map:(OrderEdges.compute_hashes_to_keys ~keys:order_keys)
-    |> extend_map ~new_map:(OrderBackedges.compute_hashes_to_keys ~keys:order_keys)
-  in
   (* Handle-based keys. *)
   let map =
-    map
-    |> extend_map ~new_map:(FunctionKeys.compute_hashes_to_keys ~keys:qualifiers)
+    FunctionKeys.compute_hashes_to_keys ~keys:qualifiers
     |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:qualifiers)
     |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:qualifiers)
     |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:qualifiers)
@@ -1150,8 +1114,6 @@ let serialize_decoded decoded =
         ( BackedgeValue.description,
           decode key,
           value >>| ClassHierarchy.Target.Set.Tree.to_list >>| List.to_string ~f:decode_target )
-  | OrderKeys.Decoded (key, value) ->
-      Some (OrderKeyValue.description, Int.to_string key, value >>| List.to_string ~f:decode)
   | _ -> None
 
 
@@ -1178,8 +1140,6 @@ let decoded_equal first second =
       Some (Option.equal (List.equal ClassHierarchy.Target.equal) first second)
   | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
       Some (Option.equal ClassHierarchy.Target.Set.Tree.equal first second)
-  | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
-      Some (Option.equal (List.equal IndexTracker.equal) first second)
   | _ -> None
 
 
