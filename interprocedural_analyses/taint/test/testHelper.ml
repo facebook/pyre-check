@@ -440,7 +440,8 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
         errors
         |> List.map ~f:(fun error ->
                AnalysisError.instantiate
-                 ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+                 ~lookup:
+                   (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
                  error
                |> AnalysisError.Instantiated.description ~show_error_traces:false)
         |> String.concat ~sep:"\n"

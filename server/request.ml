@@ -27,9 +27,11 @@ let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } pat
   |> Option.value ~default:[]
 
 
-let instantiate_error ~state:{ State.environment; _ } error =
+let instantiate_error ~configuration ~state:{ State.environment; _ } error =
   let ast_environment = Environment.ast_environment environment in
-  Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) error
+  Error.instantiate
+    ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
+    error
 
 
 let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~request =
@@ -477,7 +479,8 @@ let process_type_query_request
         let instantiate =
           Location.instantiate
             ~lookup:
-              (AstEnvironment.ReadOnly.get_relative
+              (AstEnvironment.ReadOnly.get_real_path_relative
+                 ~configuration
                  (AstEnvironment.read_only state.ast_environment))
         in
         let callees =
@@ -681,7 +684,8 @@ let process_type_query_request
             let instantiate =
               Location.instantiate
                 ~lookup:
-                  (AstEnvironment.ReadOnly.get_relative
+                  (AstEnvironment.ReadOnly.get_real_path_relative
+                     ~configuration
                      (AstEnvironment.read_only state.ast_environment))
             in
             Dependencies.Callgraph.get ~caller
@@ -887,8 +891,10 @@ let process_type_query_request
             let descriptions =
               let lookup reference =
                 let ast_environment = Environment.ast_environment environment in
-                AstEnvironment.ReadOnly.get_source_path ast_environment reference
-                >>| fun { SourcePath.relative; _ } -> relative
+                AstEnvironment.ReadOnly.get_real_path_relative
+                  ~configuration
+                  ast_environment
+                  reference
               in
               errors
               |> List.map ~f:(Analysis.Error.instantiate ~lookup)
@@ -986,7 +992,7 @@ let process_type_query_request
 
 let process_type_check_request ~state ~configuration paths =
   let state, response = IncrementalCheck.recheck ~state ~configuration paths in
-  let response = List.map response ~f:(instantiate_error ~state) in
+  let response = List.map response ~f:(instantiate_error ~configuration ~state) in
   { state; response = Some (TypeCheckResponse response) }
 
 
@@ -997,7 +1003,7 @@ let process_display_type_errors_request ~state ~configuration paths =
     | [] -> Hashtbl.data errors |> List.concat |> List.sort ~compare:Error.compare
     | _ -> List.concat_map ~f:(errors_of_path ~configuration ~state) paths
   in
-  let errors = List.map errors ~f:(instantiate_error ~state) in
+  let errors = List.map errors ~f:(instantiate_error ~configuration ~state) in
   { state; response = Some (TypeCheckResponse errors) }
 
 

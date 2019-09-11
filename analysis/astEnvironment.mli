@@ -77,6 +77,12 @@ module ReadOnly : sig
 
   val get_relative : t -> Reference.t -> string option
 
+  val get_real_path_relative
+    :  configuration:Configuration.Analysis.t ->
+    t ->
+    Reference.t ->
+    string option
+
   val all_explicit_modules : t -> Reference.t list
 
   val get_module_metadata : t -> ?dependency:Reference.t -> Reference.t -> Module.t option

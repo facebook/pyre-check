@@ -149,7 +149,8 @@ let run_analysis
     (* Print results. *)
     List.map errors ~f:(fun error ->
         Interprocedural.Error.instantiate
-          ~lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
+          ~lookup:
+            (Analysis.AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
           error
         |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
     |> (fun result -> Yojson.Safe.pretty_to_string (`List result))

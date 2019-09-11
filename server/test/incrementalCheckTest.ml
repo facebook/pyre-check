@@ -34,7 +34,10 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
     let description error =
       Error.instantiate
         error
-        ~lookup:(AstEnvironment.ReadOnly.get_relative (AstEnvironment.read_only ast_environment))
+        ~lookup:
+          (AstEnvironment.ReadOnly.get_real_path_relative
+             ~configuration
+             (AstEnvironment.read_only ast_environment))
       |> Error.Instantiated.description ~show_error_traces:false ~concise:false
     in
     Server.IncrementalCheck.recheck ~state ~configuration paths

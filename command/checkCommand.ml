@@ -94,7 +94,10 @@ let run_check
       let ast_environment = Analysis.Environment.ast_environment environment in
       List.map
         errors
-        ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+        ~f:
+          (Error.instantiate
+             ~lookup:
+               (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
     Yojson.Safe.to_string
       (`Assoc

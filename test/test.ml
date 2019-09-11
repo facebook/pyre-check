@@ -1544,7 +1544,10 @@ let assert_errors
       in
       check ~configuration ~environment ~source
       |> List.map
-           ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+           ~f:
+             (Error.instantiate
+                ~lookup:
+                  (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
     let errors_with_any_location =
       List.filter_map errors ~f:(fun error ->

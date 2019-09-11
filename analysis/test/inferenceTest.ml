@@ -166,7 +166,10 @@ let assert_infer
     let ast_environment = Environment.ast_environment environment in
     Inference.run ~configuration ~environment ~source
     |> List.map
-         ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+         ~f:
+           (Error.instantiate
+              ~lookup:
+                (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
   in
   let fields_of_error error =
     let field_of_error field =

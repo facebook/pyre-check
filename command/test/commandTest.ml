@@ -66,7 +66,10 @@ let make_errors ~context ?(handle = "test.py") source =
   let configuration = ScratchProject.configuration_of project in
   let ast_environment = Environment.ast_environment environment in
   TypeCheck.run ~configuration ~environment ~source
-  |> List.map ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+  |> List.map
+       ~f:
+         (Error.instantiate
+            ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
 
 
 let run_command_tests test_category tests =

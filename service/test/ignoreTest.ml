@@ -22,7 +22,10 @@ let ignore_lines_test context =
       let ast_environment = Environment.ast_environment environment in
       Service.Check.analyze_sources ~scheduler ~configuration ~environment sources
       |> List.map ~f:(fun error ->
-             Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) error
+             Error.instantiate
+               ~lookup:
+                 (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
+               error
              |> Error.Instantiated.description ~show_error_traces)
     in
     let description_list_to_string descriptions =

@@ -60,7 +60,8 @@ let assert_errors
     |> List.map ~f:(fun error ->
            Analysis.Error.instantiate
              ~lookup:
-               (Analysis.AstEnvironment.ReadOnly.get_relative
+               (Analysis.AstEnvironment.ReadOnly.get_real_path_relative
+                  ~configuration
                   (Analysis.AstEnvironment.read_only ast_environment))
              error
            |> Analysis.Error.Instantiated.description ~show_error_traces:false)

@@ -43,7 +43,8 @@ let run_additional_check ~configuration ~scheduler ~environment ~source_paths ~c
       |> List.map
            ~f:
              (Analysis.Error.instantiate
-                ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+                ~lookup:
+                  (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
   | None ->
       Log.warning "No check corresponding to `%s` found." check;
       []
