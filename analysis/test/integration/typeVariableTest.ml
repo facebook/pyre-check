@@ -173,6 +173,20 @@ let test_check_unbounded_variables context =
       "Revealed type [-1]: Revealed type for `i` is `Union[typing.Tuple[int, bool], \
        typing.Tuple[str, None]]`.";
     ];
+  assert_type_errors
+    {|
+    from typing import Callable, TypeVar
+    T = TypeVar("T")
+    class CallMe:
+      def __call__(self, x: int) -> str:
+        return "A"
+    def foo(f: Callable[[int], T]) -> T:
+      return f(1)
+    def bar() -> None:
+      x = foo(CallMe())
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `str`."];
   ()
 
 

@@ -505,14 +505,6 @@ let connect_definition
       SharedMemoryClassHierarchyHandler.connect ~predecessor ~successor ~parameters
   in
   let primitive = Reference.show name in
-  ( match Annotated.Class.inferred_callable_type annotated ~resolution with
-  | Some callable ->
-      connect
-        ~predecessor:primitive
-        ~successor:"typing.Callable"
-        ~parameters:(Concrete [Type.Callable callable])
-  | None -> () );
-
   (* Register normal annotations. *)
   let register_supertype { Expression.Call.Argument.value; _ } =
     let value = Expression.delocalize value in

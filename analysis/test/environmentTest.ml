@@ -713,7 +713,7 @@ let test_connect_type_order context =
   Environment.connect_annotations_to_object environment all_annotations;
   assert_successors "C" ["object"];
   assert_successors "D" ["C"; "object"];
-  assert_successors "CallMe" ["typing.Callable"; "object"]
+  assert_successors "CallMe" ["object"]
 
 
 let test_populate context =
@@ -987,21 +987,7 @@ let test_populate context =
         );
       ]
   in
-  let type_parameters annotation =
-    match annotation with
-    | "typing.Callable" ->
-        Type.OrderedTypes.Concrete
-          [
-            parse_single_expression "typing.Callable('test.CallMe.__call__')[[Named(x, int)], str]"
-            |> Type.create ~aliases:(fun _ -> None);
-          ]
-    | _ -> Type.OrderedTypes.Concrete []
-  in
-  assert_superclasses
-    ~superclass_parameters:type_parameters
-    ~environment
-    "test.CallMe"
-    ~superclasses:["typing.Callable"];
+  assert_superclasses ~environment "test.CallMe" ~superclasses:["object"];
   ();
   let environment = populate ~context ["test.py", {|
       def foo(x: int) -> str: ...

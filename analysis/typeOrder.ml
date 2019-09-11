@@ -78,7 +78,7 @@ module type FullOrderTypeWithoutT = sig
   val instantiate_protocol_parameters
     :  order ->
     candidate:Type.t ->
-    protocol:Ast.Identifier.t ->
+    protocol:Identifier.t ->
     Type.OrderedTypes.t option
 
   val solve_ordered_types_less_or_equal
@@ -100,6 +100,23 @@ module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with
 module OrderImplementation = struct
   module Make (OrderedConstraints : OrderedConstraintsType) = struct
     type t = order
+
+    let get_dunder_call_method { attributes; protocol_assumptions; _ } annotation =
+      let find_call = function
+        | {
+            Node.value =
+              {
+                AnnotatedAttribute.name = "__call__";
+                annotation = { annotation = Type.Callable _ as annotation; _ };
+                _;
+              };
+            _;
+          } ->
+            Some annotation
+        | _ -> None
+      in
+      attributes annotation ~protocol_assumptions >>= List.find_map ~f:find_call
+
 
     (* TODO(T40105833): merge this with actual signature select *)
     let rec simulate_signature_select
@@ -618,15 +635,10 @@ module OrderImplementation = struct
           |> constructor ~protocol_assumptions
           >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
           |> Option.value ~default:[]
-      | left, Type.Callable _ -> (
-          let joined =
-            join order (Type.parametric "typing.Callable" (Concrete [Type.Bottom])) left
-          in
-          match joined with
-          | Type.Parametric { name; parameters = Concrete [left] }
-            when Identifier.equal name "typing.Callable" ->
-              solve_less_or_equal order ~constraints ~left ~right
-          | _ -> [] )
+      | left, Type.Callable _ ->
+          get_dunder_call_method order left
+          >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
+          |> Option.value ~default:[]
       | Type.Callable _, _ -> []
       | Type.TypedDictionary left, Type.TypedDictionary right ->
           let field_not_found field =
@@ -1140,14 +1152,9 @@ module OrderImplementation = struct
         | Type.Callable callable, other
         | other, Type.Callable callable ->
             let default =
-              let other =
-                join order (Type.parametric "typing.Callable" (Concrete [Type.Bottom])) other
-              in
-              match other with
-              | Type.Parametric { name; parameters = Concrete [other_callable] }
-                when Identifier.equal name "typing.Callable" ->
-                  join order (Type.Callable callable) other_callable
-              | _ -> Type.union [left; right]
+              match get_dunder_call_method order other with
+              | Some other_callable -> join order other_callable (Type.Callable callable)
+              | None -> Type.union [left; right]
             in
             Option.some_if (Type.is_meta other) other
             >>= constructor ~protocol_assumptions

@@ -81,12 +81,16 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) ha
     }
 
 
-let join ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
+let join
+    ?(constructor = fun _ ~protocol_assumptions:_ -> None)
+    ?(attributes = fun _ ~protocol_assumptions:_ -> None)
+    handler
+  =
   join
     {
       handler;
       constructor;
-      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      attributes;
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty;
@@ -675,24 +679,6 @@ let test_less_or_equal context =
 
     concrete_connect
       order
-      ~parameters:[parse_callable "typing.Callable[[float], str]"]
-      ~predecessor:"FloatToStrCallable"
-      ~successor:"typing.Callable";
-    let callable =
-      let aliases = function
-        | "_T" -> Some (Type.variable "_T")
-        | _ -> None
-      in
-      let aliases = create_type_alias_table aliases in
-      parse_callable ~aliases "typing.Callable[[_T], str]"
-    in
-    concrete_connect
-      order
-      ~parameters:[callable]
-      ~predecessor:"ParametricCallableToStr"
-      ~successor:"typing.Callable";
-    concrete_connect
-      order
       ~parameters:[Type.variable "_T"]
       ~predecessor:"ParametricCallableToStr"
       ~successor:"typing.Generic";
@@ -881,9 +867,38 @@ let test_less_or_equal context =
                ~constraints:(Type.Variable.Explicit [Type.integer; Type.bool]))
       | _ -> None
     in
+    let attributes annotation ~protocol_assumptions:_ =
+      let parse_annotation =
+        let aliases = function
+          | "_T" -> Some (Type.variable "_T")
+          | _ -> None
+        in
+        let aliases = create_type_alias_table aliases in
+        parse_callable ~aliases
+      in
+      match annotation with
+      | Type.Primitive "FloatToStrCallable" ->
+          Some
+            (parse_attributes
+               ~parse_annotation
+               ~class_name:"MatchesProtocol"
+               ["__call__", "typing.Callable[[float], str]"])
+      | Type.Parametric
+          { name = "ParametricCallableToStr"; parameters = Concrete [Primitive parameter] } ->
+          let callable = Format.sprintf "typing.Callable[[%s], str]" parameter in
+          Some
+            (parse_attributes
+               ~parse_annotation
+               ~class_name:"MatchesProtocol"
+               ["__call__", callable])
+      | annotation -> (
+        match attributes with
+        | Some attributes -> attributes annotation
+        | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation) )
+    in
     let aliases = create_type_alias_table aliases in
     less_or_equal
-      ?attributes
+      ~attributes
       ?is_protocol
       order
       ~left:(parse_callable ~aliases left)
@@ -1165,7 +1180,7 @@ let test_less_or_equal context =
         true
     | _ -> false
   in
-  let attributes annotation ~protocol_assumptions:_ =
+  let attributes annotation =
     match annotation with
     | Type.Primitive "MatchesProtocol" ->
         Some
@@ -1632,9 +1647,35 @@ let test_join context =
       else
         parse_single_expression source |> Type.create ~aliases
     in
+    let attributes annotation ~protocol_assumptions:_ =
+      let parse_annotation =
+        let aliases = function
+          | "_T" -> Some (Type.variable "_T")
+          | _ -> None
+        in
+        let aliases = create_type_alias_table aliases in
+        parse_callable ~aliases
+      in
+      match annotation with
+      | Type.Primitive "CallableClass" ->
+          Some
+            (parse_attributes
+               ~parse_annotation
+               ~class_name:"MatchesProtocol"
+               ["__call__", "typing.Callable[[int], str]"])
+      | Type.Parametric
+          { name = "ParametricCallableToStr"; parameters = Concrete [Primitive parameter] } ->
+          let callable = Format.sprintf "typing.Callable[[%s], str]" parameter in
+          Some
+            (parse_attributes
+               ~parse_annotation
+               ~class_name:"MatchesProtocol"
+               ["__call__", callable])
+      | annotation -> failwith ("getting attributes for wrong class" ^ Type.show annotation)
+    in
     assert_type_equal
       (parse_annotation expected)
-      (join order (parse_annotation left) (parse_annotation right))
+      (join ~attributes order (parse_annotation left) (parse_annotation right))
   in
   (* Primitive types. *)
   assert_join "list" "typing.Sized" "typing.Sized";
@@ -1762,24 +1803,6 @@ let test_join context =
       ~successor:"typing.Generic"
       ~parameters:[Type.variable "_T"];
 
-    concrete_connect
-      order
-      ~parameters:[parse_callable "typing.Callable[[int], str]"]
-      ~predecessor:"CallableClass"
-      ~successor:"typing.Callable";
-    let callable =
-      let aliases = function
-        | "_T" -> Some (Type.variable "_T")
-        | _ -> None
-      in
-      let aliases = create_type_alias_table aliases in
-      parse_callable ~aliases "typing.Callable[[_T], str]"
-    in
-    concrete_connect
-      order
-      ~parameters:[callable]
-      ~predecessor:"ParametricCallableToStr"
-      ~successor:"typing.Callable";
     concrete_connect
       order
       ~parameters:[Type.variable "_T"]
