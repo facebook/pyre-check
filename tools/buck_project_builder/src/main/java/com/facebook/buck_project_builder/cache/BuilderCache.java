@@ -68,7 +68,7 @@ public final class BuilderCache {
     try (FileReader reader = new FileReader(cacheJson)) {
       return readFromCache(reader);
     } catch (IOException exception) {
-      SimpleLogger.warning("Buck builder cache is not found. Rebuilding everything...");
+      SimpleLogger.warning("Buck builder cache not found. Rebuilding everything...");
       // Return a cache that will invalidate everything.
       return new BuilderCache();
     }

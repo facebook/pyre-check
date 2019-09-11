@@ -99,6 +99,6 @@ def perform_handshake(
             client_handshake = LanguageServerProtocolMessage(method="handshake/client")
             write_message(output_file, client_handshake)
         else:
-            raise ValueError("Handshake parameters from server is not found.")
+            raise ValueError("Handshake parameters from server not found.")
     else:
         raise ValueError("Handshake from server was malformed.")

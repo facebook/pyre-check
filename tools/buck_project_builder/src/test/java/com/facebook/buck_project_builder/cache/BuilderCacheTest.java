@@ -32,7 +32,7 @@ public class BuilderCacheTest {
   public void cacheReadWriteTest() {
     // Use a broken reader to simulate bad cache.
     assertEquals(
-        "Expect empty cache if cache is not found.",
+        "Expect empty cache if cache not found.",
         new BuilderCache(),
         BuilderCache.readFromCache(
             new Reader() {
