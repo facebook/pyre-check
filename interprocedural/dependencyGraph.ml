@@ -22,24 +22,46 @@ let empty_callgraph = Callable.RealMap.empty
 let empty_overrides = Reference.Map.empty
 
 let type_checking_callgraph
+    ~resolution
     dependencies
     ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
   =
   let module Callgraph = Analysis.Dependencies.Callgraph in
+  let create_target method_name =
+    if DependencyGraphSharedMemory.overrides_exist method_name then
+      Callable.create_override method_name
+    else
+      Callable.create_method method_name
+  in
   let callees = function
-    | Callgraph.Function name -> Callable.create_function name
-    | Callgraph.Method { direct_target; dispatch = Dynamic; _ } ->
-        if DependencyGraphSharedMemory.overrides_exist direct_target then
-          Callable.create_override direct_target
-        else
-          Callable.create_method direct_target
+    | Callgraph.Function name -> [Callable.create_function name]
+    | Callgraph.Method { direct_target; class_name; dispatch = Dynamic; _ } ->
+        let override_targets =
+          match DependencyGraphSharedMemory.get_overriding_types ~member:direct_target with
+          | None -> []
+          | Some overriding_types ->
+              (* We want to ensure that we don't pick up on unrelated overrides, i.e. classes that
+                 subclass the direct target's parent but not the class being called from. *)
+              let keep_subtypes candidate =
+                let candidate_type = GlobalResolution.parse_reference resolution candidate in
+                GlobalResolution.less_or_equal
+                  resolution
+                  ~left:candidate_type
+                  ~right:(GlobalResolution.parse_reference resolution class_name)
+              in
+              List.filter overriding_types ~f:keep_subtypes
+              |> List.map ~f:(fun overriding_type ->
+                     create_target
+                       (Reference.create ~prefix:overriding_type (Reference.last direct_target)))
+        in
+        Callable.create_method direct_target :: override_targets
     | Callgraph.Method { direct_target; dispatch = Static; _ } ->
-        Callable.create_method direct_target
+        [Callable.create_method direct_target]
   in
   let callees =
     Callgraph.get ~caller:name
     |> List.map ~f:(fun { Dependencies.Callgraph.callee; _ } -> callee)
-    |> List.map ~f:callees
+    |> List.concat_map ~f:callees
   in
   Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees
 
@@ -94,7 +116,8 @@ let create_callgraph ?(use_type_checking_callgraph = false) ~environment ~source
   in
   let fold_defines =
     if use_type_checking_callgraph then
-      type_checking_callgraph
+      let global_resolution = Environment.resolution environment () in
+      type_checking_callgraph ~resolution:global_resolution
     else
       fold_defines
   in

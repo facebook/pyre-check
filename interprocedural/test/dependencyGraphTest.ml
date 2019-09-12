@@ -36,6 +36,13 @@ let create_call_graph
     setup ~update_environment_with ~context ~handle:"test.py" source_text
   in
   let errors = TypeCheck.run ~configuration ~environment ~source in
+  let record_overrides overrides =
+    let record_override_edge ~key:member ~data:subtypes =
+      DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
+    in
+    Reference.Map.iteri overrides ~f:record_override_edge
+  in
+  DependencyGraph.create_overrides ~environment ~source |> record_overrides;
   if not (List.is_empty errors) then
     Format.asprintf
       "Type errors in %s\n%a"
@@ -49,14 +56,20 @@ let create_call_graph
 let create_callable = function
   | `Function name -> !&name |> Callable.create_function
   | `Method name -> !&name |> Callable.create_method
+  | `Override name -> !&name |> Callable.create_override
 
 
 let compare_dependency_graph call_graph ~expected =
   let expected =
     let map_callee_callers (callee, callers) =
-      create_callable callee, List.map callers ~f:create_callable
+      ( create_callable callee,
+        List.map callers ~f:create_callable |> List.sort ~compare:Callable.compare )
     in
     List.map expected ~f:map_callee_callers
+  in
+  let call_graph =
+    List.map call_graph ~f:(fun (callee, callers) ->
+        callee, List.sort callers ~compare:Callable.compare)
   in
   let printer call_graph =
     Sexp.to_string [%message (call_graph : (Callable.t * Callable.t list) list)]
@@ -165,7 +178,53 @@ let test_construction context =
        def call_foo(c: C) -> None:
          c.foo()
     |}
-    ~expected:[`Function "test.call_foo", [`Method "test.Base.foo"]]
+    ~expected:[`Function "test.call_foo", [`Method "test.Base.foo"]];
+  assert_call_graph
+    {|
+       class Base:
+         def foo(self) -> None: ...
+       class C(Base):
+         pass
+       class D(C):
+         def foo(self) -> None: ...
+       class E(C):
+         pass
+       def call_foo(c: C) -> None:
+         c.foo()
+    |}
+    ~expected:[`Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"]];
+
+  (* Ensure that we don't include UnrelatedToC.foo here. *)
+  assert_call_graph
+    {|
+       class Base:
+         def foo(self) -> None: ...
+       class C(Base):
+         pass
+       class D(C):
+         def foo(self) -> None: ...
+       class UnrelatedToC(Base):
+         def foo(self) -> None: ...
+       def call_foo(c: C) -> None:
+         c.foo()
+    |}
+    ~expected:[`Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"]];
+
+  (* We only dereference overrides by one level. *)
+  assert_call_graph
+    {|
+       class Base:
+         def foo(self) -> None: ...
+       class C(Base):
+         pass
+       class Child(C):
+         def foo(self) -> None: ...
+       class Grandchild(Child):
+         def foo(self) -> None: ...
+       def call_foo(c: C) -> None:
+         c.foo()
+    |}
+    ~expected:[`Function "test.call_foo", [`Override "test.Child.foo"; `Method "test.Base.foo"]]
 
 
 let test_construction_reverse context =
