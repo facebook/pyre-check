@@ -432,10 +432,7 @@ let test_check_init context =
         def __init__(self) -> None:
            pass
       |}
-    [
-      "Uninitialized attribute [13]: Attribute `foo` is declared in class `A` to have type `int` \
-       but is never initialized.";
-    ];
+    [];
   assert_type_errors
     {|
       from abc import ABCMeta

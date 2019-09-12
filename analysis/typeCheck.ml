@@ -358,7 +358,8 @@ module State (Context : Context) = struct
                       Reference.create_from_list [StatementDefine.self_identifier define; name]
                     in
                     if
-                      Map.mem (Resolution.annotations resolution) reference
+                      ( Map.mem (Resolution.annotations resolution) reference
+                      || AnnotatedClass.is_abstract definition )
                       && not (StatementDefine.is_class_toplevel define)
                     then
                       errors
@@ -535,21 +536,24 @@ module State (Context : Context) = struct
                   ~resolution:global_resolution
                   definition
               in
-              let add_to_map sofar { Node.value = { AnnotatedAttribute.name; _ } as attribute; _ } =
-                match String.Map.add sofar ~key:name ~data:attribute with
-                | `Ok map -> map
-                | `Duplicate -> sofar
-              in
               if is_class_type definition then
-                let implicitly_initialized name =
-                  Identifier.SerializableMap.mem
-                    name
-                    (AnnotatedClass.implicit_attributes definition)
-                in
                 let is_not_initialized
                     { Node.value = { AnnotatedAttribute.name; initialized; _ }; _ }
                   =
+                  let implicitly_initialized name =
+                    Identifier.SerializableMap.mem
+                      name
+                      (AnnotatedClass.implicit_attributes definition)
+                  in
                   (not initialized) && not (implicitly_initialized name)
+                in
+                let add_to_map
+                    sofar
+                    { Node.value = { AnnotatedAttribute.name; _ } as attribute; _ }
+                  =
+                  match String.Map.add sofar ~key:name ~data:attribute with
+                  | `Ok map -> map
+                  | `Duplicate -> sofar
                 in
                 List.filter attributes ~f:is_not_initialized |> List.fold ~init:sofar ~f:add_to_map
               else
