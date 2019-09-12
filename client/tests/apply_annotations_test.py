@@ -453,3 +453,20 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 pass
             """,
         )
+
+        self.assert_annotations(
+            """
+            def foo(x: django.http.response.HttpResponse) -> str:
+                pass
+            """,
+            """
+            def foo(x) -> str:
+                pass
+            """,
+            """
+            from django.http.response import HttpResponse
+
+            def foo(x: HttpResponse) -> str:
+                pass
+            """,
+        )

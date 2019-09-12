@@ -83,8 +83,9 @@ class TypeCollector(cst.CSTVisitor):
             # pyre-fixme[6]: Expected `CSTNode` for 1st param but got
             #  `Optional[Annotation]`.
             return_annotation = self._create_import_from_annotation(node.returns)
+            parameter_annotations = self._import_parameter_annotations(node.params)
             self.function_annotations[".".join(self.qualifier)] = FunctionAnnotation(
-                parameters=node.params, returns=return_annotation
+                parameters=parameter_annotations, returns=return_annotation
             )
         # pyi files don't support inner functions, return False to stop the traversal.
         return False
@@ -183,6 +184,25 @@ class TypeCollector(cst.CSTVisitor):
             for name in names:
                 if not _is_in_list(import_statement.names, name):
                     import_statement.names.append(name)
+
+    def _import_parameter_annotations(
+        self, parameters: cst.Parameters
+    ) -> cst.Parameters:
+        def update_annotations(parameters: Sequence[cst.Param]) -> List[cst.Param]:
+            updated_parameters = []
+            for parameter in list(parameters):
+                annotation = parameter.annotation
+                if annotation is not None:
+                    parameter = parameter.with_changes(
+                        annotation=self._create_import_from_annotation(annotation)
+                    )
+                updated_parameters.append(parameter)
+            return updated_parameters
+
+        return parameters.with_changes(
+            params=update_annotations(parameters.params),
+            default_params=update_annotations(parameters.default_params),
+        )
 
 
 class TypeTransformer(cst.CSTTransformer):
