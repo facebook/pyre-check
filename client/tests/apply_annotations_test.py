@@ -223,9 +223,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
         self.assert_annotations(
             """
-            from typing import Any
-
-            a: Dict[Any, Any] = ...
+            a: Dict[str, int] = ...
             """,
             """
             def foo() -> int:
@@ -234,11 +232,9 @@ class ApplyAnnotationsTest(unittest.TestCase):
             a['x'] = foo()
             """,
             """
-            from typing import Any
-
             def foo() -> int:
                 return 1
-            a: Dict[Any, Any] = {}
+            a: Dict[str, int] = {}
             a['x'] = foo()
             """,
         )
@@ -433,6 +429,27 @@ class ApplyAnnotationsTest(unittest.TestCase):
             """,
             """
             def foo(x: str) -> str:
+                pass
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            def foo(x: int)-> Union[
+                Coroutine[Any, Any, django.http.response.HttpResponse], str
+            ]:
+                ...
+            """,
+            """
+            def foo(x: int):
+                pass
+            """,
+            """
+            from django.http.response import HttpResponse
+
+            def foo(x: int) -> Union[
+                Coroutine[Any, Any, HttpResponse], str
+            ]:
                 pass
             """,
         )

@@ -5,19 +5,28 @@
 
 # pyre-strict
 
-from typing import IO, Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import (
+    IO,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 
 import libcst as cst
 
 
-def _get_attribute_as_string(attribute: Union[cst.Attribute, cst.Name]) -> str:
+def _get_attribute_as_string(attribute: cst.BaseExpression) -> str:
     names = []
     while isinstance(attribute, cst.Attribute):
         # pyre-fixme[16]: `BaseExpression` has no attribute `value`.
         if isinstance(attribute.value.value, cst.Attribute):
             value = _get_attribute_as_string(
-                # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 1st param but
-                #  got `BaseExpression`.
                 cst.ensure_type(attribute.value, cst.Attribute).value
             )
         else:
@@ -104,17 +113,28 @@ class TypeCollector(cst.CSTVisitor):
         self._add_to_imports(node.names, cst.Name(module.value), module.value)
 
     def _add_annotation_to_imports(self, annotation: cst.Attribute) -> cst.Name:
-        # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 1st param but got
-        #  `BaseExpression`.
         key = _get_attribute_as_string(annotation.value)
         self._add_to_imports(
-            [cst.ImportAlias(name=annotation.attr)],
-            # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 2nd param but got
-            #  `BaseExpression`.
-            annotation.value,
-            key,
+            [cst.ImportAlias(name=annotation.attr)], annotation.value, key
         )
         return annotation.attr
+
+    @overload
+    def _handle_Index(self, slice: cst.Index, node: cst.Subscript) -> cst.Subscript:
+        pass
+
+    def _handle_Index(  # noqa
+        self, slice: cst.Index, node: cst.BaseExpression
+    ) -> cst.BaseExpression:
+        value = slice.value
+        if isinstance(value, cst.Subscript):
+            new_slice = slice.with_changes(value=self._handle_Subscript(value))
+            return node.with_changes(slice=new_slice)
+        elif isinstance(value, cst.Attribute):
+            new_slice = slice.with_changes(value=self._add_annotation_to_imports(value))
+            return node.with_changes(slice=new_slice)
+        else:
+            return node
 
     def _handle_Subscript(self, node: cst.Subscript) -> cst.Subscript:
         slice = node.slice
@@ -127,20 +147,17 @@ class TypeCollector(cst.CSTVisitor):
                     new_index = item.slice.with_changes(value=name)
                     new_slice.append(item.with_changes(slice=new_index))
                 else:
+                    if isinstance(item.slice, cst.Index) and not isinstance(
+                        item.slice.value, cst.Name
+                    ):
+                        new_index = item.slice.with_changes(
+                            value=self._handle_Index(item.slice, item)
+                        )
+                        item = item.with_changes(slice=new_index, comma=None)
                     new_slice.append(item)
             return node.with_changes(slice=new_slice)
         elif isinstance(slice, cst.Index):
-            value = slice.value
-            if isinstance(value, cst.Subscript):
-                new_slice = slice.with_changes(value=self._handle_Subscript(value))
-                return node.with_changes(slice=new_slice)
-            elif isinstance(value, cst.Attribute):
-                new_slice = slice.with_changes(
-                    value=self._add_annotation_to_imports(value)
-                )
-                return node.with_changes(slice=new_slice)
-            else:
-                return node
+            return self._handle_Index(slice, node)
         else:
             return node
 
@@ -155,9 +172,11 @@ class TypeCollector(cst.CSTVisitor):
             return returns
 
     def _add_to_imports(
-        self, names: List[cst.CSTNode], module: Union[cst.Name, cst.Attribute], key: str
+        self, names: List[cst.CSTNode], module: cst.BaseExpression, key: str
     ) -> None:
         if key not in self.imports:
+            # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 2nd param but got
+            #  `BaseExpression`.
             self.imports[key] = ImportStatement(names=names, module=module)
         else:
             import_statement = self.imports[key]
