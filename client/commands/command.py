@@ -235,7 +235,7 @@ class Command:
         def limit_memory_usage() -> None:
             try:
                 limit = 20 * 1024 * 1024 * 1024  # 20 GB
-                resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+                resource.setrlimit(resource.RLIMIT_DATA, (limit, limit))
             except OSError:
                 # Run the process with unlimited memory if the underlying syscall fails.
                 pass
