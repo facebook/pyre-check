@@ -1976,6 +1976,23 @@ let test_calls context =
             };
         ] );
     ];
+  assert_calls
+    {|
+      class Foo:
+        @property
+        def x(self) -> int: ...
+        @x.setter
+        def x(self, item: int) -> None: ...
+      def call_property_setter(foo: Foo) -> None:
+        foo.x = 1
+    |}
+    [
+      ( "qualifier.call_property_setter",
+        [
+          `Method
+            { direct_target = "qualifier.Foo.x"; class_name = "qualifier.Foo"; dispatch = Dynamic };
+        ] );
+    ];
 
   (* Don't attempt to register calls for non-property attribute accesses. *)
   assert_calls

@@ -3364,6 +3364,8 @@ module State (Context : Context) = struct
           | None -> value_is_type
           | Some annotation -> Type.is_type_alias annotation || Type.is_meta annotation
         in
+        (* Ensure that we actually visit the target and resolve any property calls. *)
+        let _ = forward_expression ~state ~expression:target in
         let state, resolved =
           let { state = { resolution; _ } as new_state; resolved; _ } =
             forward_expression ~state ~expression:value
