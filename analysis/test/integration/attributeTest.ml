@@ -9,7 +9,6 @@ open IntegrationTest
 
 let test_check_attributes context =
   let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
   let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
@@ -68,17 +67,6 @@ let test_check_attributes context =
       ^ "has type `int` but is used as type `None`.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
     ];
-  assert_strict_type_errors
-    {|
-      class Bar:
-        def bar(self) -> None:
-          pass
-      class Foo:
-        bar: typing.Optional[Bar] = None
-        def foo(self) -> None:
-          self.bar.bar()
-    |}
-    ["Undefined attribute [16]: Optional type has no attribute `bar`."];
   assert_type_errors {|
       a = str
       b = 1
@@ -95,30 +83,6 @@ let test_check_attributes context =
        is specified.";
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `None` but no type \
        is specified.";
-    ];
-  assert_strict_type_errors
-    {|
-      class Foo:
-        a = None
-        def __init__(self) -> None:
-          self.a = 1
-    |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
-       is specified.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `None` but no type \
-       is specified.";
-    ];
-  assert_strict_type_errors
-    {|
-      class Foo:
-        a = "string"
-        def __init__(self) -> None:
-          self.a = 1
-    |}
-    [
-      "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `str` "
-      ^ "but is used as type `int`.";
     ];
   assert_type_errors
     ~show_error_traces:true
@@ -201,39 +165,6 @@ let test_check_attributes context =
        `typing.Any` but is never initialized.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
-
-  (* Annotations containing `Any` in strict are not permitted. *)
-  assert_type_errors
-    {|
-      class Foo:
-        bar: typing.Any
-        def foo(self) -> int:
-          self.bar = 'foo'
-          self.bar = 1
-          return self.bar
-    |}
-    [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
-       than `Any`.";
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type \
-       `typing.Union[int, str]` but type `Any` is specified.";
-      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
-       `typing.Any` but is never initialized.";
-    ];
-
-  (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference errors
-     are thrown in debug that are filtered away in strict. *)
-  assert_strict_type_errors
-    {|
-      MyType = typing.Any
-      class Foo:
-        bar: MyType
-        def foo(self) -> int:
-          self.bar = 'foo'
-          self.bar = 1
-          return self.bar
-    |}
-    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
   assert_type_errors
     {|
       class Foo:
@@ -573,30 +504,6 @@ let test_check_attributes context =
     |}
     [];
 
-  (* Check for class definitions that conflict with imports *)
-  assert_type_errors
-    ~handle:"test.py"
-    ~update_environment_with:[{ handle = "foo.py"; source = "class Bar: pass" }]
-    {|
-      from foo import Bar
-      class Bar: pass
-    |}
-    ["Redefined class [50]: Class `Bar` conflicts with an imported class."];
-
-  (* Any has all attributes in default mode, but not strict mode. *)
-  assert_strict_type_errors
-    {|
-      def foo(any: typing.Any) -> int:
-        return any.attribute
-    |}
-    ["Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`."];
-  assert_default_type_errors
-    {|
-      def foo(any: typing.Any) -> int:
-        return any.attribute
-    |}
-    [];
-
   (* Things that inherit from any have all attributes *)
   assert_strict_type_errors
     {|
@@ -637,109 +544,6 @@ let test_check_attributes context =
       ^ "`int` but is used as type `unknown`.";
     ];
 
-  (* Check attribute type variable resolution. *)
-  assert_type_errors
-    {|
-      _VALUE = typing.TypeVar('_VALUE')
-      class Wrapper(typing.Generic[_VALUE]):
-        value: _VALUE
-
-      def bar(wrapper: Wrapper[int]) -> int:
-        return wrapper.value
-    |}
-    [
-      "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have "
-      ^ "type `Variable[_VALUE]` but is never initialized.";
-    ];
-  assert_type_errors
-    {|
-      _VALUE = typing.TypeVar('_VALUE')
-      class Wrapper(typing.Generic[_VALUE]):
-        value: _VALUE
-
-      class WrapperSubclass(Wrapper[int]):
-        pass
-
-      def bar(wrapper: WrapperSubclass) -> int:
-        return wrapper.value
-    |}
-    [
-      "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have "
-      ^ "type `Variable[_VALUE]` but is never initialized.";
-    ];
-  assert_type_errors
-    {|
-      _T = typing.TypeVar('_T')
-      class ReturnSelf(typing.Generic[_T]):
-        def f(self) -> ReturnSelf[_T]:
-          return self
-    |}
-    [];
-  assert_type_errors
-    {|
-      _T = typing.TypeVar('_T')
-      class ReturnClass(typing.Generic[_T]):
-        @classmethod
-        def f(cls) -> ReturnClass[_T]:
-          return cls
-    |}
-    [
-      "Incompatible return type [7]: Expected `ReturnClass[Variable[_T]]` but got \
-       `typing.Type[ReturnClass[Variable[_T]]]`.";
-    ];
-  assert_type_errors
-    {|
-      _T = typing.TypeVar('_T')
-      class Class:
-        @property
-        def property(self: _T) -> typing.Sequence[_T]: ...
-      def foo(c: Class) -> typing.Sequence[Class]:
-        return c.property
-    |}
-    [];
-  assert_type_errors
-    {|
-      _T = typing.TypeVar('_T')
-      class Class(typing.Generic[_T]):
-        @property
-        def property(self) -> _T: ...
-      def foo(c: Class[int]) -> int:
-        return c.property
-    |}
-    [];
-  assert_type_errors
-    {|
-      _T = typing.TypeVar('_T')
-      class A:
-        @property
-        def property(self: _T) -> _T: ...
-      class B(A):
-        def foo(self) -> None:
-          reveal_type(self.property)
-    |}
-    ["Revealed type [-1]: Revealed type for `self.property` is `B`."];
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T')
-      def f(t: typing.Type[T]) -> None:
-        a = t()
-    |}
-    [];
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T', bound=int)
-      def f(t: typing.Type[T]) -> None:
-        a = t()
-    |}
-    [];
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T', int)
-      def f(t: typing.Type[T]) -> None:
-        a = t()
-    |}
-    [];
-
   (* Do not resolve optional attributes to the optional type. *)
   assert_type_errors
     {|
@@ -753,6 +557,19 @@ let test_check_attributes context =
       "Undefined attribute [16]: Optional type has no attribute `debug`.";
     ];
 
+  (* Check for class definitions that conflict with imports *)
+  assert_type_errors
+    ~handle:"test.py"
+    ~update_environment_with:[{ handle = "foo.py"; source = "class Bar: pass" }]
+    {|
+      from foo import Bar
+      class Bar: pass
+    |}
+    ["Redefined class [50]: Class `Bar` conflicts with an imported class."]
+
+
+let test_attribute_decorators context =
+  let assert_type_errors = assert_type_errors ~context in
   (* Attributes defined with property decorators. *)
   assert_type_errors
     {|
@@ -829,6 +646,108 @@ let test_check_attributes context =
     [
       "Missing global annotation [5]: Globally accessible variable `__property__` "
       ^ "must be specified as type other than `Any`.";
+    ]
+
+
+let test_attribute_strict context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  (* Annotations containing `Any` in strict are not permitted. *)
+  assert_type_errors
+    {|
+      class Foo:
+        bar: typing.Any
+        def foo(self) -> int:
+          self.bar = 'foo'
+          self.bar = 1
+          return self.bar
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
+       than `Any`.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type \
+       `typing.Union[int, str]` but type `Any` is specified.";
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
+       `typing.Any` but is never initialized.";
+    ];
+
+  (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference errors
+     are thrown in debug that are filtered away in strict. *)
+  assert_strict_type_errors
+    {|
+      MyType = typing.Any
+      class Foo:
+        bar: MyType
+        def foo(self) -> int:
+          self.bar = 'foo'
+          self.bar = 1
+          return self.bar
+    |}
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
+
+  assert_strict_type_errors
+    {|
+      class Foo:
+        a = None
+        def __init__(self) -> None:
+          self.a = 1
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
+       is specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `None` but no type \
+       is specified.";
+    ];
+  assert_strict_type_errors
+    {|
+      class Foo:
+        a = "string"
+        def __init__(self) -> None:
+          self.a = 1
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `str` "
+      ^ "but is used as type `int`.";
+    ];
+  assert_strict_type_errors
+    {|
+      class Bar:
+        def bar(self) -> None:
+          pass
+      class Foo:
+        bar: typing.Optional[Bar] = None
+        def foo(self) -> None:
+          self.bar.bar()
+    |}
+    ["Undefined attribute [16]: Optional type has no attribute `bar`."];
+
+  (* Any has all attributes in default mode, but not strict mode. *)
+  assert_strict_type_errors
+    {|
+      def foo(any: typing.Any) -> int:
+        return any.attribute
+    |}
+    ["Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`."];
+  assert_default_type_errors
+    {|
+      def foo(any: typing.Any) -> int:
+        return any.attribute
+    |}
+    []
+
+
+let test_check_attribute_initialization context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+        class Foo:
+          a: int
+        Foo.a = 1
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have "
+      ^ "type `int` but is never initialized.";
     ]
 
 
@@ -994,6 +913,112 @@ let test_check_missing_attribute context =
     |} []
 
 
+let test_attribute_type_variable_resolution context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* Check attribute type variable resolution. *)
+  assert_type_errors
+    {|
+    _VALUE = typing.TypeVar('_VALUE')
+    class Wrapper(typing.Generic[_VALUE]):
+      value: _VALUE
+
+    def bar(wrapper: Wrapper[int]) -> int:
+      return wrapper.value
+  |}
+    [
+      "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have "
+      ^ "type `Variable[_VALUE]` but is never initialized.";
+    ];
+  assert_type_errors
+    {|
+    _VALUE = typing.TypeVar('_VALUE')
+    class Wrapper(typing.Generic[_VALUE]):
+      value: _VALUE
+
+    class WrapperSubclass(Wrapper[int]):
+      pass
+
+    def bar(wrapper: WrapperSubclass) -> int:
+      return wrapper.value
+  |}
+    [
+      "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have "
+      ^ "type `Variable[_VALUE]` but is never initialized.";
+    ];
+  assert_type_errors
+    {|
+    _T = typing.TypeVar('_T')
+    class ReturnSelf(typing.Generic[_T]):
+      def f(self) -> ReturnSelf[_T]:
+        return self
+  |}
+    [];
+  assert_type_errors
+    {|
+    _T = typing.TypeVar('_T')
+    class ReturnClass(typing.Generic[_T]):
+      @classmethod
+      def f(cls) -> ReturnClass[_T]:
+        return cls
+  |}
+    [
+      "Incompatible return type [7]: Expected `ReturnClass[Variable[_T]]` but got \
+       `typing.Type[ReturnClass[Variable[_T]]]`.";
+    ];
+  assert_type_errors
+    {|
+    _T = typing.TypeVar('_T')
+    class Class:
+      @property
+      def property(self: _T) -> typing.Sequence[_T]: ...
+    def foo(c: Class) -> typing.Sequence[Class]:
+      return c.property
+  |}
+    [];
+  assert_type_errors
+    {|
+    _T = typing.TypeVar('_T')
+    class Class(typing.Generic[_T]):
+      @property
+      def property(self) -> _T: ...
+    def foo(c: Class[int]) -> int:
+      return c.property
+  |}
+    [];
+  assert_type_errors
+    {|
+    _T = typing.TypeVar('_T')
+    class A:
+      @property
+      def property(self: _T) -> _T: ...
+    class B(A):
+      def foo(self) -> None:
+        reveal_type(self.property)
+  |}
+    ["Revealed type [-1]: Revealed type for `self.property` is `B`."];
+  assert_type_errors
+    {|
+    T = typing.TypeVar('T')
+    def f(t: typing.Type[T]) -> None:
+      a = t()
+  |}
+    [];
+  assert_type_errors
+    {|
+    T = typing.TypeVar('T', bound=int)
+    def f(t: typing.Type[T]) -> None:
+      a = t()
+  |}
+    [];
+  assert_type_errors
+    {|
+    T = typing.TypeVar('T', int)
+    def f(t: typing.Type[T]) -> None:
+      a = t()
+  |}
+    []
+
+
 let test_check_getattr context =
   let assert_test_getattr source =
     let getattr_stub =
@@ -1126,7 +1151,11 @@ let () =
   "attribute"
   >::: [
          "check_attributes" >:: test_check_attributes;
+         "check_attribute_decorators" >:: test_attribute_decorators;
+         "check_attribute_strict" >:: test_attribute_strict;
+         "check_attribute_initialization" >:: test_check_attribute_initialization;
          "check_missing_attribute" >:: test_check_missing_attribute;
+         "check_attribute_type_variable_resolution" >:: test_attribute_type_variable_resolution;
          "check_getattr" >:: test_check_getattr;
          "check_metaclass_attributes" >:: test_check_metaclass_attributes;
        ]
