@@ -1439,6 +1439,26 @@ let test_user_defined_variadics context =
       "Revealed type [-1]: Revealed type for `x` is `Foo[int, str, bool]`.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, bool]`.";
     ];
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Protocol
+    from pyre_extensions import ListVariadic, Generic
+    from pyre_extensions.type_variable_operators import Map
+    Ts = ListVariadic("Ts")
+    class Foo(Generic[Ts]):
+      pass
+    def f_in( *args: Ts) -> Foo[Ts]: ...
+    def f_out(f: Foo[Ts]) -> Tuple[Ts]: ...
+    def fun(i: int, s: str, b: bool) -> None:
+      x = f_in(i, s, b)
+      reveal_type(x)
+      y = f_out(x)
+      reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `Foo[int, str, bool]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, bool]`.";
+    ];
 
   ()
 

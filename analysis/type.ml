@@ -936,6 +936,7 @@ let parametric_substitution_map =
     "typing.Set", "set";
     "typing.Type", "type";
     "typing_extensions.Protocol", "typing.Protocol";
+    "pyre_extensions.Generic", "typing.Generic";
   ]
   |> Identifier.Table.of_alist_exn
 
@@ -2077,7 +2078,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
           | None -> result )
         | Parametric { name; parameters = Concrete parameters } -> (
           match Identifier.Table.find parametric_substitution_map name with
-          | Some name -> Parametric { name; parameters = Concrete parameters }
+          | Some name -> Parametric { name; parameters = substitute_ordered_types parameters }
           | None -> (
             match name with
             | "typing.Annotated" when List.length parameters > 0 ->
