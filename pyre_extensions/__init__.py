@@ -1,10 +1,17 @@
 # pyre-ignore-all-errors
 from typing import Any, Type, TypeVar
 
-from . import tests, type_variable_operators  # noqa F401
-
 
 _T = TypeVar("_T")
+
+
+class GenericMeta(type):
+    def __getitem__(cls, *args) -> Any:
+        ...
+
+
+class Generic(metaclass=GenericMeta):
+    pass
 
 
 def none_throws(optional, message: str = "Unexpected `None`"):

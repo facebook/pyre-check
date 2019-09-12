@@ -1,6 +1,8 @@
 # pyre-unsafe
 from typing import Any, Generic, TypeVar
 
+from tools.pyre.pyre_extensions import GenericMeta
+
 
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
@@ -23,14 +25,5 @@ class Map(Generic[_T1, _T2]):
     pass
 
 
-class GenericMeta(type):
-    def __getitem__(cls, *args):
-        return Any
-
-
-class Generic(metaclass=GenericMeta):
-    pass
-
-
-class Concatenation(Generic):
+class Concatenation(metaclass=GenericMeta):
     pass
