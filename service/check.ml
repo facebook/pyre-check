@@ -128,7 +128,9 @@ let check
   (* Find sources to parse *)
   let module_tracker = Analysis.ModuleTracker.create configuration in
   (* Parse sources. *)
-  let sources, ast_environment = Parser.parse_all ~scheduler ~configuration module_tracker in
+  let sources, ast_environment =
+    Analysis.AstEnvironment.parse_all ~scheduler ~configuration module_tracker
+  in
   let environment =
     let populate = Environment.populate in
     let open Analysis in

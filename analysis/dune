@@ -19,6 +19,7 @@
   ppx_deriving
   pyrelib.ast
   pyrelib.pyreParser
+  pyrelib.projectSpecificPreprocessing
   pyrelib.recognized
   pyrelib.statistics
   pyrelib.file))

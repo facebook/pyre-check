@@ -107,7 +107,7 @@
    ppx_compare
    ppx_sexp_conv))
  (libraries
-  pyrelib.network
+  pyrelib.ast
   pyrePath
   pyre
   core

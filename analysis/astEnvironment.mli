@@ -13,31 +13,18 @@ val get_source : t -> ?dependency:Reference.t -> Reference.t -> Source.t option
 
 val get_wildcard_exports : t -> ?dependency:Reference.t -> Reference.t -> Reference.t list option
 
+val update
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  ast_environment:t ->
+  ModuleTracker.IncrementalUpdate.t list ->
+  Reference.t list
+
 val add_source : t -> Source.t -> unit
 
 val remove_sources : t -> Reference.t list -> unit
 
-val update_and_compute_dependencies
-  :  t ->
-  update:(unit -> unit) ->
-  Reference.t list ->
-  Reference.t list
-
 val get_source_path : t -> Reference.t -> SourcePath.t option
-
-module Raw : sig
-  val get_source : t -> ?dependency:Reference.t -> Reference.t -> Source.t option
-
-  val get_wildcard_exports : t -> ?dependency:Reference.t -> Reference.t -> Reference.t list option
-
-  val add_source : t -> Source.t -> unit
-
-  val update_and_compute_dependencies
-    :  t ->
-    update:(unit -> unit) ->
-    Reference.t list ->
-    Reference.t list
-end
 
 (* Store the environment to saved-state *)
 val store : t -> unit
@@ -89,3 +76,30 @@ module ReadOnly : sig
 end
 
 val read_only : t -> ReadOnly.t
+
+type parse_result =
+  | Success of Source.t
+  | SyntaxError of string
+  | SystemError of string
+
+val parse_source : configuration:Configuration.Analysis.t -> SourcePath.t -> parse_result
+
+type parse_sources_result = {
+  parsed: Reference.t list;
+  syntax_error: SourcePath.t list;
+  system_error: SourcePath.t list;
+}
+
+val parse_sources
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  preprocessing_state:ProjectSpecificPreprocessing.state option ->
+  ast_environment:t ->
+  SourcePath.t list ->
+  parse_sources_result
+
+val parse_all
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  ModuleTracker.t ->
+  Source.t list * t

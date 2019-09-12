@@ -1422,9 +1422,9 @@ module ScratchProject = struct
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
-    let { Service.Parser.parsed; syntax_error; system_error } =
+    let { Analysis.AstEnvironment.parsed; syntax_error; system_error } =
       Analysis.ModuleTracker.source_paths module_tracker
-      |> Service.Parser.parse_sources
+      |> Analysis.AstEnvironment.parse_sources
            ~configuration
            ~scheduler:(mock_scheduler ())
            ~preprocessing_state:None

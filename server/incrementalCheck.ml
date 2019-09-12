@@ -28,8 +28,8 @@ let direct_parser_update ~configuration ~scheduler ~ast_environment module_updat
   AstEnvironment.remove_sources
     ast_environment
     (List.append removed_modules directly_changed_modules);
-  let { Service.Parser.parsed; _ } =
-    Service.Parser.parse_sources
+  let { AstEnvironment.parsed; _ } =
+    AstEnvironment.parse_sources
       ~configuration
       ~scheduler
       ~preprocessing_state:None
@@ -73,7 +73,7 @@ let recheck
     if ignore_dependencies then
       direct_parser_update ~configuration ~scheduler ~ast_environment module_updates
     else
-      Service.Parser.update ~configuration ~scheduler ~ast_environment module_updates
+      AstEnvironment.update ~configuration ~scheduler ~ast_environment module_updates
   in
   Log.log
     ~section:`Server
