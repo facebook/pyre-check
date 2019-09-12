@@ -2054,6 +2054,48 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
+    ];
+
+  (* Include calls for optionals, as the callgraph is an overapproximation. *)
+  assert_calls
+    {|
+      import typing
+      class Foo:
+        def method(self) -> int: ...
+      def calls_optional(foo: typing.Optional[Foo]) -> None:
+        foo.method()
+    |}
+    [
+      ( "qualifier.calls_optional",
+        [
+          `Method
+            {
+              direct_target = "qualifier.Foo.method";
+              class_name = "qualifier.Foo";
+              dispatch = Dynamic;
+            };
+        ] );
+    ];
+  assert_calls
+    {|
+      import typing
+      class Foo:
+        def method(self) -> int: ...
+      class Bar(Foo):
+        pass
+      def calls_optional(bar: typing.Optional[Bar]) -> None:
+        bar.method()
+    |}
+    [
+      ( "qualifier.calls_optional",
+        [
+          `Method
+            {
+              direct_target = "qualifier.Foo.method";
+              class_name = "qualifier.Bar";
+              dispatch = Dynamic;
+            };
+        ] );
     ]
 
 

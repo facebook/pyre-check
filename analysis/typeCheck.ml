@@ -2123,6 +2123,15 @@ module State (Context : Context) = struct
             when List.length elements = List.length callables ->
               List.map2_exn elements callables ~f:method_callee |> List.concat
           | Some annotation, Some [callable] -> method_callee annotation callable
+          | Some (Type.Optional annotation), _ -> (
+            match Node.value callee with
+            | Name (Name.Attribute { attribute; _ }) -> (
+                find_method ~parent:annotation ~name:attribute
+                >>| method_callee annotation
+                |> function
+                | None -> []
+                | Some list -> list )
+            | _ -> [] )
           | None, Some [{ Type.Callable.kind = Named define; _ }] ->
               [Dependencies.Callgraph.Function define]
           | _ -> []
