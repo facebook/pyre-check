@@ -529,9 +529,7 @@ let test_forward_expression context =
       | _ -> failwith "Unable to extract expression"
     in
     let resolution =
-      ScratchProject.setup ~context ["test.py", environment]
-      |> ScratchProject.build_resolution
-           ~imports:(Reference.Set.singleton (Reference.create "test"))
+      ScratchProject.setup ~context ["test.py", environment] |> ScratchProject.build_resolution
     in
     let { State.state = forwarded; resolved; _ } =
       State.forward_expression ~state:(create ~resolution precondition) ~expression
@@ -1696,7 +1694,8 @@ let test_calls context =
      def calls_ClassWithInit__init__(object: object):
        ClassWithInit.__init__(object)
    |}
-    [ ( "qualifier.ClassWithInit.__init__",
+    [
+      ( "qualifier.ClassWithInit.__init__",
         [`Method { direct_target = "object.__init__"; class_name = "object"; dispatch = Static }] );
       ( "qualifier.calls_Class",
         [

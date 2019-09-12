@@ -1482,7 +1482,7 @@ module State (Context : Context) = struct
               state
           | Top
           (* There's some other problem we already errored on *)
-
+          
           | Primitive _
           | Parametric _ ->
               state_with_errors
@@ -1968,7 +1968,6 @@ module State (Context : Context) = struct
       |> correct_bottom
     in
     let forward_reference ~state reference =
-      let original_reference = reference in
       let reference = GlobalResolution.resolve_exports global_resolution ~reference in
       let annotation =
         let local_annotation = Resolution.get_local resolution ~reference in
@@ -2040,55 +2039,7 @@ module State (Context : Context) = struct
                   |> emit_raw_error ~state
             in
             { state; resolved = Type.Top; resolved_annotation = None; base = None }
-        | _ ->
-            let { Node.value = { Define.signature = { name = current_module_define; _ }; _ }; _ } =
-              Context.define
-            in
-            let state =
-              if
-                Resolution.is_imported resolution ~reference
-                || Reference.is_prefix ~prefix:reference current_module_define
-                (* TODO(T52571718): We need to special case typing module for now since it can be
-                   synthesized by earlier steps. For example, `except (Exception1, Exception2)`
-                   will generate a typing.Union[Exception1, Exception2], and cause `typing.Union`
-                   to be checked as a reference. *)
-                || String.equal (Reference.show reference) "typing"
-              then
-                (* We enforce that only imported module and its parents or the current module and
-                   its parents's attributes appear visible. *)
-                state
-              else
-                (* It is also possible that the module referenced here is re-exported by parent
-                   module. We need to use the non-export-resolved original reference to find the
-                   actual parent module that does the re-export. *)
-                let is_exported_from module_reference =
-                  let resolved_module_reference =
-                    GlobalResolution.resolve_exports global_resolution ~reference:module_reference
-                  in
-                  if
-                    GlobalResolution.is_suppressed_module
-                      global_resolution
-                      resolved_module_reference
-                  then
-                    true
-                  else
-                    let member =
-                      Reference.drop_prefix ~prefix:module_reference original_reference
-                    in
-                    resolved_module_reference
-                    |> AstEnvironment.ReadOnly.get_wildcard_exports
-                         (GlobalResolution.ast_environment global_resolution)
-                    >>| (fun wildcard_exports ->
-                          List.mem wildcard_exports member ~equal:Reference.equal)
-                    |> Option.value ~default:false
-                in
-                match Reference.prefix original_reference with
-                | Some parent_module_reference when is_exported_from parent_module_reference ->
-                    state
-                | _ ->
-                    emit_error ~state ~location ~kind:(Error.UnimportedModule original_reference)
-            in
-            { state; resolved = Type.Top; resolved_annotation = None; base = None } )
+        | _ -> { state; resolved = Type.Top; resolved_annotation = None; base = None } )
     in
     let forward_callable ~state ~target ~dynamic ~callee ~resolved ~arguments =
       let state =
@@ -2161,8 +2112,9 @@ module State (Context : Context) = struct
                     annotation )
                   |> Type.class_name
                 in
-                [ Dependencies.Callgraph.Method
-                    { direct_target; class_name; dispatch = (if dynamic then Dynamic else Static) }
+                [
+                  Dependencies.Callgraph.Method
+                    { direct_target; class_name; dispatch = (if dynamic then Dynamic else Static) };
                 ]
             | _ -> []
           in
@@ -4549,13 +4501,12 @@ module State (Context : Context) = struct
         in
         { state with resolution }
     | Import { Import.from; imports } ->
-        let original_imports = imports in
         let imports =
           match from with
           | Some from -> [from]
           | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
         in
-        let add_imports_and_error state import =
+        let add_import_error state import =
           let error, _ =
             if GlobalResolution.is_suppressed_module global_resolution import then
               None, []
@@ -4583,34 +4534,11 @@ module State (Context : Context) = struct
               in
               List.fold ~f:check_import ~init:(None, []) (Reference.as_list import)
           in
-          match error with
-          | Some error -> emit_raw_error ~state error
-          | None ->
-              let rec add_import resolution reference =
-                if Option.is_some (GlobalResolution.module_definition global_resolution reference)
-                then
-                  Resolution.add_import resolution ~reference
-                else
-                  match Reference.prefix reference with
-                  | Some reference -> add_import resolution reference
-                  | None -> resolution
-              in
-              let additional_module_imports =
-                match from with
-                | None -> []
-                | Some from ->
-                    List.map original_imports ~f:(fun { Import.name; _ } ->
-                        Reference.combine from name)
-              in
-              let resolution =
-                List.fold
-                  ~f:add_import
-                  ~init:(add_import resolution import)
-                  additional_module_imports
-              in
-              { state with resolution }
+          error >>| emit_raw_error ~state |> Option.value ~default:state
         in
-        List.fold ~init:state ~f:add_imports_and_error imports
+        List.filter imports ~f:(fun import ->
+            not (GlobalResolution.is_suppressed_module global_resolution import))
+        |> List.fold ~init:state ~f:add_import_error
     | Raise { Raise.expression = Some expression; _ } ->
         let { state; resolved; _ } = forward_expression ~state ~expression in
         let expected = Type.Primitive "BaseException" in
@@ -4839,12 +4767,7 @@ type result = {
   coverage: Coverage.t;
 }
 
-let resolution
-    global_resolution
-    ?(imports = Reference.Set.empty)
-    ?(annotations = Reference.Map.empty)
-    ()
-  =
+let resolution global_resolution ?(annotations = Reference.Map.empty) () =
   let define =
     Define.create_toplevel ~qualifier:None ~statements:[] |> Node.create_with_default_location
   in
@@ -4860,7 +4783,6 @@ let resolution
     let empty_resolution =
       Resolution.create
         ~global_resolution
-        ~imports:Reference.Set.empty
         ~annotations:Reference.Map.empty
         ~resolve:(fun ~resolution:_ _ -> Annotation.create Type.Top)
         ()
@@ -4880,7 +4802,7 @@ let resolution
     |> fun { State.resolved; resolved_annotation; _ } ->
     resolved_annotation |> Option.value ~default:(Annotation.create resolved)
   in
-  Resolution.create ~global_resolution ~imports ~annotations ~resolve ()
+  Resolution.create ~global_resolution ~annotations ~resolve ()
 
 
 let resolution_with_key ~global_resolution ~parent ~name ~key =

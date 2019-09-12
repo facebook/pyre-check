@@ -877,15 +877,7 @@ let process_type_query_request
         let { State.state; resolved = annotation; _ } =
           State.forward_expression ~state ~expression
         in
-        let errors =
-          let filter_use_unimported_module_error { Error.kind; _ } =
-            match kind with
-            | UnimportedModule _ -> false
-            | _ -> true
-          in
-          List.filter (State.errors state) ~f:filter_use_unimported_module_error
-        in
-        match errors with
+        match State.errors state with
         | [] -> TypeQuery.Response (TypeQuery.Type annotation)
         | errors ->
             let descriptions =

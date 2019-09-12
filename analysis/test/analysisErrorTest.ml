@@ -1208,12 +1208,7 @@ let test_suppress context =
     (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
   assert_not_suppressed
     Source.Strict
-    (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
-
-  (* Always suppress unimported modules for now in non-debug mode. *)
-  assert_suppressed Source.Default (Error.UnimportedModule (Reference.create "foo"));
-  assert_suppressed Source.Strict (Error.UnimportedModule (Reference.create "foo"));
-  assert_suppressed Source.Infer (Error.UnimportedModule (Reference.create "foo"))
+    (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"))
 
 
 let test_namespace_insensitive_set _ =

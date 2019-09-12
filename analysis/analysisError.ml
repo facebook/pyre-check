@@ -251,7 +251,6 @@ type kind =
       typed_dictionary_name: Identifier.t;
       missing_key: string;
     }
-  | UnimportedModule of Reference.t
   | UndefinedAttribute of {
       attribute: Identifier.t;
       origin: origin;
@@ -335,7 +334,6 @@ let code = function
   | InvalidException _ -> 48
   | UnsafeCast _ -> 49
   | RedefinedClass _ -> 50
-  | UnimportedModule _ -> 51
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -396,7 +394,6 @@ let name = function
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | Unpack _ -> "Unable to unpack"
   | UnusedIgnore _ -> "Unused ignore"
-  | UnimportedModule _ -> "Unimported module"
 
 
 let weaken_literals kind =
@@ -1637,8 +1634,6 @@ let messages ~concise ~signature location kind =
           pp_reference
           name;
       ]
-  | UnimportedModule reference ->
-      [Format.asprintf "Module `%a` is used without being imported." pp_reference reference]
   | UndefinedImport reference when concise ->
       [Format.asprintf "Could not find `%a`." pp_reference reference]
   | UndefinedImport reference ->
@@ -1967,7 +1962,6 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedImport _
   | UndefinedType _
   | UnexpectedKeyword _
-  | UnimportedModule _
   | AbstractClass _
   | UnusedIgnore _ ->
       false
@@ -2072,8 +2066,7 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | UndefinedImport _
   | AbstractClass _
   | Unpack _
-  | UnusedIgnore _
-  | UnimportedModule _ ->
+  | UnusedIgnore _ ->
       false
 
 
@@ -2257,7 +2250,6 @@ let less_or_equal ~resolution left right =
       | _ -> false )
   | AbstractClass left, AbstractClass right ->
       Reference.equal_sanitized left.class_name right.class_name
-  | UnimportedModule left, UnimportedModule right -> Reference.equal_sanitized left right
   | _, Top -> true
   | AnalysisFailure _, _
   | DeadStore _, _
@@ -2311,8 +2303,7 @@ let less_or_equal ~resolution left right =
   | UninitializedAttribute _, _
   | AbstractClass _, _
   | Unpack _, _
-  | UnusedIgnore _, _
-  | UnimportedModule _, _ ->
+  | UnusedIgnore _, _ ->
       false
 
 
@@ -2591,8 +2582,6 @@ let join ~resolution left right =
     | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
       when List.equal String.equal left right ->
         TypedDictionaryAccessWithNonLiteral left
-    | UnimportedModule left, UnimportedModule right when Reference.equal_sanitized left right ->
-        UnimportedModule left
     | Top, _
     | _, Top ->
         Top
@@ -2647,7 +2636,6 @@ let join ~resolution left right =
     | UninitializedAttribute _, _
     | AbstractClass _, _
     | Unpack _, _
-    | UnimportedModule _, _
     | UnusedIgnore _, _ ->
         let { location; _ } = left in
         Log.debug
@@ -2861,7 +2849,6 @@ let suppress ~mode ~resolution error =
     else
       match kind with
       | UndefinedImport _ -> due_to_builtin_import error
-      | UnimportedModule _ -> true
       | IncompleteType _ ->
           (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
           true
@@ -2897,7 +2884,6 @@ let suppress ~mode ~resolution error =
     | Unpack { unpack_problem = UnacceptableType Type.Any; _ }
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
         true
-    | UnimportedModule _ -> true
     | UndefinedImport _ -> false
     | UndefinedName name when String.equal (Reference.show name) "reveal_type" -> true
     | RevealedType _ -> false
@@ -3170,7 +3156,6 @@ let dequalify
         UndefinedAttribute { attribute; origin }
     | UndefinedName name -> UndefinedName name
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
-    | UnimportedModule reference -> UnimportedModule reference
     | UndefinedImport reference -> UndefinedImport reference
     | UnexpectedKeyword { name; callee } ->
         UnexpectedKeyword { name; callee = Option.map callee ~f:dequalify_reference }

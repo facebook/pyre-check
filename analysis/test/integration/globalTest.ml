@@ -83,11 +83,7 @@ let test_check_with_qualification context =
               global global_number
               return global_number
     |}
-    (* FIXME: The first error is bogus *)
-    [
-      "Unimported module [51]: Module `test` is used without being imported.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-    ];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
   assert_type_errors
     {|
       global_number: int = 1

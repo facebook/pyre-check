@@ -1484,10 +1484,10 @@ module ScratchProject = struct
     sources, ast_environment, environment
 
 
-  let build_resolution ?imports project =
+  let build_resolution project =
     let _, _, environment = build_environment project in
     let global_resolution = Environment.resolution environment () in
-    TypeCheck.resolution ?imports global_resolution ()
+    TypeCheck.resolution global_resolution ()
 
 
   let build_global_resolution project =
