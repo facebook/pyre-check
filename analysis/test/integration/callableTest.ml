@@ -97,7 +97,37 @@ let test_callable_attribute_access context =
         anon = lambda x: 0
         anon.attr
     |}
-    ["Undefined attribute [16]: Anonymous callable has no attribute `attr`."]
+    ["Undefined attribute [16]: Anonymous callable has no attribute `attr`."];
+
+  (* We filter errors related to patching. *)
+  assert_default_type_errors
+    ~context
+    {|
+      from unittest.mock import Mock
+      from unittest import TestCase
+
+      class C:
+        def foo(self) -> int: ...
+      class Test(TestCase):
+        def test_foo(self) -> None:
+          c = C()
+          c.foo = Mock()
+          c.foo.assert_not_called()
+    |}
+    [];
+  assert_default_type_errors
+    ~context
+    {|
+      from unittest import TestCase
+      def patch(item): ...
+      class C:
+        def foo(self) -> int: ...
+      class Test(TestCase):
+        def test_foo(self) -> None:
+          x = patch("os.path.abspath")
+          x.assert_not_called()
+    |}
+    []
 
 
 let () =

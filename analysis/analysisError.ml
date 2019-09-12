@@ -2811,10 +2811,20 @@ let filter ~configuration ~resolution errors =
         | _ -> false )
       | _ -> false
     in
-    let is_click_error { kind; _ } =
+    let is_callable_attribute_error { kind; _ } =
       (* TODO(T53616545): Remove once our decorators are more expressive. *)
       match kind with
       | UndefinedAttribute { origin = Callable _; attribute = "command" } -> true
+      (* We also need to filter errors for common mocking patterns. *)
+      | UndefinedAttribute
+          {
+            origin = Callable _;
+            attribute =
+              ( "assert_not_called" | "assert_called_once_with" | "reset_mock" | "assert_has_calls"
+              | "assert_any_call" );
+          } ->
+          true
+      | UndefinedAttribute { origin = Callable (Some name); _ } -> Reference.last name = "patch"
       | _ -> false
     in
     let is_stub_error { kind; location = { Location.path; _ }; _ } =
@@ -2835,7 +2845,7 @@ let filter ~configuration ~resolution errors =
     || is_override_on_dunder_method error
     || is_unnecessary_missing_annotation_error error
     || is_unknown_callable_error error
-    || is_click_error error
+    || is_callable_attribute_error error
   in
   match configuration with
   | { Configuration.Analysis.debug = true; _ } -> errors
