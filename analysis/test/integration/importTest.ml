@@ -54,7 +54,116 @@ let test_check_imports context =
       from typing import Optional
       def foo() -> None: return 1
     |}
-    ["Incompatible return type [7]: Expected `None` but got `int`."]
+    ["Incompatible return type [7]: Expected `None` but got `int`."];
+
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "durp.py";
+          source =
+            {|
+          from typing import Any
+          class Foo:
+            a: int = 1
+          b: int = 2
+          c: Any = ...
+        |};
+        };
+      ]
+    {|
+      from durp import Foo
+      from durp import b
+      from durp import c
+    |}
+    [];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "durp.py";
+          source =
+            {|
+                from typing import Any
+                class Foo:
+                    a: int = 1
+                b: int = 2
+                c: Any = ...
+            |};
+        };
+      ]
+    {|
+      from durp.Foo import a
+      from durp.b import b
+      from durp.c import c  # This is ok
+    |}
+    [
+      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.b`.";
+    ];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "durp.py";
+          source =
+            {|
+                from typing import Any
+                class Foo:
+                    a: int = 1
+                b: int = 2
+                c: Any = ...
+            |};
+        };
+      ]
+    {|
+      import durp
+      import durp.Foo
+      import durp.b
+      import durp.c
+    |}
+    [
+      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.b`.";
+    ];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "derp.py";
+          source =
+            {|
+                from typing import Any
+                a: Any = ...
+            |};
+        };
+      ]
+    {|
+      import derp
+      import derp.a
+      import derp.a.b
+      import derp.a.b.c
+    |}
+    [];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "derp.py";
+          source =
+            {|
+                from typing import Any
+                a: Any = ...
+            |};
+        };
+      ]
+    {|
+      from derp import a
+      from derp.a import b
+      from derp.a.b import c
+    |}
+    [];
+  ()
 
 
 let () = "import" >::: ["check_imports" >:: test_check_imports] |> Test.run

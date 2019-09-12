@@ -4501,44 +4501,35 @@ module State (Context : Context) = struct
         in
         { state with resolution }
     | Import { Import.from; imports } ->
-        let imports =
-          match from with
-          | Some from -> [from]
-          | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
-        in
-        let add_import_error state import =
-          let error, _ =
-            if GlobalResolution.is_suppressed_module global_resolution import then
-              None, []
-            else
-              let check_import (error, lead) import =
-                let import = lead @ [import] in
-                let reference = Reference.create_from_list import in
-                match error with
-                | Some error -> Some error, import
-                | None ->
-                    let error =
-                      Error.create
-                        ~location
-                        ~kind:(Error.UndefinedImport reference)
-                        ~define:Context.define
-                    in
-                    let local = Resolution.get_local resolution ~reference in
-                    let module_definition =
-                      GlobalResolution.module_definition global_resolution reference
-                    in
-                    if Option.is_some local || Option.is_some module_definition then
-                      None, import
-                    else
-                      Some error, import
-              in
-              List.fold ~f:check_import ~init:(None, []) (Reference.as_list import)
+        let check_import import =
+          let rec check_lead lead = function
+            | [] -> None
+            | name :: rest -> (
+                let lead = lead @ [name] in
+                let reference = Reference.create_from_list lead in
+                match GlobalResolution.module_definition global_resolution reference with
+                | Some _ -> check_lead lead rest
+                | None -> (
+                  match Resolution.resolve_reference resolution reference with
+                  | Type.Any ->
+                      (* Import from Any is ok *)
+                      None
+                  | _ -> Some reference ) )
           in
-          error >>| emit_raw_error ~state |> Option.value ~default:state
+          match GlobalResolution.is_suppressed_module global_resolution import with
+          | true -> None
+          | false -> check_lead [] (Reference.as_list import)
         in
-        List.filter imports ~f:(fun import ->
-            not (GlobalResolution.is_suppressed_module global_resolution import))
-        |> List.fold ~init:state ~f:add_import_error
+        let undefined_imports =
+          match from with
+          | Some from -> Option.to_list (check_import from)
+          | None -> List.filter_map imports ~f:(fun { Import.name; _ } -> check_import name)
+        in
+        let add_import_error state reference =
+          Error.create ~location ~kind:(Error.UndefinedImport reference) ~define:Context.define
+          |> emit_raw_error ~state
+        in
+        List.fold undefined_imports ~init:state ~f:add_import_error
     | Raise { Raise.expression = Some expression; _ } ->
         let { state; resolved; _ } = forward_expression ~state ~expression in
         let expected = Type.Primitive "BaseException" in

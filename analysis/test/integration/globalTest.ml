@@ -264,23 +264,6 @@ let test_check_globals context =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     ~update_environment_with:
-      [
-        {
-          handle = "export.py";
-          source = {|
-          class Foo:
-            a, b = 1, 2
-        |};
-        };
-      ]
-    {|
-      from export.Foo import a
-      def foo() -> str:
-        return a
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
-    ~update_environment_with:
       [{ handle = "export.py"; source = {|
           str_to_int_dictionary = {"a": 1}
         |} }]
