@@ -1695,6 +1695,12 @@ let test_join context =
   assert_join "typing.Annotated[int]" "float" "typing.Annotated[float]";
   assert_join "typing.Annotated[int]" "typing.Annotated[float]" "typing.Annotated[float]";
 
+  assert_join "typing_extensions.Annotated[int]" "float" "typing_extensions.Annotated[float]";
+  assert_join
+    "typing_extensions.Annotated[int]"
+    "typing_extensions.Annotated[float]"
+    "typing_extensions.Annotated[float]";
+
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
   let bound_list_variadic =
@@ -2226,6 +2232,12 @@ let test_meet _ =
   assert_meet "typing.Annotated[int]" "float" "typing.Annotated[int]";
   assert_meet "typing.Annotated[int]" "typing.Annotated[float]" "typing.Annotated[int]";
 
+  assert_meet "typing_extensions.Annotated[int]" "float" "typing_extensions.Annotated[int]";
+  assert_meet
+    "typing_extensions.Annotated[int]"
+    "typing_extensions.Annotated[float]"
+    "typing_extensions.Annotated[int]";
+
   (* Unions. *)
   assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
   assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
@@ -2670,6 +2682,15 @@ let test_solve_less_or_equal context =
   (* Annotated types. *)
   assert_solve ~left:"typing.Annotated[C]" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
   assert_solve ~left:"C" ~right:"typing.Annotated[T_Unconstrained]" [["T_Unconstrained", "C"]];
+
+  assert_solve
+    ~left:"typing_extensions.Annotated[C]"
+    ~right:"T_Unconstrained"
+    [["T_Unconstrained", "C"]];
+  assert_solve
+    ~left:"C"
+    ~right:"typing_extensions.Annotated[T_Unconstrained]"
+    [["T_Unconstrained", "C"]];
 
   (* An explicit type variable can only be bound to its constraints *)
   assert_solve ~left:"D" ~right:"T_C_Q" [["T_C_Q", "C"]];

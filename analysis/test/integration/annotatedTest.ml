@@ -10,6 +10,16 @@ let test_annotated context =
   assert_type_errors
     ~context
     {|
+      def foo(annotated: typing_extensions.Annotated[int]) -> int:
+        expect_int(annotated)
+        reveal_type(annotated)
+        return annotated
+    |}
+    ["Revealed type [-1]: Revealed type for `annotated` is `typing.Annotated[int]`."];
+
+  assert_type_errors
+    ~context
+    {|
       def foo(annotated: typing.Annotated[int]) -> int:
         expect_int(annotated)
         reveal_type(annotated)

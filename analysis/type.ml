@@ -2081,7 +2081,9 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
           | Some name -> Parametric { name; parameters = substitute_ordered_types parameters }
           | None -> (
             match name with
-            | "typing.Annotated" when List.length parameters > 0 ->
+            | "typing_extensions.Annotated"
+            | "typing.Annotated"
+              when List.length parameters > 0 ->
                 annotated (List.hd_exn parameters)
             | "typing.Optional" when List.length parameters = 1 ->
                 optional (List.hd_exn parameters)

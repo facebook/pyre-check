@@ -241,7 +241,11 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     ]
   in
   let typing_extension_classes =
-    [make "typing_extensions.Final"; make "typing_extensions.Literal"]
+    [
+      make "typing_extensions.Final";
+      make "typing_extensions.Literal";
+      make "typing_extensions.Annotated";
+    ]
   in
   let builtin_classes =
     let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
