@@ -1589,6 +1589,7 @@ type method_call = {
   direct_target: string;
   class_name: string;
   dispatch: Dependencies.Callgraph.dispatch;
+  is_optional_class_attribute: bool;
 }
 
 let test_calls context =
@@ -1615,12 +1616,13 @@ let test_calls context =
     let assert_calls (caller, callees) =
       let expected_callees =
         let callee = function
-          | `Method { direct_target; class_name; dispatch } ->
+          | `Method { direct_target; class_name; dispatch; is_optional_class_attribute } ->
               Dependencies.Callgraph.Method
                 {
                   direct_target = Reference.create direct_target;
                   class_name = Reference.create class_name;
                   dispatch;
+                  is_optional_class_attribute;
                 }
           | `Function name -> Dependencies.Callgraph.Function (Reference.create name)
         in
@@ -1676,6 +1678,7 @@ let test_calls context =
               direct_target = "qualifier.Class.method";
               class_name = "qualifier.Class";
               dispatch = Dynamic;
+              is_optional_class_attribute = false;
             };
         ] );
     ];
@@ -1696,13 +1699,22 @@ let test_calls context =
    |}
     [
       ( "qualifier.ClassWithInit.__init__",
-        [`Method { direct_target = "object.__init__"; class_name = "object"; dispatch = Static }] );
+        [
+          `Method
+            {
+              direct_target = "object.__init__";
+              class_name = "object";
+              is_optional_class_attribute = false;
+              dispatch = Static;
+            };
+        ] );
       ( "qualifier.calls_Class",
         [
           `Method
             {
               direct_target = "object.__init__";
               class_name = "qualifier.Class";
+              is_optional_class_attribute = false;
               dispatch = Static;
             };
         ] );
@@ -1712,6 +1724,7 @@ let test_calls context =
             {
               direct_target = "qualifier.ClassWithInit.__init__";
               class_name = "qualifier.ClassWithInit";
+              is_optional_class_attribute = false;
               dispatch = Static;
             };
         ] );
@@ -1721,6 +1734,7 @@ let test_calls context =
             {
               direct_target = "qualifier.ClassWithInit.__init__";
               class_name = "qualifier.ClassWithInit";
+              is_optional_class_attribute = false;
               dispatch = Static;
             };
         ] );
@@ -1740,6 +1754,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.classmethod";
               class_name = "qualifier.Class";
+              is_optional_class_attribute = false;
               dispatch = Static;
             };
         ] );
@@ -1772,6 +1787,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.method";
               class_name = "qualifier.Class";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1781,6 +1797,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.method";
               class_name = "qualifier.Indirect";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1790,6 +1807,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.method";
               class_name = "qualifier.Subclass";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1799,6 +1817,7 @@ let test_calls context =
             {
               direct_target = "qualifier.OverridingSubclass.method";
               class_name = "qualifier.OverridingSubclass";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1835,6 +1854,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.class_method";
               class_name = "qualifier.Class";
+              is_optional_class_attribute = false;
               dispatch = Static;
             };
         ] );
@@ -1844,6 +1864,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.class_method";
               class_name = "qualifier.Indirect";
+              is_optional_class_attribute = false;
               dispatch = Static;
             };
         ] );
@@ -1853,6 +1874,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Subclass.class_method";
               class_name = "qualifier.Subclass";
+              is_optional_class_attribute = false;
               dispatch = Static;
             };
         ] );
@@ -1862,6 +1884,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.class_method";
               class_name = "qualifier.Class";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1871,6 +1894,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.class_method";
               class_name = "qualifier.Indirect";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1880,6 +1904,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Subclass.class_method";
               class_name = "qualifier.Subclass";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1902,12 +1927,14 @@ let test_calls context =
             {
               direct_target = "qualifier.Class.method";
               class_name = "qualifier.Class";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
           `Method
             {
               direct_target = "qualifier.OtherClass.method";
               class_name = "qualifier.OtherClass";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1930,6 +1957,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Foo.method";
               class_name = "qualifier.Foo";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1951,6 +1979,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Foo.method";
               class_name = "qualifier.Foo";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1972,6 +2001,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Foo.method";
               class_name = "qualifier.Bar";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -1990,7 +2020,12 @@ let test_calls context =
       ( "qualifier.call_property_setter",
         [
           `Method
-            { direct_target = "qualifier.Foo.x"; class_name = "qualifier.Foo"; dispatch = Dynamic };
+            {
+              direct_target = "qualifier.Foo.x";
+              class_name = "qualifier.Foo";
+              is_optional_class_attribute = false;
+              dispatch = Dynamic;
+            };
         ] );
     ];
 
@@ -2023,19 +2058,21 @@ let test_calls context =
             {
               direct_target = "qualifier.Foo.method";
               class_name = "qualifier.Foo";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
           `Method
             {
               direct_target = "qualifier.Bar.method";
               class_name = "qualifier.Bar";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
     ];
 
-  (* Statically invoking properties is illegal in the runtime - we default to dynamic dispatch, but
-     this should be a type error, really. *)
+  (* Statically invoking properties is illegal in the runtime - we default to dynamic
+     is_optional_class_attribute = false; dispatch, but this should be a type error, really. *)
   assert_calls
     {|
       class Foo:
@@ -2051,6 +2088,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Foo.method";
               class_name = "qualifier.Foo";
+              is_optional_class_attribute = false;
               dispatch = Dynamic;
             };
         ] );
@@ -2072,6 +2110,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Foo.method";
               class_name = "qualifier.Foo";
+              is_optional_class_attribute = true;
               dispatch = Dynamic;
             };
         ] );
@@ -2093,6 +2132,7 @@ let test_calls context =
             {
               direct_target = "qualifier.Foo.method";
               class_name = "qualifier.Bar";
+              is_optional_class_attribute = true;
               dispatch = Dynamic;
             };
         ] );
@@ -2110,7 +2150,12 @@ let test_calls context =
       ( "qualifier.optional_property",
         [
           `Method
-            { direct_target = "qualifier.Foo.x"; class_name = "qualifier.Foo"; dispatch = Dynamic };
+            {
+              direct_target = "qualifier.Foo.x";
+              class_name = "qualifier.Foo";
+              is_optional_class_attribute = true;
+              dispatch = Dynamic;
+            };
         ] );
     ]
 

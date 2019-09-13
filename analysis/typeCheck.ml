@@ -2097,7 +2097,7 @@ module State (Context : Context) = struct
         in
         (* Store callees. *)
         let callees =
-          let method_callee annotation callable =
+          let method_callee ?(is_optional_class_attribute = false) annotation callable =
             match callable with
             | { Type.Callable.kind = Named direct_target; _ } ->
                 let class_name =
@@ -2109,7 +2109,12 @@ module State (Context : Context) = struct
                 in
                 [
                   Dependencies.Callgraph.Method
-                    { direct_target; class_name; dispatch = (if dynamic then Dynamic else Static) };
+                    {
+                      direct_target;
+                      class_name;
+                      dispatch = (if dynamic then Dynamic else Static);
+                      is_optional_class_attribute;
+                    };
                 ]
             | _ -> []
           in
@@ -2122,7 +2127,7 @@ module State (Context : Context) = struct
             match Node.value callee with
             | Name (Name.Attribute { attribute; _ }) -> (
                 find_method ~parent:annotation ~name:attribute
-                >>| method_callee annotation
+                >>| method_callee ~is_optional_class_attribute:true annotation
                 |> function
                 | None -> []
                 | Some list -> list )
@@ -3004,7 +3009,11 @@ module State (Context : Context) = struct
                       Some instantiated
                   in
                   (* Collect @property's in the call graph. *)
-                  let register_attribute_callable class_name attribute =
+                  let register_attribute_callable
+                      ?(is_optional_class_attribute = false)
+                      class_name
+                      attribute
+                    =
                     let direct_target_name =
                       Annotated.Attribute.parent attribute
                       |> Type.primitive_name
@@ -3014,7 +3023,12 @@ module State (Context : Context) = struct
                     | Some direct_target ->
                         property_callables :=
                           Dependencies.Callgraph.Method
-                            { direct_target; class_name; dispatch = Dynamic }
+                            {
+                              direct_target;
+                              class_name;
+                              dispatch = Dynamic;
+                              is_optional_class_attribute;
+                            }
                           :: !property_callables
                     | None -> ()
                   in
@@ -3042,6 +3056,7 @@ module State (Context : Context) = struct
                             in
                             if Option.is_some (Annotated.Attribute.property attribute) then
                               register_attribute_callable
+                                ~is_optional_class_attribute:true
                                 (Annotated.Class.name class_definition)
                                 attribute
                         | Some _

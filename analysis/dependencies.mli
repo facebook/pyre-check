@@ -78,6 +78,7 @@ module Callgraph : sig
         class_name: Reference.t;
         direct_target: Reference.t;
         dispatch: dispatch;
+        is_optional_class_attribute: bool;
       }
   [@@deriving compare, eq, show]
 

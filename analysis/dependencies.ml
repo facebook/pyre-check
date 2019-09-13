@@ -261,6 +261,7 @@ module Callgraph = struct
         class_name: Reference.t;
         direct_target: Reference.t;
         dispatch: dispatch;
+        is_optional_class_attribute: bool;
       }
   [@@deriving compare, hash, sexp, eq, show, to_yojson]
 
@@ -286,12 +287,13 @@ module Callgraph = struct
           (List.rev_append
              locations
              ["kind", `String "function"; "target", `String (Reference.show name)])
-    | Method { direct_target; class_name; dispatch } ->
+    | Method { direct_target; class_name; dispatch; is_optional_class_attribute } ->
         `Assoc
           (List.rev_append
              locations
              [
                "kind", `String "method";
+               "is_optional_class_attribute", `Bool is_optional_class_attribute;
                "direct_target", `String (Reference.show direct_target);
                "class_name", `String (Reference.show class_name);
                ( "dispatch",
