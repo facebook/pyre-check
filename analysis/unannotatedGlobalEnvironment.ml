@@ -408,6 +408,8 @@ module UpdateResult = struct
 
 
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+
+  let upstream { upstream; _ } = upstream
 end
 
 let update

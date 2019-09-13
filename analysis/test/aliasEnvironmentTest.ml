@@ -150,30 +150,30 @@ let test_harder_registrations context =
 
 let test_updates context =
   let assert_updates
-      ?original_source
-      ?new_source
+      ?(original_sources = [])
+      ?(new_sources = [])
       ~middle_actions
       ~expected_triggers
       ?post_actions
       ()
     =
     Memory.reset_shared_memory ();
-    let sources = original_source >>| (fun source -> "test.py", source) |> Option.to_list in
     let project =
       ScratchProject.setup
         ~include_typeshed_stubs:false
         ~incremental_style:FineGrained
-        sources
+        original_sources
         ~context
     in
     let configuration = ScratchProject.configuration_of project in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let update ~ast_environment_update_result () =
+      let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
       update_environments
         ~configuration
         ~ast_environment:(AstEnvironment.read_only ast_environment)
         ~ast_environment_update_result
-        ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+        ~qualifiers:(Reference.Set.of_list qualifiers)
         ()
     in
     let alias_environment = update ~ast_environment_update_result () |> fst in
@@ -207,14 +207,16 @@ let test_updates context =
       let file = File.create ~content (Path.create_relative ~root:local_root ~relative) in
       File.write file
     in
-    if Option.is_some original_source then
-      delete_file project "test.py";
-    new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
+    List.iter original_sources ~f:(fun (path, _) -> delete_file project path);
+    List.iter new_sources ~f:(fun (relative, content) -> add_file project ~relative content);
     let ast_environment_update_result =
       let { ScratchProject.module_tracker; _ } = project in
       let { Configuration.Analysis.local_root; _ } = configuration in
-      let path = Path.create_relative ~root:local_root ~relative:"test.py" in
-      ModuleTracker.update ~configuration ~paths:[path] module_tracker
+      let paths =
+        List.map new_sources ~f:(fun (relative, _) ->
+            Path.create_relative ~root:local_root ~relative)
+      in
+      ModuleTracker.update ~configuration ~paths module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
       |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
     in
@@ -233,7 +235,12 @@ let test_updates context =
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
   let dependency = Reference.create "dep" in
-  assert_updates
+  let assert_test_py_updates ?original_source ?new_source =
+    assert_updates
+      ?original_sources:(original_source >>| fun source -> ["test.py", source])
+      ?new_sources:(new_source >>| fun source -> ["test.py", source])
+  in
+  assert_test_py_updates
     ~original_source:{|
       class C:
         pass
@@ -248,7 +255,7 @@ let test_updates context =
     ~expected_triggers:[]
     ~post_actions:["test.X", dependency, Some "test.C"]
     ();
-  assert_updates
+  assert_test_py_updates
     ~original_source:{|
       class C:
         pass
@@ -261,7 +268,7 @@ let test_updates context =
     ~expected_triggers:[dependency]
     ~post_actions:["test.X", dependency, None]
     ();
-  assert_updates
+  assert_test_py_updates
     ~original_source:{|
       class C:
         pass
@@ -278,6 +285,30 @@ let test_updates context =
       (* Even if the route to the alias changed, no trigger *)
     ~expected_triggers:[]
     ~post_actions:["test.X", dependency, Some "test.C"]
+    ();
+  assert_updates
+    ~original_sources:
+      [
+        "test.py", {|
+          from placeholder import Q
+          X = Q
+        |};
+        "placeholder.pyi", {|
+          # pyre-placeholder-stub
+        |};
+      ]
+    ~new_sources:
+      [
+        "test.py", {|
+          from placeholder import Q
+          X = Q
+        |};
+        "placeholder.pyi", {|
+        |};
+      ]
+    ~middle_actions:["test.X", dependency, Some "typing.Any"]
+    ~expected_triggers:[dependency]
+    ~post_actions:["test.X", dependency, None]
     ();
   ()
 

@@ -75,6 +75,12 @@ module UnresolvedAlias = struct
       ~dependency
       ()
     =
+    let unannotated_global_environment_dependency =
+      dependency >>| fun dependency -> UnannotatedGlobalEnvironment.AliasRegister dependency
+    in
+    let ast_environment_dependency =
+      dependency >>| fun dependency -> AstEnvironment.AliasRegister dependency
+    in
     let value_annotation = unchecked_resolve ~unparsed:value ~target String.Map.empty in
     let dependencies = String.Hash_set.create () in
     let module TrackedTransform = Type.Transform.Make (struct
@@ -99,16 +105,22 @@ module UnresolvedAlias = struct
                 | _ -> Reference.create "typing.Any"
               in
               let ast_environment = ast_environment environment in
-              if AstEnvironment.ReadOnly.from_empty_stub ast_environment reference then
+              if
+                AstEnvironment.ReadOnly.from_empty_stub
+                  ast_environment
+                  ?dependency:ast_environment_dependency
+                  reference
+              then
                 (), Type.Any
               else if
                 UnannotatedGlobalEnvironment.ReadOnly.class_exists
-                  ?dependency
+                  ?dependency:unannotated_global_environment_dependency
                   unannotated_global_environment
                   primitive
                 || Option.is_some
                      (AstEnvironment.ReadOnly.get_module_metadata
                         ast_environment
+                        ?dependency:ast_environment_dependency
                         (Reference.create primitive))
               then
                 (), annotation
@@ -285,8 +297,11 @@ let extract_alias { unannotated_global_environment } name ~dependency =
               in
               Some (TypeAlias { target = name; value }) )
   in
+  let unannotated_global_environment_dependency =
+    dependency >>| fun dependency -> UnannotatedGlobalEnvironment.AliasRegister dependency
+  in
   UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-    ?dependency
+    ?dependency:unannotated_global_environment_dependency
     unannotated_global_environment
     name
   >>= extract_alias
@@ -298,9 +313,7 @@ let register_aliases environment global_names ~track_dependencies =
   (* We must do this in every worker because global state is not shared *)
   Type.Cache.disable ();
   let register global_name =
-    let dependency =
-      Option.some_if track_dependencies (UnannotatedGlobalEnvironment.AliasRegister global_name)
-    in
+    let dependency = Option.some_if track_dependencies global_name in
     let rec get_aliased_type_for current ~visited =
       (* This means we're in a loop *)
       if Set.mem visited current then
@@ -357,13 +370,22 @@ let update environment ~scheduler ~configuration upstream_update =
   in
   match configuration with
   | { incremental_style = FineGrained; _ } ->
-      let dependencies =
+      let global_environment_dependencies =
         UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
           (UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies upstream_update)
         |> List.filter_map ~f:(function
                | UnannotatedGlobalEnvironment.AliasRegister name -> Some name
                | _ -> None)
       in
+      let ast_environment_dependencies =
+        UnannotatedGlobalEnvironment.UpdateResult.upstream upstream_update
+        |> AstEnvironment.UpdateResult.triggered_dependencies
+        |> AstEnvironment.DependencyKey.KeySet.elements
+        |> List.filter_map ~f:(function
+               | AstEnvironment.AliasRegister name -> Some name
+               | _ -> None)
+      in
+      let dependencies = global_environment_dependencies @ ast_environment_dependencies in
       let names_to_update =
         dependencies
         |> List.fold

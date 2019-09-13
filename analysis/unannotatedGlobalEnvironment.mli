@@ -64,6 +64,8 @@ module UpdateResult : sig
   val current_and_previous_unannotated_globals : t -> Reference.Set.t
 
   val triggered_dependencies : t -> DependencyKey.KeySet.t
+
+  val upstream : t -> AstEnvironment.UpdateResult.t
 end
 
 val update
