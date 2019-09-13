@@ -79,10 +79,8 @@ module type AnnotatedClass = sig
 end
 
 val create
-  :  ast_environment:AstEnvironment.ReadOnly.t ->
-  aliases:(Type.Primitive.t -> Type.alias option) ->
-  module_definition:(Reference.t -> Module.t option) ->
-  class_definition:(Type.Primitive.t -> Class.t Node.t option) ->
+  :  ?dependency:Reference.t ->
+  alias_environment:AliasEnvironment.ReadOnly.t ->
   class_metadata:(Type.Primitive.t -> class_metadata option) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   global:(Reference.t -> global option) ->

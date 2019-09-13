@@ -355,25 +355,10 @@ let ast_environment environment =
 
 
 let resolution_implementation ?dependency environment () =
-  let ast_environment = ast_environment environment in
   let alias_environment = alias_environment environment in
-  let unannotated_global_environment_dependency =
-    dependency >>| fun dependency -> UnannotatedGlobalEnvironment.TypeCheckSource dependency
-  in
-  let ast_environment_dependency =
-    dependency >>| fun dependency -> AstEnvironment.TypeCheckSource dependency
-  in
   GlobalResolution.create
-    ~ast_environment
-    ~aliases:(AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment)
-    ~module_definition:
-      (AstEnvironment.ReadOnly.get_module_metadata
-         ?dependency:ast_environment_dependency
-         ast_environment)
-    ~class_definition:
-      (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-         (unannotated_global_environment environment)
-         ?dependency:unannotated_global_environment_dependency)
+    ?dependency
+    ~alias_environment
     ~class_metadata:(SharedMemory.ClassMetadata.get ?dependency)
     ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
     ~global:(SharedMemory.Globals.get ?dependency)

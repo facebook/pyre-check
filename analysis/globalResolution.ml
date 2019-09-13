@@ -95,10 +95,8 @@ module type AnnotatedClass = sig
 end
 
 let create
-    ~ast_environment
-    ~aliases
-    ~module_definition
-    ~class_definition
+    ?dependency
+    ~alias_environment
     ~class_metadata
     ~undecorated_signature
     ~global
@@ -106,6 +104,29 @@ let create
     ~backedges
     (module AnnotatedClass : AnnotatedClass)
   =
+  let ast_environment_dependency =
+    dependency >>| fun dependency -> AstEnvironment.TypeCheckSource dependency
+  in
+  let unannotated_global_environment_dependency =
+    dependency >>| fun dependency -> UnannotatedGlobalEnvironment.TypeCheckSource dependency
+  in
+  let unannotated_global_environment =
+    AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
+  in
+  let ast_environment =
+    UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
+  in
+  let class_definition =
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      unannotated_global_environment
+      ?dependency:unannotated_global_environment_dependency
+  in
+  let module_definition =
+    AstEnvironment.ReadOnly.get_module_metadata
+      ?dependency:ast_environment_dependency
+      ast_environment
+  in
+  let aliases = AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment in
   let constructor ~resolution class_name =
     let instantiated = Type.Primitive class_name in
     class_definition class_name
