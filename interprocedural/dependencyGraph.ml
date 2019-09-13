@@ -112,7 +112,13 @@ let create_callgraph ?(use_type_checking_callgraph = false) ~environment ~source
               |> Option.value ~default:callees
           | _ -> callees
         in
-        Visit.collect_calls_and_names statement |> List.fold ~init:callees ~f:process_call
+        match Node.value statement with
+        | Statement.Define _
+        | Statement.Class _ ->
+            (* Ensure that we don't visited nested functions or class toplevels, as those will be
+               analyzed separately. *)
+            callees
+        | _ -> Visit.collect_calls_and_names statement |> List.fold ~init:callees ~f:process_call
       in
       List.foldi statements ~init:callees ~f:fold_statements
     in
