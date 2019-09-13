@@ -34,7 +34,7 @@ let run_check
   let timer = Timer.start () in
   let map _ sources =
     Analysis.Annotated.Class.AttributeCache.clear ();
-    Module.Cache.clear ();
+    Analysis.AstEnvironment.FromEmptyStubCache.clear ();
     let analyze_source
         { errors; number_files }
         ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)

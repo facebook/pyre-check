@@ -529,8 +529,7 @@ let register_class_metadata environment class_name =
     >>| Annotated.Class.create
     >>| Annotated.Class.extends_placeholder_stub_class
           ~aliases:(AliasEnvironment.ReadOnly.get_alias (alias_environment environment))
-          ~module_definition:
-            (AstEnvironment.ReadOnly.get_module_metadata (ast_environment environment))
+          ~from_empty_stub:(AstEnvironment.ReadOnly.from_empty_stub (ast_environment environment))
     |> Option.value ~default:false
   in
   ClassMetadata.add

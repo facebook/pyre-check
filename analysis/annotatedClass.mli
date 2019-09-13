@@ -157,7 +157,7 @@ val inferred_callable_type : t -> resolution:GlobalResolution.t -> Type.Callable
 val extends_placeholder_stub_class
   :  t ->
   aliases:(Type.Primitive.t -> Type.alias option) ->
-  module_definition:(Reference.t -> Module.t option) ->
+  from_empty_stub:(Reference.t -> bool) ->
   bool
 
 module AttributeCache : sig

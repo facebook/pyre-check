@@ -98,17 +98,18 @@ module UnresolvedAlias = struct
                     Expression.name_to_reference_exn name
                 | _ -> Reference.create "typing.Any"
               in
-              let module_definition =
-                AstEnvironment.ReadOnly.get_module_metadata (ast_environment environment)
-              in
-              if Module.from_empty_stub ~reference ~module_definition then
+              let ast_environment = ast_environment environment in
+              if AstEnvironment.ReadOnly.from_empty_stub ast_environment reference then
                 (), Type.Any
               else if
                 UnannotatedGlobalEnvironment.ReadOnly.class_exists
                   ?dependency
                   unannotated_global_environment
                   primitive
-                || Option.is_some (module_definition (Reference.create primitive))
+                || Option.is_some
+                     (AstEnvironment.ReadOnly.get_module_metadata
+                        ast_environment
+                        (Reference.create primitive))
               then
                 (), annotation
               else

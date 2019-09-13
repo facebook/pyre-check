@@ -10,6 +10,14 @@ open PyreParser
 
 type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
 
+(* We cache results of `from_empty_stub` here since module definition lookup requires shared memory
+   lookup, which can be expensive *)
+module FromEmptyStubCache = struct
+  let cache = Reference.Table.create ()
+
+  let clear () = Reference.Table.clear cache
+end
+
 module DependencyKey = Memory.DependencyKey.Make (struct
   type nonrec t = dependency
 
@@ -636,6 +644,24 @@ module ReadOnly = struct
   let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
 
   let get_module_metadata { get_module_metadata; _ } = get_module_metadata
+
+  let from_empty_stub { get_module_metadata; _ } ?dependency reference =
+    let rec is_empty_stub ~lead ~tail =
+      match tail with
+      | head :: tail -> (
+          let lead = lead @ [head] in
+          let reference = Reference.create_from_list lead in
+          match get_module_metadata ?dependency reference with
+          | Some definition when Module.empty_stub definition -> true
+          | Some _ -> is_empty_stub ~lead ~tail
+          | _ -> false )
+      | _ -> false
+    in
+    let compute () = is_empty_stub ~lead:[] ~tail:(Reference.as_list reference) in
+    if Option.is_some dependency then
+      compute ()
+    else
+      Hashtbl.find_or_add FromEmptyStubCache.cache reference ~default:(fun _ -> compute ())
 end
 
 let read_only ({ module_tracker } as environment) =

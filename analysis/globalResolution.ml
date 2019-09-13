@@ -323,7 +323,7 @@ let parse_annotation
     ?(allow_untracked = false)
     ?(allow_invalid_type_parameters = false)
     ?(allow_primitives_from_empty_stubs = false)
-    ({ aliases; module_definition; _ } as resolution)
+    ({ aliases; ast_environment; _ } as resolution)
     expression
   =
   let expression = Expression.delocalize expression in
@@ -346,8 +346,7 @@ let parse_annotation
       let constraints = function
         | Type.Primitive name ->
             let originates_from_empty_stub =
-              Reference.create name
-              |> fun reference -> Module.from_empty_stub ~reference ~module_definition
+              AstEnvironment.ReadOnly.from_empty_stub ast_environment (Reference.create name)
             in
             if originates_from_empty_stub then
               Some Type.Any
@@ -512,9 +511,8 @@ let function_definitions resolution reference =
       result
 
 
-let is_suppressed_module resolution reference =
-  let module_definition = module_definition resolution in
-  Module.from_empty_stub ~reference ~module_definition
+let is_suppressed_module { ast_environment; _ } reference =
+  AstEnvironment.ReadOnly.from_empty_stub ast_environment reference
 
 
 let solve_less_or_equal ?(any_is_bottom = false) resolution ~constraints ~left ~right =
@@ -686,10 +684,7 @@ let source_is_unit_test resolution ~source =
   List.exists (Preprocessing.classes source) ~f:is_unittest
 
 
-let class_extends_placeholder_stub_class
-    ({ module_definition; _ } as resolution)
-    { Class.bases; _ }
-  =
+let class_extends_placeholder_stub_class ({ ast_environment; _ } as resolution) { Class.bases; _ } =
   let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
     let parsed =
       parse_annotation
@@ -703,7 +698,7 @@ let class_extends_placeholder_stub_class
     | Type.Primitive primitive
     | Parametric { name = primitive; _ } ->
         Reference.create primitive
-        |> fun reference -> Module.from_empty_stub ~reference ~module_definition
+        |> fun reference -> AstEnvironment.ReadOnly.from_empty_stub ast_environment reference
     | _ -> false
   in
   List.exists bases ~f:is_from_placeholder_stub

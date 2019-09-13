@@ -19,14 +19,6 @@ type t =
   | Implicit of { empty_stub: bool }
 [@@deriving eq, sexp, compare]
 
-(* We cache results of `from_empty_stub` here since module definition lookup requires shared memory
-   lookup, which can be expensive *)
-module Cache = struct
-  let cache = Reference.Table.create ()
-
-  let clear () = Reference.Table.clear cache
-end
-
 let pp format printed_module =
   let aliased_exports, empty_stub =
     match printed_module with
@@ -48,22 +40,6 @@ let empty_stub = function
   | Implicit { empty_stub }
   | Explicit { empty_stub; _ } ->
       empty_stub
-
-
-let from_empty_stub ~reference ~module_definition =
-  let rec is_empty_stub ~lead ~tail =
-    match tail with
-    | head :: tail -> (
-        let lead = lead @ [head] in
-        let reference = Reference.create_from_list lead in
-        match module_definition reference with
-        | Some definition when empty_stub definition -> true
-        | Some _ -> is_empty_stub ~lead ~tail
-        | _ -> false )
-    | _ -> false
-  in
-  Hashtbl.find_or_add Cache.cache reference ~default:(fun _ ->
-      is_empty_stub ~lead:[] ~tail:(Reference.as_list reference))
 
 
 let create_for_testing ~local_mode ~stub =

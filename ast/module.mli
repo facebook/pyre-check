@@ -7,13 +7,7 @@ type t [@@deriving eq, sexp, show, compare]
 
 val empty_stub : t -> bool
 
-val from_empty_stub : reference:Reference.t -> module_definition:(Reference.t -> t option) -> bool
-
 val aliased_export : t -> Reference.t -> Reference.t option
-
-module Cache : sig
-  val clear : unit -> unit
-end
 
 val create : Source.t -> t
 

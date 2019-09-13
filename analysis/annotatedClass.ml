@@ -691,10 +691,7 @@ let create_attribute
   }
 
 
-let extends_placeholder_stub_class
-    { Node.value = { Class.bases; _ }; _ }
-    ~aliases
-    ~module_definition
+let extends_placeholder_stub_class { Node.value = { Class.bases; _ }; _ } ~aliases ~from_empty_stub
   =
   let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
     let value = Expression.delocalize value in
@@ -702,8 +699,7 @@ let extends_placeholder_stub_class
     match parsed with
     | Type.Primitive primitive
     | Parametric { name = primitive; _ } ->
-        Reference.create primitive
-        |> fun reference -> Module.from_empty_stub ~reference ~module_definition
+        Reference.create primitive |> fun reference -> from_empty_stub reference
     | _ -> false
   in
   List.exists bases ~f:is_from_placeholder_stub
@@ -1126,7 +1122,7 @@ let rec attribute_table
           extends_placeholder_stub_class
             parent
             ~aliases:(GlobalResolution.aliases resolution)
-            ~module_definition:(GlobalResolution.module_definition resolution)
+            ~from_empty_stub:(GlobalResolution.is_suppressed_module resolution)
         then
           add_placeholder_stub_inheritances ();
         let get_table =
