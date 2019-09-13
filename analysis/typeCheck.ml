@@ -343,7 +343,7 @@ module State (Context : Context) = struct
     let class_initialization_errors errors =
       (* Ensure non-nullable typed attributes are instantiated in init. This must happen after
          typechecking is finished to access the annotations added to resolution. *)
-      let check_attributes_initialized () =
+      let check_attributes_initialized errors =
         let open Annotated in
         Define.parent_definition
           ~resolution:(Resolution.global_resolution resolution)
@@ -437,41 +437,39 @@ module State (Context : Context) = struct
                 definition)
         |> Option.value ~default:errors
       in
-      let check_bases () =
-        let open Annotated in
-        let is_final { Expression.Call.Argument.name; value } =
-          let add_error { GlobalResolution.is_final; _ } =
-            if is_final then
-              let error =
-                Error.create
-                  ~location
-                  ~kind:(Error.InvalidInheritance (ClassName (Expression.show value)))
-                  ~define:Context.define
-              in
-              error :: errors
-            else
-              errors
-          in
-          match name, value with
-          | None, { Node.value = Name name; _ } when Expression.is_simple_name name ->
-              let reference = Expression.name_to_reference_exn name in
-              GlobalResolution.class_metadata
-                global_resolution
-                (Type.Primitive (Reference.show reference))
-              >>| add_error
-              |> Option.value ~default:errors
-          | _ -> errors
-        in
-        Define.parent_definition ~resolution:global_resolution (Define.create define)
-        >>| Class.bases
-        >>| List.map ~f:is_final
-        >>| List.concat
-        |> Option.value ~default:errors
-      in
       if Define.is_constructor define && not (Define.is_stub define) then
-        let base_errors = check_bases () in
-        List.append base_errors (check_attributes_initialized ())
+        errors |> check_attributes_initialized
       else if Define.is_class_toplevel define then
+        let check_bases errors =
+          let open Annotated in
+          let is_final errors { Expression.Call.Argument.name; value } =
+            let add_error { GlobalResolution.is_final; _ } =
+              if is_final then
+                let error =
+                  Error.create
+                    ~location
+                    ~kind:(Error.InvalidInheritance (ClassName (Expression.show value)))
+                    ~define:Context.define
+                in
+                error :: errors
+              else
+                errors
+            in
+            match name, value with
+            | None, { Node.value = Name name; _ } when Expression.is_simple_name name ->
+                let reference = Expression.name_to_reference_exn name in
+                GlobalResolution.class_metadata
+                  global_resolution
+                  (Type.Primitive (Reference.show reference))
+                >>| add_error
+                |> Option.value ~default:errors
+            | _ -> errors
+          in
+          Define.parent_definition ~resolution:global_resolution (Define.create define)
+          >>| Class.bases
+          >>| List.fold ~init:errors ~f:is_final
+          |> Option.value ~default:errors
+        in
         let check_unimplemented_abstract_methods definition errors =
           if AnnotatedClass.is_abstract definition then
             errors
@@ -513,101 +511,93 @@ module State (Context : Context) = struct
           else
             errors
         in
-        let check_protocol_and_abstract_attributes_initialized
-            ~is_class_type
-            ~error_kind
-            class_definition
-            errors
-          =
-          let uninitialized_attributes =
-            let superclasses =
-              let superclasses =
-                AnnotatedClass.superclasses class_definition ~resolution:global_resolution
-              in
-              if List.exists superclasses ~f:is_class_type then
-                superclasses |> List.cons class_definition
-              else
-                []
-            in
-            let create_attribute_map definition sofar =
-              let attributes =
-                Annotated.Class.attributes
-                  ~include_generated_attributes:false
-                  ~resolution:global_resolution
-                  definition
-              in
-              if is_class_type definition then
-                let is_not_initialized
-                    { Node.value = { AnnotatedAttribute.name; initialized; _ }; _ }
-                  =
-                  let implicitly_initialized name =
-                    Identifier.SerializableMap.mem
-                      name
-                      (AnnotatedClass.implicit_attributes definition)
-                  in
-                  (not initialized) && not (implicitly_initialized name)
-                in
-                let add_to_map
-                    sofar
-                    { Node.value = { AnnotatedAttribute.name; _ } as attribute; _ }
-                  =
-                  match String.Map.add sofar ~key:name ~data:attribute with
-                  | `Ok map -> map
-                  | `Duplicate -> sofar
-                in
-                List.filter attributes ~f:is_not_initialized |> List.fold ~init:sofar ~f:add_to_map
-              else
-                List.filter attributes ~f:AnnotatedAttribute.initialized
-                |> List.map ~f:AnnotatedAttribute.name
-                |> List.fold ~init:sofar ~f:Map.remove
-            in
-            superclasses
-            |> List.fold_right ~init:String.Map.empty ~f:create_attribute_map
-            |> String.Map.to_alist
-          in
-          let unimplemented_errors =
-            uninitialized_attributes
-            |> List.map ~f:(fun (name, { AnnotatedAttribute.annotation; parent; _ }) ->
-                   let expected = Annotation.annotation annotation in
-                   Error.create
-                     ~location
-                     ~kind:
-                       (Error.UninitializedAttribute
-                          {
-                            name;
-                            parent;
-                            mismatch =
-                              {
-                                Error.expected;
-                                actual = Type.optional expected;
-                                actual_expressions = [];
-                                due_to_invariance = false;
-                              };
-                            kind = error_kind;
-                          })
-                     ~define:Context.define)
-          in
-          unimplemented_errors @ errors
-        in
-        let check_base_and_attributes definition errors =
-          if not (AnnotatedClass.has_explicit_constructor definition ~resolution:global_resolution)
+        let check_attributes definition errors =
+          if
+            (not (AnnotatedClass.has_explicit_constructor definition ~resolution:global_resolution))
+            && (not (AnnotatedClass.is_protocol definition))
+            && not (AnnotatedClass.is_abstract definition)
           then
-            let base_errors = check_bases () in
-            if
-              (not (AnnotatedClass.is_protocol definition))
-              && not (AnnotatedClass.is_abstract definition)
-            then
-              List.append base_errors (check_attributes_initialized ())
-              |> check_protocol_and_abstract_attributes_initialized
-                   ~is_class_type:AnnotatedClass.is_protocol
-                   ~error_kind:(Error.Protocol (AnnotatedClass.name definition))
-                   definition
-              |> check_protocol_and_abstract_attributes_initialized
-                   ~is_class_type:AnnotatedClass.is_abstract
-                   ~error_kind:(Error.Abstract (AnnotatedClass.name definition))
-                   definition
-            else
-              base_errors
+            let check_initialized ~is_class_type ~error_kind class_definition errors =
+              let uninitialized_attributes =
+                let superclasses =
+                  let superclasses =
+                    AnnotatedClass.superclasses class_definition ~resolution:global_resolution
+                  in
+                  if List.exists superclasses ~f:is_class_type then
+                    superclasses |> List.cons class_definition
+                  else
+                    []
+                in
+                let create_attribute_map definition sofar =
+                  let attributes =
+                    Annotated.Class.attributes
+                      ~include_generated_attributes:false
+                      ~resolution:global_resolution
+                      definition
+                  in
+                  if is_class_type definition then
+                    let is_not_initialized
+                        { Node.value = { AnnotatedAttribute.name; initialized; _ }; _ }
+                      =
+                      let implicitly_initialized name =
+                        Identifier.SerializableMap.mem
+                          name
+                          (AnnotatedClass.implicit_attributes definition)
+                      in
+                      (not initialized) && not (implicitly_initialized name)
+                    in
+                    let add_to_map
+                        sofar
+                        { Node.value = { AnnotatedAttribute.name; _ } as attribute; _ }
+                      =
+                      match String.Map.add sofar ~key:name ~data:attribute with
+                      | `Ok map -> map
+                      | `Duplicate -> sofar
+                    in
+                    List.filter attributes ~f:is_not_initialized
+                    |> List.fold ~init:sofar ~f:add_to_map
+                  else
+                    List.filter attributes ~f:AnnotatedAttribute.initialized
+                    |> List.map ~f:AnnotatedAttribute.name
+                    |> List.fold ~init:sofar ~f:Map.remove
+                in
+                superclasses
+                |> List.fold_right ~init:String.Map.empty ~f:create_attribute_map
+                |> String.Map.to_alist
+              in
+              let unimplemented_errors =
+                uninitialized_attributes
+                |> List.map ~f:(fun (name, { AnnotatedAttribute.annotation; parent; _ }) ->
+                       let expected = Annotation.annotation annotation in
+                       Error.create
+                         ~location
+                         ~kind:
+                           (Error.UninitializedAttribute
+                              {
+                                name;
+                                parent;
+                                mismatch =
+                                  {
+                                    Error.expected;
+                                    actual = Type.optional expected;
+                                    actual_expressions = [];
+                                    due_to_invariance = false;
+                                  };
+                                kind = error_kind;
+                              })
+                         ~define:Context.define)
+              in
+              unimplemented_errors @ errors
+            in
+            check_attributes_initialized errors
+            |> check_initialized
+                 ~is_class_type:AnnotatedClass.is_protocol
+                 ~error_kind:(Error.Protocol (AnnotatedClass.name definition))
+                 definition
+            |> check_initialized
+                 ~is_class_type:AnnotatedClass.is_abstract
+                 ~error_kind:(Error.Abstract (AnnotatedClass.name definition))
+                 definition
           else
             errors
         in
@@ -633,7 +623,8 @@ module State (Context : Context) = struct
         >>| Annotated.Class.create
         >>| (fun definition ->
               errors
-              |> check_base_and_attributes definition
+              |> check_bases
+              |> check_attributes definition
               |> check_abstract_methods definition
               |> check_unimplemented_abstract_methods definition
               |> check_redefined_class definition)
