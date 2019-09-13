@@ -21,24 +21,35 @@ class GraphQLSourceGenerator(ModelGenerator):
         # Get all graphql import names.
         views = []
         modules = []
-        for path in os.listdir(
-            os.path.dirname(import_module(Configuration.graphql_module).__file__)
-        ):
-            if path.endswith(".py") and path != "__init__.py":
-                modules.append(f"{Configuration.graphql_module}.{path[:-3]}")
 
-        def visit_all_graphql_resolvers(module_name: str) -> None:
-            module = import_module(module_name)
-            for key in module.__dict__:
-                element = module.__dict__[key]
-                if isinstance(element, Configuration.graphql_object_type):
+        module_argument = Configuration.graphql_module
+        graphql_modules = (
+            [module_argument] if isinstance(module_argument, str) else module_argument
+        )
+
+        for graphql_module in graphql_modules:
+            for path in os.listdir(
+                os.path.dirname(import_module(graphql_module).__file__)
+            ):
+                if path.endswith(".py") and path != "__init__.py":
+                    modules.append(f"{graphql_module}.{path[:-3]}")
+
+            def visit_all_graphql_resolvers(module_name: str) -> None:
+                module = import_module(module_name)
+                for key in module.__dict__:
+                    element = module.__dict__[key]
+
+                    if not isinstance(element, Configuration.graphql_object_type):
+                        continue
+
                     for field in element.fields:
                         resolver = element.fields[field].resolver
                         if resolver is not None and resolver.__name__ != "<lambda>":
                             views.append(resolver)
 
-        for module_name in modules:
-            visit_all_graphql_resolvers(module_name)
+            for module_name in modules:
+                visit_all_graphql_resolvers(module_name)
+
         return views
 
     def compute_models(

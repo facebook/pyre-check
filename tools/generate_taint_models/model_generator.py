@@ -10,7 +10,18 @@ import functools
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, ClassVar, Dict, Iterable, List, Optional, Set, Type
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Type,
+    Union,
+)
 
 from .get_annotated_free_functions_with_decorator import DecoratorAnnotationSpec
 
@@ -60,7 +71,7 @@ class Configuration:
     whitelisted_views: ClassVar[List[str]] = []
     root: ClassVar[str] = ""
     stub_root: ClassVar[Optional[str]] = ""
-    graphql_module: ClassVar[str] = ""
+    graphql_module: ClassVar[Union[List[str], str]] = ""
     blacklisted_globals: ClassVar[Set[str]] = set()
     blacklisted_global_directories: ClassVar[Set[str]] = set()
     annotation_specs: ClassVar[List[DecoratorAnnotationSpec]] = []
