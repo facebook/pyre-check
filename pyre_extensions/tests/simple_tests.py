@@ -54,6 +54,37 @@ class BasicTestCase(unittest.TestCase):
         except Exception:
             self.fail("none_throws missing or broken")
 
+    def test_generic(self):
+        try:
+            from typing import TypeVar
+            from .. import Generic, ListVariadic
+            from ..type_variable_operators import Concatenation
+
+            # permitted
+            class Foo(Generic):
+                pass
+
+            # permitted
+            class Bar(Generic[int]):
+                pass
+
+            # permitted
+            class Baz(Generic[42]):
+                pass
+
+            Shape = ListVariadic("Shape")
+            DType = TypeVar("DType")
+
+            # intended use
+            class Tensor(Generic[Concatenation[DType, Shape]]):
+                pass
+
+            # not handled in the backend ... yet
+            X = Tensor[int, 7, 8, 9]  # noqa
+
+        except Exception:
+            self.fail("Generic/GenericMeta missing or broken")
+
 
 if __name__ == "__main__":
     unittest.main()
