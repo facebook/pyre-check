@@ -871,7 +871,7 @@ let process_type_query_request
 
           let define = define
 
-          let calls = Location.Reference.Table.create ()
+          module Builder = Dependencies.Callgraph.DefaultBuilder
         end)
         in
         let state = State.create ~resolution () in

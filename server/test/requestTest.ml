@@ -217,7 +217,7 @@ let test_process_type_query_request context =
                             },
                             "stop": {
                                 "line": 4,
-                                "column": 12
+                                "column": 10
                             }
                         }
                     ],
@@ -245,7 +245,7 @@ let test_process_type_query_request context =
                             },
                             "stop": {
                                 "line": 4,
-                                "column": 12
+                                "column": 10
                             }
                         }
                     ],

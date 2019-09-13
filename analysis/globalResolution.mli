@@ -66,6 +66,16 @@ module type AnnotatedClass = sig
     t ->
     resolution:global_resolution_t ->
     AnnotatedAttribute.t list
+
+  val attribute
+    :  ?transitive:bool ->
+    ?class_attributes:bool ->
+    ?special_method:bool ->
+    t ->
+    resolution:global_resolution_t ->
+    name:Identifier.t ->
+    instantiated:Type.t ->
+    AnnotatedAttribute.t
 end
 
 val create
@@ -207,3 +217,5 @@ val consistent_solution_exists : t -> Type.t -> Type.t -> bool
 val global : t -> Reference.t -> global option
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
+
+val attribute : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option

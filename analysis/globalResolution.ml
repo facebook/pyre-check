@@ -48,6 +48,7 @@ type t = {
   class_metadata: Type.Primitive.t -> class_metadata option;
   constructor: resolution:t -> Type.Primitive.t -> Type.t option;
   attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
+  attribute: resolution:t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option;
   is_protocol: Type.t -> bool;
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
   protocol_assumptions: TypeOrder.ProtocolAssumptions.t;
@@ -81,6 +82,16 @@ module type AnnotatedClass = sig
     t ->
     resolution:global_resolution_t ->
     AnnotatedAttribute.t list
+
+  val attribute
+    :  ?transitive:bool ->
+    ?class_attributes:bool ->
+    ?special_method:bool ->
+    t ->
+    resolution:global_resolution_t ->
+    name:Identifier.t ->
+    instantiated:Type.t ->
+    AnnotatedAttribute.t
 end
 
 let create
@@ -128,6 +139,21 @@ let create
            Therefore, there is no reason to deal with joining the attributes together here *)
         None
   in
+  let attribute ~resolution ~parent:annotation ~name =
+    match AnnotatedClass.resolve_class ~resolution annotation with
+    | None -> None
+    | Some [] -> None
+    | Some [{ instantiated; class_attributes; class_definition }] ->
+        AnnotatedClass.attribute
+          class_definition
+          ~resolution
+          ~transitive:true
+          ~instantiated
+          ~class_attributes
+          ~name
+        |> fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
+    | Some (_ :: _) -> None
+  in
   let class_hierarchy =
     ( module struct
       let edges = edges
@@ -147,6 +173,7 @@ let create
     constructor;
     undecorated_signature;
     attributes;
+    attribute;
     is_protocol;
     protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
     global;
@@ -704,3 +731,5 @@ let global { global; _ } reference =
 
 
 let class_hierarchy { class_hierarchy; _ } = class_hierarchy
+
+let attribute ({ attribute; _ } as resolution) = attribute ~resolution

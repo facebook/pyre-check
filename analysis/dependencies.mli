@@ -104,4 +104,28 @@ module Callgraph : sig
   val set : caller:Reference.t -> callees:callee_with_locations list -> unit
 
   val get : caller:Reference.t -> callee_with_locations list
+
+  module type Builder = sig
+    val initialize : unit -> unit
+
+    val add_callee
+      :  global_resolution:GlobalResolution.t ->
+      target:Type.t option ->
+      callables:Type.Callable.t list option ->
+      dynamic:bool ->
+      callee:Ast.Expression.t ->
+      unit
+
+    val add_property_callees
+      :  global_resolution:GlobalResolution.t ->
+      resolved_base:Type.t ->
+      attributes:(AnnotatedAttribute.t * Ast.Reference.t) list ->
+      name:string ->
+      location:Ast.Location.Reference.t ->
+      unit
+
+    val get_all_callees : unit -> callee_with_locations list
+  end
+
+  module DefaultBuilder : Builder
 end

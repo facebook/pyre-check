@@ -343,7 +343,7 @@ let test_type_collection context =
 
           let define = +Test.mock_define
 
-          let calls = Location.Reference.Table.create ()
+          module Builder = Dependencies.Callgraph.DefaultBuilder
         end)
         in
         let state = State.create ~resolution () in

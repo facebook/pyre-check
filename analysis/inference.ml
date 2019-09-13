@@ -37,6 +37,8 @@ module State (Context : Context) = struct
     let define = Context.define
 
     let calls = Location.Reference.Table.create ()
+
+    module Builder = Dependencies.Callgraph.DefaultBuilder
   end
 
   module TypeCheckState = TypeCheck.State (TypeCheckContext)

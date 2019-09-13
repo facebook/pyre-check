@@ -39,7 +39,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val calls : Dependencies.Callgraph.callee list Location.Reference.Table.t
+  module Builder : Dependencies.Callgraph.Builder
 end
 
 module type Signature = sig
@@ -2095,49 +2095,7 @@ module State (Context : Context) = struct
           | Type.Union annotations -> List.map annotations ~f:callable |> Option.all
           | annotation -> callable annotation >>| fun callable -> [callable]
         in
-        (* Store callees. *)
-        let callees =
-          let method_callee ?(is_optional_class_attribute = false) annotation callable =
-            match callable with
-            | { Type.Callable.kind = Named direct_target; _ } ->
-                let class_name =
-                  ( if Type.is_meta annotation then
-                      Type.single_parameter annotation
-                  else
-                    annotation )
-                  |> Type.class_name
-                in
-                [
-                  Dependencies.Callgraph.Method
-                    {
-                      direct_target;
-                      class_name;
-                      dispatch = (if dynamic then Dynamic else Static);
-                      is_optional_class_attribute;
-                    };
-                ]
-            | _ -> []
-          in
-          match target, callables with
-          | Some (Type.Union elements), Some callables
-            when List.length elements = List.length callables ->
-              List.map2_exn elements callables ~f:method_callee |> List.concat
-          | Some annotation, Some [callable] -> method_callee annotation callable
-          | Some (Type.Optional annotation), _ -> (
-            match Node.value callee with
-            | Name (Name.Attribute { attribute; _ }) -> (
-                find_method ~parent:annotation ~name:attribute
-                >>| method_callee ~is_optional_class_attribute:true annotation
-                |> function
-                | None -> []
-                | Some list -> list )
-            | _ -> [] )
-          | None, Some [{ Type.Callable.kind = Named define; _ }] ->
-              [Dependencies.Callgraph.Function define]
-          | _ -> []
-        in
-        Hashtbl.set Context.calls ~key:location ~data:callees;
-
+        Context.Builder.add_callee ~global_resolution ~target ~callables ~dynamic ~callee;
         let signature callable =
           let signature = Annotated.Signature.select ~arguments ~resolution ~callable in
           match signature with
@@ -2981,7 +2939,6 @@ module State (Context : Context) = struct
             | Some [] -> { state; resolved = Type.Top; resolved_annotation = None; base = None }
             | Some (head :: tail) ->
                 let name = attribute in
-                let property_callables = ref [] in
                 let rec find_attribute
                     { Annotated.Class.instantiated; class_attributes; class_definition }
                   =
@@ -3009,68 +2966,28 @@ module State (Context : Context) = struct
                       Some instantiated
                   in
                   (* Collect @property's in the call graph. *)
-                  let register_attribute_callable
-                      ?(is_optional_class_attribute = false)
-                      class_name
-                      attribute
-                    =
-                    let direct_target_name =
-                      Annotated.Attribute.parent attribute
-                      |> Type.primitive_name
-                      >>| fun parent -> Reference.create ~prefix:(Reference.create parent) name
-                    in
-                    match direct_target_name with
-                    | Some direct_target ->
-                        property_callables :=
-                          Dependencies.Callgraph.Method
-                            {
-                              direct_target;
-                              class_name;
-                              dispatch = Dynamic;
-                              is_optional_class_attribute;
-                            }
-                          :: !property_callables
-                    | None -> ()
-                  in
-                  ( if Option.is_some (Annotated.Attribute.property attribute) then
-                      register_attribute_callable (Annotated.Class.name class_definition) attribute
-                    (* As the callgraph is an overapproximation, we also have to consider property
-                       calls from optional attributes.*)
-                  else
-                    match resolved_base with
-                    | Type.Optional base -> (
-                        Annotated.Class.resolve_class ~resolution:global_resolution base
-                        |> function
-                        | Some
-                            [{ Annotated.Class.instantiated; class_attributes; class_definition }]
-                          ->
-                            let attribute =
-                              Annotated.Class.attribute
-                                class_definition
-                                ~transitive:true
-                                ~class_attributes
-                                ~special_method:special
-                                ~resolution:global_resolution
-                                ~name
-                                ~instantiated
-                            in
-                            if Option.is_some (Annotated.Attribute.property attribute) then
-                              register_attribute_callable
-                                ~is_optional_class_attribute:true
-                                (Annotated.Class.name class_definition)
-                                attribute
-                        | Some _
-                        | None ->
-                            () )
-                    | _ -> () );
                   (attribute, undefined_target), Annotated.Attribute.annotation attribute
                 in
                 let head_definition, head_resolved = find_attribute head in
                 let tail_definitions, tail_resolveds =
                   List.map ~f:find_attribute tail |> List.unzip
                 in
-                if not (List.is_empty !property_callables) then
-                  Hashtbl.set Context.calls ~key:location ~data:!property_callables;
+                begin
+                  let attributes =
+                    List.map (head_definition :: tail_definitions) ~f:fst
+                    |> fun definitions ->
+                    List.zip_exn
+                      definitions
+                      (List.map (head :: tail) ~f:(fun { Annotated.Class.class_definition; _ } ->
+                           Annotated.Class.name class_definition))
+                  in
+                  Context.Builder.add_property_callees
+                    ~global_resolution
+                    ~resolved_base
+                    ~attributes
+                    ~location
+                    ~name
+                end;
                 let state =
                   let definition =
                     List.find
@@ -4815,7 +4732,7 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
 
     let define = define
 
-    let calls = Location.Reference.Table.create ()
+    module Builder = Dependencies.Callgraph.DefaultBuilder
   end)
   in
   let state_without_resolution =
@@ -4860,6 +4777,7 @@ let check_define
     ~configuration:({ Configuration.Analysis.include_hints; debug; _ } as configuration)
     ~global_resolution
     ~source:({ Source.source_path = { SourcePath.qualifier; relative; _ }; _ } as source)
+    ~call_graph_builder:(module Builder : Dependencies.Callgraph.Builder)
     ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
       resolution )
   =
@@ -4868,7 +4786,7 @@ let check_define
 
     let define = define_node
 
-    let calls = Location.Reference.Table.create ()
+    module Builder = Builder
   end
   in
   let filter_errors errors =
@@ -4900,6 +4818,7 @@ let check_define
       ~initial
     =
     Log.log ~section:`Check "Checking %a" Reference.pp name;
+    Context.Builder.initialize ();
     let dump = Define.dump define in
     if dump then (
       Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
@@ -4947,16 +4866,7 @@ let check_define
     exit >>| dump_resolutions |> ignore;
 
     (* Store calls in shared memory. *)
-    let callees =
-      (* Sort the callees as a map from callee -> list of locations. *)
-      let callees = Dependencies.Callgraph.Table.create () in
-      let add_binding ~key ~data =
-        List.iter data ~f:(fun callee -> Hashtbl.add_multi callees ~key:callee ~data:key)
-      in
-      Hashtbl.iteri Context.calls ~f:add_binding;
-      Hashtbl.to_alist callees
-      |> List.map ~f:(fun (callee, locations) -> { Dependencies.Callgraph.callee; locations })
-    in
+    let callees = Context.Builder.get_all_callees () in
     Dependencies.Callgraph.set ~caller:name ~callees;
 
     (* Schedule nested functions for analysis. *)
@@ -5005,7 +4915,12 @@ let check_defines ~configuration ~global_resolution ~source defines =
       | None -> ()
       | Some define ->
           let result, nested_defines =
-            check_define ~configuration ~global_resolution ~source define
+            check_define
+              ~configuration
+              ~global_resolution
+              ~call_graph_builder:(module Dependencies.Callgraph.DefaultBuilder)
+              ~source
+              define
           in
           results := result :: !results;
           Queue.enqueue_all queue nested_defines;
@@ -5019,11 +4934,6 @@ let check_defines ~configuration ~global_resolution ~source defines =
   ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
   ResolutionSharedMemory.Keys.LocalChanges.pop_stack ();
   results
-
-
-let run_on_defines ~configuration ~global_resolution ~source defines =
-  let results = check_defines ~configuration ~global_resolution ~source defines in
-  List.concat_map results ~f:(fun { errors; _ } -> errors) |> List.sort ~compare:Error.compare
 
 
 let run

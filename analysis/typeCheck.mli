@@ -27,7 +27,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val calls : Dependencies.Callgraph.callee list Location.Reference.Table.t
+  module Builder : Dependencies.Callgraph.Builder
 end
 
 module type Signature = sig
@@ -89,13 +89,6 @@ val resolution_with_key
   Resolution.t
 
 val name : string
-
-val run_on_defines
-  :  configuration:Configuration.Analysis.t ->
-  global_resolution:GlobalResolution.t ->
-  source:Source.t ->
-  Define.t Node.t list ->
-  Error.t list
 
 val run
   :  configuration:Configuration.Analysis.t ->
