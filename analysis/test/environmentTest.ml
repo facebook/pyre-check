@@ -454,35 +454,6 @@ let test_register_aliases context =
     [
       "a.py", {|
           class Bar: ...
-          class Baz: ...
-        |};
-      ( "b.py",
-        {|
-          from a import Bar as Foo
-          from a import Baz
-          class Boom: ...
-        |}
-      );
-    ]
-    ["b.Foo", "a.Bar"; "b.Baz", "a.Baz"; "b.Boom", "b.Boom"];
-  assert_resolved ["a.py", "class Foo: ..."; "b.py", "import a as c"] ["b.c.Foo", "a.Foo"];
-  assert_resolved
-    ["a.py", "class Foo: ..."; "b.py", "from a import Foo"; "c.py", "from b import Foo"]
-    ["b.Foo", "a.Foo"; "c.Foo", "a.Foo"];
-  assert_resolved
-    [
-      "a.py", {|
-         class Foo: ...
-         class Bar: ...
-      |};
-      "b.py", "from a import *";
-      "c.py", "from b import *";
-    ]
-    ["b.Foo", "a.Foo"; "c.Foo", "a.Foo"; "b.Bar", "a.Bar"; "c.Bar", "a.Bar"];
-  assert_resolved
-    [
-      "a.py", {|
-          class Bar: ...
         |};
       "b.py", {|
           from a import Bar as Foo

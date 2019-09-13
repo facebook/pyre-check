@@ -63,14 +63,11 @@ module UnresolvedAlias = struct
 
 
   type check_result =
-    | Unresolvable
     | Resolved of Type.alias
     | HasDependents of {
         unparsed: Expression.t;
         dependencies: string list;
       }
-
-  exception IllegalAnnotation
 
   let checked_resolve
       ({ unannotated_global_environment } as environment)
@@ -106,13 +103,12 @@ module UnresolvedAlias = struct
               in
               if Module.from_empty_stub ~reference ~module_definition then
                 (), Type.Any
-              else if Option.is_some (module_definition (Reference.create primitive)) then
-                raise IllegalAnnotation
               else if
                 UnannotatedGlobalEnvironment.ReadOnly.class_exists
                   ?dependency
                   unannotated_global_environment
                   primitive
+                || Option.is_some (module_definition (Reference.create primitive))
               then
                 (), annotation
               else
@@ -123,14 +119,11 @@ module UnresolvedAlias = struct
         { Type.Transform.transformed_annotation; new_state }
     end)
     in
-    try
-      let _, annotation = TrackedTransform.visit () value_annotation in
-      if Hash_set.is_empty dependencies then
-        Resolved (Type.TypeAlias annotation)
-      else
-        HasDependents { unparsed = value; dependencies = Hash_set.to_list dependencies }
-    with
-    | IllegalAnnotation -> Unresolvable
+    let _, annotation = TrackedTransform.visit () value_annotation in
+    if Hash_set.is_empty dependencies then
+      Resolved (Type.TypeAlias annotation)
+    else
+      HasDependents { unparsed = value; dependencies = Hash_set.to_list dependencies }
 end
 
 type extracted =
@@ -317,7 +310,6 @@ let register_aliases environment global_names ~track_dependencies =
           | VariableAlias variable -> Some (Type.VariableAlias variable)
           | TypeAlias unresolved -> (
             match UnresolvedAlias.checked_resolve environment unresolved ~dependency () with
-            | Unresolvable -> None
             | Resolved alias -> Some alias
             | HasDependents { unparsed; dependencies } ->
                 let solve_pair dependency =
