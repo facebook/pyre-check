@@ -2096,6 +2096,22 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
+    ];
+  assert_calls
+    {|
+      from typing import Optional
+      class Foo:
+        @property
+        def x(self) -> int: ...
+      def optional_property(foo: typing.Optional[Foo]) -> None:
+        y = foo.x
+    |}
+    [
+      ( "qualifier.optional_property",
+        [
+          `Method
+            { direct_target = "qualifier.Foo.x"; class_name = "qualifier.Foo"; dispatch = Dynamic };
+        ] );
     ]
 
 

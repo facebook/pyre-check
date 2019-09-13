@@ -2986,7 +2986,7 @@ module State (Context : Context) = struct
             | Some (head :: tail) ->
                 let name = attribute in
                 let property_callables = ref [] in
-                let find_attribute
+                let rec find_attribute
                     { Annotated.Class.instantiated; class_attributes; class_definition }
                   =
                   let attribute =
@@ -3013,23 +3013,50 @@ module State (Context : Context) = struct
                       Some instantiated
                   in
                   (* Collect @property's in the call graph. *)
+                  let register_attribute_callable class_name attribute =
+                    let direct_target_name =
+                      Annotated.Attribute.parent attribute
+                      |> Type.primitive_name
+                      >>| fun parent -> Reference.create ~prefix:(Reference.create parent) name
+                    in
+                    match direct_target_name with
+                    | Some direct_target ->
+                        property_callables :=
+                          Dependencies.Callgraph.Method
+                            { direct_target; class_name; dispatch = Dynamic }
+                          :: !property_callables
+                    | None -> ()
+                  in
                   ( if Option.is_some (Annotated.Attribute.property attribute) then
-                      let direct_target_name =
-                        Annotated.Attribute.parent attribute
-                        |> Type.primitive_name
-                        >>| fun parent -> Reference.create ~prefix:(Reference.create parent) name
-                      in
-                      match direct_target_name with
-                      | Some direct_target ->
-                          property_callables :=
-                            Dependencies.Callgraph.Method
-                              {
-                                direct_target;
-                                class_name = Annotated.Class.name class_definition;
-                                dispatch = Dynamic;
-                              }
-                            :: !property_callables
-                      | None -> () );
+                      register_attribute_callable (Annotated.Class.name class_definition) attribute
+                    (* As the callgraph is an overapproximation, we also have to consider property
+                       calls from optional attributes.*)
+                  else
+                    match resolved_base with
+                    | Type.Optional base -> (
+                        Annotated.Class.resolve_class ~resolution:global_resolution base
+                        |> function
+                        | Some
+                            [{ Annotated.Class.instantiated; class_attributes; class_definition }]
+                          ->
+                            let attribute =
+                              Annotated.Class.attribute
+                                class_definition
+                                ~transitive:true
+                                ~class_attributes
+                                ~special_method:special
+                                ~resolution:global_resolution
+                                ~name
+                                ~instantiated
+                            in
+                            if Option.is_some (Annotated.Attribute.property attribute) then
+                              register_attribute_callable
+                                (Annotated.Class.name class_definition)
+                                attribute
+                        | Some _
+                        | None ->
+                            () )
+                    | _ -> () );
                   (attribute, undefined_target), Annotated.Attribute.annotation attribute
                 in
                 let head_definition, head_resolved = find_attribute head in
