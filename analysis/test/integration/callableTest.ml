@@ -126,6 +126,7 @@ let test_callable_attribute_access context =
         def test_foo(self) -> None:
           x = patch("os.path.abspath")
           x.assert_not_called()
+          x.assert_called_once()
     |}
     []
 

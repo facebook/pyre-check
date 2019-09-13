@@ -2820,8 +2820,8 @@ let filter ~configuration ~resolution errors =
           {
             origin = Callable _;
             attribute =
-              ( "assert_not_called" | "assert_called_once_with" | "reset_mock" | "assert_has_calls"
-              | "assert_any_call" );
+              ( "assert_not_called" | "assert_called_once" | "assert_called_once_with"
+              | "reset_mock" | "assert_has_calls" | "assert_any_call" );
           } ->
           true
       | UndefinedAttribute { origin = Callable (Some name); _ } -> Reference.last name = "patch"
