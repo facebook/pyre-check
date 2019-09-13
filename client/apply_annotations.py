@@ -33,7 +33,8 @@ def _get_attribute_as_string(attribute: cst.BaseExpression) -> str:
             value = _get_name_as_string(attribute.value.value)
         names.append(value)
         attribute = attribute.attr
-    names.append(_get_name_as_string(attribute.value))
+    if attribute is not None:
+        names.append(_get_name_as_string(attribute.value))
     return ".".join(names)
 
 
