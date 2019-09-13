@@ -341,8 +341,8 @@ module State (Context : Context) = struct
       Context.define
     in
     let class_initialization_errors errors =
-      (* Ensure non-nullable typed attributes are instantiated in init. This must happen after
-         typechecking is finished to access the annotations added to resolution. *)
+      (* Ensure all attributes are instantiated. This must happen after typechecking is finished to
+         access the annotations added to resolution. *)
       let check_attributes_initialized errors =
         let open Annotated in
         Define.parent_definition
