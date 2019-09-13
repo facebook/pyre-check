@@ -58,7 +58,7 @@ class BasicTestCase(unittest.TestCase):
         try:
             from typing import TypeVar
             from .. import Generic, ListVariadic
-            from ..type_variable_operators import Concatenation
+            from ..type_variable_operators import Concatenate
 
             # permitted
             class Foo(Generic):
@@ -76,14 +76,14 @@ class BasicTestCase(unittest.TestCase):
             DType = TypeVar("DType")
 
             # intended use
-            class Tensor(Generic[Concatenation[DType, Shape]]):
+            class Tensor(Generic[Concatenate[DType, Shape]]):
                 pass
 
             # not handled in the backend ... yet
             X = Tensor[int, 7, 8, 9]  # noqa
 
         except Exception:
-            self.fail("Generic/GenericMeta missing or broken")
+            self.fail("Generic/GenericMeta/Concatenate missing or broken")
 
 
 if __name__ == "__main__":

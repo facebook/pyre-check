@@ -25,5 +25,5 @@ class Map(Generic[_T1, _T2]):
     pass
 
 
-class Concatenation(metaclass=GenericMeta):
+class Concatenate(metaclass=GenericMeta):
     pass
