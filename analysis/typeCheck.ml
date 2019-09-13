@@ -2479,10 +2479,23 @@ module State (Context : Context) = struct
         { state; resolved = cast_annotation; resolved_annotation = None; base = None }
     | Call
         {
-          callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
+          callee = { Node.value = Name (Name.Identifier "isinstance"); _ } as callee;
           arguments =
             [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }];
         } ->
+        let callables =
+          let { resolved; _ } = forward_expression ~state ~expression:callee in
+          match resolved with
+          | Type.Callable callable -> Some [callable]
+          | _ -> None
+        in
+        Context.Builder.add_callee
+          ~global_resolution
+          ~target:None
+          ~callables
+          ~dynamic:false
+          ~callee;
+
         (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let state =

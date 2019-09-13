@@ -2165,7 +2165,16 @@ let test_calls context =
               dispatch = Dynamic;
             };
         ] );
-    ]
+    ];
+  assert_calls
+    {|
+      def calls_isinstance():
+        x = 1
+        if isinstance(x, int):
+          return 0
+        return 1
+    |}
+    ["qualifier.calls_isinstance", [`Function "isinstance"]]
 
 
 let () =
