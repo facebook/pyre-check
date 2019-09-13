@@ -13,32 +13,6 @@ open Pyre
 
 type errors = State.Error.t list [@@deriving show]
 
-let direct_parser_update ~configuration ~scheduler ~ast_environment module_updates =
-  let directly_changed_source_paths, removed_modules, updated_submodules =
-    let categorize = function
-      | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
-      | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
-      | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
-    in
-    List.partition3_map module_updates ~f:categorize
-  in
-  let directly_changed_modules =
-    List.map directly_changed_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-  in
-  AstEnvironment.remove_sources
-    ast_environment
-    (List.append removed_modules directly_changed_modules);
-  let { AstEnvironment.parsed; _ } =
-    AstEnvironment.parse_sources
-      ~configuration
-      ~scheduler
-      ~preprocessing_state:None
-      ~ast_environment
-      directly_changed_source_paths
-  in
-  List.append updated_submodules parsed
-
-
 let recheck
     ~state:( {
                State.module_tracker;
@@ -49,7 +23,7 @@ let recheck
                open_documents;
                _;
              } as state )
-    ~configuration:({ debug; ignore_dependencies; incremental_style; _ } as configuration)
+    ~configuration:({ debug; incremental_style; _ } as configuration)
     paths
   =
   let timer = Timer.start () in
@@ -69,31 +43,29 @@ let recheck
     "Incremental Module Update %a"
     Sexp.pp
     [%message (module_updates : ModuleTracker.IncrementalUpdate.t list)];
-  let invalidated_environment_qualifiers =
-    if ignore_dependencies then
-      direct_parser_update ~configuration ~scheduler ~ast_environment module_updates
-    else
-      AstEnvironment.update ~configuration ~scheduler ~ast_environment module_updates
+  let ast_environment_update_result =
+    AstEnvironment.update ~configuration ~scheduler ast_environment (Update module_updates)
   in
+  let reparsed_sources = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
   Log.log
     ~section:`Server
     "Incremental Parser Update %s"
-    (List.to_string ~f:Reference.show invalidated_environment_qualifiers);
+    (List.to_string ~f:Reference.show reparsed_sources);
 
   (* Repopulate the environment. *)
   let invalidated_environment_qualifiers =
     match incremental_style with
-    | FineGrained -> Reference.Set.of_list invalidated_environment_qualifiers
+    | FineGrained -> Reference.Set.of_list reparsed_sources
     | Shallow ->
         Dependencies.of_list
-          ~modules:invalidated_environment_qualifiers
+          ~modules:reparsed_sources
           ~get_dependencies:(Environment.dependencies environment)
-        |> Reference.Set.union (Reference.Set.of_list invalidated_environment_qualifiers)
+        |> Reference.Set.union (Reference.Set.of_list reparsed_sources)
     | Transitive ->
         Dependencies.transitive_of_list
-          ~modules:invalidated_environment_qualifiers
+          ~modules:reparsed_sources
           ~get_dependencies:(Environment.dependencies environment)
-        |> Reference.Set.union (Reference.Set.of_list invalidated_environment_qualifiers)
+        |> Reference.Set.union (Reference.Set.of_list reparsed_sources)
   in
   Log.info
     "Repopulating the environment for %d modules."
@@ -111,6 +83,7 @@ let recheck
         unannotated_global_environment
         ~scheduler
         ~configuration
+        ~ast_environment_update_result
         invalidated_environment_qualifiers
     in
     let alias_environment =
@@ -126,9 +99,10 @@ let recheck
     in
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     let re_environment_build_sources =
+      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
       List.filter_map
         invalidated_environment_qualifiers
-        ~f:(AstEnvironment.get_source ast_environment)
+        ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
     in
     match incremental_style with
     | FineGrained ->
@@ -181,7 +155,8 @@ let recheck
         in
         let recheck_modules = invalidated_type_checking_keys in
         let recheck_sources =
-          List.filter_map recheck_modules ~f:(AstEnvironment.get_source ast_environment)
+          let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+          List.filter_map recheck_modules ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
         in
         Log.log
           ~section:`Server

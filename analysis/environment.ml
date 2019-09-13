@@ -360,10 +360,16 @@ let resolution_implementation ?dependency environment () =
   let unannotated_global_environment_dependency =
     dependency >>| fun dependency -> UnannotatedGlobalEnvironment.TypeCheckSource dependency
   in
+  let ast_environment_dependency =
+    dependency >>| fun dependency -> AstEnvironment.TypeCheckSource dependency
+  in
   GlobalResolution.create
     ~ast_environment
     ~aliases:(AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment)
-    ~module_definition:(AstEnvironment.ReadOnly.get_module_metadata ?dependency ast_environment)
+    ~module_definition:
+      (AstEnvironment.ReadOnly.get_module_metadata
+         ?dependency:ast_environment_dependency
+         ast_environment)
     ~class_definition:
       (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
          (unannotated_global_environment environment)

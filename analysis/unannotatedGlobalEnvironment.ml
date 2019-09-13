@@ -386,6 +386,7 @@ module UpdateResult = struct
     current_unannotated_globals: Reference.Set.t;
     previous_unannotated_globals: Reference.Set.t;
     triggered_dependencies: DependencyKey.KeySet.t;
+    upstream: AstEnvironment.UpdateResult.t;
   }
 
   let added_unannotated_globals { current_unannotated_globals; previous_unannotated_globals; _ } =
@@ -409,7 +410,13 @@ module UpdateResult = struct
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 end
 
-let update { ast_environment; _ } ~scheduler ~configuration modified_qualifiers =
+let update
+    { ast_environment; _ }
+    ~scheduler
+    ~configuration
+    ~ast_environment_update_result:upstream
+    modified_qualifiers
+  =
   let map sources =
     let register qualifier =
       AstEnvironment.ReadOnly.get_source ast_environment qualifier
@@ -462,6 +469,7 @@ let update { ast_environment; _ } ~scheduler ~configuration modified_qualifiers 
         current_unannotated_globals;
         previous_unannotated_globals;
         triggered_dependencies;
+        upstream;
       }
   | _ ->
       WriteOnly.direct_data_purge ~previous_classes_list ~previous_unannotated_globals_list;
@@ -479,6 +487,7 @@ let update { ast_environment; _ } ~scheduler ~configuration modified_qualifiers 
         current_unannotated_globals;
         previous_unannotated_globals;
         triggered_dependencies;
+        upstream;
       }
 
 

@@ -360,7 +360,9 @@ let test_source_is_unit_test context =
     in
     let resolution = Environment.resolution environment () in
     let source =
-      AstEnvironment.get_source ast_environment (Reference.create "test")
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
     assert_equal expected (GlobalResolution.source_is_unit_test resolution ~source)

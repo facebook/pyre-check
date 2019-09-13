@@ -191,7 +191,9 @@ let assert_infer
     let _, ast_environment, environment = ScratchProject.build_environment project in
     let configuration = ScratchProject.configuration_of project in
     let source =
-      AstEnvironment.get_source ast_environment (Reference.create "test")
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
     { configuration with debug; infer }, source, environment

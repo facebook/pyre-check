@@ -8,22 +8,21 @@ open Core
 open Pyre
 open PyreParser
 
-type t = {
-  add_raw_source: Source.t -> unit;
-  add_source: Source.t -> unit;
-  remove_sources: Reference.t list -> unit;
-  update_raw_and_compute_dependencies:
-    update:(unit -> unit) -> Reference.t list -> Reference.t list;
-  update_and_compute_dependencies: update:(unit -> unit) -> Reference.t list -> Reference.t list;
-  get_raw_source: ?dependency:Reference.t -> Reference.t -> Source.t option;
-  get_raw_wildcard_exports: ?dependency:Reference.t -> Reference.t -> Reference.t list option;
-  get_source: ?dependency:Reference.t -> Reference.t -> Source.t option;
-  get_wildcard_exports: ?dependency:Reference.t -> Reference.t -> Reference.t list option;
-  get_source_path: Reference.t -> SourcePath.t option;
-  is_module: Reference.t -> bool;
-  get_module_metadata: ?dependency:Reference.t -> Reference.t -> Module.t option;
-  all_explicit_modules: unit -> Reference.t list;
-}
+type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
+
+module DependencyKey = Memory.DependencyKey.Make (struct
+  type nonrec t = dependency
+
+  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
+
+  let compare = compare_dependency
+
+  type out = dependency
+
+  let from_string string = Sexp.of_string string |> dependency_of_sexp
+end)
+
+type t = { module_tracker: ModuleTracker.t }
 
 module RawSourceValue = struct
   type t = Source.t
@@ -74,9 +73,7 @@ module SourceValue = struct
 end
 
 module Sources =
-  Memory.DependencyTrackedTableNoCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.ReferenceDependencyKey)
+  Memory.DependencyTrackedTableNoCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
     (SourceValue)
 
 module WildcardExportsValue = struct
@@ -92,9 +89,7 @@ module WildcardExportsValue = struct
 end
 
 module WildcardExports =
-  Memory.DependencyTrackedTableWithCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.ReferenceDependencyKey)
+  Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
     (WildcardExportsValue)
 
 module ModuleMetadataValue = struct
@@ -110,106 +105,64 @@ module ModuleMetadataValue = struct
 end
 
 module ModuleMetadata =
-  Memory.DependencyTrackedTableWithCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.ReferenceDependencyKey)
+  Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
     (ModuleMetadataValue)
 
-let create module_tracker =
-  let add_raw_source ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+let create module_tracker = { module_tracker }
+
+module Raw = struct
+  let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
     RawSources.add qualifier source;
     RawWildcardExports.write_through qualifier (Source.wildcard_exports_of source)
-  in
-  let add_source ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-    Sources.add qualifier source;
-    WildcardExports.write_through qualifier (Source.wildcard_exports_of source);
-    ModuleMetadata.add qualifier (Module.create source)
-  in
-  let remove_sources qualifiers =
-    let keys = Sources.KeySet.of_list qualifiers in
-    RawSources.remove_batch keys;
-    Sources.remove_batch keys;
-    RawWildcardExports.remove_batch keys;
-    WildcardExports.remove_batch keys;
-    ModuleMetadata.remove_batch keys
-  in
-  let update_raw_and_compute_dependencies ~update qualifiers =
+
+
+  let update_and_compute_dependencies _ ~update qualifiers =
     let keys = RawSources.KeySet.of_list qualifiers in
-    let (), dependency_set =
+    let update_result, dependency_set =
       SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
       |> RawSources.add_to_transaction ~keys
       |> RawWildcardExports.add_to_transaction ~keys
       |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
     in
-    List.fold qualifiers ~init:dependency_set ~f:(fun sofar qualifier ->
-        SharedMemoryKeys.ReferenceDependencyKey.KeySet.add qualifier sofar)
-    |> SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements
-  in
-  let update_and_compute_dependencies ~update qualifiers =
-    let keys = Sources.KeySet.of_list qualifiers in
-    let (), dependency_set =
-      SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
-      |> Sources.add_to_transaction ~keys
-      |> WildcardExports.add_to_transaction ~keys
-      |> ModuleMetadata.add_to_transaction ~keys
-      |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
-    in
-    List.fold qualifiers ~init:dependency_set ~f:(fun sofar qualifier ->
-        SharedMemoryKeys.ReferenceDependencyKey.KeySet.add qualifier sofar)
-    |> SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements
-  in
-  let all_explicit_modules () = ModuleTracker.tracked_explicit_modules module_tracker in
-  let get_module_metadata ?dependency qualifier =
-    match Reference.as_list qualifier with
-    | ["future"; "builtins"]
-    | ["builtins"] ->
-        Some (Module.create_implicit ~empty_stub:true ())
-    | _ -> (
-      match ModuleMetadata.get ?dependency qualifier with
-      | Some _ as result -> result
-      | None -> (
-        match ModuleTracker.is_module_tracked module_tracker qualifier with
-        | true -> Some (Module.create_implicit ())
-        | false -> None ) )
-  in
-  {
-    add_raw_source;
-    add_source;
-    remove_sources;
-    update_raw_and_compute_dependencies;
-    update_and_compute_dependencies;
-    get_raw_source = RawSources.get;
-    get_raw_wildcard_exports = RawWildcardExports.get;
-    get_source = Sources.get;
-    get_wildcard_exports = WildcardExports.get;
-    get_source_path = ModuleTracker.lookup_source_path module_tracker;
-    is_module = ModuleTracker.is_module_tracked module_tracker;
-    get_module_metadata;
-    all_explicit_modules;
-  }
+    ( update_result,
+      List.fold qualifiers ~init:dependency_set ~f:(fun sofar qualifier ->
+          SharedMemoryKeys.ReferenceDependencyKey.KeySet.add qualifier sofar)
+      |> SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements )
 
 
-module Raw = struct
-  let add_source { add_raw_source; _ } = add_raw_source
+  let get_source _ = RawSources.get
 
-  let update_and_compute_dependencies { update_raw_and_compute_dependencies; _ } =
-    update_raw_and_compute_dependencies
-
-
-  let get_source { get_raw_source; _ } = get_raw_source
-
-  let get_wildcard_exports { get_raw_wildcard_exports; _ } = get_raw_wildcard_exports
+  let get_wildcard_exports _ = RawWildcardExports.get
 end
 
-let add_source { add_source; _ } = add_source
-
-let remove_sources { remove_sources; _ } = remove_sources
-
-let update_and_compute_dependencies { update_and_compute_dependencies; _ } =
-  update_and_compute_dependencies
+let add_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  Sources.add qualifier source;
+  WildcardExports.write_through qualifier (Source.wildcard_exports_of source);
+  ModuleMetadata.add qualifier (Module.create source)
 
 
-let get_source { get_source; _ } = get_source
+let remove_sources _ qualifiers =
+  let keys = Sources.KeySet.of_list qualifiers in
+  RawSources.remove_batch keys;
+  Sources.remove_batch keys;
+  RawWildcardExports.remove_batch keys;
+  WildcardExports.remove_batch keys;
+  ModuleMetadata.remove_batch keys
+
+
+let update_and_compute_dependencies _ ~update qualifiers =
+  let keys = Sources.KeySet.of_list qualifiers in
+  let (), dependency_set =
+    DependencyKey.Transaction.empty
+    |> Sources.add_to_transaction ~keys
+    |> WildcardExports.add_to_transaction ~keys
+    |> ModuleMetadata.add_to_transaction ~keys
+    |> DependencyKey.Transaction.execute ~update
+  in
+  dependency_set
+
+
+let get_source _ = Sources.get
 
 type parse_result =
   | Success of Source.t
@@ -442,65 +395,139 @@ let log_parse_errors ~syntax_error ~system_error =
       () )
 
 
-let parse_all ~scheduler ~configuration module_tracker =
-  let timer = Timer.start () in
-  Log.info "Parsing %d stubs and sources..." (ModuleTracker.explicit_module_count module_tracker);
-  let ast_environment = create module_tracker in
-  let { parsed; syntax_error; system_error } =
-    let preprocessing_state =
-      ProjectSpecificPreprocessing.initial (fun qualifier ->
-          ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some)
-    in
-    ModuleTracker.source_paths module_tracker
-    |> parse_sources
-         ~configuration
-         ~scheduler
-         ~preprocessing_state:(Some preprocessing_state)
-         ~ast_environment
-  in
-  log_parse_errors ~syntax_error ~system_error;
-  Statistics.performance ~name:"sources parsed" ~timer ();
-  List.filter_map parsed ~f:(get_source ast_environment), ast_environment
+module UpdateResult = struct
+  type t = {
+    triggered_dependencies: DependencyKey.KeySet.t;
+    reparsed: Reference.t list;
+    syntax_error: SourcePath.t list;
+    system_error: SourcePath.t list;
+  }
+
+  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+
+  let reparsed { reparsed; _ } = reparsed
+
+  let syntax_errors { syntax_error; _ } = syntax_error
+
+  let system_errors { system_error; _ } = system_error
+
+  let create_for_testing () =
+    {
+      triggered_dependencies = DependencyKey.KeySet.empty;
+      reparsed = [];
+      syntax_error = [];
+      system_error = [];
+    }
+end
+
+type trigger =
+  | Update of ModuleTracker.IncrementalUpdate.t list
+  | ColdStart
+
+let update
+    ~configuration:({ Configuration.Analysis.ignore_dependencies; _ } as configuration)
+    ~scheduler
+    ({ module_tracker } as ast_environment)
+  = function
+  | Update module_updates ->
+      let reparse_source_paths, removed_modules, updated_submodules =
+        let categorize = function
+          | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
+          | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
+          | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
+        in
+        List.partition3_map module_updates ~f:categorize
+      in
+      if ignore_dependencies then (
+        let directly_changed_modules =
+          List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+        in
+        remove_sources ast_environment (List.append removed_modules directly_changed_modules);
+        let { parsed; syntax_error; system_error } =
+          parse_sources
+            ~configuration
+            ~scheduler
+            ~preprocessing_state:None
+            ~ast_environment
+            reparse_source_paths
+        in
+        {
+          UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
+          reparsed = List.append updated_submodules parsed;
+          syntax_error;
+          system_error;
+        } )
+      else
+        let changed_modules =
+          let reparse_modules =
+            List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+          in
+          List.concat [removed_modules; updated_submodules; reparse_modules]
+        in
+        let update_raw_sources () =
+          let ({ RawParseResult.syntax_error; system_error; _ } as result) =
+            parse_raw_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
+          in
+          log_parse_errors ~syntax_error ~system_error;
+          result
+        in
+        let { RawParseResult.syntax_error; system_error; _ }, raw_dependencies =
+          Raw.update_and_compute_dependencies
+            ast_environment
+            changed_modules
+            ~update:update_raw_sources
+        in
+        let update_processed_sources () =
+          process_sources
+            ~configuration
+            ~scheduler
+            ~preprocessing_state:None
+            ~ast_environment
+            raw_dependencies
+        in
+        let triggered_dependencies =
+          update_and_compute_dependencies
+            ast_environment
+            raw_dependencies
+            ~update:update_processed_sources
+        in
+        {
+          UpdateResult.triggered_dependencies;
+          reparsed = raw_dependencies;
+          syntax_error;
+          system_error;
+        }
+  | ColdStart ->
+      let timer = Timer.start () in
+      Log.info
+        "Parsing %d stubs and sources..."
+        (ModuleTracker.explicit_module_count module_tracker);
+      let ast_environment = create module_tracker in
+      let { parsed; syntax_error; system_error } =
+        let preprocessing_state =
+          ProjectSpecificPreprocessing.initial (fun qualifier ->
+              ModuleTracker.lookup_source_path module_tracker qualifier |> Option.is_some)
+        in
+        ModuleTracker.source_paths module_tracker
+        |> parse_sources
+             ~configuration
+             ~scheduler
+             ~preprocessing_state:(Some preprocessing_state)
+             ~ast_environment
+      in
+      log_parse_errors ~syntax_error ~system_error;
+      Statistics.performance ~name:"sources parsed" ~timer ();
+      {
+        UpdateResult.reparsed = parsed;
+        triggered_dependencies = DependencyKey.KeySet.empty;
+        syntax_error;
+        system_error;
+      }
 
 
-let update ~configuration ~scheduler ~ast_environment module_updates =
-  let reparse_source_paths, removed_modules, updated_submodules =
-    let categorize = function
-      | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
-      | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
-      | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
-    in
-    List.partition3_map module_updates ~f:categorize
-  in
-  let changed_modules =
-    let reparse_modules =
-      List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-    in
-    List.concat [removed_modules; updated_submodules; reparse_modules]
-  in
-  let update_raw_sources () =
-    let { RawParseResult.syntax_error; system_error; _ } =
-      parse_raw_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
-    in
-    log_parse_errors ~syntax_error ~system_error
-  in
-  let raw_dependencies =
-    Raw.update_and_compute_dependencies ast_environment changed_modules ~update:update_raw_sources
-  in
-  let update_processed_sources () =
-    process_sources
-      ~configuration
-      ~scheduler
-      ~preprocessing_state:None
-      ~ast_environment
-      raw_dependencies
-  in
-  update_and_compute_dependencies ast_environment raw_dependencies ~update:update_processed_sources
+let get_wildcard_exports _ = WildcardExports.get
 
-
-let get_wildcard_exports { get_wildcard_exports; _ } = get_wildcard_exports
-
-let get_source_path { get_source_path; _ } = get_source_path
+let get_source_path { module_tracker } = ModuleTracker.lookup_source_path module_tracker
 
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared
    memory, and `Memory.load_shared_memory`/`Memory.save_shared_memory` will take care of the
@@ -551,8 +578,6 @@ let decoded_equal first second =
   | _ -> None
 
 
-type environment_t = t
-
 module ReadOnly = struct
   type t = {
     get_source: Reference.t -> Source.t option;
@@ -560,7 +585,7 @@ module ReadOnly = struct
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
-    get_module_metadata: ?dependency:Reference.t -> Reference.t -> Module.t option;
+    get_module_metadata: ?dependency:dependency -> Reference.t -> Module.t option;
   }
 
   let create
@@ -613,22 +638,25 @@ module ReadOnly = struct
   let get_module_metadata { get_module_metadata; _ } = get_module_metadata
 end
 
-let read_only
-    {
-      get_source;
-      get_wildcard_exports;
-      get_source_path;
-      is_module;
-      all_explicit_modules;
-      get_module_metadata;
-      _;
-    }
-  =
+let read_only ({ module_tracker } as environment) =
+  let get_module_metadata ?dependency qualifier =
+    match Reference.as_list qualifier with
+    | ["future"; "builtins"]
+    | ["builtins"] ->
+        Some (Module.create_implicit ~empty_stub:true ())
+    | _ -> (
+      match ModuleMetadata.get ?dependency qualifier with
+      | Some _ as result -> result
+      | None -> (
+        match ModuleTracker.is_module_tracked module_tracker qualifier with
+        | true -> Some (Module.create_implicit ())
+        | false -> None ) )
+  in
   {
-    ReadOnly.get_source;
-    get_wildcard_exports;
-    get_source_path;
-    is_module;
-    all_explicit_modules;
+    ReadOnly.get_source = get_source environment;
+    get_wildcard_exports = get_wildcard_exports environment;
+    get_source_path = get_source_path environment;
+    is_module = ModuleTracker.is_module_tracked module_tracker;
+    all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);
     get_module_metadata;
   }

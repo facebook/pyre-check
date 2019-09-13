@@ -1554,7 +1554,11 @@ let test_coverage context =
     let coverage =
       let project = ScratchProject.setup ~context ["coverage_test.py", source] in
       let _, ast_environment, environment = ScratchProject.build_environment project in
-      let source = AstEnvironment.get_source ast_environment (Reference.create "coverage_test") in
+      let source =
+        AstEnvironment.ReadOnly.get_source
+          (AstEnvironment.read_only ast_environment)
+          (Reference.create "coverage_test")
+      in
       let source = Option.value_exn source in
       let configuration = ScratchProject.configuration_of project in
       TypeCheck.run ~configuration ~environment ~source |> ignore;
@@ -1596,7 +1600,11 @@ let test_calls context =
   let assert_calls source calls =
     let project = ScratchProject.setup ~context ["qualifier.py", source] in
     let _, ast_environment, environment = ScratchProject.build_environment project in
-    let source = AstEnvironment.get_source ast_environment (Reference.create "qualifier") in
+    let source =
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "qualifier")
+    in
     let source = Option.value_exn source in
     let configuration = ScratchProject.configuration_of project in
     (* Clear dependencies for all defines. *)

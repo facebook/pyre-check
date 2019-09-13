@@ -62,7 +62,7 @@ let test_normalize_dependencies _ =
 
 
 let test_populate context =
-  let configuration, sources, ast_environment =
+  let configuration, sources, ast_environment, ast_environment_update_result =
     let project =
       ScratchProject.setup
         ~context
@@ -78,8 +78,16 @@ let test_populate context =
           );
         ]
     in
-    let sources, ast_environment = ScratchProject.parse_sources project in
-    ScratchProject.configuration_of project, sources, AstEnvironment.read_only ast_environment
+    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+    let sources =
+      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+      AstEnvironment.UpdateResult.reparsed ast_environment_update_result
+      |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+    in
+    ( ScratchProject.configuration_of project,
+      sources,
+      AstEnvironment.read_only ast_environment,
+      ast_environment_update_result )
   in
   let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
   let alias_environment =
@@ -94,6 +102,7 @@ let test_populate context =
       unannotated_global_environment
       ~scheduler:(Scheduler.mock ())
       ~configuration
+      ~ast_environment_update_result
       (Reference.Set.of_list qualifiers)
     |> AliasEnvironment.update alias_environment ~scheduler:(Scheduler.mock ()) ~configuration
   in
@@ -138,6 +147,7 @@ let test_populate context =
   let _ =
     let _, update_result =
       Test.update_environments
+        ~ast_environment_update_result:(AstEnvironment.UpdateResult.create_for_testing ())
         ~ast_environment
         ~configuration
         ~qualifiers:(Reference.Set.singleton (Reference.create "a"))
@@ -179,6 +189,7 @@ let test_purge context =
       unannotated_global_environment
       ~scheduler:(mock_scheduler ())
       ~configuration:(Configuration.Analysis.create ())
+      ~ast_environment_update_result:(AstEnvironment.UpdateResult.create_for_testing ())
       (Reference.Set.singleton (Reference.create "x"))
     |> AliasEnvironment.update
          alias_environment

@@ -77,7 +77,10 @@ let test_decorate context =
       let _, ast_environment, environment =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
       in
-      ( Option.value_exn (AstEnvironment.get_source ast_environment (Reference.create "test")),
+      ( Option.value_exn
+          (AstEnvironment.ReadOnly.get_source
+             (AstEnvironment.read_only ast_environment)
+             (Reference.create "test")),
         environment )
     in
     let resolution = Environment.resolution environment () in

@@ -215,7 +215,9 @@ let test_create context =
       let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
       let parent = parent >>| Reference.create in
       let defines =
-        AstEnvironment.get_source ast_environment (Reference.create "test")
+        AstEnvironment.ReadOnly.get_source
+          (AstEnvironment.read_only ast_environment)
+          (Reference.create "test")
         |> (fun option -> Option.value_exn option)
         |> Preprocessing.defines ~include_stubs:true
         |> List.rev

@@ -70,6 +70,7 @@ val update
   :  t ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
+  ast_environment_update_result:AstEnvironment.UpdateResult.t ->
   Reference.Set.t ->
   UpdateResult.t
 

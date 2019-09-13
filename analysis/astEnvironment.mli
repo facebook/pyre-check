@@ -7,39 +7,9 @@ open Ast
 
 type t
 
-val create : ModuleTracker.t -> t
+type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
 
-val get_source : t -> ?dependency:Reference.t -> Reference.t -> Source.t option
-
-val get_wildcard_exports : t -> ?dependency:Reference.t -> Reference.t -> Reference.t list option
-
-val update
-  :  configuration:Configuration.Analysis.t ->
-  scheduler:Scheduler.t ->
-  ast_environment:t ->
-  ModuleTracker.IncrementalUpdate.t list ->
-  Reference.t list
-
-val add_source : t -> Source.t -> unit
-
-val remove_sources : t -> Reference.t list -> unit
-
-val get_source_path : t -> Reference.t -> SourcePath.t option
-
-(* Store the environment to saved-state *)
-val store : t -> unit
-
-(* Load the environment from saved-state. Taking a `ModuleTracker` parameter just to signal that
-   loading an `AstEnvironment` must be done after loading a `ModuleTracker` *)
-val load : ModuleTracker.t -> t
-
-val shared_memory_hash_to_key_map : Reference.t list -> string Core.String.Map.t
-
-val serialize_decoded : Memory.decodable -> (string * string * string option) option
-
-val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
-
-type environment_t = t
+module DependencyKey : Memory.DependencyKey.S with type t = dependency
 
 module ReadOnly : sig
   type t
@@ -50,7 +20,7 @@ module ReadOnly : sig
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
     ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
-    ?get_module_metadata:(?dependency:Reference.t -> Reference.t -> Module.t option) ->
+    ?get_module_metadata:(?dependency:dependency -> Reference.t -> Module.t option) ->
     unit ->
     t
 
@@ -72,34 +42,47 @@ module ReadOnly : sig
 
   val all_explicit_modules : t -> Reference.t list
 
-  val get_module_metadata : t -> ?dependency:Reference.t -> Reference.t -> Module.t option
+  val get_module_metadata : t -> ?dependency:dependency -> Reference.t -> Module.t option
 end
 
-val read_only : t -> ReadOnly.t
+(* Store the environment to saved-state *)
+val store : t -> unit
 
-type parse_result =
-  | Success of Source.t
-  | SyntaxError of string
-  | SystemError of string
+(* Load the environment from saved-state. Taking a `ModuleTracker` parameter just to signal that
+   loading an `AstEnvironment` must be done after loading a `ModuleTracker` *)
+val load : ModuleTracker.t -> t
 
-val parse_source : configuration:Configuration.Analysis.t -> SourcePath.t -> parse_result
+val shared_memory_hash_to_key_map : Reference.t list -> string Core.String.Map.t
 
-type parse_sources_result = {
-  parsed: Reference.t list;
-  syntax_error: SourcePath.t list;
-  system_error: SourcePath.t list;
-}
+val serialize_decoded : Memory.decodable -> (string * string * string option) option
 
-val parse_sources
+val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
+
+val create : ModuleTracker.t -> t
+
+module UpdateResult : sig
+  type t
+
+  val triggered_dependencies : t -> DependencyKey.KeySet.t
+
+  val reparsed : t -> Reference.t list
+
+  val syntax_errors : t -> SourcePath.t list
+
+  val system_errors : t -> SourcePath.t list
+
+  val create_for_testing : unit -> t
+end
+
+type trigger =
+  | Update of ModuleTracker.IncrementalUpdate.t list
+  | ColdStart
+
+val update
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  preprocessing_state:ProjectSpecificPreprocessing.state option ->
-  ast_environment:t ->
-  SourcePath.t list ->
-  parse_sources_result
+  t ->
+  trigger ->
+  UpdateResult.t
 
-val parse_all
-  :  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  ModuleTracker.t ->
-  Source.t list * t
+val read_only : t -> ReadOnly.t

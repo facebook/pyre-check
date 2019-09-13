@@ -52,22 +52,11 @@ let assert_dependencies ~environment ~modules ~expected function_to_test =
   assert_equal ~printer:(List.to_string ~f:ident) expected dependencies
 
 
-let purge environment qualifiers =
-  let update_result =
-    update_environments
-      ~ast_environment:(Environment.ast_environment environment)
-      ~configuration:(Configuration.Analysis.create ())
-      ~qualifiers:(Reference.Set.of_list qualifiers)
-      ()
-    |> snd
-  in
-  Environment.purge environment qualifiers ~update_result
-
+let purge () = Memory.reset_shared_memory ()
 
 let test_dependent_of_list context =
   let environment = default_environment context in
-  let qualifiers = List.map ~f:Reference.create ["a"; "b"; "c"; "test"] in
-  purge environment qualifiers;
+  purge ();
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
   add_dependent environment "c" "b";
@@ -83,8 +72,7 @@ let test_dependent_of_list context =
 
 let test_dependent_of_list_duplicates context =
   let environment = default_environment context in
-  let qualifiers = List.map ~f:Reference.create ["a"; "b"; "c"; "test"] in
-  purge environment qualifiers;
+  purge ();
   add_dependent environment "a" "b";
   add_dependent environment "a" "c";
   add_dependent environment "a" "b";
@@ -97,7 +85,7 @@ let test_dependent_of_list_duplicates context =
 
 let test_transitive_dependent_of_list context =
   let environment = default_environment context in
-  List.map ~f:Reference.create ["a"; "b"; "c"; "test"] |> purge environment;
+  purge ();
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
   add_dependent environment "c" "b";
@@ -112,8 +100,7 @@ let test_transitive_dependent_of_list context =
 
 let test_transitive_dependents context =
   let environment = default_environment context in
-  let qualifiers = List.map ~f:Reference.create ["a"; "b"; "c"; "test"] in
-  purge environment qualifiers;
+  purge ();
   add_dependent environment "b" "a";
   add_dependent environment "c" "a";
   add_dependent environment "c" "b";

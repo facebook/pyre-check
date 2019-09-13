@@ -37,31 +37,8 @@ let assert_errors
   in
   let scheduler = Test.mock_scheduler () in
   List.iter ~f:File.write files;
-  let { Service.Check.ast_environment; environment; errors; _ } =
+  let { Service.Check.ast_environment; errors; _ } =
     Service.Check.check ~scheduler:(Some scheduler) ~configuration
-  in
-  let unannotated_global_environment =
-    Analysis.UnannotatedGlobalEnvironment.create
-      (Analysis.AstEnvironment.read_only ast_environment)
-  in
-  let alias_environment =
-    Analysis.AliasEnvironment.create
-      (Analysis.UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let all_qualifiers =
-    Analysis.AstEnvironment.ReadOnly.all_explicit_modules
-      (Analysis.AstEnvironment.read_only ast_environment)
-  in
-  let update_result =
-    Analysis.UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
-      ~configuration:(Configuration.Analysis.create ())
-      (Ast.Reference.Set.of_list all_qualifiers)
-    |> Analysis.AliasEnvironment.update
-         alias_environment
-         ~scheduler:(mock_scheduler ())
-         ~configuration:(Configuration.Analysis.create ())
   in
   let errors =
     errors
@@ -74,8 +51,7 @@ let assert_errors
              error
            |> Analysis.Error.Instantiated.description ~show_error_traces:false)
   in
-  Analysis.Environment.purge environment all_qualifiers ~update_result;
-  Analysis.AstEnvironment.remove_sources ast_environment all_qualifiers;
+  Memory.reset_shared_memory ();
   assert_equal
     ~printer:(List.to_string ~f:ident)
     ~cmp:(List.equal String.equal)

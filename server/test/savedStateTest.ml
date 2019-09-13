@@ -85,7 +85,7 @@ let test_compute_locally_changed_files context =
             old_content >>| fun content -> relative, content)
       in
       let project = ScratchProject.setup ~context sources in
-      let _, ast_environment = ScratchProject.parse_sources project in
+      let ast_environment, _ = ScratchProject.parse_sources project in
       project, ast_environment
     in
     let { Configuration.Analysis.local_root; _ } = configuration in
@@ -105,9 +105,6 @@ let test_compute_locally_changed_files context =
         ~ast_environment:(Analysis.AstEnvironment.read_only ast_environment)
       |> List.filter_map ~f:(fun path -> Path.get_relative_to_root ~root:local_root ~path)
     in
-    (* Ensure sources are cleaned up afterwards. *)
-    List.map files ~f:(fun { relative; _ } -> Ast.SourcePath.qualifier_of_relative relative)
-    |> Analysis.AstEnvironment.remove_sources ast_environment;
     assert_equal
       ~printer:(List.to_string ~f:ident)
       (List.sort ~compare:String.compare expected)

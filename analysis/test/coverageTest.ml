@@ -11,7 +11,14 @@ let test_coverage context =
   let assert_coverage ?external_sources sources expected =
     let project = Test.ScratchProject.setup ~context ?external_sources sources in
     let configuration = Test.ScratchProject.configuration_of project in
-    let sources, _ = Test.ScratchProject.parse_sources project in
+    let ast_environment, ast_environment_update_result =
+      Test.ScratchProject.parse_sources project
+    in
+    let sources =
+      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+      AstEnvironment.UpdateResult.reparsed ast_environment_update_result
+      |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+    in
     Coverage.coverage ~configuration sources |> assert_equal expected
   in
   assert_coverage

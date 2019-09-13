@@ -19,7 +19,9 @@ let generate_lookup ~context source =
     let project = ScratchProject.setup ~context ["test.py", source] in
     let _, ast_environment, environment = ScratchProject.build_environment project in
     let source =
-      AstEnvironment.get_source ast_environment (Reference.create "test")
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
     ScratchProject.configuration_of project, source, environment

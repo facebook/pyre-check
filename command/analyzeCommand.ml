@@ -105,7 +105,8 @@ let run_analysis
          schedule a type check for external files as well. *)
       let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in
       let external_sources =
-        List.filter_map qualifiers ~f:(Analysis.AstEnvironment.get_source ast_environment)
+        let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+        List.filter_map qualifiers ~f:(Analysis.AstEnvironment.ReadOnly.get_source ast_environment)
         |> List.filter ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.is_external; _ }; _ } ->
                is_external)
       in

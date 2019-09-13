@@ -33,11 +33,10 @@ let test_basic context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let ast_environment = AstEnvironment.create module_tracker in
-  let source_a = parse ~handle:handle_a source_a in
-  let source_b = parse ~handle:handle_b source_b in
-  let source_c = parse ~handle:handle_c source_c in
   let assert_source_path ~ast_environment ~expected reference =
-    match AstEnvironment.get_source_path ast_environment reference with
+    match
+      AstEnvironment.ReadOnly.get_source_path (AstEnvironment.read_only ast_environment) reference
+    with
     | None ->
         let message =
           Format.asprintf "Cannot find reference %a in the AST environment" Reference.pp reference
@@ -55,66 +54,11 @@ let test_basic context =
     !&"b"
     ~ast_environment
     ~expected:(Path.create_relative ~root:local_root ~relative:handle_b);
-
-  let assert_no_source ~get_source reference =
-    match get_source reference with
-    | None -> ()
-    | Some _ ->
-        let message =
-          Format.asprintf "Getting source for %a is supposed to fail" Reference.pp reference
-        in
-        assert_failure message
-  in
-  let assert_source ~get_source ~expected reference =
-    match get_source reference with
-    | None ->
-        let message = Format.asprintf "Cannot find source for %a" Reference.pp reference in
-        assert_failure message
-    | Some actual -> assert_source_equal expected actual
-  in
-  let () =
-    let get_source = AstEnvironment.get_source ast_environment in
-    assert_no_source ~get_source !&"a";
-    assert_no_source ~get_source !&"b";
-    assert_no_source ~get_source !&"c";
-    AstEnvironment.add_source ast_environment source_a;
-    assert_source ~get_source ~expected:source_a !&"a";
-    assert_no_source ~get_source !&"b";
-    assert_no_source ~get_source !&"c";
-    AstEnvironment.add_source ast_environment source_b;
-    assert_source ~get_source ~expected:source_a !&"a";
-    assert_source ~get_source ~expected:source_b !&"b";
-    assert_no_source ~get_source !&"c"
-  in
-  let () =
-    let read_only_environment = AstEnvironment.read_only ast_environment in
-    let get_source = AstEnvironment.ReadOnly.get_source read_only_environment in
-    assert_source ~get_source ~expected:source_a !&"a";
-    assert_source ~get_source ~expected:source_b !&"b";
-    assert_no_source ~get_source !&"c"
-  in
-  let () =
-    let get_source = AstEnvironment.get_source ast_environment in
-    AstEnvironment.remove_sources ast_environment [!&"a"];
-    assert_no_source ~get_source !&"a";
-    assert_source ~get_source ~expected:source_b !&"b";
-    assert_no_source ~get_source !&"c";
-
-    AstEnvironment.add_source ast_environment source_c;
-    assert_no_source ~get_source !&"a";
-    assert_source ~get_source ~expected:source_b !&"b";
-    assert_source ~get_source ~expected:source_c !&"c";
-
-    AstEnvironment.remove_sources ast_environment [!&"c"; !&"b"];
-    assert_no_source ~get_source !&"a";
-    assert_no_source ~get_source !&"b";
-    assert_no_source ~get_source !&"c"
-  in
   ()
 
 
 let test_parse_stubs_modules_list context =
-  let _, ast_environment =
+  let ast_environment, _ =
     let stub_content = "def f()->int: ...\n" in
     let source_content = "def f()->int:\n    return 1\n" in
     ScratchProject.setup
@@ -133,7 +77,11 @@ let test_parse_stubs_modules_list context =
   in
   let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
-      match Analysis.AstEnvironment.get_source ast_environment qualifier with
+      match
+        Analysis.AstEnvironment.ReadOnly.get_source
+          (AstEnvironment.read_only ast_environment)
+          qualifier
+      with
       | Some
           {
             Source.statements =
@@ -162,18 +110,25 @@ let test_parse_stubs_modules_list context =
 
 
 let test_parse_source context =
-  let sources, ast_environment =
+  let ast_environment, ast_environment_update_result =
     ScratchProject.setup
       ~context
       ~include_typeshed_stubs:false
       ["x.py", "def foo()->int:\n    return 1\n"]
     |> ScratchProject.parse_sources
   in
+  let sources =
+    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+    AstEnvironment.UpdateResult.reparsed ast_environment_update_result
+    |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+  in
   let handles =
     List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
   in
   assert_equal handles ["x.py"];
-  let source = Analysis.AstEnvironment.get_source ast_environment !&"x" in
+  let source =
+    Analysis.AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment) !&"x"
+  in
   assert_equal (Option.is_some source) true;
   let {
     Source.source_path = { SourcePath.relative; _ };
@@ -228,8 +183,14 @@ let test_parse_sources context =
         ()
     in
     let module_tracker = Analysis.ModuleTracker.create configuration in
-    let sources, ast_environment =
-      AstEnvironment.parse_all ~scheduler ~configuration module_tracker
+    let ast_environment = Analysis.AstEnvironment.create module_tracker in
+    let update_result =
+      AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart
+    in
+    let sources =
+      AstEnvironment.UpdateResult.reparsed update_result
+      |> List.filter_map
+           ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
     in
     let is_source_sorted =
       let compare
@@ -268,11 +229,25 @@ let test_parse_sources context =
     in
     write_file local_root "a.py";
     write_file stub_root "stub.pyi";
-    Analysis.AstEnvironment.remove_sources
-      ast_environment
-      [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Analysis.ModuleTracker.create configuration in
-    let sources, _ = AstEnvironment.parse_all ~scheduler ~configuration module_tracker in
+    let update_result =
+      let { Configuration.Analysis.local_root; _ } = configuration in
+      ModuleTracker.update
+        ~configuration
+        ~paths:
+          [
+            Path.create_relative ~root:local_root ~relative:"a.py";
+            Path.create_relative ~root:stub_root ~relative:"stub.pyi";
+          ]
+        module_tracker
+      |> (fun updates -> AstEnvironment.Update updates)
+      |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
+    in
+    let sources =
+      AstEnvironment.UpdateResult.reparsed update_result
+      |> List.filter_map
+           ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
+    in
     List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
@@ -285,7 +260,11 @@ let test_parse_sources context =
       List.equal String.equal left_handles right_handles)
     source_handles
     ["stub.pyi"; "a.py"];
-  match Analysis.AstEnvironment.get_source ast_environment (Reference.create "c") with
+  match
+    Analysis.AstEnvironment.ReadOnly.get_source
+      (AstEnvironment.read_only ast_environment)
+      (Reference.create "c")
+  with
   | Some { metadata = { Source.Metadata.raw_hash; _ }; _ } ->
       assert_equal raw_hash ([%hash: string list] (String.split ~on:'\n' content))
   | None -> assert_unreached ()
@@ -576,7 +555,7 @@ let test_ast_hash _ =
 let test_register_modules context =
   let assert_module_exports raw_source expected_exports =
     let ast_environment =
-      let _, ast_environment =
+      let ast_environment, _ =
         ScratchProject.setup
           ~context
           ["testing.py", raw_source; "canary.py", "from .testing import *"]
@@ -672,7 +651,12 @@ let test_parse_repository context =
     let actual =
       ScratchProject.setup ~context ~include_typeshed_stubs:false repository
       |> ScratchProject.parse_sources
-      |> fun (sources, _) ->
+      |> fun (ast_environment, ast_environment_update_result) ->
+      let sources =
+        let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+        AstEnvironment.UpdateResult.reparsed ast_environment_update_result
+        |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+      in
       List.map
         sources
         ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
@@ -765,19 +749,19 @@ module IncrementalTest = struct
       let ({ ScratchProject.configuration; module_tracker; _ } as project) =
         ScratchProject.setup ~context ~external_sources:old_external_sources old_sources
       in
-      let _, ast_environment = ScratchProject.parse_sources project in
+      let ast_environment, _ = ScratchProject.parse_sources project in
       configuration, module_tracker, ast_environment
     in
     (* Update filesystem *)
     let paths = update_filesystem_state configuration in
     (* Compute the dependencies *)
     let module_tracker_updates = ModuleTracker.update ~configuration ~paths module_tracker in
-    let updated_qualifiers =
+    let update_result =
       AstEnvironment.update
         ~configuration
         ~scheduler:(Test.mock_scheduler ())
-        ~ast_environment
-        module_tracker_updates
+        ast_environment
+        (Update module_tracker_updates)
     in
     (* Check dependency expectations *)
     let assert_parser_dependency expected actual =
@@ -787,13 +771,17 @@ module IncrementalTest = struct
         "Check if the actual parser dependency overapproximates the expected one"
         (Set.is_subset expected_set ~of_:actual_set)
     in
-    assert_parser_dependency expected_dependencies updated_qualifiers;
+    AstEnvironment.UpdateResult.reparsed update_result
+    |> assert_parser_dependency expected_dependencies;
 
     (* Check export expectations *)
     let assert_new_exports ~expected qualifier =
       let expected = List.sort ~compare:Reference.compare expected in
       let actual =
-        AstEnvironment.get_wildcard_exports ast_environment qualifier |> Option.value ~default:[]
+        AstEnvironment.ReadOnly.get_wildcard_exports
+          (AstEnvironment.read_only ast_environment)
+          qualifier
+        |> Option.value ~default:[]
       in
       assert_equal
         ~cmp:(List.equal Reference.equal)

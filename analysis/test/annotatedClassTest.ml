@@ -33,7 +33,11 @@ let test_generics context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source =
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
+    in
     let source = Option.value_exn source in
     match source |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
@@ -278,7 +282,11 @@ let test_constructors context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
     let resolution = Environment.resolution environment () in
-    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source =
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
+    in
     let source = Option.value_exn source in
     let instantiated =
       parse_single_expression instantiated
@@ -399,7 +407,11 @@ let test_methods context =
     let _, ast_environment, _ =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source =
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
+    in
     let source = Option.value_exn source in
     match source |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
@@ -493,7 +505,11 @@ let test_class_attributes context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source =
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
+    in
     let source = Option.value_exn source in
     let parent =
       match source |> last_statement_exn with
@@ -806,7 +822,11 @@ let test_fallback_attribute context =
     let global_resolution = Environment.resolution environment () in
     let resolution = TypeCheck.resolution global_resolution () in
     let attribute =
-      let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+      let source =
+        AstEnvironment.ReadOnly.get_source
+          (AstEnvironment.read_only ast_environment)
+          (Reference.create "test")
+      in
       let source = Option.value_exn source in
       last_statement_exn source
       |> (function
@@ -923,7 +943,11 @@ let test_constraints context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
     let resolution = Environment.resolution environment () in
-    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source =
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
+    in
     let source = Option.value_exn source in
     let target =
       let { Source.statements; _ } = source in
@@ -1191,7 +1215,11 @@ let test_inferred_generic_base context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source =
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
+    in
     let source = Option.value_exn source in
     let { Source.statements; _ } = source in
     let target =
@@ -1286,7 +1314,11 @@ let test_metaclasses context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let source = AstEnvironment.get_source ast_environment (Reference.create "test") in
+    let source =
+      AstEnvironment.ReadOnly.get_source
+        (AstEnvironment.read_only ast_environment)
+        (Reference.create "test")
+    in
     let source = Option.value_exn source in
     let { Source.statements; _ } = source in
     let target =

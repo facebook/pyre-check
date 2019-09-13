@@ -128,8 +128,14 @@ let check
   (* Find sources to parse *)
   let module_tracker = Analysis.ModuleTracker.create configuration in
   (* Parse sources. *)
-  let sources, ast_environment =
-    Analysis.AstEnvironment.parse_all ~scheduler ~configuration module_tracker
+  let ast_environment = Analysis.AstEnvironment.create module_tracker in
+  let ast_environment_update_result =
+    Analysis.AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart
+  in
+  let sources =
+    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+    Analysis.AstEnvironment.UpdateResult.reparsed ast_environment_update_result
+    |> List.filter_map ~f:(Analysis.AstEnvironment.ReadOnly.get_source ast_environment)
   in
   let environment =
     let populate = Environment.populate in
@@ -162,6 +168,7 @@ let check
         unannotated_global_environment
         ~scheduler
         ~configuration
+        ~ast_environment_update_result
         (Ast.Reference.Set.of_list qualifiers)
       |> AliasEnvironment.update alias_environment ~scheduler ~configuration
     in

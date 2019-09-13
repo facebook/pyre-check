@@ -1309,6 +1309,7 @@ let update_environments
     ?(scheduler = mock_scheduler ())
     ~configuration
     ~ast_environment
+    ~ast_environment_update_result
     ~qualifiers
     ()
   =
@@ -1321,6 +1322,7 @@ let update_environments
       unannotated_global_environment
       ~scheduler
       ~configuration
+      ~ast_environment_update_result
       qualifiers
     |> AliasEnvironment.update alias_environment ~scheduler ~configuration
   in
@@ -1334,12 +1336,18 @@ module ScratchProject = struct
     module_tracker: ModuleTracker.t;
   }
 
-  let clean_ast_shared_memory module_tracker ast_environment =
-    let qualifiers =
+  let clean_ast_shared_memory ~configuration module_tracker ast_environment =
+    let deletions =
       ModuleTracker.source_paths module_tracker
       |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+      |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
     in
-    AstEnvironment.remove_sources ast_environment qualifiers
+    AstEnvironment.update
+      ~configuration
+      ~scheduler:(mock_scheduler ())
+      ast_environment
+      (Update deletions)
+    |> ignore
 
 
   let setup
@@ -1417,33 +1425,44 @@ module ScratchProject = struct
     let ast_environment = AstEnvironment.create module_tracker in
     let () =
       (* Clean shared memory up before the test *)
-      clean_ast_shared_memory module_tracker ast_environment;
+      clean_ast_shared_memory ~configuration module_tracker ast_environment;
       let set_up_shared_memory _ = () in
-      let tear_down_shared_memory () _ = clean_ast_shared_memory module_tracker ast_environment in
+      let tear_down_shared_memory () _ =
+        clean_ast_shared_memory ~configuration module_tracker ast_environment
+      in
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
-    let { Analysis.AstEnvironment.parsed; syntax_error; system_error } =
+    let ast_environment_update_result =
       Analysis.ModuleTracker.source_paths module_tracker
-      |> Analysis.AstEnvironment.parse_sources
+      |> List.map ~f:(fun source_path -> ModuleTracker.IncrementalUpdate.NewExplicit source_path)
+      |> (fun updates -> AstEnvironment.Update updates)
+      |> Analysis.AstEnvironment.update
            ~configuration
            ~scheduler:(mock_scheduler ())
-           ~preprocessing_state:None
-           ~ast_environment
+           ast_environment
     in
     (* Normally we shouldn't have any parse errors in tests *)
-    let errors = system_error @ syntax_error in
+    let errors =
+      AstEnvironment.UpdateResult.system_errors ast_environment_update_result
+      @ AstEnvironment.UpdateResult.syntax_errors ast_environment_update_result
+    in
     ( if not (List.is_empty errors) then
         let relative_paths =
           List.map errors ~f:(fun { SourcePath.relative; _ } -> relative)
           |> String.concat ~sep:", "
         in
         raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
-    List.filter_map parsed ~f:(AstEnvironment.get_source ast_environment), ast_environment
+    ast_environment, ast_environment_update_result
 
 
   let build_environment ({ configuration; _ } as project) =
-    let sources, ast_environment = parse_sources project in
+    let ast_environment, ast_environment_update_result = parse_sources project in
+    let sources =
+      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+      AstEnvironment.UpdateResult.reparsed ast_environment_update_result
+      |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+    in
     let environment =
       let unannotated_global_environment =
         UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
@@ -1461,6 +1480,7 @@ module ScratchProject = struct
           unannotated_global_environment
           ~scheduler:(Scheduler.mock ())
           ~configuration
+          ~ast_environment_update_result
           (Reference.Set.of_list qualifiers)
         |> AliasEnvironment.update alias_environment ~scheduler:(Scheduler.mock ()) ~configuration
       in

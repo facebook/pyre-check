@@ -13,7 +13,7 @@ open Test
 let test_simple_registration context =
   let assert_registers ?(expected = true) source name =
     let project = ScratchProject.setup ["test.py", source] ~context in
-    let _, ast_environment, _ = ScratchProject.build_environment project in
+    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
     in
@@ -22,6 +22,7 @@ let test_simple_registration context =
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
+        ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
     in
     let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
@@ -56,7 +57,7 @@ let test_updates context =
         sources
         ~context
     in
-    let _, ast_environment = ScratchProject.parse_sources project in
+    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
     in
@@ -66,6 +67,7 @@ let test_updates context =
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
+        ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
     in
     let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
@@ -105,17 +107,37 @@ let test_updates context =
           |> assert_equal ~cmp ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;
-    AstEnvironment.remove_sources ast_environment [Reference.create "test"];
-    new_source
-    >>| parse ~handle:"test.py"
-    >>| Preprocessing.preprocess
-    >>| AstEnvironment.add_source ast_environment
-    |> Option.value ~default:();
+    let add_file
+        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
+        content
+        ~relative
+      =
+      let content = trim_extra_indentation content in
+      let file = File.create ~content (Path.create_relative ~root:local_root ~relative) in
+      File.write file
+    in
+    let delete_file
+        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
+        relative
+      =
+      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+    in
+    if Option.is_some original_source then
+      delete_file project "test.py";
+    new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
+    let { ScratchProject.module_tracker; _ } = project in
+    let { Configuration.Analysis.local_root; _ } = configuration in
+    let path = Path.create_relative ~root:local_root ~relative:"test.py" in
     let update_result =
+      ModuleTracker.update ~configuration ~paths:[path] module_tracker
+      |> (fun updates -> AstEnvironment.Update updates)
+      |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
+      |> fun ast_environment_update_result ->
       UnannotatedGlobalEnvironment.update
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
+        ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
     in
     let printer set =

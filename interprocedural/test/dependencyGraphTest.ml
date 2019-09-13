@@ -311,8 +311,8 @@ let test_type_collection context =
       let project = ScratchProject.setup ~context [handle, source] in
       let _, ast_environment, environment = ScratchProject.build_environment project in
       let source =
-        AstEnvironment.get_source
-          ast_environment
+        AstEnvironment.ReadOnly.get_source
+          (AstEnvironment.read_only ast_environment)
           (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
         |> fun option -> Option.value_exn option
       in

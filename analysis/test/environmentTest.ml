@@ -33,25 +33,11 @@ let create_environments_and_project
       ~include_helper_builtins:include_helpers
       additional_sources
   in
-  let sources, ast_environment, environment = project |> ScratchProject.build_environment in
+  let _, ast_environment, environment = project |> ScratchProject.build_environment in
   (* TODO (T47159596): This can be done in a more elegant way *)
   let () =
     let set_up_shared_memory _ = () in
-    let tear_down_shared_memory () _ =
-      let qualifiers =
-        sources
-        |> List.map ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
-      in
-      let update_result =
-        update_environments
-          ~ast_environment:(AstEnvironment.read_only ast_environment)
-          ~configuration:(ScratchProject.configuration_of project)
-          ~qualifiers:(Reference.Set.of_list qualifiers)
-          ()
-        |> snd
-      in
-      Environment.purge environment qualifiers ~update_result
-    in
+    let tear_down_shared_memory () _ = Memory.reset_shared_memory () in
     OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
   in
   environment, ast_environment, project
@@ -101,15 +87,13 @@ let create_location path start_line start_column end_line end_column =
 
 
 let test_register_class_metadata context =
-  let environment, ast_environment, project =
-    create_environments_and_project ~context ~include_helpers:false ()
-  in
-  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
-  AstEnvironment.add_source
-    ast_environment
-    ( parse
-        ~handle:"test.py"
-        {|
+  let project =
+    ScratchProject.setup
+      ~context
+      ~include_helper_builtins:false
+      [
+        ( "test.py",
+          {|
        from placeholder_stub import MadeUpClass
        class A: pass
        class B(A): pass
@@ -123,7 +107,10 @@ let test_register_class_metadata context =
        class E(D, A): pass
        class F(B, MadeUpClass, A): pass
       |}
-    |> Preprocessing.preprocess );
+        );
+      ]
+  in
+  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
   let unannotated_global_environment =
     UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
@@ -132,7 +119,14 @@ let test_register_class_metadata context =
       unannotated_global_environment
       ~scheduler:(mock_scheduler ())
       ~configuration:(ScratchProject.configuration_of project)
+      ~ast_environment_update_result
       (Reference.Set.singleton (Reference.create "test"))
+  in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
+  let environment =
+    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
   in
   let resolution = Environment.resolution environment () in
   let connect annotation =
@@ -522,20 +516,17 @@ let test_register_implicit_submodules context =
 
 
 let test_connect_definition context =
-  let environment, ast_environment, project = create_environments_and_project ~context () in
-  let resolution = Environment.resolution environment () in
-  let (module TypeOrderHandler : ClassHierarchy.Handler) = class_hierarchy environment in
-  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
-  AstEnvironment.add_source
-    ast_environment
-    (parse
-       ~handle:"test.py"
-       {|
+  let project =
+    ScratchProject.setup
+      ~context
+      ["test.py", {|
        class C:
          pass
        class D:
          pass
-      |});
+      |}]
+  in
+  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
   let unannotated_global_environment =
     UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
@@ -544,8 +535,17 @@ let test_connect_definition context =
       unannotated_global_environment
       ~scheduler:(mock_scheduler ())
       ~configuration:(ScratchProject.configuration_of project)
-      (Reference.Set.singleton (Reference.create "test"))
+      ~ast_environment_update_result
+      (Reference.Set.of_list [Reference.create ""; Reference.create "test"])
   in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
+  let environment =
+    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+  in
+  let resolution = Environment.resolution environment () in
+  let (module TypeOrderHandler : ClassHierarchy.Handler) = class_hierarchy environment in
   let assert_edge ~predecessor ~successor =
     let predecessor_index = IndexTracker.index predecessor in
     let successor_index = IndexTracker.index successor in
@@ -653,16 +653,13 @@ let test_register_globals context =
 
 
 let test_connect_type_order context =
-  let environment, ast_environment, project =
-    create_environments_and_project ~context ~include_helpers:false ()
-  in
-  let resolution = Environment.resolution environment () in
-  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
-  AstEnvironment.add_source
-    ast_environment
-    (parse
-       ~handle:"test.py"
-       {|
+  let project =
+    ScratchProject.setup
+      ~context
+      ~include_helper_builtins:false
+      [
+        ( "test.py",
+          {|
        class C:
          ...
        class D(C):
@@ -674,13 +671,27 @@ let test_connect_type_order context =
        A = B
        def foo() -> A:
          return D()
-        |});
+        |}
+        );
+      ]
+  in
+  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+  let unannotated_global_environment =
+    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+  in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
+  let environment =
+    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+  in
   let order = class_hierarchy environment in
   let update_result =
     update_environments
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ~ast_environment_update_result
       ()
     |> snd
   in
@@ -691,6 +702,10 @@ let test_connect_type_order context =
   in
   let unannotated_global_environment = Environment.unannotated_global_environment environment in
   let connect annotation =
+    let environment =
+      Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+    in
+    let resolution = Environment.resolution environment () in
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
       unannotated_global_environment
       annotation
@@ -705,9 +720,9 @@ let test_connect_type_order context =
       (ClassHierarchy.successors order annotation)
   in
   (* Classes get connected to object via `connect_definition`. *)
-  assert_successors "C" ["object"];
-  assert_successors "D" ["C"; "object"];
-  assert_successors "CallMe" ["object"]
+  assert_successors "test.C" ["object"];
+  assert_successors "test.D" ["test.C"; "object"];
+  assert_successors "test.CallMe" ["object"]
 
 
 let test_populate context =
@@ -1403,12 +1418,28 @@ let test_purge context =
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_true (GlobalResolution.is_tracked global_resolution "test.P");
   Environment.check_class_hierarchy_integrity handler;
-  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
+  let delete_file
+      { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
+      relative
+    =
+    Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+  in
+  delete_file project "test.py";
   let update_result =
+    let ast_environment_update_result =
+      let { ScratchProject.module_tracker; _ } = project in
+      let configuration = ScratchProject.configuration_of project in
+      let { Configuration.Analysis.local_root; _ } = configuration in
+      let path = Path.create_relative ~root:local_root ~relative:"test.py" in
+      ModuleTracker.update ~configuration ~paths:[path] module_tracker
+      |> (fun updates -> AstEnvironment.Update updates)
+      |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
+    in
     update_environments
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ~ast_environment_update_result
       ()
     |> snd
   in
@@ -1465,6 +1496,7 @@ let test_purge_hierarchy context =
   let purge qualifiers ~handler =
     let update_result =
       update_environments
+        ~ast_environment_update_result:(AstEnvironment.UpdateResult.create_for_testing ())
         ~ast_environment:(Environment.ast_environment handler)
         ~configuration:(Configuration.Analysis.create ())
         ~qualifiers:(Reference.Set.of_list qualifiers)
@@ -1587,13 +1619,12 @@ let test_connect_annotations_to_top context =
   (*  0 - 2                *)
   (*  |                    *)
   (*  1   object           *)
-  let environment, ast_environment, project = create_environments_and_project ~context () in
-  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
-  AstEnvironment.add_source
-    ast_environment
-    ( parse
-        ~handle:"test.py"
-        {|
+  let project =
+    ScratchProject.setup
+      ~context
+      [
+        ( "test.py",
+          {|
        class One:
          pass
        class Two:
@@ -1601,7 +1632,10 @@ let test_connect_annotations_to_top context =
        class Zero(Two, One):
          pass
     |}
-    |> Preprocessing.preprocess );
+        );
+      ]
+  in
+  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
   let unannotated_global_environment =
     UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
@@ -1609,9 +1643,16 @@ let test_connect_annotations_to_top context =
     update_environments
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
-      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ~qualifiers:(Reference.Set.of_list [Reference.create ""; Reference.create "test"])
+      ~ast_environment_update_result
       ()
     |> snd
+  in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
+  let environment =
+    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
   in
   Environment.purge environment [Reference.create "test"] ~update_result;
   let resolution = Environment.resolution environment () in
@@ -1633,13 +1674,12 @@ let test_connect_annotations_to_top context =
 
 
 let test_deduplicate context =
-  let environment, ast_environment, project = create_environments_and_project ~context () in
-  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
-  AstEnvironment.add_source
-    ast_environment
-    ( parse
-        ~handle:"test.py"
-        {|
+  let project =
+    ScratchProject.setup
+      ~context
+      [
+        ( "test.py",
+          {|
        class One:
          pass
        class Zero(One[int, int]):
@@ -1647,7 +1687,10 @@ let test_deduplicate context =
        class Zero(One[int]):
          pass
     |}
-    |> Preprocessing.preprocess );
+        );
+      ]
+  in
+  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
   let unannotated_global_environment =
     UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
@@ -1656,8 +1699,15 @@ let test_deduplicate context =
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ~ast_environment_update_result
       ()
     |> snd
+  in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
+  let environment =
+    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
   in
   Environment.purge environment [Reference.create "test"] ~update_result;
   let resolution = Environment.resolution environment () in
@@ -1704,13 +1754,13 @@ let test_remove_extra_edges_to_object context =
   (*0 -> 1 -> 2 -> object*)
   (*|----^         ^     *)
   (*|--------------^     *)
-  let environment, ast_environment, project = create_environments_and_project ~context () in
-  AstEnvironment.remove_sources ast_environment [Reference.create "test"];
-  AstEnvironment.add_source
-    ast_environment
-    ( parse
-        ~handle:"test.py"
-        {|
+  let project =
+    ScratchProject.setup
+      ~context
+      ~include_helper_builtins:false
+      [
+        ( "test.py",
+          {|
        class Two(object):
          pass
        class One(Two):
@@ -1718,7 +1768,10 @@ let test_remove_extra_edges_to_object context =
        class Zero(One, object):
          pass
     |}
-    |> Preprocessing.preprocess );
+        );
+      ]
+  in
+  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
   let unannotated_global_environment =
     UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
   in
@@ -1727,8 +1780,15 @@ let test_remove_extra_edges_to_object context =
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ~ast_environment_update_result
       ()
     |> snd
+  in
+  let alias_environment =
+    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+  in
+  let environment =
+    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
   in
   Environment.purge environment [] ~update_result;
   let resolution = Environment.resolution environment () in
@@ -1818,28 +1878,53 @@ let test_update_and_compute_dependencies context =
     let assert_state (primitive, expected) =
       edges untracked_global_resolution primitive |> Option.is_some |> assert_equal expected
     in
+    let add_file
+        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
+        content
+        ~relative
+      =
+      let content = trim_extra_indentation content in
+      let file = File.create ~content (Path.create_relative ~root:local_root ~relative) in
+      File.write file
+    in
+    let delete_file
+        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
+        relative
+      =
+      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+    in
     let (), dependents =
-      let source =
-        Option.value repopulate_source_to ~default:""
-        |> Test.parse ~handle:"source.py"
-        |> Preprocessing.preprocess
-      in
-      AstEnvironment.remove_sources ast_environment [Reference.create "source"];
-      AstEnvironment.add_source ast_environment source;
+      delete_file project "source.py";
+      let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
+      add_file project repopulate_source_to ~relative:"source.py";
       let unannotated_global_environment =
         UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+      in
+      let ast_environment_update_result =
+        let { ScratchProject.module_tracker; _ } = project in
+        let configuration = ScratchProject.configuration_of project in
+        let { Configuration.Analysis.local_root; _ } = configuration in
+        let path = Path.create_relative ~root:local_root ~relative:"source.py" in
+        ModuleTracker.update ~configuration ~paths:[path] module_tracker
+        |> (fun updates -> AstEnvironment.Update updates)
+        |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
       in
       let update_result =
         update_environments
           ~ast_environment:(AstEnvironment.read_only ast_environment)
           ~configuration:(ScratchProject.configuration_of project)
           ~qualifiers:(Reference.Set.singleton (Reference.create "source"))
+          ~ast_environment_update_result
           ()
         |> snd
       in
       let update () =
         List.iter expected_state_in_update ~f:assert_state;
-        repopulate source ~update_result ~unannotated_global_environment
+        AstEnvironment.ReadOnly.get_source
+          (AstEnvironment.read_only ast_environment)
+          (Reference.create "source")
+        |> (fun option -> Option.value_exn option)
+        |> repopulate ~update_result ~unannotated_global_environment
       in
       Environment.update_and_compute_dependencies
         environment

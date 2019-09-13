@@ -59,6 +59,7 @@ let environment
     ~sources
     ?(configuration = Configuration.Analysis.create ())
     ?(ast_environment = AstEnvironment.ReadOnly.create ())
+    ?(ast_environment_update_result = AstEnvironment.UpdateResult.create_for_testing ())
     ()
   =
   let qualifiers =
@@ -70,6 +71,7 @@ let environment
       ~ast_environment
       ~configuration
       ~qualifiers:(Reference.Set.of_list qualifiers)
+      ~ast_environment_update_result
       ()
   in
   let environment =

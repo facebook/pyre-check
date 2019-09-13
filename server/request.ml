@@ -693,7 +693,8 @@ let process_type_query_request
                    { TypeQuery.callee; locations = List.map locations ~f:instantiate })
             |> fun callees -> { Protocol.TypeQuery.caller; callees }
           in
-          AstEnvironment.get_source state.ast_environment module_qualifier
+          let ast_environment = Analysis.AstEnvironment.read_only state.ast_environment in
+          AstEnvironment.ReadOnly.get_source ast_environment module_qualifier
           >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false
           >>| List.map ~f:callees
           |> Option.value ~default:[]

@@ -89,7 +89,9 @@ let test_select context =
       let callable, signature =
         let arguments, expression =
           match
-            AstEnvironment.get_source ast_environment (Reference.create "test")
+            AstEnvironment.ReadOnly.get_source
+              (AstEnvironment.read_only ast_environment)
+              (Reference.create "test")
             >>| Source.statements
             >>| List.rev
           with

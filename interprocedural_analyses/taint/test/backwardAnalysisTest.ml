@@ -18,7 +18,9 @@ let assert_taint ~context source expected =
     Test.ScratchProject.configuration_of project, environment, ast_environment
   in
   let source =
-    AstEnvironment.get_source ast_environment (Ast.Reference.create "qualifier")
+    AstEnvironment.ReadOnly.get_source
+      (AstEnvironment.read_only ast_environment)
+      (Ast.Reference.create "qualifier")
     |> fun option -> Option.value_exn option
   in
   TypeCheck.run ~configuration ~environment ~source |> ignore;
