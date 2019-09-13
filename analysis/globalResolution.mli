@@ -83,6 +83,8 @@ val create
 
 val resolve_literal : t -> Expression.t -> Type.t
 
+val resolve_exports : t -> reference:Reference.t -> Reference.t
+
 val parse_annotation
   :  ?allow_untracked:bool ->
   ?allow_invalid_type_parameters:bool ->
@@ -157,8 +159,6 @@ val widen
   next:Type.t ->
   iteration:int ->
   Type.t
-
-val resolve_exports : t -> reference:Reference.t -> Reference.t
 
 val ast_environment : t -> AstEnvironment.ReadOnly.t
 

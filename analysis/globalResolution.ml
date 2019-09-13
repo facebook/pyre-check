@@ -292,11 +292,44 @@ let check_invalid_type_parameters resolution annotation =
   InvalidTypeParametersTransform.visit [] annotation
 
 
+let resolve_exports { module_definition; _ } ~reference =
+  (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
+  let widening_threshold = 25 in
+  let rec resolve_exports_fixpoint ~reference ~visited ~count =
+    if Set.mem visited reference || count > widening_threshold then
+      reference
+    else
+      let rec resolve_exports ~lead ~tail =
+        match tail with
+        | head :: tail ->
+            module_definition (Reference.create_from_list lead)
+            >>| (fun definition ->
+                  match Module.aliased_export definition (Reference.create head) with
+                  | Some export -> Reference.combine export (Reference.create_from_list tail)
+                  | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
+            |> Option.value ~default:reference
+        | _ -> reference
+      in
+      match Reference.as_list reference with
+      | head :: tail ->
+          let exported_reference = resolve_exports ~lead:[head] ~tail in
+          if Reference.is_strict_prefix ~prefix:reference exported_reference then
+            reference
+          else
+            resolve_exports_fixpoint
+              ~reference:exported_reference
+              ~visited:(Set.add visited reference)
+              ~count:(count + 1)
+      | _ -> reference
+  in
+  resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
+
+
 let parse_annotation
     ?(allow_untracked = false)
     ?(allow_invalid_type_parameters = false)
     ?(allow_primitives_from_empty_stubs = false)
-    ({ aliases; module_definition; _ } as resolution)
+    ({ aliases; module_definition; class_hierarchy; _ } as resolution)
     expression
   =
   let expression = Expression.delocalize expression in
@@ -318,14 +351,22 @@ let parse_annotation
     else
       let constraints = function
         | Type.Primitive name ->
+            let reference = Reference.create name in
             let originates_from_empty_stub =
-              Reference.create name
-              |> fun reference -> Module.from_empty_stub ~reference ~module_definition
+              Module.from_empty_stub ~reference ~module_definition
             in
             if originates_from_empty_stub then
               Some Type.Any
             else
-              None
+              let resolved_reference =
+                match ClassHierarchy.contains class_hierarchy name with
+                | true -> reference
+                | false -> resolve_exports ~reference resolution
+              in
+              if not (Reference.equal resolved_reference reference) then
+                Some (Type.Primitive (Reference.show resolved_reference))
+              else
+                None
         | _ -> None
       in
       Type.instantiate parsed ~constraints
@@ -609,39 +650,6 @@ let is_invariance_mismatch ({ class_hierarchy; _ } as resolution) ~left ~right =
       in
       zipped >>| List.exists ~f:due_to_invariant_variable |> Option.value ~default:false
   | _ -> false
-
-
-let resolve_exports resolution ~reference =
-  (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
-  let widening_threshold = 25 in
-  let rec resolve_exports_fixpoint ~reference ~visited ~count =
-    if Set.mem visited reference || count > widening_threshold then
-      reference
-    else
-      let rec resolve_exports ~lead ~tail =
-        match tail with
-        | head :: tail ->
-            module_definition resolution (Reference.create_from_list lead)
-            >>| (fun definition ->
-                  match Module.aliased_export definition (Reference.create head) with
-                  | Some export -> Reference.combine export (Reference.create_from_list tail)
-                  | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
-            |> Option.value ~default:reference
-        | _ -> reference
-      in
-      match Reference.as_list reference with
-      | head :: tail ->
-          let exported_reference = resolve_exports ~lead:[head] ~tail in
-          if Reference.is_strict_prefix ~prefix:reference exported_reference then
-            reference
-          else
-            resolve_exports_fixpoint
-              ~reference:exported_reference
-              ~visited:(Set.add visited reference)
-              ~count:(count + 1)
-      | _ -> reference
-  in
-  resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
 
 
 let solve_ordered_types_less_or_equal resolution =
