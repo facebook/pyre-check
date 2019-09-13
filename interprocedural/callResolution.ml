@@ -116,7 +116,8 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
     | None ->
         (* case b *)
         [target_callable]
-    | Some overriding_types -> (
+    | Some overriding_types ->
+        (* case c *)
         let keep_subtypes candidate =
           let candidate_type = get_class_type candidate in
           GlobalResolution.less_or_equal
@@ -124,17 +125,15 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
             ~left:candidate_type
             ~right:receiver_type
         in
-        match List.filter overriding_types ~f:keep_subtypes with
-        | [] ->
-            (* case b *)
-            [target_callable]
-        | subtypes ->
-            (* case c *)
+        let override_targets =
+          let create_override_target class_name =
             let method_name = Reference.last implementation_target in
-            let create_override_target class_name =
-              Reference.create ~prefix:class_name method_name |> get_actual_target
-            in
-            target_callable :: List.map subtypes ~f:create_override_target )
+            Reference.create ~prefix:class_name method_name |> get_actual_target
+          in
+          List.filter overriding_types ~f:keep_subtypes
+          |> fun subtypes -> List.map subtypes ~f:create_override_target
+        in
+        target_callable :: override_targets
 
 
 let rec is_all_names = function
