@@ -1837,12 +1837,21 @@ module PrettyPrinter = struct
             body
             pp_statement_list
             orelse
-    | Import { Import.from; imports } ->
+    | Import { Import.from; imports } -> (
         let pp_import formatter { Import.name; alias } =
           Format.fprintf formatter "%a%a" Reference.pp name pp_reference_option alias
         in
         let pp_imports formatter import_list = pp_list formatter pp_import ", " import_list in
-        Format.fprintf formatter "@[<v>%aimport %a@]" pp_reference_option from pp_imports imports
+        match from with
+        | None -> Format.fprintf formatter "@[<v>import %a@]" pp_imports imports
+        | Some from ->
+            Format.fprintf
+              formatter
+              "@[<v>from %a import %a@]"
+              Reference.pp
+              from
+              pp_imports
+              imports )
     | Nonlocal nonlocal_list -> pp_list formatter String.pp "," nonlocal_list
     | Pass -> Format.fprintf formatter "%s" "pass"
     | Raise { Raise.expression; _ } ->
