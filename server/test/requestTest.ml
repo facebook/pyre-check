@@ -259,6 +259,7 @@ let test_process_type_query_request context =
             "dict.add_key": [],
             "str.substr": [],
             "str.lower": [],
+            "str.format": [],
             "typing.Iterable.__iter__": [],
             "test.foo": []
         }

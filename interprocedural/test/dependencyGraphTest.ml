@@ -245,7 +245,17 @@ let test_construction context =
         `Function "test.calls_c", [`Override "test.C.foo"];
         `Function "test.calls_d", [`Method "test.E.foo"; `Method "test.C.foo"];
         `Function "test.calls_e", [`Method "test.E.foo"];
-      ]
+      ];
+  assert_call_graph
+    {|
+      class C(str):
+        def format(self, *args) -> C: ...
+      def format_str() -> None:
+        "string literal {}".format("foo")
+    |}
+    (* If we didn't weaken literals, the call would be a method("str.format") instead of override
+       here. *)
+    ~expected:[`Function "test.format_str", [`Override "str.format"]]
 
 
 let test_construction_reverse context =
