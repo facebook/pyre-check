@@ -35,6 +35,13 @@ let type_checking_callgraph
   in
   let callees = function
     | Callgraph.Function name -> [Callable.create_function name]
+    | Callgraph.Method { direct_target; class_name; dispatch = Dynamic; _ }
+      when Reference.equal
+             direct_target
+             (Reference.create ~prefix:class_name (Reference.last direct_target)) ->
+        (* If the direct target is the same as the class name, we don't need to expand the
+           override. *)
+        [create_target direct_target]
     | Callgraph.Method { direct_target; class_name; dispatch = Dynamic; _ } ->
         let override_targets =
           match DependencyGraphSharedMemory.get_overriding_types ~member:direct_target with

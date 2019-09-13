@@ -224,7 +224,28 @@ let test_construction context =
        def call_foo(c: C) -> None:
          c.foo()
     |}
-    ~expected:[`Function "test.call_foo", [`Override "test.Child.foo"; `Method "test.Base.foo"]]
+    ~expected:[`Function "test.call_foo", [`Override "test.Child.foo"; `Method "test.Base.foo"]];
+  assert_call_graph
+    {|
+      class C:
+        def foo(self) -> int: ...
+      class D(C):
+        def bar(self) -> int: ...
+      class E(D):
+        def foo(self) -> int: ...
+      def calls_c(c: C) -> None:
+        c.foo()
+      def calls_d(d: D) -> None:
+        d.foo()
+      def calls_e(e: E) -> None:
+        e.foo()
+    |}
+    ~expected:
+      [
+        `Function "test.calls_c", [`Override "test.C.foo"];
+        `Function "test.calls_d", [`Method "test.E.foo"; `Method "test.C.foo"];
+        `Function "test.calls_e", [`Method "test.E.foo"];
+      ]
 
 
 let test_construction_reverse context =
