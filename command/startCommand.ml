@@ -28,7 +28,7 @@ let handshake_message version =
 let computation_thread
     request_queue
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
-    ({ Server.State.environment; ast_environment; open_documents; _ } as state)
+    ({ Server.State.ast_environment; open_documents; _ } as state)
   =
   let errors_to_lsp_responses errors =
     let build_file_to_error_map error_list =
@@ -49,7 +49,9 @@ let computation_thread
         in
         let open Analysis in
         reference
-        |> Analysis.AstEnvironment.ReadOnly.get_relative (AstEnvironment.read_only ast_environment)
+        |> Analysis.AstEnvironment.ReadOnly.get_real_path_relative
+             (AstEnvironment.read_only ast_environment)
+             ~configuration:analysis_configuration
         >>| Hashtbl.update table ~f:update
         |> ignore
       in
@@ -57,16 +59,10 @@ let computation_thread
       List.iter error_list ~f:add_to_table;
       Hashtbl.to_alist table
     in
-    let relative_to_full_path relative =
-      let ast_environment = Analysis.Environment.ast_environment environment in
-      Ast.SourcePath.qualifier_of_relative relative
-      |> Analysis.AstEnvironment.ReadOnly.get_source_path ast_environment
-      >>| Ast.SourcePath.full_path ~configuration:analysis_configuration
-    in
+    let { Configuration.Analysis.local_root; _ } = analysis_configuration in
     build_file_to_error_map errors
-    |> List.filter_map ~f:(fun (handle, errors) ->
-           relative_to_full_path handle
-           >>| fun path ->
+    |> List.map ~f:(fun (handle, errors) ->
+           let path = Path.create_relative ~root:local_root ~relative:handle in
            LanguageServer.Protocol.PublishDiagnostics.of_errors path errors
            |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
            |> Yojson.Safe.to_string
