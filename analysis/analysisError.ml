@@ -1685,10 +1685,10 @@ let messages ~concise ~signature location kind =
                 pp_identifier
                 name
                 kind_string
-                pp_type
-                parent
                 pp_reference
                 superclass_name
+                pp_type
+                parent
                 pp_type
                 expected
       in

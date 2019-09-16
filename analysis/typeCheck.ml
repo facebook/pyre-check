@@ -372,7 +372,7 @@ module State (Context : Context) = struct
                               (Error.UninitializedAttribute
                                  {
                                    name;
-                                   parent = Annotated.Class.annotation definition;
+                                   parent = Attribute.parent attribute;
                                    mismatch =
                                      {
                                        Error.expected;
@@ -529,9 +529,9 @@ module State (Context : Context) = struct
                        else
                          let error_kind =
                            if AnnotatedClass.is_protocol original_definition then
-                             Error.Protocol (AnnotatedClass.name definition)
+                             Error.Protocol (AnnotatedClass.name original_definition)
                            else if AnnotatedClass.is_abstract original_definition then
-                             Error.Abstract (AnnotatedClass.name definition)
+                             Error.Abstract (AnnotatedClass.name original_definition)
                            else
                              Error.Class
                          in
@@ -542,7 +542,7 @@ module State (Context : Context) = struct
                                 (Error.UninitializedAttribute
                                    {
                                      name;
-                                     parent = Annotated.Class.annotation original_definition;
+                                     parent = Annotated.Class.annotation definition;
                                      mismatch =
                                        {
                                          Error.expected;
