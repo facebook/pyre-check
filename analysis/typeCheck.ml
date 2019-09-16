@@ -554,62 +554,7 @@ module State (Context : Context) = struct
                                    })
                               ~define:Context.define))
               in
-              let override_errors =
-                let open Annotated in
-                definitions
-                |> List.map
-                     ~f:
-                       (Annotated.Class.attributes
-                          ~include_generated_attributes:false
-                          ~resolution:global_resolution)
-                |> List.concat
-                |> List.filter_map
-                     ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; _ } ->
-                       let actual = Annotation.annotation annotation in
-                       let check_override
-                           ( { Node.value = { Attribute.annotation; name; final; _ }; _ } as
-                           overridden_attribute )
-                         =
-                         let expected = Annotation.annotation annotation in
-                         if
-                           ( GlobalResolution.less_or_equal
-                               global_resolution
-                               ~left:actual
-                               ~right:expected
-                           || Type.is_top actual )
-                           && not final
-                         then
-                           None
-                         else
-                           let kind =
-                             if final then
-                               Error.InvalidAssignment (FinalAttribute (Reference.create name))
-                             else
-                               Error.InconsistentOverride
-                                 {
-                                   overridden_method = name;
-                                   parent =
-                                     Attribute.parent overridden_attribute
-                                     |> Type.show
-                                     |> Reference.create;
-                                   override_kind = Attribute;
-                                   override =
-                                     Error.WeakenedPostcondition
-                                       (Error.create_mismatch
-                                          ~resolution:global_resolution
-                                          ~actual
-                                          ~actual_expression:None
-                                          ~expected
-                                          ~covariant:false);
-                                 }
-                           in
-                           Some (Error.create ~location ~kind ~define:Context.define)
-                       in
-                       Class.overrides ~resolution:global_resolution ~name definition
-                       >>| check_override
-                       |> Option.value ~default:None)
-              in
-              unimplemented_errors @ override_errors @ errors
+              unimplemented_errors @ errors
             in
             let superclasses =
               AnnotatedClass.superclasses definition ~resolution:global_resolution
@@ -620,6 +565,63 @@ module State (Context : Context) = struct
             errors |> check_attributes superclasses
           else
             errors
+        in
+        let check_overrides definition errors =
+          let override_errors =
+            let open Annotated in
+            Annotated.Class.attributes
+              ~include_generated_attributes:false
+              ~transitive:true
+              ~resolution:global_resolution
+              definition
+            |> List.filter_map
+                 ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; _ } ->
+                   let actual = Annotation.annotation annotation in
+                   let check_override
+                       ( { Node.value = { Attribute.annotation; name; final; _ }; _ } as
+                       overridden_attribute )
+                     =
+                     let expected = Annotation.annotation annotation in
+                     if
+                       ( GlobalResolution.less_or_equal
+                           global_resolution
+                           ~left:actual
+                           ~right:expected
+                       || Type.is_top actual
+                       || Type.contains_variable actual )
+                       && not final
+                     then (* TODO(T53997072): Support type variable instantiation for overrides. *)
+                       None
+                     else
+                       let kind =
+                         if final then
+                           Error.InvalidAssignment (FinalAttribute (Reference.create name))
+                         else
+                           Error.InconsistentOverride
+                             {
+                               overridden_method = name;
+                               parent =
+                                 Attribute.parent overridden_attribute
+                                 |> Type.show
+                                 |> Reference.create;
+                               override_kind = Attribute;
+                               override =
+                                 Error.WeakenedPostcondition
+                                   (Error.create_mismatch
+                                      ~resolution:global_resolution
+                                      ~actual
+                                      ~actual_expression:None
+                                      ~expected
+                                      ~covariant:false);
+                             }
+                       in
+                       Some (Error.create ~location ~kind ~define:Context.define)
+                   in
+                   Class.overrides ~resolution:global_resolution ~name definition
+                   >>| check_override
+                   |> Option.value ~default:None)
+          in
+          override_errors @ errors
         in
         let check_redefined_class definition errors =
           (* Detect when a class from an import is redefined. This relies on the fact that
@@ -645,6 +647,7 @@ module State (Context : Context) = struct
               errors
               |> check_bases
               |> check_attributes definition
+              |> check_overrides definition
               |> check_abstract_methods definition
               |> check_unimplemented_abstract_methods definition
               |> check_redefined_class definition)
