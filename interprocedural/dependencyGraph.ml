@@ -296,6 +296,7 @@ let create_overrides ~environment ~source =
     Preprocessing.classes source
     |> List.map ~f:class_method_overrides
     |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
+    |> Map.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
 
 
 let union left right =

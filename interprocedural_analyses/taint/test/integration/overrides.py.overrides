@@ -10,3 +10,4 @@ overrides.Base::methodA (override) -> [overrides.A::methodA (override) overrides
 overrides.Base::methodB (override) -> [overrides.B::methodB (override)]
 overrides.C::__init__ (override) -> [overrides.D::__init__ (override)]
 overrides.C::methodA (override) -> [overrides.D::methodA (override)]
+overrides.D::methodA (override) -> [overrides.OverloadedOverride::methodA (override)]

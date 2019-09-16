@@ -1,4 +1,5 @@
 # flake8: noqa
+from typing import overload
 
 
 class Base:
@@ -150,3 +151,16 @@ def testMakeD():
 
 def constructorTest(cls: typing.Type[D]) -> D:
     return cls(__test_source())
+
+
+class OverloadedOverride(D):
+    @overload
+    def methodA(self, arg: int) -> int:
+        ...
+
+    @overload
+    def methodA(self, arg: str) -> str:
+        ...
+
+    def methodA(self, arg):
+        return arg
