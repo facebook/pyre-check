@@ -343,101 +343,58 @@ module State (Context : Context) = struct
     let class_initialization_errors errors =
       (* Ensure all attributes are instantiated. This must happen after typechecking is finished to
          access the annotations added to resolution. *)
-      let check_attributes_initialized errors =
-        let open Annotated in
-        Define.parent_definition
-          ~resolution:(Resolution.global_resolution resolution)
-          (Define.create define)
-        >>| (fun definition ->
-              let propagate_initialization_errors errors attribute =
-                let expected = Annotation.annotation (Attribute.annotation attribute) in
-                let location = Attribute.location attribute in
-                match Attribute.name attribute with
-                | name when not (Type.is_top expected || Attribute.initialized attribute) ->
-                    let reference =
-                      Reference.create_from_list [StatementDefine.self_identifier define; name]
-                    in
-                    if
-                      ( Map.mem (Resolution.annotations resolution) reference
-                      || AnnotatedClass.is_abstract definition )
-                      && not (StatementDefine.is_class_toplevel define)
-                    then
-                      errors
-                    else
-                      let error =
-                        Error.create
-                          ~location
-                          ~kind:
-                            (Error.UninitializedAttribute
-                               {
-                                 name;
-                                 parent = Annotated.Class.annotation definition;
-                                 mismatch =
-                                   {
-                                     Error.expected;
-                                     actual = Type.optional expected;
-                                     actual_expressions = [];
-                                     due_to_invariance = false;
-                                   };
-                                 kind = Class;
-                               })
-                          ~define:Context.define
+      if Define.is_constructor define && not (Define.is_stub define) then
+        let check_attributes_initialized errors =
+          let open Annotated in
+          Define.parent_definition
+            ~resolution:(Resolution.global_resolution resolution)
+            (Define.create define)
+          >>| (fun definition ->
+                let propagate_initialization_errors errors attribute =
+                  let expected = Annotation.annotation (Attribute.annotation attribute) in
+                  let location = Attribute.location attribute in
+                  match Attribute.name attribute with
+                  | name when not (Type.is_top expected || Attribute.initialized attribute) ->
+                      let reference =
+                        Reference.create_from_list [StatementDefine.self_identifier define; name]
                       in
-                      error :: errors
-                | name ->
-                    let actual = expected in
-                    let check_override
-                        ( { Node.value = { Attribute.annotation; name; final; _ }; _ } as
-                        overridden_attribute )
-                      =
-                      let expected = Annotation.annotation annotation in
                       if
-                        ( GlobalResolution.less_or_equal
-                            global_resolution
-                            ~left:actual
-                            ~right:expected
-                        || Type.is_top actual )
-                        && not final
+                        ( Map.mem (Resolution.annotations resolution) reference
+                        || AnnotatedClass.is_abstract definition )
+                        && not (StatementDefine.is_class_toplevel define)
                       then
                         errors
                       else
-                        let kind =
-                          if final then
-                            Error.InvalidAssignment (FinalAttribute (Reference.create name))
-                          else
-                            Error.InconsistentOverride
-                              {
-                                overridden_method = name;
-                                parent =
-                                  Attribute.parent overridden_attribute
-                                  |> Type.show
-                                  |> Reference.create;
-                                override_kind = Attribute;
-                                override =
-                                  Error.WeakenedPostcondition
-                                    (Error.create_mismatch
-                                       ~resolution:global_resolution
-                                       ~actual
-                                       ~actual_expression:None
-                                       ~expected
-                                       ~covariant:false);
-                              }
+                        let error =
+                          Error.create
+                            ~location
+                            ~kind:
+                              (Error.UninitializedAttribute
+                                 {
+                                   name;
+                                   parent = Annotated.Class.annotation definition;
+                                   mismatch =
+                                     {
+                                       Error.expected;
+                                       actual = Type.optional expected;
+                                       actual_expressions = [];
+                                       due_to_invariance = false;
+                                     };
+                                   kind = Class;
+                                 })
+                            ~define:Context.define
                         in
-                        Error.create ~location ~kind ~define:Context.define :: errors
-                    in
-                    Class.overrides ~resolution:global_resolution ~name definition
-                    >>| check_override
-                    |> Option.value ~default:errors
-              in
-              Class.attribute_fold
-                ~include_generated_attributes:false
-                ~initial:errors
-                ~resolution:global_resolution
-                ~f:propagate_initialization_errors
-                definition)
-        |> Option.value ~default:errors
-      in
-      if Define.is_constructor define && not (Define.is_stub define) then
+                        error :: errors
+                  | _ -> errors
+                in
+                Class.attribute_fold
+                  ~include_generated_attributes:false
+                  ~initial:errors
+                  ~resolution:global_resolution
+                  ~f:propagate_initialization_errors
+                  definition)
+          |> Option.value ~default:errors
+        in
         errors |> check_attributes_initialized
       else if Define.is_class_toplevel define then
         let check_bases errors =
@@ -517,26 +474,17 @@ module State (Context : Context) = struct
             && (not (AnnotatedClass.is_protocol definition))
             && not (AnnotatedClass.is_abstract definition)
           then
-            let check_initialized ~is_class_type ~error_kind class_definition errors =
-              let uninitialized_attributes =
-                let superclasses =
-                  let superclasses =
-                    AnnotatedClass.superclasses class_definition ~resolution:global_resolution
-                  in
-                  if List.exists superclasses ~f:is_class_type then
-                    superclasses |> List.cons class_definition
-                  else
-                    []
-                in
-                let create_attribute_map definition sofar =
-                  let attributes =
-                    Annotated.Class.attributes
-                      ~include_generated_attributes:false
-                      ~resolution:global_resolution
-                      definition
-                  in
-                  if is_class_type definition then
-                    let is_not_initialized
+            let check_attributes definitions errors =
+              let unimplemented_errors =
+                let uninitialized_attributes =
+                  let add_uninitialized definition attribute_map =
+                    let attributes =
+                      Annotated.Class.attributes
+                        ~include_generated_attributes:false
+                        ~resolution:global_resolution
+                        definition
+                    in
+                    let is_uninitialized
                         { Node.value = { AnnotatedAttribute.name; initialized; _ }; _ }
                       =
                       let implicitly_initialized name =
@@ -548,56 +496,128 @@ module State (Context : Context) = struct
                     in
                     let add_to_map
                         sofar
-                        { Node.value = { AnnotatedAttribute.name; _ } as attribute; _ }
+                        { Node.value = { AnnotatedAttribute.name; annotation; _ }; _ }
                       =
-                      match String.Map.add sofar ~key:name ~data:attribute with
+                      match String.Map.add sofar ~key:name ~data:(annotation, definition) with
                       | `Ok map -> map
                       | `Duplicate -> sofar
                     in
-                    List.filter attributes ~f:is_not_initialized
-                    |> List.fold ~init:sofar ~f:add_to_map
-                  else
+                    List.filter attributes ~f:is_uninitialized
+                    |> List.fold ~init:attribute_map ~f:add_to_map
+                  in
+                  let remove_initialized definition attribute_map =
+                    let attributes =
+                      Annotated.Class.attributes
+                        ~include_generated_attributes:false
+                        ~resolution:global_resolution
+                        definition
+                    in
                     List.filter attributes ~f:AnnotatedAttribute.initialized
                     |> List.map ~f:AnnotatedAttribute.name
-                    |> List.fold ~init:sofar ~f:Map.remove
+                    |> List.fold ~init:attribute_map ~f:Map.remove
+                  in
+                  List.fold_right ~init:String.Map.empty ~f:add_uninitialized definitions
+                  |> (fun attribute_map ->
+                       List.fold_right ~init:attribute_map ~f:remove_initialized definitions)
+                  |> String.Map.to_alist
                 in
-                superclasses
-                |> List.fold_right ~init:String.Map.empty ~f:create_attribute_map
-                |> String.Map.to_alist
-              in
-              let unimplemented_errors =
                 uninitialized_attributes
-                |> List.map ~f:(fun (name, { AnnotatedAttribute.annotation; parent; _ }) ->
+                |> List.filter_map ~f:(fun (name, (annotation, original_definition)) ->
                        let expected = Annotation.annotation annotation in
-                       Error.create
-                         ~location
-                         ~kind:
-                           (Error.UninitializedAttribute
-                              {
-                                name;
-                                parent;
-                                mismatch =
-                                  {
-                                    Error.expected;
-                                    actual = Type.optional expected;
-                                    actual_expressions = [];
-                                    due_to_invariance = false;
-                                  };
-                                kind = error_kind;
-                              })
-                         ~define:Context.define)
+                       if Type.is_top expected then
+                         None
+                       else
+                         let error_kind =
+                           if AnnotatedClass.is_protocol original_definition then
+                             Error.Protocol (AnnotatedClass.name definition)
+                           else if AnnotatedClass.is_abstract original_definition then
+                             Error.Abstract (AnnotatedClass.name definition)
+                           else
+                             Error.Class
+                         in
+                         Some
+                           (Error.create
+                              ~location
+                              ~kind:
+                                (Error.UninitializedAttribute
+                                   {
+                                     name;
+                                     parent = Annotated.Class.annotation original_definition;
+                                     mismatch =
+                                       {
+                                         Error.expected;
+                                         actual = Type.optional expected;
+                                         actual_expressions = [];
+                                         due_to_invariance = false;
+                                       };
+                                     kind = error_kind;
+                                   })
+                              ~define:Context.define))
               in
-              unimplemented_errors @ errors
+              let override_errors =
+                let open Annotated in
+                definitions
+                |> List.map
+                     ~f:
+                       (Annotated.Class.attributes
+                          ~include_generated_attributes:false
+                          ~resolution:global_resolution)
+                |> List.concat
+                |> List.filter_map
+                     ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; _ } ->
+                       let actual = Annotation.annotation annotation in
+                       let check_override
+                           ( { Node.value = { Attribute.annotation; name; final; _ }; _ } as
+                           overridden_attribute )
+                         =
+                         let expected = Annotation.annotation annotation in
+                         if
+                           ( GlobalResolution.less_or_equal
+                               global_resolution
+                               ~left:actual
+                               ~right:expected
+                           || Type.is_top actual )
+                           && not final
+                         then
+                           None
+                         else
+                           let kind =
+                             if final then
+                               Error.InvalidAssignment (FinalAttribute (Reference.create name))
+                             else
+                               Error.InconsistentOverride
+                                 {
+                                   overridden_method = name;
+                                   parent =
+                                     Attribute.parent overridden_attribute
+                                     |> Type.show
+                                     |> Reference.create;
+                                   override_kind = Attribute;
+                                   override =
+                                     Error.WeakenedPostcondition
+                                       (Error.create_mismatch
+                                          ~resolution:global_resolution
+                                          ~actual
+                                          ~actual_expression:None
+                                          ~expected
+                                          ~covariant:false);
+                                 }
+                           in
+                           Some (Error.create ~location ~kind ~define:Context.define)
+                       in
+                       Class.overrides ~resolution:global_resolution ~name definition
+                       >>| check_override
+                       |> Option.value ~default:None)
+              in
+              unimplemented_errors @ override_errors @ errors
             in
-            check_attributes_initialized errors
-            |> check_initialized
-                 ~is_class_type:AnnotatedClass.is_protocol
-                 ~error_kind:(Error.Protocol (AnnotatedClass.name definition))
-                 definition
-            |> check_initialized
-                 ~is_class_type:AnnotatedClass.is_abstract
-                 ~error_kind:(Error.Abstract (AnnotatedClass.name definition))
-                 definition
+            let superclasses =
+              AnnotatedClass.superclasses definition ~resolution:global_resolution
+              |> List.filter ~f:(fun superclass ->
+                     AnnotatedClass.is_protocol superclass || AnnotatedClass.is_abstract superclass)
+              |> List.cons definition
+            in
+            errors |> check_attributes superclasses
           else
             errors
         in

@@ -911,10 +911,10 @@ let test_check_typed_dictionaries context =
         optional: str
     |}
     [
-      "Invalid inheritance [39]: Building TypedDicts up through inheritance is not yet supported.";
-      "Invalid type [31]: Expression `False` is not a valid type.";
       "Uninitialized attribute [13]: Attribute `optional` is declared in class `ChildTypedDict` \
        to have type `str` but is never initialized.";
+      "Invalid inheritance [39]: Building TypedDicts up through inheritance is not yet supported.";
+      "Invalid type [31]: Expression `False` is not a valid type.";
     ];
   ()
 
