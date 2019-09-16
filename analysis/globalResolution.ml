@@ -40,7 +40,8 @@ type class_metadata = {
 type global = Annotation.t Node.t [@@deriving eq, show, compare]
 
 type t = {
-  ast_environment: AstEnvironment.ReadOnly.t;
+  dependency: Reference.t option;
+  alias_environment: AliasEnvironment.ReadOnly.t;
   class_hierarchy: (module ClassHierarchy.Handler);
   aliases: Type.Primitive.t -> Type.alias option;
   module_definition: Reference.t -> Module.t option;
@@ -110,6 +111,9 @@ let create
   let unannotated_global_environment_dependency =
     dependency >>| fun dependency -> UnannotatedGlobalEnvironment.TypeCheckSource dependency
   in
+  let alias_environment_dependency =
+    dependency >>| fun dependency -> AliasEnvironment.TypeCheckSource dependency
+  in
   let unannotated_global_environment =
     AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
   in
@@ -126,7 +130,9 @@ let create
       ?dependency:ast_environment_dependency
       ast_environment
   in
-  let aliases = AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment in
+  let aliases =
+    AliasEnvironment.ReadOnly.get_alias ?dependency:alias_environment_dependency alias_environment
+  in
   let constructor ~resolution class_name =
     let instantiated = Type.Primitive class_name in
     class_definition class_name
@@ -185,7 +191,8 @@ let create
     end : ClassHierarchy.Handler )
   in
   {
-    ast_environment;
+    dependency;
+    alias_environment;
     class_hierarchy;
     aliases;
     module_definition;
@@ -199,6 +206,17 @@ let create
     protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
     global;
   }
+
+
+let alias_environment { alias_environment; _ } = alias_environment
+
+let unannotated_global_environment resolution =
+  alias_environment resolution |> AliasEnvironment.ReadOnly.unannotated_global_environment
+
+
+let ast_environment resolution =
+  unannotated_global_environment resolution
+  |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 
 
 let is_tracked { class_hierarchy; _ } = ClassHierarchy.contains class_hierarchy
@@ -344,42 +362,29 @@ let parse_annotation
     ?(allow_untracked = false)
     ?(allow_invalid_type_parameters = false)
     ?(allow_primitives_from_empty_stubs = false)
-    ({ aliases; ast_environment; _ } as resolution)
+    ({ dependency; _ } as resolution)
     expression
   =
-  let expression = Expression.delocalize expression in
-  let aliases name =
+  let dependency = dependency >>| fun dependency -> AliasEnvironment.TypeCheckSource dependency in
+  let modify_aliases =
     if allow_invalid_type_parameters then
-      aliases name
+      Fn.id
     else
-      match aliases name with
-      | Some (Type.TypeAlias alias) ->
-          check_invalid_type_parameters resolution alias
-          |> snd
-          |> fun alias -> Some (Type.TypeAlias alias)
-      | result -> result
+      function
+    | Type.TypeAlias alias ->
+        check_invalid_type_parameters resolution alias |> snd |> fun alias -> Type.TypeAlias alias
+    | result -> result
   in
-  let parsed = Type.create ~aliases expression in
   let annotation =
-    if allow_primitives_from_empty_stubs then
-      parsed
-    else
-      let constraints = function
-        | Type.Primitive name ->
-            let originates_from_empty_stub =
-              AstEnvironment.ReadOnly.from_empty_stub ast_environment (Reference.create name)
-            in
-            if originates_from_empty_stub then
-              Some Type.Any
-            else
-              None
-        | _ -> None
-      in
-      Type.instantiate parsed ~constraints
+    AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+      (alias_environment resolution)
+      ~modify_aliases
+      ?dependency
+      ~allow_untracked
+      ~allow_primitives_from_empty_stubs
+      expression
   in
-  if contains_untracked resolution annotation && not allow_untracked then
-    Type.Top
-  else if not allow_invalid_type_parameters then
+  if not allow_invalid_type_parameters then
     check_invalid_type_parameters resolution annotation |> snd
   else
     annotation
@@ -476,8 +481,6 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
 
 let undecorated_signature { undecorated_signature; _ } = undecorated_signature
 
-let ast_environment { ast_environment; _ } = ast_environment
-
 let aliases { aliases; _ } = aliases
 
 let module_definition { module_definition; _ } = module_definition
@@ -532,8 +535,8 @@ let function_definitions resolution reference =
       result
 
 
-let is_suppressed_module { ast_environment; _ } reference =
-  AstEnvironment.ReadOnly.from_empty_stub ast_environment reference
+let is_suppressed_module resolution reference =
+  AstEnvironment.ReadOnly.from_empty_stub (ast_environment resolution) reference
 
 
 let solve_less_or_equal ?(any_is_bottom = false) resolution ~constraints ~left ~right =
@@ -705,7 +708,7 @@ let source_is_unit_test resolution ~source =
   List.exists (Preprocessing.classes source) ~f:is_unittest
 
 
-let class_extends_placeholder_stub_class ({ ast_environment; _ } as resolution) { Class.bases; _ } =
+let class_extends_placeholder_stub_class resolution { Class.bases; _ } =
   let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
     let parsed =
       parse_annotation
@@ -719,7 +722,8 @@ let class_extends_placeholder_stub_class ({ ast_environment; _ } as resolution) 
     | Type.Primitive primitive
     | Parametric { name = primitive; _ } ->
         Reference.create primitive
-        |> fun reference -> AstEnvironment.ReadOnly.from_empty_stub ast_environment reference
+        |> fun reference ->
+        AstEnvironment.ReadOnly.from_empty_stub (ast_environment resolution) reference
     | _ -> false
   in
   List.exists bases ~f:is_from_placeholder_stub

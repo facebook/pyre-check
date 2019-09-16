@@ -12,9 +12,23 @@ type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly
 
 let create unannotated_global_environment = { unannotated_global_environment }
 
+type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
+
+module DependencyKey = Memory.DependencyKey.Make (struct
+  type nonrec t = dependency
+
+  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
+
+  let compare = compare_dependency
+
+  type out = dependency
+
+  let from_string string = Sexp.of_string string |> dependency_of_sexp
+end)
+
 module ReadOnly = struct
   type t = {
-    get_alias: ?dependency:Reference.t -> Type.Primitive.t -> Type.alias option;
+    get_alias: ?dependency:dependency -> Type.Primitive.t -> Type.alias option;
     unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly.t;
   }
 
@@ -22,6 +36,59 @@ module ReadOnly = struct
 
   let unannotated_global_environment { unannotated_global_environment; _ } =
     unannotated_global_environment
+
+
+  let parse_annotation_without_validating_type_parameters
+      { get_alias; unannotated_global_environment; _ }
+      ?(modify_aliases = Fn.id)
+      ?dependency
+      ?(allow_untracked = false)
+      ?(allow_primitives_from_empty_stubs = false)
+      expression
+    =
+    let parsed =
+      let expression = Expression.delocalize expression in
+      let aliases name = get_alias ?dependency name >>| modify_aliases in
+      Type.create ~aliases expression
+    in
+    let annotation =
+      if allow_primitives_from_empty_stubs then
+        parsed
+      else
+        let constraints = function
+          | Type.Primitive name ->
+              let dependency =
+                let translate = function
+                  | TypeCheckSource source -> AstEnvironment.TypeCheckSource source
+                in
+                dependency >>| translate
+              in
+              let originates_from_empty_stub =
+                let ast_environment =
+                  UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+                    unannotated_global_environment
+                in
+                let reference = Reference.create name in
+                AstEnvironment.ReadOnly.from_empty_stub ?dependency ast_environment reference
+              in
+              if originates_from_empty_stub then
+                Some Type.Any
+              else
+                None
+          | _ -> None
+        in
+        Type.instantiate parsed ~constraints
+    in
+    let contains_untracked annotation =
+      let is_tracked =
+        UnannotatedGlobalEnvironment.ReadOnly.class_exists unannotated_global_environment
+      in
+      List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
+    in
+    if contains_untracked annotation && not allow_untracked then
+      Type.Top
+    else
+      annotation
 end
 
 module AliasValue = struct
@@ -37,10 +104,7 @@ module AliasValue = struct
 end
 
 module Aliases =
-  Memory.DependencyTrackedTableNoCache
-    (SharedMemoryKeys.StringKey)
-    (SharedMemoryKeys.ReferenceDependencyKey)
-    (AliasValue)
+  Memory.DependencyTrackedTableNoCache (SharedMemoryKeys.StringKey) (DependencyKey) (AliasValue)
 
 let ast_environment { unannotated_global_environment } =
   UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
@@ -347,7 +411,7 @@ let register_aliases environment global_names ~track_dependencies =
 
 module UpdateResult = struct
   type t = {
-    triggered_dependencies: SharedMemoryKeys.ReferenceDependencyKey.KeySet.t;
+    triggered_dependencies: DependencyKey.KeySet.t;
     upstream: UnannotatedGlobalEnvironment.UpdateResult.t;
   }
 
@@ -395,10 +459,9 @@ let update environment ~scheduler ~configuration upstream_update =
       in
       let keys_to_invalidate = List.map dependencies ~f:Reference.show |> Aliases.KeySet.of_list in
       let (), triggered_dependencies =
-        SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
+        DependencyKey.Transaction.empty
         |> Aliases.add_to_transaction ~keys:keys_to_invalidate
-        |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute
-             ~update:(update ~names_to_update)
+        |> DependencyKey.Transaction.execute ~update:(update ~names_to_update)
       in
       { UpdateResult.triggered_dependencies; upstream = upstream_update }
   | _ ->
@@ -414,7 +477,7 @@ let update environment ~scheduler ~configuration upstream_update =
       in
       update ~names_to_update:current_and_previous ~track_dependencies:false ();
       {
-        UpdateResult.triggered_dependencies = SharedMemoryKeys.ReferenceDependencyKey.KeySet.empty;
+        UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
         upstream = upstream_update;
       }
 

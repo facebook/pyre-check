@@ -6,12 +6,25 @@ open Ast
 
 type t
 
+type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
+
+module DependencyKey : Memory.DependencyKey.S with type t = dependency
+
 module ReadOnly : sig
   type t
 
-  val get_alias : t -> ?dependency:Reference.t -> Type.Primitive.t -> Type.alias option
+  val get_alias : t -> ?dependency:dependency -> Type.Primitive.t -> Type.alias option
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
+  val parse_annotation_without_validating_type_parameters
+    :  t ->
+    ?modify_aliases:(Type.alias -> Type.alias) ->
+    ?dependency:dependency ->
+    ?allow_untracked:bool ->
+    ?allow_primitives_from_empty_stubs:bool ->
+    Expression.t ->
+    Type.t
 end
 
 val create : UnannotatedGlobalEnvironment.ReadOnly.t -> t
@@ -19,7 +32,7 @@ val create : UnannotatedGlobalEnvironment.ReadOnly.t -> t
 module UpdateResult : sig
   type t
 
-  val triggered_dependencies : t -> SharedMemoryKeys.ReferenceDependencyKey.KeySet.t
+  val triggered_dependencies : t -> DependencyKey.KeySet.t
 
   val upstream : t -> UnannotatedGlobalEnvironment.UpdateResult.t
 end

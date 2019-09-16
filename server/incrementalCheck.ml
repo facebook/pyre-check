@@ -133,16 +133,16 @@ let recheck
                    | UnannotatedGlobalEnvironment.TypeCheckSource source -> Some source
                    | _ -> None)
           in
-          let init =
-            SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
-              (AliasEnvironment.UpdateResult.triggered_dependencies alias_update_result)
-              invalidated_type_checking_keys
+          let alias_environment_dependencies =
+            AliasEnvironment.UpdateResult.triggered_dependencies alias_update_result
+            |> AliasEnvironment.DependencyKey.KeySet.elements
+            |> List.filter_map ~f:(function AliasEnvironment.TypeCheckSource source -> Some source)
           in
           List.fold
-            unannotated_global_environment_dependencies
+            (unannotated_global_environment_dependencies @ alias_environment_dependencies)
             ~f:(fun sofar element ->
               SharedMemoryKeys.ReferenceDependencyKey.KeySet.add element sofar)
-            ~init
+            ~init:invalidated_type_checking_keys
         in
         let invalidated_type_checking_keys =
           List.fold

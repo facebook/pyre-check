@@ -222,19 +222,17 @@ let test_updates context =
     in
     let update_result = update ~ast_environment_update_result () |> snd in
     let printer set =
-      SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements set
-      |> List.to_string ~f:Reference.show
+      AliasEnvironment.DependencyKey.KeySet.elements set
+      |> List.to_string ~f:AliasEnvironment.show_dependency
     in
-    let expected_triggers =
-      SharedMemoryKeys.ReferenceDependencyKey.KeySet.of_list expected_triggers
-    in
+    let expected_triggers = AliasEnvironment.DependencyKey.KeySet.of_list expected_triggers in
     assert_equal
       ~printer
       expected_triggers
       (AliasEnvironment.UpdateResult.triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = Reference.create "dep" in
+  let dependency = AliasEnvironment.TypeCheckSource (Reference.create "dep") in
   let assert_test_py_updates ?original_source ?new_source =
     assert_updates
       ?original_sources:(original_source >>| fun source -> ["test.py", source])
