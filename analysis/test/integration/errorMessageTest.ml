@@ -94,8 +94,7 @@ let test_show_error_traces context =
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
-      ^ "type `int` but is never initialized. Attribute `attribute` is declared on "
-      ^ "line 3, never initialized and therefore must be `typing.Optional[int]`.";
+      ^ "type `int` but is never initialized.";
     ];
   assert_type_errors
     {|

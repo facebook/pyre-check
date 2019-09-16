@@ -235,10 +235,7 @@ let test_check_protocol context =
         def __init__(self) -> None:
           pass
       |}
-    [
-      "Uninitialized attribute [13]: Attribute `foo` is declared in class `P` to have type `int` \
-       but is never initialized.";
-    ];
+    [];
   assert_type_errors
     {|
       class P(typing.Protocol):

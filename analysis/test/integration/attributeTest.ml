@@ -785,6 +785,67 @@ let test_check_attribute_initialization context =
           def __init__(self) -> None:
             y = 1
     |}
+    [];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+        class Bar(Foo):
+          def __init__(self) -> None:
+            self.y = 1
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `x` inherited from abstract class `Foo` in class \
+       `Bar` to have type `int` but is never initialized.";
+    ];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+          y: int
+        class Bar(Foo):
+          a = 1
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `x` inherited from abstract class `Foo` in class \
+       `Bar` to have type `int` but is never initialized.";
+      "Uninitialized attribute [13]: Attribute `y` inherited from abstract class `Foo` in class \
+       `Bar` to have type `int` but is never initialized.";
+    ];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+          y: int
+        class Bar(Foo):
+          a = 1
+          def __init__(self) -> None:
+            b = 2
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `x` inherited from abstract class `Foo` in class \
+       `Bar` to have type `int` but is never initialized.";
+      "Uninitialized attribute [13]: Attribute `y` inherited from abstract class `Foo` in class \
+       `Bar` to have type `int` but is never initialized.";
+    ];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+          y: int
+        class Bar(Foo):
+          def __init__(self) -> None:
+            self.x = 1
+            self._y = self.y = 1
+    |}
     []
 
 

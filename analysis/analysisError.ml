@@ -1655,7 +1655,7 @@ let messages ~concise ~signature location kind =
       [
         Format.asprintf "Unexpected keyword argument `%s` to %s." (Identifier.sanitized name) callee;
       ]
-  | UninitializedAttribute { name; parent; mismatch = { actual; expected; _ }; kind } ->
+  | UninitializedAttribute { name; parent; mismatch = { expected; _ }; kind } ->
       let message =
         if concise then
           Format.asprintf "Attribute `%a` is never initialized." pp_identifier name
@@ -1692,16 +1692,7 @@ let messages ~concise ~signature location kind =
                 pp_type
                 expected
       in
-      [
-        message;
-        Format.asprintf
-          "Attribute `%a` is declared on line %d, never initialized and therefore must be `%a`."
-          pp_identifier
-          name
-          start_line
-          pp_type
-          actual;
-      ]
+      [message]
   | AbstractClass { class_name; _ } when concise ->
       [
         Format.asprintf
