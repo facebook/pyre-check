@@ -846,6 +846,33 @@ let test_check_attribute_initialization context =
             self.x = 1
             self._y = self.y = 1
     |}
+    [];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+        class Bar(Foo):
+          @property
+          def x(self) -> int:
+            return 1
+          @x.setter
+          def x(self, value: int) -> None:
+            self.x = value
+    |}
+    [];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+        class Bar(Foo):
+          @property
+          def x(self) -> int:
+            return 1
+    |}
     []
 
 

@@ -354,7 +354,7 @@ module State (Context : Context) = struct
                 let add_uninitialized definition attribute_map =
                   let attributes =
                     Annotated.Class.attributes
-                      ~include_generated_attributes:false
+                      ~include_generated_attributes:true
                       ~resolution:global_resolution
                       definition
                   in
@@ -384,11 +384,19 @@ module State (Context : Context) = struct
                 let remove_initialized definition attribute_map =
                   let attributes =
                     Annotated.Class.attributes
-                      ~include_generated_attributes:false
+                      ~include_generated_attributes:true
                       ~resolution:global_resolution
                       definition
                   in
-                  List.filter attributes ~f:AnnotatedAttribute.initialized
+                  let is_initialized
+                      { Node.value = { AnnotatedAttribute.initialized; property; _ }; _ }
+                    =
+                    (* TODO(T54083014): Don't error on properties overriding attributes, even if
+                       they are read-only and therefore not marked as initialized on the attribute
+                       object. We should error in the future that this is an inconsistent override. *)
+                    initialized || Option.is_some property
+                  in
+                  List.filter attributes ~f:is_initialized
                   |> List.map ~f:AnnotatedAttribute.name
                   |> List.fold ~init:attribute_map ~f:Map.remove
                 in
