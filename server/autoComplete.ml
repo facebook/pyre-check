@@ -10,20 +10,17 @@ open Pyre
 
 let remove_dot ~cursor_position:{ Location.line; column } source =
   let line_rewriter line_index original_line =
-    (* Pyre line number starts at 1. *)
-    let line_substring = Substring.of_string original_line in
+    let original_line_length = String.length original_line in
     if
+      (* Pyre line number starts at 1. *)
       Int.equal (line_index + 1) line
-      && (not (Int.equal column 0))
+      && original_line_length > 0
+      && column >= 1
       (* Make sure pos and len are within bounds of the line_substring *)
-      && String.length original_line - column >= 0
-      && column - 1 <= Substring.length line_substring
+      && original_line_length - column >= 0
     then (* Remove DOT to make the source parsable. *)
-      let before_dot_segment = Substring.sub ~pos:0 ~len:(column - 1) line_substring in
-      let after_dot_segment =
-        Substring.sub ~pos:column ~len:(String.length original_line - column) line_substring
-      in
-      Substring.([before_dot_segment; after_dot_segment] |> concat |> to_string)
+      String.sub original_line ~pos:0 ~len:(column - 1)
+      ^ String.sub original_line ~pos:column ~len:(original_line_length - column)
     else
       original_line
   in
