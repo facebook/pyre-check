@@ -563,7 +563,7 @@ module State (Context : Context) = struct
               ~resolution:global_resolution
               definition
             |> List.filter_map
-                 ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; _ } ->
+                 ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; location } ->
                    let actual = Annotation.annotation annotation in
                    let check_override
                        ( { Node.value = { Attribute.annotation; name; final; _ }; _ } as
