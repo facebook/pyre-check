@@ -83,25 +83,27 @@ def get_binary_version_from_file(local_path: Optional[str]) -> str:
     if override:
         return "override: {}".format(override)
 
-    # Get local configuration version
-    if local_path:
-        local_configuration = os.path.join(local_path, CONFIGURATION_FILE + ".local")
-        with open(local_configuration) as file:
+    def read_version(configuration_path: str) -> Optional[str]:
+        with open(configuration_path) as file:
             configuration_contents = file.read()
-            version = json.loads(configuration_contents).pop("version", None)
+            return json.loads(configuration_contents).pop("version", None)
 
-            if version:
-                return version
+    version = None  # type: Optional[str]
+    try:
+        # Get local configuration version
+        if local_path:
+            local_configuration = os.path.join(
+                local_path, CONFIGURATION_FILE + ".local"
+            )
+            version = read_version(local_configuration)
 
-    # Get configuration version
-    with open(CONFIGURATION_FILE) as file:
-        configuration_contents = file.read()
-        version = json.loads(configuration_contents).pop("version", None)
-
-        if version:
-            return version
-
-    return "No version set"
+        # Get configuration version
+        if not version:
+            version = read_version(CONFIGURATION_FILE)
+    except Exception:
+        pass
+    # pyre-fixme[7]: Expected `str` but got `Optional[str]`.
+    return "No version set" if not version else version
 
 
 def switch_root(arguments) -> None:
