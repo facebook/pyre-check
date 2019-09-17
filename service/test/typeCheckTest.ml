@@ -38,7 +38,10 @@ let assert_errors
   let scheduler = Test.mock_scheduler () in
   List.iter ~f:File.write files;
   let { Service.Check.ast_environment; errors; _ } =
-    Service.Check.check ~scheduler:(Some scheduler) ~configuration
+    Service.Check.check
+      ~scheduler:(Some scheduler)
+      ~configuration
+      ~build_legacy_dependency_graph:false
   in
   let errors =
     errors

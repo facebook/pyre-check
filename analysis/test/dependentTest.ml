@@ -13,43 +13,26 @@ let default_environment context =
   environment
 
 
-let test_index context =
-  let source =
-    {|
-      class baz.baz(): pass
-      _T = typing.TypeVar("_T")
-      def foo(): pass
-    |}
-  in
-  let _, _, handler =
-    ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
-  in
-  let qualifier = Reference.create "test" in
-  let (module DependencyHandler) = Environment.dependency_handler handler in
-  assert_equal
-    ~cmp:(List.equal Reference.equal)
-    ~printer:(List.to_string ~f:Reference.show)
-    (DependencyHandler.get_function_keys ~qualifier)
-    [!&"test.foo"]
-
-
-let add_dependent environment handle dependent =
-  let (module Dependencies) = Environment.dependency_handler environment in
-  Dependencies.add_dependent ~qualifier:(Reference.create dependent) (Reference.create handle)
-
-
-let get_dependencies environment qualifier = Environment.dependencies environment qualifier
-
 let assert_dependencies ~environment ~modules ~expected function_to_test =
-  let get_dependencies = get_dependencies environment in
+  let ast_environment = Environment.ast_environment environment in
+  let dependencies = Dependencies.create ast_environment in
   let dependencies =
-    function_to_test ~get_dependencies ~modules:(List.map modules ~f:Reference.create)
+    function_to_test dependencies ~modules:(List.map modules ~f:Reference.create)
     |> Set.to_list
     |> List.map ~f:Reference.show
     |> List.sort ~compare:String.compare
   in
   let expected = List.sort ~compare:String.compare expected in
   assert_equal ~printer:(List.to_string ~f:ident) expected dependencies
+
+
+let add_dependent environment handle dependent =
+  let ast_environment = Environment.ast_environment environment in
+  let dependencies = Dependencies.create ast_environment in
+  Dependencies.add_manual_dependency_for_test
+    dependencies
+    ~source:(Reference.create dependent)
+    ~target:(Reference.create handle)
 
 
 let purge () = Memory.reset_shared_memory ()
@@ -106,75 +89,116 @@ let test_transitive_dependents context =
   add_dependent environment "c" "b";
   add_dependent environment "a" "test";
   let assert_dependents ~handle ~expected =
-    let get_dependencies = get_dependencies environment in
-    let dependencies =
-      Dependencies.transitive_of_list
-        ~modules:[SourcePath.qualifier_of_relative handle]
-        ~get_dependencies
-      |> Set.to_list
-      |> List.map ~f:Reference.show
-      |> List.sort ~compare:String.compare
-    in
-    let expected = List.sort ~compare:String.compare expected in
-    let printer = List.to_string ~f:Fn.id in
-    assert_equal ~printer expected dependencies
+    assert_dependencies ~environment ~modules:[handle] ~expected Dependencies.transitive_of_list
   in
-  assert_dependents ~handle:"c.py" ~expected:["a"; "b"; "test"];
+  assert_dependents ~handle:"c" ~expected:["a"; "b"; "test"];
   ()
 
 
-let test_normalize context =
-  let assert_normalized ~edges expected =
-    let handler = default_environment context in
-    let (module DependencyHandler) = Environment.dependency_handler handler in
-    let add_dependent (left, right) =
-      DependencyHandler.add_dependent ~qualifier:(Reference.create left) !&right
-    in
-    List.iter edges ~f:add_dependent;
-    let all_modules =
-      edges
-      |> List.concat_map ~f:(fun (left, right) -> [left; right])
-      |> List.map ~f:(fun name -> Reference.create name)
-    in
-    DependencyHandler.normalize all_modules;
-    let assert_dependents_equal (node, expected) =
-      let expected =
-        List.map expected ~f:(fun name -> Reference.create name)
-        |> List.sort ~compare:Reference.compare
-        |> Reference.Set.Tree.of_list
-      in
-      let printer = function
-        | None -> "None"
-        | Some dependents -> Reference.Set.Tree.sexp_of_t dependents |> Sexp.to_string
-      in
-      (* If the printer shows identical sets here but the equality fails, the underlying
-         representation must have diverged. *)
-      assert_equal ~printer (Some expected) (DependencyHandler.dependents !&node)
-    in
-    List.iter expected ~f:assert_dependents_equal
+let test_import_dependencies context =
+  purge ();
+  let project =
+    ScratchProject.setup
+      ~context
+      [
+        ( "test.py",
+          {|
+         import a
+         from builtins import str
+         from subdirectory.b import c
+         import sys
+         from . import ignored
+        |}
+        );
+        "a.py", "";
+        "subdirectory/b.py", "";
+      ]
   in
-  assert_normalized ~edges:["a", "b"] ["b", ["a"]];
-  assert_normalized ~edges:["a", "c"; "b", "c"] ["c", ["a"; "b"]];
-  assert_normalized ~edges:["b", "c"; "a", "c"] ["c", ["a"; "b"]];
-  assert_normalized
-    ~edges:["a", "h"; "b", "h"; "c", "h"; "d", "h"; "e", "h"; "f", "h"; "g", "h"]
-    ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]];
-  assert_normalized
-    ~edges:["g", "h"; "f", "h"; "e", "h"; "d", "h"; "c", "h"; "b", "h"; "a", "h"]
-    ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]];
-  assert_normalized
-    ~edges:["d", "h"; "e", "h"; "f", "h"; "g", "h"; "c", "h"; "b", "h"; "a", "h"]
-    ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]]
+  let ast_environment, update = ScratchProject.parse_sources project in
+  let dependencies = Dependencies.create (AstEnvironment.read_only ast_environment) in
+  AstEnvironment.UpdateResult.reparsed update
+  |> List.filter_map
+       ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
+  |> Dependencies.register_all_dependencies dependencies;
+
+  let dependencies qualifier =
+    Dependencies.of_list dependencies ~modules:[!&qualifier]
+    |> Set.to_list
+    |> List.map ~f:Reference.show
+  in
+  let printer = List.to_string ~f:Fn.id in
+  assert_equal ~printer (dependencies "subdirectory.b") ["test"];
+  assert_equal ~printer (dependencies "a") ["test"];
+  assert_equal ~printer (dependencies "") ["test"];
+  assert_equal ~printer (dependencies "sys") ["numbers"; "test"];
+  ()
+
+
+let test_register_dependencies context =
+  purge ();
+  let ast_environment =
+    let project =
+      ScratchProject.setup
+        ~context
+        [
+          "foo.py", "class Foo: ...";
+          "bar/a.py", "class A: ...";
+          "bar/b.py", "x = 42";
+          "bar/c.py", "";
+          "baz.py", "";
+        ]
+    in
+    ScratchProject.parse_sources project |> fst
+  in
+  let source_test1 =
+    {|
+         import foo, baz
+         from bar.a import A
+         from bar import b
+      |}
+  in
+  let source_test2 =
+    {|
+         import baz
+         from bar.b import x
+         from builtins import str
+      |}
+  in
+  let dependencies = Dependencies.create (AstEnvironment.read_only ast_environment) in
+  Dependencies.register_all_dependencies
+    dependencies
+    [parse ~handle:"test1.py" source_test1; parse ~handle:"test2.py" source_test2];
+  let assert_dependency_equal ~expected qualifier =
+    let actual = Dependencies.of_list dependencies ~modules:[qualifier] |> Set.to_list in
+    assert_equal
+      ~cmp:(List.equal Reference.equal)
+      ~printer:(List.to_string ~f:Reference.show)
+      expected
+      actual
+  in
+  assert_dependency_equal !&"foo" ~expected:[!&"test1"];
+  assert_dependency_equal !&"bar" ~expected:[!&"test1"];
+  assert_dependency_equal !&"bar.a" ~expected:[!&"test1"];
+  assert_dependency_equal !&"bar.b" ~expected:[!&"test1"; !&"test2"];
+  assert_dependency_equal !&"bar.c" ~expected:[];
+  assert_dependency_equal !&"baz" ~expected:[!&"test1"; !&"test2"];
+  assert_dependency_equal !&"foo.Foo" ~expected:[];
+  assert_dependency_equal !&"bar.a.A" ~expected:[];
+  assert_dependency_equal !&"bar.b.x" ~expected:[];
+  assert_dependency_equal !&"str" ~expected:[];
+
+  Memory.reset_shared_memory ();
+  ()
 
 
 let () =
   "dependencies"
   >::: [
-         "index" >:: test_index;
          "transitive_dependents" >:: test_transitive_dependents;
          "transitive_dependent_of_list" >:: test_transitive_dependent_of_list;
          "dependent_of_list" >:: test_dependent_of_list;
          "dependent_of_list_duplicates" >:: test_dependent_of_list_duplicates;
-         "normalize" >:: test_normalize;
+         "import_dependencies" >:: test_import_dependencies;
+         "register_dependencies" >:: test_register_dependencies;
        ]
   |> Test.run

@@ -51,20 +51,16 @@ let recheck
     ~section:`Server
     "Incremental Parser Update %s"
     (List.to_string ~f:Reference.show reparsed_sources);
-
+  let legacy_dependency_tracker = Dependencies.create (AstEnvironment.read_only ast_environment) in
   (* Repopulate the environment. *)
   let invalidated_environment_qualifiers =
     match incremental_style with
     | FineGrained -> Reference.Set.of_list reparsed_sources
     | Shallow ->
-        Dependencies.of_list
-          ~modules:reparsed_sources
-          ~get_dependencies:(Environment.dependencies environment)
+        Dependencies.of_list legacy_dependency_tracker ~modules:reparsed_sources
         |> Reference.Set.union (Reference.Set.of_list reparsed_sources)
     | Transitive ->
-        Dependencies.transitive_of_list
-          ~modules:reparsed_sources
-          ~get_dependencies:(Environment.dependencies environment)
+        Dependencies.transitive_of_list legacy_dependency_tracker ~modules:reparsed_sources
         |> Reference.Set.union (Reference.Set.of_list reparsed_sources)
   in
   Log.info
@@ -190,6 +186,10 @@ let recheck
             ~debug
             invalidated_environment_qualifiers
             ~update_result:class_hierarchy_update_result;
+          Dependencies.purge legacy_dependency_tracker invalidated_environment_qualifiers;
+          Dependencies.register_all_dependencies
+            legacy_dependency_tracker
+            re_environment_build_sources;
           Service.Environment.populate
             ~configuration
             ~scheduler

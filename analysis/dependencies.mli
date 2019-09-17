@@ -7,65 +7,23 @@ open Core
 open Ast
 module SharedMemory = Memory
 
-type index = {
-  function_keys: Reference.t Hash_set.t Reference.Table.t;
-  class_keys: Identifier.t Hash_set.t Reference.Table.t;
-  alias_keys: Identifier.t Hash_set.t Reference.Table.t;
-  global_keys: Reference.t Hash_set.t Reference.Table.t;
-  dependent_keys: Reference.t Hash_set.t Reference.Table.t;
-}
+type t
 
-type t = {
-  index: index;
-  dependents: Reference.Set.t Reference.Table.t;
-}
+val create : AstEnvironment.ReadOnly.t -> t
 
-module type Handler = sig
-  val add_function_key : qualifier:Reference.t -> Reference.t -> unit
+val transitive_of_list : t -> modules:Reference.t list -> Reference.Set.t
 
-  val add_alias_key : qualifier:Reference.t -> Identifier.t -> unit
+val of_list : t -> modules:Reference.t list -> Reference.Set.t
 
-  val add_global_key : qualifier:Reference.t -> Reference.t -> unit
+val to_dot : t -> qualifier:Reference.t -> string
 
-  val add_dependent_key : qualifier:Reference.t -> Reference.t -> unit
+val register_all_dependencies : t -> Source.t list -> unit
 
-  val add_dependent : qualifier:Reference.t -> Reference.t -> unit
+val add_manual_dependency_for_test : t -> source:Reference.t -> target:Reference.t -> unit
 
-  val dependents : Reference.t -> Reference.Set.Tree.t option
+val normalize : t -> Reference.t list -> unit
 
-  val get_function_keys : qualifier:Reference.t -> Reference.t list
-
-  val get_alias_keys : qualifier:Reference.t -> Identifier.t list
-
-  val get_global_keys : qualifier:Reference.t -> Reference.t list
-
-  val get_dependent_keys : qualifier:Reference.t -> Reference.t list
-
-  val clear_keys_batch : Reference.t list -> unit
-
-  val normalize : Reference.t list -> unit
-end
-
-val create : unit -> t
-
-val copy : t -> t
-
-val handler : t -> (module Handler)
-
-val transitive_of_list
-  :  get_dependencies:(Reference.t -> Reference.Set.Tree.t option) ->
-  modules:Reference.t list ->
-  Reference.Set.t
-
-val of_list
-  :  get_dependencies:(Reference.t -> Reference.Set.Tree.t option) ->
-  modules:Reference.t list ->
-  Reference.Set.t
-
-val to_dot
-  :  get_dependencies:(Reference.t -> Reference.Set.Tree.t option) ->
-  qualifier:Reference.t ->
-  string
+val purge : t -> Reference.t list -> unit
 
 module Callgraph : sig
   type dispatch =

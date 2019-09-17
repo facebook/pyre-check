@@ -1201,87 +1201,6 @@ let test_modules context =
   ()
 
 
-let test_import_dependencies context =
-  let environment =
-    let source =
-      {|
-         import a
-         from builtins import str
-         from subdirectory.b import c
-         import sys
-         from . import ignored
-      |}
-    in
-    populate ~context ["test.py", source; "a.py", ""; "subdirectory/b.py", ""]
-  in
-  let dependencies qualifier =
-    Environment.dependencies environment !&qualifier
-    >>| String.Set.Tree.map ~f:Reference.show
-    >>| String.Set.Tree.to_list
-  in
-  assert_equal (dependencies "subdirectory.b") (Some ["test"]);
-  assert_equal (dependencies "a") (Some ["test"]);
-  assert_equal (dependencies "") (Some ["test"]);
-  assert_equal (dependencies "sys") (Some ["numbers"; "test"])
-
-
-let test_register_dependencies context =
-  let environment =
-    create_environment
-      ~context
-      ~additional_sources:
-        [
-          "foo.py", "class Foo: ...";
-          "bar/a.py", "class A: ...";
-          "bar/b.py", "x = 42";
-          "bar/c.py", "";
-          "baz.py", "";
-        ]
-      ()
-  in
-  let source_test1 =
-    {|
-         import foo, baz
-         from bar.a import A
-         from bar import b
-      |}
-  in
-  let source_test2 =
-    {|
-         import baz
-         from bar.b import x
-         from builtins import str
-      |}
-  in
-  Environment.register_dependencies environment (parse ~handle:"test1.py" source_test1);
-  Environment.register_dependencies environment (parse ~handle:"test2.py" source_test2);
-  let assert_dependency_equal ~expected qualifier =
-    let actual =
-      Environment.dependencies environment qualifier
-      >>| Reference.Set.Tree.to_list
-      |> Option.value ~default:[]
-    in
-    assert_equal
-      ~cmp:(List.equal Reference.equal)
-      ~printer:(List.to_string ~f:Reference.show)
-      expected
-      actual
-  in
-  assert_dependency_equal !&"foo" ~expected:[!&"test1"];
-  assert_dependency_equal !&"bar" ~expected:[!&"test1"];
-  assert_dependency_equal !&"bar.a" ~expected:[!&"test1"];
-  assert_dependency_equal !&"bar.b" ~expected:[!&"test1"; !&"test2"];
-  assert_dependency_equal !&"bar.c" ~expected:[];
-  assert_dependency_equal !&"baz" ~expected:[!&"test1"; !&"test2"];
-  assert_dependency_equal !&"foo.Foo" ~expected:[];
-  assert_dependency_equal !&"bar.a.A" ~expected:[];
-  assert_dependency_equal !&"bar.b.x" ~expected:[];
-  assert_dependency_equal !&"str" ~expected:[];
-
-  Memory.reset_shared_memory ();
-  ()
-
-
 let test_purge context =
   let assert_type_errors = Test.assert_errors ~check:Analysis.TypeCheck.run ~debug:true in
   let assert_type_errors = assert_type_errors ~context in
@@ -1319,12 +1238,6 @@ let test_purge context =
   let global_resolution = Environment.resolution handler () in
   assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
   assert_is_some (GlobalResolution.aliases global_resolution "test._T");
-  let dependencies relative =
-    Environment.dependencies handler (SourcePath.qualifier_of_relative relative)
-    >>| String.Set.Tree.map ~f:Reference.show
-    >>| String.Set.Tree.to_list
-  in
-  assert_equal (dependencies "a.py") (Some ["test"]);
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_true (GlobalResolution.is_tracked global_resolution "test.P");
@@ -1358,7 +1271,6 @@ let test_purge context =
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_is_none (GlobalResolution.aliases global_resolution "test._T");
-  assert_equal (dependencies "a.py") (Some []);
   Environment.check_class_hierarchy_integrity handler;
   ()
 
@@ -1909,13 +1821,11 @@ let () =
          "meet_type_order" >:: test_meet_type_order;
          "supertypes_type_order" >:: test_supertypes_type_order;
          "class_definition" >:: test_class_definition;
-         "import_dependencies" >:: test_import_dependencies;
          "modules" >:: test_modules;
          "populate" >:: test_populate;
          "purge" >:: test_purge;
          "register_class_metadata" >:: test_register_class_metadata;
          "register_aliases" >:: test_register_aliases;
-         "register_dependencies" >:: test_register_dependencies;
          "register_globals" >:: test_register_globals;
          "register_implicit_submodules" >:: test_register_implicit_submodules;
          "default_class_hierarchy" >:: test_default_class_hierarchy;

@@ -9,158 +9,102 @@ open Expression
 open Pyre
 module SharedMemory = Memory
 
-type index = {
-  function_keys: Reference.t Hash_set.t Reference.Table.t;
-  class_keys: Identifier.t Hash_set.t Reference.Table.t;
-  alias_keys: Identifier.t Hash_set.t Reference.Table.t;
-  global_keys: Reference.t Hash_set.t Reference.Table.t;
-  dependent_keys: Reference.t Hash_set.t Reference.Table.t;
-}
+type t = { ast_environment: AstEnvironment.ReadOnly.t }
 
-type t = {
-  index: index;
-  dependents: Reference.Set.t Reference.Table.t;
-}
+let create ast_environment = { ast_environment }
 
-module type Handler = sig
-  val add_function_key : qualifier:Reference.t -> Reference.t -> unit
+module DependentValue = struct
+  type t = Reference.Set.Tree.t
 
-  val add_alias_key : qualifier:Reference.t -> Identifier.t -> unit
+  let prefix = Prefix.make ()
 
-  val add_global_key : qualifier:Reference.t -> Reference.t -> unit
+  let description = "Dependent"
 
-  val add_dependent_key : qualifier:Reference.t -> Reference.t -> unit
-
-  val add_dependent : qualifier:Reference.t -> Reference.t -> unit
-
-  val dependents : Reference.t -> Reference.Set.Tree.t option
-
-  val get_function_keys : qualifier:Reference.t -> Reference.t list
-
-  val get_alias_keys : qualifier:Reference.t -> Identifier.t list
-
-  val get_global_keys : qualifier:Reference.t -> Reference.t list
-
-  val get_dependent_keys : qualifier:Reference.t -> Reference.t list
-
-  val clear_keys_batch : Reference.t list -> unit
-
-  val normalize : Reference.t list -> unit
+  let unmarshall value = Marshal.from_string value 0
 end
 
-let handler
-    { index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys }; dependents }
-  =
-  ( module struct
-    let add_function_key ~qualifier name =
-      match Hashtbl.find function_keys qualifier with
-      | None -> Hashtbl.set function_keys ~key:qualifier ~data:(Reference.Hash_set.of_list [name])
-      | Some hash_set -> Hash_set.add hash_set name
+module DependentKeyValue = struct
+  type t = Reference.t list
+
+  let prefix = Prefix.make ()
+
+  let description = "Dependent keys"
+
+  let unmarshall value = Marshal.from_string value 0
+end
+
+module Dependents = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentValue)
+module DependentKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentKeyValue)
+
+let clear_keys_batch qualifiers =
+  DependentKeys.remove_batch (DependentKeys.KeySet.of_list qualifiers)
 
 
-    let add_alias_key ~qualifier alias =
-      match Hashtbl.find alias_keys qualifier with
-      | None -> Hashtbl.set alias_keys ~key:qualifier ~data:(Identifier.Hash_set.of_list [alias])
-      | Some hash_set -> Hash_set.add hash_set alias
+let add_new_key ~get ~add ~qualifier ~key =
+  let existing = get qualifier in
+  match existing with
+  | None -> add qualifier [key]
+  | Some keys -> add qualifier (key :: keys)
 
 
-    let add_global_key ~qualifier global =
-      match Hashtbl.find global_keys qualifier with
-      | None -> Hashtbl.set global_keys ~key:qualifier ~data:(Reference.Hash_set.of_list [global])
-      | Some hash_set -> Hash_set.add hash_set global
+let add_dependent_key ~qualifier dependent =
+  add_new_key ~qualifier ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
 
 
-    let add_dependent_key ~qualifier dependent =
-      match Hashtbl.find dependent_keys qualifier with
-      | None ->
-          Hashtbl.set dependent_keys ~key:qualifier ~data:(Reference.Hash_set.of_list [dependent])
-      | Some hash_set -> Hash_set.add hash_set dependent
+let add_dependent ~qualifier dependent =
+  add_dependent_key ~qualifier dependent;
+  match Dependents.get dependent with
+  | None -> Dependents.add dependent (Reference.Set.Tree.singleton qualifier)
+  | Some dependencies -> Dependents.add dependent (Reference.Set.Tree.add dependencies qualifier)
 
 
-    let add_dependent ~qualifier dependent =
-      add_dependent_key ~qualifier dependent;
-      let update entry =
-        match entry with
-        | None -> Reference.Set.singleton qualifier
-        | Some set -> Set.add set qualifier
-      in
-      Hashtbl.update dependents dependent ~f:update
+let add_manual_dependency_for_test _ ~source ~target = add_dependent ~qualifier:source target
 
+let get_dependent_keys ~qualifier = DependentKeys.get qualifier |> Option.value ~default:[]
 
-    let dependents_table = dependents
+let get_dependencies = Dependents.get
 
-    let dependents reference = Hashtbl.find dependents reference >>| Set.to_tree
-
-    let get_function_keys ~qualifier =
-      Hashtbl.find function_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
-
-
-    let get_alias_keys ~qualifier =
-      Hashtbl.find alias_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
-
-
-    let get_global_keys ~qualifier =
-      Hashtbl.find global_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
-
-
-    let get_dependent_keys ~qualifier =
-      Hashtbl.find dependent_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
-
-
-    let clear_keys_batch qualifiers =
-      List.iter ~f:(Hashtbl.remove function_keys) qualifiers;
-      List.iter ~f:(Hashtbl.remove class_keys) qualifiers;
-      List.iter ~f:(Hashtbl.remove alias_keys) qualifiers;
-      List.iter ~f:(Hashtbl.remove global_keys) qualifiers;
-      List.iter ~f:(Hashtbl.remove dependent_keys) qualifiers
-
-
-    let normalize qualifiers =
-      let normalize qualifier =
-        match Hashtbl.find dependents_table qualifier with
-        | Some unnormalized ->
-            Reference.Set.to_list unnormalized
-            |> List.sort ~compare:Reference.compare
-            |> Reference.Set.of_list
-            |> fun normalized -> Hashtbl.set dependents_table ~key:qualifier ~data:normalized
-        | None -> ()
-      in
-      List.concat_map qualifiers ~f:(fun qualifier -> get_dependent_keys ~qualifier)
-      |> List.dedup_and_sort ~compare:Reference.compare
-      |> List.iter ~f:normalize
-  end : Handler )
-
-
-let create () =
-  let index =
-    {
-      function_keys = Reference.Table.create ();
-      class_keys = Reference.Table.create ();
-      alias_keys = Reference.Table.create ();
-      global_keys = Reference.Table.create ();
-      dependent_keys = Reference.Table.create ();
-    }
+let remove_from_dependency_graph qualifiers =
+  let keys =
+    List.concat_map ~f:(fun qualifier -> get_dependent_keys ~qualifier) qualifiers
+    |> List.dedup_and_sort ~compare:Reference.compare
   in
-  { index; dependents = Reference.Table.create () }
+  let new_dependents = Reference.Table.create () in
+  let recompute_dependents key dependents =
+    let qualifiers = Reference.Set.Tree.of_list qualifiers in
+    Hashtbl.set new_dependents ~key ~data:(Reference.Set.Tree.diff dependents qualifiers)
+  in
+  List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
+  Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
+  Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
+  DependentKeys.remove_batch (Dependents.KeySet.of_list qualifiers)
 
 
-let copy
-    { index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys }; dependents }
-  =
-  {
-    index =
-      {
-        function_keys = Hashtbl.copy function_keys;
-        class_keys = Hashtbl.copy class_keys;
-        alias_keys = Hashtbl.copy alias_keys;
-        global_keys = Hashtbl.copy global_keys;
-        dependent_keys = Hashtbl.copy dependent_keys;
-      };
-    dependents = Hashtbl.copy dependents;
-  }
+let normalize _ qualifiers =
+  let normalize_keys qualifier =
+    match DependentKeys.get qualifier with
+    | Some keys ->
+        DependentKeys.remove_batch (DependentKeys.KeySet.singleton qualifier);
+        DependentKeys.add qualifier (List.dedup_and_sort ~compare:Reference.compare keys)
+    | None -> ()
+  in
+  List.iter qualifiers ~f:normalize_keys;
+  let normalize_dependents name =
+    match Dependents.get name with
+    | Some unnormalized ->
+        Dependents.remove_batch (Dependents.KeySet.singleton name);
+        Reference.Set.Tree.to_list unnormalized
+        |> List.sort ~compare:Reference.compare
+        |> Reference.Set.Tree.of_list
+        |> Dependents.add name
+    | None -> ()
+  in
+  List.concat_map qualifiers ~f:(fun qualifier -> get_dependent_keys ~qualifier)
+  |> List.dedup_and_sort ~compare:Reference.compare
+  |> List.iter ~f:normalize_dependents
 
 
-let transitive_of_list ~get_dependencies ~modules =
+let transitive_of_list _ ~modules =
   let rec transitive ~visited ~frontier =
     if Reference.Set.Tree.is_empty frontier then
       visited
@@ -183,7 +127,71 @@ let transitive_of_list ~get_dependencies ~modules =
   |> Reference.Set.of_tree
 
 
-let of_list ~get_dependencies ~modules =
+let register_dependencies { ast_environment } source =
+  let module Visit = Visit.MakeStatementVisitor (struct
+    open Statement
+
+    type t = unit
+
+    let visit_children _ = true
+
+    let statement { Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } _ = function
+      | { Node.value = Statement.Import { Import.from; imports }; _ } ->
+          let imports =
+            let imports =
+              match from with
+              | None ->
+                  (* If analyzing `import a, b, c`, add `a`, `b`, `c` to the dependencies. *)
+                  imports |> List.map ~f:(fun { Import.name; _ } -> name)
+              | Some base_module ->
+                  (* If analyzing `from x import a, b, c`, add `x`, `x.a`, `x.b`, `x.c` to the
+                     dependencies, if they are module names. *)
+                  base_module
+                  :: List.map imports ~f:(fun { Import.name; _ } ->
+                         Reference.combine base_module name)
+                  |> List.filter ~f:(AstEnvironment.ReadOnly.is_module ast_environment)
+            in
+            let qualify_builtins import =
+              match Reference.single import with
+              | Some "builtins" -> Reference.empty
+              | _ -> import
+            in
+            List.map imports ~f:qualify_builtins
+          in
+          let register dependency =
+            Log.log
+              ~section:`Dependencies
+              "Adding dependency from %a to %a"
+              Reference.pp
+              dependency
+              Reference.pp
+              qualifier;
+            add_dependent ~qualifier dependency
+          in
+          List.iter ~f:register imports
+      | _ -> ()
+  end)
+  in
+  Visit.visit () source
+
+
+let register_all_dependencies environment sources =
+  DependentKeys.LocalChanges.push_stack ();
+  Dependents.LocalChanges.push_stack ();
+  List.iter sources ~f:(register_dependencies environment);
+  DependentKeys.LocalChanges.commit_all ();
+  Dependents.LocalChanges.commit_all ();
+  DependentKeys.LocalChanges.pop_stack ();
+  Dependents.LocalChanges.pop_stack ()
+
+
+let purge _ qualifiers =
+  remove_from_dependency_graph qualifiers;
+  clear_keys_batch qualifiers;
+  ()
+
+
+let of_list _ ~modules =
   let fold_dependents dependents handle =
     get_dependencies handle
     >>| Reference.Set.of_tree
@@ -194,7 +202,7 @@ let of_list ~get_dependencies ~modules =
   |> fun dependents -> Set.diff dependents (Reference.Set.of_list modules)
 
 
-let to_dot ~get_dependencies ~qualifier =
+let to_dot _ ~qualifier =
   let nodes, edges =
     let rec iterate ~worklist ~visited ~result:((nodes, edges) as result) =
       match Queue.dequeue worklist with

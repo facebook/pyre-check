@@ -20,49 +20,6 @@ let empty_environment () =
   |> Environment.shared_memory_handler
 
 
-let test_normalize_dependencies _ =
-  let qualifier = Reference.create "dummy" in
-  let environment = empty_environment () in
-  let (module DependencyHandler) = Environment.dependency_handler environment in
-  DependencyHandler.clear_keys_batch [qualifier];
-  DependencyHandler.add_function_key ~qualifier !&"f";
-
-  (* Only keep one copy. *)
-  DependencyHandler.add_function_key ~qualifier !&"f";
-  DependencyHandler.add_function_key ~qualifier !&"h";
-  DependencyHandler.add_function_key ~qualifier !&"g";
-  DependencyHandler.normalize [qualifier];
-  assert_equal
-    ~printer:(List.to_string ~f:Reference.show)
-    (DependencyHandler.get_function_keys ~qualifier)
-    [!&"f"; !&"g"; !&"h"];
-  DependencyHandler.add_global_key ~qualifier !&"b";
-  DependencyHandler.add_global_key ~qualifier !&"c";
-  DependencyHandler.add_global_key ~qualifier !&"a";
-  DependencyHandler.normalize [qualifier];
-  assert_equal
-    ~printer:(List.to_string ~f:Reference.show)
-    (DependencyHandler.get_global_keys ~qualifier)
-    [!&"a"; !&"b"; !&"c"];
-  DependencyHandler.add_dependent_key ~qualifier !&"first.module";
-  DependencyHandler.add_dependent_key ~qualifier !&"second.module";
-  DependencyHandler.add_dependent_key ~qualifier !&"aardvark";
-  DependencyHandler.normalize [qualifier];
-  assert_equal
-    ~printer:(List.to_string ~f:Reference.show)
-    (DependencyHandler.get_dependent_keys ~qualifier)
-    [!&"aardvark"; !&"first.module"; !&"second.module"];
-  DependencyHandler.normalize [qualifier];
-  DependencyHandler.add_alias_key ~qualifier "C_Alias";
-  DependencyHandler.add_alias_key ~qualifier "A_Alias";
-  DependencyHandler.add_alias_key ~qualifier "B_Alias";
-  DependencyHandler.normalize [qualifier];
-  assert_equal
-    ~printer:(List.to_string ~f:ident)
-    (DependencyHandler.get_alias_keys ~qualifier)
-    ["A_Alias"; "B_Alias"; "C_Alias"]
-
-
 let test_populate context =
   let configuration, sources, ast_environment, ast_environment_update_result =
     let project =
@@ -115,11 +72,6 @@ let test_populate context =
     environment
     sources;
   let global_resolution = Analysis.Environment.resolution environment () in
-  let (module DependenciesHandler) = Environment.dependency_handler environment in
-  assert_equal
-    ~printer:(List.to_string ~f:Reference.show)
-    (DependenciesHandler.get_global_keys ~qualifier:(Reference.create "a"))
-    (List.map ~f:Reference.create ["a.T"; "a.C"; "a.D"; "a.foo"; "a.bar"]);
   assert_equal
     (GlobalResolution.undecorated_signature global_resolution (Reference.create "a.foo"))
     (Some
@@ -188,11 +140,4 @@ let test_purge context =
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "x.D"))
 
 
-let () =
-  "environment"
-  >::: [
-         "normalize_dependencies" >:: test_normalize_dependencies;
-         "populate" >:: test_populate;
-         "purge" >:: test_purge;
-       ]
-  |> Test.run
+let () = "environment" >::: ["populate" >:: test_populate; "purge" >:: test_purge] |> Test.run

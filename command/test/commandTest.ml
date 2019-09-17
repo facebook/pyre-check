@@ -165,6 +165,9 @@ module ScratchServer = struct
         environment,
         sources )
     in
+    Dependencies.register_all_dependencies
+      (Dependencies.create (AstEnvironment.read_only ast_environment))
+      sources;
     let new_errors =
       Service.Check.analyze_sources
         ~scheduler:(mock_scheduler ())

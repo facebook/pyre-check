@@ -99,7 +99,10 @@ let run_analysis
     in
     let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
     let errors, ast_environment =
-      Service.Check.check ~scheduler:(Some scheduler) ~configuration
+      Service.Check.check
+        ~scheduler:(Some scheduler)
+        ~configuration
+        ~build_legacy_dependency_graph:true
       |> fun { module_tracker; environment; ast_environment; _ } ->
       (* In order to get an accurate call graph and type information, we need to ensure that we
          schedule a type check for external files as well. *)

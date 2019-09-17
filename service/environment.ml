@@ -23,8 +23,6 @@ let populate
     let all_annotations =
       Set.to_list (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result)
     in
-    List.iter ~f:(Environment.register_dependencies environment) sources;
-
     if debug then
       (* Validate integrity of the type order built so far before moving forward. Further
          transformations might be incorrect or not terminate otherwise. *)

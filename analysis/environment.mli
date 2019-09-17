@@ -21,13 +21,9 @@ val resolution : t -> unit -> GlobalResolution.t
 (* Currently experimental *)
 val dependency_tracked_resolution : t -> dependency:Reference.t -> unit -> GlobalResolution.t
 
-val dependencies : t -> Reference.t -> Reference.Set.Tree.t option
-
 val register_undecorated_functions : t -> GlobalResolution.t -> Source.t -> unit
 
 val register_values : t -> GlobalResolution.t -> Source.t -> unit
-
-val register_dependencies : t -> Source.t -> unit
 
 val is_module : t -> Reference.t -> bool
 
@@ -47,15 +43,11 @@ val update_and_compute_dependencies
   update_result:ClassHierarchyEnvironment.UpdateResult.t ->
   'a * SharedMemoryKeys.ReferenceDependencyKey.KeySet.t
 
-val dependency_handler : t -> (module Dependencies.Handler)
-
 val register_class_metadata : t -> Identifier.t -> unit
 
 val transaction : t -> ?only_global_keys:bool -> f:(unit -> 'a) -> unit -> 'a
 
 val shared_memory_handler : ClassHierarchyEnvironment.ReadOnly.t -> t
-
-val normalize_shared_memory : Reference.t list -> unit
 
 val shared_memory_hash_to_key_map : qualifiers:Ast.Reference.t list -> unit -> string String.Map.t
 

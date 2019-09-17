@@ -39,26 +39,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module AliasKeyValue = struct
-    type t = Identifier.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Alias keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module DependentKeyValue = struct
-    type t = Reference.t list
-
-    let prefix = Prefix.make ()
-
-    let description = "Dependent keys"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
   module ClassMetadataValue = struct
     type t = GlobalResolution.class_metadata
 
@@ -83,16 +63,6 @@ module SharedMemory = struct
     let compare = GlobalResolution.compare_global
   end
 
-  module DependentValue = struct
-    type t = Reference.Set.Tree.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Dependent"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
   module UndecoratedFunctionValue = struct
     type t = Type.t Type.Callable.overload [@@deriving compare]
 
@@ -115,7 +85,6 @@ module SharedMemory = struct
       (SharedMemoryKeys.ReferenceKey)
       (SharedMemoryKeys.ReferenceDependencyKey)
       (GlobalValue)
-  module Dependents = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentValue)
   module UndecoratedFunctions =
     Memory.DependencyTrackedTableWithCache
       (SharedMemoryKeys.ReferenceKey)
@@ -126,8 +95,6 @@ module SharedMemory = struct
   (** Keys *)
 
   module GlobalKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (GlobalKeyValue)
-  module AliasKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (AliasKeyValue)
-  module DependentKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentKeyValue)
 end
 
 module SharedMemoryDependencyHandler = struct
@@ -144,95 +111,17 @@ module SharedMemoryDependencyHandler = struct
     add_new_key ~qualifier ~key:reference ~get:FunctionKeys.get ~add:FunctionKeys.add
 
 
-  let add_alias_key ~qualifier alias =
-    add_new_key ~qualifier ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
-
-
   let add_global_key ~qualifier global =
     add_new_key ~qualifier ~key:global ~get:GlobalKeys.get ~add:GlobalKeys.add
 
 
-  let add_dependent_key ~qualifier dependent =
-    add_new_key ~qualifier ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
-
-
-  let add_dependent ~qualifier dependent =
-    add_dependent_key ~qualifier dependent;
-    match Dependents.get dependent with
-    | None -> Dependents.add dependent (Reference.Set.Tree.singleton qualifier)
-    | Some dependencies -> Dependents.add dependent (Reference.Set.Tree.add dependencies qualifier)
-
-
   let get_function_keys ~qualifier = FunctionKeys.get qualifier |> Option.value ~default:[]
-
-  let get_alias_keys ~qualifier = AliasKeys.get qualifier |> Option.value ~default:[]
 
   let get_global_keys ~qualifier = GlobalKeys.get qualifier |> Option.value ~default:[]
 
-  let get_dependent_keys ~qualifier = DependentKeys.get qualifier |> Option.value ~default:[]
-
-  let remove_from_dependency_graph qualifiers =
-    let keys =
-      List.concat_map ~f:(fun qualifier -> get_dependent_keys ~qualifier) qualifiers
-      |> List.dedup_and_sort ~compare:Reference.compare
-    in
-    let new_dependents = Reference.Table.create () in
-    let recompute_dependents key dependents =
-      let qualifiers = Reference.Set.Tree.of_list qualifiers in
-      Hashtbl.set new_dependents ~key ~data:(Reference.Set.Tree.diff dependents qualifiers)
-    in
-    List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
-    Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
-    Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
-    DependentKeys.remove_batch (Dependents.KeySet.of_list qualifiers)
-
-
   let clear_keys_batch qualifiers =
     FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list qualifiers);
-    AliasKeys.remove_batch (AliasKeys.KeySet.of_list qualifiers);
-    GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list qualifiers);
-    DependentKeys.remove_batch (DependentKeys.KeySet.of_list qualifiers)
-
-
-  let dependents = Dependents.get
-
-  let normalize qualifiers =
-    let normalize_keys qualifier =
-      ( match FunctionKeys.get qualifier with
-      | Some keys ->
-          FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton qualifier);
-          FunctionKeys.add qualifier (List.dedup_and_sort ~compare:Reference.compare keys)
-      | None -> () );
-      ( match AliasKeys.get qualifier with
-      | Some keys ->
-          AliasKeys.remove_batch (AliasKeys.KeySet.singleton qualifier);
-          AliasKeys.add qualifier (List.dedup_and_sort ~compare:Identifier.compare keys)
-      | None -> () );
-      ( match GlobalKeys.get qualifier with
-      | Some keys ->
-          GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton qualifier);
-          GlobalKeys.add qualifier (List.dedup_and_sort ~compare:Reference.compare keys)
-      | None -> () );
-      match DependentKeys.get qualifier with
-      | Some keys ->
-          DependentKeys.remove_batch (DependentKeys.KeySet.singleton qualifier);
-          DependentKeys.add qualifier (List.dedup_and_sort ~compare:Reference.compare keys)
-      | None -> ()
-    in
-    List.iter qualifiers ~f:normalize_keys;
-    let normalize_dependents name =
-      match Dependents.get name with
-      | Some unnormalized ->
-          Dependents.remove_batch (Dependents.KeySet.singleton name);
-          Reference.Set.Tree.to_list unnormalized
-          |> List.sort ~compare:Reference.compare
-          |> Reference.Set.Tree.of_list
-          |> Dependents.add name
-      | None -> ()
-    in
-    List.concat_map qualifiers ~f:(fun qualifier -> get_dependent_keys ~qualifier)
-    |> List.dedup_and_sort ~compare:Reference.compare
-    |> List.iter ~f:normalize_dependents
+    GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list qualifiers)
 
 
   type table_keys = {
@@ -375,8 +264,6 @@ let add_special_globals environment =
     ~reference:(Reference.create "__debug__")
     ~global:(annotation Type.bool)
 
-
-let dependencies _ = SharedMemory.Dependents.get
 
 let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
   let module Visit = Visit.MakeStatementVisitor (struct
@@ -575,64 +462,13 @@ let register_values
 
 let is_module environment = AstEnvironment.ReadOnly.is_module (ast_environment environment)
 
-let register_dependencies environment source =
-  let module Visit = Visit.MakeStatementVisitor (struct
-    type t = unit
-
-    let visit_children _ = true
-
-    let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } _ = function
-      | { Node.value = Statement.Import { Import.from; imports }; _ } ->
-          let imports =
-            let imports =
-              match from with
-              | None ->
-                  (* If analyzing `import a, b, c`, add `a`, `b`, `c` to the dependencies. *)
-                  imports |> List.map ~f:(fun { Import.name; _ } -> name)
-              | Some base_module ->
-                  (* If analyzing `from x import a, b, c`, add `x`, `x.a`, `x.b`, `x.c` to the
-                     dependencies, if they are module names. *)
-                  base_module
-                  :: List.map imports ~f:(fun { Import.name; _ } ->
-                         Reference.combine base_module name)
-                  |> List.filter ~f:(is_module environment)
-            in
-            let qualify_builtins import =
-              match Reference.single import with
-              | Some "builtins" -> Reference.empty
-              | _ -> import
-            in
-            List.map imports ~f:qualify_builtins
-          in
-          let register dependency =
-            Log.log
-              ~section:`Dependencies
-              "Adding dependency from %a to %a"
-              Reference.pp
-              dependency
-              Reference.pp
-              qualifier;
-            SharedMemoryDependencyHandler.add_dependent ~qualifier dependency
-          in
-          List.iter ~f:register imports
-      | _ -> ()
-  end)
-  in
-  Visit.visit () source
-
-
-let dependency_handler _ = (module SharedMemoryDependencyHandler : Dependencies.Handler)
-
 let transaction _ ?(only_global_keys = false) ~f () =
   let open SharedMemory in
   if only_global_keys then
     GlobalKeys.LocalChanges.push_stack ()
   else (
     FunctionKeys.LocalChanges.push_stack ();
-    AliasKeys.LocalChanges.push_stack ();
     GlobalKeys.LocalChanges.push_stack ();
-    DependentKeys.LocalChanges.push_stack ();
-    Dependents.LocalChanges.push_stack ();
     ClassMetadata.LocalChanges.push_stack ();
     Globals.LocalChanges.push_stack () );
   let result = f () in
@@ -640,20 +476,14 @@ let transaction _ ?(only_global_keys = false) ~f () =
     GlobalKeys.LocalChanges.commit_all ()
   else (
     FunctionKeys.LocalChanges.commit_all ();
-    AliasKeys.LocalChanges.commit_all ();
     GlobalKeys.LocalChanges.commit_all ();
-    DependentKeys.LocalChanges.commit_all ();
-    Dependents.LocalChanges.commit_all ();
     ClassMetadata.LocalChanges.commit_all ();
     Globals.LocalChanges.commit_all () );
   if only_global_keys then
     GlobalKeys.LocalChanges.pop_stack ()
   else (
     FunctionKeys.LocalChanges.pop_stack ();
-    AliasKeys.LocalChanges.pop_stack ();
     GlobalKeys.LocalChanges.pop_stack ();
-    DependentKeys.LocalChanges.pop_stack ();
-    Dependents.LocalChanges.pop_stack ();
     ClassMetadata.LocalChanges.pop_stack ();
     Globals.LocalChanges.pop_stack () );
   result
@@ -689,9 +519,6 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
   ClassMetadata.remove_batch caml_current_and_removed_classes;
   UndecoratedFunctions.remove_batch undecorated_signatures;
 
-  SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
-  SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
-
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
     check_class_hierarchy_integrity environment
 
@@ -715,7 +542,6 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
   let caml_current_and_removed_classes =
     Type.Primitive.Set.to_list current_and_removed_classes |> ClassMetadata.KeySet.of_list
   in
-  SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
 
   let update, mutation_triggers =
@@ -742,8 +568,6 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
 
 let shared_memory_handler class_hierarchy_environment = { class_hierarchy_environment }
 
-let normalize_shared_memory qualifiers = SharedMemoryDependencyHandler.normalize qualifiers
-
 let shared_memory_hash_to_key_map ~qualifiers () =
   let extend_map map ~new_map =
     Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
@@ -753,19 +577,12 @@ let shared_memory_hash_to_key_map ~qualifiers () =
   let map =
     FunctionKeys.compute_hashes_to_keys ~keys:qualifiers
     |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:qualifiers)
-    |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:qualifiers)
-    |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:qualifiers)
   in
   (* Globals and undecorated functions. *)
   let map =
     let keys = List.filter_map qualifiers ~f:GlobalKeys.get |> List.concat in
     extend_map map ~new_map:(Globals.compute_hashes_to_keys ~keys)
     |> extend_map ~new_map:(UndecoratedFunctions.compute_hashes_to_keys ~keys)
-  in
-  (* Dependents. *)
-  let map =
-    let keys = List.filter_map qualifiers ~f:DependentKeys.get |> List.concat in
-    extend_map map ~new_map:(Dependents.compute_hashes_to_keys ~keys)
   in
   map
 
@@ -798,11 +615,6 @@ let serialize_decoded decoded =
         ( UndecoratedFunctionValue.description,
           Reference.show key,
           value >>| Type.Callable.show_overload Type.pp )
-  | Dependents.Decoded (key, value) ->
-      Some
-        ( DependentValue.description,
-          Reference.show key,
-          value >>| Reference.Set.Tree.to_list >>| List.to_string ~f:Reference.show )
   | FunctionKeys.Decoded (key, value) ->
       Some
         ( FunctionKeyValue.description,
@@ -811,13 +623,6 @@ let serialize_decoded decoded =
   | GlobalKeys.Decoded (key, value) ->
       Some
         (GlobalKeyValue.description, Reference.show key, value >>| List.to_string ~f:Reference.show)
-  | AliasKeys.Decoded (key, value) ->
-      Some (AliasKeyValue.description, Reference.show key, value >>| List.to_string ~f:ident)
-  | DependentKeys.Decoded (key, value) ->
-      Some
-        ( DependentKeyValue.description,
-          Reference.show key,
-          value >>| List.to_string ~f:Reference.show )
   | _ -> None
 
 
@@ -830,15 +635,9 @@ let decoded_equal first second =
       Some (Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value))
   | UndecoratedFunctions.Decoded (_, first), UndecoratedFunctions.Decoded (_, second) ->
       Some (Option.equal (Type.Callable.equal_overload Type.equal) first second)
-  | Dependents.Decoded (_, first), Dependents.Decoded (_, second) ->
-      Some (Option.equal Reference.Set.Tree.equal first second)
   | FunctionKeys.Decoded (_, first), FunctionKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal Reference.equal) first second)
   | GlobalKeys.Decoded (_, first), GlobalKeys.Decoded (_, second) ->
-      Some (Option.equal (List.equal Reference.equal) first second)
-  | AliasKeys.Decoded (_, first), AliasKeys.Decoded (_, second) ->
-      Some (Option.equal (List.equal Identifier.equal) first second)
-  | DependentKeys.Decoded (_, first), DependentKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal Reference.equal) first second)
   | _ -> None
 

@@ -30,4 +30,8 @@ val analyze_sources
   Ast.Source.t list ->
   Error.t list
 
-val check : scheduler:Scheduler.t option -> configuration:Configuration.Analysis.t -> result
+val check
+  :  scheduler:Scheduler.t option ->
+  configuration:Configuration.Analysis.t ->
+  build_legacy_dependency_graph:bool ->
+  result

@@ -73,7 +73,9 @@ let run_check
   in
   (fun () ->
     let timer = Timer.start () in
-    let { Check.errors; environment; _ } = Check.check ~scheduler:None ~configuration in
+    let { Check.errors; environment; _ } =
+      Check.check ~scheduler:None ~configuration ~build_legacy_dependency_graph:false
+    in
     let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
     Statistics.performance
       ~name:"check"

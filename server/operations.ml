@@ -74,7 +74,12 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
   let { Check.module_tracker; ast_environment; environment; errors } =
-    Check.check ~scheduler:(Some scheduler) ~configuration
+    let build_legacy_dependency_graph =
+      match configuration with
+      | { Configuration.Analysis.incremental_style = FineGrained; _ } -> false
+      | _ -> true
+    in
+    Check.check ~scheduler:(Some scheduler) ~configuration ~build_legacy_dependency_graph
   in
   let symlink_targets_to_sources =
     let table = String.Table.create () in

@@ -105,6 +105,7 @@ let check
     ~scheduler:original_scheduler
     ~configuration:( { Configuration.Analysis.project_root; local_root; search_path; debug; _ } as
                    configuration )
+    ~build_legacy_dependency_graph
   =
   (* Sanity check environment. *)
   let check_directory_exists directory =
@@ -137,6 +138,11 @@ let check
     Analysis.AstEnvironment.UpdateResult.reparsed ast_environment_update_result
     |> List.filter_map ~f:(Analysis.AstEnvironment.ReadOnly.get_source ast_environment)
   in
+  ( if build_legacy_dependency_graph then
+      let legacy_dependency_tracker =
+        Analysis.Dependencies.create (Analysis.AstEnvironment.read_only ast_environment)
+      in
+      Analysis.Dependencies.register_all_dependencies legacy_dependency_tracker sources );
   let environment =
     let populate = Environment.populate in
     let open Analysis in
