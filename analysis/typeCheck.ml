@@ -559,7 +559,6 @@ module State (Context : Context) = struct
             let open Annotated in
             Annotated.Class.attributes
               ~include_generated_attributes:false
-              ~transitive:true
               ~resolution:global_resolution
               definition
             |> List.filter_map
