@@ -8,9 +8,8 @@ open Analysis
 
 val populate
   :  Environment.t ->
-  UnannotatedGlobalEnvironment.ReadOnly.t ->
   configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  update_result:AliasEnvironment.UpdateResult.t ->
+  update_result:ClassHierarchyEnvironment.UpdateResult.t ->
   Source.t list ->
   unit

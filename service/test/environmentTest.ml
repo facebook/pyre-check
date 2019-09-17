@@ -15,6 +15,8 @@ let empty_environment () =
   |> UnannotatedGlobalEnvironment.read_only
   |> AliasEnvironment.create
   |> AliasEnvironment.read_only
+  |> ClassHierarchyEnvironment.create
+  |> ClassHierarchyEnvironment.read_only
   |> Environment.shared_memory_handler
 
 
@@ -89,32 +91,28 @@ let test_populate context =
       AstEnvironment.read_only ast_environment,
       ast_environment_update_result )
   in
-  let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
   let qualifiers =
     List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
         qualifier)
   in
-  let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
+  let class_hierarchy_environment, update_result =
+    update_environments
       ~scheduler:(Scheduler.mock ())
       ~configuration
       ~ast_environment_update_result
-      (Reference.Set.of_list qualifiers)
-    |> AliasEnvironment.update alias_environment ~scheduler:(Scheduler.mock ()) ~configuration
+      ~ast_environment
+      ~qualifiers:(Reference.Set.of_list qualifiers)
+      ()
   in
   let environment =
-    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+    Environment.shared_memory_handler
+      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
   Service.Environment.populate
     ~configuration
     ~scheduler:(Scheduler.mock ())
     ~update_result
     environment
-    (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
     sources;
   let global_resolution = Analysis.Environment.resolution environment () in
   let (module DependenciesHandler) = Environment.dependency_handler environment in
@@ -155,7 +153,6 @@ let test_populate context =
     in
     Service.Environment.populate
       environment
-      (UnannotatedGlobalEnvironment.read_only (UnannotatedGlobalEnvironment.create ast_environment))
       ~configuration
       ~scheduler
       ~update_result
@@ -167,7 +164,7 @@ let test_populate context =
 
 
 let test_purge context =
-  let _, _, environment =
+  let _, ast_environment, environment =
     ScratchProject.setup
       ~context
       ["x.py", {|
@@ -178,23 +175,14 @@ let test_purge context =
   in
   let global_resolution = Analysis.Environment.resolution environment () in
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "x.D"));
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (Environment.ast_environment environment)
-  in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
+  let _, update_result =
+    update_environments
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~scheduler:(mock_scheduler ())
       ~configuration:(Configuration.Analysis.create ())
       ~ast_environment_update_result:(AstEnvironment.UpdateResult.create_for_testing ())
-      (Reference.Set.singleton (Reference.create "x"))
-    |> AliasEnvironment.update
-         alias_environment
-         ~scheduler:(mock_scheduler ())
-         ~configuration:(Configuration.Analysis.create ())
+      ~qualifiers:(Reference.Set.singleton (Reference.create "x"))
+      ()
   in
   Environment.purge environment [Reference.create "x"] ~update_result;
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "x.D"))

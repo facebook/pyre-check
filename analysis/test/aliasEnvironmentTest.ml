@@ -169,15 +169,19 @@ let test_updates context =
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let update ~ast_environment_update_result () =
       let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
-      update_environments
+      Test.update_environments
         ~configuration
         ~ast_environment:(AstEnvironment.read_only ast_environment)
         ~ast_environment_update_result
         ~qualifiers:(Reference.Set.of_list qualifiers)
         ()
     in
-    let alias_environment = update ~ast_environment_update_result () |> fst in
-    let read_only = AliasEnvironment.read_only alias_environment in
+    let read_only =
+      update ~ast_environment_update_result ()
+      |> fst
+      |> ClassHierarchyEnvironment.read_only
+      |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+    in
     let execute_action (alias_name, dependency, expectation) =
       let printer v =
         v >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
@@ -220,7 +224,11 @@ let test_updates context =
       |> (fun updates -> AstEnvironment.Update updates)
       |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
     in
-    let update_result = update ~ast_environment_update_result () |> snd in
+    let update_result =
+      update ~ast_environment_update_result ()
+      |> snd
+      |> ClassHierarchyEnvironment.UpdateResult.upstream
+    in
     let printer set =
       AliasEnvironment.DependencyKey.KeySet.elements set
       |> List.to_string ~f:AliasEnvironment.show_dependency

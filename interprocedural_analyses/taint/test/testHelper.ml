@@ -39,7 +39,7 @@ type expectation = {
   obscure: bool option;
 }
 
-let populate ~configuration environment unannotated_global_environment sources ~update_result =
+let populate ~configuration environment sources ~update_result =
   let qualifiers =
     sources
     |> List.map ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
@@ -51,7 +51,6 @@ let populate ~configuration environment unannotated_global_environment sources ~
     ~scheduler:(Test.mock_scheduler ())
     ~update_result
     environment
-    unannotated_global_environment
     sources
 
 
@@ -66,7 +65,7 @@ let environment
     List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
         qualifier)
   in
-  let alias_environment, update_result =
+  let class_hierarchy_environment, update_result =
     Test.update_environments
       ~ast_environment
       ~configuration
@@ -75,13 +74,10 @@ let environment
       ()
   in
   let environment =
-    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+    Environment.shared_memory_handler
+      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
-  let unannotated_global_environment =
-    AliasEnvironment.ReadOnly.unannotated_global_environment
-      (AliasEnvironment.read_only alias_environment)
-  in
-  populate ~configuration ~update_result environment unannotated_global_environment sources;
+  populate ~configuration ~update_result environment sources;
   environment
 
 

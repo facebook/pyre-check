@@ -41,7 +41,7 @@ type global = Annotation.t Node.t [@@deriving eq, show, compare]
 
 type t = {
   dependency: Reference.t option;
-  alias_environment: AliasEnvironment.ReadOnly.t;
+  class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t;
   class_hierarchy: (module ClassHierarchy.Handler);
   aliases: Type.Primitive.t -> Type.alias option;
   module_definition: Reference.t -> Module.t option;
@@ -97,12 +97,10 @@ end
 
 let create
     ?dependency
-    ~alias_environment
+    ~class_hierarchy_environment
     ~class_metadata
     ~undecorated_signature
     ~global
-    ~edges
-    ~backedges
     (module AnnotatedClass : AnnotatedClass)
   =
   let ast_environment_dependency =
@@ -113,6 +111,12 @@ let create
   in
   let alias_environment_dependency =
     dependency >>| fun dependency -> AliasEnvironment.TypeCheckSource dependency
+  in
+  let class_hierarchy_environment_dependency =
+    dependency >>| fun dependency -> ClassHierarchyEnvironment.TypeCheckSource dependency
+  in
+  let alias_environment =
+    ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
   in
   let unannotated_global_environment =
     AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
@@ -133,6 +137,12 @@ let create
   let aliases =
     AliasEnvironment.ReadOnly.get_alias ?dependency:alias_environment_dependency alias_environment
   in
+  let edges =
+    ClassHierarchyEnvironment.ReadOnly.get_edges
+      ?dependency:class_hierarchy_environment_dependency
+      class_hierarchy_environment
+  in
+  let backedges = ClassHierarchyEnvironment.ReadOnly.get_backedges class_hierarchy_environment in
   let constructor ~resolution class_name =
     let instantiated = Type.Primitive class_name in
     class_definition class_name
@@ -192,7 +202,7 @@ let create
   in
   {
     dependency;
-    alias_environment;
+    class_hierarchy_environment;
     class_hierarchy;
     aliases;
     module_definition;
@@ -208,7 +218,9 @@ let create
   }
 
 
-let alias_environment { alias_environment; _ } = alias_environment
+let alias_environment { class_hierarchy_environment; _ } =
+  ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
+
 
 let unannotated_global_environment resolution =
   alias_environment resolution |> AliasEnvironment.ReadOnly.unannotated_global_environment

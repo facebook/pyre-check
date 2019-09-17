@@ -9,9 +9,13 @@ open Expression
 open Pyre
 open Statement
 
-type t = { alias_environment: AliasEnvironment.ReadOnly.t }
+type t = { class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t }
 
-let alias_environment { alias_environment } = alias_environment
+let class_hierarchy_environment { class_hierarchy_environment } = class_hierarchy_environment
+
+let alias_environment environment =
+  class_hierarchy_environment environment |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+
 
 module SharedMemory = struct
   (** Values *)
@@ -89,26 +93,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module EdgeValue = struct
-    type t = ClassHierarchy.Target.t list [@@deriving compare]
-
-    let prefix = Prefix.make ()
-
-    let description = "Edges"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
-  module BackedgeValue = struct
-    type t = ClassHierarchy.Target.Set.Tree.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Backedges"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
   module UndecoratedFunctionValue = struct
     type t = Type.t Type.Callable.overload [@@deriving compare]
 
@@ -144,56 +128,6 @@ module SharedMemory = struct
   module GlobalKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (GlobalKeyValue)
   module AliasKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (AliasKeyValue)
   module DependentKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DependentKeyValue)
-
-  (** Type order maps *)
-
-  module OrderEdges =
-    Memory.DependencyTrackedTableWithCache
-      (IndexTracker.IndexKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (EdgeValue)
-  module OrderBackedges = Memory.WithCache.Make (IndexTracker.IndexKey) (BackedgeValue)
-end
-
-module SharedMemoryClassHierarchyHandler = struct
-  open SharedMemory
-
-  let edges = OrderEdges.get ?dependency:None
-
-  let backedges key = OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree
-
-  let set_backedges ~key ~data =
-    let value = ClassHierarchy.Target.Set.to_tree data in
-    OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
-    OrderBackedges.add key value
-
-
-  let disconnect_backedges purged_indices =
-    let all_successors =
-      let all_successors = IndexTracker.Hash_set.create () in
-      let add_successors key =
-        match edges key with
-        | Some successors ->
-            List.iter successors ~f:(fun { ClassHierarchy.Target.target; _ } ->
-                Hash_set.add all_successors target)
-        | None -> ()
-      in
-      IndexTracker.Set.iter purged_indices ~f:add_successors;
-      all_successors
-    in
-    let remove_backedges successor =
-      backedges successor
-      >>| (fun current_predecessors ->
-            let new_predecessors =
-              Set.filter
-                ~f:(fun { ClassHierarchy.Target.target; _ } ->
-                  not (IndexTracker.Set.mem purged_indices target))
-                current_predecessors
-            in
-            set_backedges ~key:successor ~data:new_predecessors)
-      |> ignore
-    in
-    Hash_set.iter all_successors ~f:remove_backedges
 end
 
 module SharedMemoryDependencyHandler = struct
@@ -332,15 +266,20 @@ module SharedMemoryDependencyHandler = struct
     }
 end
 
-let unannotated_global_environment { alias_environment } =
-  AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
+let unannotated_global_environment environment =
+  alias_environment environment |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-let untracked_class_hierarchy_handler environment =
+let untracked_class_hierarchy_handler ({ class_hierarchy_environment } as environment) =
   ( module struct
-    let edges = SharedMemory.OrderEdges.get ?dependency:None
+    let edges =
+      ClassHierarchyEnvironment.ReadOnly.get_edges ?dependency:None class_hierarchy_environment
 
-    let backedges key = SharedMemory.OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree
+
+    let backedges key =
+      ClassHierarchyEnvironment.ReadOnly.get_backedges class_hierarchy_environment key
+      >>| ClassHierarchy.Target.Set.of_tree
+
 
     let contains =
       UnannotatedGlobalEnvironment.ReadOnly.class_exists
@@ -355,15 +294,13 @@ let ast_environment environment =
 
 
 let resolution_implementation ?dependency environment () =
-  let alias_environment = alias_environment environment in
+  let class_hierarchy_environment = class_hierarchy_environment environment in
   GlobalResolution.create
     ?dependency
-    ~alias_environment
+    ~class_hierarchy_environment
     ~class_metadata:(SharedMemory.ClassMetadata.get ?dependency)
     ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
     ~global:(SharedMemory.Globals.get ?dependency)
-    ~edges:(SharedMemory.OrderEdges.get ?dependency)
-    ~backedges:SharedMemory.OrderBackedges.get
     (module Annotated.Class)
 
 
@@ -371,119 +308,6 @@ let resolution = resolution_implementation ?dependency:None
 
 let dependency_tracked_resolution environment ~dependency () =
   resolution_implementation ~dependency environment ()
-
-
-let connect_definition
-    environment
-    ~(resolution : GlobalResolution.t)
-    ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
-  =
-  (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
-     classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
-  let primitive = Reference.show name in
-  (* Register normal annotations. *)
-  let extract_supertype { Expression.Call.Argument.value; _ } =
-    let value = Expression.delocalize value in
-    match Node.value value with
-    | Call _
-    | Name _ -> (
-        let supertype, parameters =
-          (* While building environment, allow untracked to parse into primitives *)
-          GlobalResolution.parse_annotation
-            ~allow_untracked:true
-            ~allow_invalid_type_parameters:true
-            resolution
-            value
-          |> Type.split
-        in
-        match supertype with
-        | Type.Top ->
-            Statistics.event
-              ~name:"superclass of top"
-              ~section:`Environment
-              ~normals:["unresolved name", Expression.show value]
-              ();
-            None
-        | Type.Primitive primitive
-          when not
-                 (UnannotatedGlobalEnvironment.ReadOnly.class_exists
-                    (unannotated_global_environment environment)
-                    primitive) ->
-            Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype;
-            None
-        | Type.Primitive supertype -> Some (supertype, parameters)
-        | _ -> None )
-    | _ -> None
-  in
-  let parse_annotation =
-    GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
-  in
-  let inferred_base = AnnotatedBases.inferred_generic_base definition ~parse_annotation in
-  if not (SharedMemory.OrderBackedges.mem (IndexTracker.index primitive)) then
-    SharedMemoryClassHierarchyHandler.set_backedges
-      ~key:(IndexTracker.index primitive)
-      ~data:ClassHierarchy.Target.Set.empty;
-
-  (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-  let add parents =
-    let simples = List.map ~f:(fun parent -> parent, Type.OrderedTypes.Concrete []) in
-    match parents, primitive with
-    | _, "int" -> simples ["float"; "numbers.Integral"]
-    | _, "float" -> simples ["complex"; "numbers.Rational"; "numbers.Real"]
-    | _, "complex" -> simples ["numbers.Complex"]
-    | _, "numbers.Complex" -> simples ["numbers.Number"]
-    | [], _ -> simples ["object"]
-    | _ -> parents
-  in
-  let parents =
-    let is_not_primitive_cycle (parent, _) = not (String.equal primitive parent) in
-    inferred_base @ bases
-    |> List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
-    |> List.filter_map ~f:extract_supertype
-    |> add
-    |> List.filter ~f:is_not_primitive_cycle
-  in
-  let targets =
-    List.map parents ~f:(fun (name, parameters) ->
-        { ClassHierarchy.Target.target = IndexTracker.index name; parameters })
-  in
-  let targets =
-    let deduplicate (visited, sofar) ({ ClassHierarchy.Target.target; _ } as edge) =
-      if Set.mem visited target then
-        visited, sofar
-      else
-        Set.add visited target, edge :: sofar
-    in
-    let remove_extra_edges_to_object targets =
-      let object_index = IndexTracker.index "object" in
-      let not_object_edge { ClassHierarchy.Target.target; _ } =
-        not (IndexTracker.equal target object_index)
-      in
-      match List.filter targets ~f:not_object_edge with
-      | [] -> targets
-      | filtered -> filtered
-    in
-    List.fold targets ~f:deduplicate ~init:(IndexTracker.Set.empty, [])
-    |> snd
-    |> List.rev
-    |> remove_extra_edges_to_object
-  in
-  let predecessor = IndexTracker.index primitive in
-  let add_backedges () =
-    let add_backedge { ClassHierarchy.Target.target = successor; parameters } =
-      let predecessors =
-        SharedMemoryClassHierarchyHandler.backedges successor
-        |> Option.value ~default:ClassHierarchy.Target.Set.empty
-      in
-      SharedMemoryClassHierarchyHandler.set_backedges
-        ~key:successor
-        ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
-    in
-    List.iter targets ~f:add_backedge
-  in
-  SharedMemory.OrderEdges.add predecessor targets;
-  add_backedges ();
-  ()
 
 
 let register_class_metadata environment class_name =
@@ -810,8 +634,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
     DependentKeys.LocalChanges.push_stack ();
     Dependents.LocalChanges.push_stack ();
     ClassMetadata.LocalChanges.push_stack ();
-    OrderEdges.LocalChanges.push_stack ();
-    OrderBackedges.LocalChanges.push_stack ();
     Globals.LocalChanges.push_stack () );
   let result = f () in
   if only_global_keys then
@@ -823,9 +645,7 @@ let transaction _ ?(only_global_keys = false) ~f () =
     DependentKeys.LocalChanges.commit_all ();
     Dependents.LocalChanges.commit_all ();
     ClassMetadata.LocalChanges.commit_all ();
-    Globals.LocalChanges.commit_all ();
-    OrderEdges.LocalChanges.commit_all ();
-    OrderBackedges.LocalChanges.commit_all () );
+    Globals.LocalChanges.commit_all () );
   if only_global_keys then
     GlobalKeys.LocalChanges.pop_stack ()
   else (
@@ -835,9 +655,7 @@ let transaction _ ?(only_global_keys = false) ~f () =
     DependentKeys.LocalChanges.pop_stack ();
     Dependents.LocalChanges.pop_stack ();
     ClassMetadata.LocalChanges.pop_stack ();
-    Globals.LocalChanges.pop_stack ();
-    OrderEdges.LocalChanges.pop_stack ();
-    OrderBackedges.LocalChanges.pop_stack () );
+    Globals.LocalChanges.pop_stack () );
   result
 
 
@@ -852,7 +670,10 @@ let check_class_hierarchy_integrity environment =
 
 
 let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_result =
-  let update_result = AliasEnvironment.UpdateResult.upstream update_result in
+  let update_result =
+    ClassHierarchyEnvironment.UpdateResult.upstream update_result
+    |> AliasEnvironment.UpdateResult.upstream
+  in
   let current_and_removed_classes =
     UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
   in
@@ -861,15 +682,10 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
   in
   let open SharedMemory in
   (* Must disconnect backedges before deleting edges, since this relies on edges *)
-  let index_keys = IndexTracker.indices current_and_removed_classes in
-  SharedMemoryClassHierarchyHandler.disconnect_backedges index_keys;
-  let caml_index_keys = IndexTracker.Set.to_list index_keys |> OrderEdges.KeySet.of_list in
   let caml_current_and_removed_classes =
     Type.Primitive.Set.to_list current_and_removed_classes |> ClassMetadata.KeySet.of_list
   in
   Globals.remove_batch globals;
-  OrderEdges.remove_batch caml_index_keys;
-  OrderBackedges.remove_batch caml_index_keys;
   ClassMetadata.remove_batch caml_current_and_removed_classes;
   UndecoratedFunctions.remove_batch undecorated_signatures;
 
@@ -881,7 +697,10 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
 
 
 let update_and_compute_dependencies _ qualifiers ~update ~update_result =
-  let update_result = AliasEnvironment.UpdateResult.upstream update_result in
+  let update_result =
+    ClassHierarchyEnvironment.UpdateResult.upstream update_result
+    |> AliasEnvironment.UpdateResult.upstream
+  in
   let current_and_removed_classes =
     UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
   in
@@ -893,14 +712,9 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
   in
   let open SharedMemory in
   (* Backedges are not tracked *)
-  let index_keys = IndexTracker.indices current_and_removed_classes in
-  SharedMemoryClassHierarchyHandler.disconnect_backedges index_keys;
-  let caml_index_keys = IndexTracker.Set.to_list index_keys |> OrderEdges.KeySet.of_list in
   let caml_current_and_removed_classes =
     Type.Primitive.Set.to_list current_and_removed_classes |> ClassMetadata.KeySet.of_list
   in
-  OrderBackedges.remove_batch caml_index_keys;
-
   SharedMemoryDependencyHandler.remove_from_dependency_graph qualifiers;
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
 
@@ -909,7 +723,6 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
     |> ClassMetadata.add_to_transaction ~keys:caml_current_and_removed_classes
     |> UndecoratedFunctions.add_to_transaction ~keys:undecorated_signatures
     |> Globals.add_to_transaction ~keys:globals
-    |> OrderEdges.add_to_transaction ~keys:caml_index_keys
     |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
   in
   let { SharedMemoryDependencyHandler.undecorated_signatures; globals } =
@@ -927,7 +740,7 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
   update, mutation_and_addition_triggers
 
 
-let shared_memory_handler alias_environment = { alias_environment }
+let shared_memory_handler class_hierarchy_environment = { class_hierarchy_environment }
 
 let normalize_shared_memory qualifiers = SharedMemoryDependencyHandler.normalize qualifiers
 
@@ -958,10 +771,6 @@ let shared_memory_hash_to_key_map ~qualifiers () =
 
 
 let serialize_decoded decoded =
-  let decode index = IndexTracker.annotation index in
-  let decode_target { ClassHierarchy.Target.target; parameters } =
-    Format.asprintf "%s[%a]" (decode target) Type.OrderedTypes.pp_concise parameters
-  in
   let open SharedMemory in
   match decoded with
   | ClassMetadata.Decoded (key, value) ->
@@ -1009,13 +818,6 @@ let serialize_decoded decoded =
         ( DependentKeyValue.description,
           Reference.show key,
           value >>| List.to_string ~f:Reference.show )
-  | OrderEdges.Decoded (key, value) ->
-      Some (EdgeValue.description, decode key, value >>| List.to_string ~f:decode_target)
-  | OrderBackedges.Decoded (key, value) ->
-      Some
-        ( BackedgeValue.description,
-          decode key,
-          value >>| ClassHierarchy.Target.Set.Tree.to_list >>| List.to_string ~f:decode_target )
   | _ -> None
 
 
@@ -1038,10 +840,6 @@ let decoded_equal first second =
       Some (Option.equal (List.equal Identifier.equal) first second)
   | DependentKeys.Decoded (_, first), DependentKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal Reference.equal) first second)
-  | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
-      Some (Option.equal (List.equal ClassHierarchy.Target.equal) first second)
-  | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
-      Some (Option.equal ClassHierarchy.Target.Set.Tree.equal first second)
   | _ -> None
 
 

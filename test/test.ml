@@ -1317,6 +1317,9 @@ let update_environments
   let alias_environment =
     AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
   in
+  let class_hierarchy_environment =
+    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+  in
   let result =
     UnannotatedGlobalEnvironment.update
       unannotated_global_environment
@@ -1325,8 +1328,9 @@ let update_environments
       ~ast_environment_update_result
       qualifiers
     |> AliasEnvironment.update alias_environment ~scheduler ~configuration
+    |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
   in
-  alias_environment, result
+  class_hierarchy_environment, result
 
 
 module ScratchProject = struct
@@ -1471,21 +1475,24 @@ module ScratchProject = struct
         AliasEnvironment.create
           (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
       in
+      let class_hierarchy_environment =
+        ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+      in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
             qualifier)
       in
-      let update_result =
-        UnannotatedGlobalEnvironment.update
-          unannotated_global_environment
-          ~scheduler:(Scheduler.mock ())
+      let _, update_result =
+        update_environments
+          ~ast_environment:(AstEnvironment.read_only ast_environment)
           ~configuration
           ~ast_environment_update_result
-          (Reference.Set.of_list qualifiers)
-        |> AliasEnvironment.update alias_environment ~scheduler:(Scheduler.mock ()) ~configuration
+          ~qualifiers:(Reference.Set.of_list qualifiers)
+          ()
       in
       let environment =
-        Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+        Environment.shared_memory_handler
+          (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
       in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
@@ -1498,7 +1505,6 @@ module ScratchProject = struct
         ~scheduler:(Scheduler.mock ())
         ~update_result
         environment
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
         sources;
       environment
     in

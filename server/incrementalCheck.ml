@@ -97,6 +97,16 @@ let recheck
         ~configuration
         unannotated_global_environment_update_result
     in
+    let class_hierarchy_update_result =
+      let class_hierarchy_environment =
+        ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+      in
+      ClassHierarchyEnvironment.update
+        class_hierarchy_environment
+        ~scheduler
+        ~configuration
+        alias_update_result
+    in
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     let re_environment_build_sources =
       let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
@@ -111,9 +121,8 @@ let recheck
             Service.Environment.populate
               ~configuration
               ~scheduler
-              ~update_result:alias_update_result
+              ~update_result:class_hierarchy_update_result
               environment
-              (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
               re_environment_build_sources;
             if debug then
               Analysis.Environment.check_class_hierarchy_integrity environment
@@ -122,7 +131,7 @@ let recheck
             environment
             invalidated_environment_qualifiers
             ~update
-            ~update_result:alias_update_result
+            ~update_result:class_hierarchy_update_result
         in
         let invalidated_type_checking_keys =
           let unannotated_global_environment_dependencies =
@@ -140,8 +149,17 @@ let recheck
                    | AliasEnvironment.TypeCheckSource source -> Some source
                    | _ -> None)
           in
+          let class_hierarchy_dependencies =
+            ClassHierarchyEnvironment.UpdateResult.triggered_dependencies
+              class_hierarchy_update_result
+            |> ClassHierarchyEnvironment.DependencyKey.KeySet.elements
+            |> List.filter_map ~f:(function ClassHierarchyEnvironment.TypeCheckSource source ->
+                   Some source)
+          in
           List.fold
-            (unannotated_global_environment_dependencies @ alias_environment_dependencies)
+            ( unannotated_global_environment_dependencies
+            @ alias_environment_dependencies
+            @ class_hierarchy_dependencies )
             ~f:(fun sofar element ->
               SharedMemoryKeys.ReferenceDependencyKey.KeySet.add element sofar)
             ~init:invalidated_type_checking_keys
@@ -171,13 +189,12 @@ let recheck
             environment
             ~debug
             invalidated_environment_qualifiers
-            ~update_result:alias_update_result;
+            ~update_result:class_hierarchy_update_result;
           Service.Environment.populate
             ~configuration
             ~scheduler
-            ~update_result:alias_update_result
+            ~update_result:class_hierarchy_update_result
             environment
-            (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
             re_environment_build_sources
         in
         Log.log

@@ -111,35 +111,19 @@ let test_register_class_metadata context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
-  let update_result =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
+  let class_hierarchy_environment, _ =
+    update_environments
       ~scheduler:(mock_scheduler ())
       ~configuration:(ScratchProject.configuration_of project)
       ~ast_environment_update_result
-      (Reference.Set.singleton (Reference.create "test"))
-  in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
+      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ()
   in
   let environment =
-    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+    Environment.shared_memory_handler
+      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
-  let resolution = Environment.resolution environment () in
-  let connect annotation =
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-      annotation
-    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
-    |> Option.iter ~f:Fn.id
-  in
-  let all_annotations =
-    UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result |> Set.to_list
-  in
-  List.iter ~f:connect all_annotations;
   Environment.register_class_metadata environment "test.A";
   Environment.register_class_metadata environment "test.B";
   Environment.register_class_metadata environment "test.C";
@@ -515,63 +499,6 @@ let test_register_implicit_submodules context =
   assert_true (Environment.is_module environment (Reference.create "a"))
 
 
-let test_connect_definition context =
-  let project =
-    ScratchProject.setup
-      ~context
-      ["test.py", {|
-       class C:
-         pass
-       class D:
-         pass
-      |}]
-  in
-  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
-  let _ =
-    UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
-      ~configuration:(ScratchProject.configuration_of project)
-      ~ast_environment_update_result
-      (Reference.Set.of_list [Reference.create ""; Reference.create "test"])
-  in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let environment =
-    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
-  in
-  let resolution = Environment.resolution environment () in
-  let (module TypeOrderHandler : ClassHierarchy.Handler) = class_hierarchy environment in
-  let assert_edge ~predecessor ~successor =
-    let predecessor_index = IndexTracker.index predecessor in
-    let successor_index = IndexTracker.index successor in
-    assert_true
-      (List.mem
-         ~equal:ClassHierarchy.Target.equal
-         (find_unsafe TypeOrderHandler.edges predecessor_index)
-         { ClassHierarchy.Target.target = successor_index; parameters = Concrete [] });
-    assert_true
-      (ClassHierarchy.Target.Set.mem
-         (find_unsafe TypeOrderHandler.backedges successor_index)
-         { ClassHierarchy.Target.target = predecessor_index; parameters = Concrete [] })
-  in
-  let class_definition =
-    +{ Class.name = !&"test.C"; bases = []; body = []; decorators = []; docstring = None }
-  in
-  Environment.connect_definition environment ~resolution ~definition:class_definition;
-  let definition = +Test.parse_single_class {|
-       class D(int, float):
-         ...
-     |} in
-  Environment.connect_definition environment ~resolution ~definition;
-  assert_edge ~predecessor:"D" ~successor:"int";
-  assert_edge ~predecessor:"D" ~successor:"float"
-
-
 let test_register_globals context =
   let environment = create_environment ~context () in
   let resolution = Environment.resolution environment () in
@@ -682,44 +609,28 @@ let test_connect_type_order context =
   let alias_environment =
     AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
   in
+  let class_hierarchy_environment =
+    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+  in
   let environment =
-    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+    Environment.shared_memory_handler
+      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
   let order = class_hierarchy environment in
-  let update_result =
-    update_environments
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
-      ~configuration:(ScratchProject.configuration_of project)
-      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-      ~ast_environment_update_result
-      ()
-    |> snd
-  in
-  let all_annotations =
-    AliasEnvironment.UpdateResult.upstream update_result
-    |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
-    |> Set.to_list
-  in
-  let unannotated_global_environment = Environment.unannotated_global_environment environment in
-  let connect annotation =
-    let environment =
-      Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
-    in
-    let resolution = Environment.resolution environment () in
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      unannotated_global_environment
-      annotation
-    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
-    |> Option.iter ~f:Fn.id
-  in
-  List.iter ~f:connect all_annotations;
+  update_environments
+    ~ast_environment:(AstEnvironment.read_only ast_environment)
+    ~configuration:(ScratchProject.configuration_of project)
+    ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+    ~ast_environment_update_result
+    ()
+  |> ignore;
   let assert_successors annotation successors =
     assert_equal
       ~printer:(List.to_string ~f:Type.Primitive.show)
       successors
       (ClassHierarchy.successors order annotation)
   in
-  (* Classes get connected to object via `connect_definition`. *)
+  (* Classes get connected to object via ClassHierarchyEnvironment.update. *)
   assert_successors "test.C" ["object"];
   assert_successors "test.D" ["test.C"; "object"];
   assert_successors "test.CallMe" ["object"]
@@ -1473,11 +1384,13 @@ let test_purge_hierarchy context =
       class b(One):
         pass
     |} in
-    populate
+    create_environments_and_project
       ~include_typeshed_stubs:false
       ~include_helpers:false
       ~context
-      ["A.py", a_source; "B.py", b_source; "One.py", one_source; "Two.py", two_source]
+      ~additional_sources:
+        ["A.py", a_source; "B.py", b_source; "One.py", one_source; "Two.py", two_source]
+      ()
   in
   let assert_backedges_equal wrapped_left unwrapped_right =
     let printer set =
@@ -1491,26 +1404,49 @@ let test_purge_hierarchy context =
   in
   let assert_node_completely_deleted (module Handler : ClassHierarchy.Handler) annotation =
     let index = IndexTracker.index annotation in
-    assert_equal (Handler.edges index, Handler.backedges index) (None, None)
+    let printer (a, b) = Format.sprintf "%B %B" (Option.is_some a) (Option.is_some b) in
+    assert_equal ~printer (Handler.edges index, Handler.backedges index) (None, None)
   in
-  let purge qualifiers ~handler =
+  let purge files ~handler ~project =
+    let delete_file
+        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
+        relative
+      =
+      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+    in
+    List.iter files ~f:(delete_file project);
+    let ast_environment_update_result =
+      let configuration = ScratchProject.configuration_of project in
+      let { ScratchProject.module_tracker; _ } = project in
+      let ast_environment = AstEnvironment.create module_tracker in
+      let { Configuration.Analysis.local_root; _ } = configuration in
+      let paths =
+        List.map files ~f:(fun relative -> Path.create_relative ~root:local_root ~relative)
+      in
+      ModuleTracker.update ~configuration ~paths module_tracker
+      |> (fun updates -> AstEnvironment.Update updates)
+      |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
+    in
+    let qualifiers =
+      Reference.Set.of_list (AstEnvironment.UpdateResult.reparsed ast_environment_update_result)
+    in
     let update_result =
       update_environments
         ~ast_environment_update_result:(AstEnvironment.UpdateResult.create_for_testing ())
         ~ast_environment:(Environment.ast_environment handler)
         ~configuration:(Configuration.Analysis.create ())
-        ~qualifiers:(Reference.Set.of_list qualifiers)
+        ~qualifiers
         ()
       |> snd
     in
-    Environment.purge handler qualifiers ~update_result
+    Environment.purge handler (Reference.Set.to_list qualifiers) ~update_result
   in
   let () =
-    let handler = order () in
+    let handler, _, project = order () in
     let (module Handler) = class_hierarchy handler in
     let index key = IndexTracker.index key in
     let one_index = index "One.One" in
-    purge [Reference.create "One"] ~handler;
+    purge ["One.py"] ~handler ~project;
     assert_node_completely_deleted (module Handler) "One.One";
     assert_backedges_equal (find_unsafe Handler.backedges (index "Two.Two")) [];
     assert_equal
@@ -1518,30 +1454,30 @@ let test_purge_hierarchy context =
       [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }]
   in
   let () =
-    let handler = order () in
+    let handler, _, project = order () in
     let (module Handler) = class_hierarchy handler in
     let index key = IndexTracker.index key in
-    purge [Reference.create "A"] ~handler;
+    purge ["A.py"] ~handler ~project;
     assert_node_completely_deleted (module Handler) "A.a";
     assert_backedges_equal
       (find_unsafe Handler.backedges (index "One.One"))
       [{ ClassHierarchy.Target.target = index "B.b"; parameters = Concrete [] }]
   in
   let () =
-    let handler = order () in
+    let handler, _, project = order () in
     let (module Handler) = class_hierarchy handler in
     let index key = IndexTracker.index key in
-    purge ~handler [Reference.create "B"];
+    purge ~handler ["B.py"] ~project;
     assert_node_completely_deleted (module Handler) "B.b";
     assert_backedges_equal
       (find_unsafe Handler.backedges (index "One.One"))
       [{ ClassHierarchy.Target.target = index "A.a"; parameters = Concrete [] }]
   in
   let () =
-    let handler = order () in
+    let handler, _, project = order () in
     let (module Handler) = class_hierarchy handler in
     let index key = IndexTracker.index key in
-    purge ~handler [Reference.create "A"; Reference.create "B"];
+    purge ~handler ["A.py"; "B.py"] ~project;
     assert_node_completely_deleted (module Handler) "A.a";
     assert_node_completely_deleted (module Handler) "B.b";
     assert_backedges_equal (find_unsafe Handler.backedges (index "One.One")) []
@@ -1651,21 +1587,14 @@ let test_connect_annotations_to_top context =
   let alias_environment =
     AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
   in
+  let class_hierarchy_environment =
+    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+  in
   let environment =
-    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+    Environment.shared_memory_handler
+      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
   Environment.purge environment [Reference.create "test"] ~update_result;
-  let resolution = Environment.resolution environment () in
-  let connect annotation =
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-      annotation
-    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
-    |> Option.iter ~f:Fn.id
-  in
-  AliasEnvironment.UpdateResult.upstream update_result
-  |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
-  |> Set.iter ~f:connect;
   let order = class_hierarchy environment in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"];
 
@@ -1706,21 +1635,14 @@ let test_deduplicate context =
   let alias_environment =
     AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
   in
+  let class_hierarchy_environment =
+    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+  in
   let environment =
-    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+    Environment.shared_memory_handler
+      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
   Environment.purge environment [Reference.create "test"] ~update_result;
-  let resolution = Environment.resolution environment () in
-  let connect annotation =
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-      annotation
-    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
-    |> Option.iter ~f:Fn.id
-  in
-  AliasEnvironment.UpdateResult.upstream update_result
-  |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
-  |> Set.iter ~f:connect;
   let (module Handler) = class_hierarchy environment in
   let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
@@ -1787,21 +1709,14 @@ let test_remove_extra_edges_to_object context =
   let alias_environment =
     AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
   in
+  let class_hierarchy_environment =
+    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+  in
   let environment =
-    Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+    Environment.shared_memory_handler
+      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
   Environment.purge environment [] ~update_result;
-  let resolution = Environment.resolution environment () in
-  let connect annotation =
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-      annotation
-    >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
-    |> Option.iter ~f:Fn.id
-  in
-  AliasEnvironment.UpdateResult.upstream update_result
-  |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
-  |> Set.iter ~f:connect;
   let (module Handler) = class_hierarchy environment in
   let zero_index = IndexTracker.index "test.Zero" in
   let one_index = IndexTracker.index "test.One" in
@@ -1850,15 +1765,18 @@ let test_update_and_compute_dependencies context =
   let dependency_tracked_global_resolution_B =
     Environment.dependency_tracked_resolution environment ~dependency:dependency_B ()
   in
-  let edges resolution annotation =
-    let (module ClassHierarchy) = GlobalResolution.class_hierarchy resolution in
-    ClassHierarchy.edges (IndexTracker.index annotation)
+  let class_metadata resolution annotation =
+    GlobalResolution.class_metadata resolution (Primitive annotation)
   in
   (* A read Foo *)
-  edges dependency_tracked_global_resolution_A "source.Foo" |> Option.is_some |> assert_true;
+  class_metadata dependency_tracked_global_resolution_A "source.Foo"
+  |> Option.is_some
+  |> assert_true;
 
   (* B read Bar *)
-  edges dependency_tracked_global_resolution_B "other.Bar" |> Option.is_some |> assert_true;
+  class_metadata dependency_tracked_global_resolution_B "other.Bar"
+  |> Option.is_some
+  |> assert_true;
 
   let assert_update
       ~repopulate_source_to
@@ -1866,17 +1784,18 @@ let test_update_and_compute_dependencies context =
       ~expected_state_after_update
       ~expected_dependencies
     =
-    let repopulate source ~update_result ~unannotated_global_environment =
+    let repopulate source ~update_result =
       Service.Environment.populate
         ~configuration:(ScratchProject.configuration_of project)
         ~scheduler:(Test.mock_scheduler ())
         ~update_result
         environment
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
         [source]
     in
     let assert_state (primitive, expected) =
-      edges untracked_global_resolution primitive |> Option.is_some |> assert_equal expected
+      class_metadata untracked_global_resolution primitive
+      |> Option.is_some
+      |> assert_equal expected
     in
     let add_file
         { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
@@ -1897,9 +1816,6 @@ let test_update_and_compute_dependencies context =
       delete_file project "source.py";
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
       add_file project repopulate_source_to ~relative:"source.py";
-      let unannotated_global_environment =
-        UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-      in
       let ast_environment_update_result =
         let { ScratchProject.module_tracker; _ } = project in
         let configuration = ScratchProject.configuration_of project in
@@ -1924,7 +1840,7 @@ let test_update_and_compute_dependencies context =
           (AstEnvironment.read_only ast_environment)
           (Reference.create "source")
         |> (fun option -> Option.value_exn option)
-        |> repopulate ~update_result ~unannotated_global_environment
+        |> repopulate ~update_result
       in
       Environment.update_and_compute_dependencies
         environment
@@ -1993,7 +1909,6 @@ let () =
          "meet_type_order" >:: test_meet_type_order;
          "supertypes_type_order" >:: test_supertypes_type_order;
          "class_definition" >:: test_class_definition;
-         "connect_definition" >:: test_connect_definition;
          "import_dependencies" >:: test_import_dependencies;
          "modules" >:: test_modules;
          "populate" >:: test_populate;

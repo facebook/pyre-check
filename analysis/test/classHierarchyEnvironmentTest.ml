@@ -109,11 +109,6 @@ let test_inferred_generic_base context =
         ~ast_environment_update_result
         ~qualifiers:(Reference.Set.of_list qualifiers)
         ()
-      |> snd
-      |> ClassHierarchyEnvironment.update
-           ~configuration
-           ~scheduler:(Test.mock_scheduler ())
-           class_hierarchy_environment
     in
     let read_only = ClassHierarchyEnvironment.read_only class_hierarchy_environment in
     let expected =

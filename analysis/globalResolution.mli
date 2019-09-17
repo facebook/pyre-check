@@ -80,12 +80,10 @@ end
 
 val create
   :  ?dependency:Reference.t ->
-  alias_environment:AliasEnvironment.ReadOnly.t ->
+  class_hierarchy_environment:ClassHierarchyEnvironment.ReadOnly.t ->
   class_metadata:(Type.Primitive.t -> class_metadata option) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   global:(Reference.t -> global option) ->
-  edges:(IndexTracker.t -> ClassHierarchy.Target.t list option) ->
-  backedges:(IndexTracker.t -> ClassHierarchy.Target.Set.Tree.t option) ->
   (module AnnotatedClass) ->
   t
 

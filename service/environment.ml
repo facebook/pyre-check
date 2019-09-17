@@ -6,11 +6,9 @@
 open Core
 module ServiceTypeOrder = TypeOrder
 open Analysis
-open Pyre
 
 let populate
     environment
-    unannotated_global_environment
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
     ~update_result
@@ -18,21 +16,15 @@ let populate
   =
   let resolution = Environment.resolution environment () in
   let populate () =
-    let update_result = AliasEnvironment.UpdateResult.upstream update_result in
+    let update_result =
+      ClassHierarchyEnvironment.UpdateResult.upstream update_result
+      |> AliasEnvironment.UpdateResult.upstream
+    in
     let all_annotations =
       Set.to_list (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result)
     in
     List.iter ~f:(Environment.register_dependencies environment) sources;
 
-    (* Build type order. *)
-    let connect annotation =
-      UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-        unannotated_global_environment
-        annotation
-      >>| (fun definition -> Environment.connect_definition environment ~definition ~resolution)
-      |> Option.iter ~f:Fn.id
-    in
-    List.iter ~f:connect all_annotations;
     if debug then
       (* Validate integrity of the type order built so far before moving forward. Further
          transformations might be incorrect or not terminate otherwise. *)

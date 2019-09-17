@@ -148,8 +148,12 @@ let check
       AliasEnvironment.create
         (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
     in
+    let class_hierarchy_environment =
+      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+    in
     let environment =
-      Environment.shared_memory_handler (AliasEnvironment.read_only alias_environment)
+      Environment.shared_memory_handler
+        (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
     in
     Environment.add_special_globals environment;
     Statistics.performance ~name:"added environment to shared memory" ~timer ();
@@ -158,7 +162,6 @@ let check
     (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
        sequentially until we find a way to build the environment in parallel. *)
     let timer = Timer.start () in
-    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
     let qualifiers =
       List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
           qualifier)
@@ -171,14 +174,9 @@ let check
         ~ast_environment_update_result
         (Ast.Reference.Set.of_list qualifiers)
       |> AliasEnvironment.update alias_environment ~scheduler ~configuration
+      |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
     in
-    populate
-      ~configuration
-      ~scheduler
-      ~update_result
-      environment
-      (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-      sources;
+    populate ~configuration ~scheduler ~update_result environment sources;
     Statistics.performance ~name:"full environment built" ~timer ();
     if Log.is_enabled `Dotty then (
       let type_order_file =
