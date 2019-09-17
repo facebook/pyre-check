@@ -529,7 +529,7 @@ let register_global _ ?qualifier ~reference ~global =
 
 
 let add_special_globals environment =
-  (* Add `None` constant to globals. *)
+  (* Add builtin constants to globals. *)
   let annotation annotation =
     Annotation.create_immutable ~global:true annotation |> Node.create_with_default_location
   in
@@ -542,7 +542,12 @@ let add_special_globals environment =
     environment
     ?qualifier:None
     ~reference:(Reference.create "...")
-    ~global:(annotation Type.Any)
+    ~global:(annotation Type.Any);
+  register_global
+    environment
+    ?qualifier:None
+    ~reference:(Reference.create "__debug__")
+    ~global:(annotation Type.bool)
 
 
 let dependencies _ = SharedMemory.Dependents.get

@@ -332,10 +332,25 @@ let test_check_globals context =
     ["Prohibited any [33]: `MyType` cannot alias to a type containing `Any`."]
 
 
+let test_check_builtin_globals context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      reveal_type(...)
+    |}
+    ["Revealed type [-1]: Revealed type for `...` is `typing.Any`."];
+  assert_type_errors
+    {|
+      reveal_type(__debug__)
+    |}
+    ["Revealed type [-1]: Revealed type for `__debug__` is `bool`."]
+
+
 let () =
   "global"
   >::: [
          "check_with_qualification" >:: test_check_with_qualification;
          "check_globals" >:: test_check_globals;
+         "check_builtin_globals" >:: test_check_builtin_globals;
        ]
   |> Test.run
