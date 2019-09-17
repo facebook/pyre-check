@@ -17,6 +17,7 @@ from typing import Callable, Dict, Mapping, Optional, Set, Union
 import _ast
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
+from . import ConfigurationArguments, GenerationArguments, run_from_global_state
 from .generator_specs import DecoratorAnnotationSpec
 from .model_generator import Configuration, Registry
 
@@ -45,11 +46,6 @@ _WHITELISTED_DJANGO_VIEWS = [
 
 
 def main() -> None:
-    # pyre-ignore: Typeshed is for django 2.x
-    Configuration.url_pattern_type = RegexURLPattern
-    # pyre-ignore: Typeshed is for django 2.x
-    Configuration.url_resolver_type = RegexURLResolver
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     parser.add_argument(
@@ -86,38 +82,38 @@ def main() -> None:
         # pyre-fixme[16]: `Namespace` has no attribute `whitelisted_class`.
         arguments.whitelisted_class = ["HttpRequest"]
 
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.DEBUG if arguments.verbose else logging.INFO,
-    )
-
-    Configuration.root = os.path.dirname(os.path.abspath(arguments.urls_path))
-    Configuration.urls_module = os.path.basename(arguments.urls_path)
-    Configuration.whitelisted_classes = arguments.whitelisted_class
-    Configuration.whitelisted_views = _WHITELISTED_DJANGO_VIEWS
     stub_root = arguments.stub_root
     if stub_root:
-        Configuration.stub_root = os.path.abspath(stub_root)
+        stub_root = os.path.abspath(stub_root)
 
-    Configuration.annotation_specs = [
+    annotation_specs = [
         DecoratorAnnotationSpec(**dict(zip(DecoratorAnnotationSpec._fields, spec)))
         for spec in (arguments.annotation_spec or [])
     ]
 
-    modes = arguments.mode or Registry.default_generators
-    models = Registry.generate_models(modes)
-    output_directory = arguments.output_directory
-    if output_directory is not None:
-        for name in models:
-            with open(f"{output_directory}/generated_{name}.pysa", "w") as output_file:
-                output_file.write("\n".join(sorted(models[name])))
-                output_file.write("\n")
-    else:
-        all_models = set()
-        for name in models:
-            all_models = all_models.union(models[name])
-        print("\n".join(sorted(all_models)))
+    run_from_global_state(
+        GenerationArguments(
+            mode=arguments.mode,
+            verbose=arguments.verbose,
+            output_directory=arguments.output_directory,
+        ),
+        ConfigurationArguments(
+            annotation_specs=annotation_specs,
+            whitelisted_views=_WHITELISTED_DJANGO_VIEWS,
+            whitelisted_classes=arguments.whitelisted_classes,
+            # pyre-ignore[16]: The django stubs are for another version.
+            url_resolver_type=RegexURLResolver,
+            # pyre-ignore[16]: The django stubs are for another version.
+            url_pattern_type=RegexURLPattern,
+            root=os.path.dirname(os.path.abspath(arguments.urls_path)),
+            stub_root=stub_root,
+            graphql_object_type=object,
+            urls_module=os.path.basename(arguments.urls_path),
+            graphql_module=[],
+            blacklisted_global_directories=set(),
+            blacklisted_globals=set(),
+        ),
+    )
 
 
 if __name__ == "__main__":
