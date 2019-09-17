@@ -84,8 +84,17 @@ module ReadOnly = struct
         Type.instantiate parsed ~constraints
     in
     let contains_untracked annotation =
+      let dependency =
+        let translate = function
+          | TypeCheckSource source -> UnannotatedGlobalEnvironment.TypeCheckSource source
+          | ClassConnect class_name -> UnannotatedGlobalEnvironment.ClassConnect class_name
+        in
+        dependency >>| translate
+      in
       let is_tracked =
-        UnannotatedGlobalEnvironment.ReadOnly.class_exists unannotated_global_environment
+        UnannotatedGlobalEnvironment.ReadOnly.class_exists
+          unannotated_global_environment
+          ?dependency
       in
       List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
     in
