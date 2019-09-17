@@ -103,7 +103,7 @@ class PyreRunner:
 
 
 def _run_full_check(pyre_runner: PyreRunner) -> Tuple[List[PyreError], int]:
-    LOG.info("Running pyre incremental check...")
+    LOG.info("Running pyre full check...")
 
     LOG.debug("Preparing updated repository state...")
     pyre_runner.prepare_new_state()
