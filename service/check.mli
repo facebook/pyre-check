@@ -17,7 +17,7 @@ val run_check
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:Environment.t ->
-  Ast.Source.t list ->
+  Ast.Reference.t list ->
   (module Analysis.Check.Signature) ->
   Error.t list
 
@@ -27,7 +27,7 @@ val analyze_sources
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:Environment.t ->
-  Ast.Source.t list ->
+  Ast.Reference.t list ->
   Error.t list
 
 val check

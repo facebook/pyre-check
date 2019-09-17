@@ -15,3 +15,5 @@ val create_implicit : ?empty_stub:bool -> unit -> t
 
 (* Exposed for testing only *)
 val create_for_testing : local_mode:Source.mode -> stub:bool -> t
+
+val local_mode : t -> Source.mode option

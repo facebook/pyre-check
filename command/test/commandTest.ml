@@ -168,12 +168,16 @@ module ScratchServer = struct
     Dependencies.register_all_dependencies
       (Dependencies.create (AstEnvironment.read_only ast_environment))
       sources;
+    let qualifiers =
+      List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
+          qualifier)
+    in
     let new_errors =
       Service.Check.analyze_sources
         ~scheduler:(mock_scheduler ())
         ~configuration
         ~environment
-        sources
+        qualifiers
     in
     (* Associate the new errors with new files *)
     let errors = Ast.Reference.Table.create () in

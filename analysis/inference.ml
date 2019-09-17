@@ -542,7 +542,11 @@ let name = "Inference"
 let run
     ~configuration
     ~environment
-    ~source:({ Source.source_path = { SourcePath.relative; is_stub; _ }; _ } as source)
+    ~source:( {
+                Source.source_path = { SourcePath.relative; is_stub; _ };
+                metadata = { local_mode; _ };
+                _;
+              } as source )
   =
   Log.debug "Checking %s..." relative;
   let global_resolution = Environment.resolution environment () in
@@ -607,7 +611,7 @@ let run
           errors
         else
           let keep_error error =
-            let mode = Source.mode ~configuration source in
+            let mode = Source.mode ~configuration ~local_mode in
             not (Error.suppress ~mode ~resolution error)
           in
           List.filter ~f:keep_error errors

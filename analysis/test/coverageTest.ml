@@ -14,12 +14,14 @@ let test_coverage context =
     let ast_environment, ast_environment_update_result =
       Test.ScratchProject.parse_sources project
     in
+    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
     let sources =
-      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
       AstEnvironment.UpdateResult.reparsed ast_environment_update_result
       |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+      |> List.map ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
+             qualifier)
     in
-    Coverage.coverage ~configuration sources |> assert_equal expected
+    Coverage.coverage ~configuration ~ast_environment sources |> assert_equal expected
   in
   assert_coverage
     [

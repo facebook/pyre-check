@@ -200,7 +200,7 @@ let pp format { statements; _ } =
 
 let show source = Format.asprintf "%a" pp source
 
-let mode ~configuration { metadata = { Metadata.local_mode; _ }; _ } =
+let mode ~configuration ~local_mode =
   match configuration, local_mode with
   | { Configuration.Analysis.infer = true; _ }, _ -> Infer
   | { Configuration.Analysis.strict = true; _ }, _

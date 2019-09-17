@@ -70,7 +70,7 @@ let recheck
     ~message:"Repopulating the environment"
     ~short_message:(Some "[Repopulating]")
     ~state;
-  let recheck_modules, recheck_sources =
+  let recheck_modules =
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
     in
@@ -104,12 +104,6 @@ let recheck
         alias_update_result
     in
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
-    let re_environment_build_sources =
-      let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-      List.filter_map
-        invalidated_environment_qualifiers
-        ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-    in
     match incremental_style with
     | FineGrained ->
         let (), invalidated_type_checking_keys =
@@ -170,15 +164,11 @@ let recheck
           SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements invalidated_type_checking_keys
         in
         let recheck_modules = invalidated_type_checking_keys in
-        let recheck_sources =
-          let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-          List.filter_map recheck_modules ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-        in
         Log.log
           ~section:`Server
           "Incremental Environment Builder Update %s"
           (List.to_string ~f:Reference.show invalidated_type_checking_keys);
-        recheck_modules, recheck_sources
+        recheck_modules
     | _ ->
         let () =
           Analysis.Environment.purge
@@ -187,6 +177,12 @@ let recheck
             invalidated_environment_qualifiers
             ~update_result:class_hierarchy_update_result;
           Dependencies.purge legacy_dependency_tracker invalidated_environment_qualifiers;
+          let re_environment_build_sources =
+            let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
+            List.filter_map
+              invalidated_environment_qualifiers
+              ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+          in
           Dependencies.register_all_dependencies
             legacy_dependency_tracker
             re_environment_build_sources;
@@ -201,7 +197,7 @@ let recheck
           ~section:`Server
           "(Old) Incremental Environment Builder Update %s"
           (List.to_string ~f:Reference.show invalidated_environment_qualifiers);
-        invalidated_environment_qualifiers, re_environment_build_sources
+        invalidated_environment_qualifiers
   in
   Statistics.event
     ~section:`Memory
@@ -222,7 +218,7 @@ let recheck
       ~scheduler
       ~configuration
       ~environment
-      recheck_sources
+      recheck_modules
   in
   (* Kill all previous errors for new files we just checked *)
   List.iter ~f:(Hashtbl.remove errors) recheck_modules;
@@ -232,6 +228,23 @@ let recheck
       let key = Error.path error in
       Hashtbl.add_multi errors ~key ~data:error);
 
+  let total_rechecked_functions =
+    let map sofar modules =
+      List.filter_map
+        modules
+        ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
+      |> List.sum (module Int) ~f:Preprocessing.count_defines
+      |> fun added -> sofar + added
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~initial:0
+      ~map
+      ~reduce:(fun left right -> left + right)
+      ~inputs:recheck_modules
+      ()
+  in
   Statistics.performance
     ~name:"incremental check"
     ~timer
@@ -240,9 +253,8 @@ let recheck
         "number of changed files", List.length paths;
         "number of module tracker updates", List.length module_updates;
         "number of parser updates", Set.length invalidated_environment_qualifiers;
-        "number of environment builder updates", List.length recheck_sources;
-        ( "number of re-checked functions",
-          List.sum (module Int) ~f:Preprocessing.count_defines recheck_sources );
+        "number of environment builder updates", List.length recheck_modules;
+        "number of re-checked functions", total_rechecked_functions;
       ]
     ();
   StatusUpdate.information ~message:"Done recheck." ~short_message:(Some "Done recheck.") ~state;

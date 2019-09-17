@@ -15,16 +15,11 @@ let compute_type_check_resolution ~configuration ~scheduler ~environment ~source
     in
     List.filter source_paths ~f:(fun source_path -> not (has_resolution_shared_memory source_path))
   in
-  let ast_environment = Environment.ast_environment environment in
-  let sources =
-    List.filter_map source_paths ~f:(fun { SourcePath.qualifier; _ } ->
-        AstEnvironment.ReadOnly.get_source ast_environment qualifier)
-  in
-  Service.Check.analyze_sources
-    ~scheduler
-    ~configuration:{ configuration with store_type_check_resolution = true }
-    ~environment
-    sources
+  List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+  |> Service.Check.analyze_sources
+       ~scheduler
+       ~configuration:{ configuration with store_type_check_resolution = true }
+       ~environment
   |> ignore
 
 
@@ -33,13 +28,8 @@ let run_additional_check ~configuration ~scheduler ~environment ~source_paths ~c
   match Analysis.Check.get_check_to_run ~check_name:check with
   | Some (module Check) ->
       let ast_environment = Environment.ast_environment environment in
-      let sources =
-        let to_source { SourcePath.qualifier; _ } =
-          AstEnvironment.ReadOnly.get_source ast_environment qualifier
-        in
-        List.filter_map source_paths ~f:to_source
-      in
-      Service.Check.run_check ~configuration ~scheduler ~environment sources (module Check)
+      let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
+      Service.Check.run_check ~configuration ~scheduler ~environment qualifiers (module Check)
       |> List.map
            ~f:
              (Analysis.Error.instantiate

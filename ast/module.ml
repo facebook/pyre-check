@@ -15,6 +15,7 @@ type t =
   | Explicit of {
       aliased_exports: aliased_exports;
       empty_stub: bool;
+      local_mode: Source.mode;
     }
   | Implicit of { empty_stub: bool }
 [@@deriving eq, sexp, compare]
@@ -22,7 +23,7 @@ type t =
 let pp format printed_module =
   let aliased_exports, empty_stub =
     match printed_module with
-    | Explicit { aliased_exports; empty_stub } -> Map.Tree.to_alist aliased_exports, empty_stub
+    | Explicit { aliased_exports; empty_stub; _ } -> Map.Tree.to_alist aliased_exports, empty_stub
     | Implicit { empty_stub } -> [], empty_stub
   in
   let aliased_exports =
@@ -47,6 +48,7 @@ let create_for_testing ~local_mode ~stub =
     {
       aliased_exports = Reference.Map.empty |> Map.to_tree;
       empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
+      local_mode = Default;
     }
 
 
@@ -101,6 +103,7 @@ let create
     {
       aliased_exports;
       empty_stub = is_stub && Source.equal_mode local_mode Source.PlaceholderStub;
+      local_mode;
     }
 
 
@@ -111,4 +114,9 @@ let aliased_export considered_module reference =
   | Explicit { aliased_exports; _ } ->
       let aliased_exports = Reference.Map.of_tree aliased_exports in
       Map.find aliased_exports reference
+  | Implicit _ -> None
+
+
+let local_mode = function
+  | Explicit { local_mode; _ } -> Some local_mode
   | Implicit _ -> None

@@ -5,6 +5,7 @@
 
 open Core
 open Ast
+open Pyre
 
 type t = {
   full: int;
@@ -93,20 +94,23 @@ type aggregate = {
   source_files: int;
 }
 
-let coverage ~configuration sources =
-  let sources =
-    List.filter sources ~f:(fun { Source.source_path = { SourcePath.is_external; _ }; _ } ->
-        not is_external)
+let coverage ~configuration ~ast_environment qualifiers =
+  let qualifiers =
+    let is_not_external qualifier =
+      AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+      >>| (fun { SourcePath.is_external; _ } -> not is_external)
+      |> Option.value ~default:false
+    in
+    List.filter qualifiers ~f:is_not_external
   in
-  let number_of_files = List.length sources in
+  let number_of_files = List.length qualifiers in
   let strict_coverage, declare_coverage =
-    List.fold
-      ~init:(0, 0)
-      ~f:(fun (prev_strict, prev_declare) source ->
-        let mode = Source.mode ~configuration source in
-        ( (prev_strict + if Source.equal_mode mode Source.Strict then 1 else 0),
-          prev_declare + if Source.equal_mode mode Source.Declare then 1 else 0 ))
-      sources
+    List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_module_metadata ast_environment)
+    |> List.filter_map ~f:Module.local_mode
+    |> List.fold ~init:(0, 0) ~f:(fun (prev_strict, prev_declare) local_mode ->
+           let mode = Source.mode ~local_mode ~configuration in
+           ( (prev_strict + if Source.equal_mode mode Source.Strict then 1 else 0),
+             prev_declare + if Source.equal_mode mode Source.Declare then 1 else 0 ))
   in
   {
     strict_coverage;

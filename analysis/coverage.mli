@@ -63,4 +63,8 @@ type aggregate = {
   source_files: int;
 }
 
-val coverage : configuration:Configuration.Analysis.t -> Source.t list -> aggregate
+val coverage
+  :  configuration:Configuration.Analysis.t ->
+  ast_environment:AstEnvironment.ReadOnly.t ->
+  Reference.t list ->
+  aggregate

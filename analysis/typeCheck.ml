@@ -4799,7 +4799,11 @@ let name = "TypeCheck"
 let check_define
     ~configuration:({ Configuration.Analysis.include_hints; debug; _ } as configuration)
     ~global_resolution
-    ~source:({ Source.source_path = { SourcePath.qualifier; relative; _ }; _ } as source)
+    ~source:( {
+                Source.source_path = { SourcePath.qualifier; relative; _ };
+                metadata = { local_mode; _ };
+                _;
+              } as source )
     ~call_graph_builder:(module Builder : Dependencies.Callgraph.Builder)
     ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
       resolution )
@@ -4813,7 +4817,7 @@ let check_define
   end
   in
   let filter_errors errors =
-    let mode = Source.mode ~configuration source in
+    let mode = Source.mode ~configuration ~local_mode in
     let filter errors =
       if debug then
         errors

@@ -46,11 +46,15 @@ let initialize_server ?incremental_style ~context ~initial_sources =
   let configuration = ScratchProject.configuration_of project in
   let ast_environment = AstEnvironment.create module_tracker in
   let new_errors =
+    let qualifiers =
+      List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
+          qualifier)
+    in
     Service.Check.analyze_sources
       ~scheduler:(mock_scheduler ())
       ~configuration
       ~environment
-      sources
+      qualifiers
   in
   let errors = Reference.Table.create () in
   List.iter new_errors ~f:(fun error ->

@@ -20,7 +20,11 @@ let ignore_lines_test context =
     let scheduler = Test.mock_scheduler () in
     let descriptions =
       let ast_environment = Environment.ast_environment environment in
-      Service.Check.analyze_sources ~scheduler ~configuration ~environment sources
+      let qualifiers =
+        List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
+            qualifier)
+      in
+      Service.Check.analyze_sources ~scheduler ~configuration ~environment qualifiers
       |> List.map ~f:(fun error ->
              Error.instantiate
                ~lookup:

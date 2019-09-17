@@ -32,7 +32,7 @@ let run_check
   let number_of_sources = List.length checked_sources in
   Log.info "Running check `%s`..." Check.name;
   let timer = Timer.start () in
-  let map _ sources =
+  let map _ qualifiers =
     Analysis.Annotated.Class.AttributeCache.clear ();
     Analysis.AstEnvironment.FromEmptyStubCache.clear ();
     let analyze_source
@@ -48,7 +48,9 @@ let run_check
       let new_errors = Check.run ~configuration ~environment ~source in
       { errors = List.append new_errors errors; number_files = number_files + 1 }
     in
-    List.fold sources ~init:empty_result ~f:analyze_source
+    let ast_environment = Analysis.Environment.ast_environment environment in
+    List.filter_map qualifiers ~f:(Analysis.AstEnvironment.ReadOnly.get_source ast_environment)
+    |> List.fold ~init:empty_result ~f:analyze_source
   in
   let reduce left right =
     let number_files = left.number_files + right.number_files in
@@ -84,11 +86,16 @@ let analyze_sources
     sources
   =
   let open Analysis in
+  let ast_environment = Environment.ast_environment environment in
   Annotated.Class.AttributeCache.clear ();
   let checked_sources =
     if filter_external_sources then
-      List.filter sources ~f:(fun { Source.source_path = { SourcePath.is_external; _ }; _ } ->
-          not is_external)
+      let is_not_external qualifier =
+        AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+        >>| (fun { SourcePath.is_external; _ } -> not is_external)
+        |> Option.value ~default:false
+      in
+      List.filter sources ~f:is_not_external
     else
       sources
   in
@@ -133,16 +140,22 @@ let check
   let ast_environment_update_result =
     Analysis.AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart
   in
-  let sources =
-    let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-    Analysis.AstEnvironment.UpdateResult.reparsed ast_environment_update_result
-    |> List.filter_map ~f:(Analysis.AstEnvironment.ReadOnly.get_source ast_environment)
+  let qualifiers = Analysis.AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
+  let build_legacy_dependencies () =
+    let sources =
+      qualifiers
+      |> List.filter_map
+           ~f:
+             (Analysis.AstEnvironment.ReadOnly.get_source
+                (Analysis.AstEnvironment.read_only ast_environment))
+    in
+    let legacy_dependency_tracker =
+      Analysis.Dependencies.create (Analysis.AstEnvironment.read_only ast_environment)
+    in
+    Analysis.Dependencies.register_all_dependencies legacy_dependency_tracker sources
   in
-  ( if build_legacy_dependency_graph then
-      let legacy_dependency_tracker =
-        Analysis.Dependencies.create (Analysis.AstEnvironment.read_only ast_environment)
-      in
-      Analysis.Dependencies.register_all_dependencies legacy_dependency_tracker sources );
+  if build_legacy_dependency_graph then
+    build_legacy_dependencies ();
   let environment =
     let populate = Environment.populate in
     let open Analysis in
@@ -168,10 +181,6 @@ let check
     (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
        sequentially until we find a way to build the environment in parallel. *)
     let timer = Timer.start () in
-    let qualifiers =
-      List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
-          qualifier)
-    in
     let update_result =
       UnannotatedGlobalEnvironment.update
         unannotated_global_environment
@@ -202,7 +211,7 @@ let check
         () );
     environment
   in
-  let errors = analyze_sources ~scheduler ~configuration ~environment sources in
+  let errors = analyze_sources ~scheduler ~configuration ~environment qualifiers in
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
@@ -210,15 +219,18 @@ let check
   in
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
-    Coverage.coverage ~configuration sources
+    Coverage.coverage
+      ~configuration
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
+      qualifiers
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
-    let aggregate sofar { Source.source_path = { SourcePath.qualifier; _ }; _ } =
+    let aggregate sofar qualifier =
       match Coverage.get ~qualifier with
       | Some coverage -> Coverage.sum sofar coverage
       | _ -> sofar
     in
-    List.fold sources ~init:(Coverage.create ()) ~f:aggregate
+    List.fold qualifiers ~init:(Coverage.create ()) ~f:aggregate
   in
   Statistics.coverage
     ~randomly_log_every:20

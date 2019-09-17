@@ -109,9 +109,12 @@ let run_analysis
       let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in
       let external_sources =
         let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-        List.filter_map qualifiers ~f:(Analysis.AstEnvironment.ReadOnly.get_source ast_environment)
-        |> List.filter ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.is_external; _ }; _ } ->
-               is_external)
+        let is_external qualifier =
+          Analysis.AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+          >>| (fun { Ast.SourcePath.is_external; _ } -> is_external)
+          |> Option.value ~default:false
+        in
+        List.filter qualifiers ~f:is_external
       in
       Log.info "Analyzing %d external sources..." (List.length external_sources);
       Service.Check.analyze_sources

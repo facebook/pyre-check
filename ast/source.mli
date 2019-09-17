@@ -63,7 +63,7 @@ val create
   Statement.t list ->
   t
 
-val mode : configuration:Configuration.Analysis.t -> t -> mode
+val mode : configuration:Configuration.Analysis.t -> local_mode:mode -> mode
 
 val ignore_lines : t -> Ignore.t list
 
