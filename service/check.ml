@@ -160,8 +160,6 @@ let check
     let populate = Environment.populate in
     let open Analysis in
     let ast_environment = AstEnvironment.read_only ast_environment in
-    Log.info "Adding built-in environment information to shared memory...";
-    let timer = Timer.start () in
     let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
     let alias_environment =
       AliasEnvironment.create
@@ -175,7 +173,6 @@ let check
         (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
     in
     Environment.add_special_globals environment;
-    Statistics.performance ~name:"added environment to shared memory" ~timer ();
     Log.info "Building type environment...";
 
     (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
