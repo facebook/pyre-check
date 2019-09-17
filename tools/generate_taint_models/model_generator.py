@@ -60,7 +60,7 @@ class Configuration:
     # Arguments that can be supplied through argparse and callers - these are globals to
     # allow registering generators at the definition point and not having to repeat the
     # arguments for similar generators.
-    urls_module: ClassVar[str] = ""
+    urls_module: ClassVar[Optional[str]] = None
     # pyre-ignore[4]: Too dynamic.
     url_pattern_type: ClassVar[Type[Any]] = object
     # pyre-ignore[4]: Too dynamic.

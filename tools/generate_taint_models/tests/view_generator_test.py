@@ -47,3 +47,8 @@ class ViewGeneratorTest(unittest.TestCase):
             views = TestGenerator().gather_functions_to_model()
             values = [view() for view in views]
             self.assertEqual(values, [1, 2, 3, 4, 5, 6, 7])
+
+            model_generator.Configuration.urls_module = None
+            views = TestGenerator().gather_functions_to_model()
+            values = [view() for view in views]
+            self.assertEqual(values, [])

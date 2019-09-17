@@ -18,8 +18,13 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 class ViewGenerator(ModelGenerator, ABC):
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
-        LOG.info(f"Getting all URLs from `{Configuration.urls_module}`")
-        urls_module = import_module(Configuration.urls_module)
+        urls_module = Configuration.urls_module
+        if urls_module is None:
+            LOG.warning(f"No url module supplied, can't generate view models.")
+            return []
+
+        LOG.info(f"Getting all URLs from `{urls_module}`")
+        urls_module = import_module(urls_module)
         functions_to_model = []
 
         # pyre-ignore: Too dynamic.

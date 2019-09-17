@@ -32,7 +32,7 @@ class ConfigurationArguments:
     stub_root: Optional[str]
     # pyre-ignore[4]: Too dynamic.
     graphql_object_type: Type[Any]
-    urls_module: str
+    urls_module: Optional[str]
     graphql_module: List[str]
     blacklisted_global_directories: Set[str]
     blacklisted_globals: Set[str]
