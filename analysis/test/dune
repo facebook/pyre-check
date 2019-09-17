@@ -3,6 +3,7 @@
   abstractDomainTest
   aliasEnvironmentTest
   analysisErrorTest
+  annotatedBasesTest
   annotatedCallableTest
   annotatedClassTest
   annotatedDefineTest
@@ -12,6 +13,7 @@
   awaitableCheckTest
   cfgTest
   classHierarchyTest
+  classHierarchyEnvironmentTest
   coverageTest
   customAnalysisTest
   deobfuscationCheckTest

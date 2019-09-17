@@ -69,11 +69,6 @@ end
 
 val generics : t -> resolution:GlobalResolution.t -> Type.OrderedTypes.t
 
-(* Find free variables in the parametric type. E.g. for generic class `class A(typing.Generic[_T],
-   typing.Generic[_S]): ...` and instantiated type `A[int, Bottom]` we consider `_S` to be free. *)
-
-val inferred_generic_base : t -> resolution:GlobalResolution.t -> Expression.Call.Argument.t list
-
 val constraints
   :  ?target:t ->
   ?parameters:Type.OrderedTypes.t ->

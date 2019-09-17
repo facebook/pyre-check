@@ -19,6 +19,7 @@ type unannotated_global =
 type dependency =
   | AliasRegister of Reference.t
   | TypeCheckSource of Reference.t
+  | ClassConnect of Type.Primitive.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey : Memory.DependencyKey.S with type t = dependency
@@ -49,6 +50,8 @@ module UpdateResult : sig
   type t
 
   val added_unannotated_globals : t -> Reference.Set.t
+
+  val added_classes : t -> Type.Primitive.Set.t
 
   (* In principle we should only need to pass on those of these that are newly introduced, but we
      pass all current classes in the specified modules as a compatibility feature for downstream

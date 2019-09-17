@@ -12,7 +12,10 @@ type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly
 
 let create unannotated_global_environment = { unannotated_global_environment }
 
-type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
+type dependency =
+  | TypeCheckSource of Reference.t
+  | ClassConnect of Type.Primitive.t
+[@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct
   type nonrec t = dependency
@@ -60,6 +63,7 @@ module ReadOnly = struct
               let dependency =
                 let translate = function
                   | TypeCheckSource source -> AstEnvironment.TypeCheckSource source
+                  | ClassConnect class_name -> AstEnvironment.ClassConnect class_name
                 in
                 dependency >>| translate
               in

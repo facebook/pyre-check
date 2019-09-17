@@ -11,6 +11,7 @@ open PyreParser
 type dependency =
   | TypeCheckSource of Reference.t
   | AliasRegister of Reference.t
+  | ClassConnect of Type.Primitive.t
 [@@deriving show, compare, sexp]
 
 (* We cache results of `from_empty_stub` here since module definition lookup requires shared memory

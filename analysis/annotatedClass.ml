@@ -197,64 +197,19 @@ module Method = struct
       annotation
 end
 
-let find_propagated_type_variables bases ~resolution =
-  let find_type_variables { Expression.Call.Argument.value; _ } =
-    GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
-    |> Type.Variable.all_free_variables
-  in
-  let handle_deduplicated = function
-    | [Type.Variable.ListVariadic variable] -> Type.Variable.Variadic.List.self_reference variable
-    | deduplicated ->
-        let to_unary = function
-          | Type.Variable.Unary variable -> Some (Type.Variable variable)
-          | _ -> None
-        in
-        List.map deduplicated ~f:to_unary
-        |> Option.all
-        |> Option.value ~default:[]
-        |> fun concrete -> Type.OrderedTypes.Concrete concrete
-  in
-  List.concat_map ~f:find_type_variables bases
-  |> List.dedup ~compare:Type.Variable.compare
-  |> handle_deduplicated
-
-
 let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
+  let parse_annotation =
+    GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
+  in
   let generic { Expression.Call.Argument.value; _ } =
-    let annotation =
-      GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
-    in
-    match annotation with
+    match parse_annotation value with
     | Type.Parametric { name = "typing.Generic"; parameters } -> Some parameters
     | Type.Parametric { name = "typing.Protocol"; parameters } -> Some parameters
     | _ -> None
   in
   match List.find_map ~f:generic bases with
-  | None -> find_propagated_type_variables bases ~resolution
+  | None -> AnnotatedBases.find_propagated_type_variables bases ~parse_annotation
   | Some parameters -> parameters
-
-
-let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
-  let is_generic { Expression.Call.Argument.value; _ } =
-    let primitive, _ =
-      GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
-      |> Type.split
-    in
-    Type.is_generic_primitive primitive
-  in
-  if List.exists ~f:is_generic bases then
-    []
-  else
-    let variables = find_propagated_type_variables bases ~resolution in
-    if Type.OrderedTypes.equal variables (Concrete []) then
-      []
-    else
-      [
-        {
-          Expression.Call.Argument.name = None;
-          value = Type.parametric "typing.Generic" variables |> Type.expression;
-        };
-      ]
 
 
 let constraints ?target ?parameters definition ~instantiated ~resolution =

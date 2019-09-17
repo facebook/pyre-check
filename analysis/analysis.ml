@@ -20,6 +20,7 @@ module BaseError = BaseError
 module Cfg = Cfg
 module Check = Check
 module ClassHierarchy = ClassHierarchy
+module ClassHierarchyEnvironment = ClassHierarchyEnvironment
 module Coverage = Coverage
 module CustomAnalysis = CustomAnalysis
 module DeobfuscationCheck = DeobfuscationCheck

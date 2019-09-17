@@ -24,6 +24,7 @@ type unannotated_global =
 type dependency =
   | AliasRegister of Reference.t
   | TypeCheckSource of Reference.t
+  | ClassConnect of Type.Primitive.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct
@@ -391,6 +392,10 @@ module UpdateResult = struct
 
   let added_unannotated_globals { current_unannotated_globals; previous_unannotated_globals; _ } =
     Reference.Set.diff current_unannotated_globals previous_unannotated_globals
+
+
+  let added_classes { current_classes; previous_classes; _ } =
+    Type.Primitive.Set.diff current_classes previous_classes
 
 
   let current_classes { current_classes; _ } = current_classes

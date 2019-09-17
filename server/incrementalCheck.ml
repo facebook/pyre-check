@@ -136,7 +136,9 @@ let recheck
           let alias_environment_dependencies =
             AliasEnvironment.UpdateResult.triggered_dependencies alias_update_result
             |> AliasEnvironment.DependencyKey.KeySet.elements
-            |> List.filter_map ~f:(function AliasEnvironment.TypeCheckSource source -> Some source)
+            |> List.filter_map ~f:(function
+                   | AliasEnvironment.TypeCheckSource source -> Some source
+                   | _ -> None)
           in
           List.fold
             (unannotated_global_environment_dependencies @ alias_environment_dependencies)

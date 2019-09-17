@@ -378,7 +378,6 @@ let connect_definition
     ~(resolution : GlobalResolution.t)
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
-  let annotated = Annotated.Class.create definition in
   (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
      classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
   let primitive = Reference.show name in
@@ -416,7 +415,10 @@ let connect_definition
         | _ -> None )
     | _ -> None
   in
-  let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
+  let parse_annotation =
+    GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
+  in
+  let inferred_base = AnnotatedBases.inferred_generic_base definition ~parse_annotation in
   if not (SharedMemory.OrderBackedges.mem (IndexTracker.index primitive)) then
     SharedMemoryClassHierarchyHandler.set_backedges
       ~key:(IndexTracker.index primitive)
