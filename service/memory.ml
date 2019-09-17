@@ -363,7 +363,7 @@ module DependencyKey = struct
 
     val encode : t -> int
 
-    val decode : int -> t
+    val decode : int -> t option
 
     module Transaction : sig
       type t
@@ -437,7 +437,7 @@ module DependencyKey = struct
           encoded
 
 
-    let decode encoded = DecodeTable.find_unsafe encoded
+    let decode encoded = DecodeTable.get encoded
 
     module Transaction = struct
       type t = KeySet.t transaction_element list
@@ -470,8 +470,9 @@ module DependencyTracking = struct
     let get_dependents key =
       DependencyGraph.get (Dependency.make (Table.Value.prefix, key))
       |> DependencySet.fold ~init:DependencyKey.KeySet.empty ~f:(fun sofar encoded ->
-             let decoded = DependencyKey.decode encoded in
-             DependencyKey.KeySet.add decoded sofar)
+             match DependencyKey.decode encoded with
+             | Some decoded -> DependencyKey.KeySet.add decoded sofar
+             | None -> sofar)
 
 
     let get_all_dependents keys =

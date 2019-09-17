@@ -145,7 +145,7 @@ module DependencyKey : sig
 
     val encode : t -> int
 
-    val decode : int -> t
+    val decode : int -> t option
 
     module Transaction : sig
       type t
