@@ -119,7 +119,7 @@ let recheck
               ~scheduler
               ~update_result:class_hierarchy_update_result
               environment
-              re_environment_build_sources;
+              invalidated_environment_qualifiers;
             if debug then
               Analysis.Environment.check_class_hierarchy_integrity environment
           in
@@ -195,7 +195,7 @@ let recheck
             ~scheduler
             ~update_result:class_hierarchy_update_result
             environment
-            re_environment_build_sources
+            invalidated_environment_qualifiers
         in
         Log.log
           ~section:`Server

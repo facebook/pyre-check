@@ -514,10 +514,12 @@ let test_register_globals context =
       expected
       actual
   in
-  let source =
-    parse
-      ~handle:"qualifier.py"
-      {|
+  let environment =
+    populate
+      ~context
+      [
+        ( "qualifier.py",
+          {|
         with_join = 1 or 'asdf'
         with_resolve = with_join
         annotated: int = 1
@@ -536,9 +538,10 @@ let test_register_globals context =
         class Foo:
           attribute: int = 1
       |}
-    |> Preprocessing.preprocess
+        );
+      ]
   in
-  Environment.register_values environment resolution source;
+  Environment.register_values environment resolution (Reference.create "qualifier");
   assert_global "qualifier.undefined" None;
   assert_global "qualifier.with_join" (Some (Type.union [Type.integer; Type.string]));
   assert_global "qualifier.with_resolve" (Some Type.Top);
@@ -550,30 +553,34 @@ let test_register_globals context =
   assert_global "qualifier.identifier.access" None;
   assert_global "qualifier.identifier().access" None;
   assert_global "Foo.attribute" None;
-  let source =
-    parse
-      ~handle:"test.py"
-      {|
+  let environment =
+    populate
+      ~context
+      [
+        ( "test.py",
+          {|
         class Class: ...
         alias = Class
 
         GLOBAL: Class = ...
         GLOBAL2: alias = ...
       |}
-    |> Preprocessing.preprocess
+        );
+      ]
   in
-  Environment.register_values environment resolution source;
+  Environment.register_values environment resolution (Reference.create "test");
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
-  assert_global "test.GLOBAL2" (Some (Type.Primitive "test.alias"));
-  let source =
-    parse ~handle:"tuples.py" {|
+  assert_global "test.GLOBAL2" (Some (Type.Primitive "test.Class"));
+  let environment =
+    populate
+      ~context
+      ["tuples.py", {|
         def f():
           return 7, 8
         y, z = f()
-      |}
-    |> Preprocessing.preprocess
+      |}]
   in
-  Environment.register_values environment resolution source;
+  Environment.register_values environment resolution (Reference.create "tuples");
   assert_global "tuples.y" (Some Type.Top);
   assert_global "tuples.z" (Some Type.Top);
   ()
@@ -1696,13 +1703,13 @@ let test_update_and_compute_dependencies context =
       ~expected_state_after_update
       ~expected_dependencies
     =
-    let repopulate source ~update_result =
+    let repopulate { Source.source_path = { SourcePath.qualifier; _ }; _ } ~update_result =
       Service.Environment.populate
         ~configuration:(ScratchProject.configuration_of project)
         ~scheduler:(Test.mock_scheduler ())
         ~update_result
         environment
-        [source]
+        [qualifier]
     in
     let assert_state (primitive, expected) =
       class_metadata untracked_global_resolution primitive

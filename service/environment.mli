@@ -11,5 +11,5 @@ val populate
   configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
   update_result:ClassHierarchyEnvironment.UpdateResult.t ->
-  Source.t list ->
+  Reference.t list ->
   unit

@@ -12,29 +12,25 @@ let populate
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
     ~update_result
-    sources
+    qualifiers
   =
   let resolution = Environment.resolution environment () in
-  let populate () =
-    let update_result =
-      ClassHierarchyEnvironment.UpdateResult.upstream update_result
-      |> AliasEnvironment.UpdateResult.upstream
-    in
-    let all_annotations =
-      Set.to_list (UnannotatedGlobalEnvironment.UpdateResult.current_classes update_result)
-    in
-    if debug then
-      (* Validate integrity of the type order built so far before moving forward. Further
-         transformations might be incorrect or not terminate otherwise. *)
-      Environment.check_class_hierarchy_integrity environment;
-    List.iter all_annotations ~f:(Environment.register_class_metadata environment)
+  if debug then
+    (* Validate integrity of the type order built so far before moving forward. Further
+       transformations might be incorrect or not terminate otherwise. *)
+    Environment.check_class_hierarchy_integrity environment;
+  let register_class_metadata () =
+    ClassHierarchyEnvironment.UpdateResult.upstream update_result
+    |> AliasEnvironment.UpdateResult.upstream
+    |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
+    |> Set.iter ~f:(Environment.register_class_metadata environment)
   in
-  Environment.transaction environment ~f:populate ();
+  Environment.transaction environment ~f:register_class_metadata ();
   let register_undecorated_functions sources =
     let register = Environment.register_undecorated_functions environment resolution in
     List.iter sources ~f:register
   in
-  Scheduler.iter scheduler ~configuration ~f:register_undecorated_functions ~inputs:sources;
+  Scheduler.iter scheduler ~configuration ~f:register_undecorated_functions ~inputs:qualifiers;
   let register_values sources =
     Environment.transaction
       environment
@@ -46,7 +42,7 @@ let populate
     scheduler
     ~configuration
     ~f:(fun sources -> List.iter sources ~f:register_values)
-    ~inputs:sources;
+    ~inputs:qualifiers;
 
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
   Annotated.Class.AttributeCache.clear ()

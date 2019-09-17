@@ -51,7 +51,7 @@ let populate ~configuration environment sources ~update_result =
     ~scheduler:(Test.mock_scheduler ())
     ~update_result
     environment
-    sources
+    qualifiers
 
 
 let environment

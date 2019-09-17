@@ -265,7 +265,7 @@ let add_special_globals environment =
     ~global:(annotation Type.bool)
 
 
-let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
+let register_undecorated_functions environment (resolution : GlobalResolution.t) qualifier =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
@@ -300,164 +300,165 @@ let register_undecorated_functions _ (resolution : GlobalResolution.t) source =
       | _ -> ()
   end)
   in
-  Visit.visit () source
+  let ast_environment = ast_environment environment in
+  AstEnvironment.ReadOnly.get_source ast_environment qualifier |> Option.iter ~f:(Visit.visit ())
 
 
-let register_values
-    environment
-    (resolution : GlobalResolution.t)
-    ({ Source.statements; source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
-  let qualified_reference reference =
-    let reference =
-      let builtins = Reference.create "builtins" in
-      if Reference.is_strict_prefix ~prefix:builtins reference then
-        Reference.drop_prefix ~prefix:builtins reference
-      else
-        reference
-    in
-    Reference.sanitize_qualified reference
-  in
-  let module CollectCallables = Visit.MakeStatementVisitor (struct
-    type t = Type.Callable.t Node.t list Reference.Map.t
-
-    let visit_children = function
-      | { Node.value = Statement.Define _; _ } ->
-          (* inner functions are not globals *)
-          false
-      | _ -> true
-
-
-    let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } callables statement =
-      let collect_callable ~name callables callable =
-        SharedMemoryDependencyHandler.add_function_key ~qualifier name;
-
-        (* Register callable global. *)
-        let change callable = function
-          | None -> Some [callable]
-          | Some existing -> Some (existing @ [callable])
-        in
-        Map.change callables name ~f:(change callable)
+let register_values environment (resolution : GlobalResolution.t) qualifier =
+  let handle ({ Source.statements; source_path = { SourcePath.qualifier; _ }; _ } as source) =
+    let qualified_reference reference =
+      let reference =
+        let builtins = Reference.create "builtins" in
+        if Reference.is_strict_prefix ~prefix:builtins reference then
+          Reference.drop_prefix ~prefix:builtins reference
+        else
+          reference
       in
-      match statement with
-      | {
-       Node.location;
-       value = Statement.Define ({ Define.signature = { name; parent; _ }; _ } as define);
-      } ->
-          let parent =
-            if Define.is_class_method define then
-              parent
-              >>= fun reference -> Some (Type.Primitive (Reference.show reference)) >>| Type.meta
-            else
-              None
+      Reference.sanitize_qualified reference
+    in
+    let module CollectCallables = Visit.MakeStatementVisitor (struct
+      type t = Type.Callable.t Node.t list Reference.Map.t
+
+      let visit_children = function
+        | { Node.value = Statement.Define _; _ } ->
+            (* inner functions are not globals *)
+            false
+        | _ -> true
+
+
+      let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } callables statement =
+        let collect_callable ~name callables callable =
+          SharedMemoryDependencyHandler.add_function_key ~qualifier name;
+
+          (* Register callable global. *)
+          let change callable = function
+            | None -> Some [callable]
+            | Some existing -> Some (existing @ [callable])
           in
-          Annotated.Callable.apply_decorators ~resolution ~location define
-          |> (fun overload -> [Define.is_overloaded_method define, overload])
-          |> Annotated.Callable.create ~resolution ~parent ~name:(Reference.show name)
-          |> Node.create ~location
-          |> collect_callable ~name callables
-      | _ -> callables
-  end)
-  in
-  let register_callables ~key ~data =
-    assert (not (List.is_empty data));
-    let location = List.hd_exn data |> Node.location in
-    data
-    |> List.map ~f:Node.value
-    |> Type.Callable.from_overloads
-    >>| (fun callable -> Type.Callable callable)
-    >>| Annotation.create_immutable ~global:true
-    >>| Node.create ~location
-    >>| (fun global -> register_global environment ~qualifier ~reference:key ~global)
-    |> ignore
-  in
-  CollectCallables.visit Reference.Map.empty source |> Map.iteri ~f:register_callables;
-
-  (* Register meta annotations for classes. *)
-  let module Visit = Visit.MakeStatementVisitor (struct
-    type t = unit
-
-    let visit_children _ = true
-
-    let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } _ = function
-      | { Node.location; value = Statement.Class { Class.name; _ } } ->
-          (* Register meta annotation. *)
-          let primitive = Type.Primitive (Reference.show name) in
-          let global =
-            Annotation.create_immutable
-              ~global:true
-              ~original:(Some Type.Top)
-              (Type.meta primitive)
-            |> Node.create ~location
-          in
-          register_global environment ~qualifier ~reference:(qualified_reference name) ~global
-      | _ -> ()
-  end)
-  in
-  Visit.visit () source |> ignore;
-  let rec visit statement =
-    match statement with
-    | { Node.value = Statement.If { If.body; orelse; _ }; _ } ->
-        (* TODO(T28732125): Properly take an intersection here. *)
-        List.iter ~f:visit body;
-        List.iter ~f:visit orelse
-    | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
-        let explicit = Option.is_some annotation in
-        let literal_annotation = GlobalResolution.resolve_literal resolution value in
-        let annotation =
-          annotation
-          >>| Expression.delocalize
-          >>| Type.create
-                ~aliases:(AliasEnvironment.ReadOnly.get_alias (alias_environment environment))
-          >>= (fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation)
-          |> Option.value ~default:literal_annotation
+          Map.change callables name ~f:(change callable)
         in
-        let rec register_assign ~target ~annotation =
-          let register ~location reference annotation =
-            let reference = qualified_reference (Reference.combine qualifier reference) in
-            (* Don't register attributes or chained accesses as globals *)
-            if Reference.length (Reference.drop_prefix ~prefix:qualifier reference) = 1 then
-              let register_global global =
-                Node.create ~location global
-                |> fun global -> register_global environment ~qualifier ~reference ~global
-              in
-              let exists = Option.is_some (SharedMemory.Globals.get reference) in
-              if explicit then
-                Annotation.create_immutable ~global:true annotation |> register_global
-              else if not exists then
-                (* Treat literal globals as having been explicitly annotated. *)
-                let original =
-                  if Type.is_partially_typed annotation then Some Type.Top else None
-                in
-                Annotation.create_immutable ~global:true ~original annotation |> register_global
+        match statement with
+        | {
+         Node.location;
+         value = Statement.Define ({ Define.signature = { name; parent; _ }; _ } as define);
+        } ->
+            let parent =
+              if Define.is_class_method define then
+                parent
+                >>= fun reference -> Some (Type.Primitive (Reference.show reference)) >>| Type.meta
               else
-                ()
+                None
+            in
+            Annotated.Callable.apply_decorators ~resolution ~location define
+            |> (fun overload -> [Define.is_overloaded_method define, overload])
+            |> Annotated.Callable.create ~resolution ~parent ~name:(Reference.show name)
+            |> Node.create ~location
+            |> collect_callable ~name callables
+        | _ -> callables
+    end)
+    in
+    let register_callables ~key ~data =
+      assert (not (List.is_empty data));
+      let location = List.hd_exn data |> Node.location in
+      data
+      |> List.map ~f:Node.value
+      |> Type.Callable.from_overloads
+      >>| (fun callable -> Type.Callable callable)
+      >>| Annotation.create_immutable ~global:true
+      >>| Node.create ~location
+      >>| (fun global -> register_global environment ~qualifier ~reference:key ~global)
+      |> ignore
+    in
+    CollectCallables.visit Reference.Map.empty source |> Map.iteri ~f:register_callables;
+
+    (* Register meta annotations for classes. *)
+    let module Visit = Visit.MakeStatementVisitor (struct
+      type t = unit
+
+      let visit_children _ = true
+
+      let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } _ = function
+        | { Node.location; value = Statement.Class { Class.name; _ } } ->
+            (* Register meta annotation. *)
+            let primitive = Type.Primitive (Reference.show name) in
+            let global =
+              Annotation.create_immutable
+                ~global:true
+                ~original:(Some Type.Top)
+                (Type.meta primitive)
+              |> Node.create ~location
+            in
+            register_global environment ~qualifier ~reference:(qualified_reference name) ~global
+        | _ -> ()
+    end)
+    in
+    Visit.visit () source |> ignore;
+    let rec visit statement =
+      match statement with
+      | { Node.value = Statement.If { If.body; orelse; _ }; _ } ->
+          (* TODO(T28732125): Properly take an intersection here. *)
+          List.iter ~f:visit body;
+          List.iter ~f:visit orelse
+      | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
+          let explicit = Option.is_some annotation in
+          let literal_annotation = GlobalResolution.resolve_literal resolution value in
+          let annotation =
+            annotation
+            >>| Expression.delocalize
+            >>| Type.create
+                  ~aliases:(AliasEnvironment.ReadOnly.get_alias (alias_environment environment))
+            >>= (fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation)
+            |> Option.value ~default:literal_annotation
           in
-          match target.Node.value, annotation with
-          | Name name, _ when Expression.is_simple_name name ->
-              register
-                ~location:target.Node.location
-                (Expression.name_to_reference_exn name)
-                annotation
-          | Tuple elements, Type.Tuple (Type.Bounded (Concrete parameters))
-            when List.length elements = List.length parameters ->
-              List.map2_exn
-                ~f:(fun target annotation -> register_assign ~target ~annotation)
-                elements
-                parameters
-              |> ignore
-          | Tuple elements, Type.Tuple (Type.Unbounded parameter) ->
-              List.map ~f:(fun target -> register_assign ~target ~annotation:parameter) elements
-              |> ignore
-          | Tuple elements, _ ->
-              List.map ~f:(fun target -> register_assign ~target ~annotation:Type.Top) elements
-              |> ignore
-          | _ -> ()
-        in
-        register_assign ~target ~annotation
-    | _ -> ()
+          let rec register_assign ~target ~annotation =
+            let register ~location reference annotation =
+              let reference = qualified_reference (Reference.combine qualifier reference) in
+              (* Don't register attributes or chained accesses as globals *)
+              if Reference.length (Reference.drop_prefix ~prefix:qualifier reference) = 1 then
+                let register_global global =
+                  Node.create ~location global
+                  |> fun global -> register_global environment ~qualifier ~reference ~global
+                in
+                let exists = Option.is_some (SharedMemory.Globals.get reference) in
+                if explicit then
+                  Annotation.create_immutable ~global:true annotation |> register_global
+                else if not exists then
+                  (* Treat literal globals as having been explicitly annotated. *)
+                  let original =
+                    if Type.is_partially_typed annotation then Some Type.Top else None
+                  in
+                  Annotation.create_immutable ~global:true ~original annotation |> register_global
+                else
+                  ()
+            in
+            match target.Node.value, annotation with
+            | Name name, _ when Expression.is_simple_name name ->
+                register
+                  ~location:target.Node.location
+                  (Expression.name_to_reference_exn name)
+                  annotation
+            | Tuple elements, Type.Tuple (Type.Bounded (Concrete parameters))
+              when List.length elements = List.length parameters ->
+                List.map2_exn
+                  ~f:(fun target annotation -> register_assign ~target ~annotation)
+                  elements
+                  parameters
+                |> ignore
+            | Tuple elements, Type.Tuple (Type.Unbounded parameter) ->
+                List.map ~f:(fun target -> register_assign ~target ~annotation:parameter) elements
+                |> ignore
+            | Tuple elements, _ ->
+                List.map ~f:(fun target -> register_assign ~target ~annotation:Type.Top) elements
+                |> ignore
+            | _ -> ()
+          in
+          register_assign ~target ~annotation
+      | _ -> ()
+    in
+    List.iter ~f:visit statements
   in
-  List.iter ~f:visit statements
+  let ast_environment = ast_environment environment in
+  AstEnvironment.ReadOnly.get_source ast_environment qualifier |> Option.iter ~f:handle
 
 
 let is_module environment = AstEnvironment.ReadOnly.is_module (ast_environment environment)

@@ -182,7 +182,7 @@ let check
       |> AliasEnvironment.update alias_environment ~scheduler ~configuration
       |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
     in
-    populate ~configuration ~scheduler ~update_result environment sources;
+    populate ~configuration ~scheduler ~update_result environment qualifiers;
     Statistics.performance ~name:"full environment built" ~timer ();
     if Log.is_enabled `Dotty then (
       let type_order_file =

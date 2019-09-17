@@ -1505,7 +1505,7 @@ module ScratchProject = struct
         ~scheduler:(Scheduler.mock ())
         ~update_result
         environment
-        sources;
+        qualifiers;
       environment
     in
     sources, ast_environment, environment

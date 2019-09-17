@@ -65,12 +65,16 @@ let test_populate context =
     Environment.shared_memory_handler
       (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
+  let qualifiers =
+    List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
+        qualifier)
+  in
   Service.Environment.populate
     ~configuration
     ~scheduler:(Scheduler.mock ())
     ~update_result
     environment
-    sources;
+    qualifiers;
   let global_resolution = Analysis.Environment.resolution environment () in
   assert_equal
     (GlobalResolution.undecorated_signature global_resolution (Reference.create "a.foo"))
@@ -108,9 +112,7 @@ let test_populate context =
       ~configuration
       ~scheduler
       ~update_result
-      [
-        Option.value_exn (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a"));
-      ]
+      [Reference.create "a"]
   in
   assert_successors "a.C" ["a.D"; "object"]
 
