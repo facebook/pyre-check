@@ -11,7 +11,7 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import call, patch
 
-from .. import monitor, watchman_subscriber
+from .. import configuration_monitor, watchman_subscriber
 from ..commands import stop
 from ..commands.tests.command_test import mock_arguments, mock_configuration
 from ..filesystem import AnalysisDirectory
@@ -21,25 +21,31 @@ class MonitorTest(unittest.TestCase):
     @patch("os.fork")
     @patch("os.close")
     @patch("sys.exit")
-    @patch.object(monitor.Monitor, "_run")
+    @patch.object(configuration_monitor.ConfigurationMonitor, "_run")
     def test_daemonize(self, run, _exit, _close, fork) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory("/tmp")
         # Ensure that run() only gets called from the child.
         fork.return_value = 1
-        monitor.Monitor(arguments, configuration, analysis_directory).daemonize()
+        configuration_monitor.ConfigurationMonitor(
+            arguments, configuration, analysis_directory
+        ).daemonize()
         run.assert_not_called()
         fork.assert_has_calls([call()])
 
         fork.return_value = 0
-        monitor.Monitor(arguments, configuration, analysis_directory).daemonize()
+        configuration_monitor.ConfigurationMonitor(
+            arguments, configuration, analysis_directory
+        ).daemonize()
         fork.assert_has_calls([call(), call()])
         run.assert_has_calls([call()])
         _exit.assert_has_calls([call(0)])
 
         run.side_effect = OSError
-        monitor.Monitor(arguments, configuration, analysis_directory).daemonize()
+        configuration_monitor.ConfigurationMonitor(
+            arguments, configuration, analysis_directory
+        ).daemonize()
         _exit.assert_has_calls([call(0), call(1)])
 
     @patch("os.makedirs")
@@ -60,7 +66,7 @@ class MonitorTest(unittest.TestCase):
                 pywatchman_client.side_effect = Exception
                 with self.assertRaises(Exception):
                     with patch("builtins.open"):
-                        monitor.Monitor(
+                        configuration_monitor.ConfigurationMonitor(
                             arguments, configuration, analysis_directory
                         )._run()
         except ImportError:
@@ -71,7 +77,9 @@ class MonitorTest(unittest.TestCase):
         arguments.local_configuration = "/ROOT/a/b/c"
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory("/tmp")
-        monitor_instance = monitor.Monitor(arguments, configuration, analysis_directory)
+        monitor_instance = configuration_monitor.ConfigurationMonitor(
+            arguments, configuration, analysis_directory
+        )
 
         with patch.object(stop, "Stop") as stop_command:
             monitor_instance._handle_response(
@@ -92,5 +100,21 @@ class MonitorTest(unittest.TestCase):
                     ],
                     "root": "/ROOT",
                 }
+            )
+            stop_command.assert_not_called()
+
+        with patch.object(stop, "Stop") as stop_command:
+            monitor_instance._handle_response(
+                {"files": [".pyre_configuration"], "root": "/ROOT"}
+            )
+            stop_command.assert_called_once_with(
+                arguments, configuration, analysis_directory
+            )
+
+        # Changes to any other .pyre_configuration files within root directory
+        # should not trigger server stop.
+        with patch.object(stop, "Stop") as stop_command:
+            monitor_instance._handle_response(
+                {"files": ["a/b/.pyre_configuration"], "root": "/ROOT"}
             )
             stop_command.assert_not_called()

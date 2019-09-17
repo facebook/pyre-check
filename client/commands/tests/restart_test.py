@@ -8,15 +8,15 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ... import commands, monitor, project_files_monitor
+from ... import commands, configuration_monitor, project_files_monitor
 from ...commands import restart
 from .command_test import mock_arguments, mock_configuration
 
 
 class RestartTest(unittest.TestCase):
-    @patch("{}.Monitor".format(project_files_monitor.__name__))
+    @patch("{}.ProjectFilesMonitor".format(project_files_monitor.__name__))
     @patch.object(restart, "Stop")
-    @patch.object(monitor.Monitor, "daemonize")
+    @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
     def test_restart(
         self, _daemonize, commands_Stop, _daemonize_project_files_monitor
     ) -> None:

@@ -10,7 +10,7 @@ import logging
 import os
 from typing import List, Optional
 
-from .. import filesystem, monitor, project_files_monitor
+from .. import configuration_monitor, filesystem, project_files_monitor
 from .command import ExitCode, IncrementalStyle, typeshed_search_path
 from .reporting import Reporting
 
@@ -30,7 +30,9 @@ class Start(Reporting):
         self._incremental_style = arguments.incremental_style  # type: bool
         self._number_of_workers = configuration.number_of_workers  # type: int
         self._configuration_file_hash = configuration.file_hash  # type: Optional[str]
-        self._file_monitor = None  # type: Optional[project_files_monitor.Monitor]
+        self._file_monitor = (
+            None
+        )  # type: Optional[project_files_monitor.ProjectFilesMonitor]
         if not arguments.no_saved_state:
             # Saved state.
             self._save_initial_state_to = (
@@ -58,12 +60,10 @@ class Start(Reporting):
             # a message when the lock is being waited on.
             try:
                 with filesystem.acquire_lock(".pyre/client.lock", blocking):
-                    if self._arguments.local_configuration:
-                        monitor.Monitor(
-                            self._arguments,
-                            self._configuration,
-                            self._analysis_directory,
-                        ).daemonize()
+                    configuration_monitor.ConfigurationMonitor(
+                        self._arguments, self._configuration, self._analysis_directory
+                    ).daemonize()
+
                     # This unsafe call is OK due to the client lock always
                     # being acquired before starting a server - no server can
                     # spawn in the interim which would cause a race.
@@ -90,7 +90,7 @@ class Start(Reporting):
 
                     if self._use_watchman:
                         try:
-                            self._file_monitor = project_files_monitor.Monitor(
+                            self._file_monitor = project_files_monitor.ProjectFilesMonitor(  # noqa
                                 self._arguments,
                                 self._configuration,
                                 self._analysis_directory,

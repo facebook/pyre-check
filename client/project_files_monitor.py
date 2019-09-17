@@ -52,7 +52,13 @@ class SocketConnection(object):
         self.close()
 
 
-class Monitor(WatchmanSubscriber):
+class ProjectFilesMonitor(WatchmanSubscriber):
+    """
+        Logs from this monitor are found in .pyre/file_monitor/file_monitor.log
+        One file monitor is spawned per pyre server. When a server is stopped,
+        the process of pyre file monitor associated to it is killed.
+    """
+
     NAME = "file_monitor"
 
     def __init__(
@@ -61,7 +67,7 @@ class Monitor(WatchmanSubscriber):
         configuration: Configuration,
         analysis_directory: AnalysisDirectory,
     ) -> None:
-        super(Monitor, self).__init__(analysis_directory)
+        super(ProjectFilesMonitor, self).__init__(analysis_directory)
         self._arguments = arguments
         self._configuration = configuration
         self._analysis_directory = analysis_directory
@@ -119,13 +125,13 @@ class Monitor(WatchmanSubscriber):
         return os.path.join(
             analysis_directory_root,
             ".pyre",
-            Monitor.NAME,
-            "{}.pid".format(Monitor.NAME),
+            ProjectFilesMonitor.NAME,
+            "{}.pid".format(ProjectFilesMonitor.NAME),
         )
 
     @staticmethod
     def is_alive(analysis_directory_root: str) -> bool:
-        pid_path = Monitor.pid_path(analysis_directory_root)
+        pid_path = ProjectFilesMonitor.pid_path(analysis_directory_root)
         try:
             with open(pid_path) as file:
                 pid = int(file.read())

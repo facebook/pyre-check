@@ -11,7 +11,7 @@ import os
 import unittest
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
-from ... import commands, monitor, project_files_monitor  # noqa
+from ... import commands, configuration_monitor, project_files_monitor  # noqa
 from ...commands import start  # noqa
 from ...filesystem import AnalysisDirectory, acquire_lock  # noqa
 from .command_test import mock_arguments, mock_configuration
@@ -24,7 +24,7 @@ class StartTest(unittest.TestCase):
     @patch("fcntl.lockf")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    @patch.object(monitor.Monitor, "daemonize")
+    @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
     def test_start(self, _daemonize, get_directories_to_analyze, lock_file) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
@@ -37,7 +37,9 @@ class StartTest(unittest.TestCase):
         # Check start without watchman.
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
-        ) as call_client, patch.object(project_files_monitor, "Monitor") as Monitor:
+        ) as call_client, patch.object(
+            project_files_monitor, "ProjectFilesMonitor"
+        ) as Monitor:
             arguments.no_watchman = True
             command = commands.Start(arguments, configuration, analysis_directory)
             self.assertEqual(
@@ -63,7 +65,9 @@ class StartTest(unittest.TestCase):
         # Check start with watchman.
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
-        ) as call_client, patch.object(project_files_monitor, "Monitor") as Monitor:
+        ) as call_client, patch.object(
+            project_files_monitor, "ProjectFilesMonitor"
+        ) as Monitor:
             arguments.no_watchman = False
             command = commands.Start(arguments, configuration, analysis_directory)
             self.assertEqual(
@@ -103,7 +107,9 @@ class StartTest(unittest.TestCase):
         # EAGAINs get caught.
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
-        ) as call_client, patch.object(project_files_monitor, "Monitor") as Monitor:
+        ) as call_client, patch.object(
+            project_files_monitor, "ProjectFilesMonitor"
+        ) as Monitor:
             arguments.no_watchman = True
             command = commands.Start(arguments, configuration, analysis_directory)
             self.assertEqual(
@@ -134,7 +140,9 @@ class StartTest(unittest.TestCase):
         # Check that the command errors on OS errors other than EAGAIN.
         with patch("builtins.open", mock_open()), patch.object(
             commands.Command, "_call_client"
-        ) as call_client, patch.object(project_files_monitor, "Monitor") as Monitor:
+        ) as call_client, patch.object(
+            project_files_monitor, "ProjectFilesMonitor"
+        ) as Monitor:
             arguments.no_watchman = True
             command = commands.Start(arguments, configuration, analysis_directory)
             self.assertEqual(
@@ -168,7 +176,7 @@ class StartTest(unittest.TestCase):
         ) as call_client, patch.object(
             shared_analysis_directory, "prepare"
         ) as prepare, patch.object(
-            project_files_monitor, "Monitor"
+            project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments = mock_arguments(no_watchman=True)
             configuration = mock_configuration(version_hash="hash")

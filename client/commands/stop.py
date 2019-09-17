@@ -10,7 +10,7 @@ import os
 import time
 from typing import List
 
-from ..project_files_monitor import Monitor
+from ..project_files_monitor import ProjectFilesMonitor
 from .command import ClientException, Command, State
 from .kill import Kill
 
@@ -74,7 +74,7 @@ class Stop(Command):
                 LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
 
         try:
-            pid_path = Monitor.pid_path(self._analysis_directory.get_root())
+            pid_path = ProjectFilesMonitor.pid_path(self._analysis_directory.get_root())
             with open(pid_path) as file:
                 pid = int(file.read())
                 os.kill(pid, 2)  # sigint
