@@ -103,27 +103,10 @@ let run_analysis
         ~scheduler:(Some scheduler)
         ~configuration
         ~build_legacy_dependency_graph:true
-      |> fun { module_tracker; environment; ast_environment; _ } ->
+      |> fun { module_tracker; environment; _ } ->
       (* In order to get an accurate call graph and type information, we need to ensure that we
          schedule a type check for external files as well. *)
       let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in
-      let external_sources =
-        let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-        let is_external qualifier =
-          Analysis.AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
-          >>| (fun { Ast.SourcePath.is_external; _ } -> is_external)
-          |> Option.value ~default:false
-        in
-        List.filter qualifiers ~f:is_external
-      in
-      Log.info "Analyzing %d external sources..." (List.length external_sources);
-      Service.Check.analyze_sources
-        ~filter_external_sources:false
-        ~scheduler
-        ~configuration
-        ~environment
-        external_sources
-      |> ignore;
       let errors =
         Service.StaticAnalysis.analyze
           ~scheduler
