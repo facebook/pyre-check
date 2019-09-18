@@ -2,40 +2,18 @@
 
 import json
 import unittest
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import List, Optional
 
-from .environment import CommandOutput, Environment
-from .runner import InconsistentOutput, PyreError, compare_server_to_full
-from .specification import Specification
-
-
-@dataclass
-class CommandInput:
-    working_directory: Path
-    command: str
-
-
-MockExecuteCallable = Callable[[CommandInput], CommandOutput]
-
-
-class TestEnvironment(Environment):
-    _command_history: List[CommandInput]
-    _mock_execute: MockExecuteCallable
-
-    def __init__(self, mock_execute: MockExecuteCallable) -> None:
-        self._command_history = []
-        self._mock_execute = mock_execute
-
-    @property
-    def command_history(self) -> List[CommandInput]:
-        return self._command_history
-
-    def run(self, working_directory: Path, command: str) -> CommandOutput:
-        command_input = CommandInput(working_directory, command)
-        self._command_history.append(command_input)
-        return self._mock_execute(command_input)
+from ..runner import InconsistentOutput, PyreError, compare_server_to_full
+from ..specification import Specification
+from .test_environment import (
+    CommandInput,
+    CommandOutput,
+    MockExecuteCallable,
+    TestEnvironment,
+)
 
 
 class RunnerTest(unittest.TestCase):

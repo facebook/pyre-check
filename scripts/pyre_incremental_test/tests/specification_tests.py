@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 
-from .specification import (
+from ..specification import (
     BaseRepositoryState,
     InvalidSpecificationException,
     RepositoryState,

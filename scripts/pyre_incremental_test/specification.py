@@ -21,6 +21,10 @@ class RepositoryState(ABC):
     def get_working_directory(self) -> Path:
         raise NotImplementedError
 
+    @abstractmethod
+    def to_json(self) -> Dict[str, Any]:
+        raise NotImplementedError
+
     @staticmethod
     def from_json(input_json: Dict[str, Any]) -> "RepositoryState":
         try:
@@ -66,6 +70,13 @@ class BaseRepositoryState(RepositoryState):
     def __repr__(self) -> str:
         return f"BaseRepositoryState({self._repository}, {self._commit_hash})"
 
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "kind": "base",
+            "repository": str(self._repository),
+            "commit_hash": str(self._commit_hash),
+        }
+
     def prepare(self, environment: Environment) -> None:
         environment.checked_run(
             working_directory=self._repository, command=f"hg update {self._commit_hash}"
@@ -86,6 +97,18 @@ class Specification:
     pyre_start_options: str
     pyre_incremental_pyre_options: str
     pyre_incremental_options: str
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "old_state": self.old_state.to_json(),
+            "new_state": self.new_state.to_json(),
+            "pyre_check_pyre_options": self.pyre_check_pyre_options,
+            "pyre_check_options": self.pyre_check_options,
+            "pyre_start_pyre_options": self.pyre_start_pyre_options,
+            "pyre_start_options": self.pyre_start_options,
+            "pyre_incremental_pyre_options": self.pyre_incremental_pyre_options,
+            "pyre_incremental_options": self.pyre_incremental_options,
+        }
 
     @staticmethod
     def from_json(input_json: Dict[str, Any]) -> "Specification":
