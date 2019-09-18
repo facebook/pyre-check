@@ -216,34 +216,23 @@ let add_special_globals environment =
 
 
 let register_undecorated_functions environment (resolution : GlobalResolution.t) qualifier =
-  let module Visit = Visit.MakeStatementVisitor (struct
-    type t = unit
-
-    let visit_children = function
-      | { Node.value = Statement.Define _; _ } ->
-          (* inner functions are not globals *)
-          false
-      | _ -> true
-
-
-    let statement _ _ { Node.value; _ } =
-      let register ~reference ~annotation =
-        SharedMemory.UndecoratedFunctions.add reference annotation
-      in
-      match value with
-      | Statement.Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
-          if Define.is_overloaded_method define then
-            ()
-          else
-            let parser = GlobalResolution.annotation_parser resolution in
-            register
-              ~reference:name
-              ~annotation:(Annotated.Callable.create_overload ~parser define)
-      | _ -> ()
-  end)
+  let register_statement { Node.value; _ } =
+    let register ~reference ~annotation =
+      SharedMemory.UndecoratedFunctions.add reference annotation
+    in
+    match value with
+    | Statement.Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
+        if Define.is_overloaded_method define then
+          ()
+        else
+          let parser = GlobalResolution.annotation_parser resolution in
+          register ~reference:name ~annotation:(Annotated.Callable.create_overload ~parser define)
+    | _ -> ()
   in
   let ast_environment = ast_environment environment in
-  AstEnvironment.ReadOnly.get_source ast_environment qualifier |> Option.iter ~f:(Visit.visit ())
+  AstEnvironment.ReadOnly.get_source ast_environment qualifier
+  >>| (fun { Source.statements; _ } -> statements)
+  |> Option.iter ~f:(List.iter ~f:register_statement)
 
 
 let register_values environment (resolution : GlobalResolution.t) qualifier =
