@@ -220,6 +220,33 @@ let test_check_isinstance context =
     ["Revealed type [-1]: Revealed type for `f.x` is `typing.Union[int, str]`."]
 
 
+let test_assert_contains_none context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      def foo(x: typing.List[typing.Optional[int]]) -> None:
+        assert None not in x
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Optional[int]]` \
+       (inferred: `typing.List[int]`).";
+    ];
+
+  assert_type_errors
+    {|
+      def bar(i: typing.Optional[int]) -> bool:
+        return i is not None
+
+      def foo(x: typing.List[typing.Optional[int]]) -> None:
+        x = [1, 2, 3, 4, None, 5]
+        y = [i for i in x if bar(i)]
+        assert None not in y
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.List[int]`."]
+
+
 let () =
   "assert_is_not_none"
   >::: [
@@ -227,5 +254,6 @@ let () =
          "check_global_refinement" >:: test_check_global_refinement;
          "check_local_refinement" >:: test_check_local_refinement;
          "check_isinstance" >:: test_check_isinstance;
+         "check_assert_contains_none" >:: test_assert_contains_none;
        ]
   |> Test.run

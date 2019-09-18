@@ -4450,6 +4450,40 @@ module State (Context : Context) = struct
               | _ -> state
             else
               state
+        | ComparisonOperator
+            {
+              ComparisonOperator.left = { Node.value = Name (Name.Identifier "None"); _ };
+              operator = ComparisonOperator.NotIn;
+              right = { Node.value = Name name; _ };
+            }
+          when Expression.is_simple_name name -> (
+            let reference = Expression.name_to_reference_exn name in
+            match Resolution.get_local resolution ~reference with
+            | Some annotation -> (
+              match Annotation.annotation annotation with
+              | t when Type.is_none t ->
+                  Error.create
+                    ~location:(Node.location test)
+                    ~kind:
+                      (Error.ImpossibleAssertion
+                         {
+                           statement;
+                           expression = test;
+                           annotation = Type.list (Type.Optional Type.Bottom);
+                         })
+                    ~define:Context.define
+                  |> emit_raw_error ~state:{ state with bottom = true }
+              | Type.Parametric { name = "list"; parameters = Concrete [Type.Optional parameter] }
+                ->
+                  let resolution =
+                    Resolution.set_local
+                      resolution
+                      ~reference
+                      ~annotation:{ annotation with Annotation.annotation = Type.list parameter }
+                  in
+                  { state with resolution }
+              | _ -> state )
+            | _ -> state )
         | _ -> state )
     | Delete expression ->
         let resolution =
