@@ -470,6 +470,11 @@ def main() -> int:
         action="store_true",
         help="Print error message when file fails to annotate.",
     )
+    infer.add_argument(
+        "--count-annotations",
+        nargs="*",
+        help="Count the existing annotations present in a given file.",
+    )
     infer.set_defaults(command=commands.Infer)
 
     arguments = parser.parse_args()
