@@ -459,10 +459,10 @@ let create_attribute
         in
         let apply_decorators define =
           ( Define.is_overloaded_method define,
-            Callable.apply_decorators ~resolution ~location define )
+            ResolvedCallable.apply_decorators ~resolution ~location define )
         in
         List.map defines ~f:apply_decorators
-        |> Callable.create ~resolution ~parent ~name:(Reference.show name)
+        |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)
         |> fun callable -> Some (Type.Callable callable)
     | _ -> annotation
   in

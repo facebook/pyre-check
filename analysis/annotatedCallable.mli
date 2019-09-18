@@ -8,23 +8,22 @@ open Statement
 
 val is_generator : Define.t -> bool
 
-val return_annotation : define:Define.t -> resolution:GlobalResolution.t -> Type.t
+type annotation_parser = {
+  parse_annotation: Expression.expression Node.t -> Type.t;
+  parse_as_concatenation:
+    Expression.t ->
+    (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
+    option;
+  parse_as_parameter_specification_instance_annotation:
+    variable_parameter_annotation:Expression.t ->
+    keywords_parameter_annotation:Expression.t ->
+    Type.Variable.Variadic.Parameters.t option;
+}
+
+val return_annotation : define:Define.t -> parser:annotation_parser -> Type.t
 
 val create_overload
   :  ?location:Location.t ->
-  resolution:GlobalResolution.t ->
-  Define.t ->
-  Type.t Type.Callable.overload
-
-val create
-  :  resolution:GlobalResolution.t ->
-  parent:Type.t option ->
-  name:Identifier.t ->
-  (bool * Type.t Type.Callable.overload) list ->
-  Type.Callable.t
-
-val apply_decorators
-  :  ?location:Location.t ->
-  resolution:GlobalResolution.t ->
+  parser:annotation_parser ->
   Define.t ->
   Type.t Type.Callable.overload

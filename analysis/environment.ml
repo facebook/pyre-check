@@ -235,9 +235,10 @@ let register_undecorated_functions environment (resolution : GlobalResolution.t)
           if Define.is_overloaded_method define then
             ()
           else
+            let parser = GlobalResolution.annotation_parser resolution in
             register
               ~reference:name
-              ~annotation:(Annotated.Callable.create_overload ~resolution define)
+              ~annotation:(Annotated.Callable.create_overload ~parser define)
       | _ -> ()
   end)
   in
@@ -290,9 +291,9 @@ let register_values environment (resolution : GlobalResolution.t) qualifier =
               else
                 None
             in
-            Annotated.Callable.apply_decorators ~resolution ~location define
+            ResolvedCallable.apply_decorators ~resolution ~location define
             |> (fun overload -> [Define.is_overloaded_method define, overload])
-            |> Annotated.Callable.create ~resolution ~parent ~name:(Reference.show name)
+            |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)
             |> Node.create ~location
             |> collect_callable ~name callables
         | _ -> callables

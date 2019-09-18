@@ -206,3 +206,5 @@ val global : t -> Reference.t -> global option
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
 val attribute : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option
+
+val annotation_parser : t -> AnnotatedCallable.annotation_parser

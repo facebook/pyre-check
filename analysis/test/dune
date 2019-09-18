@@ -31,6 +31,7 @@
   preprocessingTest
   refinementTest
   resolutionTest
+  resolvedCallableTest
   typeCheckTest
   typeConstraintsTest
   typeOrderTest

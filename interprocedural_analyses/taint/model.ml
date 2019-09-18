@@ -795,8 +795,9 @@ let create ~resolution ?path ~configuration ~verify source =
                   predicate define
                   && Reference.equal define.Define.signature.Define.Signature.name name
                 then
+                  let parser = GlobalResolution.annotation_parser global_resolution in
                   define
-                  |> Annotated.Define.Callable.create_overload ~resolution:global_resolution
+                  |> Annotated.Define.Callable.create_overload ~parser
                   |> Type.Callable.create_from_implementation
                   |> Option.some
                 else

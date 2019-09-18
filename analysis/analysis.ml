@@ -44,6 +44,7 @@ module TypeOrder = TypeOrder
 module TypeConstraints = TypeConstraints
 module Inference = Inference
 module ResolutionSharedMemory = ResolutionSharedMemory
+module ResolvedCallable = ResolvedCallable
 module EnvironmentSharedMemory = EnvironmentSharedMemory
 module IndexTracker = IndexTracker
 module UnannotatedGlobalEnvironment = UnannotatedGlobalEnvironment

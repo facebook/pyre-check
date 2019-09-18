@@ -52,9 +52,8 @@ module State (Context : Context) = struct
   let pp format { resolution; errors; bottom; _ } =
     let global_resolution = Resolution.global_resolution resolution in
     let expected =
-      Annotated.Callable.return_annotation
-        ~define:(Node.value Context.define)
-        ~resolution:global_resolution
+      let parser = GlobalResolution.annotation_parser global_resolution in
+      Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~parser
     in
     let annotations =
       let annotation_to_string (name, annotation) =
@@ -292,9 +291,8 @@ module State (Context : Context) = struct
 
   let initial_backward ~forward:{ resolution; errors; _ } =
     let expected_return =
-      Annotated.Callable.return_annotation
-        ~define:(Node.value Context.define)
-        ~resolution:(Resolution.global_resolution resolution)
+      let parser = GlobalResolution.annotation_parser (Resolution.global_resolution resolution) in
+      Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~parser
       |> Annotation.create
     in
     let backward_initial_state =

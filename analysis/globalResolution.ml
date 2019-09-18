@@ -767,3 +767,11 @@ let global { global; _ } reference =
 let class_hierarchy { class_hierarchy; _ } = class_hierarchy
 
 let attribute ({ attribute; _ } as resolution) = attribute ~resolution
+
+let annotation_parser resolution =
+  {
+    AnnotatedCallable.parse_annotation = parse_annotation resolution;
+    parse_as_concatenation = parse_as_concatenation resolution;
+    parse_as_parameter_specification_instance_annotation =
+      parse_as_parameter_specification_instance_annotation resolution;
+  }

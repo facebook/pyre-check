@@ -117,9 +117,8 @@ module State (Context : Context) = struct
   let pp format { resolution; errors; nested_defines; bottom; _ } =
     let global_resolution = Resolution.global_resolution resolution in
     let expected =
-      Annotated.Callable.return_annotation
-        ~define:(Node.value Context.define)
-        ~resolution:global_resolution
+      let parser = GlobalResolution.annotation_parser global_resolution in
+      Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~parser
     in
     let nested_defines =
       let nested_define_to_string nested_define =
@@ -1045,7 +1044,8 @@ module State (Context : Context) = struct
       let add_missing_return_error ~state annotation =
         let return_annotation =
           let annotation =
-            Annotated.Callable.return_annotation ~define ~resolution:global_resolution
+            let parser = GlobalResolution.annotation_parser global_resolution in
+            Annotated.Callable.return_annotation ~define ~parser
           in
           if async then
             Type.coroutine_value annotation
@@ -3208,7 +3208,8 @@ module State (Context : Context) = struct
     let validate_return ~expression ~state ~actual ~is_implicit =
       let return_annotation =
         let annotation =
-          Annotated.Callable.return_annotation ~define ~resolution:global_resolution
+          let parser = GlobalResolution.annotation_parser global_resolution in
+          Annotated.Callable.return_annotation ~define ~parser
         in
         if async then
           Type.coroutine_value annotation
@@ -4576,7 +4577,8 @@ module State (Context : Context) = struct
     | YieldFrom _ -> state
     | Define define ->
         if Reference.is_local define.signature.name then
-          AnnotatedCallable.create_overload ~resolution:global_resolution ~location define
+          let parser = GlobalResolution.annotation_parser global_resolution in
+          AnnotatedCallable.create_overload ~parser ~location define
           |> Type.Callable.create_from_implementation
           |> Type.Variable.mark_all_variables_as_bound
                ~specific:(Resolution.all_type_variables_in_scope resolution)
@@ -4713,7 +4715,8 @@ module State (Context : Context) = struct
               ~define:(Define.create_class_toplevel ~parent:name ~statements:body)
         | Define define ->
             let variables =
-              AnnotatedCallable.create_overload ~resolution:global_resolution ~location define
+              let parser = GlobalResolution.annotation_parser global_resolution in
+              AnnotatedCallable.create_overload ~parser ~location define
               |> (fun { parameters; _ } ->
                    Type.Callable.create ~parameters ~annotation:Type.Top ())
               |> Type.Variable.all_free_variables
