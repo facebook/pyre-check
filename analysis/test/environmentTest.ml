@@ -86,77 +86,6 @@ let create_location path start_line start_column end_line end_column =
   { Location.path; start; stop }
 
 
-let test_register_class_metadata context =
-  let project =
-    ScratchProject.setup
-      ~context
-      ~include_helper_builtins:false
-      [
-        ( "test.py",
-          {|
-       from placeholder_stub import MadeUpClass
-       class A: pass
-       class B(A): pass
-       class C:
-         def __init__(self):
-           self.x = 3
-       class D(C):
-         def __init__(self):
-           self.y = 4
-         D.z = 5
-       class E(D, A): pass
-       class F(B, MadeUpClass, A): pass
-      |}
-        );
-      ]
-  in
-  let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let class_hierarchy_environment, _ =
-    update_environments
-      ~scheduler:(mock_scheduler ())
-      ~configuration:(ScratchProject.configuration_of project)
-      ~ast_environment_update_result
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
-      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-      ()
-  in
-  let environment =
-    Environment.shared_memory_handler
-      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
-  in
-  Environment.register_class_metadata environment "test.A";
-  Environment.register_class_metadata environment "test.B";
-  Environment.register_class_metadata environment "test.C";
-  Environment.register_class_metadata environment "test.D";
-  Environment.register_class_metadata environment "test.E";
-  Environment.register_class_metadata environment "test.F";
-  let assert_successors class_name expected =
-    let { ClassMetadataEnvironment.successors; _ } =
-      let global_resolution = Environment.resolution environment () in
-      Option.value_exn (GlobalResolution.class_metadata global_resolution (Primitive class_name))
-    in
-    assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
-      ~cmp:(List.equal Type.Primitive.equal)
-      expected
-      successors
-  in
-  assert_successors "test.C" ["object"];
-  assert_successors "test.D" ["test.C"; "object"];
-  assert_successors "test.B" ["test.A"; "object"];
-  assert_successors "test.E" ["test.D"; "test.C"; "test.A"; "object"];
-  let assert_extends_placeholder_stub_class class_name expected =
-    let { ClassMetadataEnvironment.extends_placeholder_stub_class; _ } =
-      let global_resolution = Environment.resolution environment () in
-      Option.value_exn (GlobalResolution.class_metadata global_resolution (Primitive class_name))
-    in
-    assert_equal expected extends_placeholder_stub_class
-  in
-  assert_extends_placeholder_stub_class "test.A" false;
-  assert_extends_placeholder_stub_class "test.F" true;
-  ()
-
-
 let test_register_aliases context =
   let register_all sources = populate ~context sources in
   let assert_resolved sources aliases =
@@ -610,27 +539,19 @@ let test_connect_type_order context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let class_hierarchy_environment =
-    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+  let class_metadata_environment, _ =
+    update_environments
+      ~ast_environment:(AstEnvironment.read_only ast_environment)
+      ~configuration:(ScratchProject.configuration_of project)
+      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
+      ~ast_environment_update_result
+      ()
   in
   let environment =
     Environment.shared_memory_handler
-      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
   let order = class_hierarchy environment in
-  update_environments
-    ~ast_environment:(AstEnvironment.read_only ast_environment)
-    ~configuration:(ScratchProject.configuration_of project)
-    ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-    ~ast_environment_update_result
-    ()
-  |> ignore;
   let assert_successors annotation successors =
     assert_equal
       ~printer:(List.to_string ~f:Type.Primitive.show)
@@ -1491,27 +1412,17 @@ let test_connect_annotations_to_top context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
-  let update_result =
+  let class_metadata_environment, update_result =
     update_environments
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.of_list [Reference.create ""; Reference.create "test"])
       ~ast_environment_update_result
       ()
-    |> snd
-  in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let class_hierarchy_environment =
-    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
   in
   let environment =
     Environment.shared_memory_handler
-      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
   Environment.purge environment [Reference.create "test"] ~update_result;
   let order = class_hierarchy environment in
@@ -1539,27 +1450,17 @@ let test_deduplicate context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
-  let update_result =
+  let class_metadata_environment, update_result =
     update_environments
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
       ~ast_environment_update_result
       ()
-    |> snd
-  in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let class_hierarchy_environment =
-    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
   in
   let environment =
     Environment.shared_memory_handler
-      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
   Environment.purge environment [Reference.create "test"] ~update_result;
   let (module Handler) = class_hierarchy environment in
@@ -1613,27 +1514,17 @@ let test_remove_extra_edges_to_object context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let unannotated_global_environment =
-    UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
-  let update_result =
+  let class_metadata_environment, update_result =
     update_environments
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
       ~ast_environment_update_result
       ()
-    |> snd
-  in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let class_hierarchy_environment =
-    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
   in
   let environment =
     Environment.shared_memory_handler
-      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
   Environment.purge environment [] ~update_result;
   let (module Handler) = class_hierarchy environment in
@@ -1664,14 +1555,11 @@ let test_update_and_compute_dependencies context =
     create_environments_and_project
       ~context
       ~additional_sources:
-        [
-          "source.py", {|
-      class Foo(): ...
-      |};
-          "other.py", {|
-      class Bar(): ...
-      |};
-        ]
+        ["source.py", {|
+          foo = 1
+      |}; "other.py", {|
+          bar = "A"
+      |}]
       ()
   in
   let dependency_A = Reference.create "A" in
@@ -1684,18 +1572,12 @@ let test_update_and_compute_dependencies context =
   let dependency_tracked_global_resolution_B =
     Environment.dependency_tracked_resolution environment ~dependency:dependency_B ()
   in
-  let class_metadata resolution annotation =
-    GlobalResolution.class_metadata resolution (Primitive annotation)
-  in
+  let global resolution name = GlobalResolution.global resolution (Reference.create name) in
   (* A read Foo *)
-  class_metadata dependency_tracked_global_resolution_A "source.Foo"
-  |> Option.is_some
-  |> assert_true;
+  global dependency_tracked_global_resolution_A "source.foo" |> Option.is_some |> assert_true;
 
   (* B read Bar *)
-  class_metadata dependency_tracked_global_resolution_B "other.Bar"
-  |> Option.is_some
-  |> assert_true;
+  global dependency_tracked_global_resolution_B "other.bar" |> Option.is_some |> assert_true;
 
   let assert_update
       ~repopulate_source_to
@@ -1712,9 +1594,7 @@ let test_update_and_compute_dependencies context =
         [qualifier]
     in
     let assert_state (primitive, expected) =
-      class_metadata untracked_global_resolution primitive
-      |> Option.is_some
-      |> assert_equal expected
+      global untracked_global_resolution primitive |> Option.is_some |> assert_equal expected
     in
     let add_file
         { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
@@ -1776,45 +1656,41 @@ let test_update_and_compute_dependencies context =
   (* Removes source without replacing it, triggers dependency *)
   assert_update
     ~repopulate_source_to:None
-    ~expected_state_in_update:["source.Foo", false]
-    ~expected_state_after_update:["source.Foo", false]
+    ~expected_state_in_update:["source.foo", false]
+    ~expected_state_after_update:["source.foo", false]
     ~expected_dependencies:[dependency_A];
 
   (* Re-adds source, triggers dependency *)
   assert_update
-    ~repopulate_source_to:(Some "class Foo: ...")
-    ~expected_state_in_update:["source.Foo", false]
-    ~expected_state_after_update:["source.Foo", true]
+    ~repopulate_source_to:(Some "foo = 7")
+    ~expected_state_in_update:["source.foo", false]
+    ~expected_state_after_update:["source.foo", true]
     ~expected_dependencies:[dependency_A];
 
   (* Removes source, but replaces it exactly, does not trigger dependency *)
   assert_update
-    ~repopulate_source_to:(Some "class Foo: ...")
-    ~expected_state_in_update:["source.Foo", false]
-    ~expected_state_after_update:["source.Foo", true]
+    ~repopulate_source_to:(Some "foo = 7")
+    ~expected_state_in_update:["source.foo", false]
+    ~expected_state_after_update:["source.foo", true]
     ~expected_dependencies:[];
 
   (* Removes source, but replaced it with something new, triggers dependency *)
   assert_update
     ~repopulate_source_to:(Some {|
-      class Foo(str):
-        x: int
+      foo = "A"
       |})
-    ~expected_state_in_update:["source.Foo", false]
-    ~expected_state_after_update:["source.Foo", true]
+    ~expected_state_in_update:["source.foo", false]
+    ~expected_state_after_update:["source.foo", true]
     ~expected_dependencies:[dependency_A];
 
   (* Irrelevant update, does not trigger dependencies *)
   assert_update
-    ~repopulate_source_to:
-      (Some {|
-      class Foo(str):
-        x: int
-      class Irrelevant:
-        x: str
+    ~repopulate_source_to:(Some {|
+      foo = "A"
+      irrelevant = 45
       |})
-    ~expected_state_in_update:["source.Foo", false; "source.Irrelevant", false]
-    ~expected_state_after_update:["source.Foo", true; "source.Irrelevant", true]
+    ~expected_state_in_update:["source.foo", false; "source.irrelevant", false]
+    ~expected_state_after_update:["source.foo", true; "source.irrelevant", true]
     ~expected_dependencies:[];
   ()
 
@@ -1831,7 +1707,6 @@ let () =
          "modules" >:: test_modules;
          "populate" >:: test_populate;
          "purge" >:: test_purge;
-         "register_class_metadata" >:: test_register_class_metadata;
          "register_aliases" >:: test_register_aliases;
          "register_globals" >:: test_register_globals;
          "register_implicit_submodules" >:: test_register_implicit_submodules;

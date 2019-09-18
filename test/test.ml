@@ -1320,6 +1320,10 @@ let update_environments
   let class_hierarchy_environment =
     ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
   in
+  let class_metadata_environment =
+    ClassMetadataEnvironment.create
+      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+  in
   let result =
     UnannotatedGlobalEnvironment.update
       unannotated_global_environment
@@ -1329,8 +1333,9 @@ let update_environments
       qualifiers
     |> AliasEnvironment.update alias_environment ~scheduler ~configuration
     |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
+    |> ClassMetadataEnvironment.update class_metadata_environment ~scheduler ~configuration
   in
-  class_hierarchy_environment, result
+  class_metadata_environment, result
 
 
 module ScratchProject = struct
@@ -1478,6 +1483,10 @@ module ScratchProject = struct
       let class_hierarchy_environment =
         ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
       in
+      let class_metadata_environment =
+        ClassMetadataEnvironment.create
+          (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
             qualifier)
@@ -1492,7 +1501,7 @@ module ScratchProject = struct
       in
       let environment =
         Environment.shared_memory_handler
-          (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+          (ClassMetadataEnvironment.read_only class_metadata_environment)
       in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->

@@ -33,21 +33,19 @@ val purge
   :  t ->
   ?debug:bool ->
   Reference.t list ->
-  update_result:ClassHierarchyEnvironment.UpdateResult.t ->
+  update_result:ClassMetadataEnvironment.UpdateResult.t ->
   unit
 
 val update_and_compute_dependencies
   :  t ->
   Reference.t list ->
   update:(unit -> 'a) ->
-  update_result:ClassHierarchyEnvironment.UpdateResult.t ->
+  update_result:ClassMetadataEnvironment.UpdateResult.t ->
   'a * SharedMemoryKeys.ReferenceDependencyKey.KeySet.t
-
-val register_class_metadata : t -> Identifier.t -> unit
 
 val transaction : t -> ?only_global_keys:bool -> f:(unit -> 'a) -> unit -> 'a
 
-val shared_memory_handler : ClassHierarchyEnvironment.ReadOnly.t -> t
+val shared_memory_handler : ClassMetadataEnvironment.ReadOnly.t -> t
 
 val shared_memory_hash_to_key_map : qualifiers:Ast.Reference.t list -> unit -> string String.Map.t
 

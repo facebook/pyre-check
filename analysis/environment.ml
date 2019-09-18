@@ -9,9 +9,14 @@ open Expression
 open Pyre
 open Statement
 
-type t = { class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t }
+type t = { class_metadata_environment: ClassMetadataEnvironment.ReadOnly.t }
 
-let class_hierarchy_environment { class_hierarchy_environment } = class_hierarchy_environment
+let class_metadata_environment { class_metadata_environment } = class_metadata_environment
+
+let class_hierarchy_environment environment =
+  class_metadata_environment environment
+  |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+
 
 let alias_environment environment =
   class_hierarchy_environment environment |> ClassHierarchyEnvironment.ReadOnly.alias_environment
@@ -39,18 +44,6 @@ module SharedMemory = struct
     let unmarshall value = Marshal.from_string value 0
   end
 
-  module ClassMetadataValue = struct
-    type t = ClassMetadataEnvironment.class_metadata
-
-    let prefix = Prefix.make ()
-
-    let description = "Class metadata"
-
-    let unmarshall value = Marshal.from_string value 0
-
-    let compare = ClassMetadataEnvironment.compare_class_metadata
-  end
-
   module GlobalValue = struct
     type t = GlobalResolution.global
 
@@ -75,11 +68,6 @@ module SharedMemory = struct
 
   (** Shared memory maps *)
 
-  module ClassMetadata =
-    Memory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.StringKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (ClassMetadataValue)
   module Globals =
     Memory.DependencyTrackedTableWithCache
       (SharedMemoryKeys.ReferenceKey)
@@ -159,7 +147,8 @@ let unannotated_global_environment environment =
   alias_environment environment |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-let untracked_class_hierarchy_handler ({ class_hierarchy_environment } as environment) =
+let untracked_class_hierarchy_handler environment =
+  let class_hierarchy_environment = class_hierarchy_environment environment in
   ( module struct
     let edges =
       ClassHierarchyEnvironment.ReadOnly.get_edges ?dependency:None class_hierarchy_environment
@@ -183,11 +172,10 @@ let ast_environment environment =
 
 
 let resolution_implementation ?dependency environment () =
-  let class_hierarchy_environment = class_hierarchy_environment environment in
+  let class_metadata_environment = class_metadata_environment environment in
   GlobalResolution.create
     ?dependency
-    ~class_hierarchy_environment
-    ~class_metadata:(SharedMemory.ClassMetadata.get ?dependency)
+    ~class_metadata_environment
     ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
     ~global:(SharedMemory.Globals.get ?dependency)
     (module Annotated.Class)
@@ -197,48 +185,6 @@ let resolution = resolution_implementation ?dependency:None
 
 let dependency_tracked_resolution environment ~dependency () =
   resolution_implementation ~dependency environment ()
-
-
-let register_class_metadata environment class_name =
-  let open SharedMemory in
-  let successors =
-    ClassHierarchy.successors (untracked_class_hierarchy_handler environment) class_name
-  in
-  let is_final =
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      (unannotated_global_environment environment)
-      class_name
-    >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
-    |> Option.value ~default:false
-  in
-  let in_test =
-    let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
-    let successor_classes =
-      List.filter_map
-        ~f:
-          (UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-             (unannotated_global_environment environment))
-        successors
-    in
-    List.exists ~f:is_unit_test successor_classes
-  in
-  let extends_placeholder_stub_class =
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-      (unannotated_global_environment environment)
-      class_name
-    >>| Annotated.Bases.extends_placeholder_stub_class
-          ~aliases:(AliasEnvironment.ReadOnly.get_alias (alias_environment environment))
-          ~from_empty_stub:(AstEnvironment.ReadOnly.from_empty_stub (ast_environment environment))
-    |> Option.value ~default:false
-  in
-  ClassMetadata.add
-    class_name
-    {
-      ClassMetadataEnvironment.is_test = in_test;
-      successors;
-      is_final;
-      extends_placeholder_stub_class;
-    }
 
 
 let register_global _ ?qualifier ~reference ~global =
@@ -474,7 +420,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
   else (
     FunctionKeys.LocalChanges.push_stack ();
     GlobalKeys.LocalChanges.push_stack ();
-    ClassMetadata.LocalChanges.push_stack ();
     Globals.LocalChanges.push_stack () );
   let result = f () in
   if only_global_keys then
@@ -482,14 +427,12 @@ let transaction _ ?(only_global_keys = false) ~f () =
   else (
     FunctionKeys.LocalChanges.commit_all ();
     GlobalKeys.LocalChanges.commit_all ();
-    ClassMetadata.LocalChanges.commit_all ();
     Globals.LocalChanges.commit_all () );
   if only_global_keys then
     GlobalKeys.LocalChanges.pop_stack ()
   else (
     FunctionKeys.LocalChanges.pop_stack ();
     GlobalKeys.LocalChanges.pop_stack ();
-    ClassMetadata.LocalChanges.pop_stack ();
     Globals.LocalChanges.pop_stack () );
   result
 
@@ -504,38 +447,20 @@ let check_class_hierarchy_integrity environment =
   ClassHierarchy.check_integrity (untracked_class_hierarchy_handler environment) ~indices
 
 
-let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_result =
-  let update_result =
-    ClassHierarchyEnvironment.UpdateResult.upstream update_result
-    |> AliasEnvironment.UpdateResult.upstream
-  in
-  let current_and_removed_classes =
-    UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
-  in
+let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_result:_ =
   let { SharedMemoryDependencyHandler.undecorated_signatures; globals } =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
   let open SharedMemory in
   (* Must disconnect backedges before deleting edges, since this relies on edges *)
-  let caml_current_and_removed_classes =
-    Type.Primitive.Set.to_list current_and_removed_classes |> ClassMetadata.KeySet.of_list
-  in
   Globals.remove_batch globals;
-  ClassMetadata.remove_batch caml_current_and_removed_classes;
   UndecoratedFunctions.remove_batch undecorated_signatures;
 
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
     check_class_hierarchy_integrity environment
 
 
-let update_and_compute_dependencies _ qualifiers ~update ~update_result =
-  let update_result =
-    ClassHierarchyEnvironment.UpdateResult.upstream update_result
-    |> AliasEnvironment.UpdateResult.upstream
-  in
-  let current_and_removed_classes =
-    UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes update_result
-  in
+let update_and_compute_dependencies _ qualifiers ~update ~update_result:_ =
   let old_dependent_table_keys =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
@@ -544,14 +469,10 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
   in
   let open SharedMemory in
   (* Backedges are not tracked *)
-  let caml_current_and_removed_classes =
-    Type.Primitive.Set.to_list current_and_removed_classes |> ClassMetadata.KeySet.of_list
-  in
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
 
   let update, mutation_triggers =
     SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
-    |> ClassMetadata.add_to_transaction ~keys:caml_current_and_removed_classes
     |> UndecoratedFunctions.add_to_transaction ~keys:undecorated_signatures
     |> Globals.add_to_transaction ~keys:globals
     |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
@@ -571,7 +492,7 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result =
   update, mutation_and_addition_triggers
 
 
-let shared_memory_handler class_hierarchy_environment = { class_hierarchy_environment }
+let shared_memory_handler class_metadata_environment = { class_metadata_environment }
 
 let shared_memory_hash_to_key_map ~qualifiers () =
   let extend_map map ~new_map =
@@ -595,28 +516,6 @@ let shared_memory_hash_to_key_map ~qualifiers () =
 let serialize_decoded decoded =
   let open SharedMemory in
   match decoded with
-  | ClassMetadata.Decoded (key, value) ->
-      let value =
-        match value with
-        | Some
-            {
-              ClassMetadataEnvironment.successors;
-              is_test;
-              is_final;
-              extends_placeholder_stub_class;
-            } ->
-            `Assoc
-              [
-                "successors", `String (List.to_string ~f:Type.Primitive.show successors);
-                "is_test", `Bool is_test;
-                "is_final", `Bool is_final;
-                "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class;
-              ]
-            |> Yojson.to_string
-            |> Option.some
-        | None -> None
-      in
-      Some (ClassMetadataValue.description, key, value)
   | Globals.Decoded (key, value) ->
       let value = value >>| Node.value >>| Annotation.sexp_of_t >>| Sexp.to_string in
       Some (GlobalValue.description, Reference.show key, value)
@@ -639,8 +538,6 @@ let serialize_decoded decoded =
 let decoded_equal first second =
   let open SharedMemory in
   match first, second with
-  | ClassMetadata.Decoded (_, first), ClassMetadata.Decoded (_, second) ->
-      Some (Option.equal ClassMetadataEnvironment.equal_class_metadata first second)
   | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
       Some (Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value))
   | UndecoratedFunctions.Decoded (_, first), UndecoratedFunctions.Decoded (_, second) ->

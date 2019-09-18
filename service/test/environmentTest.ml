@@ -17,6 +17,8 @@ let empty_environment () =
   |> AliasEnvironment.read_only
   |> ClassHierarchyEnvironment.create
   |> ClassHierarchyEnvironment.read_only
+  |> ClassMetadataEnvironment.create
+  |> ClassMetadataEnvironment.read_only
   |> Environment.shared_memory_handler
 
 
@@ -63,7 +65,7 @@ let test_populate context =
   in
   let environment =
     Environment.shared_memory_handler
-      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      (ClassMetadataEnvironment.read_only class_hierarchy_environment)
   in
   let qualifiers =
     List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
@@ -117,29 +119,4 @@ let test_populate context =
   assert_successors "a.C" ["a.D"; "object"]
 
 
-let test_purge context =
-  let _, ast_environment, environment =
-    ScratchProject.setup
-      ~context
-      ["x.py", {|
-            class D: pass
-            class C(D): pass
-          |}]
-    |> ScratchProject.build_environment
-  in
-  let global_resolution = Analysis.Environment.resolution environment () in
-  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "x.D"));
-  let _, update_result =
-    update_environments
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
-      ~scheduler:(mock_scheduler ())
-      ~configuration:(Configuration.Analysis.create ())
-      ~ast_environment_update_result:(AstEnvironment.UpdateResult.create_for_testing ())
-      ~qualifiers:(Reference.Set.singleton (Reference.create "x"))
-      ()
-  in
-  Environment.purge environment [Reference.create "x"] ~update_result;
-  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "x.D"))
-
-
-let () = "environment" >::: ["populate" >:: test_populate; "purge" >:: test_purge] |> Test.run
+let () = "environment" >::: ["populate" >:: test_populate] |> Test.run

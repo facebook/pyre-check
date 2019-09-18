@@ -10,6 +10,6 @@ val populate
   :  Environment.t ->
   configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  update_result:ClassHierarchyEnvironment.UpdateResult.t ->
+  update_result:ClassMetadataEnvironment.UpdateResult.t ->
   Reference.t list ->
   unit

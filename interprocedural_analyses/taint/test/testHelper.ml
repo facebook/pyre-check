@@ -65,7 +65,7 @@ let environment
     List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
         qualifier)
   in
-  let class_hierarchy_environment, update_result =
+  let class_metadata_environment, update_result =
     Test.update_environments
       ~ast_environment
       ~configuration
@@ -75,7 +75,7 @@ let environment
   in
   let environment =
     Environment.shared_memory_handler
-      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
   populate ~configuration ~update_result environment sources;
   environment

@@ -11,7 +11,7 @@ let populate
     environment
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
-    ~update_result
+    ~update_result:_
     qualifiers
   =
   let resolution = Environment.resolution environment () in
@@ -19,14 +19,6 @@ let populate
     (* Validate integrity of the type order built so far before moving forward. Further
        transformations might be incorrect or not terminate otherwise. *)
     Environment.check_class_hierarchy_integrity environment;
-  let register_class_metadata = List.iter ~f:(Environment.register_class_metadata environment) in
-  let current_classes =
-    ClassHierarchyEnvironment.UpdateResult.upstream update_result
-    |> AliasEnvironment.UpdateResult.upstream
-    |> UnannotatedGlobalEnvironment.UpdateResult.current_classes
-    |> Set.to_list
-  in
-  Scheduler.iter scheduler ~configuration ~f:register_class_metadata ~inputs:current_classes;
   let register_undecorated_functions sources =
     let register = Environment.register_undecorated_functions environment resolution in
     List.iter sources ~f:register

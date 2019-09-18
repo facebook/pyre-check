@@ -89,8 +89,7 @@ end
 
 let create
     ?dependency
-    ~class_hierarchy_environment
-    ~class_metadata
+    ~class_metadata_environment
     ~undecorated_signature
     ~global
     (module AnnotatedClass : AnnotatedClass)
@@ -106,6 +105,12 @@ let create
   in
   let class_hierarchy_environment_dependency =
     dependency >>| fun dependency -> ClassHierarchyEnvironment.TypeCheckSource dependency
+  in
+  let class_metadata_environment_dependency =
+    dependency >>| fun dependency -> ClassMetadataEnvironment.TypeCheckSource dependency
+  in
+  let class_hierarchy_environment =
+    ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
   in
   let alias_environment =
     ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
@@ -191,6 +196,11 @@ let create
 
       let contains key = class_definition key |> Option.is_some
     end : ClassHierarchy.Handler )
+  in
+  let class_metadata =
+    ClassMetadataEnvironment.ReadOnly.get_class_metadata
+      ?dependency:class_metadata_environment_dependency
+      class_metadata_environment
   in
   {
     dependency;

@@ -93,15 +93,26 @@ let recheck
         ~configuration
         unannotated_global_environment_update_result
     in
+    let class_hierarchy_environment =
+      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+    in
     let class_hierarchy_update_result =
-      let class_hierarchy_environment =
-        ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-      in
       ClassHierarchyEnvironment.update
         class_hierarchy_environment
         ~scheduler
         ~configuration
         alias_update_result
+    in
+    let class_metadata_update_result =
+      let class_metadata_environment =
+        ClassMetadataEnvironment.create
+          (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      in
+      ClassMetadataEnvironment.update
+        class_metadata_environment
+        ~scheduler
+        ~configuration
+        class_hierarchy_update_result
     in
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     match incremental_style with
@@ -111,7 +122,7 @@ let recheck
             Service.Environment.populate
               ~configuration
               ~scheduler
-              ~update_result:class_hierarchy_update_result
+              ~update_result:class_metadata_update_result
               environment
               invalidated_environment_qualifiers;
             if debug then
@@ -121,7 +132,7 @@ let recheck
             environment
             invalidated_environment_qualifiers
             ~update
-            ~update_result:class_hierarchy_update_result
+            ~update_result:class_metadata_update_result
         in
         let invalidated_type_checking_keys =
           let unannotated_global_environment_dependencies =
@@ -176,7 +187,7 @@ let recheck
             environment
             ~debug
             invalidated_environment_qualifiers
-            ~update_result:class_hierarchy_update_result;
+            ~update_result:class_metadata_update_result;
           Dependencies.purge legacy_dependency_tracker invalidated_environment_qualifiers;
           let re_environment_build_sources =
             let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
@@ -190,7 +201,7 @@ let recheck
           Service.Environment.populate
             ~configuration
             ~scheduler
-            ~update_result:class_hierarchy_update_result
+            ~update_result:class_metadata_update_result
             environment
             invalidated_environment_qualifiers
         in

@@ -218,9 +218,13 @@ let load
     Analysis.ClassHierarchyEnvironment.create
       (Analysis.AliasEnvironment.read_only alias_environment)
   in
+  let class_metadata_environment =
+    Analysis.ClassMetadataEnvironment.create
+      (Analysis.ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+  in
   let environment =
     Analysis.Environment.shared_memory_handler
-      (Analysis.ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+      (Analysis.ClassMetadataEnvironment.read_only class_metadata_environment)
   in
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then

@@ -168,9 +168,13 @@ let check
     let class_hierarchy_environment =
       ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
     in
+    let class_metadata_environment =
+      ClassMetadataEnvironment.create
+        (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+    in
     let environment =
       Environment.shared_memory_handler
-        (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+        (ClassMetadataEnvironment.read_only class_metadata_environment)
     in
     Environment.add_special_globals environment;
     Log.info "Building type environment...";
@@ -187,6 +191,7 @@ let check
         (Ast.Reference.Set.of_list qualifiers)
       |> AliasEnvironment.update alias_environment ~scheduler ~configuration
       |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
+      |> ClassMetadataEnvironment.update class_metadata_environment ~scheduler ~configuration
     in
     populate ~configuration ~scheduler ~update_result environment qualifiers;
     Statistics.performance ~name:"full environment built" ~timer ();

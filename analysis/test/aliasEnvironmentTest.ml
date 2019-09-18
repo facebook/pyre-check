@@ -179,7 +179,8 @@ let test_updates context =
     let read_only =
       update ~ast_environment_update_result ()
       |> fst
-      |> ClassHierarchyEnvironment.read_only
+      |> ClassMetadataEnvironment.read_only
+      |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
       |> ClassHierarchyEnvironment.ReadOnly.alias_environment
     in
     let execute_action (alias_name, dependency, expectation) =
@@ -227,6 +228,7 @@ let test_updates context =
     let update_result =
       update ~ast_environment_update_result ()
       |> snd
+      |> ClassMetadataEnvironment.UpdateResult.upstream
       |> ClassHierarchyEnvironment.UpdateResult.upstream
     in
     let printer set =
