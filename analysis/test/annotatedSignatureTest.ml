@@ -701,4 +701,4 @@ let test_select context =
   ()
 
 
-let () = "signature" >::: ["select" >:: test_select] |> Test.run
+let () = "signature" >::: ["select" >: test_case ~length:Long test_select] |> Test.run
