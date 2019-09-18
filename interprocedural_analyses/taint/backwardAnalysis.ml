@@ -125,7 +125,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       =
       let analyze_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~call_target ~arguments in
-        let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
         if not taint_model.is_obscure then
           let { TaintResult.backward; _ } = taint_model.model in
           let sink_argument_matches =
@@ -248,7 +247,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             let annotation =
               Resolution.resolve resolution { Node.value = call_expression; location }
             in
-            collapsed_call_taint
+            BackwardState.Tree.collapse call_taint
             |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
             |> BackwardTaint.transform
                  BackwardTaint.simple_feature_set
