@@ -1430,26 +1430,3 @@ let has_method ?transitive definition ~resolution ~name =
   |> AnnotatedAttribute.annotation
   |> Annotation.annotation
   |> Type.is_callable
-
-
-let inferred_callable_type definition ~resolution =
-  let explicit_callables =
-    let extract_callable { Method.define = { Define.signature = { name; _ }; _ } as define; _ } =
-      Option.some_if (Reference.is_suffix ~suffix:(Reference.create "__call__") name) define
-      >>| fun define ->
-      ( Reference.show name,
-        Define.is_overloaded_method define,
-        Callable.create_overload define ~resolution )
-    in
-    methods definition |> List.filter_map ~f:extract_callable
-  in
-  if List.is_empty explicit_callables then
-    None
-  else
-    let parent = annotation definition in
-    let name, _, _ = List.hd_exn explicit_callables in
-    let explicit_callables =
-      List.map explicit_callables ~f:(fun (_, is_overload, callable) -> is_overload, callable)
-    in
-    let callable = Callable.create ~resolution ~parent:(Some parent) ~name explicit_callables in
-    Some callable

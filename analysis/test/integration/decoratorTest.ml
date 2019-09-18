@@ -457,6 +457,8 @@ let test_check_user_decorators context =
 
 let test_check_callable_class_decorators context =
   let assert_type_errors = assert_type_errors ~context in
+  (* This should not work because that's a __call__ on the *instance* not the class. In principle
+     we could support metaclass __call__ methods, but we're not now *)
   assert_type_errors
     {|
       import typing
@@ -476,7 +478,8 @@ let test_check_callable_class_decorators context =
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
       "Revealed type [-1]: Revealed type for `test.am_i_async` is \
-       `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
+       `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
+       str]]`.";
     ];
 
   (* We don't support overloaded callable classes. *)

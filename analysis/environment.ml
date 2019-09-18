@@ -226,21 +226,12 @@ let register_undecorated_functions environment (resolution : GlobalResolution.t)
       | _ -> true
 
 
-    let statement _ _ { Node.value; location } =
+    let statement _ _ { Node.value; _ } =
       let register ~reference ~annotation =
         SharedMemory.UndecoratedFunctions.add reference annotation
       in
       match value with
-      | Statement.Class definition -> (
-          let annotation =
-            AnnotatedClass.create { Node.value = definition; location }
-            |> AnnotatedClass.inferred_callable_type ~resolution
-          in
-          match annotation with
-          | Some { Type.Callable.implementation; overloads = []; _ } ->
-              register ~reference:definition.Class.name ~annotation:implementation
-          | _ -> () )
-      | Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
+      | Statement.Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
           if Define.is_overloaded_method define then
             ()
           else

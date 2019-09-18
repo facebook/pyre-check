@@ -147,8 +147,6 @@ val has_method
   name:Identifier.t ->
   bool
 
-val inferred_callable_type : t -> resolution:GlobalResolution.t -> Type.Callable.t option
-
 module AttributeCache : sig
   val clear : unit -> unit
 end
