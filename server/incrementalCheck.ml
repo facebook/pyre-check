@@ -143,8 +143,9 @@ let recheck
             ClassHierarchyEnvironment.UpdateResult.triggered_dependencies
               class_hierarchy_update_result
             |> ClassHierarchyEnvironment.DependencyKey.KeySet.elements
-            |> List.filter_map ~f:(function ClassHierarchyEnvironment.TypeCheckSource source ->
-                   Some source)
+            |> List.filter_map ~f:(function
+                   | ClassHierarchyEnvironment.TypeCheckSource source -> Some source
+                   | _ -> None)
           in
           List.fold
             ( unannotated_global_environment_dependencies

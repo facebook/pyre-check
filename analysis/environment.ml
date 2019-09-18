@@ -40,7 +40,7 @@ module SharedMemory = struct
   end
 
   module ClassMetadataValue = struct
-    type t = GlobalResolution.class_metadata
+    type t = ClassMetadataEnvironment.class_metadata
 
     let prefix = Prefix.make ()
 
@@ -48,7 +48,7 @@ module SharedMemory = struct
 
     let unmarshall value = Marshal.from_string value 0
 
-    let compare = GlobalResolution.compare_class_metadata
+    let compare = ClassMetadataEnvironment.compare_class_metadata
   end
 
   module GlobalValue = struct
@@ -226,15 +226,19 @@ let register_class_metadata environment class_name =
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
       (unannotated_global_environment environment)
       class_name
-    >>| Annotated.Class.create
-    >>| Annotated.Class.extends_placeholder_stub_class
+    >>| Annotated.Bases.extends_placeholder_stub_class
           ~aliases:(AliasEnvironment.ReadOnly.get_alias (alias_environment environment))
           ~from_empty_stub:(AstEnvironment.ReadOnly.from_empty_stub (ast_environment environment))
     |> Option.value ~default:false
   in
   ClassMetadata.add
     class_name
-    { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+    {
+      ClassMetadataEnvironment.is_test = in_test;
+      successors;
+      is_final;
+      extends_placeholder_stub_class;
+    }
 
 
 let register_global _ ?qualifier ~reference ~global =
@@ -594,8 +598,13 @@ let serialize_decoded decoded =
   | ClassMetadata.Decoded (key, value) ->
       let value =
         match value with
-        | Some { GlobalResolution.successors; is_test; is_final; extends_placeholder_stub_class }
-          ->
+        | Some
+            {
+              ClassMetadataEnvironment.successors;
+              is_test;
+              is_final;
+              extends_placeholder_stub_class;
+            } ->
             `Assoc
               [
                 "successors", `String (List.to_string ~f:Type.Primitive.show successors);
@@ -631,7 +640,7 @@ let decoded_equal first second =
   let open SharedMemory in
   match first, second with
   | ClassMetadata.Decoded (_, first), ClassMetadata.Decoded (_, second) ->
-      Some (Option.equal GlobalResolution.equal_class_metadata first second)
+      Some (Option.equal ClassMetadataEnvironment.equal_class_metadata first second)
   | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
       Some (Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value))
   | UndecoratedFunctions.Decoded (_, first), UndecoratedFunctions.Decoded (_, second) ->

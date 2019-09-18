@@ -131,7 +131,7 @@ let test_register_class_metadata context =
   Environment.register_class_metadata environment "test.E";
   Environment.register_class_metadata environment "test.F";
   let assert_successors class_name expected =
-    let { GlobalResolution.successors; _ } =
+    let { ClassMetadataEnvironment.successors; _ } =
       let global_resolution = Environment.resolution environment () in
       Option.value_exn (GlobalResolution.class_metadata global_resolution (Primitive class_name))
     in
@@ -146,7 +146,7 @@ let test_register_class_metadata context =
   assert_successors "test.B" ["test.A"; "object"];
   assert_successors "test.E" ["test.D"; "test.C"; "test.A"; "object"];
   let assert_extends_placeholder_stub_class class_name expected =
-    let { GlobalResolution.extends_placeholder_stub_class; _ } =
+    let { ClassMetadataEnvironment.extends_placeholder_stub_class; _ } =
       let global_resolution = Environment.resolution environment () in
       Option.value_exn (GlobalResolution.class_metadata global_resolution (Primitive class_name))
     in

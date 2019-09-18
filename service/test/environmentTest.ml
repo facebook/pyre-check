@@ -91,7 +91,7 @@ let test_populate context =
        });
   let assert_successors name expected_successors =
     let metadata = Analysis.GlobalResolution.class_metadata global_resolution (Primitive name) in
-    let { GlobalResolution.successors; _ } = Option.value_exn metadata in
+    let { ClassMetadataEnvironment.successors; _ } = Option.value_exn metadata in
     assert_equal ~printer:(String.concat ~sep:", ") expected_successors successors
   in
   assert_successors "a.C" ["a.D"; "object"];

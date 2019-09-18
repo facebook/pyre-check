@@ -27,14 +27,6 @@ type type_parameters_mismatch = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-type class_metadata = {
-  successors: Type.Primitive.t list;
-  is_test: bool;
-  is_final: bool;
-  extends_placeholder_stub_class: bool;
-}
-[@@deriving eq, compare]
-
 type global = Annotation.t Node.t [@@deriving eq, show, compare]
 
 type t
@@ -81,7 +73,7 @@ end
 val create
   :  ?dependency:Reference.t ->
   class_hierarchy_environment:ClassHierarchyEnvironment.ReadOnly.t ->
-  class_metadata:(Type.Primitive.t -> class_metadata option) ->
+  class_metadata:(Type.Primitive.t -> ClassMetadataEnvironment.class_metadata option) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   global:(Reference.t -> global option) ->
   (module AnnotatedClass) ->
@@ -172,7 +164,7 @@ val aliases : t -> Type.Primitive.t -> Type.alias option
 
 val module_definition : t -> Reference.t -> Module.t option
 
-val class_metadata : t -> Type.t -> class_metadata option
+val class_metadata : t -> Type.t -> ClassMetadataEnvironment.class_metadata option
 
 val is_protocol : t -> Type.t -> bool
 

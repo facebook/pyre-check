@@ -14,6 +14,7 @@
   cfgTest
   classHierarchyTest
   classHierarchyEnvironmentTest
+  classMetadataEnvironmentTest
   coverageTest
   customAnalysisTest
   deobfuscationCheckTest

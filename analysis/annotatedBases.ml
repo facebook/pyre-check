@@ -46,3 +46,17 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~parse_annotati
           value = Type.parametric "typing.Generic" variables |> Type.expression;
         };
       ]
+
+
+let extends_placeholder_stub_class { Node.value = { Class.bases; _ }; _ } ~aliases ~from_empty_stub
+  =
+  let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
+    let value = Expression.delocalize value in
+    let parsed = Type.create ~aliases value in
+    match parsed with
+    | Type.Primitive primitive
+    | Parametric { name = primitive; _ } ->
+        Reference.create primitive |> fun reference -> from_empty_stub reference
+    | _ -> false
+  in
+  List.exists bases ~f:is_from_placeholder_stub

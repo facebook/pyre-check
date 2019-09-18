@@ -20,6 +20,7 @@ type dependency =
   | AliasRegister of Reference.t
   | TypeCheckSource of Reference.t
   | ClassConnect of Type.Primitive.t
+  | RegisterClassMetadata of Type.Primitive.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey : Memory.DependencyKey.S with type t = dependency

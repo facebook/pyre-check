@@ -17,3 +17,9 @@ val inferred_generic_base
   :  Statement.Class.t Node.t ->
   parse_annotation:(Expression.expression_t -> Type.t) ->
   Expression.Call.Argument.t list
+
+val extends_placeholder_stub_class
+  :  Statement.Class.t Node.t ->
+  aliases:(Type.Primitive.t -> Type.alias option) ->
+  from_empty_stub:(Reference.t -> bool) ->
+  bool

@@ -442,7 +442,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         let annotations =
           let successors =
             GlobalResolution.class_metadata (Resolution.global_resolution resolution) annotation
-            >>| (fun { GlobalResolution.successors; _ } -> successors)
+            >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
             |> Option.value ~default:[]
             |> List.map ~f:(fun name -> Type.Primitive name)
           in

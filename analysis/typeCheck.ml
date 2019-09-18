@@ -475,7 +475,7 @@ module State (Context : Context) = struct
         let check_bases errors =
           let open Annotated in
           let is_final errors { Expression.Call.Argument.name; value } =
-            let add_error { GlobalResolution.is_final; _ } =
+            let add_error { ClassMetadataEnvironment.is_final; _ } =
               if is_final then
                 let error =
                   Error.create
@@ -2381,7 +2381,7 @@ module State (Context : Context) = struct
           >>= GlobalResolution.class_metadata global_resolution
         in
         (* Resolve `super()` calls. *)
-        let superclass { GlobalResolution.successors; extends_placeholder_stub_class; _ } =
+        let superclass { ClassMetadataEnvironment.successors; extends_placeholder_stub_class; _ } =
           if extends_placeholder_stub_class then
             None
           else

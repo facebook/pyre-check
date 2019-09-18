@@ -21,6 +21,7 @@ module Cfg = Cfg
 module Check = Check
 module ClassHierarchy = ClassHierarchy
 module ClassHierarchyEnvironment = ClassHierarchyEnvironment
+module ClassMetadataEnvironment = ClassMetadataEnvironment
 module Coverage = Coverage
 module CustomAnalysis = CustomAnalysis
 module DeobfuscationCheck = DeobfuscationCheck

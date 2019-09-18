@@ -29,14 +29,6 @@ type type_parameters_mismatch = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-type class_metadata = {
-  successors: Type.Primitive.t list;
-  is_test: bool;
-  is_final: bool;
-  extends_placeholder_stub_class: bool;
-}
-[@@deriving eq, compare]
-
 type global = Annotation.t Node.t [@@deriving eq, show, compare]
 
 type t = {
@@ -46,7 +38,7 @@ type t = {
   aliases: Type.Primitive.t -> Type.alias option;
   module_definition: Reference.t -> Module.t option;
   class_definition: Type.Primitive.t -> Class.t Node.t option;
-  class_metadata: Type.Primitive.t -> class_metadata option;
+  class_metadata: Type.Primitive.t -> ClassMetadataEnvironment.class_metadata option;
   constructor: resolution:t -> Type.Primitive.t -> Type.t option;
   attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
   attribute: resolution:t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option;

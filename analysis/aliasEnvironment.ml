@@ -15,6 +15,7 @@ let create unannotated_global_environment = { unannotated_global_environment }
 type dependency =
   | TypeCheckSource of Reference.t
   | ClassConnect of Type.Primitive.t
+  | RegisterClassMetadata of Type.Primitive.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct
@@ -64,6 +65,8 @@ module ReadOnly = struct
                 let translate = function
                   | TypeCheckSource source -> AstEnvironment.TypeCheckSource source
                   | ClassConnect class_name -> AstEnvironment.ClassConnect class_name
+                  | RegisterClassMetadata class_name ->
+                      AstEnvironment.RegisterClassMetadata class_name
                 in
                 dependency >>| translate
               in
@@ -88,6 +91,8 @@ module ReadOnly = struct
         let translate = function
           | TypeCheckSource source -> UnannotatedGlobalEnvironment.TypeCheckSource source
           | ClassConnect class_name -> UnannotatedGlobalEnvironment.ClassConnect class_name
+          | RegisterClassMetadata class_name ->
+              UnannotatedGlobalEnvironment.RegisterClassMetadata class_name
         in
         dependency >>| translate
       in
