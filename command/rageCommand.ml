@@ -14,6 +14,27 @@ let get_watchman_watched_directories () =
   { RageResponse.RageResult.title = Some "Watchman watched directories"; data }
 
 
+let get_mercurial_base () =
+  let channel = Unix.open_process_in "hg id" in
+  let data = In_channel.input_all channel in
+  In_channel.close channel;
+  { RageResponse.RageResult.title = Some "Mercurial commit hash"; data }
+
+
+let get_mercurial_status () =
+  let channel = Unix.open_process_in "hg status" in
+  let data = In_channel.input_all channel in
+  In_channel.close channel;
+  { RageResponse.RageResult.title = Some "Mercurial status"; data }
+
+
+let get_mercurial_diff () =
+  let channel = Unix.open_process_in "hg diff" in
+  let data = In_channel.input_all channel in
+  In_channel.close channel;
+  { RageResponse.RageResult.title = Some "Mercurial diff"; data }
+
+
 let display_log { RageResponse.RageResult.title; data } =
   let name = Option.value_exn title in
   Out_channel.printf "\nDisplaying logs for %s:\n%s" name data
@@ -38,7 +59,11 @@ let run_rage local_root () =
     Configuration.Analysis.create ~local_root:(Path.create_absolute local_root) ()
   in
   let logs =
-    (get_watchman_watched_directories () :: get_pyre_locks ())
+    get_mercurial_base ()
+    :: get_mercurial_status ()
+    :: get_mercurial_diff ()
+    :: get_watchman_watched_directories ()
+    :: get_pyre_locks ()
     @ Service.Rage.get_logs configuration
   in
   List.iter ~f:display_log logs
