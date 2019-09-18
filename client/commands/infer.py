@@ -43,18 +43,7 @@ def split_imports(types_list) -> Set[Any]:
 def _relativize_access(access, path):
     if not access:
         return []
-    path = (
-        str(path)
-        .split(".", 1)[0]
-        .replace("/", ".")
-        .replace(".__init__", "")
-        .replace("distillery.", "")
-    )
-    split_path = path.split(".")
-    name = split_path[0]
-    if name not in access:
-        return [access]
-    access = name + (access.split(name))[1]
+    path = str(path).split(".", 1)[0].replace("/", ".").replace(".__init__", "")
     return access.replace(path, "", 1).strip(".").split(".")
 
 

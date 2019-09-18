@@ -46,12 +46,6 @@ class HelperTest(unittest.TestCase):
 
     def test__relativize_access(self) -> None:
         self.assertEqual(
-            _relativize_access(
-                "tools.pyre.client.commands.infer.Stub", "client/commands/infer.py"
-            ),
-            ["Stub"],
-        )
-        self.assertEqual(
             _relativize_access("function_name", "tools/pyre/client/infer.py"),
             ["function_name"],
         )
@@ -73,12 +67,6 @@ class HelperTest(unittest.TestCase):
                 "tools.pyre.client.function", "tools/pyre/client/__init__.py"
             ),
             ["function"],
-        )
-        self.assertEqual(
-            _relativize_access(
-                "path.example.ExampleName", "distillery/path/example.py"
-            ),
-            ["ExampleName"],
         )
 
 
