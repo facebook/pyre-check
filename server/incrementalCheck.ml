@@ -264,8 +264,9 @@ let recheck
       [
         "number of changed files", List.length paths;
         "number of module tracker updates", List.length module_updates;
-        "number of parser updates", Set.length invalidated_environment_qualifiers;
-        "number of environment builder updates", List.length recheck_modules;
+        "number of parser updates", List.length reparsed_sources;
+        "number of environment builder updates", Set.length invalidated_environment_qualifiers;
+        "number of rechecked modules", List.length recheck_modules;
         "number of re-checked functions", total_rechecked_functions;
       ]
     ();
