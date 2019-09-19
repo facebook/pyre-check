@@ -210,29 +210,23 @@ module State (Context : Context) = struct
     List.fold mismatches ~f:add_error ~init:errors, annotation
 
 
-  let add_untracked_annotation_errors ~resolution ~resolved ~location ~errors annotation =
-    let untracked_annotation_error annotation =
-      match resolved with
-      | Type.Top ->
-          Some
-            (Error.create
-               ~location
-               ~kind:(Error.UndefinedType (Primitive annotation))
-               ~define:Context.define)
-      | _ when not (String.equal annotation "...") ->
-          Some
-            (Error.create
-               ~location
-               ~kind:(Error.InvalidType (InvalidType (Primitive annotation)))
-               ~define:Context.define)
-      | _ -> None
+  let add_untracked_annotation_errors ~resolution ~location ~errors annotation =
+    let untracked_annotation_error class_name =
+      match class_name with
+      | "..." -> None
+      | _ -> (
+        match GlobalResolution.is_tracked resolution class_name with
+        | true -> None
+        | false ->
+            Some
+              (Error.create
+                 ~location
+                 ~kind:(Error.UndefinedType (Primitive class_name))
+                 ~define:Context.define) )
     in
-    let untracked =
-      List.filter (Type.elements annotation) ~f:(Fn.non (GlobalResolution.is_tracked resolution))
-    in
+    let untracked = List.filter_map (Type.elements annotation) ~f:untracked_annotation_error in
     let errors =
-      List.filter_map ~f:untracked_annotation_error untracked
-      |> List.fold ~init:errors ~f:(fun errors error -> ErrorMap.add ~errors error)
+      List.fold untracked ~init:errors ~f:(fun errors error -> ErrorMap.add ~errors error)
     in
     errors, List.is_empty untracked
 
@@ -243,7 +237,7 @@ module State (Context : Context) = struct
       ({ Node.location; _ } as expression)
     =
     let global_resolution = Resolution.global_resolution resolution in
-    let check_and_correct_annotation ~resolution ~location ~annotation ~resolved errors =
+    let check_and_correct_annotation ~resolution ~location ~annotation errors =
       let check_invalid_variables resolution variable =
         if not (Resolution.type_variable_exists resolution ~variable) then
           let origin =
@@ -279,7 +273,6 @@ module State (Context : Context) = struct
         let errors, no_untracked =
           add_untracked_annotation_errors
             ~resolution:global_resolution
-            ~resolved
             ~location
             ~errors
             annotation
@@ -320,9 +313,8 @@ module State (Context : Context) = struct
       else
         errors
     in
-    let resolved = Resolution.resolve resolution expression in
     let errors, annotation =
-      check_and_correct_annotation errors ~resolution ~location ~annotation ~resolved
+      check_and_correct_annotation errors ~resolution ~location ~annotation
     in
     let annotation =
       if bind_variables then Type.Variable.mark_all_variables_as_bound annotation else annotation
@@ -3369,7 +3361,6 @@ module State (Context : Context) = struct
               |> fun errors ->
               add_untracked_annotation_errors
                 ~resolution:global_resolution
-                ~resolved
                 ~location
                 ~errors
                 parsed

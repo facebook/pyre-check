@@ -16,8 +16,8 @@ let test_check_undefined_type context =
         pass
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
 
   (* Don't crash when returning a bad type. *)
@@ -26,29 +26,29 @@ let test_check_undefined_type context =
       def foo(a: gurbage) -> None:
         return a
     |}
-    ["Undefined type [11]: Type `gurbage` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `gurbage` is not defined as a type."];
   assert_default_type_errors
     {|
       def foo(a: gurbage) -> int:
         a = 1
         return a
     |}
-    ["Undefined type [11]: Type `gurbage` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `gurbage` is not defined as a type."];
   assert_default_type_errors
     {|
       def foo(x: Derp, y: Herp) -> None:
         pass
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
   assert_default_type_errors
     {|
       def foo(x: int) -> Herp:
         return x
     |}
-    ["Undefined type [11]: Type `Herp` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Herp` is not defined as a type."];
 
   (* TODO(T44482498): Fix our locations for types to also throw for Derp. *)
   assert_default_type_errors
@@ -57,36 +57,36 @@ let test_check_undefined_type context =
         pass
     |}
     [
-      "Undefined type [11]: Type `Herp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
   assert_default_type_errors
     {|
       def foo(x: Derp[int]) -> None:
         pass
     |}
-    ["Undefined type [11]: Type `Derp` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
   assert_default_type_errors
     {|
       def foo(x: Derp[int, str]) -> None:
         pass
     |}
-    ["Undefined type [11]: Type `Derp` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
   assert_default_type_errors
     {|
       def foo(x: typing.Optional[Derp[int]]) -> typing.List[Herp]:
         pass
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
   assert_default_type_errors
     {|
       def foo(x: Optional) -> None:
         pass
     |}
-    ["Undefined type [11]: Type `Optional` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Optional` is not defined as a type."];
 
   (* TODO(T44482498): We should error on both Optional and Any. *)
   assert_default_type_errors
@@ -94,20 +94,20 @@ let test_check_undefined_type context =
       def foo(x: Optional[Any]) -> None:
         pass
     |}
-    ["Undefined type [11]: Type `Optional` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Optional` is not defined as a type."];
   assert_default_type_errors
     {|
       def foo(x: Dict) -> None:
         pass
     |}
-    ["Undefined type [11]: Type `Dict` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Dict` is not defined as a type."];
   assert_default_type_errors
     {|
       def foo() -> None:
         x: undefined = 1
         return
     |}
-    ["Undefined type [11]: Type `undefined` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `undefined` is not defined as a type."];
   assert_default_type_errors
     {|
       def foo(x: Derp) -> None:
@@ -115,8 +115,8 @@ let test_check_undefined_type context =
         return
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `undefined` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `undefined` is not defined as a type.";
     ];
   assert_type_errors
     {|
@@ -139,18 +139,18 @@ let test_check_undefined_type context =
               return x
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Incompatible return type [7]: Expected `int` but got `None`.";
-      "Undefined type [11]: Type `Herp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
   assert_strict_type_errors
     {|
       def foo() -> typing.Optional["Herp"]:
         return None
     |}
-    ["Undefined type [11]: Type `Herp` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Herp` is not defined as a type."];
   assert_strict_type_errors
     {|
       class Foo:
@@ -162,7 +162,7 @@ let test_check_undefined_type context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `other` has no type specified.";
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
 
   (* Attributes *)
@@ -176,8 +176,8 @@ let test_check_undefined_type context =
           self.z: Herp = 1
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Herp` is not defined as a type.";
     ];
 
   (* Class bases *)
@@ -185,7 +185,7 @@ let test_check_undefined_type context =
     {|
       class Foo(Bar): ...
     |}
-    ["Undefined type [11]: Type `Bar` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Bar` is not defined as a type."];
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
@@ -194,7 +194,7 @@ let test_check_undefined_type context =
     [
       "Invalid type variable [34]: The current class isn't generic with respect to the type \
        variable `Variable[_T]`.";
-      "Undefined type [11]: Type `Generic` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Generic` is not defined as a type.";
     ];
   assert_type_errors
     {|
@@ -203,8 +203,8 @@ let test_check_undefined_type context =
       class Foo(AA, BB, CC, DD): ...
     |}
     [
-      "Undefined type [11]: Type `BB` is not defined.";
-      "Undefined type [11]: Type `DD` is not defined.";
+      "Undefined or invalid type [11]: Annotation `BB` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `DD` is not defined as a type.";
     ];
   assert_type_errors
     {|
@@ -213,9 +213,9 @@ let test_check_undefined_type context =
       class Foo(AA, BB, CC, DD): ...
     |}
     [
-      "Undefined type [11]: Type `BB` is not defined.";
-      "Undefined type [11]: Type `BB` is not defined.";
-      "Undefined type [11]: Type `DD` is not defined.";
+      "Undefined or invalid type [11]: Annotation `BB` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `BB` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `DD` is not defined as a type.";
     ];
 
   (* Globals *)
@@ -226,9 +226,9 @@ let test_check_undefined_type context =
       z: Derp
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
     ];
 
   (* Assigns *)
@@ -240,9 +240,9 @@ let test_check_undefined_type context =
         z: Derp
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
     ];
 
   (* cast, isinstance *)
@@ -252,7 +252,7 @@ let test_check_undefined_type context =
         x: int = 1
         typing.cast(Derp, x)
     |}
-    ["Undefined type [11]: Type `Derp` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."];
   assert_type_errors
     {|
       Derp = typing.Any
@@ -299,24 +299,24 @@ let test_check_invalid_type context =
       MyType: typing.Type[int] = int
       x: MyType = 1
     |}
-    ["Invalid type [31]: Expression `MyType` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `MyType` is not defined as a type."];
   assert_type_errors
     {|
       x: MyType = 1
     |}
-    ["Undefined type [11]: Type `MyType` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `MyType` is not defined as a type."];
   assert_type_errors
     {|
       MyType: int
       x: MyType = 1
     |}
-    ["Invalid type [31]: Expression `MyType` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `MyType` is not defined as a type."];
   assert_strict_type_errors
     {|
       MyType = 1
       x: MyType = 1
     |}
-    ["Invalid type [31]: Expression `MyType` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `MyType` is not defined as a type."];
 
   (* Type aliases to Any *)
   assert_type_errors
@@ -327,7 +327,7 @@ let test_check_invalid_type context =
     [
       "Missing global annotation [5]: Globally accessible variable `MyType` "
       ^ "must be specified as type other than `Any`.";
-      "Invalid type [31]: Expression `MyType` is not a valid type.";
+      "Undefined or invalid type [11]: Annotation `MyType` is not defined as a type.";
     ];
   assert_type_errors
     {|
@@ -362,13 +362,13 @@ let test_check_invalid_type context =
       def f(my_type: typing.Type[int]) -> None:
        x: my_type = ...
     |}
-    ["Invalid type [31]: Expression `my_type` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `my_type` is not defined as a type."];
   assert_type_errors
     {|
       def f(my_type: typing.Type[int]) -> None:
        y = typing.cast(my_type, "string")
     |}
-    ["Invalid type [31]: Expression `my_type` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `my_type` is not defined as a type."];
   assert_type_errors
     {|
       def f(my_type: typing.Type[int]) -> None:
@@ -488,7 +488,7 @@ let test_check_analysis_failure context =
         return x
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Incompatible variable type [9]: x is declared to have type `int` "
       ^ "but is used as type `unknown`.";
     ];
@@ -502,7 +502,7 @@ let test_check_analysis_failure context =
         test = foo( **x )
     |}
     [
-      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Derp` is not defined as a type.";
       "Invalid argument [32]: Keyword argument `x` has type `unknown` "
       ^ "but must be a mapping with string keys.";
     ]
@@ -1274,7 +1274,7 @@ let test_check_aliases context =
         x = int
         y: x = 1
     |}
-    ["Invalid type [31]: Expression `foo.x` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `foo.x` is not defined as a type."];
 
   assert_type_errors ~context {|
       def foo(type: int) -> None:
@@ -1299,14 +1299,14 @@ let test_check_aliases context =
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, UndefinedName]
     |}
-    ["Undefined type [11]: Type `UndefinedName` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `UndefinedName` is not defined as a type."];
   assert_type_errors
     ~context
     {|
       import typing
       MyAlias: typing.TypeAlias = typing.Union[int, "UndefinedName"]
     |}
-    ["Undefined type [11]: Type `UndefinedName` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `UndefinedName` is not defined as a type."];
 
   (* Aliases to invalid types *)
   assert_type_errors

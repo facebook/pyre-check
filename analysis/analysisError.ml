@@ -388,7 +388,7 @@ let name = function
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedImport _ -> "Undefined import"
   | UndefinedName _ -> "Undefined name"
-  | UndefinedType _ -> "Undefined type"
+  | UndefinedType _ -> "Undefined or invalid type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UnsafeCast _ -> "Unsafe cast"
   | UninitializedAttribute _ -> "Uninitialized attribute"
@@ -1643,7 +1643,8 @@ let messages ~concise ~signature location kind =
           pp_reference
           reference;
       ]
-  | UndefinedType annotation -> [Format.asprintf "Type `%a` is not defined." pp_type annotation]
+  | UndefinedType annotation ->
+      [Format.asprintf "Annotation `%a` is not defined as a type." pp_type annotation]
   | UnexpectedKeyword { name; _ } when concise ->
       [Format.asprintf "Unexpected keyword argument `%s`." (Identifier.sanitized name)]
   | UnexpectedKeyword { name; callee } ->

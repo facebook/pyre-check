@@ -87,7 +87,7 @@ let test_check_missing_parameter context =
       def foo(x: UnknownType) -> int:
         return 1
     |}
-    ["Undefined type [11]: Type `UnknownType` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `UnknownType` is not defined as a type."];
   assert_type_errors
     {|
       def foo(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> int:

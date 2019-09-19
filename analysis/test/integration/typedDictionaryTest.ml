@@ -747,7 +747,7 @@ let test_check_typed_dictionaries context =
       "Missing global annotation [5]: Globally accessible variable `NamelessTypedDict` "
       ^ "has no type specified.";
       "Missing argument [20]: Call `mypy_extensions.TypedDict` expects argument `fields`.";
-      "Undefined type [11]: Type `NamelessTypedDict` is not defined.";
+      "Undefined or invalid type [11]: Annotation `NamelessTypedDict` is not defined as a type.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` "
       ^ "but got `unknown`.";
     ];

@@ -991,7 +991,7 @@ let test_list_variadics context =
       reveal_type(x)
     |}
     [
-      "Undefined type [11]: Type `Ts` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Ts` is not defined as a type.";
       "Invalid type variable [34]: The type variable `Ts` isn't present in the function's \
        parameters.";
       "Incomplete type [37]: Type `typing.Tuple[test.Ts]` inferred for `x` is incomplete, add an \

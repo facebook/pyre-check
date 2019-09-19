@@ -65,7 +65,7 @@ let test_check_union context =
         pass
       foo(1)
     |}
-    ["Undefined type [11]: Type `Undefined` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Undefined` is not defined as a type."];
   assert_type_errors
     {|
       def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:

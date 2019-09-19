@@ -780,7 +780,7 @@ let test_check_constructors context =
         return x(7)
     |}
     [
-      "Undefined type [11]: Type `Clss` is not defined.";
+      "Undefined or invalid type [11]: Annotation `Clss` is not defined as a type.";
       "Incompatible return type [7]: Expected `Class` but got `unknown`.";
     ];
   assert_default_type_errors
@@ -802,7 +802,7 @@ let test_check_constructors context =
       def foo(x: typing.Type[Clss]) -> Class:
         return x(7)
     |}
-    ["Undefined type [11]: Type `Clss` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `Clss` is not defined as a type."];
   assert_type_errors
     {|
       class Class:

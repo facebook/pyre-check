@@ -343,7 +343,7 @@ let test_concise context =
       def foo() -> MyType:
         return
     |}
-    ["Invalid type [31]: Expression `MyType` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `MyType` is not defined as a type."];
 
   (* Argument Errors *)
   assert_type_errors
@@ -408,7 +408,7 @@ let test_concise context =
       def foo(x: X) -> None:
         return
     |}
-    ["Undefined type [11]: Type `X` is not defined."];
+    ["Undefined or invalid type [11]: Annotation `X` is not defined as a type."];
 
   (* Uninitialized Attribute *)
   assert_type_errors

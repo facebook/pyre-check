@@ -292,20 +292,23 @@ let test_check_annotation context =
       descriptions
       errors
   in
-  assert_check_annotation "" "x" ["Undefined type [11]: Type `x` is not defined."];
+  assert_check_annotation
+    ""
+    "x"
+    ["Undefined or invalid type [11]: Annotation `x` is not defined as a type."];
   assert_check_annotation
     "x: int = 1"
     "test.x"
-    ["Invalid type [31]: Expression `test.x` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `test.x` is not defined as a type."];
   assert_check_annotation
     "x: typing.Type[int] = int"
     "test.x"
-    ["Invalid type [31]: Expression `test.x` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `test.x` is not defined as a type."];
   assert_check_annotation "x = int" "test.x" [];
   assert_check_annotation
     "x: typing.Any"
     "test.x"
-    ["Invalid type [31]: Expression `test.x` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `test.x` is not defined as a type."];
   assert_check_annotation "x = typing.Any" "test.x" [];
   assert_check_annotation "x: typing.TypeAlias = typing.Any" "test.x" [];
   assert_check_annotation {|
@@ -318,7 +321,7 @@ let test_check_annotation context =
       x = Foo()
     |}
     "test.x"
-    ["Invalid type [31]: Expression `test.x` is not a valid type."];
+    ["Undefined or invalid type [11]: Annotation `test.x` is not defined as a type."];
   assert_check_annotation
     {|
       class Foo:
@@ -327,7 +330,7 @@ let test_check_annotation context =
       x = Foo[Undefined]
     |}
     "test.x"
-    ["Undefined type [11]: Type `test.x` is not defined."]
+    ["Undefined or invalid type [11]: Annotation `test.x` is not defined as a type."]
 
 
 type definer =
@@ -1105,7 +1108,8 @@ let test_forward_statement context =
     "x = [y]"
     ["x", Type.list Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
   assert_forward
-    ~errors:(`Specific ["Undefined type [11]: Type `Derp` is not defined."])
+    ~errors:
+      (`Specific ["Undefined or invalid type [11]: Annotation `Derp` is not defined as a type."])
     ~postcondition_immutables:["x", (false, Type.Any)]
     []
     "x: Derp"
