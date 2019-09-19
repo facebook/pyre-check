@@ -351,6 +351,7 @@ module State (Context : Context) = struct
             let unimplemented_errors =
               let uninitialized_attributes =
                 let add_uninitialized definition attribute_map =
+                  let implicit_attributes = AnnotatedClass.implicit_attributes definition in
                   let attributes =
                     Annotated.Class.attributes
                       ~include_generated_attributes:true
@@ -361,9 +362,7 @@ module State (Context : Context) = struct
                       ({ Node.value = { AnnotatedAttribute.name; initialized; _ }; _ } as attribute)
                     =
                     let implicitly_initialized name =
-                      Identifier.SerializableMap.mem
-                        name
-                        (AnnotatedClass.implicit_attributes definition)
+                      Identifier.SerializableMap.mem name implicit_attributes
                     in
                     (not initialized)
                     && (not (implicitly_initialized name))
