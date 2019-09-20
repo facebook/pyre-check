@@ -25,7 +25,7 @@ def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution]): ...
 
 def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution]): ...
 
-def subprocess.Popen.__init__(
+def subprocess.Popen.__new__(
   self,
   args: TaintSink[RemoteCodeExecution],
   bufsize,
