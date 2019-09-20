@@ -10,6 +10,7 @@ type dependency =
   | TypeCheckSource of Reference.t
   | ClassConnect of Type.Primitive.t
   | RegisterClassMetadata of Type.Primitive.t
+  | UndecoratedFunction of Reference.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey : Memory.DependencyKey.S with type t = dependency
@@ -29,6 +30,20 @@ module ReadOnly : sig
     ?allow_primitives_from_empty_stubs:bool ->
     Expression.t ->
     Type.t
+
+  val parse_as_concatenation
+    :  t ->
+    ?dependency:dependency ->
+    Expression.t ->
+    (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
+    option
+
+  val parse_as_parameter_specification_instance_annotation
+    :  t ->
+    ?dependency:dependency ->
+    variable_parameter_annotation:Expression.t ->
+    keywords_parameter_annotation:Expression.t ->
+    Type.Variable.Variadic.Parameters.t option
 end
 
 val create : UnannotatedGlobalEnvironment.ReadOnly.t -> t

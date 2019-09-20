@@ -14,6 +14,7 @@ type unannotated_global =
       value: Expression.t;
     }
   | Imported of Reference.t
+  | Define of Define.t
 [@@deriving compare, show]
 
 type dependency =
@@ -21,6 +22,7 @@ type dependency =
   | TypeCheckSource of Reference.t
   | ClassConnect of Type.Primitive.t
   | RegisterClassMetadata of Type.Primitive.t
+  | UndecoratedFunction of Reference.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey : Memory.DependencyKey.S with type t = dependency

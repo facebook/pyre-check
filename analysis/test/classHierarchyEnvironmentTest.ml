@@ -235,29 +235,44 @@ let test_updates context =
     in
     let _ = update ~ast_environment_update_result () in
     let read_only = ClassHierarchyEnvironment.read_only class_hierarchy_environment in
-    let execute_action (class_name, dependency, expectation) =
-      let printer v =
-        let show_target_readable { ClassHierarchy.Target.target; parameters } =
-          Printf.sprintf
-            "%s[%s]"
-            (IndexTracker.annotation target)
-            (Type.OrderedTypes.show parameters)
-        in
-        v >>| List.to_string ~f:show_target_readable |> Option.value ~default:"none"
-      in
-      let expectation =
-        expectation
-        >>| List.map ~f:(fun name ->
-                {
-                  ClassHierarchy.Target.target = IndexTracker.index name;
-                  parameters = Concrete [];
-                })
-      in
-      ClassHierarchyEnvironment.ReadOnly.get_edges
-        read_only
-        ~dependency
-        (IndexTracker.index class_name)
-      |> assert_equal ~printer expectation
+    let execute_action = function
+      | `Edges (class_name, dependency, expectation) ->
+          let printer v =
+            let show_target_readable { ClassHierarchy.Target.target; parameters } =
+              Printf.sprintf
+                "%s[%s]"
+                (IndexTracker.annotation target)
+                (Type.OrderedTypes.show parameters)
+            in
+            v >>| List.to_string ~f:show_target_readable |> Option.value ~default:"none"
+          in
+          let expectation =
+            expectation
+            >>| List.map ~f:(fun name ->
+                    {
+                      ClassHierarchy.Target.target = IndexTracker.index name;
+                      parameters = Concrete [];
+                    })
+          in
+          ClassHierarchyEnvironment.ReadOnly.get_edges
+            read_only
+            ~dependency
+            (IndexTracker.index class_name)
+          |> assert_equal ~printer expectation
+      | `Undecorated (function_name, dependency, expectation) ->
+          let parse expectation =
+            match Type.create (parse_single_expression expectation) ~aliases:(fun _ -> None) with
+            | Type.Callable { implementation; _ } -> implementation
+            | _ -> failwith (expectation ^ "not a callable")
+          in
+          let printer implementation =
+            implementation >>| Type.Callable.show_overload Type.pp |> Option.value ~default:"none"
+          in
+          ClassHierarchyEnvironment.ReadOnly.get_undecorated_function
+            read_only
+            ~dependency
+            (Reference.create function_name)
+          |> assert_equal ~printer (expectation >>| parse)
     in
     List.iter middle_actions ~f:execute_action;
     let delete_file
@@ -313,9 +328,9 @@ let test_updates context =
       class C:
         pass
     |}
-    ~middle_actions:["test.C", dependency, Some ["object"]]
+    ~middle_actions:[`Edges ("test.C", dependency, Some ["object"])]
     ~expected_triggers:[]
-    ~post_actions:["test.C", dependency, Some ["object"]]
+    ~post_actions:[`Edges ("test.C", dependency, Some ["object"])]
     ();
   assert_updates
     ~original_source:{|
@@ -324,9 +339,9 @@ let test_updates context =
     |}
     ~new_source:{|
     |}
-    ~middle_actions:["test.C", dependency, Some ["object"]]
+    ~middle_actions:[`Edges ("test.C", dependency, Some ["object"])]
     ~expected_triggers:[dependency]
-    ~post_actions:["test.C", dependency, None]
+    ~post_actions:[`Edges ("test.C", dependency, None)]
     ();
 
   (* Class definition changes trigger *)
@@ -341,9 +356,9 @@ let test_updates context =
       class C(D):
        pass
     |}
-    ~middle_actions:["test.C", dependency, Some ["object"]]
+    ~middle_actions:[`Edges ("test.C", dependency, Some ["object"])]
     ~expected_triggers:[dependency]
-    ~post_actions:["test.C", dependency, Some ["test.D"]]
+    ~post_actions:[`Edges ("test.C", dependency, Some ["test.D"])]
     ();
 
   (* Class attributes do not trigger *)
@@ -356,9 +371,9 @@ let test_updates context =
       class C:
        x: int = 9
     |}
-    ~middle_actions:["test.C", dependency, Some ["object"]]
+    ~middle_actions:[`Edges ("test.C", dependency, Some ["object"])]
     ~expected_triggers:[]
-    ~post_actions:["test.C", dependency, Some ["object"]]
+    ~post_actions:[`Edges ("test.C", dependency, Some ["object"])]
     ();
 
   (* Alias changes trigger *)
@@ -383,9 +398,44 @@ let test_updates context =
       class C(Alias):
        pass
     |}
-    ~middle_actions:["test.C", dependency, Some ["test.First"]]
+    ~middle_actions:[`Edges ("test.C", dependency, Some ["test.First"])]
     ~expected_triggers:[dependency]
-    ~post_actions:["test.C", dependency, Some ["test.Second"]]
+    ~post_actions:[`Edges ("test.C", dependency, Some ["test.Second"])]
+    ();
+
+  (* Undecorated functions *)
+  assert_updates
+    ~original_source:
+      {|
+      class First:
+        pass
+      class Second:
+        pass
+      Alias = First
+      def decorator(__x: Alias) -> Second:
+       pass
+    |}
+    ~new_source:
+      {|
+      class First:
+        pass
+      class Second:
+        pass
+      Alias = Second
+      def decorator(__x: Alias) -> Second:
+       pass
+    |}
+    ~middle_actions:
+      [
+        `Undecorated
+          ("test.decorator", dependency, Some "typing.Callable[[test.First], test.Second]");
+      ]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        `Undecorated
+          ("test.decorator", dependency, Some "typing.Callable[[test.Second], test.Second]");
+      ]
     ();
   ()
 

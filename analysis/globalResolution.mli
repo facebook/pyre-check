@@ -73,7 +73,6 @@ end
 val create
   :  ?dependency:Reference.t ->
   class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
-  undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   global:(Reference.t -> global option) ->
   (module AnnotatedClass) ->
   t

@@ -24,6 +24,12 @@ module ReadOnly : sig
 
   val get_backedges : t -> IndexTracker.t -> ClassHierarchy.Target.Set.Tree.t option
 
+  val get_undecorated_function
+    :  t ->
+    ?dependency:dependency ->
+    Reference.t ->
+    Type.t Type.Callable.overload option
+
   val alias_environment : t -> AliasEnvironment.ReadOnly.t
 end
 

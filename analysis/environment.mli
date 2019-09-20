@@ -21,8 +21,6 @@ val resolution : t -> unit -> GlobalResolution.t
 (* Currently experimental *)
 val dependency_tracked_resolution : t -> dependency:Reference.t -> unit -> GlobalResolution.t
 
-val register_undecorated_functions : t -> GlobalResolution.t -> Reference.t -> unit
-
 val register_values : t -> GlobalResolution.t -> Reference.t -> unit
 
 val is_module : t -> Reference.t -> bool

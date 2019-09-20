@@ -56,16 +56,6 @@ module SharedMemory = struct
     let compare = GlobalResolution.compare_global
   end
 
-  module UndecoratedFunctionValue = struct
-    type t = Type.t Type.Callable.overload [@@deriving compare]
-
-    let prefix = Prefix.make ()
-
-    let description = "Undecorated functions"
-
-    let unmarshall value = Marshal.from_string value 0
-  end
-
   (** Shared memory maps *)
 
   module Globals =
@@ -73,11 +63,6 @@ module SharedMemory = struct
       (SharedMemoryKeys.ReferenceKey)
       (SharedMemoryKeys.ReferenceDependencyKey)
       (GlobalValue)
-  module UndecoratedFunctions =
-    Memory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.ReferenceKey)
-      (SharedMemoryKeys.ReferenceDependencyKey)
-      (UndecoratedFunctionValue)
 
   module FunctionKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (FunctionKeyValue)
   (** Keys *)
@@ -112,10 +97,7 @@ module SharedMemoryDependencyHandler = struct
     GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list qualifiers)
 
 
-  type table_keys = {
-    undecorated_signatures: SharedMemory.UndecoratedFunctions.KeySet.t;
-    globals: SharedMemory.Globals.KeySet.t;
-  }
+  type table_keys = { globals: SharedMemory.Globals.KeySet.t }
 
   let get_all_dependent_table_keys qualifiers =
     let global_keys =
@@ -126,7 +108,6 @@ module SharedMemoryDependencyHandler = struct
     in
     let open SharedMemory in
     {
-      undecorated_signatures = UndecoratedFunctions.KeySet.of_list global_keys;
       (* We add a global name for each function definition as well. *)
       globals = Globals.KeySet.of_list (global_keys @ function_keys);
     }
@@ -134,13 +115,7 @@ module SharedMemoryDependencyHandler = struct
 
   let find_added_dependent_table_keys qualifiers ~old_keys =
     let new_keys = get_all_dependent_table_keys qualifiers in
-    {
-      undecorated_signatures =
-        UndecoratedFunctions.KeySet.diff
-          new_keys.undecorated_signatures
-          old_keys.undecorated_signatures;
-      globals = Globals.KeySet.diff new_keys.globals old_keys.globals;
-    }
+    { globals = Globals.KeySet.diff new_keys.globals old_keys.globals }
 end
 
 let unannotated_global_environment environment =
@@ -176,7 +151,6 @@ let resolution_implementation ?dependency environment () =
   GlobalResolution.create
     ?dependency
     ~class_metadata_environment
-    ~undecorated_signature:(SharedMemory.UndecoratedFunctions.get ?dependency)
     ~global:(SharedMemory.Globals.get ?dependency)
     (module Annotated.Class)
 
@@ -213,26 +187,6 @@ let add_special_globals environment =
     ?qualifier:None
     ~reference:(Reference.create "__debug__")
     ~global:(annotation Type.bool)
-
-
-let register_undecorated_functions environment (resolution : GlobalResolution.t) qualifier =
-  let register_statement { Node.value; _ } =
-    let register ~reference ~annotation =
-      SharedMemory.UndecoratedFunctions.add reference annotation
-    in
-    match value with
-    | Statement.Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
-        if Define.is_overloaded_method define then
-          ()
-        else
-          let parser = GlobalResolution.annotation_parser resolution in
-          register ~reference:name ~annotation:(Annotated.Callable.create_overload ~parser define)
-    | _ -> ()
-  in
-  let ast_environment = ast_environment environment in
-  AstEnvironment.ReadOnly.get_source ast_environment qualifier
-  >>| (fun { Source.statements; _ } -> statements)
-  |> Option.iter ~f:(List.iter ~f:register_statement)
 
 
 let register_values environment (resolution : GlobalResolution.t) qualifier =
@@ -429,13 +383,10 @@ let check_class_hierarchy_integrity environment =
 
 
 let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_result:_ =
-  let { SharedMemoryDependencyHandler.undecorated_signatures; globals } =
+  let { SharedMemoryDependencyHandler.globals } =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
-  let open SharedMemory in
-  (* Must disconnect backedges before deleting edges, since this relies on edges *)
-  Globals.remove_batch globals;
-  UndecoratedFunctions.remove_batch undecorated_signatures;
+  SharedMemory.Globals.remove_batch globals;
 
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
     check_class_hierarchy_integrity environment
@@ -445,29 +396,23 @@ let update_and_compute_dependencies _ qualifiers ~update ~update_result:_ =
   let old_dependent_table_keys =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
-  let { SharedMemoryDependencyHandler.undecorated_signatures; globals } =
-    old_dependent_table_keys
-  in
+  let { SharedMemoryDependencyHandler.globals } = old_dependent_table_keys in
   let open SharedMemory in
   (* Backedges are not tracked *)
   SharedMemoryDependencyHandler.clear_keys_batch qualifiers;
 
   let update, mutation_triggers =
     SharedMemoryKeys.ReferenceDependencyKey.Transaction.empty
-    |> UndecoratedFunctions.add_to_transaction ~keys:undecorated_signatures
     |> Globals.add_to_transaction ~keys:globals
     |> SharedMemoryKeys.ReferenceDependencyKey.Transaction.execute ~update
   in
-  let { SharedMemoryDependencyHandler.undecorated_signatures; globals } =
+  let { SharedMemoryDependencyHandler.globals } =
     SharedMemoryDependencyHandler.find_added_dependent_table_keys
       qualifiers
       ~old_keys:old_dependent_table_keys
   in
   let mutation_and_addition_triggers =
-    [
-      UndecoratedFunctions.get_all_dependents undecorated_signatures;
-      Globals.get_all_dependents globals;
-    ]
+    [Globals.get_all_dependents globals]
     |> List.fold ~init:mutation_triggers ~f:SharedMemoryKeys.ReferenceDependencyKey.KeySet.union
   in
   update, mutation_and_addition_triggers
@@ -489,7 +434,6 @@ let shared_memory_hash_to_key_map ~qualifiers () =
   let map =
     let keys = List.filter_map qualifiers ~f:GlobalKeys.get |> List.concat in
     extend_map map ~new_map:(Globals.compute_hashes_to_keys ~keys)
-    |> extend_map ~new_map:(UndecoratedFunctions.compute_hashes_to_keys ~keys)
   in
   map
 
@@ -500,11 +444,6 @@ let serialize_decoded decoded =
   | Globals.Decoded (key, value) ->
       let value = value >>| Node.value >>| Annotation.sexp_of_t >>| Sexp.to_string in
       Some (GlobalValue.description, Reference.show key, value)
-  | UndecoratedFunctions.Decoded (key, value) ->
-      Some
-        ( UndecoratedFunctionValue.description,
-          Reference.show key,
-          value >>| Type.Callable.show_overload Type.pp )
   | FunctionKeys.Decoded (key, value) ->
       Some
         ( FunctionKeyValue.description,
@@ -521,8 +460,6 @@ let decoded_equal first second =
   match first, second with
   | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
       Some (Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value))
-  | UndecoratedFunctions.Decoded (_, first), UndecoratedFunctions.Decoded (_, second) ->
-      Some (Option.equal (Type.Callable.equal_overload Type.equal) first second)
   | FunctionKeys.Decoded (_, first), FunctionKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal Reference.equal) first second)
   | GlobalKeys.Decoded (_, first), GlobalKeys.Decoded (_, second) ->

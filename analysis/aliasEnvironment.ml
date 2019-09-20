@@ -16,6 +16,7 @@ type dependency =
   | TypeCheckSource of Reference.t
   | ClassConnect of Type.Primitive.t
   | RegisterClassMetadata of Type.Primitive.t
+  | UndecoratedFunction of Reference.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct
@@ -67,6 +68,8 @@ module ReadOnly = struct
                   | ClassConnect class_name -> AstEnvironment.ClassConnect class_name
                   | RegisterClassMetadata class_name ->
                       AstEnvironment.RegisterClassMetadata class_name
+                  | UndecoratedFunction function_name ->
+                      AstEnvironment.UndecoratedFunction function_name
                 in
                 dependency >>| translate
               in
@@ -93,6 +96,8 @@ module ReadOnly = struct
           | ClassConnect class_name -> UnannotatedGlobalEnvironment.ClassConnect class_name
           | RegisterClassMetadata class_name ->
               UnannotatedGlobalEnvironment.RegisterClassMetadata class_name
+          | UndecoratedFunction function_name ->
+              UnannotatedGlobalEnvironment.UndecoratedFunction function_name
         in
         dependency >>| translate
       in
@@ -107,6 +112,27 @@ module ReadOnly = struct
       Type.Top
     else
       annotation
+
+
+  let parse_as_concatenation { get_alias; _ } ?dependency expression =
+    Expression.delocalize expression
+    |> Type.OrderedTypes.Concatenation.parse ~aliases:(get_alias ?dependency)
+
+
+  let parse_as_parameter_specification_instance_annotation
+      { get_alias; _ }
+      ?dependency
+      ~variable_parameter_annotation
+      ~keywords_parameter_annotation
+    =
+    let variable_parameter_annotation, keywords_parameter_annotation =
+      ( Expression.delocalize variable_parameter_annotation,
+        Expression.delocalize keywords_parameter_annotation )
+    in
+    Type.Variable.Variadic.Parameters.parse_instance_annotation
+      ~aliases:(get_alias ?dependency)
+      ~variable_parameter_annotation
+      ~keywords_parameter_annotation
 end
 
 module AliasValue = struct
@@ -378,6 +404,7 @@ let extract_alias { unannotated_global_environment } name ~dependency =
                 Expression.from_reference ~location:Location.Reference.any original_name
               in
               Some (TypeAlias { target = name; value }) )
+    | Define _ -> None
   in
   let unannotated_global_environment_dependency =
     dependency >>| fun dependency -> UnannotatedGlobalEnvironment.AliasRegister dependency

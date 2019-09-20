@@ -19,6 +19,7 @@ type unannotated_global =
       value: Expression.t;
     }
   | Imported of Reference.t
+  | Define of Define.t
 [@@deriving compare, show]
 
 type dependency =
@@ -26,6 +27,7 @@ type dependency =
   | TypeCheckSource of Reference.t
   | ClassConnect of Type.Primitive.t
   | RegisterClassMetadata of Type.Primitive.t
+  | UndecoratedFunction of Reference.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct
@@ -368,6 +370,8 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
           qualified_name, Imported original_name
         in
         List.rev_append (List.map ~f:import_to_global imports) globals
+    | Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
+        (name, Define define) :: globals
     | _ -> globals
   in
   let write (target, o) =

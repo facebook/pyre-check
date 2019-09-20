@@ -38,12 +38,16 @@ module ReadOnly = struct
   type t = {
     get_edges: ?dependency:dependency -> IndexTracker.t -> ClassHierarchy.Target.t list option;
     get_backedges: IndexTracker.t -> ClassHierarchy.Target.Set.Tree.t option;
+    get_undecorated_function:
+      ?dependency:dependency -> Reference.t -> Type.t Type.Callable.overload option;
     alias_environment: AliasEnvironment.ReadOnly.t;
   }
 
   let get_edges { get_edges; _ } = get_edges
 
   let get_backedges { get_backedges; _ } = get_backedges
+
+  let get_undecorated_function { get_undecorated_function; _ } = get_undecorated_function
 
   let alias_environment { alias_environment; _ } = alias_environment
 end
@@ -82,6 +86,20 @@ end
 module Edges =
   Memory.DependencyTrackedTableWithCache (IndexTracker.IndexKey) (DependencyKey) (EdgeValue)
 module Backedges = Memory.WithCache.Make (IndexTracker.IndexKey) (BackedgeValue)
+
+module UndecoratedFunctionValue = struct
+  type t = Type.t Type.Callable.overload [@@deriving compare]
+
+  let prefix = Prefix.make ()
+
+  let description = "Undecorated functions"
+
+  let unmarshall value = Marshal.from_string value 0
+end
+
+module UndecoratedFunctions =
+  Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
+    (UndecoratedFunctionValue)
 
 let edges = Edges.get ?dependency:None
 
@@ -210,6 +228,48 @@ let get_parents ({ alias_environment } as environment) ~track_dependencies name 
   >>| remove_extra_edges_to_object
 
 
+let register_define_as_undecorated_function
+    ({ alias_environment } as environment)
+    name
+    ~track_dependencies
+  =
+  let global =
+    UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global (* TODO *)
+      ?dependency:None
+      (unannotated_global_environment environment)
+      name
+  in
+  let handle = function
+    | UnannotatedGlobalEnvironment.Define define when not (Define.is_overloaded_method define) ->
+        let dependency =
+          Option.some_if track_dependencies (AliasEnvironment.UndecoratedFunction name)
+        in
+        let parse_annotation =
+          AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+            ?dependency
+            alias_environment
+        in
+        let parse_as_concatenation =
+          AliasEnvironment.ReadOnly.parse_as_concatenation ?dependency alias_environment
+        in
+        let parse_as_parameter_specification_instance_annotation =
+          AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+            ?dependency
+            alias_environment
+        in
+        let parser =
+          {
+            AnnotatedCallable.parse_annotation;
+            parse_as_concatenation;
+            parse_as_parameter_specification_instance_annotation;
+          }
+        in
+        UndecoratedFunctions.add name (AnnotatedCallable.create_overload ~parser define)
+    | _ -> ()
+  in
+  global >>| handle |> Option.value ~default:()
+
+
 let add_backedges class_name =
   let predecessor = IndexTracker.index class_name in
   let handle_targets targets =
@@ -229,7 +289,7 @@ let add_backedges class_name =
 
 
 let update environment ~scheduler ~configuration upstream_update =
-  let update ~names_to_update ~track_dependencies () =
+  let update_class_hierarchy ~class_names_to_update ~track_dependencies () =
     let connect environment names =
       let set_edges name =
         let targets = get_parents environment name ~track_dependencies in
@@ -241,71 +301,116 @@ let update environment ~scheduler ~configuration upstream_update =
       scheduler
       ~configuration
       ~f:(connect environment)
-      ~inputs:(Set.to_list names_to_update);
-    Set.iter names_to_update ~f:add_backedges
+      ~inputs:(Set.to_list class_names_to_update);
+    Set.iter class_names_to_update ~f:add_backedges
+  in
+  let update_undecorated_functions ~function_names_to_update ~track_dependencies () =
+    let register environment names =
+      List.iter names ~f:(register_define_as_undecorated_function environment ~track_dependencies)
+    in
+    Scheduler.iter
+      scheduler
+      ~configuration
+      ~f:(register environment)
+      ~inputs:(Set.to_list function_names_to_update)
   in
   match configuration with
   | { incremental_style = FineGrained; _ } ->
-      let dependencies =
+      let class_dependencies, function_dependencies =
         AliasEnvironment.UpdateResult.triggered_dependencies upstream_update
         |> AliasEnvironment.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | AliasEnvironment.ClassConnect name -> Some name
-               | _ -> None)
-        |> Type.Primitive.Set.of_list
+        |> List.partition3_map ~f:(function
+               | AliasEnvironment.ClassConnect name -> `Fst name
+               | AliasEnvironment.UndecoratedFunction name -> `Snd name
+               | _ -> `Trd None)
+        |> fun (classes, functions, _) ->
+        Type.Primitive.Set.of_list classes, Reference.Set.of_list functions
       in
-      let dependencies =
+      let class_dependencies, function_dependencies =
         AliasEnvironment.UpdateResult.upstream upstream_update
         |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
         |> UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | UnannotatedGlobalEnvironment.ClassConnect name -> Some name
-               | _ -> None)
-        |> Type.Primitive.Set.of_list
-        |> Type.Primitive.Set.union dependencies
+        |> List.partition3_map ~f:(function
+               | UnannotatedGlobalEnvironment.ClassConnect name -> `Fst name
+               | UnannotatedGlobalEnvironment.UndecoratedFunction name -> `Snd name
+               | _ -> `Trd None)
+        |> (fun (classes, functions, _) ->
+             Type.Primitive.Set.of_list classes, Reference.Set.of_list functions)
+        |> fun (classes, functions) ->
+        ( Type.Primitive.Set.union class_dependencies classes,
+          Reference.Set.union function_dependencies functions )
       in
-      let dependencies =
+      let class_dependencies, function_dependencies =
         AliasEnvironment.UpdateResult.upstream upstream_update
         |> UnannotatedGlobalEnvironment.UpdateResult.upstream
         |> AstEnvironment.UpdateResult.triggered_dependencies
         |> AstEnvironment.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | AstEnvironment.ClassConnect name -> Some name
-               | _ -> None)
-        |> Type.Primitive.Set.of_list
-        |> Type.Primitive.Set.union dependencies
+        |> List.partition3_map ~f:(function
+               | AstEnvironment.ClassConnect name -> `Fst name
+               | AstEnvironment.UndecoratedFunction name -> `Snd name
+               | _ -> `Trd None)
+        |> (fun (classes, functions, _) ->
+             Type.Primitive.Set.of_list classes, Reference.Set.of_list functions)
+        |> fun (classes, functions) ->
+        ( Type.Primitive.Set.union class_dependencies classes,
+          Reference.Set.union function_dependencies functions )
       in
-      let names_to_update =
+      let class_names_to_update =
         AliasEnvironment.UpdateResult.upstream upstream_update
         |> UnannotatedGlobalEnvironment.UpdateResult.added_classes
-        |> Set.union dependencies
+        |> Set.union class_dependencies
       in
-      let keys_to_invalidate = IndexTracker.indices dependencies in
+      let function_names_to_update =
+        AliasEnvironment.UpdateResult.upstream upstream_update
+        |> UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals
+        |> Set.union function_dependencies
+      in
+      let keys_to_invalidate = IndexTracker.indices class_dependencies in
       disconnect_incoming_backedges_of_successors ~indices_to_disconnect:keys_to_invalidate;
       let (), triggered_dependencies =
-        let keys = keys_to_invalidate |> IndexTracker.Set.to_list |> Edges.KeySet.of_list in
-        Backedges.remove_batch keys;
+        let class_keys = keys_to_invalidate |> IndexTracker.Set.to_list |> Edges.KeySet.of_list in
+        let function_keys =
+          function_dependencies |> Set.to_list |> UndecoratedFunctions.KeySet.of_list
+        in
+        let update () =
+          update_class_hierarchy ~class_names_to_update ~track_dependencies:true ();
+          update_undecorated_functions ~function_names_to_update ~track_dependencies:true ()
+        in
+        Backedges.remove_batch class_keys;
         DependencyKey.Transaction.empty
-        |> Edges.add_to_transaction ~keys
-        |> DependencyKey.Transaction.execute
-             ~update:(update ~names_to_update ~track_dependencies:true)
+        |> Edges.add_to_transaction ~keys:class_keys
+        |> UndecoratedFunctions.add_to_transaction ~keys:function_keys
+        |> DependencyKey.Transaction.execute ~update
       in
       { UpdateResult.triggered_dependencies; upstream = upstream_update }
   | _ ->
       let upstream = AliasEnvironment.UpdateResult.upstream upstream_update in
-      let current_and_previous =
+      let current_and_previous_classes =
         upstream |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
       in
-      let current_and_previous_indices = IndexTracker.indices current_and_previous in
+      let current_and_previous_undecorated_functions =
+        upstream
+        |> UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
+      in
+      let current_and_previous_indices = IndexTracker.indices current_and_previous_classes in
       disconnect_incoming_backedges_of_successors
         ~indices_to_disconnect:current_and_previous_indices;
       let () =
         let s = current_and_previous_indices |> IndexTracker.Set.to_list |> Edges.KeySet.of_list in
         Edges.remove_batch s;
-        Backedges.remove_batch s
+        Backedges.remove_batch s;
+        Set.to_list current_and_previous_undecorated_functions
+        |> UndecoratedFunctions.KeySet.of_list
+        |> UndecoratedFunctions.remove_batch
       in
-      update ~names_to_update:current_and_previous () ~track_dependencies:false;
-
+      update_class_hierarchy
+        ~class_names_to_update:current_and_previous_classes
+        ~track_dependencies:false
+        ();
+      update_undecorated_functions
+        ~function_names_to_update:current_and_previous_undecorated_functions
+        ~track_dependencies:false
+        ();
       {
         UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
         upstream = upstream_update;
@@ -313,4 +418,9 @@ let update environment ~scheduler ~configuration upstream_update =
 
 
 let read_only { alias_environment } =
-  { ReadOnly.alias_environment; get_edges = Edges.get; get_backedges = Backedges.get }
+  {
+    ReadOnly.alias_environment;
+    get_edges = Edges.get;
+    get_backedges = Backedges.get;
+    get_undecorated_function = UndecoratedFunctions.get;
+  }

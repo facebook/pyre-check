@@ -19,11 +19,6 @@ let populate
     (* Validate integrity of the type order built so far before moving forward. Further
        transformations might be incorrect or not terminate otherwise. *)
     Environment.check_class_hierarchy_integrity environment;
-  let register_undecorated_functions sources =
-    let register = Environment.register_undecorated_functions environment resolution in
-    List.iter sources ~f:register
-  in
-  Scheduler.iter scheduler ~configuration ~f:register_undecorated_functions ~inputs:qualifiers;
   let register_values sources =
     Environment.transaction
       environment

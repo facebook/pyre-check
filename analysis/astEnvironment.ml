@@ -13,6 +13,7 @@ type dependency =
   | AliasRegister of Reference.t
   | ClassConnect of Type.Primitive.t
   | RegisterClassMetadata of Type.Primitive.t
+  | UndecoratedFunction of Reference.t
 [@@deriving show, compare, sexp]
 
 (* We cache results of `from_empty_stub` here since module definition lookup requires shared memory
