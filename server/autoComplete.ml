@@ -165,7 +165,8 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             let state, _ =
               IncrementalCheck.recheck
                 ~state
-                ~configuration:{ configuration with ignore_dependencies = true }
+                ~configuration:
+                  { configuration with Configuration.Analysis.incremental_style = Shallow }
                 [dummy_path]
             in
             (* Perform auto-completion *)
@@ -179,7 +180,8 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
               (* Trigger another incremental check to revert server state *)
               IncrementalCheck.recheck
                 ~state
-                ~configuration:{ configuration with ignore_dependencies = true }
+                ~configuration:
+                  { configuration with Configuration.Analysis.incremental_style = Shallow }
                 [dummy_path]
               |> ignore
             with

@@ -1194,7 +1194,8 @@ let rec process
              memory. *)
           process_type_check_request
             ~state
-            ~configuration:{ configuration with ignore_dependencies = true }
+            ~configuration:
+              { configuration with Configuration.Analysis.incremental_style = Shallow }
             [path]
       | CloseDocument path ->
           let { State.open_documents; _ } = state in

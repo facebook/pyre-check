@@ -1360,7 +1360,7 @@ module ScratchProject = struct
 
 
   let setup
-      ?incremental_style
+      ?(incremental_style = Configuration.Analysis.FineGrained)
       ~context
       ?(external_sources = [])
       ?(include_typeshed_stubs = true)
@@ -1380,7 +1380,7 @@ module ScratchProject = struct
         ~search_path:[SearchPath.Root external_root]
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
-        ?incremental_style
+        ~incremental_style
         ()
     in
     let external_sources =

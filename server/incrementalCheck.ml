@@ -55,10 +55,9 @@ let recheck
   (* Repopulate the environment. *)
   let invalidated_environment_qualifiers =
     match incremental_style with
-    | FineGrained -> Reference.Set.of_list reparsed_sources
+    | FineGrained
     | Shallow ->
-        Dependencies.of_list legacy_dependency_tracker ~modules:reparsed_sources
-        |> Reference.Set.union (Reference.Set.of_list reparsed_sources)
+        Reference.Set.of_list reparsed_sources
     | Transitive ->
         Dependencies.transitive_of_list legacy_dependency_tracker ~modules:reparsed_sources
         |> Reference.Set.union (Reference.Set.of_list reparsed_sources)

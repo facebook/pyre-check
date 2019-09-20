@@ -438,11 +438,11 @@ type trigger =
   | ColdStart
 
 let update
-    ~configuration:({ Configuration.Analysis.ignore_dependencies; _ } as configuration)
+    ~configuration:({ Configuration.Analysis.incremental_style; _ } as configuration)
     ~scheduler
     ({ module_tracker } as ast_environment)
   = function
-  | Update module_updates ->
+  | Update module_updates -> (
       let reparse_source_paths, removed_modules, updated_submodules =
         let categorize = function
           | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
@@ -451,65 +451,66 @@ let update
         in
         List.partition3_map module_updates ~f:categorize
       in
-      if ignore_dependencies then (
-        let directly_changed_modules =
-          List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-        in
-        remove_sources ast_environment (List.append removed_modules directly_changed_modules);
-        let { parsed; syntax_error; system_error } =
-          parse_sources
-            ~configuration
-            ~scheduler
-            ~preprocessing_state:None
-            ~ast_environment
-            reparse_source_paths
-        in
-        {
-          UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
-          reparsed = List.append updated_submodules parsed;
-          syntax_error;
-          system_error;
-        } )
-      else
-        let changed_modules =
-          let reparse_modules =
+      match incremental_style with
+      | Configuration.Analysis.Shallow ->
+          let directly_changed_modules =
             List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
           in
-          List.concat [removed_modules; updated_submodules; reparse_modules]
-        in
-        let update_raw_sources () =
-          let ({ RawParseResult.syntax_error; system_error; _ } as result) =
-            parse_raw_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
+          remove_sources ast_environment (List.append removed_modules directly_changed_modules);
+          let { parsed; syntax_error; system_error } =
+            parse_sources
+              ~configuration
+              ~scheduler
+              ~preprocessing_state:None
+              ~ast_environment
+              reparse_source_paths
           in
-          log_parse_errors ~syntax_error ~system_error;
-          result
-        in
-        let { RawParseResult.syntax_error; system_error; _ }, raw_dependencies =
-          Raw.update_and_compute_dependencies
-            ast_environment
-            changed_modules
-            ~update:update_raw_sources
-        in
-        let update_processed_sources () =
-          process_sources
-            ~configuration
-            ~scheduler
-            ~preprocessing_state:None
-            ~ast_environment
-            raw_dependencies
-        in
-        let triggered_dependencies =
-          update_and_compute_dependencies
-            ast_environment
-            raw_dependencies
-            ~update:update_processed_sources
-        in
-        {
-          UpdateResult.triggered_dependencies;
-          reparsed = raw_dependencies;
-          syntax_error;
-          system_error;
-        }
+          {
+            UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
+            reparsed = List.append updated_submodules parsed;
+            syntax_error;
+            system_error;
+          }
+      | _ ->
+          let changed_modules =
+            let reparse_modules =
+              List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+            in
+            List.concat [removed_modules; updated_submodules; reparse_modules]
+          in
+          let update_raw_sources () =
+            let ({ RawParseResult.syntax_error; system_error; _ } as result) =
+              parse_raw_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
+            in
+            log_parse_errors ~syntax_error ~system_error;
+            result
+          in
+          let { RawParseResult.syntax_error; system_error; _ }, raw_dependencies =
+            Raw.update_and_compute_dependencies
+              ast_environment
+              changed_modules
+              ~update:update_raw_sources
+          in
+          let update_processed_sources () =
+            process_sources
+              ~configuration
+              ~scheduler
+              ~preprocessing_state:None
+              ~ast_environment
+              raw_dependencies
+          in
+          let triggered_dependencies =
+            update_and_compute_dependencies
+              ast_environment
+              raw_dependencies
+              ~update:update_processed_sources
+          in
+          {
+            UpdateResult.triggered_dependencies;
+            reparsed = raw_dependencies;
+            syntax_error;
+            system_error;
+          } )
   | ColdStart ->
       let timer = Timer.start () in
       Log.info

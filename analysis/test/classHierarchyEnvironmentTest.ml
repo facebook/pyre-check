@@ -80,7 +80,7 @@ let test_simple_registration context =
 
 let test_inferred_generic_base context =
   let assert_registers source name expected =
-    let project = ScratchProject.setup ["test.py", source] ~context in
+    let project = ScratchProject.setup ["test.py", source] ~context ~incremental_style:Shallow in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let sources =
       let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
