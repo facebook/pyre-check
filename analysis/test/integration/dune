@@ -26,8 +26,9 @@
   asyncTest
   attributeTest
   callableTest
-  coverageTest
+  constructorTest
   controlFlowTest
+  coverageTest
   dataClassTest
   decoratorTest
   deleteTest
@@ -37,23 +38,23 @@
   formatStringTest
   generatorTest
   globalTest
-  signatureSelectionTest
-  constructorTest
   importTest
   inferTest
   isinstanceTest
+  literalTest
   methodTest
   overloadTest
   protocolTest
   redundantCastTest
   refinementTest
-  revealTypeTest
   returnTest
-  varianceTest
+  revealTypeTest
+  signatureSelectionTest
   tupleTest
   typeVariableTest
   typedDictionaryTest
-  unionTest)
+  unionTest
+  varianceTest)
  (modules :standard \ integrationTest)
  (preprocess
   (pps

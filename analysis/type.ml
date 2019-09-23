@@ -2000,6 +2000,8 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                 | _ -> None
               in
               let parse = function
+                | Expression.True -> Some (Literal (Boolean true))
+                | Expression.False -> Some (Literal (Boolean false))
                 | Expression.Integer literal -> Some (literal_integer literal)
                 | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
                     Some (literal_string value)
