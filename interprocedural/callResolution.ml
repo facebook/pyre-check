@@ -107,8 +107,12 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
       Callable.create_method method_name
   in
   let receiver_type = strip_optional_and_meta receiver_type |> Type.weaken_literals in
-  let declaring_type = Reference.prefix implementation_target >>| get_class_type in
-  if declaring_type >>| Type.equal receiver_type |> Option.value ~default:false then (* case a *)
+  let declaring_type = Reference.prefix implementation_target in
+  if
+    declaring_type
+    >>| Reference.equal (Type.class_name receiver_type)
+    |> Option.value ~default:false
+  then (* case a *)
     [get_actual_target implementation_target]
   else
     let target_callable = Callable.create_method implementation_target in
