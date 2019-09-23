@@ -92,11 +92,30 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.number_of_workers, number_of_workers())
         self.assertEqual(configuration.file_hash, None)
 
-        python_paths = site.getsitepackages()
-        json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
-        configuration = Configuration()
-        for python_path in python_paths:
-            self.assertIn("{}$abc".format(python_path), configuration.search_path)
+        with patch.object(os.path, "isdir", return_value=False):
+            json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
+            with self.assertRaises(InvalidConfiguration):
+                configuration = Configuration()
+
+        with patch.object(
+            site, "getsitepackages", return_value=["/mock/site0", "/mock/site1"]
+        ):
+            with patch.object(
+                os.path,
+                "isdir",
+                side_effect=lambda path: path.startswith("/mock/site0"),
+            ):
+                json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
+                configuration = Configuration()
+                self.assertIn("/mock/site0$abc", configuration.search_path)
+            with patch.object(
+                os.path,
+                "isdir",
+                side_effect=lambda path: path.startswith("/mock/site1"),
+            ):
+                json_load.side_effect = [{"search_path": [{"site-package": "abc"}]}]
+                configuration = Configuration()
+                self.assertIn("/mock/site1$abc", configuration.search_path)
 
         json_load.side_effect = [
             {
