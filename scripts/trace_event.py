@@ -31,6 +31,7 @@ def _translate(event: Dict[str, Any]) -> Dict[str, Any]:
                 arguments[key] = value
         return {
             "pid": pid,
+            "tid": 0,
             "ts": start_time_ms * 1000,
             "ph": trace_event_type,
             "name": name,
@@ -61,7 +62,7 @@ if __name__ == "__main__":
             except ValueError as e:
                 LOG.error(f"Malformed log entry on line {index+1}")
                 LOG.exception(f"Unrecognized event type: {e}")
-        final_output = {"traceEvents": translated_events}
+        final_output = translated_events
         print(json.dumps(final_output))
     except json.decoder.JSONDecodeError as e:
         LOG.error(f"JSON parsing error: {e}")
