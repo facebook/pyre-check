@@ -12,11 +12,19 @@ type t = {
   annotations: Annotation.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
   resolve: resolution:t -> Expression.t -> Annotation.t;
+  resolve_assignment: resolution:t -> Statement.Assign.t -> t;
   parent: Reference.t option;
 }
 
-let create ~global_resolution ~annotations ~resolve ?parent () =
-  { global_resolution; annotations; type_variables = Type.Variable.Set.empty; resolve; parent }
+let create ~global_resolution ~annotations ~resolve ~resolve_assignment ?parent () =
+  {
+    global_resolution;
+    annotations;
+    type_variables = Type.Variable.Set.empty;
+    resolve;
+    resolve_assignment;
+    parent;
+  }
 
 
 let pp format { annotations; type_variables; _ } =
@@ -88,6 +96,10 @@ let resolve_reference ({ resolve; _ } as resolution) reference =
   Expression.from_reference ~location:Location.Reference.any reference
   |> resolve ~resolution
   |> Annotation.annotation
+
+
+let resolve_assignment ({ resolve_assignment; _ } as resolution) assignment =
+  resolve_assignment ~resolution assignment
 
 
 let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparator =

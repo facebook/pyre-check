@@ -368,15 +368,24 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_comprehension ~resolution { Comprehension.element; generators; _ } state =
-      let add_binding state { Comprehension.target; iterator; _ } =
+      let add_binding (state, resolution) ({ Comprehension.target; iterator; _ } as generator) =
         let taint, state =
           analyze_expression ~resolution ~state ~expression:iterator
           |>> ForwardState.Tree.read [AbstractTreeDomain.Label.Any]
         in
+        (* Since generators create variables that Pyre sees as scoped within the generator, handle
+           them by adding the generator's bindings to the resolution. *)
+        let resolution =
+          Resolution.resolve_assignment
+            resolution
+            (Ast.Statement.Statement.generator_assignment generator)
+        in
         let access_path = AccessPath.of_expression ~resolution target in
-        store_taint_option access_path taint state
+        store_taint_option access_path taint state, resolution
       in
-      let bound_state = List.fold ~f:add_binding generators ~init:state in
+      let bound_state, resolution =
+        List.fold ~f:add_binding generators ~init:(state, resolution)
+      in
       analyze_expression ~resolution ~state:bound_state ~expression:element
       |>> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Any]
 

@@ -286,6 +286,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_comprehension ~resolution taint { Comprehension.element; generators; _ } state =
+      let resolve_generator resolution generator =
+        Resolution.resolve_assignment
+          resolution
+          (Ast.Statement.Statement.generator_assignment generator)
+      in
+      let resolution = List.fold generators ~init:resolution ~f:resolve_generator in
       let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
       let state = analyze_expression ~resolution ~taint:element_taint ~state ~expression:element in
       let handle_generator state { Comprehension.target; iterator; _ } =

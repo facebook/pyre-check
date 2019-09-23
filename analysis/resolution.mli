@@ -11,6 +11,7 @@ val create
   :  global_resolution:GlobalResolution.t ->
   annotations:Annotation.t Reference.Map.t ->
   resolve:(resolution:t -> Expression.t -> Annotation.t) ->
+  resolve_assignment:(resolution:t -> Statement.Assign.t -> t) ->
   ?parent:Reference.t ->
   unit ->
   t
@@ -42,6 +43,8 @@ val resolve : t -> Expression.t -> Type.t
 val resolve_to_annotation : t -> Expression.t -> Annotation.t
 
 val resolve_reference : t -> Reference.t -> Type.t
+
+val resolve_assignment : t -> Statement.Assign.t -> t
 
 val resolve_mutable_literals
   :  t ->

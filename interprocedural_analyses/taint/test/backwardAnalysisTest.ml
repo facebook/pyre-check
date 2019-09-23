@@ -1400,4 +1400,4 @@ let () =
     "assignment", test_assignment;
     "access_paths", test_access_paths;
   ]
-  |> TestHelper.run_with_taint_models ~name:"taint"
+  |> TestHelper.run_with_taint_models ~name:"backwardsTaint"

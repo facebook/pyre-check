@@ -338,6 +338,8 @@ and Statement : sig
 
   val terminates : t list -> bool
 
+  val generator_assignment : Expression.t Expression.Comprehension.generator -> Assign.t
+
   val extract_docstring : t list -> string option
 end
 

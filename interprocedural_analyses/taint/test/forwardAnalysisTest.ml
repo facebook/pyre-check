@@ -864,4 +864,4 @@ let () =
     "test_tito_side_effects", test_tito_side_effects;
     "test_global_taint", test_global_taint;
   ]
-  |> TestHelper.run_with_taint_models ~name:"taint"
+  |> TestHelper.run_with_taint_models ~name:"forwardTaint"

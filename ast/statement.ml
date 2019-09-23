@@ -1605,6 +1605,8 @@ and Statement : sig
 
   val terminates : t list -> bool
 
+  val generator_assignment : Expression.t Expression.Comprehension.generator -> Assign.t
+
   val extract_docstring : t list -> string option
 end = struct
   type statement =
@@ -1675,6 +1677,82 @@ end = struct
       :: _ ->
         Some (unindent value)
     | _ -> None
+
+
+  let generator_assignment
+      { Expression.Comprehension.target; iterator = { Node.location; _ } as iterator; async; _ }
+    =
+    let value =
+      if async then
+        let aiter =
+          {
+            Node.location;
+            value =
+              Expression.Call
+                {
+                  callee =
+                    {
+                      Node.location;
+                      value =
+                        Name
+                          (Name.Attribute
+                             { base = iterator; attribute = "__aiter__"; special = true });
+                    };
+                  arguments = [];
+                };
+          }
+        in
+        {
+          Node.location;
+          value =
+            Expression.Call
+              {
+                callee =
+                  {
+                    Node.location;
+                    value =
+                      Name
+                        (Name.Attribute { base = aiter; attribute = "__anext__"; special = true });
+                  };
+                arguments = [];
+              };
+        }
+        |> fun target -> Node.create ~location (Expression.Await target)
+      else
+        let iter =
+          {
+            Node.location;
+            value =
+              Expression.Call
+                {
+                  callee =
+                    {
+                      Node.location;
+                      value =
+                        Name
+                          (Name.Attribute
+                             { base = iterator; attribute = "__iter__"; special = true });
+                    };
+                  arguments = [];
+                };
+          }
+        in
+        {
+          Node.location;
+          value =
+            Expression.Call
+              {
+                callee =
+                  {
+                    Node.location;
+                    value =
+                      Name (Name.Attribute { base = iter; attribute = "__next__"; special = true });
+                  };
+                arguments = [];
+              };
+        }
+    in
+    { Assign.target; annotation = None; value; parent = None }
 end
 
 include Statement

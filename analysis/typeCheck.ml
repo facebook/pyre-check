@@ -1788,90 +1788,10 @@ module State (Context : Context) = struct
       let { state; resolved = value_resolved; _ } = forward_expression ~state ~expression:value in
       Type.weaken_literals key_resolved, Type.weaken_literals value_resolved, state
     in
-    let forward_generator
-        ~state
-        ~generator:{
-                     Comprehension.target;
-                     iterator = { Node.location; _ } as iterator;
-                     conditions;
-                     async;
-                   }
-      =
+    let forward_generator ~state ~generator:({ Comprehension.conditions; _ } as generator) =
       (* Propagate the target type information. *)
       let iterator =
-        let value =
-          if async then
-            let aiter =
-              {
-                Node.location;
-                value =
-                  Call
-                    {
-                      callee =
-                        {
-                          Node.location;
-                          value =
-                            Name
-                              (Name.Attribute
-                                 { base = iterator; attribute = "__aiter__"; special = true });
-                        };
-                      arguments = [];
-                    };
-              }
-            in
-            {
-              Node.location;
-              value =
-                Call
-                  {
-                    callee =
-                      {
-                        Node.location;
-                        value =
-                          Name
-                            (Name.Attribute
-                               { base = aiter; attribute = "__anext__"; special = true });
-                      };
-                    arguments = [];
-                  };
-            }
-            |> fun target -> Node.create ~location (Await target)
-          else
-            let iter =
-              {
-                Node.location;
-                value =
-                  Call
-                    {
-                      callee =
-                        {
-                          Node.location;
-                          value =
-                            Name
-                              (Name.Attribute
-                                 { base = iterator; attribute = "__iter__"; special = true });
-                        };
-                      arguments = [];
-                    };
-              }
-            in
-            {
-              Node.location;
-              value =
-                Call
-                  {
-                    callee =
-                      {
-                        Node.location;
-                        value =
-                          Name
-                            (Name.Attribute { base = iter; attribute = "__next__"; special = true });
-                      };
-                    arguments = [];
-                  };
-            }
-        in
-        Statement.Assign { Assign.target; annotation = None; value; parent = None }
+        Statement.Assign (Ast.Statement.Statement.generator_assignment generator)
         |> Node.create ~location
       in
       let state =
@@ -4791,6 +4711,7 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
         ~global_resolution
         ~annotations:Reference.Map.empty
         ~resolve:(fun ~resolution:_ _ -> Annotation.create Type.Top)
+        ~resolve_assignment:(fun ~resolution _ -> resolution)
         ()
     in
     {
@@ -4808,7 +4729,14 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
     |> fun { State.resolved; resolved_annotation; _ } ->
     resolved_annotation |> Option.value ~default:(Annotation.create resolved)
   in
-  Resolution.create ~global_resolution ~annotations ~resolve ()
+  let resolve_assignment ~resolution assign =
+    let state = { state_without_resolution with State.resolution } in
+    State.forward_statement
+      ~state
+      ~statement:(Ast.Node.create_with_default_location (Statement.Assign assign))
+    |> State.resolution
+  in
+  Resolution.create ~global_resolution ~annotations ~resolve ~resolve_assignment ()
 
 
 let resolution_with_key ~global_resolution ~parent ~name ~key =
