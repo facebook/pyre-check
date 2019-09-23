@@ -158,6 +158,7 @@ opam install --yes \
   yojson.1.7.0 \
   ppx_deriving_yojson.3.5.1 \
   ounit.2.0.8 \
+  sedlex.2.1 \
   menhir \
   utop \
   && opam_install_dependencies_succeeded=1
