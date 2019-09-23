@@ -54,7 +54,7 @@ module PublishDiagnostics = struct
       parameters =
         Some
           {
-            PublishDiagnosticsParameters.uri = path |> Path.real_path |> Path.uri;
+            PublishDiagnosticsParameters.uri = Path.Absolute path |> Path.uri;
             diagnostics = List.map ~f:diagnostic_of_error errors;
           };
     }

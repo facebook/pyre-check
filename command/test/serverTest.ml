@@ -50,7 +50,14 @@ let test_language_server_protocol_json_format context =
     |> String.concat
     |> String.filter ~f:(fun character -> not (Char.is_whitespace character))
   in
-  let path = Path.create_relative ~root:local_root ~relative:handle in
+  let path =
+    Path.create_relative ~root:local_root ~relative:handle
+    |> Path.absolute
+    |> Path.create_absolute
+    |> function
+    | Path.Absolute path -> path
+    | _ -> failwith "Absolute path expected"
+  in
   let json_error =
     LanguageServer.Protocol.PublishDiagnostics.of_errors path [type_error]
     |> LanguageServer.Protocol.PublishDiagnostics.to_yojson

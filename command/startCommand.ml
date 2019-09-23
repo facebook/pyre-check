@@ -60,13 +60,26 @@ let computation_thread
       Hashtbl.to_alist table
     in
     let { Configuration.Analysis.local_root; _ } = analysis_configuration in
-    build_file_to_error_map errors
-    |> List.map ~f:(fun (handle, errors) ->
-           let path = Path.create_relative ~root:local_root ~relative:handle in
-           LanguageServer.Protocol.PublishDiagnostics.of_errors path errors
-           |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
-           |> Yojson.Safe.to_string
-           |> fun serialized_diagnostic -> LanguageServerProtocolResponse serialized_diagnostic)
+    let file_diagnostic_response (handle, errors) =
+      let path =
+        try
+          Path.create_relative ~root:local_root ~relative:handle
+          |> Path.real_path
+          |> function
+          | Path.Absolute path -> Some path
+          | Path.Relative _ -> None
+        with
+        | Unix.Unix_error (name, kind, parameters) ->
+            Log.log_unix_error (name, kind, parameters);
+            None
+      in
+      path
+      >>| (fun path -> LanguageServer.Protocol.PublishDiagnostics.of_errors path errors)
+      >>| LanguageServer.Protocol.PublishDiagnostics.to_yojson
+      >>| Yojson.Safe.to_string
+      >>| fun serialized_diagnostic -> LanguageServerProtocolResponse serialized_diagnostic
+    in
+    build_file_to_error_map errors |> List.filter_map ~f:file_diagnostic_response
   in
   (* Decides what to broadcast to persistent clients after a request is processed. *)
   let broadcast_response state response =
