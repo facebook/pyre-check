@@ -33,7 +33,7 @@ module Callgraph : sig
   and callee =
     | Function of Reference.t
     | Method of {
-        class_name: Reference.t;
+        class_name: Type.t;
         direct_target: Reference.t;
         dispatch: dispatch;
         is_optional_class_attribute: bool;
@@ -77,7 +77,7 @@ module Callgraph : sig
     val add_property_callees
       :  global_resolution:GlobalResolution.t ->
       resolved_base:Type.t ->
-      attributes:(AnnotatedAttribute.t * Ast.Reference.t) list ->
+      attributes:(AnnotatedAttribute.t * Type.t) list ->
       name:string ->
       location:Ast.Location.Reference.t ->
       unit

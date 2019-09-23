@@ -2992,8 +2992,8 @@ module State (Context : Context) = struct
                     |> fun definitions ->
                     List.zip_exn
                       definitions
-                      (List.map (head :: tail) ~f:(fun { Annotated.Class.class_definition; _ } ->
-                           Annotated.Class.name class_definition))
+                      (List.map (head :: tail) ~f:(fun { Annotated.Class.instantiated; _ } ->
+                           instantiated))
                   in
                   Context.Builder.add_property_callees
                     ~global_resolution

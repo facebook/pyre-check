@@ -38,7 +38,8 @@ let type_checking_callgraph
     | Callgraph.Method { direct_target; class_name; dispatch = Dynamic; _ }
       when Reference.equal
              direct_target
-             (Reference.create ~prefix:class_name (Reference.last direct_target)) ->
+             (Reference.create ~prefix:(Type.class_name class_name) (Reference.last direct_target))
+      ->
         (* If the direct target is the same as the class name, we don't need to expand the
            override. *)
         [create_target direct_target]
@@ -51,10 +52,7 @@ let type_checking_callgraph
                  subclass the direct target's parent but not the class being called from. *)
               let keep_subtypes candidate =
                 let candidate_type = GlobalResolution.parse_reference resolution candidate in
-                GlobalResolution.less_or_equal
-                  resolution
-                  ~left:candidate_type
-                  ~right:(GlobalResolution.parse_reference resolution class_name)
+                GlobalResolution.less_or_equal resolution ~left:candidate_type ~right:class_name
               in
               List.filter overriding_types ~f:keep_subtypes
               |> List.map ~f:(fun overriding_type ->

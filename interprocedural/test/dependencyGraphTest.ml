@@ -264,7 +264,25 @@ let test_construction context =
           "ASD".format("ASD").lower()
         bar()
     |}
-    ~expected:[`Function "test.foo", []]
+    ~expected:[`Function "test.foo", []];
+  assert_call_graph
+    {|
+      from typing import Generic, TypeVar
+      T = TypeVar("T")
+      class C(Generic[T]):
+        def method(self) -> int: ...
+      class D(C[int]):
+        def method(self) -> int: ...
+      def calls_C_str(c: C[str]) -> None:
+        c.method()
+      def calls_C_int(c: C[int]) -> None:
+        c.method()
+    |}
+    ~expected:
+      [
+        `Function "test.calls_C_int", [`Override "test.C.method"];
+        `Function "test.calls_C_str", [`Override "test.C.method"];
+      ]
 
 
 let test_construction_reverse context =

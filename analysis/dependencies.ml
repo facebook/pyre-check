@@ -267,7 +267,7 @@ module Callgraph = struct
   and callee =
     | Function of Reference.t
     | Method of {
-        class_name: Reference.t;
+        class_name: Type.t;
         direct_target: Reference.t;
         dispatch: dispatch;
         is_optional_class_attribute: bool;
@@ -304,7 +304,7 @@ module Callgraph = struct
                "kind", `String "method";
                "is_optional_class_attribute", `Bool is_optional_class_attribute;
                "direct_target", `String (Reference.show direct_target);
-               "class_name", `String (Reference.show class_name);
+               "class_name", `String (Type.class_name class_name |> Reference.show);
                ( "dispatch",
                  `String
                    ( match dispatch with
@@ -343,7 +343,7 @@ module Callgraph = struct
     val add_property_callees
       :  global_resolution:GlobalResolution.t ->
       resolved_base:Type.t ->
-      attributes:(AnnotatedAttribute.t * Reference.t) list ->
+      attributes:(AnnotatedAttribute.t * Type.t) list ->
       name:string ->
       location:Location.t ->
       unit
@@ -363,11 +363,10 @@ module Callgraph = struct
           match callable with
           | { Type.Callable.kind = Named direct_target; _ } ->
               let class_name =
-                ( if Type.is_meta annotation then
-                    Type.single_parameter annotation
+                if Type.is_meta annotation then
+                  Type.single_parameter annotation
                 else
-                  annotation )
-                |> Type.class_name
+                  annotation
               in
               [
                 Method
@@ -420,9 +419,9 @@ module Callgraph = struct
               :: !property_callables
         | None -> ()
       in
-      let register (attribute, class_name) =
+      let register (attribute, instantiated) =
         if Option.is_some (Annotated.Attribute.property attribute) then
-          register_attribute_callable class_name attribute
+          register_attribute_callable instantiated attribute
         (* As the callgraph is an overapproximation, we also have to consider property calls from
            optional attributes.*)
         else
@@ -444,7 +443,7 @@ module Callgraph = struct
                   if Option.is_some (Annotated.Attribute.property attribute) then
                     register_attribute_callable
                       ~is_optional_class_attribute:true
-                      (Annotated.Class.name class_definition)
+                      instantiated
                       attribute
               | Some _
               | None ->

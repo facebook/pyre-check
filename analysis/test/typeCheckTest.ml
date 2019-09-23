@@ -1632,7 +1632,7 @@ let test_calls context =
               Dependencies.Callgraph.Method
                 {
                   direct_target = Reference.create direct_target;
-                  class_name = Reference.create class_name;
+                  class_name = Type.Primitive class_name;
                   dispatch;
                   is_optional_class_attribute;
                 }
@@ -2178,7 +2178,30 @@ let test_calls context =
           return 0
         return 1
     |}
-    ["qualifier.calls_isinstance", [`Function "isinstance"]]
+    ["qualifier.calls_isinstance", [`Function "isinstance"]];
+  assert_calls
+    {|
+      from typing import Generic, TypeVar
+      T = TypeVar("T")
+      class C(Generic[T]):
+        def method(self) -> int: ...
+      class D(C[int]):
+        def method(self) -> int: ...
+      def calls_C_str(c: C[str]) -> None:
+        c.method()
+    |}
+    [
+      ( "qualifier.calls_C_str",
+        [
+          `Method
+            {
+              direct_target = "qualifier.C.method";
+              class_name = "qualifier.C[str]";
+              is_optional_class_attribute = false;
+              dispatch = Dynamic;
+            };
+        ] );
+    ]
 
 
 let () =
