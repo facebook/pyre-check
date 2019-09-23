@@ -36,6 +36,7 @@ class ConfigurationArguments:
     graphql_module: List[str]
     blacklisted_global_directories: Set[str]
     blacklisted_globals: Set[str]
+    logger: Optional[str] = None
 
 
 @dataclass
@@ -63,6 +64,7 @@ def run_from_global_state(
         configuration_arguments.blacklisted_global_directories
     )
     Configuration.blacklisted_globals = configuration_arguments.blacklisted_globals
+    Configuration.logger = configuration_arguments.logger
 
     modes = generation_arguments.mode or Registry.default_generators
 

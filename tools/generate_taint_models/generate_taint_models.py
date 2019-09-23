@@ -76,6 +76,7 @@ def main() -> None:
         "provided '*_annotation' arguments",
     )
     parser.add_argument("--mode", action="append", choices=Registry.generators.keys())
+    parser.add_argument("--logger", type=_file_exists, help="Path to logger executable")
     arguments: argparse.Namespace = parser.parse_args()
 
     if not arguments.whitelisted_class:
@@ -100,7 +101,7 @@ def main() -> None:
         ConfigurationArguments(
             annotation_specs=annotation_specs,
             whitelisted_views=_WHITELISTED_DJANGO_VIEWS,
-            whitelisted_classes=arguments.whitelisted_classes,
+            whitelisted_classes=arguments.whitelisted_class,
             # pyre-ignore[16]: The django stubs are for another version.
             url_resolver_type=RegexURLResolver,
             # pyre-ignore[16]: The django stubs are for another version.
@@ -112,6 +113,7 @@ def main() -> None:
             graphql_module=[],
             blacklisted_global_directories=set(),
             blacklisted_globals=set(),
+            logger=arguments.logger,
         ),
     )
 

@@ -9,6 +9,7 @@ import ast
 import functools
 import logging
 import os
+import time
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -23,6 +24,7 @@ from typing import (
     Union,
 )
 
+from ...client import log_statistics
 from .get_annotated_free_functions_with_decorator import DecoratorAnnotationSpec
 
 
@@ -75,6 +77,7 @@ class Configuration:
     blacklisted_globals: ClassVar[Set[str]] = set()
     blacklisted_global_directories: ClassVar[Set[str]] = set()
     annotation_specs: ClassVar[List[DecoratorAnnotationSpec]] = []
+    logger: ClassVar[Optional[str]] = None
 
 
 class Registry:
@@ -95,6 +98,16 @@ class Registry:
         models = {}
         for name in generator_names:
             LOG.info("Computing models for `%s`", name)
+            start = time.time()
             generator = cls.generators[name]()
             models[name] = generator.generate_models()
+            logger = Configuration.logger
+            if logger is not None:
+                elapsed_time = int((time.time() - start) * 1000)
+                log_statistics(
+                    "perfpipe_pyre_performance",
+                    integers={"time": elapsed_time},
+                    normals={"name": "model generation", "model kind": name},
+                    logger=logger,
+                )
         return models
