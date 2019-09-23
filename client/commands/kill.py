@@ -63,6 +63,11 @@ class Kill(Command):
                 shutil.rmtree(os.path.join(os.getcwd(), ".pyre/resource_cache"))
             except OSError:
                 pass
+            # If a buck builder cache exists, also remove it.
+            try:
+                shutil.rmtree("/tmp/pyre/buck_builder_cache")
+            except OSError:
+                pass
 
         for process in psutil.process_iter(attrs=["name"]):
             if process.info["name"] != CLIENT_NAME:

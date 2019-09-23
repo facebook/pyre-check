@@ -100,7 +100,12 @@ class KillTest(unittest.TestCase):
             analysis_directory = MagicMock()
             arguments.with_fire = True
             commands.Kill(arguments, configuration, analysis_directory).run()
-            remove_tree.assert_called_once_with("/root/.pyre/resource_cache")
+            remove_tree.assert_has_calls(
+                [
+                    call("/root/.pyre/resource_cache"),
+                    call("/tmp/pyre/buck_builder_cache"),
+                ]
+            )
         # Ensure that we don't crash even if os.kill fails to find a process.
         with patch("os.getenv", return_value=None), patch(
             "os.getpid", return_value=1234
