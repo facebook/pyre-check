@@ -302,7 +302,10 @@ let update environment ~scheduler ~configuration upstream_update =
       ~configuration
       ~f:(connect environment)
       ~inputs:(Set.to_list class_names_to_update);
-    Set.iter class_names_to_update ~f:add_backedges
+    Backedges.LocalChanges.push_stack ();
+    Set.iter class_names_to_update ~f:add_backedges;
+    Backedges.LocalChanges.commit_all ();
+    Backedges.LocalChanges.pop_stack ()
   in
   let update_undecorated_functions ~function_names_to_update ~track_dependencies () =
     let register environment names =
