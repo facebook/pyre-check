@@ -71,9 +71,12 @@ class PyreRunner:
 
     def run_start(self) -> None:
         pyre_start_command = (
+            # Use `pyre restart` instead of `pyre start` as the we want to:
+            # - Kill existing servers
+            # - Force the initial check to finish
             f"pyre {self._specification.pyre_start_pyre_options} "
             "--no-saved-state "
-            f"start {self._specification.pyre_start_options}"
+            f"restart {self._specification.pyre_start_options}"
         ).rstrip()
         self._environment.checked_run(
             working_directory=self._specification.old_state.get_working_directory(),
