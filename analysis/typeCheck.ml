@@ -326,457 +326,6 @@ module State (Context : Context) = struct
 
   let error_map { errors; _ } = errors
 
-  let errors { resolution; errors; _ } =
-    let global_resolution = Resolution.global_resolution resolution in
-    let ({ Node.value = { Define.signature = { name; _ }; _ } as define; location } as define_node)
-      =
-      Context.define
-    in
-    let class_initialization_errors errors =
-      (* Ensure all attributes are instantiated. This must happen after typechecking is finished to
-         access the annotations added to resolution. *)
-      let check_attribute_initialization ~is_dynamically_initialized definition errors =
-        if
-          (not (AnnotatedClass.is_protocol definition))
-          && not (AnnotatedClass.is_abstract definition)
-        then
-          let check_attributes definitions errors =
-            let unimplemented_errors =
-              let uninitialized_attributes =
-                let add_uninitialized definition attribute_map =
-                  let implicit_attributes = AnnotatedClass.implicit_attributes definition in
-                  let attributes =
-                    Annotated.Class.attributes
-                      ~include_generated_attributes:true
-                      ~resolution:global_resolution
-                      definition
-                  in
-                  let is_uninitialized
-                      ({ Node.value = { AnnotatedAttribute.name; initialized; _ }; _ } as attribute)
-                    =
-                    let implicitly_initialized name =
-                      Identifier.SerializableMap.mem name implicit_attributes
-                    in
-                    (not initialized)
-                    && (not (implicitly_initialized name))
-                    && not (is_dynamically_initialized attribute)
-                  in
-                  let add_to_map
-                      sofar
-                      { Node.value = { AnnotatedAttribute.name; annotation; _ }; _ }
-                    =
-                    match String.Map.add sofar ~key:name ~data:(annotation, definition) with
-                    | `Ok map -> map
-                    | `Duplicate -> sofar
-                  in
-                  List.filter attributes ~f:is_uninitialized
-                  |> List.fold ~init:attribute_map ~f:add_to_map
-                in
-                let remove_initialized definition attribute_map =
-                  let attributes =
-                    Annotated.Class.attributes
-                      ~include_generated_attributes:true
-                      ~resolution:global_resolution
-                      definition
-                  in
-                  let is_initialized
-                      { Node.value = { AnnotatedAttribute.initialized; property; _ }; _ }
-                    =
-                    (* TODO(T54083014): Don't error on properties overriding attributes, even if
-                       they are read-only and therefore not marked as initialized on the attribute
-                       object. We should error in the future that this is an inconsistent override. *)
-                    initialized || Option.is_some property
-                  in
-                  List.filter attributes ~f:is_initialized
-                  |> List.map ~f:AnnotatedAttribute.name
-                  |> List.fold ~init:attribute_map ~f:Map.remove
-                in
-                List.fold_right ~init:String.Map.empty ~f:add_uninitialized definitions
-                |> (fun attribute_map ->
-                     List.fold_right ~init:attribute_map ~f:remove_initialized definitions)
-                |> String.Map.to_alist
-              in
-              uninitialized_attributes
-              |> List.filter_map ~f:(fun (name, (annotation, original_definition)) ->
-                     let expected = Annotation.annotation annotation in
-                     if Type.is_top expected then
-                       None
-                     else
-                       let error_kind =
-                         if AnnotatedClass.is_protocol original_definition then
-                           Error.Protocol (AnnotatedClass.name original_definition)
-                         else if AnnotatedClass.is_abstract original_definition then
-                           Error.Abstract (AnnotatedClass.name original_definition)
-                         else
-                           Error.Class
-                       in
-                       Some
-                         (Error.create
-                            ~location
-                            ~kind:
-                              (Error.UninitializedAttribute
-                                 {
-                                   name;
-                                   parent = Annotated.Class.annotation definition;
-                                   mismatch =
-                                     {
-                                       Error.expected;
-                                       actual = Type.Top;
-                                       actual_expressions = [];
-                                       due_to_invariance = false;
-                                     };
-                                   kind = error_kind;
-                                 })
-                            ~define:Context.define))
-            in
-            unimplemented_errors @ errors
-          in
-          let superclasses =
-            AnnotatedClass.superclasses definition ~resolution:global_resolution
-            |> List.filter ~f:(fun superclass ->
-                   AnnotatedClass.is_protocol superclass || AnnotatedClass.is_abstract superclass)
-            |> List.cons definition
-          in
-          errors |> check_attributes superclasses
-        else
-          errors
-      in
-      if Define.is_constructor define && not (Define.is_stub define) then
-        let check_attributes_initialized errors =
-          let open Annotated in
-          let definition =
-            Define.parent_definition
-              ~resolution:(Resolution.global_resolution resolution)
-              (Define.create define_node)
-          in
-          match definition with
-          | Some definition ->
-              let is_dynamically_initialized attribute =
-                let reference =
-                  Reference.create_from_list
-                    [StatementDefine.self_identifier define; Attribute.name attribute]
-                in
-                Map.mem (Resolution.annotations resolution) reference
-              in
-              check_attribute_initialization ~is_dynamically_initialized definition errors
-          | None -> errors
-        in
-        errors |> check_attributes_initialized
-      else if Define.is_class_toplevel define then
-        let check_bases errors =
-          let open Annotated in
-          let is_final errors { Expression.Call.Argument.name; value } =
-            let add_error { ClassMetadataEnvironment.is_final; _ } =
-              if is_final then
-                let error =
-                  Error.create
-                    ~location
-                    ~kind:(Error.InvalidInheritance (ClassName (Expression.show value)))
-                    ~define:Context.define
-                in
-                error :: errors
-              else
-                errors
-            in
-            match name, value with
-            | None, { Node.value = Name name; _ } when Expression.is_simple_name name ->
-                let reference = Expression.name_to_reference_exn name in
-                GlobalResolution.class_metadata
-                  global_resolution
-                  (Type.Primitive (Reference.show reference))
-                >>| add_error
-                |> Option.value ~default:errors
-            | _ -> errors
-          in
-          Define.parent_definition ~resolution:global_resolution (Define.create define_node)
-          >>| Class.bases
-          >>| List.fold ~init:errors ~f:is_final
-          |> Option.value ~default:errors
-        in
-        let check_unimplemented_abstract_methods definition errors =
-          if AnnotatedClass.is_abstract definition then
-            errors
-          else
-            let abstract_methods =
-              AnnotatedClass.unimplemented_abstract_methods
-                ~resolution:global_resolution
-                definition
-              |> List.map ~f:Define.unqualified_name
-            in
-            if List.is_empty abstract_methods then
-              errors
-            else
-              let error =
-                Error.create
-                  ~location
-                  ~kind:
-                    (Error.AbstractClass
-                       {
-                         class_name = AnnotatedClass.name definition;
-                         method_names = abstract_methods;
-                       })
-                  ~define:Context.define
-              in
-              error :: errors
-        in
-        let check_abstract_methods definition errors =
-          if
-            (not (AnnotatedClass.is_abstract definition))
-            && AnnotatedClass.has_abstract_methods definition
-          then
-            let error =
-              Error.create
-                ~location
-                ~kind:(Error.InvalidClass (AnnotatedClass.name definition))
-                ~define:Context.define
-            in
-            error :: errors
-          else
-            errors
-        in
-        let check_attributes definition errors =
-          (* Error on uninitialized attributes if there was no constructor in which to do so. *)
-          if not (AnnotatedClass.has_explicit_constructor definition ~resolution:global_resolution)
-          then
-            check_attribute_initialization
-              ~is_dynamically_initialized:(fun _ -> false)
-              definition
-              errors
-          else
-            errors
-        in
-        let check_overrides definition errors =
-          let override_errors =
-            let open Annotated in
-            Annotated.Class.attributes
-              ~include_generated_attributes:false
-              ~resolution:global_resolution
-              definition
-            |> List.filter_map
-                 ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; location } ->
-                   let actual = Annotation.annotation annotation in
-                   let check_override
-                       ( { Node.value = { Attribute.annotation; name; final; _ }; _ } as
-                       overridden_attribute )
-                     =
-                     let expected = Annotation.annotation annotation in
-                     if
-                       ( GlobalResolution.less_or_equal
-                           global_resolution
-                           ~left:actual
-                           ~right:expected
-                       || Type.is_top actual
-                       || Type.contains_variable actual )
-                       && not final
-                     then (* TODO(T53997072): Support type variable instantiation for overrides. *)
-                       None
-                     else
-                       let kind =
-                         if final then
-                           Error.InvalidAssignment (FinalAttribute (Reference.create name))
-                         else
-                           Error.InconsistentOverride
-                             {
-                               overridden_method = name;
-                               parent =
-                                 Attribute.parent overridden_attribute
-                                 |> Type.show
-                                 |> Reference.create;
-                               override_kind = Attribute;
-                               override =
-                                 Error.WeakenedPostcondition
-                                   (Error.create_mismatch
-                                      ~resolution:global_resolution
-                                      ~actual
-                                      ~actual_expression:None
-                                      ~expected
-                                      ~covariant:false);
-                             }
-                       in
-                       Some (Error.create ~location ~kind ~define:Context.define)
-                   in
-                   Class.overrides ~resolution:global_resolution ~name definition
-                   >>| check_override
-                   |> Option.value ~default:None)
-          in
-          override_errors @ errors
-        in
-        let check_redefined_class definition errors =
-          (* Detect when a class from an import is redefined. This relies on the fact that
-             resolve_exports always chooses an imported class if it exists, so we can compare that
-             against the current class definition to determine if it is shadowing an imported
-             class. *)
-          let class_name = AnnotatedClass.name definition in
-          let exported_name =
-            GlobalResolution.resolve_exports global_resolution ~reference:class_name
-          in
-          if not (Reference.equal class_name exported_name) then
-            let error =
-              Error.create ~location ~kind:(Error.RedefinedClass class_name) ~define:Context.define
-            in
-            error :: errors
-          else
-            errors
-        in
-        let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
-        GlobalResolution.class_definition global_resolution (Type.Primitive name)
-        >>| Annotated.Class.create
-        >>| (fun definition ->
-              errors
-              |> check_bases
-              |> check_attributes definition
-              |> check_overrides definition
-              |> check_abstract_methods definition
-              |> check_unimplemented_abstract_methods definition
-              |> check_redefined_class definition)
-        |> Option.value ~default:errors
-      else
-        errors
-    in
-    let overload_errors errors =
-      let annotation = Resolution.get_local resolution ~reference:name in
-      let overload_to_callable overload =
-        Type.Callable
-          {
-            implementation = { overload with annotation = Type.Any };
-            kind = Anonymous;
-            overloads = [];
-            implicit = None;
-          }
-      in
-      let check_implementation_exists errors =
-        match annotation with
-        | Some { annotation = Type.Callable { implementation; _ }; _ }
-          when Define.is_overloaded_method define
-               && Type.Callable.Overload.is_undefined implementation ->
-            let error =
-              Error.create
-                ~location
-                ~kind:(Error.MissingOverloadImplementation name)
-                ~define:Context.define
-            in
-            error :: errors
-        | _ -> errors
-      in
-      let check_compatible_return_types errors =
-        match annotation with
-        | Some
-            {
-              annotation =
-                Type.Callable
-                  {
-                    overloads;
-                    implementation =
-                      { annotation = implementation_annotation; _ } as implementation;
-                    _;
-                  };
-              _;
-            }
-          when not (Define.is_overloaded_method define) ->
-            overloads
-            |> List.fold
-                 ~init:errors
-                 ~f:(fun errors_sofar
-                         ({ Type.Callable.annotation; define_location; _ } as overload)
-                         ->
-                   let errors_sofar =
-                     if
-                       Resolution.is_consistent_with
-                         resolution
-                         annotation
-                         implementation_annotation
-                         ~expression:None
-                     then
-                       errors_sofar
-                     else
-                       let error =
-                         Error.create
-                           ~location
-                           ~kind:
-                             (Error.IncompatibleOverload
-                                (ReturnType
-                                   {
-                                     implementation_annotation;
-                                     overload_annotation = annotation;
-                                     name;
-                                   }))
-                           ~define:Context.define
-                       in
-                       error :: errors_sofar
-                   in
-                   if
-                     not
-                       (GlobalResolution.less_or_equal
-                          global_resolution
-                          ~right:(overload_to_callable overload)
-                          ~left:(overload_to_callable implementation))
-                   then
-                     let error =
-                       Error.create
-                         ~location
-                         ~define:Context.define
-                         ~kind:
-                           (Error.IncompatibleOverload
-                              (Parameters
-                                 {
-                                   name;
-                                   location = define_location |> Option.value ~default:location;
-                                 }))
-                     in
-                     error :: errors_sofar
-                   else
-                     errors_sofar)
-        | _ -> errors
-      in
-      let check_unmatched_overloads errors =
-        match annotation with
-        | Some { annotation = Type.Callable { overloads; _ }; _ }
-          when not (Define.is_overloaded_method define) ->
-            let rec compare_parameters errors_sofar overloads =
-              match overloads with
-              | left :: overloads ->
-                  let create_unmatched_error matched errors_sofar unmatched =
-                    match unmatched, matched with
-                    | ( Type.Callable
-                          { implementation = { define_location = Some unmatched_location; _ }; _ },
-                        Type.Callable
-                          { implementation = { define_location = Some matched_location; _ }; _ } )
-                      ->
-                        let error =
-                          Error.create
-                            ~location
-                            ~define:Context.define
-                            ~kind:
-                              (Error.IncompatibleOverload
-                                 (Unmatchable { name; unmatched_location; matched_location }))
-                        in
-                        error :: errors_sofar
-                    | _, _ -> failwith "Callables missing locations."
-                  in
-                  let errors_sofar =
-                    overloads
-                    |> List.filter ~f:(fun right ->
-                           GlobalResolution.less_or_equal global_resolution ~left ~right)
-                    |> List.fold ~init:errors_sofar ~f:(create_unmatched_error left)
-                  in
-                  compare_parameters errors_sofar overloads
-              | _ -> errors_sofar
-            in
-            overloads |> List.map ~f:overload_to_callable |> compare_parameters errors
-        | _ -> errors
-      in
-      errors
-      |> check_implementation_exists
-      |> check_compatible_return_types
-      |> check_unmatched_overloads
-    in
-    Map.data errors
-    |> Error.deduplicate
-    |> class_initialization_errors
-    |> overload_errors
-    |> Error.filter ~configuration:Context.configuration ~resolution:global_resolution
-
-
   let coverage { resolution; _ } =
     Resolution.annotations resolution |> Map.data |> Coverage.aggregate
 
@@ -4587,6 +4136,457 @@ module State (Context : Context) = struct
     | Nonlocal _
     | Pass ->
         state
+
+
+  let errors { resolution; errors; _ } =
+    let global_resolution = Resolution.global_resolution resolution in
+    let ({ Node.value = { Define.signature = { name; _ }; _ } as define; location } as define_node)
+      =
+      Context.define
+    in
+    let class_initialization_errors errors =
+      (* Ensure all attributes are instantiated. This must happen after typechecking is finished to
+         access the annotations added to resolution. *)
+      let check_attribute_initialization ~is_dynamically_initialized definition errors =
+        if
+          (not (AnnotatedClass.is_protocol definition))
+          && not (AnnotatedClass.is_abstract definition)
+        then
+          let check_attributes definitions errors =
+            let unimplemented_errors =
+              let uninitialized_attributes =
+                let add_uninitialized definition attribute_map =
+                  let implicit_attributes = AnnotatedClass.implicit_attributes definition in
+                  let attributes =
+                    Annotated.Class.attributes
+                      ~include_generated_attributes:true
+                      ~resolution:global_resolution
+                      definition
+                  in
+                  let is_uninitialized
+                      ({ Node.value = { AnnotatedAttribute.name; initialized; _ }; _ } as attribute)
+                    =
+                    let implicitly_initialized name =
+                      Identifier.SerializableMap.mem name implicit_attributes
+                    in
+                    (not initialized)
+                    && (not (implicitly_initialized name))
+                    && not (is_dynamically_initialized attribute)
+                  in
+                  let add_to_map
+                      sofar
+                      { Node.value = { AnnotatedAttribute.name; annotation; _ }; _ }
+                    =
+                    match String.Map.add sofar ~key:name ~data:(annotation, definition) with
+                    | `Ok map -> map
+                    | `Duplicate -> sofar
+                  in
+                  List.filter attributes ~f:is_uninitialized
+                  |> List.fold ~init:attribute_map ~f:add_to_map
+                in
+                let remove_initialized definition attribute_map =
+                  let attributes =
+                    Annotated.Class.attributes
+                      ~include_generated_attributes:true
+                      ~resolution:global_resolution
+                      definition
+                  in
+                  let is_initialized
+                      { Node.value = { AnnotatedAttribute.initialized; property; _ }; _ }
+                    =
+                    (* TODO(T54083014): Don't error on properties overriding attributes, even if
+                       they are read-only and therefore not marked as initialized on the attribute
+                       object. We should error in the future that this is an inconsistent override. *)
+                    initialized || Option.is_some property
+                  in
+                  List.filter attributes ~f:is_initialized
+                  |> List.map ~f:AnnotatedAttribute.name
+                  |> List.fold ~init:attribute_map ~f:Map.remove
+                in
+                List.fold_right ~init:String.Map.empty ~f:add_uninitialized definitions
+                |> (fun attribute_map ->
+                     List.fold_right ~init:attribute_map ~f:remove_initialized definitions)
+                |> String.Map.to_alist
+              in
+              uninitialized_attributes
+              |> List.filter_map ~f:(fun (name, (annotation, original_definition)) ->
+                     let expected = Annotation.annotation annotation in
+                     if Type.is_top expected then
+                       None
+                     else
+                       let error_kind =
+                         if AnnotatedClass.is_protocol original_definition then
+                           Error.Protocol (AnnotatedClass.name original_definition)
+                         else if AnnotatedClass.is_abstract original_definition then
+                           Error.Abstract (AnnotatedClass.name original_definition)
+                         else
+                           Error.Class
+                       in
+                       Some
+                         (Error.create
+                            ~location
+                            ~kind:
+                              (Error.UninitializedAttribute
+                                 {
+                                   name;
+                                   parent = Annotated.Class.annotation definition;
+                                   mismatch =
+                                     {
+                                       Error.expected;
+                                       actual = Type.Top;
+                                       actual_expressions = [];
+                                       due_to_invariance = false;
+                                     };
+                                   kind = error_kind;
+                                 })
+                            ~define:Context.define))
+            in
+            unimplemented_errors @ errors
+          in
+          let superclasses =
+            AnnotatedClass.superclasses definition ~resolution:global_resolution
+            |> List.filter ~f:(fun superclass ->
+                   AnnotatedClass.is_protocol superclass || AnnotatedClass.is_abstract superclass)
+            |> List.cons definition
+          in
+          errors |> check_attributes superclasses
+        else
+          errors
+      in
+      if Define.is_constructor define && not (Define.is_stub define) then
+        let check_attributes_initialized errors =
+          let open Annotated in
+          let definition =
+            Define.parent_definition
+              ~resolution:(Resolution.global_resolution resolution)
+              (Define.create define_node)
+          in
+          match definition with
+          | Some definition ->
+              let is_dynamically_initialized attribute =
+                let reference =
+                  Reference.create_from_list
+                    [StatementDefine.self_identifier define; Attribute.name attribute]
+                in
+                Map.mem (Resolution.annotations resolution) reference
+              in
+              check_attribute_initialization ~is_dynamically_initialized definition errors
+          | None -> errors
+        in
+        errors |> check_attributes_initialized
+      else if Define.is_class_toplevel define then
+        let check_bases errors =
+          let open Annotated in
+          let is_final errors { Expression.Call.Argument.name; value } =
+            let add_error { ClassMetadataEnvironment.is_final; _ } =
+              if is_final then
+                let error =
+                  Error.create
+                    ~location
+                    ~kind:(Error.InvalidInheritance (ClassName (Expression.show value)))
+                    ~define:Context.define
+                in
+                error :: errors
+              else
+                errors
+            in
+            match name, value with
+            | None, { Node.value = Name name; _ } when Expression.is_simple_name name ->
+                let reference = Expression.name_to_reference_exn name in
+                GlobalResolution.class_metadata
+                  global_resolution
+                  (Type.Primitive (Reference.show reference))
+                >>| add_error
+                |> Option.value ~default:errors
+            | _ -> errors
+          in
+          Define.parent_definition ~resolution:global_resolution (Define.create define_node)
+          >>| Class.bases
+          >>| List.fold ~init:errors ~f:is_final
+          |> Option.value ~default:errors
+        in
+        let check_unimplemented_abstract_methods definition errors =
+          if AnnotatedClass.is_abstract definition then
+            errors
+          else
+            let abstract_methods =
+              AnnotatedClass.unimplemented_abstract_methods
+                ~resolution:global_resolution
+                definition
+              |> List.map ~f:Define.unqualified_name
+            in
+            if List.is_empty abstract_methods then
+              errors
+            else
+              let error =
+                Error.create
+                  ~location
+                  ~kind:
+                    (Error.AbstractClass
+                       {
+                         class_name = AnnotatedClass.name definition;
+                         method_names = abstract_methods;
+                       })
+                  ~define:Context.define
+              in
+              error :: errors
+        in
+        let check_abstract_methods definition errors =
+          if
+            (not (AnnotatedClass.is_abstract definition))
+            && AnnotatedClass.has_abstract_methods definition
+          then
+            let error =
+              Error.create
+                ~location
+                ~kind:(Error.InvalidClass (AnnotatedClass.name definition))
+                ~define:Context.define
+            in
+            error :: errors
+          else
+            errors
+        in
+        let check_attributes definition errors =
+          (* Error on uninitialized attributes if there was no constructor in which to do so. *)
+          if not (AnnotatedClass.has_explicit_constructor definition ~resolution:global_resolution)
+          then
+            check_attribute_initialization
+              ~is_dynamically_initialized:(fun _ -> false)
+              definition
+              errors
+          else
+            errors
+        in
+        let check_overrides definition errors =
+          let override_errors =
+            let open Annotated in
+            Annotated.Class.attributes
+              ~include_generated_attributes:false
+              ~resolution:global_resolution
+              definition
+            |> List.filter_map
+                 ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; location } ->
+                   let actual = Annotation.annotation annotation in
+                   let check_override
+                       ( { Node.value = { Attribute.annotation; name; final; _ }; _ } as
+                       overridden_attribute )
+                     =
+                     let expected = Annotation.annotation annotation in
+                     if
+                       ( GlobalResolution.less_or_equal
+                           global_resolution
+                           ~left:actual
+                           ~right:expected
+                       || Type.is_top actual
+                       || Type.contains_variable actual )
+                       && not final
+                     then (* TODO(T53997072): Support type variable instantiation for overrides. *)
+                       None
+                     else
+                       let kind =
+                         if final then
+                           Error.InvalidAssignment (FinalAttribute (Reference.create name))
+                         else
+                           Error.InconsistentOverride
+                             {
+                               overridden_method = name;
+                               parent =
+                                 Attribute.parent overridden_attribute
+                                 |> Type.show
+                                 |> Reference.create;
+                               override_kind = Attribute;
+                               override =
+                                 Error.WeakenedPostcondition
+                                   (Error.create_mismatch
+                                      ~resolution:global_resolution
+                                      ~actual
+                                      ~actual_expression:None
+                                      ~expected
+                                      ~covariant:false);
+                             }
+                       in
+                       Some (Error.create ~location ~kind ~define:Context.define)
+                   in
+                   Class.overrides ~resolution:global_resolution ~name definition
+                   >>| check_override
+                   |> Option.value ~default:None)
+          in
+          override_errors @ errors
+        in
+        let check_redefined_class definition errors =
+          (* Detect when a class from an import is redefined. This relies on the fact that
+             resolve_exports always chooses an imported class if it exists, so we can compare that
+             against the current class definition to determine if it is shadowing an imported
+             class. *)
+          let class_name = AnnotatedClass.name definition in
+          let exported_name =
+            GlobalResolution.resolve_exports global_resolution ~reference:class_name
+          in
+          if not (Reference.equal class_name exported_name) then
+            let error =
+              Error.create ~location ~kind:(Error.RedefinedClass class_name) ~define:Context.define
+            in
+            error :: errors
+          else
+            errors
+        in
+        let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
+        GlobalResolution.class_definition global_resolution (Type.Primitive name)
+        >>| Annotated.Class.create
+        >>| (fun definition ->
+              errors
+              |> check_bases
+              |> check_attributes definition
+              |> check_overrides definition
+              |> check_abstract_methods definition
+              |> check_unimplemented_abstract_methods definition
+              |> check_redefined_class definition)
+        |> Option.value ~default:errors
+      else
+        errors
+    in
+    let overload_errors errors =
+      let annotation = Resolution.get_local resolution ~reference:name in
+      let overload_to_callable overload =
+        Type.Callable
+          {
+            implementation = { overload with annotation = Type.Any };
+            kind = Anonymous;
+            overloads = [];
+            implicit = None;
+          }
+      in
+      let check_implementation_exists errors =
+        match annotation with
+        | Some { annotation = Type.Callable { implementation; _ }; _ }
+          when Define.is_overloaded_method define
+               && Type.Callable.Overload.is_undefined implementation ->
+            let error =
+              Error.create
+                ~location
+                ~kind:(Error.MissingOverloadImplementation name)
+                ~define:Context.define
+            in
+            error :: errors
+        | _ -> errors
+      in
+      let check_compatible_return_types errors =
+        match annotation with
+        | Some
+            {
+              annotation =
+                Type.Callable
+                  {
+                    overloads;
+                    implementation =
+                      { annotation = implementation_annotation; _ } as implementation;
+                    _;
+                  };
+              _;
+            }
+          when not (Define.is_overloaded_method define) ->
+            overloads
+            |> List.fold
+                 ~init:errors
+                 ~f:(fun errors_sofar
+                         ({ Type.Callable.annotation; define_location; _ } as overload)
+                         ->
+                   let errors_sofar =
+                     if
+                       Resolution.is_consistent_with
+                         resolution
+                         annotation
+                         implementation_annotation
+                         ~expression:None
+                     then
+                       errors_sofar
+                     else
+                       let error =
+                         Error.create
+                           ~location
+                           ~kind:
+                             (Error.IncompatibleOverload
+                                (ReturnType
+                                   {
+                                     implementation_annotation;
+                                     overload_annotation = annotation;
+                                     name;
+                                   }))
+                           ~define:Context.define
+                       in
+                       error :: errors_sofar
+                   in
+                   if
+                     not
+                       (GlobalResolution.less_or_equal
+                          global_resolution
+                          ~right:(overload_to_callable overload)
+                          ~left:(overload_to_callable implementation))
+                   then
+                     let error =
+                       Error.create
+                         ~location
+                         ~define:Context.define
+                         ~kind:
+                           (Error.IncompatibleOverload
+                              (Parameters
+                                 {
+                                   name;
+                                   location = define_location |> Option.value ~default:location;
+                                 }))
+                     in
+                     error :: errors_sofar
+                   else
+                     errors_sofar)
+        | _ -> errors
+      in
+      let check_unmatched_overloads errors =
+        match annotation with
+        | Some { annotation = Type.Callable { overloads; _ }; _ }
+          when not (Define.is_overloaded_method define) ->
+            let rec compare_parameters errors_sofar overloads =
+              match overloads with
+              | left :: overloads ->
+                  let create_unmatched_error matched errors_sofar unmatched =
+                    match unmatched, matched with
+                    | ( Type.Callable
+                          { implementation = { define_location = Some unmatched_location; _ }; _ },
+                        Type.Callable
+                          { implementation = { define_location = Some matched_location; _ }; _ } )
+                      ->
+                        let error =
+                          Error.create
+                            ~location
+                            ~define:Context.define
+                            ~kind:
+                              (Error.IncompatibleOverload
+                                 (Unmatchable { name; unmatched_location; matched_location }))
+                        in
+                        error :: errors_sofar
+                    | _, _ -> failwith "Callables missing locations."
+                  in
+                  let errors_sofar =
+                    overloads
+                    |> List.filter ~f:(fun right ->
+                           GlobalResolution.less_or_equal global_resolution ~left ~right)
+                    |> List.fold ~init:errors_sofar ~f:(create_unmatched_error left)
+                  in
+                  compare_parameters errors_sofar overloads
+              | _ -> errors_sofar
+            in
+            overloads |> List.map ~f:overload_to_callable |> compare_parameters errors
+        | _ -> errors
+      in
+      errors
+      |> check_implementation_exists
+      |> check_compatible_return_types
+      |> check_unmatched_overloads
+    in
+    Map.data errors
+    |> Error.deduplicate
+    |> class_initialization_errors
+    |> overload_errors
+    |> Error.filter ~configuration:Context.configuration ~resolution:global_resolution
 
 
   let forward ?key ({ bottom; _ } as state) ~statement:({ Node.location; _ } as statement) =
