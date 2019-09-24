@@ -4138,7 +4138,7 @@ module State (Context : Context) = struct
         state
 
 
-  let errors { resolution; errors; _ } =
+  let errors ({ resolution; errors; _ } as state) =
     let global_resolution = Resolution.global_resolution resolution in
     let ({ Node.value = { Define.signature = { name; _ }; _ } as define; location } as define_node)
       =
@@ -4446,7 +4446,10 @@ module State (Context : Context) = struct
         errors
     in
     let overload_errors errors =
-      let annotation = Resolution.get_local resolution ~reference:name in
+      let { resolved_annotation = annotation; _ } =
+        Expression.from_reference ~location:Location.Reference.any name
+        |> fun expression -> forward_expression ~state ~expression
+      in
       let overload_to_callable overload =
         Type.Callable
           {
