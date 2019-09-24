@@ -8,6 +8,7 @@ open Ast
 open Analysis
 open Test
 open OUnit2
+open Pyre
 
 let empty_environment () =
   AstEnvironment.ReadOnly.create ()
@@ -78,8 +79,12 @@ let test_populate context =
     environment
     qualifiers;
   let global_resolution = Analysis.Environment.resolution environment () in
+  let printer x = x >>| Type.Callable.show_overload Type.pp |> Option.value ~default:"o" in
+  let ignore_define_location overload = { overload with Type.Callable.define_location = None } in
   assert_equal
-    (GlobalResolution.undecorated_signature global_resolution (Reference.create "a.foo"))
+    ~printer
+    ( GlobalResolution.undecorated_signature global_resolution (Reference.create "a.foo")
+    >>| ignore_define_location )
     (Some
        {
          Type.Callable.annotation = Type.variable "a.T";

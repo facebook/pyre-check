@@ -790,13 +790,13 @@ let create ~resolution ?path ~configuration ~verify source =
         in
         let get_matching_method ~predicate =
           let get_matching_define = function
-            | { Node.value = Statement.Define define; _ } ->
+            | { Node.value = Statement.Define define; location } ->
                 if
                   predicate define
                   && Reference.equal define.Define.signature.Define.Signature.name name
                 then
                   let parser = GlobalResolution.annotation_parser global_resolution in
-                  define
+                  Node.create define ~location
                   |> Annotated.Define.Callable.create_overload ~parser
                   |> Type.Callable.create_from_implementation
                   |> Option.some

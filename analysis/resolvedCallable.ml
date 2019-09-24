@@ -9,9 +9,9 @@ open Pyre
 open Statement
 
 let apply_decorators
-    ?location
     ~resolution
-    ({ Define.signature = { Define.Signature.decorators; _ }; _ } as define)
+    ( { Node.value = { Define.signature = { Define.Signature.decorators; _ }; _ }; _ } as
+    define_node )
   =
   let apply_decorator
       ({ Type.Callable.annotation; parameters; _ } as overload)
@@ -117,9 +117,7 @@ let apply_decorators
   let parser = GlobalResolution.annotation_parser resolution in
   decorators
   |> List.rev
-  |> List.fold
-       ~init:(AnnotatedCallable.create_overload define ~parser ?location)
-       ~f:apply_decorator
+  |> List.fold ~init:(AnnotatedCallable.create_overload define_node ~parser) ~f:apply_decorator
 
 
 let create_callable ~resolution ~parent ~name overloads =

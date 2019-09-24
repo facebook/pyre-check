@@ -240,7 +240,8 @@ let register_define_as_undecorated_function
       name
   in
   let handle = function
-    | UnannotatedGlobalEnvironment.Define define when not (Define.is_overloaded_method define) ->
+    | UnannotatedGlobalEnvironment.Define define
+      when not (Define.is_overloaded_method (Node.value define)) ->
         let dependency =
           Option.some_if track_dependencies (AliasEnvironment.UndecoratedFunction name)
         in

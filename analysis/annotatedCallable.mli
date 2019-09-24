@@ -22,8 +22,4 @@ type annotation_parser = {
 
 val return_annotation : define:Define.t -> parser:annotation_parser -> Type.t
 
-val create_overload
-  :  ?location:Location.t ->
-  parser:annotation_parser ->
-  Define.t ->
-  Type.t Type.Callable.overload
+val create_overload : parser:annotation_parser -> Define.t Node.t -> Type.t Type.Callable.overload

@@ -10,13 +10,16 @@ open Statement
 module Callable = AnnotatedCallable
 module Class = AnnotatedClass
 
-type t = Define.t [@@deriving compare, eq, sexp, show, hash]
+type t = Define.t Node.t [@@deriving compare, eq, sexp, show, hash]
 
 let create definition = definition
 
 let define annotated = annotated
 
-let parameter_annotations { Define.signature = { parameters; _ }; _ } ~resolution =
+let parameter_annotations
+    { Node.value = { Define.signature = { parameters; _ }; _ }; _ }
+    ~resolution
+  =
   let element index { Node.value = { Parameter.annotation; _ }; _ } =
     let annotation =
       annotation
@@ -28,7 +31,7 @@ let parameter_annotations { Define.signature = { parameters; _ }; _ } ~resolutio
   List.mapi ~f:element parameters |> Int.Map.of_alist_exn
 
 
-let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
+let parent_definition { Node.value = { Define.signature = { parent; _ }; _ }; _ } ~resolution =
   match parent with
   | Some parent ->
       let parent_type = Type.Primitive (Reference.show parent) in
@@ -38,17 +41,21 @@ let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
 
 let decorate
     ( {
-        Define.signature =
-          { Define.Signature.decorators; parameters = original_parameters; _ } as signature;
-        _;
-      } as define )
+        Node.value =
+          {
+            Define.signature =
+              { Define.Signature.decorators; parameters = original_parameters; _ } as signature;
+            _;
+          } as define;
+        location;
+      } as define_node )
     ~resolution
   =
   match decorators with
-  | [] -> define
+  | [] -> define_node
   | _ ->
       let { Type.Callable.parameters; annotation; _ } =
-        ResolvedCallable.apply_decorators ~resolution define
+        ResolvedCallable.apply_decorators ~resolution define_node
       in
       let parameters =
         match parameters with
@@ -108,6 +115,7 @@ let decorate
         define with
         Define.signature = { signature with Define.Signature.parameters; return_annotation };
       }
+      |> Node.create ~location
 
 
 let is_constructor definition ~resolution =
@@ -117,5 +125,5 @@ let is_constructor definition ~resolution =
         let superclasses = Class.superclasses ~resolution parent_class in
         List.exists ~f:Class.is_unit_test (parent_class :: superclasses)
       in
-      Define.is_constructor ~in_test definition
+      Define.is_constructor ~in_test (Node.value definition)
   | None -> false

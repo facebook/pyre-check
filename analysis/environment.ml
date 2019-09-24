@@ -234,7 +234,8 @@ let register_values environment (resolution : GlobalResolution.t) qualifier =
               else
                 None
             in
-            ResolvedCallable.apply_decorators ~resolution ~location define
+            Node.create ~location define
+            |> ResolvedCallable.apply_decorators ~resolution
             |> (fun overload -> [Define.is_overloaded_method define, overload])
             |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)
             |> Node.create ~location

@@ -1222,7 +1222,7 @@ module Transform = struct
         | Annotated annotation -> Annotated (visit_annotation annotation ~state)
         | Callable ({ implementation; overloads; _ } as callable) ->
             let open Record.Callable in
-            let visit_overload { annotation; parameters; _ } =
+            let visit_overload ({ annotation; parameters; _ } as overload) =
               let visit_parameters parameter =
                 let visit_defined = function
                   | RecordParameter.Named ({ annotation; _ } as named) ->
@@ -1246,9 +1246,9 @@ module Transform = struct
                 | parameter -> parameter
               in
               {
+                overload with
                 annotation = visit_annotation annotation ~state;
                 parameters = visit_parameters parameters;
-                define_location = None;
               }
             in
             Callable

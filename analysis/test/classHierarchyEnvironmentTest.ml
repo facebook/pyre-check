@@ -268,11 +268,15 @@ let test_updates context =
           let printer implementation =
             implementation >>| Type.Callable.show_overload Type.pp |> Option.value ~default:"none"
           in
+          let remove_define_location overload =
+            { overload with Type.Record.Callable.define_location = None }
+          in
           ClassHierarchyEnvironment.ReadOnly.get_undecorated_function
             read_only
             ~dependency
             (Reference.create function_name)
-          |> assert_equal ~printer (expectation >>| parse)
+          >>| remove_define_location
+          |> assert_equal ~printer (expectation >>| parse >>| remove_define_location)
     in
     List.iter middle_actions ~f:execute_action;
     let delete_file

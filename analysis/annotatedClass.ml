@@ -459,7 +459,7 @@ let create_attribute
         in
         let apply_decorators define =
           ( Define.is_overloaded_method define,
-            ResolvedCallable.apply_decorators ~resolution ~location define )
+            ResolvedCallable.apply_decorators ~resolution (Node.create define ~location) )
         in
         List.map defines ~f:apply_decorators
         |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)

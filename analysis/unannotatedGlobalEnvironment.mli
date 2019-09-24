@@ -14,7 +14,7 @@ type unannotated_global =
       value: Expression.t;
     }
   | Imported of Reference.t
-  | Define of Define.t
+  | Define of Define.t Node.t
 [@@deriving compare, show]
 
 type dependency =

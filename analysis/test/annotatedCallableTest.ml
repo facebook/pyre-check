@@ -58,7 +58,10 @@ let test_create_overload context =
     assert_equal
       ~cmp:(Type.Callable.equal_overload Type.equal)
       expected
-      (source |> Test.parse_single_define |> fun define -> Callable.create_overload ~parser define)
+      ( source
+      |> Test.parse_single_define
+      |> fun define -> Callable.create_overload ~parser (Node.create_with_default_location define)
+      )
   in
   assert_overload
     {|

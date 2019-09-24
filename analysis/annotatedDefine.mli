@@ -11,9 +11,9 @@ module Class = AnnotatedClass
 
 type t [@@deriving compare, eq, sexp, show, hash]
 
-val create : Define.t -> t
+val create : Define.t Node.t -> t
 
-val define : t -> Define.t
+val define : t -> Define.t Node.t
 
 val parameter_annotations : t -> resolution:GlobalResolution.t -> Type.t Int.Map.t
 

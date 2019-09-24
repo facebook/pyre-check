@@ -31,6 +31,7 @@ let test_apply_decorators context =
         };
       body = [+Statement.Pass];
     }
+    |> Node.create_with_default_location
   in
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =
@@ -159,7 +160,8 @@ let test_create context =
       let { Define.signature = { name; _ }; _ } = List.hd_exn defines |> Node.value in
       let to_overload define =
         let parser = GlobalResolution.annotation_parser resolution in
-        Define.is_overloaded_method define, Callable.create_overload ~parser define
+        ( Define.is_overloaded_method define,
+          Callable.create_overload ~parser (Node.create_with_default_location define) )
       in
       defines
       |> List.map ~f:Node.value

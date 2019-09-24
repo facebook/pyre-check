@@ -328,7 +328,8 @@ module State (Context : Context) = struct
 
   let errors { resolution; errors; _ } =
     let global_resolution = Resolution.global_resolution resolution in
-    let { Node.value = { Define.signature = { name; _ }; _ } as define; location } =
+    let ({ Node.value = { Define.signature = { name; _ }; _ } as define; location } as define_node)
+      =
       Context.define
     in
     let class_initialization_errors errors =
@@ -446,7 +447,7 @@ module State (Context : Context) = struct
           let definition =
             Define.parent_definition
               ~resolution:(Resolution.global_resolution resolution)
-              (Define.create define)
+              (Define.create define_node)
           in
           match definition with
           | Some definition ->
@@ -487,7 +488,7 @@ module State (Context : Context) = struct
                 |> Option.value ~default:errors
             | _ -> errors
           in
-          Define.parent_definition ~resolution:global_resolution (Define.create define)
+          Define.parent_definition ~resolution:global_resolution (Define.create define_node)
           >>| Class.bases
           >>| List.fold ~init:errors ~f:is_final
           |> Option.value ~default:errors
@@ -1490,7 +1491,8 @@ module State (Context : Context) = struct
                 ~kind:(InvalidInheritance (UninheritableType annotation))
         in
         let bases =
-          Define.create define
+          Node.create define ~location
+          |> Define.create
           |> Define.parent_definition ~resolution:global_resolution
           >>| Class.bases
           |> Option.value ~default:[]
@@ -1510,7 +1512,8 @@ module State (Context : Context) = struct
             errors
           else
             let open Annotated in
-            Define.create define
+            Node.create define ~location
+            |> Define.create
             |> Define.parent_definition ~resolution:global_resolution
             >>= (fun definition ->
                   Class.overrides
@@ -4522,7 +4525,8 @@ module State (Context : Context) = struct
     | Define define ->
         if Reference.is_local define.signature.name then
           let parser = GlobalResolution.annotation_parser global_resolution in
-          AnnotatedCallable.create_overload ~parser ~location define
+          Node.create define ~location
+          |> AnnotatedCallable.create_overload ~parser
           |> Type.Callable.create_from_implementation
           |> Type.Variable.mark_all_variables_as_bound
                ~specific:(Resolution.all_type_variables_in_scope resolution)
@@ -4660,7 +4664,8 @@ module State (Context : Context) = struct
         | Define define ->
             let variables =
               let parser = GlobalResolution.annotation_parser global_resolution in
-              AnnotatedCallable.create_overload ~parser ~location define
+              Node.create define ~location
+              |> AnnotatedCallable.create_overload ~parser
               |> (fun { parameters; _ } ->
                    Type.Callable.create ~parameters ~annotation:Type.Top ())
               |> Type.Variable.all_free_variables

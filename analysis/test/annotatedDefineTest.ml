@@ -29,6 +29,7 @@ let test_parent_definition context =
         };
       body = [+Statement.Pass];
     }
+    |> Node.create_with_default_location
     |> Define.create
     |> Define.parent_definition ~resolution:(Environment.resolution environment ())
   in
@@ -85,7 +86,7 @@ let test_decorate context =
     in
     let resolution = Environment.resolution environment () in
     let take_define = function
-      | [{ Node.value = Statement.Define define; _ }] -> define
+      | [{ Node.value = Statement.Define define; location }] -> Node.create define ~location
       | _ -> failwith "Expected a define"
     in
     let define =
@@ -94,6 +95,7 @@ let test_decorate context =
       |> Annotated.Define.create
       |> Annotated.Define.decorate ~resolution
       |> Annotated.Define.define
+      |> Node.value
     in
     let expected = Test.parse_single_define expected in
     assert_equal

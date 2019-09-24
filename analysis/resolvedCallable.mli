@@ -14,7 +14,6 @@ val create_callable
   Type.Callable.t
 
 val apply_decorators
-  :  ?location:Location.t ->
-  resolution:GlobalResolution.t ->
-  Define.t ->
+  :  resolution:GlobalResolution.t ->
+  Define.t Node.t ->
   Type.t Type.Callable.overload

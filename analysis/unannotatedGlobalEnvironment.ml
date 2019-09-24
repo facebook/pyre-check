@@ -19,7 +19,7 @@ type unannotated_global =
       value: Expression.t;
     }
   | Imported of Reference.t
-  | Define of Define.t
+  | Define of Define.t Node.t
 [@@deriving compare, show]
 
 type dependency =
@@ -338,7 +338,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
 
 let collect_unannotated_globals { Source.statements; source_path = { SourcePath.qualifier; _ }; _ }
   =
-  let rec visit_statement ~qualifier globals { Node.value; _ } =
+  let rec visit_statement ~qualifier globals { Node.value; location } =
     match value with
     | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
       when Expression.is_simple_name target ->
@@ -371,7 +371,7 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
         in
         List.rev_append (List.map ~f:import_to_global imports) globals
     | Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
-        (name, Define define) :: globals
+        (name, Define (Node.create define ~location)) :: globals
     | _ -> globals
   in
   let write (target, o) =

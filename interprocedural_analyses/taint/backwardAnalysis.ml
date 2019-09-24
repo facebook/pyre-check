@@ -717,12 +717,9 @@ let run ~environment ~define ~existing_model =
   let ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define) =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = Environment.resolution environment () in
-    let decorate define =
-      Annotated.Define.create define
-      |> Annotated.Define.decorate ~resolution
-      |> Annotated.Define.define
-    in
-    Node.map define ~f:decorate
+    Annotated.Define.create define
+    |> Annotated.Define.decorate ~resolution
+    |> Annotated.Define.define
   in
   let module AnalysisInstance = AnalysisInstance (struct
     let definition = define

@@ -586,7 +586,7 @@ let run
     let dump = Define.dump define in
     if dump then (
       Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
-      Log.dump "AST:\n%s" (AnnotatedDefine.create define |> AnnotatedDefine.show) );
+      Log.dump "AST:\n%s" (AnnotatedDefine.create define_node |> AnnotatedDefine.show) );
     let print_state name state =
       if dump then
         Log.dump "%s state:\n%a" name State.pp state;

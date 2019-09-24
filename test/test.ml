@@ -1629,12 +1629,30 @@ let assert_equivalent_attributes ~context source expected =
     let ignore_value_location ({ Annotated.Attribute.value; _ } as attribute) =
       { attribute with value = Node.create_with_default_location value.value }
     in
+    let ignore_callable_define_location ({ Annotated.Attribute.annotation; _ } as attribute) =
+      let annotation =
+        match annotation with
+        | { Annotation.annotation = Callable ({ implementation; overloads; _ } as callable); _ } ->
+            let callable =
+              let remove callable = { callable with Type.Callable.define_location = None } in
+              {
+                callable with
+                implementation = remove implementation;
+                overloads = List.map overloads ~f:remove;
+              }
+            in
+            { annotation with annotation = Callable callable; mutability = Mutable }
+        | _ -> annotation
+      in
+      { attribute with annotation }
+    in
     Option.value_exn (GlobalResolution.class_definition global_resolution class_type)
     |> Annotated.Class.create
     |> Annotated.Class.attributes ~transitive:false ~resolution:global_resolution
     |> List.sort ~compare:compare_by_name
     |> List.map ~f:Node.value
     |> List.map ~f:ignore_value_location
+    |> List.map ~f:ignore_callable_define_location
   in
   let class_names =
     let expected =

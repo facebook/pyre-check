@@ -65,14 +65,13 @@ let return_annotation
 
 
 let create_overload
-    ?location
     ~parser:( {
                 parse_annotation;
                 parse_as_concatenation;
                 parse_as_parameter_specification_instance_annotation;
                 _;
               } as parser )
-    ({ Define.signature = { parameters; _ }; _ } as define)
+    { Node.value = { Define.signature = { parameters; _ }; _ } as define; location }
   =
   let open Type.Callable in
   let parameters =
@@ -116,4 +115,4 @@ let create_overload
     in
     List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
   in
-  { annotation = return_annotation ~define ~parser; parameters; define_location = location }
+  { annotation = return_annotation ~define ~parser; parameters; define_location = Some location }
