@@ -1,5 +1,5 @@
 # pyre-ignore-all-errors
-from typing import Any, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar
 
 
 _T = TypeVar("_T")
@@ -14,13 +14,23 @@ class Generic(metaclass=GenericMeta):
     pass
 
 
-def none_throws(optional, message: str = "Unexpected `None`"):
-    # type: (Optional[_T], str) -> _T
+def none_throws(optional: Optional[_T], message: str = "Unexpected `None`") -> _T:
     """Convert an optional to its value. Raises an `AssertionError` if the
     value is `None`"""
     if optional is None:
         raise AssertionError(message)
     return optional
+
+
+TClass = TypeVar("TClass")
+
+
+def assert_is_instance(obj: object, cls: Type[TClass]) -> TClass:
+    """Assert that the given object is an instance of the given class. Raises a
+    `TypeError` if not."""
+    if not isinstance(obj, cls):
+        raise TypeError(f"obj is not an instance of cls: obj={obj} cls={cls}")
+    return obj
 
 
 def safe_cast(new_type: Type[_T], value: Any) -> _T:
