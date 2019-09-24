@@ -1213,13 +1213,36 @@ class DefaultStrictTest(unittest.TestCase):
         find_configuration,
     ) -> None:
         arguments = MagicMock()
-        arguments.path = Path("local")
+        arguments.local_configuration = Path("local")
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade.run_strict_default(arguments)
             add_local_unsafe.assert_not_called()
 
+        add_local_unsafe.reset_mock()
+        get_errors.reset_mock()
+        pyre_errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            }
+        ]
+        get_errors.return_value = pyre_errors
+        configuration_contents = '{"targets":[]}'
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            upgrade.run_strict_default(arguments)
+            add_local_unsafe.assert_called_once()
+
+        arguments.reset_mock()
+        get_errors.return_value = []
         add_local_unsafe.reset_mock()
         get_errors.reset_mock()
         pyre_errors = [

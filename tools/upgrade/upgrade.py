@@ -463,7 +463,11 @@ def run_strict_default(arguments: argparse.Namespace) -> None:
     if project_configuration is None:
         LOG.info("No project configuration found for the given directory.")
         return
-    configuration_path = arguments.path / ".pyre_configuration.local"
+    local_configuration = arguments.local_configuration
+    if local_configuration:
+        configuration_path = local_configuration / ".pyre_configuration.local"
+    else:
+        configuration_path = project_configuration
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
         LOG.info("Processing %s", configuration.get_directory())
@@ -580,7 +584,10 @@ def main():
     strict_default = commands.add_parser("strict-default")
     strict_default.set_defaults(function=run_strict_default)
     strict_default.add_argument(
-        "path", help="Path to project root with local configuration", type=Path
+        "-l",
+        "--local-configuration",
+        type=Path,
+        help="Path to project root with local configuration",
     )
     strict_default.add_argument(
         # TODO(T53195818): Not implemented
