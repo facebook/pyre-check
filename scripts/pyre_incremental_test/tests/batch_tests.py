@@ -85,24 +85,27 @@ class RunnerTest(unittest.TestCase):
 
     def test_basic(self) -> None:
         def create_dummy_state_json(commit_hash: str) -> Dict[str, str]:
-            return {"kind": "base", "repository": "repo", "commit_hash": commit_hash}
+            return {"kind": "hg", "repository": "repo", "commit_hash": commit_hash}
+
+        def create_dummy_update_json(commit_hash: str) -> Dict[str, str]:
+            return {"kind": "hg", "commit_hash": commit_hash}
 
         specification0 = Specification.from_json(
             {
                 "old_state": create_dummy_state_json("hash0"),
-                "new_state": create_dummy_state_json("hash1"),
+                "new_state": create_dummy_update_json("hash1"),
             }
         )
         specification1 = Specification.from_json(
             {
                 "old_state": create_dummy_state_json("hash1"),
-                "new_state": create_dummy_state_json("hash2"),
+                "new_state": create_dummy_update_json("hash2"),
             }
         )
         specification2 = Specification.from_json(
             {
                 "old_state": create_dummy_state_json("hash2"),
-                "new_state": create_dummy_state_json("hash3"),
+                "new_state": create_dummy_update_json("hash3"),
             }
         )
 

@@ -48,7 +48,9 @@ class PyreRunner:
         self._specification.old_state.prepare(self._environment)
 
     def prepare_new_state(self) -> None:
-        self._specification.new_state.prepare(self._environment)
+        self._specification.new_state.update(
+            self._environment, self._specification.old_state
+        )
 
     def run_check(self) -> List[PyreError]:
         pyre_check_command = (
@@ -105,10 +107,7 @@ class PyreRunner:
 def _run_full_check(pyre_runner: PyreRunner) -> Tuple[List[PyreError], int]:
     LOG.info("Running pyre full check...")
 
-    LOG.debug("Preparing updated repository state...")
-    pyre_runner.prepare_new_state()
     start_time = time()
-    LOG.debug("Starting full check...")
     result = pyre_runner.run_check()
     duration = int(time() - start_time)
 

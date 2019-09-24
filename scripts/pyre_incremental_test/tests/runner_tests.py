@@ -34,15 +34,11 @@ class RunnerTest(unittest.TestCase):
         specification = Specification.from_json(
             {
                 "old_state": {
-                    "kind": "base",
+                    "kind": "hg",
                     "repository": "old_root",
                     "commit_hash": "old_hash",
                 },
-                "new_state": {
-                    "kind": "base",
-                    "repository": "new_root",
-                    "commit_hash": "new_hash",
-                },
+                "new_state": {"kind": "hg", "commit_hash": "new_hash"},
                 "pyre_check_pyre_options": "--option1",
                 "pyre_start_pyre_options": "--option2",
                 "pyre_incremental_pyre_options": "--option3",
@@ -52,13 +48,12 @@ class RunnerTest(unittest.TestCase):
         expected_commands = [
             CommandInput(Path("old_root"), "hg update old_hash"),
             CommandInput(Path("old_root"), "pyre --option2 --no-saved-state start"),
-            CommandInput(Path("new_root"), "hg update new_hash"),
+            CommandInput(Path("old_root"), "hg update new_hash"),
             CommandInput(
                 Path("old_root"),
                 "pyre --option3 --output=json --noninteractive incremental",
             ),
             CommandInput(Path("old_root"), "pyre stop"),
-            CommandInput(Path("new_root"), "hg update new_hash"),
             CommandInput(
                 Path("old_root"), "pyre --option1 --output=json --noninteractive check"
             ),
