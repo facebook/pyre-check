@@ -387,6 +387,7 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
   in
   SharedMemory.Globals.remove_batch globals;
+  SharedMemory.GlobalKeys.remove_batch (SharedMemory.GlobalKeys.KeySet.of_list qualifiers);
 
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
     check_class_hierarchy_integrity environment
