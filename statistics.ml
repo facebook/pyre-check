@@ -142,8 +142,8 @@ let performance
     | None -> randomly_log_every
   in
   Log.log ~section "%s: %fs" (String.capitalize name) (Int.to_float milliseconds /. 1000.0);
-  Profiling.log_event
-    (Profiling.Event.create name ~event_type:(Duration milliseconds) ~tags:normals);
+  Profiling.log_event (fun () ->
+      Profiling.Event.create name ~event_type:(Duration milliseconds) ~tags:normals);
   sample
     ~integers:(("elapsed_time", milliseconds) :: integers)
     ~normals:(("name", name) :: normals)

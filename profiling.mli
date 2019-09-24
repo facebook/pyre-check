@@ -4,7 +4,10 @@
  * LICENSE file in the root directory of this source tree. *)
 
 module Event : sig
-  type event_type = Duration of int [@@deriving yojson]
+  type event_type =
+    | Duration of int
+    | Counter
+  [@@deriving yojson]
 
   type t = {
     name: string;
@@ -23,6 +26,8 @@ module Event : sig
     t
 end
 
-val log_event : Event.t -> unit
+val log_event : (unit -> Event.t) -> unit
 
 val track_duration_event : ?tags:(string * string) list -> f:(unit -> 'a) -> string -> 'a
+
+val track_shared_memory_usage : unit -> unit

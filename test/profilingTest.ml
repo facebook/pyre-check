@@ -53,17 +53,24 @@ let test_event_format _ =
     assert_event ~name ~event_type ~timestamp ~tags output_name
   in
   assert_event
-    (Profiling.Event.create "foo" ~event_type:(Duration 42) ~timestamp:0)
+    (fun () -> Profiling.Event.create "foo" ~event_type:(Duration 42) ~timestamp:0)
     ~name:"foo"
     ~event_type:"[\"Duration\", 42]"
     ~timestamp:0
     ~tags:[];
   assert_event
-    (Profiling.Event.create "bar" ~event_type:(Duration 24) ~timestamp:1 ~tags:["hello", "world"])
+    (fun () ->
+      Profiling.Event.create "bar" ~event_type:(Duration 24) ~timestamp:1 ~tags:["hello", "world"])
     ~name:"bar"
     ~event_type:"[\"Duration\", 24]"
     ~timestamp:1
-    ~tags:["hello", "world"]
+    ~tags:["hello", "world"];
+  assert_event
+    (fun () -> Profiling.Event.create "baz" ~event_type:Counter ~timestamp:1 ~tags:["hello", "42"])
+    ~name:"baz"
+    ~event_type:"[\"Counter\"]"
+    ~timestamp:1
+    ~tags:["hello", "42"]
 
 
 let test_event_track _ =

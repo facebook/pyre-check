@@ -7,7 +7,10 @@ open Core
 open Pyre
 
 module Event = struct
-  type event_type = Duration of int [@@deriving yojson]
+  type event_type =
+    | Duration of int
+    | Counter
+  [@@deriving yojson]
 
   type t = {
     name: string;
@@ -32,10 +35,11 @@ module Event = struct
     { name; pid; event_type; timestamp; tags }
 end
 
-let log_event event =
+(* Taking a constructor instead of an event here so that events can be created lazily *)
+let log_event event_creator =
   let log_to_path path =
     let path = Path.create_absolute ~follow_symbolic_links:false path in
-    let line = event |> Event.to_yojson |> Yojson.Safe.to_string in
+    let line = event_creator () |> Event.to_yojson |> Yojson.Safe.to_string in
     File.append ~lines:[line] path
   in
   Configuration.Analysis.get_global ()
@@ -47,5 +51,30 @@ let track_duration_event ?(tags = []) ~f name =
   let timer = Timer.start () in
   let result = f () in
   let duration = Timer.stop_in_ms timer in
-  log_event (Event.create name ~tags ~event_type:(Duration duration));
+  let create_event () = Event.create name ~tags ~event_type:(Duration duration) in
+  log_event create_event;
   result
+
+
+let track_shared_memory_usage () =
+  let create_event () =
+    let used_heap_size = SharedMem.heap_size () in
+    let wasted_heap_size = SharedMem.wasted_heap_size () in
+    let { SharedMem.nonempty_slots = nonempty_hash_slots; used_slots = used_hash_slots; _ } =
+      SharedMem.hash_stats ()
+    in
+    let { SharedMem.used_slots = used_dependency_slots; _ } = SharedMem.dep_stats () in
+    let create_tag name counter = name, string_of_int counter in
+    Event.create
+      "Shared Memory Usage"
+      ~event_type:Event.Counter
+      ~tags:
+        [
+          create_tag "used_heap_size" used_heap_size;
+          create_tag "wasted_heap_size" wasted_heap_size;
+          create_tag "nonempty_hash_slots" nonempty_hash_slots;
+          create_tag "used_hash_slots" used_hash_slots;
+          create_tag "used_dependency_slots" used_dependency_slots;
+        ]
+  in
+  log_event create_event
