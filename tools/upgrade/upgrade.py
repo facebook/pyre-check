@@ -627,7 +627,7 @@ def main():
     fixme_single = commands.add_parser("fixme-single")
     fixme_single.set_defaults(function=run_fixme_single)
     fixme_single.add_argument(
-        "path", help="Path to project root with local configuration"
+        "path", help="Path to project root with local configuration", type=Path
     )
     fixme_single.add_argument(
         "--from-stdin", action="store_true", help=argparse.SUPPRESS
