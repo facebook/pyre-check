@@ -649,6 +649,13 @@ let test_infer_backward context =
       {|[{"name":"x","type":"int","value":null},{"name":"y","type":null,"value":null}]|};
       {|[{"name":"x","type":null,"value":null},{"name":"y","type":"int","value":null}]|};
     ];
+  assert_infer
+    ~fields:["inference.parameters"]
+    {|
+      def foo(x) -> None:
+          x += 1
+    |}
+    [{|[{"name":"x","type":"int","value":null}]|}];
   ()
 
 

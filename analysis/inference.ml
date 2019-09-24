@@ -476,6 +476,28 @@ module State (Context : Context) = struct
                   |> Option.value ~default:resolution
                 in
                 annotate_call_accesses statement resolution
+            | Call
+                {
+                  callee =
+                    {
+                      value =
+                        Name
+                          (Name.Attribute
+                            { attribute = "__iadd__"; base = { Node.value = Name name; _ }; _ });
+                      _;
+                    };
+                  arguments = [{ Call.Argument.value; _ }];
+                } ->
+                let resolution =
+                  resolve_assign target_annotation (forward_expression ~state ~expression:value)
+                  >>| (fun refined ->
+                        Resolution.set_local
+                          resolution
+                          ~reference:(Expression.name_to_reference_exn name)
+                          ~annotation:(Annotation.create refined))
+                  |> Option.value ~default:resolution
+                in
+                annotate_call_accesses statement resolution
             | Call _
             | Name _ ->
                 annotate_call_accesses statement resolution
