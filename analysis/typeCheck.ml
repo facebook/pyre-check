@@ -4566,7 +4566,7 @@ module State (Context : Context) = struct
                                  (Unmatchable { name; unmatched_location; matched_location }))
                         in
                         error :: errors_sofar
-                    | _, _ -> failwith "Callables missing locations."
+                    | _, _ -> errors_sofar
                   in
                   let errors_sofar =
                     overloads
