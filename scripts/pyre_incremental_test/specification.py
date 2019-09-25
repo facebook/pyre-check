@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, ContextManager, Dict, Iterator
+from typing import Any, ContextManager, Dict, Iterator, List
 
 from .environment import Environment
 
@@ -69,6 +69,20 @@ class RepositoryUpdate(ABC):
                     patch=input_json["patch"],
                     patch_flags=input_json.get("patch_flags", ""),
                 )
+            elif kind == "file":
+                changes = input_json.get("changes", {})
+                removals = input_json.get("removals", [])
+                if not isinstance(changes, dict):
+                    raise InvalidSpecificationException(
+                        "File changes must be specified as dicts"
+                    )
+                if not isinstance(removals, list):
+                    raise InvalidSpecificationException(
+                        "File removals must be specified as lists"
+                    )
+                if len(changes) == 0 and len(removals) == 0:
+                    raise InvalidSpecificationException("No file change is given")
+                return FileRepositoryUpdate(changes=changes, removals=removals)
             else:
                 raise InvalidSpecificationException(
                     f"Cannot create RepositoryUpdate due to unrecognized kind"
@@ -146,6 +160,27 @@ class PatchRepositoryUpdate(RepositoryUpdate):
 
     def to_json(self) -> Dict[str, Any]:
         return {"kind": "patch", "patch": self.patch, "patch_flags": self.patch_flags}
+
+
+@dataclass(frozen=True)
+class FileRepositoryUpdate(RepositoryUpdate):
+    changes: Dict[str, str]
+    removals: List[str]
+
+    def update(self, environment: Environment, working_directory: Path) -> None:
+        for handle, content in self.changes.items():
+            environment.checked_run(
+                working_directory=working_directory,
+                command=f"tee {handle}",
+                stdin=content,
+            )
+        for handle in self.removals:
+            environment.checked_run(
+                working_directory=working_directory, command=f"rm -f {handle}"
+            )
+
+    def to_json(self) -> Dict[str, Any]:
+        return {"kind": "file", "changes": self.changes, "removals": self.removals}
 
 
 @dataclass(frozen=True)

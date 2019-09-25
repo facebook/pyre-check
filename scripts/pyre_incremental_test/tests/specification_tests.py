@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from ..specification import (
+    FileRepositoryUpdate,
     HgRepositoryState,
     HgRepositoryUpdate,
     InvalidSpecificationException,
@@ -51,6 +52,14 @@ class SpecificationTest(unittest.TestCase):
             ),
             PatchRepositoryUpdate("my_patch", "my_flags"),
         )
+        changes = {"a.py": "print('a')", "b.py": "print('b')"}
+        removals = ["c.py", "d.py"]
+        self.assertEqual(
+            RepositoryUpdate.from_json(
+                {"kind": "file", "changes": changes, "removals": removals}
+            ),
+            FileRepositoryUpdate(changes=changes, removals=removals),
+        )
 
         with self.assertRaises(InvalidSpecificationException):
             RepositoryUpdate.from_json({})
@@ -60,6 +69,12 @@ class SpecificationTest(unittest.TestCase):
             RepositoryUpdate.from_json({"kind": "hg", "commit_hash_missing": ""})
         with self.assertRaises(InvalidSpecificationException):
             RepositoryUpdate.from_json({"kind": "patch", "patch_missing": ""})
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryUpdate.from_json({"kind": "file", "changes": "not_dict"})
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryUpdate.from_json({"kind": "file", "removals": "not_list"})
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryUpdate.from_json({"kind": "file", "no_file_change": ""})
 
     def test_create_specification(self) -> None:
         self.assertEqual(
