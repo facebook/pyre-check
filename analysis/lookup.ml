@@ -54,8 +54,16 @@ module NodeVisitor = struct
         in
         let resolve_definition ~expression =
           let find_definition reference =
+            let fallback = function
+              | Some location -> Some location
+              | None -> (
+                match Resolution.resolve_reference resolution reference with
+                | Type.Callable { implementation = { define_location; _ }; _ } -> define_location
+                | _ -> None )
+            in
             GlobalResolution.global (Resolution.global_resolution resolution) reference
             >>| Node.location
+            |> fallback
             >>= fun location ->
             if Location.equal location Location.Reference.any then None else Some location
           in
