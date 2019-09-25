@@ -377,9 +377,11 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
 
     lines = text.split("\n")  # type: List[str]
 
-    # Check if already locally strict.
+    # Check if already locally strict or ignore-all.
     for line in lines:
-        if re.match("^[ \t]*# *pyre-strict *$", line):
+        if re.match("^[ \t]*# *pyre-strict *$", line) or re.match(
+            "^[ \t]*# *pyre-ignore-all-errors *$", line
+        ):
             return
 
     # Add local unsafe.

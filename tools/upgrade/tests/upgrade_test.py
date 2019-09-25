@@ -1197,6 +1197,11 @@ class DefaultStrictTest(unittest.TestCase):
             upgrade.add_local_unsafe(arguments, "local.py")
             path_write_text.assert_not_called()
 
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# comment\n# pyre-ignore-all-errors\n1"
+            upgrade.add_local_unsafe(arguments, "local.py")
+            path_write_text.assert_not_called()
+
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value=Path(".")
     )
