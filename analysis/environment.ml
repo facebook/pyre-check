@@ -204,12 +204,7 @@ let register_values environment (resolution : GlobalResolution.t) qualifier =
     let module CollectCallables = Visit.MakeStatementVisitor (struct
       type t = Type.Callable.t Node.t list Reference.Map.t
 
-      let visit_children = function
-        | { Node.value = Statement.Define _; _ } ->
-            (* inner functions are not globals *)
-            false
-        | _ -> true
-
+      let visit_children _ = false
 
       let statement { Source.source_path = { SourcePath.qualifier; _ }; _ } callables statement =
         let collect_callable ~name callables callable =

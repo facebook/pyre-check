@@ -669,7 +669,7 @@ let test_populate context =
       ~printer:(function
         | Some global -> GlobalResolution.show_global global
         | None -> "None")
-      (Some (Node.create_with_default_location expected))
+      (expected >>| Node.create_with_default_location)
       (GlobalResolution.global global_resolution !&actual)
   in
   let assert_global =
@@ -692,6 +692,7 @@ let test_populate context =
       ]
     |> assert_global_with_environment
   in
+  let assert_global actual expected = assert_global actual (Some expected) in
   assert_global
     "test.A"
     (Annotation.create_immutable ~global:true (parse_annotation environment !"test.int"));
@@ -726,6 +727,8 @@ let test_populate context =
       ]
     |> assert_global_with_environment
   in
+  let assert_no_global actual = assert_global actual None in
+  let assert_global actual expected = assert_global actual (Some expected) in
   assert_global "test.global_value_set" (Annotation.create_immutable ~global:true Type.integer);
   assert_global "test.global_annotated" (Annotation.create_immutable ~global:true Type.integer);
   assert_global "test.global_both" (Annotation.create_immutable ~global:true Type.integer);
@@ -748,20 +751,7 @@ let test_populate context =
        ~global:true
        ~original:(Some Type.Top)
        (Type.meta (Type.Primitive "test.Class")));
-  assert_global
-    "test.Class.__init__"
-    (Annotation.create_immutable
-       ~global:true
-       (Type.Callable.create
-          ~name:!&"test.Class.__init__"
-          ~parameters:
-            (Type.Callable.Defined
-               [
-                 Type.Callable.Parameter.Named
-                   { name = "self"; annotation = Type.Top; default = false };
-               ])
-          ~annotation:Type.Top
-          ()));
+  assert_no_global "test.Class.__init__";
 
   (* Properties. *)
   let assert_global =
@@ -778,20 +768,7 @@ let test_populate context =
       ]
     |> assert_global_with_environment
   in
-  assert_global
-    "test.Class.property"
-    (Annotation.create_immutable
-       ~global:true
-       (Type.Callable.create
-          ~name:!&"test.Class.property"
-          ~parameters:
-            (Type.Callable.Defined
-               [
-                 Type.Callable.Parameter.Named
-                   { name = "self"; annotation = Type.Top; default = false };
-               ])
-          ~annotation:Type.integer
-          ()));
+  assert_global "test.Class.property" None;
 
   (* Loops. *)
   ( try
@@ -815,9 +792,10 @@ let test_populate context =
   in
   assert_global
     "test.A"
-    ( Type.Primitive "test.A"
-    |> Type.meta
-    |> Annotation.create_immutable ~global:true ~original:(Some Type.Top) );
+    (Some
+       ( Type.Primitive "test.A"
+       |> Type.meta
+       |> Annotation.create_immutable ~global:true ~original:(Some Type.Top) ));
 
   (* Callable classes. *)
   let environment =
