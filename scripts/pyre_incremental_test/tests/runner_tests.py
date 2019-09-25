@@ -45,7 +45,9 @@ class RunnerTest(unittest.TestCase):
             }
         )
 
+        initial_hash = "initial_hash"
         expected_commands = [
+            CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update old_hash"),
             CommandInput(Path("old_root"), "pyre --option2 --no-saved-state restart"),
             CommandInput(Path("old_root"), "hg update new_hash"),
@@ -57,10 +59,14 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre --option1 --output=json --noninteractive check"
             ),
+            CommandInput(Path("old_root"), "hg update --clean initial_hash"),
         ]
 
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
-            return CommandOutput(return_code=0, stdout="", stderr="")
+            if command_input.command.startswith("hg whereami"):
+                return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            else:
+                return CommandOutput(return_code=0, stdout="", stderr="")
 
         self.assert_run(
             mock_execute=always_clean_execute,
@@ -73,7 +79,9 @@ class RunnerTest(unittest.TestCase):
             pyre_error = PyreError(
                 line=1, column=1, path="test.py", description="Something is wrong"
             )
-            if command_input.command.endswith(
+            if command_input.command.startswith("hg whereami"):
+                return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif command_input.command.endswith(
                 "check"
             ) or command_input.command.endswith("incremental"):
                 return CommandOutput(
@@ -93,7 +101,9 @@ class RunnerTest(unittest.TestCase):
             pyre_error = PyreError(
                 line=1, column=1, path="test.py", description="Something is wrong"
             )
-            if command_input.command.endswith("check"):
+            if command_input.command.startswith("hg whereami"):
+                return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif command_input.command.endswith("check"):
                 return CommandOutput(
                     return_code=1, stdout=json.dumps([asdict(pyre_error)]), stderr=""
                 )
@@ -127,7 +137,9 @@ class RunnerTest(unittest.TestCase):
             pyre_error2 = PyreError(
                 line=3, column=3, path="test3.py", description="Everything's broken!"
             )
-            if command_input.command.endswith("check"):
+            if command_input.command.startswith("hg whereami"):
+                return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif command_input.command.endswith("check"):
                 return CommandOutput(
                     return_code=1, stdout=json.dumps([asdict(pyre_error0)]), stderr=""
                 )

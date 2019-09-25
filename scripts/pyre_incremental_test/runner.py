@@ -2,9 +2,11 @@
 
 import json
 import logging
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
-from time import ctime, time
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from time import time
+from typing import Any, Dict, Iterator, List, Optional
 
 from .environment import Environment
 from .specification import Specification
@@ -40,17 +42,18 @@ class PyreError:
 
 
 class PyreRunner:
-    def __init__(self, environment: Environment, specification: Specification) -> None:
+    def __init__(
+        self,
+        environment: Environment,
+        specification: Specification,
+        working_directory: Path,
+    ) -> None:
         self._environment = environment
         self._specification = specification
+        self._working_directory = working_directory
 
-    def prepare_old_state(self) -> None:
-        self._specification.old_state.prepare(self._environment)
-
-    def prepare_new_state(self) -> None:
-        self._specification.new_state.update(
-            self._environment, self._specification.old_state
-        )
+    def update(self) -> None:
+        self._specification.new_state.update(self._environment, self._working_directory)
 
     def run_check(self) -> List[PyreError]:
         pyre_check_command = (
@@ -60,7 +63,7 @@ class PyreRunner:
             f"check {self._specification.pyre_check_options}"
         ).rstrip()
         output = self._environment.checked_run(
-            working_directory=self._specification.old_state.get_working_directory(),
+            working_directory=self._working_directory,
             command=pyre_check_command,
             expected_return_codes=(0, 1),
         )
@@ -79,14 +82,12 @@ class PyreRunner:
             f"restart {self._specification.pyre_start_options}"
         ).rstrip()
         self._environment.checked_run(
-            working_directory=self._specification.old_state.get_working_directory(),
-            command=pyre_start_command,
+            working_directory=self._working_directory, command=pyre_start_command
         )
 
     def run_stop(self) -> None:
         self._environment.checked_run(
-            working_directory=self._specification.old_state.get_working_directory(),
-            command="pyre stop",
+            working_directory=self._working_directory, command="pyre stop"
         )
 
     def run_incremental(self) -> List[PyreError]:
@@ -97,7 +98,7 @@ class PyreRunner:
             f"incremental {self._specification.pyre_incremental_options}"
         ).rstrip()
         output = self._environment.checked_run(
-            working_directory=self._specification.old_state.get_working_directory(),
+            working_directory=self._working_directory,
             command=pyre_incremental_command,
             expected_return_codes=(0, 1),
         )
@@ -107,38 +108,12 @@ class PyreRunner:
             return [PyreError.from_json(x) for x in json.loads(output.stdout)]
 
 
-def _run_full_check(pyre_runner: PyreRunner) -> Tuple[List[PyreError], int]:
-    LOG.info("Running pyre full check...")
-
-    start_time = time()
-    result = pyre_runner.run_check()
-    duration = int(time() - start_time)
-
-    LOG.info(f"Pyre full check successfully finished (with {len(result)} errors).")
-    return result, duration
-
-
-def _run_incremental_check(pyre_runner: PyreRunner) -> Tuple[List[PyreError], int]:
-    LOG.info("Running pyre incremental check...")
-
-    LOG.debug("Preparing base repository state...")
-    pyre_runner.prepare_old_state()
-    LOG.debug("Starting pyre server...")
-    pyre_runner.run_start()
-    LOG.debug("Preparing updated repository state...")
-    pyre_runner.prepare_new_state()
-
-    start_time = time()
-    LOG.debug("Starting incremental check starts...")
-    result = pyre_runner.run_incremental()
-    duration = int(time() - start_time)
-    LOG.debug(f"Stopping pyre server...")
-    pyre_runner.run_stop()
-
-    LOG.info(
-        f"Pyre incremental check successfully finished (with {len(result)} errors)."
-    )
-    return result, duration
+@contextmanager
+def _create_pyre_runner(
+    environment: Environment, specification: Specification
+) -> Iterator["PyreRunner"]:
+    with specification.old_state.activate_sandbox(environment) as sandbox_root:
+        yield PyreRunner(environment, specification, sandbox_root)
 
 
 @dataclass
@@ -173,11 +148,31 @@ class ResultComparison:
 def compare_server_to_full(
     environment: Environment, specification: Specification
 ) -> ResultComparison:
-    pyre_runner = PyreRunner(environment, specification)
-    incremental_check_output, incremental_check_time = _run_incremental_check(
-        pyre_runner
-    )
-    full_check_output, full_check_time = _run_full_check(pyre_runner)
+    LOG.info("Preparing base repository state...")
+    with _create_pyre_runner(environment, specification) as pyre_runner:
+        LOG.debug("Starting pyre server...")
+        pyre_runner.run_start()
+        LOG.debug("Preparing updated repository state...")
+        pyre_runner.update()
+
+        start_time = time()
+        LOG.info("Running pyre incremental check...")
+        incremental_check_output = pyre_runner.run_incremental()
+        incremental_check_time = int(time() - start_time)
+        LOG.debug(f"Stopping pyre server...")
+        pyre_runner.run_stop()
+        LOG.info(
+            f"Pyre incremental check successfully finished (with {len(incremental_check_output)} errors)."  # noqa: line too long
+        )
+
+        LOG.info("Running pyre full check...")
+        start_time = time()
+        full_check_output = pyre_runner.run_check()
+        full_check_time = int(time() - start_time)
+        LOG.info(
+            f"Pyre full check successfully finished (with {len(full_check_output)} errors)."  # noqa: line too long
+        )
+
     discrepancy = (
         None
         if incremental_check_output == full_check_output

@@ -1,11 +1,16 @@
 # pyre-strict
 
+import logging
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, ContextManager, Dict, Iterator
 
 from .environment import Environment
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class InvalidSpecificationException(Exception):
@@ -14,11 +19,7 @@ class InvalidSpecificationException(Exception):
 
 class RepositoryState(ABC):
     @abstractmethod
-    def prepare(self, environment: Environment) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_working_directory(self) -> Path:
+    def activate_sandbox(self, environment: Environment) -> ContextManager[Path]:
         raise NotImplementedError
 
     @abstractmethod
@@ -50,7 +51,7 @@ class RepositoryState(ABC):
 
 class RepositoryUpdate(ABC):
     @abstractmethod
-    def update(self, environment: Environment, old_state: RepositoryState) -> None:
+    def update(self, environment: Environment, working_directory: Path) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -73,69 +74,57 @@ class RepositoryUpdate(ABC):
             )
 
 
+@dataclass(frozen=True)
 class HgRepositoryState(RepositoryState):
-    _repository: Path
-    _commit_hash: str
-
-    def __init__(self, repository: Path, commit_hash: str) -> None:
-        self._repository = repository
-        self._commit_hash = commit_hash
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, HgRepositoryState):
-            return (
-                self._repository == other._repository
-                and self._commit_hash == other._commit_hash
-            )
-        return NotImplemented
-
-    def __hash__(self) -> int:
-        return hash((self._repository, self._commit_hash))
-
-    def __repr__(self) -> str:
-        return f"HgRepositoryState({self._repository}, {self._commit_hash})"
+    repository: Path
+    commit_hash: str
 
     def to_json(self) -> Dict[str, Any]:
         return {
             "kind": "hg",
-            "repository": str(self._repository),
-            "commit_hash": self._commit_hash,
+            "repository": str(self.repository),
+            "commit_hash": self.commit_hash,
         }
 
-    def prepare(self, environment: Environment) -> None:
-        environment.checked_run(
-            working_directory=self._repository, command=f"hg update {self._commit_hash}"
-        )
-
     def get_working_directory(self) -> Path:
-        return self._repository
+        return self.repository
 
+    @contextmanager
+    def _do_prepare(self, environment: Environment) -> Iterator[Path]:
+        # Save the original commit hash.
+        hg_output = environment.checked_run(
+            working_directory=self.repository, command=f"hg whereami"
+        ).stdout.strip()
+        original_commit_hash = hg_output if len(hg_output) > 0 else None
+        LOG.debug(f"Original hg commit = {original_commit_hash}")
 
-class HgRepositoryUpdate(RepositoryUpdate):
-    _commit_hash: str
-
-    def __init__(self, commit_hash: str) -> None:
-        self._commit_hash = commit_hash
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, HgRepositoryUpdate):
-            return self._commit_hash == other._commit_hash
-        return NotImplemented
-
-    def __hash__(self) -> int:
-        return hash((self._commit_hash))
-
-    def __repr__(self) -> str:
-        return f"HgRepositoryUpdate({self._commit_hash})"
-
-    def update(self, environment: Environment, old_state: RepositoryState) -> None:
         environment.checked_run(
-            working_directory=old_state.get_working_directory(),
-            command=f"hg update {self._commit_hash}",
+            working_directory=self.repository, command=f"hg update {self.commit_hash}"
+        )
+        yield self.repository
+
+        # Discard all changes and revert to the original commit hash.
+        if original_commit_hash is not None:
+            environment.checked_run(
+                working_directory=self.repository,
+                command=f"hg update --clean {original_commit_hash}",
+            )
+
+    def activate_sandbox(self, environment: Environment) -> ContextManager[Path]:
+        return self._do_prepare(environment)
+
+
+@dataclass(frozen=True)
+class HgRepositoryUpdate(RepositoryUpdate):
+    commit_hash: str
+
+    def update(self, environment: Environment, working_directory: Path) -> None:
+        environment.checked_run(
+            working_directory=working_directory, command=f"hg update {self.commit_hash}"
         )
 
     def to_json(self) -> Dict[str, Any]:
-        return {"kind": "hg", "commit_hash": self._commit_hash}
+        return {"kind": "hg", "commit_hash": self.commit_hash}
 
 
 @dataclass(frozen=True)
