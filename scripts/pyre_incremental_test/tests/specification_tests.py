@@ -7,7 +7,9 @@ from ..specification import (
     HgRepositoryState,
     HgRepositoryUpdate,
     InvalidSpecificationException,
+    PatchRepositoryUpdate,
     RepositoryState,
+    RepositoryUpdate,
     Specification,
 )
 
@@ -35,6 +37,29 @@ class SpecificationTest(unittest.TestCase):
             RepositoryState.from_json(
                 {"kind": "hg", "repository": 42, "commit_hash": "facefacefaceb000"}
             )
+
+    def test_create_repository_update(self) -> None:
+        self.assertEqual(
+            RepositoryUpdate.from_json(
+                {"kind": "hg", "commit_hash": "facefacefaceb000"}
+            ),
+            HgRepositoryUpdate("facefacefaceb000"),
+        )
+        self.assertEqual(
+            RepositoryUpdate.from_json(
+                {"kind": "patch", "patch": "my_patch", "patch_flags": "my_flags"}
+            ),
+            PatchRepositoryUpdate("my_patch", "my_flags"),
+        )
+
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryUpdate.from_json({})
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryUpdate.from_json({"kind": "foo"})
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryUpdate.from_json({"kind": "hg", "commit_hash_missing": ""})
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryUpdate.from_json({"kind": "patch", "patch_missing": ""})
 
     def test_create_specification(self) -> None:
         self.assertEqual(

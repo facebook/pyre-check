@@ -64,6 +64,11 @@ class RepositoryUpdate(ABC):
             kind = input_json["kind"]
             if kind == "hg":
                 return HgRepositoryUpdate(commit_hash=input_json["commit_hash"])
+            elif kind == "patch":
+                return PatchRepositoryUpdate(
+                    patch=input_json["patch"],
+                    patch_flags=input_json.get("patch_flags", ""),
+                )
             else:
                 raise InvalidSpecificationException(
                     f"Cannot create RepositoryUpdate due to unrecognized kind"
@@ -125,6 +130,22 @@ class HgRepositoryUpdate(RepositoryUpdate):
 
     def to_json(self) -> Dict[str, Any]:
         return {"kind": "hg", "commit_hash": self.commit_hash}
+
+
+@dataclass(frozen=True)
+class PatchRepositoryUpdate(RepositoryUpdate):
+    patch: str
+    patch_flags: str
+
+    def update(self, environment: Environment, working_directory: Path) -> None:
+        environment.checked_run(
+            working_directory=working_directory,
+            command=f"patch {self.patch_flags}",
+            stdin=self.patch,
+        )
+
+    def to_json(self) -> Dict[str, Any]:
+        return {"kind": "patch", "patch": self.patch, "patch_flags": self.patch_flags}
 
 
 @dataclass(frozen=True)

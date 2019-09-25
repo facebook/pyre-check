@@ -5,7 +5,7 @@ import subprocess
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Container
+from typing import Container, Optional
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -24,16 +24,19 @@ class EnvironmentException(Exception):
 
 class Environment(ABC):
     @abstractmethod
-    def run(self, working_directory: Path, command: str) -> CommandOutput:
+    def run(
+        self, working_directory: Path, command: str, stdin: Optional[str]
+    ) -> CommandOutput:
         ...
 
     def checked_run(
         self,
         working_directory: Path,
         command: str,
+        stdin: Optional[str] = None,
         expected_return_codes: Container[int] = (0,),
     ) -> CommandOutput:
-        output = self.run(working_directory, command)
+        output = self.run(working_directory, command, stdin)
         if output.return_code not in expected_return_codes:
             message = (
                 f'Running command "{command}" '
@@ -47,12 +50,18 @@ class Environment(ABC):
 
 
 class SubprocessEnvironment(Environment):
-    def run(self, working_directory: Path, command: str) -> CommandOutput:
-        LOG.debug(f"Invoking subprocess `{command}` at `{working_directory}`")
+    def run(
+        self, working_directory: Path, command: str, stdin: Optional[str]
+    ) -> CommandOutput:
+        LOG.debug(
+            f"Invoking subprocess `{command}` at `{working_directory}`"
+            f"{' with stdin' if stdin is not None else ''}"
+        )
         result = subprocess.run(
             command.split(),
             cwd=working_directory,
             universal_newlines=True,
+            input=stdin,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
