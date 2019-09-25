@@ -83,6 +83,15 @@ class RepositoryUpdate(ABC):
                 if len(changes) == 0 and len(removals) == 0:
                     raise InvalidSpecificationException("No file change is given")
                 return FileRepositoryUpdate(changes=changes, removals=removals)
+            elif kind == "batch":
+                updates = input_json["updates"]
+                if not isinstance(updates, list):
+                    raise InvalidSpecificationException(
+                        "Batch updates must be specified as lists"
+                    )
+                return BatchRepositoryUpdate(
+                    [RepositoryUpdate.from_json(update) for update in updates]
+                )
             else:
                 raise InvalidSpecificationException(
                     f"Cannot create RepositoryUpdate due to unrecognized kind"
@@ -181,6 +190,21 @@ class FileRepositoryUpdate(RepositoryUpdate):
 
     def to_json(self) -> Dict[str, Any]:
         return {"kind": "file", "changes": self.changes, "removals": self.removals}
+
+
+@dataclass(frozen=True)
+class BatchRepositoryUpdate(RepositoryUpdate):
+    updates: List[RepositoryUpdate]
+
+    def update(self, environment: Environment, working_directory: Path) -> None:
+        for update in self.updates:
+            update.update(environment, working_directory)
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "kind": "batch",
+            "updates": [update.to_json() for update in self.updates],
+        }
 
 
 @dataclass(frozen=True)
