@@ -383,14 +383,7 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
             return
 
     # Add local unsafe.
-    new_lines = []
-    past_header = False
-    for line in lines:
-        if not past_header and not line.lstrip().startswith("#"):
-            past_header = True
-            new_lines.append("")
-            new_lines.append("# pyre-unsafe")
-        new_lines.append(line)
+    new_lines = ["# pyre-unsafe", ""] + lines
     new_text = "\n".join(new_lines)
     path.write_text(new_text)
 
