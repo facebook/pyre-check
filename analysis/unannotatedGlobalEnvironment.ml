@@ -230,26 +230,27 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     }
     |> Node.create_with_default_location
   in
+  let catch_all_generic = [Type.parametric "typing.Generic" Any] in
   let typing_classes =
     [
-      make "typing.Optional";
+      make "typing.Optional" ~bases:catch_all_generic;
       make "typing.Undeclared";
       make "typing.NoReturn";
-      make "typing.Annotated";
-      make "typing.Protocol";
-      make "typing.Callable";
-      make "typing.FrozenSet";
-      make "typing.ClassVar";
-      make "typing.Final";
-      make "typing.Union";
+      make "typing.Annotated" ~bases:catch_all_generic;
+      make "typing.Protocol" ~bases:catch_all_generic;
+      make "typing.Callable" ~bases:catch_all_generic;
+      make "typing.FrozenSet" ~bases:catch_all_generic;
+      make "typing.ClassVar" ~bases:catch_all_generic;
+      make "typing.Final" ~bases:catch_all_generic;
+      make "typing.Union" ~bases:catch_all_generic;
       make ~metaclasses:[Primitive "typing.GenericMeta"] "typing.Generic";
     ]
   in
   let typing_extension_classes =
     [
       make "typing_extensions.Final";
-      make "typing_extensions.Literal";
-      make "typing_extensions.Annotated";
+      make "typing_extensions.Literal" ~bases:catch_all_generic;
+      make "typing_extensions.Annotated" ~bases:catch_all_generic;
     ]
   in
   let builtin_classes =

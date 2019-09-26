@@ -905,7 +905,18 @@ let test_check_method_resolution context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Revealed type [-1]: Revealed type for `x.attribute` is `typing.Any`.";
-    ]
+    ];
+  assert_type_errors
+    ~context
+    {|
+      def foo(input: typing.Type[typing.Protocol]) -> None:
+        reveal_type(input[42])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `input.__getitem__(42)` is \
+       `typing.Type[typing.Protocol[...]]`.";
+    ];
+  ()
 
 
 let test_check_callables context =
