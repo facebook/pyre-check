@@ -142,8 +142,8 @@ let create_callable ~resolution ~parent ~name overloads =
   match parent with
   | Some parent ->
       let { Type.Callable.kind; implementation; overloads; implicit } =
-        match implementation with
-        | { parameters = Defined (Named { name; annotation; _ } :: _); _ } -> (
+        match implementation, overloads with
+        | { parameters = Defined (Named { name; annotation; _ } :: _); _ }, _ -> (
             let callable =
               let implicit = { implicit_annotation = parent; name } in
               { callable with implicit = Some implicit }
@@ -169,6 +169,10 @@ let create_callable ~resolution ~parent ~name overloads =
             match instantiated with
             | Type.Callable callable -> callable
             | _ -> callable )
+        (* We also need to set the implicit up correctly for overload-only methods. *)
+        | _, { parameters = Defined (Named { name; _ } :: _); _ } :: _ ->
+            let implicit = { implicit_annotation = parent; name } in
+            { callable with implicit = Some implicit }
         | _ -> callable
       in
       let drop_self { Type.Callable.annotation; parameters; define_location } =

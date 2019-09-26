@@ -138,7 +138,15 @@ let test_create context =
       match expected_implicit with
       (* Verify implicit if we're checking for it explicitly, ignore otherwise for convenience. *)
       | Some expected ->
-          assert_equal ~cmp:(Option.equal Type.Callable.equal_implicit) (Some expected) actual
+          let printer = function
+            | None -> "No implicit"
+            | Some implicit -> Type.Callable.show_implicit implicit
+          in
+          assert_equal
+            ~printer
+            ~cmp:(Option.equal Type.Callable.equal_implicit)
+            (Some expected)
+            actual
       | _ -> ()
     in
     let implicit =
@@ -267,7 +275,20 @@ let test_create context =
     ~expected:
       "typing.Callable('test.foo')[[Named($parameter$x, str), Named($parameter$y, int), \
        Variable(test.Ts), KeywordOnly($parameter$z, bool)], typing.Tuple[test.Ts]]";
-  ()
+  ();
+  assert_callable
+    ~parent:"module.Foo"
+    {|
+        @overload
+        def module.Foo.foo(self, a: int) -> int: ...
+        @overload
+        def module.Foo.foo(self, a: str, b: int) -> str: ...
+      |}
+    ~expected_implicit:
+      { Type.Callable.name = "$parameter$self"; implicit_annotation = Type.Primitive "module.Foo" }
+    ~expected:
+      ( "typing.Callable('module.Foo.foo')[..., $unknown]"
+      ^ "[[[Named(a, str), Named(b, int)], str][[Named(a, int)], int]]" )
 
 
 let () =
