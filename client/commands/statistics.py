@@ -64,7 +64,7 @@ class AnnotationCountCollector(StatisticsCollector):
         for parameter in list(parameters):
             self.parameter_count += 1
             annotation = parameter.annotation
-            if annotation is not None:
+            if annotation is not None or parameter.name.value == "self":
                 self.annotated_parameter_count += 1
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:

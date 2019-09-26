@@ -163,6 +163,22 @@ class AnnotationCountCollectorTest(unittest.TestCase):
             },
         )
 
+        self.assert_counts(
+            """
+            class A:
+                def bar(self, x: int):
+                    pass
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 2,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 2,
+            },
+        )
+
 
 class FixmeCountCollectorTest(unittest.TestCase):
     @staticmethod
