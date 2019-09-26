@@ -87,6 +87,16 @@ let test_show_error_traces context =
     ["Revealed type [-1]: Revealed type for `a.__add__(b)` is `int`."];
   assert_type_errors
     {|
+      from typing import List
+      def foo(b: List[int]) -> None:
+        a = 1
+        b = [1,2,3]
+        reveal_type(a in b)
+    |}
+    ["Revealed type [-1]: Revealed type for `a in b` is `bool`."];
+
+  assert_type_errors
+    {|
       class Foo:
         attribute: int
         def __init__(self) -> None:

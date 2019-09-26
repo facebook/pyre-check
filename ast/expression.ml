@@ -907,6 +907,13 @@ let rec show_sanitized { Node.location; value } =
         arguments |> List.map ~f:show_argument |> String.concat ~sep:", "
       in
       Format.asprintf "%s(%s)" (show_sanitized callee) arguments
+  | ComparisonOperator { left; operator; right } ->
+      Format.asprintf
+        "%s %a %s"
+        (show_sanitized left)
+        Record.ComparisonOperator.pp_comparison_operator
+        operator
+        (show_sanitized right)
   | Tuple items ->
       List.map items ~f:show_sanitized
       |> String.concat ~sep:", "
