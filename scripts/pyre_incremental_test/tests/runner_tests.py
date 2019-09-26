@@ -338,3 +338,52 @@ class RunnerTest(unittest.TestCase):
             expected_commands=expected_commands,
             expected_discrepancy=None,
         )
+
+    def test_file_state(self) -> None:
+        handle_a = "foo/a.py"
+        content_a = "def bar() -> None: ..."
+        handle_b = "foo/b.py"
+        content_b = "def baz(x: int) -> int: ..."
+        specification = Specification.from_json(
+            {
+                "old_state": {
+                    "kind": "file",
+                    "files": {handle_a: content_a, handle_b: content_b},
+                },
+                "new_state": {"kind": "file", "removals": [handle_a]},
+            }
+        )
+
+        expected_commands = [
+            CommandInput(Path("."), "mktemp -d"),
+            CommandInput(
+                Path("/mock/tmp"),
+                "tee .pyre_configuration",
+                '{ "source_directories": [ "." ] }',
+            ),
+            CommandInput(Path("/mock/tmp"), f"tee {handle_a}", content_a),
+            CommandInput(Path("/mock/tmp"), f"tee {handle_b}", content_b),
+            CommandInput(Path("/mock/tmp"), "pyre  --no-saved-state restart"),
+            CommandInput(Path("/mock/tmp"), f"rm -f {handle_a}"),
+            CommandInput(
+                Path("/mock/tmp"), "pyre  --output=json --noninteractive incremental"
+            ),
+            CommandInput(Path("/mock/tmp"), "pyre stop"),
+            CommandInput(
+                Path("/mock/tmp"), "pyre  --output=json --noninteractive check"
+            ),
+            CommandInput(Path("."), "rm -rf /mock/tmp"),
+        ]
+
+        def always_clean_execute(command_input: CommandInput) -> CommandOutput:
+            if command_input.command.startswith("mktemp"):
+                return CommandOutput(return_code=0, stdout="/mock/tmp", stderr="")
+            else:
+                return CommandOutput(return_code=0, stdout="", stderr="")
+
+        self.assert_run(
+            mock_execute=always_clean_execute,
+            specification=specification,
+            expected_commands=expected_commands,
+            expected_discrepancy=None,
+        )

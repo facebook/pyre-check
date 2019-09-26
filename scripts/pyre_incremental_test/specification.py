@@ -35,6 +35,13 @@ class RepositoryState(ABC):
                     repository=Path(input_json["repository"]),
                     commit_hash=input_json["commit_hash"],
                 )
+            elif kind == "file":
+                files = input_json["files"]
+                if not isinstance(files, dict):
+                    raise InvalidSpecificationException(
+                        "File repository must be specified as dicts"
+                    )
+                return FileRepositoryState(files)
             else:
                 raise InvalidSpecificationException(
                     f"Cannot create RepositoryState due to unrecognized kind"
@@ -136,6 +143,43 @@ class HgRepositoryState(RepositoryState):
             environment.checked_run(
                 working_directory=self.repository,
                 command=f"hg update --clean {original_commit_hash}",
+            )
+
+    def activate_sandbox(self, environment: Environment) -> ContextManager[Path]:
+        return self._do_prepare(environment)
+
+
+@dataclass
+class FileRepositoryState(RepositoryState):
+    files: Dict[str, str]
+
+    def to_json(self) -> Dict[str, Any]:
+        return {"kind": "file", "files": self.files}
+
+    @contextmanager
+    def _do_prepare(self, environment: Environment) -> Iterator[Path]:
+        # Grab a temporary directory as the local root
+        temporary_directory = environment.checked_run(
+            working_directory=Path("."), command="mktemp -d"
+        ).stdout.strip()
+        root = Path(temporary_directory)
+        LOG.debug(f"Using temporary directory {temporary_directory} as local root")
+
+        try:
+            # Write all files under the local root.
+            all_files = {
+                # Note that --binary and --typeshed still needs to be set in pyre flags.
+                ".pyre_configuration": '{ "source_directories": [ "." ] }',
+                **self.files,
+            }
+            FileRepositoryUpdate(changes=all_files, removals=[]).update(
+                environment, root
+            )
+            yield root
+        finally:
+            # Clean up the files we've written.
+            environment.checked_run(
+                working_directory=Path("."), command=f"rm -rf {temporary_directory}"
             )
 
     def activate_sandbox(self, environment: Environment) -> ContextManager[Path]:

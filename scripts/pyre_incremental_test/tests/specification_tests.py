@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ..specification import (
     BatchRepositoryUpdate,
+    FileRepositoryState,
     FileRepositoryUpdate,
     HgRepositoryState,
     HgRepositoryUpdate,
@@ -24,6 +25,11 @@ class SpecificationTest(unittest.TestCase):
             ),
             HgRepositoryState(repository=Path("."), commit_hash="facefacefaceb000"),
         )
+        files = {"a.py": "print('a')", "b.py": "print('b')"}
+        self.assertEqual(
+            RepositoryState.from_json({"kind": "file", "files": files}),
+            FileRepositoryState(files),
+        )
 
         with self.assertRaises(InvalidSpecificationException):
             RepositoryState.from_json({})
@@ -39,6 +45,10 @@ class SpecificationTest(unittest.TestCase):
             RepositoryState.from_json(
                 {"kind": "hg", "repository": 42, "commit_hash": "facefacefaceb000"}
             )
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryState.from_json({"kind": "file", "no_files": ""})
+        with self.assertRaises(InvalidSpecificationException):
+            RepositoryState.from_json({"kind": "file", "files": "not_a_list"})
 
     def test_create_repository_update(self) -> None:
         self.assertEqual(
