@@ -482,6 +482,36 @@ let test_updates context =
     ~expected_triggers:[]
     ();
 
+  (* Only recurse into ifs *)
+  assert_updates
+    ~original_source:{|
+      if condition:
+        X = int
+      else:
+        X = str
+    |}
+    ~new_source:{|
+      if condition:
+        X = int
+      else:
+        X = str
+    |}
+    ~middle_actions:
+      [
+        `Global
+          ( Reference.create "test.X",
+            dependency,
+            Some
+              (UnannotatedGlobalEnvironment.SimpleAssign
+                 {
+                   explicit_annotation = None;
+                   value = parse_single_expression "int";
+                   target_location = Location.Reference.any;
+                 }) );
+      ]
+    ~expected_triggers:[]
+    ();
+
   (* Keep different dependencies straight *)
   let alias_dependency =
     UnannotatedGlobalEnvironment.AliasRegister (Reference.create "same_dep")

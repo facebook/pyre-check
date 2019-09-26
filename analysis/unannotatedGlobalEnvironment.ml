@@ -383,6 +383,9 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
         List.rev_append (List.map ~f:import_to_global imports) globals
     | Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
         (name, Define (Node.create define ~location)) :: globals
+    | If { If.body; orelse; _ } ->
+        (* TODO(T28732125): Properly take an intersection here. *)
+        List.fold ~init:globals ~f:(visit_statement ~qualifier) (body @ orelse)
     | _ -> globals
   in
   let write (target, o) =
