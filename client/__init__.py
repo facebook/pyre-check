@@ -308,6 +308,10 @@ def _find_directory_upwards(base: str, target: str) -> Optional[str]:
 
 
 def find_typeshed() -> Optional[str]:
+    override = os.getenv("PYRE_TYPESHED")
+    if override:
+        return override
+
     current_directory = os.path.dirname(os.path.realpath(__file__))
 
     # Prefer the typeshed we bundled ourselves (if any) to the one
