@@ -352,21 +352,27 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             else
               taint
           in
-          let arguments =
-            let receiver = { Call.Argument.name = None; value = receiver } in
-            receiver :: arguments
+          let indirect_targets =
+            Interprocedural.CallResolution.get_indirect_targets
+              ~resolution
+              ~receiver
+              ~method_name:attribute
           in
-          Interprocedural.CallResolution.get_indirect_targets
+          let arguments =
+            match indirect_targets with
+            | (_, None) :: _ -> arguments
+            | _ ->
+                let receiver = { Call.Argument.name = None; value = receiver } in
+                receiver :: arguments
+          in
+          apply_call_targets
             ~resolution
-            ~receiver
-            ~method_name:attribute
-          |> apply_call_targets
-               ~resolution
-               ~call_expression:(Expression.Call call_expression)
-               location
-               arguments
-               state
-               taint
+            ~call_expression:(Expression.Call call_expression)
+            location
+            arguments
+            state
+            taint
+            indirect_targets
       | None, Name (Name.Identifier _name) ->
           let arguments =
             let receiver = { Call.Argument.name = None; value = callee } in

@@ -423,30 +423,30 @@ let test_overrides context =
     ~context
     {|
       class Base:
-        def split():
+        def split(self):
           pass
 
-        def some_source():
+        def some_source(self):
           pass
 
-        def some_sink(arg):
+        def some_sink(self, arg):
           pass
 
       class C(Base):
-        def split(): ...
+        def split(self): ...
 
-        def some_sink(arg):
+        def some_sink(self, arg):
           __test_sink(arg)
 
       class D(C):
-        def some_source():
+        def some_source(self):
           return __test_source()
 
-        def some_sink(arg):
+        def some_sink(self, arg):
           eval(arg)
 
       class E(Base):
-        def some_source():
+        def some_source(self):
           return __user_controlled()
 
       def test_obscure_override(b: Base):

@@ -413,9 +413,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution location arguments state targets
       | None, Name (Name.Attribute { base = receiver; attribute = method_name; _ }) ->
+          let indirect_targets =
+            Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
+          in
           let arguments =
-            let receiver = { Call.Argument.name = None; value = receiver } in
-            receiver :: arguments
+            (* For static methods or class invocations of non-class methods, we shouldn't pass a
+               receiver. *)
+            match indirect_targets with
+            | (_, None) :: _ -> arguments
+            | _ ->
+                let receiver = { Call.Argument.name = None; value = receiver } in
+                receiver :: arguments
           in
           let add_index_breadcrumb_if_necessary taint =
             if not (String.equal method_name "get") then
@@ -430,8 +438,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     taint
               | _ -> taint
           in
-          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
-          |> apply_call_targets ~resolution location arguments state
+          apply_call_targets ~resolution location arguments state indirect_targets
           |>> add_index_breadcrumb_if_necessary
       | None, Name (Name.Identifier _name) ->
           let arguments =
