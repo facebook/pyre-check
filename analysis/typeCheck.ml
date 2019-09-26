@@ -4233,7 +4233,7 @@ module State (Context : Context) = struct
                                    mismatch =
                                      {
                                        Error.expected;
-                                       actual = Type.Top;
+                                       actual = expected;
                                        actual_expressions = [];
                                        due_to_invariance = false;
                                      };

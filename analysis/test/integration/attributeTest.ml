@@ -1023,6 +1023,17 @@ let test_check_missing_attribute context =
       ^ "that does not contain `Any`.";
     ];
 
+  (* Ensure we don't filter uninitialized attribute errors. *)
+  assert_default_type_errors
+    {|
+      class Foo:
+        a: int
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have type `int` \
+       but is never initialized.";
+    ];
+
   (* Don't report in non-debug mode. *)
   assert_default_type_errors
     {|
