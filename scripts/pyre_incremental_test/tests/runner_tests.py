@@ -387,3 +387,53 @@ class RunnerTest(unittest.TestCase):
             expected_commands=expected_commands,
             expected_discrepancy=None,
         )
+
+    def test_updated_state(self) -> None:
+        specification = Specification.from_json(
+            {
+                "old_state": {
+                    "kind": "updated",
+                    "base": {
+                        "kind": "hg",
+                        "repository": "old_root",
+                        "commit_hash": "old_hash",
+                    },
+                    "updates": [
+                        {"kind": "hg", "commit_hash": "new_hashA"},
+                        {"kind": "hg", "commit_hash": "new_hashB"},
+                    ],
+                },
+                "new_state": {"kind": "hg", "commit_hash": "new_hashC"},
+            }
+        )
+
+        initial_hash = "initial_hash"
+        expected_commands = [
+            CommandInput(Path("old_root"), "hg whereami"),
+            CommandInput(Path("old_root"), "hg update old_hash"),
+            CommandInput(Path("old_root"), "hg update new_hashA"),
+            CommandInput(Path("old_root"), "hg update new_hashB"),
+            CommandInput(Path("old_root"), "pyre  --no-saved-state restart"),
+            CommandInput(Path("old_root"), "hg update new_hashC"),
+            CommandInput(
+                Path("old_root"), "pyre  --output=json --noninteractive incremental"
+            ),
+            CommandInput(Path("old_root"), "pyre stop"),
+            CommandInput(
+                Path("old_root"), "pyre  --output=json --noninteractive check"
+            ),
+            CommandInput(Path("old_root"), f"hg update --clean {initial_hash}"),
+        ]
+
+        def always_clean_execute(command_input: CommandInput) -> CommandOutput:
+            if command_input.command.startswith("hg whereami"):
+                return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            else:
+                return CommandOutput(return_code=0, stdout="", stderr="")
+
+        self.assert_run(
+            mock_execute=always_clean_execute,
+            specification=specification,
+            expected_commands=expected_commands,
+            expected_discrepancy=None,
+        )

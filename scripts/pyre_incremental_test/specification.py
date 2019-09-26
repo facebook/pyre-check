@@ -42,6 +42,17 @@ class RepositoryState(ABC):
                         "File repository must be specified as dicts"
                     )
                 return FileRepositoryState(files)
+            elif kind == "updated":
+                base = input_json["base"]
+                updates = input_json["updates"]
+                if not isinstance(updates, list):
+                    raise InvalidSpecificationException(
+                        "Updates must be specified as lists"
+                    )
+                return UpdatedRepositoryState(
+                    RepositoryState.from_json(base),
+                    [RepositoryUpdate.from_json(update) for update in updates],
+                )
             else:
                 raise InvalidSpecificationException(
                     f"Cannot create RepositoryState due to unrecognized kind"
@@ -181,6 +192,29 @@ class FileRepositoryState(RepositoryState):
             environment.checked_run(
                 working_directory=Path("."), command=f"rm -rf {temporary_directory}"
             )
+
+    def activate_sandbox(self, environment: Environment) -> ContextManager[Path]:
+        return self._do_prepare(environment)
+
+
+@dataclass
+class UpdatedRepositoryState(RepositoryState):
+    base: RepositoryState
+    updates: List[RepositoryUpdate]
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "kind": "updated",
+            "base": self.base.to_json(),
+            "updates": [update.to_json() for update in self.updates],
+        }
+
+    @contextmanager
+    def _do_prepare(self, environment: Environment) -> Iterator[Path]:
+        with self.base.activate_sandbox(environment) as sandbox_root:
+            for update in self.updates:
+                update.update(environment, sandbox_root)
+            yield sandbox_root
 
     def activate_sandbox(self, environment: Environment) -> ContextManager[Path]:
         return self._do_prepare(environment)
