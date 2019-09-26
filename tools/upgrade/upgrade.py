@@ -384,8 +384,25 @@ def add_local_unsafe(arguments: argparse.Namespace, filename: str) -> None:
         ):
             return
 
+    def is_header(line: str) -> bool:
+        is_comment = line.lstrip().startswith("#")
+        is_pyre_ignore = (
+            re.match("^[ \t]*# *pyre-ignore *$", line)
+            or re.match("^[ \t]*# *pyre-fixme *$", line)
+            or re.match("^[ \t]*# *type: ignore *$", line)
+        )
+        return is_comment and not is_pyre_ignore
+
     # Add local unsafe.
-    new_lines = ["# pyre-unsafe", ""] + lines
+    new_lines = []
+    past_header = False
+    for line in lines:
+        if not past_header and not is_header(line):
+            past_header = True
+            if len(new_lines) != 0:
+                new_lines.append("")
+            new_lines.append("# pyre-unsafe")
+        new_lines.append(line)
     new_text = "\n".join(new_lines)
     path.write_text(new_text)
 
