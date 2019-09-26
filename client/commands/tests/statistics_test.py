@@ -14,7 +14,12 @@ from typing import Dict
 from libcst import Module, parse_module
 
 from ... import commands  # noqa
-from ..statistics import AnnotationCountCollector, FixmeCountCollector, _find_paths
+from ..statistics import (
+    AnnotationCountCollector,
+    FixmeCountCollector,
+    IgnoreCountCollector,
+    _find_paths,
+)
 from .command_test import mock_arguments
 
 
@@ -166,7 +171,7 @@ class FixmeCountCollectorTest(unittest.TestCase):
 
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
         source_module = self.format_files(source)
-        collector = FixmeCountCollector(defaultdict(int))
+        collector = FixmeCountCollector()
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
 
@@ -178,5 +183,28 @@ class FixmeCountCollectorTest(unittest.TestCase):
         )
         self.assert_counts(
             "# pyre-fixme[2]: Example Error Message\n\n\n# pyre-fixme[2]: message",
+            {"2": 2},
+        )
+
+
+class IgnoreCountCollectorTest(unittest.TestCase):
+    @staticmethod
+    def format_files(source: str) -> Module:
+        return parse_module(textwrap.dedent(source.rstrip()))
+
+    def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
+        source_module = self.format_files(source)
+        collector = IgnoreCountCollector()
+        source_module.visit(collector)
+        self.assertEqual(collector.build_json(), expected)
+
+    def test_annotate_functions(self) -> None:
+        self.assert_counts("# pyre-ignore[2]: Example Error Message", {"2": 1})
+        self.assert_counts(
+            "# pyre-ignore[3]: Example Error Message \n\n\n # pyre-ignore[34]: Example",
+            {"3": 1, "34": 1},
+        )
+        self.assert_counts(
+            "# pyre-ignore[2]: Example Error Message\n\n\n# pyre-ignore[2]: message",
             {"2": 2},
         )

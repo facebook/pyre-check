@@ -7,10 +7,10 @@
 
 import argparse
 import json
-import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Sequence
+from re import compile
+from typing import Dict, List, Pattern, Sequence
 
 import libcst as cst
 
@@ -104,18 +104,28 @@ class AnnotationCountCollector(StatisticsCollector):
         self.in_class_definition = False
 
 
-class FixmeCountCollector(StatisticsCollector):
-    def __init__(self, fixme_counts: Dict[str, int] = defaultdict(int)) -> None:  # noqa
-        self.fixme_counts = fixme_counts
-        self.fixme_regex = "# pyre-fixme\[(\d*)\]:"  # noqa
+class CountCollector(StatisticsCollector):
+    def __init__(self, regex: str) -> None:
+        self.counts: Dict[str, int] = defaultdict(int)
+        self.regex: Pattern[str] = compile(regex)
 
     def visit_Comment(self, node: cst.Comment) -> None:
-        match = re.match(self.fixme_regex, node.value)
+        match = self.regex.match(node.value)
         if match:
-            self.fixme_counts[match.group(1)] += 1
+            self.counts[match.group(1)] += 1
 
     def build_json(self) -> Dict[str, int]:
-        return dict(self.fixme_counts)
+        return dict(self.counts)
+
+
+class FixmeCountCollector(CountCollector):
+    def __init__(self) -> None:
+        super().__init__(r"# pyre-fixme\[(\d*)\]:")
+
+
+class IgnoreCountCollector(CountCollector):
+    def __init__(self) -> None:
+        super().__init__(r"# pyre-ignore\[(\d*)\]:")
 
 
 def _get_paths(target_directory: Path) -> List[Path]:
@@ -190,8 +200,10 @@ class Statistics(Command):
         parsed_paths = _parse_paths(paths)
         annotations = _count(parsed_paths, AnnotationCountCollector())
         fixmes = _count(parsed_paths, FixmeCountCollector())
+        ignores = _count(parsed_paths, IgnoreCountCollector())
         as_json = {
             "annotations": annotations.build_json(),
             "fixmes": fixmes.build_json(),
+            "ignores": ignores.build_json(),
         }
         log.stdout.write(json.dumps(as_json))
