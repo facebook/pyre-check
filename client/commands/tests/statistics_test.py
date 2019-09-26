@@ -65,6 +65,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "return_count": 1,
                 "globals_count": 0,
                 "parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
             },
         )
 
@@ -80,6 +82,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "return_count": 1,
                 "globals_count": 0,
                 "parameter_count": 2,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
             },
         )
 
@@ -95,6 +99,62 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "return_count": 0,
                 "globals_count": 2,
                 "parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+            },
+        )
+
+        self.assert_counts(
+            """
+            class A:
+                a: int = 100
+                b = ""
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 0,
+                "return_count": 0,
+                "globals_count": 0,
+                "parameter_count": 0,
+                "attribute_count": 2,
+                "annotated_attribute_count": 1,
+            },
+        )
+
+        # For now, don't count annotations inside of functions
+        self.assert_counts(
+            """
+            def foo():
+                a: int = 100
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 0,
+                "return_count": 1,
+                "globals_count": 0,
+                "parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+            },
+        )
+
+        self.assert_counts(
+            """
+            def foo():
+                def bar(x: int) -> int:
+                    pass
+            """,
+            {
+                "annotated_return_count": 1,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 1,
+                "return_count": 2,
+                "globals_count": 0,
+                "parameter_count": 1,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
             },
         )
 

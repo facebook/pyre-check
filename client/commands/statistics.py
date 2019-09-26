@@ -34,6 +34,8 @@ class AnnotationCountCollector(StatisticsCollector):
         annotated_globals_count: int = 0,
         parameter_count: int = 0,
         annotated_parameter_count: int = 0,
+        attribute_count: int = 0,
+        annotated_attribute_count: int = 0,
     ) -> None:
         self.return_count = return_count
         self.annotated_return_count = annotated_return_count
@@ -41,6 +43,10 @@ class AnnotationCountCollector(StatisticsCollector):
         self.annotated_globals_count = annotated_globals_count
         self.parameter_count = parameter_count
         self.annotated_parameter_count = annotated_parameter_count
+        self.attribute_count = attribute_count
+        self.annotated_attribute_count = annotated_attribute_count
+        self.in_class_definition = False
+        self.in_function_definition = False
 
     def build_json(self) -> Dict[str, int]:
         return {
@@ -50,6 +56,8 @@ class AnnotationCountCollector(StatisticsCollector):
             "annotated_globals_count": self.annotated_globals_count,
             "parameter_count": self.parameter_count,
             "annotated_parameter_count": self.annotated_parameter_count,
+            "attribute_count": self.attribute_count,
+            "annotated_attribute_count": self.annotated_attribute_count,
         }
 
     def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> None:
@@ -60,6 +68,7 @@ class AnnotationCountCollector(StatisticsCollector):
                 self.annotated_parameter_count += 1
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+        self.in_function_definition = True
         self.return_count += 1
         if node.returns is not None:
             self.annotated_return_count += 1
@@ -67,12 +76,32 @@ class AnnotationCountCollector(StatisticsCollector):
         self._check_parameter_annotations(node.params.default_params)
         self._check_parameter_annotations(node.params.params)
 
+    def leave_FunctionDef(self, node: cst.FunctionDef) -> None:
+        self.in_function_definition = False
+
     def visit_Assign(self, node: cst.Assign) -> None:
-        self.globals_count += 1
+        if self.in_function_definition:
+            return
+        if self.in_class_definition:
+            self.attribute_count += 1
+        else:
+            self.globals_count += 1
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
-        self.globals_count += 1
-        self.annotated_globals_count += 1
+        if self.in_function_definition:
+            return
+        if self.in_class_definition:
+            self.attribute_count += 1
+            self.annotated_attribute_count += 1
+        else:
+            self.globals_count += 1
+            self.annotated_globals_count += 1
+
+    def visit_ClassDef(self, node: cst.ClassDef) -> None:
+        self.in_class_definition = True
+
+    def leave_ClassDef(self, node: cst.ClassDef) -> None:
+        self.in_class_definition = False
 
 
 class FixmeCountCollector(StatisticsCollector):
