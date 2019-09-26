@@ -234,8 +234,11 @@ let register_define_as_undecorated_function
     ~track_dependencies
   =
   let global =
-    UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global (* TODO *)
-      ?dependency:None
+    let dependency =
+      Option.some_if track_dependencies (UnannotatedGlobalEnvironment.UndecoratedFunction name)
+    in
+    UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+      ?dependency
       (unannotated_global_environment environment)
       name
   in

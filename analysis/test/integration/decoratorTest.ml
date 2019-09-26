@@ -428,10 +428,7 @@ let test_check_user_decorators context =
       reveal_type(D.f)
     |}
     [
-      "Inconsistent override [14]: `test.D.f` overrides method defined in `C` inconsistently. \
-       Could not find parameter `x` in overriding signature.";
-      "Revealed type [-1]: Revealed type for `test.C.f` is `typing.Callable(C.f)[[Named(self, \
-       unknown), Named(x, int)], None]`.";
+      "Revealed type [-1]: Revealed type for `test.C.f` is `typing.Callable(C.f)[[C, int], None]`.";
       "Revealed type [-1]: Revealed type for `test.D.f` is `typing.Callable(D.f)[[Named(self, \
        unknown), Named(y, int)], None]`.";
     ];
@@ -480,10 +477,11 @@ let test_check_callable_class_decorators context =
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
       "Revealed type [-1]: Revealed type for `test.am_i_async` is \
-       `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
+       `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
+       str]]`.";
     ];
 
-  (* We don't support overloaded callable classes. *)
+  (* We don't support overloaded callable classes either. *)
   assert_type_errors
     {|
       import typing
@@ -508,7 +506,8 @@ let test_check_callable_class_decorators context =
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type other than `Any`.";
       "Revealed type [-1]: Revealed type for `test.am_i_async` is \
-       `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
+       `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
+       str]]`.";
     ]
 
 

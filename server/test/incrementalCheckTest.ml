@@ -153,6 +153,51 @@ let test_incremental_check context =
          `foo` but got `A`.";
       ];
 
+  assert_incremental_check_errors
+    ~context
+    ~initial_sources:
+      [
+        ( false,
+          "a.py",
+          {|
+        from typing import Callable
+        def dec(x: Callable[[int], int]) -> Callable[[int], str]: ...
+      |}
+        );
+        ( false,
+          "b.py",
+          {|
+          from a import dec
+          @dec
+          def foo(x: int) -> int:
+            pass
+          reveal_type(foo)
+      |}
+        );
+      ]
+    ~updated_sources:
+      [
+        ( false,
+          "a.py",
+          {|
+        from typing import Callable
+        def dec(x: Callable[[int], int]) -> Callable[[int], bool]: ...
+      |}
+        );
+        ( false,
+          "b.py",
+          {|
+          from a import dec
+          @dec
+          def foo(x: int) -> int:
+            pass
+          reveal_type(foo)
+          irr = 8
+      |}
+        );
+      ]
+    ~expected:
+      ["Revealed type [-1]: Revealed type for `b.foo` is `typing.Callable(foo)[[int], bool]`."];
   ()
 
 
