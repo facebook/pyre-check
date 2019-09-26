@@ -45,7 +45,7 @@ class RunnerResult:
         else:
             return "fail"
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self, dont_show_discrepancy: bool = False) -> Dict[str, Any]:
         status = self.get_status()
         if status == "exception":
             return {"status": status, "input": self.input.to_json()}
@@ -58,7 +58,7 @@ class RunnerResult:
         else:
             return {
                 "status": status,
-                "output": output.to_json(),
+                "output": output.to_json(dont_show_discrepancy),
                 "input": self.input.to_json(),
             }
 

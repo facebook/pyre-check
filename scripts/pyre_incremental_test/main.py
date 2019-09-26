@@ -85,7 +85,12 @@ def main(arguments: argparse.Namespace) -> int:
         LOG.info("Done testing.")
 
         _log_statistics(results)
-        print(json.dumps([result.to_json() for result in results], indent=2))
+        print(
+            json.dumps(
+                [result.to_json(arguments.dont_show_discrepancy) for result in results],
+                indent=2,
+            )
+        )
     except FileNotFoundError:
         LOG.exception(f"Specification file at {specification_path} does not exist")
         return ExitCode.FAILURE
@@ -114,6 +119,11 @@ if __name__ == "__main__":
         type=Path,
         nargs="?",
         help="A JSON file containing a list of testing specifications",
+    )
+    parser.add_argument(
+        "--dont-show-discrepancy",
+        action="store_true",
+        help="Do not include error discrepancy in the result when the test fails",
     )
     parser.add_argument(
         "-v",

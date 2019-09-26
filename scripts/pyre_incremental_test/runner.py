@@ -136,13 +136,19 @@ class ResultComparison:
     full_check_time: int
     incremental_check_time: int
 
-    def to_json(self) -> Dict[str, Any]:
-        discrepancy = self.discrepancy
-        return {
-            "discrepancy": "none" if discrepancy is None else discrepancy.to_json(),
+    def to_json(self, dont_show_discrepancy: bool = False) -> Dict[str, Any]:
+        result: Dict[str, Any] = {
             "full_check_time": self.full_check_time,
             "incremental_check_time": self.incremental_check_time,
         }
+        discrepancy = self.discrepancy
+        if dont_show_discrepancy:
+            return result
+        else:
+            result["discrepancy"] = (
+                "none" if discrepancy is None else discrepancy.to_json()
+            )
+            return result
 
 
 def compare_server_to_full(
