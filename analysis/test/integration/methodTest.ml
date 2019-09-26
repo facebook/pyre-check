@@ -1096,7 +1096,40 @@ let test_check_callable_protocols context =
     [
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
        `Call.__call__` but got `str`.";
-    ]
+    ];
+
+  (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
+     errors. *)
+  assert_type_errors
+    {|
+      def foo_try_with_tuple(obj: typing.Tuple[int, ...]) -> None:
+        type(obj)(v for v in obj)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.List[int]` for 1st "
+      ^ "anonymous parameter to call `tuple.__init__` but got "
+      ^ "`typing.Generator[int, None, None]`.";
+    ];
+
+  (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
+     errors. *)
+  assert_type_errors
+    {|
+      def foo_try_with_tuple() -> None:
+        tuple(v for v in (1, 2, 3))
+    |}
+    [
+      "Incompatible parameter type [6]: Expected "
+      ^ "`typing.List[Variable[_T_co](covariant)]` for 1st "
+      ^ "anonymous parameter to call `tuple.__init__` but got "
+      ^ "`typing.Generator[int, None, None]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo_try_with_list(obj: typing.List[int]) -> None:
+        type(obj)(v for v in obj)
+    |}
+    []
 
 
 let test_check_explicit_method_call context =
