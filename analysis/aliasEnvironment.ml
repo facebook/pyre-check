@@ -253,7 +253,7 @@ type extracted =
 
 let extract_alias { unannotated_global_environment } name ~dependency =
   let extract_alias = function
-    | UnannotatedGlobalEnvironment.SimpleAssign { explicit_annotation; value } -> (
+    | UnannotatedGlobalEnvironment.SimpleAssign { explicit_annotation; value; _ } -> (
         let target_annotation =
           Type.create
             ~aliases:(fun _ -> None)

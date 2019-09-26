@@ -12,6 +12,7 @@ type unannotated_global =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
       value: Expression.t;
+      target_location: Location.t;
     }
   | Imported of Reference.t
   | Define of Define.t Node.t

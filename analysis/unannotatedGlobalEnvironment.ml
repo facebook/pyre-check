@@ -17,6 +17,7 @@ type unannotated_global =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
       value: Expression.t;
+      target_location: Location.t;
     }
   | Imported of Reference.t
   | Define of Define.t Node.t
@@ -344,11 +345,18 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
       Option.some_if (Reference.length target = 1) (Reference.combine qualifier target)
     in
     match value with
-    | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
+    | Statement.Assign
+        {
+          Assign.target = { Node.value = Name target; location = target_location };
+          annotation;
+          value;
+          _;
+        }
       when Expression.is_simple_name target ->
         qualified_name target
         >>| (fun qualified ->
-              (qualified, SimpleAssign { explicit_annotation = annotation; value }) :: globals)
+              (qualified, SimpleAssign { explicit_annotation = annotation; value; target_location })
+              :: globals)
         |> Option.value ~default:globals
     | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
       when String.equal (Reference.show name) "*" ->

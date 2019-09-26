@@ -40,7 +40,7 @@ let test_simple_registration context =
 
 
 let test_simple_global_registration context =
-  let assert_registers ?(expected = true) source name =
+  let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let unannotated_global_environment =
@@ -55,22 +55,48 @@ let test_simple_global_registration context =
         (Reference.Set.singleton (Reference.create "test"))
     in
     let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
+    let printer global =
+      global
+      >>| UnannotatedGlobalEnvironment.show_unannotated_global
+      |> Option.value ~default:"None"
+    in
     assert_equal
-      ( UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-          read_only
-          (Reference.create name)
-      |> Option.is_some )
+      ~printer
+      (UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+         read_only
+         (Reference.create name))
       expected
   in
-  assert_registers {|
+  let target_location =
+    {
+      Location.path = Reference.create "test";
+      start = { line = 2; column = 0 };
+      stop = { line = 2; column = 3 };
+    }
+  in
+  let value_location =
+    {
+      Location.path = Reference.create "test";
+      start = { line = 2; column = 6 };
+      stop = { line = 2; column = 7 };
+    }
+  in
+  let value =
+    let value = parse_single_expression "8" in
+    { value with location = value_location }
+  in
+  assert_registers
+    {|
     bar = 8
-  |} "test.bar";
-  assert_registers ~expected:false {|
+  |}
+    "test.bar"
+    (Some (SimpleAssign { explicit_annotation = None; value; target_location }));
+  assert_registers {|
     other.bar = 8
-  |} "test.other.bar";
-  assert_registers ~expected:false {|
+  |} "test.other.bar" None;
+  assert_registers {|
     other.bar = 8
-  |} "other.bar";
+  |} "other.bar" None;
   ()
 
 
@@ -135,10 +161,17 @@ let test_updates context =
           let cmp left right =
             Option.compare UnannotatedGlobalEnvironment.compare_unannotated_global left right = 0
           in
+          let remove_target_location = function
+            | UnannotatedGlobalEnvironment.SimpleAssign assign ->
+                UnannotatedGlobalEnvironment.SimpleAssign
+                  { assign with target_location = Location.Reference.any }
+            | global -> global
+          in
           UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
             read_only
             global_name
             ~dependency
+          >>| remove_target_location
           |> assert_equal ~cmp ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;
@@ -329,6 +362,7 @@ let test_updates context =
                  {
                    explicit_annotation = Some (parse_single_expression "int");
                    value = parse_single_expression "7";
+                   target_location = Location.Reference.any;
                  }) );
       ]
     ~expected_triggers:[dependency]
@@ -342,6 +376,7 @@ let test_updates context =
                  {
                    explicit_annotation = Some (parse_single_expression "int");
                    value = parse_single_expression "9";
+                   target_location = Location.Reference.any;
                  }) );
       ]
     ();
@@ -438,7 +473,11 @@ let test_updates context =
             dependency,
             Some
               (UnannotatedGlobalEnvironment.SimpleAssign
-                 { explicit_annotation = None; value = parse_single_expression "int" }) );
+                 {
+                   explicit_annotation = None;
+                   value = parse_single_expression "int";
+                   target_location = Location.Reference.any;
+                 }) );
       ]
     ~expected_triggers:[]
     ();
