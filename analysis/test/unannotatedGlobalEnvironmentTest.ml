@@ -39,6 +39,41 @@ let test_simple_registration context =
   ()
 
 
+let test_simple_global_registration context =
+  let assert_registers ?(expected = true) source name =
+    let project = ScratchProject.setup ["test.py", source] ~context in
+    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+    let unannotated_global_environment =
+      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+    in
+    let _ =
+      UnannotatedGlobalEnvironment.update
+        unannotated_global_environment
+        ~scheduler:(mock_scheduler ())
+        ~configuration:(Configuration.Analysis.create ())
+        ~ast_environment_update_result
+        (Reference.Set.singleton (Reference.create "test"))
+    in
+    let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
+    assert_equal
+      ( UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+          read_only
+          (Reference.create name)
+      |> Option.is_some )
+      expected
+  in
+  assert_registers {|
+    bar = 8
+  |} "test.bar";
+  assert_registers ~expected:false {|
+    other.bar = 8
+  |} "test.other.bar";
+  assert_registers ~expected:false {|
+    other.bar = 8
+  |} "other.bar";
+  ()
+
+
 let test_updates context =
   let assert_updates
       ?original_source
@@ -433,5 +468,9 @@ let test_updates context =
 
 let () =
   "environment"
-  >::: ["simple_registration" >:: test_simple_registration; "updates" >:: test_updates]
+  >::: [
+         "simple_registration" >:: test_simple_registration;
+         "simple_globals" >:: test_simple_global_registration;
+         "updates" >:: test_updates;
+       ]
   |> Test.run

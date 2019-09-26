@@ -339,14 +339,17 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
 let collect_unannotated_globals { Source.statements; source_path = { SourcePath.qualifier; _ }; _ }
   =
   let rec visit_statement ~qualifier globals { Node.value; location } =
+    let qualified_name target =
+      let target = Expression.name_to_reference_exn target |> Reference.sanitize_qualified in
+      Option.some_if (Reference.length target = 1) (Reference.combine qualifier target)
+    in
     match value with
     | Statement.Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
       when Expression.is_simple_name target ->
-        let qualified_name =
-          let target = Expression.name_to_reference_exn target |> Reference.sanitize_qualified in
-          Reference.combine qualifier target
-        in
-        (qualified_name, SimpleAssign { explicit_annotation = annotation; value }) :: globals
+        qualified_name target
+        >>| (fun qualified ->
+              (qualified, SimpleAssign { explicit_annotation = annotation; value }) :: globals)
+        |> Option.value ~default:globals
     | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
       when String.equal (Reference.show name) "*" ->
         (* Don't register x.* as a global when a user writes `from x import *`. *)
