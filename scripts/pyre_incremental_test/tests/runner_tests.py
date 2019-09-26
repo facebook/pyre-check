@@ -50,7 +50,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update old_hash"),
             CommandInput(Path("old_root"), "pyre --option2 --no-saved-state restart"),
-            CommandInput(Path("old_root"), "hg update new_hash"),
+            CommandInput(Path("old_root"), "hg update --clean new_hash"),
             CommandInput(
                 Path("old_root"),
                 "pyre --option3 --output=json --noninteractive incremental",
@@ -314,8 +314,8 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update old_hash"),
             CommandInput(Path("old_root"), "pyre  --no-saved-state restart"),
-            CommandInput(Path("old_root"), "hg update new_hashA"),
-            CommandInput(Path("old_root"), "hg update new_hashB"),
+            CommandInput(Path("old_root"), "hg update --clean new_hashA"),
+            CommandInput(Path("old_root"), "hg update --clean new_hashB"),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -411,10 +411,10 @@ class RunnerTest(unittest.TestCase):
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update old_hash"),
-            CommandInput(Path("old_root"), "hg update new_hashA"),
-            CommandInput(Path("old_root"), "hg update new_hashB"),
+            CommandInput(Path("old_root"), "hg update --clean new_hashA"),
+            CommandInput(Path("old_root"), "hg update --clean new_hashB"),
             CommandInput(Path("old_root"), "pyre  --no-saved-state restart"),
-            CommandInput(Path("old_root"), "hg update new_hashC"),
+            CommandInput(Path("old_root"), "hg update --clean new_hashC"),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),

@@ -226,7 +226,8 @@ class HgRepositoryUpdate(RepositoryUpdate):
 
     def update(self, environment: Environment, working_directory: Path) -> None:
         environment.checked_run(
-            working_directory=working_directory, command=f"hg update {self.commit_hash}"
+            working_directory=working_directory,
+            command=f"hg update --clean {self.commit_hash}",
         )
 
     def to_json(self) -> Dict[str, Any]:
