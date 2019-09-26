@@ -530,7 +530,6 @@ def mock_arguments() -> MagicMock:
     arguments.current_directory = "."
     arguments.json = False
     arguments.annotate_from_existing_stubs = False
-    arguments.count_annotations = None
 
     return arguments
 

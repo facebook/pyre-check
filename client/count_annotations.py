@@ -11,6 +11,8 @@ from typing import Dict, List, Sequence
 
 import libcst as cst
 
+from . import log
+
 
 class TypeCollector(cst.CSTVisitor):
     def __init__(
@@ -40,7 +42,7 @@ class TypeCollector(cst.CSTVisitor):
         }
 
     def print_results(self) -> None:
-        print(json.dumps(self.build_json()))
+        log.stdout.write(json.dumps(self.build_json()))
 
     def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> None:
         for parameter in list(parameters):

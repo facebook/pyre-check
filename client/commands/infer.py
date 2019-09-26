@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Any, List, Optional, Set, Union  # noqa
 
 from .. import apply_annotations, log
-from ..count_annotations import TypeCollector, run
 from .check import Check
 from .command import Command, Result, typeshed_search_path
 from .reporting import JSON, Reporting
@@ -396,14 +395,6 @@ def pyre_configuration_directory(arguments) -> Path:
         return Path(os.getcwd())
 
 
-def run_count_annotations(arguments) -> TypeCollector:
-    collector = TypeCollector()
-    for path in arguments.count_annotations:
-        run(pyre_configuration_directory(arguments) / path, collector)
-    collector.print_results()
-    return collector
-
-
 class Infer(Reporting):
     NAME = "infer"
 
@@ -415,7 +406,6 @@ class Infer(Reporting):
         self._local_configuration = arguments.local_configuration
         self._json = arguments.json
         self._annotate_from_existing_stubs = arguments.annotate_from_existing_stubs
-        self._count_annotations = arguments.count_annotations
 
     def run(self) -> Command:
         self._analysis_directory.prepare()
@@ -429,9 +419,6 @@ class Infer(Reporting):
                 ".pyre/types"
             )
             annotate_from_existing_stubs(self._arguments, type_directory)
-            return self
-        if self._count_annotations:
-            run_count_annotations(self._arguments)
             return self
         if self._json:
             result = self._errors_from_stdin()

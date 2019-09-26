@@ -470,12 +470,16 @@ def main() -> int:
         action="store_true",
         help="Print error message when file fails to annotate.",
     )
-    infer.add_argument(
-        "--count-annotations",
-        nargs="*",
-        help="Count the existing annotations present in a given file.",
-    )
     infer.set_defaults(command=commands.Infer)
+
+    statistics = parsed_commands.add_parser(commands.Statistics.NAME)
+    statistics.add_argument(
+        "filter_paths",
+        nargs="*",
+        type=file_exists,
+        help="Source path(s) to gather metrics for.",
+    )
+    statistics.set_defaults(command=commands.Statistics)
 
     arguments = parser.parse_args()
 

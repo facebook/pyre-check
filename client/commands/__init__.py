@@ -19,6 +19,7 @@ from .rage import Rage as Rage  # noqa
 from .reporting import Reporting as Reporting  # noqa
 from .restart import Restart as Restart  # noqa
 from .start import Start  # noqa
+from .statistics import Statistics as Statistics  # noqa
 from .stop import Stop as Stop  # noqa
 
 
