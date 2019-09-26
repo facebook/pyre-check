@@ -785,5 +785,4 @@ let test_transform_environment context =
     ]
 
 
-let () =
-  "plugin_data_class" >::: ["transform_environment" >:: test_transform_environment] |> Test.run
+let () = "dataClass" >::: ["transform_environment" >:: test_transform_environment] |> Test.run

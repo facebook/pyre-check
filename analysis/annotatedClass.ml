@@ -386,9 +386,9 @@ let create_attribute
   =
   let class_annotation = annotation parent in
   let initialized =
-    match value with
-    | Some { Node.value = Ellipsis; _ }
-    | None ->
+    match value, defines with
+    | Some { Node.value = Ellipsis; _ }, None
+    | None, None ->
         false
     | _ -> true
   in
@@ -952,7 +952,7 @@ module ClassDecorators = struct
                 class_attribute = false;
                 defined = true;
                 final = false;
-                initialized = false;
+                initialized = true;
                 name = attribute_name;
                 parent = Type.Primitive (Reference.show name);
                 property = None;

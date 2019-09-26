@@ -765,6 +765,7 @@ let test_class_attributes context =
   let create_expected_attribute
       ?(property = None)
       ?(parent = Type.Primitive "test.Attributes")
+      ?(initialized = true)
       name
       callable
     =
@@ -775,7 +776,7 @@ let test_class_attributes context =
       class_attribute = false;
       defined = true;
       final = false;
-      initialized = false;
+      initialized;
       name;
       parent;
       property;
@@ -810,7 +811,8 @@ let test_class_attributes context =
     ~parent
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
     ~attribute_name:"property"
-    ~expected_attribute:(create_expected_attribute ~property:(Some ReadOnly) "property" "str")
+    ~expected_attribute:
+      (create_expected_attribute ~initialized:false ~property:(Some ReadOnly) "property" "str")
 
 
 let test_fallback_attribute context =

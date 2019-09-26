@@ -87,6 +87,28 @@ let test_check_data_class context =
           b = Child(1)
     |}
     [];
+  assert_type_errors
+    {|
+      from dataclasses import dataclass
+      from typing import Dict, Any
+      @dataclass(frozen=False)
+      class Base:
+        x: str
+
+        def __init__(
+            self,
+            *,
+            x: str,
+        ) -> None:
+            self.x = x
+
+        def as_dict(self) -> Dict[str, Any]:
+            x = self.x
+            return {
+                "x": x,
+            }
+    |}
+    [];
   ()
 
 

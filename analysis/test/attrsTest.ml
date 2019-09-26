@@ -620,4 +620,4 @@ let test_transform_environment context =
     ]
 
 
-let () = "plugin_attrs" >::: ["transform_environment" >:: test_transform_environment] |> Test.run
+let () = "attrs" >::: ["transform_environment" >:: test_transform_environment] |> Test.run
