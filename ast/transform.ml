@@ -394,3 +394,38 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
     let statements = List.concat_map ~f:transform_statement source.Source.statements in
     { state = !state; source = { source with Source.statements } }
 end
+
+module SanitizeExpressions = Make (struct
+  type t = unit
+
+  let transform_expression_children _ _ = true
+
+  let expression _ { Node.location; value } =
+    match value with
+    | Name (Name.Identifier identifier) ->
+        { Node.location; value = Name (Name.Identifier (Identifier.sanitized identifier)) }
+    | Name (Name.Attribute ({ attribute; _ } as attribute_expression)) ->
+        {
+          Node.location;
+          value =
+            Name
+              (Name.Attribute
+                 { attribute_expression with attribute = Identifier.sanitized attribute });
+        }
+    | _ -> { Node.location; value }
+
+
+  let transform_children _ _ = true
+
+  let statement state statement = state, [statement]
+end)
+
+let sanitize_expression expression =
+  SanitizeExpressions.transform
+    ()
+    (Source.create [Node.create_with_default_location (Statement.Expression expression)])
+  |> (fun { SanitizeExpressions.source; _ } -> source)
+  |> Source.statements
+  |> function
+  | [{ Node.value = Statement.Expression expression; _ }] -> expression
+  | _ -> expression

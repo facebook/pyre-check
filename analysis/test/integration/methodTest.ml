@@ -173,8 +173,8 @@ let test_check_method_parameters context =
       reveal_type(Foo()[1])
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(1)` is `int`.";
-      "Revealed type [-1]: Revealed type for `test.Foo().__getitem__(1)` is `str`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[1]` is `int`.";
+      "Revealed type [-1]: Revealed type for `test.Foo()[1]` is `str`.";
     ];
   assert_strict_type_errors
     {|
@@ -198,10 +198,8 @@ let test_check_method_parameters context =
     |}
     [
       "Invalid method signature [47]: `typing.Type[Variable[_T]]` cannot be the type of `self`.";
-      "Revealed type [-1]: Revealed type for `test.StringEnum.__getitem__(\"key\")` is \
-       `StringEnum`.";
-      "Revealed type [-1]: Revealed type for `test.StringEnumTwo.__getitem__(\"key\")` is \
-       `StringEnumTwo`.";
+      "Revealed type [-1]: Revealed type for `test.StringEnum[\"key\"]` is `StringEnum`.";
+      "Revealed type [-1]: Revealed type for `test.StringEnumTwo[\"key\"]` is `StringEnumTwo`.";
     ];
 
   (* Defining methods *)

@@ -109,8 +109,7 @@ let test_reveal_type context =
       reveal_type(typing.List[int])
     |}
     [
-      "Revealed type [-1]: Revealed type for `typing.List.__getitem__(int)` is \
-       `typing.Type[typing.List[int]]`.";
+      "Revealed type [-1]: Revealed type for `typing.List[int]` is `typing.Type[typing.List[int]]`.";
     ];
   assert_type_errors
     {|
@@ -149,13 +148,13 @@ let test_reveal_type context =
       def f( *args) -> None: # type: ( *str) -> None
         reveal_type(args[0])
     |}
-    ["Revealed type [-1]: Revealed type for `args.__getitem__(0)` is `str`."];
+    ["Revealed type [-1]: Revealed type for `args[0]` is `str`."];
   assert_type_errors
     {|
       def f( **kwargs) -> None: # type: ( **int) -> None
         reveal_type(kwargs['key'])
     |}
-    ["Revealed type [-1]: Revealed type for `kwargs.__getitem__(\"key\")` is `int`."];
+    ["Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`."];
   assert_type_errors
     {|
       def f( *args, **kwargs) -> None: # type: ( *str, **int) -> None
@@ -163,8 +162,8 @@ let test_reveal_type context =
         reveal_type(kwargs['key'])
     |}
     [
-      "Revealed type [-1]: Revealed type for `args.__getitem__(0)` is `str`.";
-      "Revealed type [-1]: Revealed type for `kwargs.__getitem__(\"key\")` is `int`.";
+      "Revealed type [-1]: Revealed type for `args[0]` is `str`.";
+      "Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`.";
     ]
 
 

@@ -66,10 +66,9 @@ let test_check_unbounded_variables context =
       Foo["str"]()
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(float)` is \
-       `typing.Type[Foo[float]]`.";
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(float)()` is `Foo[float]`.";
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(str)()` is `Foo[str]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[float]` is `typing.Type[Foo[float]]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[float]()` is `Foo[float]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[str]()` is `Foo[str]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X]]` for 1st anonymous "
       ^ "parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
     ];
@@ -345,10 +344,9 @@ let test_check_variable_bindings context =
       Foo[int]()
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(test.C)` is \
-       `typing.Type[Foo[C]]`.";
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(test.C)()` is `Foo[C]`.";
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(test.D)()` is `Foo[D]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[test.C]` is `typing.Type[Foo[C]]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[test.C]()` is `Foo[C]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[test.D]()` is `Foo[D]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X (bound to C)]]` for "
       ^ "1st anonymous parameter to call `typing.GenericMeta.__getitem__` but got \
          `typing.Type[int]`.";
@@ -368,13 +366,11 @@ let test_check_variable_bindings context =
       Foo[int]()
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(test.Animal)` is "
+      "Revealed type [-1]: Revealed type for `test.Foo[test.Animal]` is "
       ^ "`typing.Type[Foo[Animal]]`.";
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(test.Animal)()` is \
-       `Foo[Animal]`.";
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(test.Mineral)()` is \
-       `Foo[Mineral]`.";
-      "Revealed type [-1]: Revealed type for `test.Foo.__getitem__(test.Fish)()` is `Foo[Animal]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[test.Animal]()` is `Foo[Animal]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[test.Mineral]()` is `Foo[Mineral]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo[test.Fish]()` is `Foo[Animal]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X <: [Mineral, Animal]]]` "
       ^ "for 1st anonymous parameter to call `typing.GenericMeta.__getitem__` but got "
       ^ "`typing.Type[int]`.";
@@ -1186,8 +1182,7 @@ let test_list_variadics context =
       call_with_args(bar, *y)
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.call_with_args(test.foo, *$parameter$x)` is \
-       `str`.";
+      "Revealed type [-1]: Revealed type for `test.call_with_args(test.foo, *x)` is `str`.";
       "Invalid argument [32]: Variable argument `y` has type `typing.Tuple[int, ...]` but must be \
        a definite tuple to be included in variadic type variable `test.Ts`.";
     ];
@@ -1205,8 +1200,7 @@ let test_list_variadics context =
       call_with_args(bar, *x, *y)
     |}
     [
-      "Revealed type [-1]: Revealed type for `test.call_with_args(test.foo, *$parameter$x, True)` \
-       is `str`.";
+      "Revealed type [-1]: Revealed type for `test.call_with_args(test.foo, *x, True)` is `str`.";
       "Invalid argument [32]: Types `Concatenate[int, str, test.Ts]` conflict with existing \
        constraints on `test.Ts`.";
     ];
@@ -1343,11 +1337,10 @@ let test_map context =
       reveal_type(await better_gather( *many))
     |}
     [
-      "Revealed type [-1]: Revealed type for `await test.better_gather($parameter$i)` is \
-       `typing.Tuple[int]`.";
-      "Revealed type [-1]: Revealed type for `await \
-       test.better_gather($parameter$i,$parameter$s)` is `typing.Tuple[int, str]`.";
-      "Revealed type [-1]: Revealed type for `await test.better_gather(*$local_test?foo$many)` is \
+      "Revealed type [-1]: Revealed type for `await test.better_gather(i)` is `typing.Tuple[int]`.";
+      "Revealed type [-1]: Revealed type for `await test.better_gather(i, s)` is \
+       `typing.Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `await test.better_gather(*many)` is \
        `typing.Tuple[int, str, int, str, int, str, int, str, int]`.";
     ];
   assert_type_errors

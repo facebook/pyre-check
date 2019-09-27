@@ -1408,7 +1408,7 @@ let test_forward_statement context =
     ~errors:
       (`Specific
         [
-          "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x,int)` will \
+          "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x, int)` will \
            always fail.";
         ])
     ~bottom:true
@@ -1419,7 +1419,7 @@ let test_forward_statement context =
     ~errors:
       (`Specific
         [
-          "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x,float)` \
+          "Impossible assertion [25]: `x` has type `int`, assertion `not isinstance(x, float)` \
            will always fail.";
         ])
     ~bottom:true
@@ -1453,7 +1453,7 @@ let test_forward_statement context =
       (`Specific
         [
           "Impossible assertion [25]: `x.__add__(1)` has type `int`, assertion `not \
-           isinstance(x.__add__(1),int)` will always fail.";
+           isinstance(x.__add__(1), int)` will always fail.";
         ])
     ~bottom:true
     ["x", Type.integer]

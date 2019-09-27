@@ -3172,7 +3172,9 @@ module State (Context : Context) = struct
                           { base = { Node.value = Name (Name.Identifier self); _ }; attribute; _ },
                         Name _ )
                       when String.equal (Identifier.sanitized self) "self" ->
-                        let sanitized = Expression.show_sanitized value in
+                        let sanitized =
+                          Ast.Transform.sanitize_expression value |> Expression.show
+                        in
                         is_immutable
                         && (not (Type.is_unknown expected))
                         && ( String.equal attribute sanitized

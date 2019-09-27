@@ -52,3 +52,5 @@ module MakeStatementTransformer (Transformer : StatementTransformer) : sig
 
   val transform : Transformer.t -> Source.t -> result
 end
+
+val sanitize_expression : Expression.t -> Expression.t

@@ -282,10 +282,6 @@ val get_item_call
   location:Reference.t Location.location ->
   expression
 
-val show_sanitized : t -> string
-
-val pp_sanitized : Format.formatter -> t -> unit
-
 val pp_expression_list : Format.formatter -> t list -> unit
 
 val pp_expression_argument_list : Format.formatter -> Call.Argument.t list -> unit

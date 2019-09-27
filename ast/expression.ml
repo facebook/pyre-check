@@ -680,7 +680,7 @@ module PrettyPrinter = struct
     | [] -> ()
     | [argument] -> Format.fprintf formatter "%a" pp_argument argument
     | argument :: argument_list ->
-        Format.fprintf formatter "%a,%a" pp_argument argument pp_argument_list argument_list
+        Format.fprintf formatter "%a, %a" pp_argument argument pp_argument_list argument_list
 
 
   and pp_dictionary_entry formatter { Dictionary.key; value } =
@@ -890,38 +890,6 @@ end
 let pp formatter expression = Format.fprintf formatter "%a" PrettyPrinter.pp expression
 
 let show expression = Format.asprintf "%a" pp expression
-
-let rec show_sanitized { Node.location; value } =
-  match value with
-  | Name (Name.Identifier identifier) -> Identifier.sanitized identifier
-  | Name (Name.Attribute { base; attribute; _ }) ->
-      Format.asprintf "%s.%s" (show_sanitized base) (Identifier.sanitized attribute)
-  | Call { callee; arguments } ->
-      let arguments =
-        let show_argument { Call.Argument.name; value } =
-          let value = show_sanitized value in
-          match name with
-          | None -> value
-          | Some { Node.value = name; _ } -> Format.sprintf "%s = %s" name value
-        in
-        arguments |> List.map ~f:show_argument |> String.concat ~sep:", "
-      in
-      Format.asprintf "%s(%s)" (show_sanitized callee) arguments
-  | ComparisonOperator { left; operator; right } ->
-      Format.asprintf
-        "%s %a %s"
-        (show_sanitized left)
-        Record.ComparisonOperator.pp_comparison_operator
-        operator
-        (show_sanitized right)
-  | Tuple items ->
-      List.map items ~f:show_sanitized
-      |> String.concat ~sep:", "
-      |> fun tuple_body -> Format.sprintf "(%s)" tuple_body
-  | _ -> show { Node.location; value }
-
-
-let pp_sanitized formatter expression = show_sanitized expression |> Format.fprintf formatter "%s"
 
 let pp_expression_list formatter expression_list =
   Format.fprintf formatter "%a" PrettyPrinter.pp_expression_list expression_list

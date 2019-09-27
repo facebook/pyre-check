@@ -217,7 +217,8 @@ let collect_nodes_as_strings source =
 
     let predicate = function
       | Visit.Expression expression ->
-          Some (Expression.show_sanitized expression, Node.location expression)
+          Some
+            (Transform.sanitize_expression expression |> Expression.show, Node.location expression)
       | Visit.Statement _ -> None
       | Visit.Identifier { Node.value; location } -> Some (Identifier.sanitized value, location)
       | Visit.Parameter { Node.value = { Parameter.name; _ }; location } ->

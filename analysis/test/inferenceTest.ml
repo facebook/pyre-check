@@ -605,7 +605,7 @@ let test_infer context =
       def foo(x: bool):
           return ""
     |}
-    [{|["click.argument(\"config-path\",type = click.Path(exists = True,readable = True))"]|}]
+    [{|["click.argument(\"config-path\", type = click.Path(exists = True, readable = True))"]|}]
 
 
 let test_infer_backward context =

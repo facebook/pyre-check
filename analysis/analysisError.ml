@@ -471,6 +471,9 @@ let messages ~concise ~signature location kind =
   let { Node.value = { Define.Signature.name = define_name; _ }; location = define_location } =
     signature
   in
+  let show_sanitized_expression expression =
+    Ast.Transform.sanitize_expression expression |> Expression.show
+  in
   let ordinal number =
     let suffix =
       if number % 10 = 1 && number % 100 <> 11 then
@@ -506,7 +509,7 @@ let messages ~concise ~signature location kind =
   | Deobfuscation source -> [Format.asprintf "\n%a" Source.pp source]
   | IllegalAnnotationTarget _ when concise -> ["Target cannot be annotated."]
   | IllegalAnnotationTarget expression ->
-      [Format.asprintf "Target `%a` cannot be annotated." Expression.pp_sanitized expression]
+      [Format.asprintf "Target `%s` cannot be annotated." (show_sanitized_expression expression)]
   | IncompleteType { target; annotation; attempted_action } ->
       let inferred =
         match annotation with
@@ -529,7 +532,7 @@ let messages ~concise ~signature location kind =
         Format.asprintf
           "Type %sinferred for `%s` is incomplete, %s"
           inferred
-          (Expression.show_sanitized target)
+          (show_sanitized_expression target)
           consequence;
       ]
   | ImpossibleAssertion _ when concise -> ["Assertion will always fail."]
@@ -806,7 +809,7 @@ let messages ~concise ~signature location kind =
         [
           Format.asprintf
             "Keyword argument `%s` has type `%a` but must be a mapping with string keys."
-            (Expression.show_sanitized expression)
+            (show_sanitized_expression expression)
             pp_type
             annotation;
         ]
@@ -814,7 +817,7 @@ let messages ~concise ~signature location kind =
         [
           Format.asprintf
             "Variable argument `%s` has type `%a` but must be an iterable."
-            (Expression.show_sanitized expression)
+            (show_sanitized_expression expression)
             pp_type
             annotation;
         ]
@@ -832,7 +835,7 @@ let messages ~concise ~signature location kind =
           Format.asprintf
             "Variable argument `%s` has type `%a` but must be a definite tuple to be included in \
              variadic type variable `%a`."
-            (Expression.show_sanitized expression)
+            (show_sanitized_expression expression)
             pp_type
             annotation
             (Type.Record.OrderedTypes.pp_concise ~pp_type)
@@ -857,7 +860,7 @@ let messages ~concise ~signature location kind =
       [
         Format.asprintf
           "Expression `%s` has type `%a` but must extend BaseException."
-          (Expression.show_sanitized expression)
+          (show_sanitized_expression expression)
           pp_type
           annotation;
       ]
@@ -1500,7 +1503,7 @@ let messages ~concise ~signature location kind =
       [
         Format.asprintf
           "Revealed type for `%s` is `%s`%s."
-          (Expression.show_sanitized expression)
+          (show_sanitized_expression expression)
           annotation
           detail;
       ]
@@ -1510,17 +1513,17 @@ let messages ~concise ~signature location kind =
           "`safe_cast` `%a` is not a subclass of `%s`."
           pp_type
           annotation
-          (Expression.show_sanitized expression);
+          (show_sanitized_expression expression);
       ]
   | UnsafeCast { expression; annotation } ->
       [
         Format.asprintf
           "`safe_cast` is only permitted to loosen the type of `%s`. `%a` is not a super type of \
            `%s`."
-          (Expression.show_sanitized expression)
+          (show_sanitized_expression expression)
           pp_type
           annotation
-          (Expression.show_sanitized expression);
+          (show_sanitized_expression expression);
       ]
   | TooManyArguments { expected; _ } when concise ->
       [
@@ -1582,8 +1585,11 @@ let messages ~concise ~signature location kind =
         [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count] )
   | UnawaitedAwaitable { references = []; expression } ->
       [
-        Format.asprintf "`%a` is never awaited." Expression.pp_sanitized expression;
-        Format.asprintf "`%a` is defined on line %d" Expression.pp_sanitized expression start_line;
+        Format.asprintf "`%s` is never awaited." (show_sanitized_expression expression);
+        Format.asprintf
+          "`%s` is defined on line %d"
+          (show_sanitized_expression expression)
+          start_line;
       ]
   | UnawaitedAwaitable { references; expression } ->
       let name =
@@ -1594,7 +1600,10 @@ let messages ~concise ~signature location kind =
       in
       [
         Format.asprintf "Awaitable assigned to %s is never awaited." name;
-        Format.asprintf "`%a` is defined on line %d" Expression.pp_sanitized expression start_line;
+        Format.asprintf
+          "`%s` is defined on line %d"
+          (show_sanitized_expression expression)
+          start_line;
       ]
   | UndefinedAttribute { attribute; origin } ->
       let target =

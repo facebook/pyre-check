@@ -989,8 +989,8 @@ let test_pp _ =
         else:
           i = 2
         j = 2
-      i.__setitem__(j,3)
-      i.__setitem__(slice(j,None,1),i[slice(None,j,None)])
+      i.__setitem__(j, 3)
+      i.__setitem__(slice(j, None, 1), i[slice(None, j, None)])
     |};
   assert_pretty_print
     {|
