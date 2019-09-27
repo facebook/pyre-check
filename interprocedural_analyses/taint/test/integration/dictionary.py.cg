@@ -9,6 +9,7 @@ dictionary.dictionary_nested_non_source_assignment (fun) -> [__test_source (fun)
 dictionary.dictionary_non_source (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
 dictionary.dictionary_source (fun) -> [__test_source (fun)]
 dictionary.dictionary_tito (fun) -> []
+dictionary.flow_through_keywords (fun) -> [__test_sink (fun) __test_source (fun) dict::__getitem__ (method)]
 dictionary.indirect_flow_from_source_to_global_dictionary (fun) -> [__test_source (fun) dictionary.update_dictionary_indirectly (fun)]
 dictionary.update_dictionary_indirectly (fun) -> [dict::update (method)]
 dictionary.update_parameter (fun) -> []

@@ -474,7 +474,42 @@ let test_dictionary context =
       outcome ~kind:`Function ~returns:[] "qualifier.dictionary_different_index";
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_unknown_read_index";
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_unknown_write_index";
-    ]
+    ];
+  assert_taint
+    ~context
+    {|
+      def dictionary_source():
+        first = {
+          "a": __test_source(),
+        }
+        second = { **first }
+        return second
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_source"];
+  assert_taint
+    ~context
+    {|
+      def dictionary_source():
+        first = {
+          "a": __test_source(),
+        }
+        second = { **first }
+        return second["a"]
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_source"];
+
+  (* We don't collapse the taint for keywords. *)
+  assert_taint
+    ~context
+    {|
+      def dictionary_source():
+        first = {
+          "a": __test_source(),
+        }
+        second = { **first }
+        return second["b"]
+    |}
+    [outcome ~kind:`Function ~returns:[] "qualifier.dictionary_source"]
 
 
 let test_comprehensions context =

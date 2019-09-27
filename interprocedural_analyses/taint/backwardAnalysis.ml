@@ -440,8 +440,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state callee arguments
       | Complex _ -> state
-      | Dictionary dictionary ->
-          List.fold ~f:(analyze_dictionary_entry ~resolution taint) dictionary.entries ~init:state
+      | Dictionary { Dictionary.entries; keywords } ->
+          let state =
+            List.fold ~f:(analyze_dictionary_entry ~resolution taint) entries ~init:state
+          in
+          let analyze_dictionary_keywords state keywords =
+            analyze_expression ~resolution ~taint ~state ~expression:keywords
+          in
+          List.fold keywords ~f:analyze_dictionary_keywords ~init:state
       | DictionaryComprehension _
       | Ellipsis
       | False

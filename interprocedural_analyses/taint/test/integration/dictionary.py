@@ -69,3 +69,9 @@ def indirect_flow_from_source_to_global_dictionary():
 
 def update_parameter(arg):
     arg.update({"a": __test_source})
+
+
+def flow_through_keywords():
+    tainted_map = {"a": __test_source()}
+    new_map = {**tainted_map}
+    __test_sink(tainted_map["a"])

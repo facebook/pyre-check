@@ -2,6 +2,64 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.flow_through_keywords",
+    "callable_line": 74,
+    "code": 5002,
+    "line": 77,
+    "start": 16,
+    "end": 32,
+    "filename": "dictionary.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 75,
+              "start": 24,
+              "end": 39
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "special_source" },
+              { "always-has": "first-index" },
+              { "always-first-index": "a" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 77,
+              "start": 16,
+              "end": 32
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.indirect_flow_from_source_to_global_dictionary",
     "callable_line": 66,
     "code": 5002,

@@ -533,11 +533,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ForwardState.Tree.empty, state
       | Call { callee; arguments } -> analyze_call ~resolution ~location ~state callee arguments
       | Complex _ -> ForwardState.Tree.empty, state
-      | Dictionary dictionary ->
-          List.fold
-            dictionary.entries
-            ~f:(analyze_dictionary_entry ~resolution)
-            ~init:(ForwardState.Tree.empty, state)
+      | Dictionary { Dictionary.entries; keywords } ->
+          let taint, state =
+            List.fold
+              entries
+              ~f:(analyze_dictionary_entry ~resolution)
+              ~init:(ForwardState.Tree.empty, state)
+          in
+          let analyze_dictionary_keywords (taint, state) keywords =
+            let new_taint, state = analyze_expression ~resolution ~state ~expression:keywords in
+            ForwardState.Tree.join new_taint taint, state
+          in
+          List.fold keywords ~f:analyze_dictionary_keywords ~init:(taint, state)
       | DictionaryComprehension _
       | Ellipsis
       | False
