@@ -687,6 +687,12 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
 
     issue_id = Column(BIGDBIDType, nullable=False, index=True)
 
+    issue = relationship(
+        "Issue",
+        primaryjoin="foreign(Issue.id) == IssueInstance.issue_id",
+        uselist=False,
+    )
+
     fix_info_id = Column(BIGDBIDType, nullable=True)
 
     fix_info = relationship(
@@ -835,9 +841,7 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
     )
 
     instances = relationship(
-        "IssueInstance",
-        primaryjoin="Issue.id == foreign(IssueInstance.issue_id)",
-        backref="issue",
+        "IssueInstance", primaryjoin="Issue.id == foreign(IssueInstance.issue_id)"
     )
 
     first_seen = Column(
@@ -1133,6 +1137,12 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
     caller_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
 
+    caller = relationship(
+        "SharedText",
+        primaryjoin="foreign(SharedText.id) == TraceFrame.caller_id",
+        uselist=False,
+    )
+
     caller_port: str = Column(
         String(length=INNODB_MAX_INDEX_LENGTH),
         nullable=False,
@@ -1141,6 +1151,12 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
     )
 
     callee_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
+
+    callee = relationship(
+        "SharedText",
+        primaryjoin="foreign(SharedText.id) == TraceFrame.callee_id",
+        uselist=False,
+    )
 
     callee_location = Column(
         SourceLocationType,
