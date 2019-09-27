@@ -102,6 +102,7 @@ let test_integration context =
         ~environment
         ~analyses:[Taint.Analysis.abstract_kind]
         ~dependencies
+        ~filtered_callables:Callable.Set.empty
         ~all_callables
         Fixpoint.Epoch.initial
       |> ignore;

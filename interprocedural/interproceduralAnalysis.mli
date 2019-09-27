@@ -24,6 +24,7 @@ val compute_fixpoint
   environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   analyses:Kind.abstract list ->
   dependencies:DependencyGraph.t ->
+  filtered_callables:Callable.Set.t ->
   all_callables:Callable.t list ->
   Fixpoint.Epoch.t ->
   int

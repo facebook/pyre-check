@@ -509,7 +509,13 @@ let get_callable_dependents ~dependencies callable =
   implicit @ explicit
 
 
-let compute_callables_to_reanalyze step previous_batch ~dependencies ~all_callables =
+let compute_callables_to_reanalyze
+    step
+    previous_batch
+    ~dependencies
+    ~filtered_callables
+    ~all_callables
+  =
   let open Fixpoint in
   let reanalyze_caller caller accumulator = Callable.Set.add caller accumulator in
   let might_change_if_reanalyzed =
@@ -538,6 +544,12 @@ let compute_callables_to_reanalyze step previous_batch ~dependencies ~all_callab
       let check_missing callable =
         match Fixpoint.get_meta_data callable with
         | None -> () (* okay, caller is in a later epoch *)
+        | Some _ when Callable.Set.mem callable filtered_callables ->
+            (* This is fine - even though this function was called, it was filtered from the
+               analysis beforehand. *)
+            Log.warning
+              "%s was omitted due to being explicitly filtered from the analysis."
+              (Callable.show callable)
         | Some { step = { epoch; _ }; _ } when epoch = Epoch.predefined -> ()
         | Some meta ->
             let message =
@@ -563,6 +575,7 @@ let compute_fixpoint
     ~environment
     ~analyses
     ~dependencies
+    ~filtered_callables
     ~all_callables
     epoch
   =
@@ -636,7 +649,12 @@ let compute_fixpoint
         Fixpoint.remove_old old_batch
       in
       let callables_to_analyze =
-        compute_callables_to_reanalyze step callables_to_analyze ~dependencies ~all_callables
+        compute_callables_to_reanalyze
+          step
+          callables_to_analyze
+          ~dependencies
+          ~filtered_callables
+          ~all_callables
       in
       let () =
         Log.info

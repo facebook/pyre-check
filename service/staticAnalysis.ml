@@ -30,41 +30,45 @@ let record_overrides overrides =
   Reference.Map.iteri overrides ~f:record_override_edge
 
 
+let unfiltered_callables ~resolution ~source =
+  let defines = Preprocessing.defines ~include_stubs:true ~include_toplevels:true source in
+  let record_toplevel_definition definition =
+    let name = definition.Node.value.Define.signature.name in
+    match definition.Node.value.Define.signature.parent with
+    | None ->
+        (* Only record top-level definitions. *)
+        Some (Callable.create_function name, definition)
+    | Some class_name ->
+        let class_annotation = Type.Primitive (Reference.show class_name) in
+        let class_exists =
+          GlobalResolution.class_definition resolution class_annotation |> Option.is_some
+        in
+        if not class_exists then
+          Log.warning
+            "Class %a for method %a is not part of the type environment"
+            Reference.pp
+            class_name
+            Reference.pp
+            name;
+        let is_test_function =
+          GlobalResolution.less_or_equal
+            resolution
+            ~left:(GlobalResolution.parse_reference resolution class_name)
+            ~right:(Type.Primitive "unittest.case.TestCase")
+        in
+        if is_test_function then
+          None
+        else
+          Some (Callable.create_method name, definition)
+  in
+  List.filter_map ~f:record_toplevel_definition defines
+
+
 let callables ~resolution ~source =
   if GlobalResolution.source_is_unit_test resolution ~source then
     []
   else
-    let defines = Preprocessing.defines ~include_stubs:true ~include_toplevels:true source in
-    let record_toplevel_definition definition =
-      let name = definition.Node.value.Define.signature.name in
-      match definition.Node.value.Define.signature.parent with
-      | None ->
-          (* Only record top-level definitions. *)
-          Some (Callable.create_function name, definition)
-      | Some class_name ->
-          let class_annotation = Type.Primitive (Reference.show class_name) in
-          let class_exists =
-            GlobalResolution.class_definition resolution class_annotation |> Option.is_some
-          in
-          if not class_exists then
-            Log.warning
-              "Class %a for method %a is not part of the type environment"
-              Reference.pp
-              class_name
-              Reference.pp
-              name;
-          let is_test_function =
-            GlobalResolution.less_or_equal
-              resolution
-              ~left:(GlobalResolution.parse_reference resolution class_name)
-              ~right:(Type.Primitive "unittest.case.TestCase")
-          in
-          if is_test_function then
-            None
-          else
-            Some (Callable.create_method name, definition)
-    in
-    List.filter_map ~f:record_toplevel_definition defines
+    unfiltered_callables ~resolution ~source
 
 
 let analyze
@@ -170,6 +174,25 @@ let analyze
     in
     List.fold qualifiers ~f:make_callables ~init:([], [])
   in
+  let filtered_callables =
+    let make_callables result qualifier =
+      AstEnvironment.ReadOnly.get_source ast_environment qualifier
+      >>| (fun source ->
+            if
+              GlobalResolution.source_is_unit_test
+                (Resolution.global_resolution resolution)
+                ~source
+            then
+              List.fold
+                (unfiltered_callables ~resolution:(Resolution.global_resolution resolution) ~source)
+                ~f:(fun result (callable, _) -> Callable.Set.add callable result)
+                ~init:result
+            else
+              result)
+      |> Option.value ~default:result
+    in
+    List.fold qualifiers ~f:make_callables ~init:Callable.Set.empty
+  in
   let configuration_json =
     let taint_models_directories =
       configuration.Configuration.Analysis.taint_models_directories
@@ -224,6 +247,7 @@ let analyze
           ~environment
           ~analyses
           ~dependencies
+          ~filtered_callables
           ~all_callables
           Interprocedural.Fixpoint.Epoch.initial
       in

@@ -33,6 +33,7 @@ let assert_fixpoint ?models ~context source ~expect:{ iterations = expect_iterat
       ~environment
       ~analyses
       ~dependencies
+      ~filtered_callables:Callable.Set.empty
       ~all_callables
       Fixpoint.Epoch.initial
   in
