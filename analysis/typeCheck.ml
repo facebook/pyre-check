@@ -2069,7 +2069,7 @@ module State (Context : Context) = struct
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
         in
         let { state = { errors = updated_errors; _ } as updated_state; resolved; _ } =
-          let target, dynamic =
+          let target_and_dynamic resolved_callee =
             if Type.is_meta resolved_callee then
               Some (Type.single_parameter resolved_callee), false
             else
@@ -2079,7 +2079,35 @@ module State (Context : Context) = struct
               | Some (Super resolved) when not (Type.is_top resolved) -> Some resolved, false
               | _ -> None, false
           in
-          forward_callable ~state ~target ~dynamic ~callee ~resolved:resolved_callee ~arguments
+          match resolved_callee with
+          | Type.Parametric { name = "type"; parameters = Concrete [Type.Union resolved_callees] }
+            ->
+              let forward_inner_callable (state, annotations) inner_resolved_callee =
+                let target, dynamic = target_and_dynamic inner_resolved_callee in
+                forward_callable
+                  ~state
+                  ~target
+                  ~dynamic
+                  ~callee
+                  ~resolved:inner_resolved_callee
+                  ~arguments
+                |> fun { state; resolved; _ } -> state, resolved :: annotations
+              in
+              let state, return_annotations =
+                List.fold_left
+                  ~f:forward_inner_callable
+                  ~init:(state, [])
+                  (List.map ~f:Type.meta resolved_callees)
+              in
+              {
+                state;
+                resolved = Type.union return_annotations;
+                resolved_annotation = None;
+                base = None;
+              }
+          | _ ->
+              let target, dynamic = target_and_dynamic resolved_callee in
+              forward_callable ~state ~target ~dynamic ~callee ~resolved:resolved_callee ~arguments
         in
         if
           Map.is_empty (Map.filter ~f:is_terminating_error callee_errors)

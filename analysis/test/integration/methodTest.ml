@@ -922,6 +922,38 @@ let test_check_callables context =
       x()
     |}
     ["Call error [29]: `int` is not a function."];
+  assert_type_errors {|
+      x: typing.Type[int]
+      x()
+    |} [];
+  assert_type_errors
+    {|
+    class A:
+      def __init__(self) -> None: pass
+    class B:
+      def __init__(self) -> None: pass
+    def foo(
+      x: typing.Type[typing.Union[A, B]],
+    ) -> None:
+      x()
+      [A, B][0]()
+    |}
+    [];
+  assert_type_errors {|
+    x: typing.Type[typing.Union[int, str]]
+    x()
+    |} [];
+  assert_type_errors {|
+    types = [int, str]
+    types[0]()
+    |} [];
+  assert_type_errors
+    {|
+    x: int
+    x = 3
+    [int, x][0]()
+    |}
+    ["Call error [29]: `typing.Union[typing.Type[int], int]` is not a function."];
   assert_type_errors
     {|
       def foo() -> None: pass

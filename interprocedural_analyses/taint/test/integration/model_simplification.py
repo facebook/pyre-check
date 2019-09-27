@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from typing import Any, Dict
+from typing import Any, Dict, List, cast
 
 
 class RecordSchema:
@@ -42,7 +42,7 @@ def _asdict_inner(obj: Any, dict_factory: Any) -> Any:
                 result.append((name_override or f.name, value))
         return dict_factory(result)
     elif isinstance(obj, (list, tuple)):
-        return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
+        return type(obj)(cast(List[Any], (_asdict_inner(v, dict_factory) for v in obj)))
     elif isinstance(obj, DictRecord):
         result = []
         # item access in dict is already by serialized name
