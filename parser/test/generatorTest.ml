@@ -971,6 +971,30 @@ let test_define _ =
   assert_parsed_equal
     (trim_extra_indentation
        {|
+      def foo():  # pyre-ignore
+        # type: (...) -> int
+        return 4
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = Some (+String (StringLiteral.create "int"));
+               async = false;
+               parent = None;
+             };
+           body =
+             [+Statement.Return { Return.expression = Some (+Integer 4); is_implicit = false }];
+         };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
       def foo():
         # type: (...) -> int
         return 4

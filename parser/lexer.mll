@@ -167,6 +167,11 @@ let stringprefix = (encoding | kind | (encoding kind) | (kind encoding) | (encod
 let escape = '\\' _
 
 rule read state = parse
+  | whitespace* comment newline whitespace* signature {
+      line_break lexbuf;
+      let parameters, return = parse_signature_comment (lexeme lexbuf) in
+      SIGNATURE_COMMENT ((lexbuf.lex_start_p, lexbuf.lex_curr_p), parameters, return)
+    }
   | newline whitespace* signature {
       line_break lexbuf;
       let parameters, return = parse_signature_comment (lexeme lexbuf) in
