@@ -244,19 +244,73 @@ module State (Context : Context) = struct
     { resolution; errors = TypeCheckState.error_map initial; bottom = false }
 
 
-  let forward ?key:_ ({ resolution; bottom; errors; _ } as state) ~statement =
+  let forward
+      ?key:_
+      ({ resolution; bottom; errors; _ } as state)
+      ~statement:({ Node.value; _ } as statement)
+    =
     if bottom then
       state
     else
       let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
-      let final_type_check_state =
-        TypeCheckState.forward_statement ~state:initial_type_check_state ~statement
-      in
-      {
-        state with
-        resolution = TypeCheckState.resolution final_type_check_state;
-        errors = TypeCheckState.error_map final_type_check_state;
-      }
+      match value with
+      | Statement.Expression
+          {
+            Node.value =
+              Call
+                {
+                  callee =
+                    {
+                      Node.value =
+                        Name
+                          (Name.Attribute
+                            {
+                              attribute = "__setitem__";
+                              base = { Node.value = Name name; _ } as base;
+                              _;
+                            });
+                      _;
+                    };
+                  arguments = [{ Call.Argument.value = key; _ }; { Call.Argument.value; _ }];
+                };
+            _;
+          }
+        when Expression.is_simple_name name
+             && Type.is_dictionary (Resolution.resolve resolution base) ->
+          let resolve annotation =
+            Resolution.resolve resolution annotation |> Type.weaken_literals
+          in
+          let resolution =
+            Resolution.set_local
+              resolution
+              ~reference:(Expression.name_to_reference_exn name)
+              ~annotation:
+                (Annotation.create (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
+          in
+          { state with resolution }
+      | Statement.Assign
+          {
+            value = { value = Dictionary { keywords = []; entries = [] }; _ };
+            target = { Node.value = Name name; _ };
+            _;
+          }
+        when Expression.is_simple_name name ->
+          let resolution =
+            Resolution.set_local
+              resolution
+              ~reference:(Expression.name_to_reference_exn name)
+              ~annotation:(Annotation.create (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
+          in
+          { state with resolution }
+      | _ ->
+          let final_type_check_state =
+            TypeCheckState.forward_statement ~state:initial_type_check_state ~statement
+          in
+          {
+            state with
+            resolution = TypeCheckState.resolution final_type_check_state;
+            errors = TypeCheckState.error_map final_type_check_state;
+          }
 
 
   let return_reference = Reference.create "$return"

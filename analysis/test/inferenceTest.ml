@@ -605,7 +605,28 @@ let test_infer context =
       def foo(x: bool):
           return ""
     |}
-    [{|["click.argument(\"config-path\", type = click.Path(exists = True, readable = True))"]|}]
+    [{|["click.argument(\"config-path\", type = click.Path(exists = True, readable = True))"]|}];
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      def foo(y: bool):
+          x = {}
+          if y:
+              x["a"] = 1
+          return x
+      |}
+    [{|"typing.Dict[str, int]"|}];
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      def a():
+          y = {}
+          list = [1, 2, 3]
+          for num in list:
+              y["a"] = num
+          return y
+      |}
+    [{|"typing.Dict[str, int]"|}]
 
 
 let test_infer_backward context =
