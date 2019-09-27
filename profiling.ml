@@ -9,7 +9,7 @@ open Pyre
 module Event = struct
   type event_type =
     | Duration of int
-    | Counter
+    | Counter of string option
   [@@deriving yojson]
 
   type t = {
@@ -56,7 +56,7 @@ let track_duration_event ?(tags = []) ~f name =
   result
 
 
-let track_shared_memory_usage () =
+let track_shared_memory_usage ?name () =
   let create_event () =
     let used_heap_size = SharedMem.heap_size () in
     let wasted_heap_size = SharedMem.wasted_heap_size () in
@@ -67,7 +67,7 @@ let track_shared_memory_usage () =
     let create_tag name counter = name, string_of_int counter in
     Event.create
       "Shared Memory Usage"
-      ~event_type:Event.Counter
+      ~event_type:(Event.Counter name)
       ~tags:
         [
           create_tag "used_heap_size" used_heap_size;
@@ -78,3 +78,10 @@ let track_shared_memory_usage () =
         ]
   in
   log_event create_event
+
+
+let track_duration_and_shared_memory ~f name =
+  track_shared_memory_usage () ~name:(Format.sprintf "Before [%s]" name);
+  let result = track_duration_event name ~f in
+  track_shared_memory_usage () ~name:(Format.sprintf "After [%s]" name);
+  result

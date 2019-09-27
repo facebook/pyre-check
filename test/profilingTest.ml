@@ -66,9 +66,14 @@ let test_event_format _ =
     ~timestamp:1
     ~tags:["hello", "world"];
   assert_event
-    (fun () -> Profiling.Event.create "baz" ~event_type:Counter ~timestamp:1 ~tags:["hello", "42"])
+    (fun () ->
+      Profiling.Event.create
+        "baz"
+        ~event_type:(Counter (Some "[Luck 7] Ice Cream"))
+        ~timestamp:1
+        ~tags:["hello", "42"])
     ~name:"baz"
-    ~event_type:"[\"Counter\"]"
+    ~event_type:"[\"Counter\", \"[Luck 7] Ice Cream\"]"
     ~timestamp:1
     ~tags:["hello", "42"]
 

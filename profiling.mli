@@ -6,7 +6,7 @@
 module Event : sig
   type event_type =
     | Duration of int
-    | Counter
+    | Counter of string option
   [@@deriving yojson]
 
   type t = {
@@ -30,4 +30,7 @@ val log_event : (unit -> Event.t) -> unit
 
 val track_duration_event : ?tags:(string * string) list -> f:(unit -> 'a) -> string -> 'a
 
-val track_shared_memory_usage : unit -> unit
+val track_shared_memory_usage : ?name:string -> unit -> unit
+
+val track_duration_and_shared_memory : f:(unit -> 'a) -> string -> 'a
+(** Convenient function to track both time and shared memory usage *)

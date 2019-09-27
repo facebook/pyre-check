@@ -306,25 +306,29 @@ let update environment ~scheduler ~configuration upstream_update =
       in
       List.iter names ~f:set_edges
     in
-    Scheduler.iter
-      scheduler
-      ~configuration
-      ~f:(connect environment)
-      ~inputs:(Set.to_list class_names_to_update);
-    Backedges.LocalChanges.push_stack ();
-    Set.iter class_names_to_update ~f:add_backedges;
-    Backedges.LocalChanges.commit_all ();
-    Backedges.LocalChanges.pop_stack ()
+    Profiling.track_duration_and_shared_memory "class forward edge" ~f:(fun _ ->
+        Scheduler.iter
+          scheduler
+          ~configuration
+          ~f:(connect environment)
+          ~inputs:(Set.to_list class_names_to_update));
+
+    Profiling.track_duration_and_shared_memory "class backward edge" ~f:(fun _ ->
+        Backedges.LocalChanges.push_stack ();
+        Set.iter class_names_to_update ~f:add_backedges;
+        Backedges.LocalChanges.commit_all ();
+        Backedges.LocalChanges.pop_stack ())
   in
   let update_undecorated_functions ~function_names_to_update ~track_dependencies () =
     let register environment names =
       List.iter names ~f:(register_define_as_undecorated_function environment ~track_dependencies)
     in
-    Scheduler.iter
-      scheduler
-      ~configuration
-      ~f:(register environment)
-      ~inputs:(Set.to_list function_names_to_update)
+    Profiling.track_duration_and_shared_memory "undecorated functions" ~f:(fun _ ->
+        Scheduler.iter
+          scheduler
+          ~configuration
+          ~f:(register environment)
+          ~inputs:(Set.to_list function_names_to_update))
   in
   match configuration with
   | { incremental_style = FineGrained; _ } ->

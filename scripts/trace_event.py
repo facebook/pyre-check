@@ -44,6 +44,8 @@ def _translate(event: Dict[str, Any]) -> Dict[str, Any]:
         if "tags" in event:
             for key, value in event["tags"]:
                 arguments[key] = int(value)
+        if len(event_type) > 1:
+            arguments["name"] = event_type[1]
         return {
             "pid": pid,
             "tid": 0,

@@ -101,10 +101,12 @@ let analyze_sources
   in
   let number_of_sources = List.length checked_sources in
   Log.info "Checking %d sources..." number_of_sources;
+  Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
   let timer = Timer.start () in
   let run = run_check ?open_documents ~scheduler ~configuration ~environment checked_sources in
   let errors = List.map (Analysis.Check.checks ~configuration) ~f:run |> List.concat in
   Statistics.performance ~name:"analyzed sources" ~timer ();
+  Profiling.track_shared_memory_usage ~name:"After analyze_sources" ();
   errors
 
 
@@ -134,11 +136,7 @@ let check
     | Some scheduler -> scheduler
   in
   (* Profiling helper *)
-  let profile_time_and_memory ~name ~f =
-    Profiling.track_shared_memory_usage ();
-    Profiling.track_duration_event name ~f
-  in
-  Profiling.track_shared_memory_usage ();
+  Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
 
   (* Find sources to parse *)
   let module_tracker = Analysis.ModuleTracker.create configuration in
@@ -163,7 +161,7 @@ let check
   in
   if build_legacy_dependency_graph then (
     Log.info "Building legacy dependency graph...";
-    profile_time_and_memory ~name:"Build legacy dependency graph" ~f:(fun _ ->
+    Profiling.track_duration_and_shared_memory "Build legacy dependency graph" ~f:(fun _ ->
         build_legacy_dependencies ()) );
   let environment =
     let populate = Environment.populate in
@@ -191,7 +189,9 @@ let check
     let timer = Timer.start () in
     let update_result =
       let unannotated_global_environment_update =
-        profile_time_and_memory ~name:"Build UnannotatedGlobalEnvironment" ~f:(fun _ ->
+        Profiling.track_duration_and_shared_memory
+          "Build UnannotatedGlobalEnvironment"
+          ~f:(fun _ ->
             UnannotatedGlobalEnvironment.update
               unannotated_global_environment
               ~scheduler
@@ -200,7 +200,7 @@ let check
               (Ast.Reference.Set.of_list qualifiers))
       in
       let alias_environment_update =
-        profile_time_and_memory ~name:"Build AliasEnvironment" ~f:(fun _ ->
+        Profiling.track_duration_and_shared_memory "Build AliasEnvironment" ~f:(fun _ ->
             AliasEnvironment.update
               alias_environment
               ~scheduler
@@ -208,21 +208,21 @@ let check
               unannotated_global_environment_update)
       in
       let class_hierarchy_environment_update =
-        profile_time_and_memory ~name:"Build ClassHierarchyEnvironment" ~f:(fun _ ->
+        Profiling.track_duration_and_shared_memory "Build ClassHierarchyEnvironment" ~f:(fun _ ->
             ClassHierarchyEnvironment.update
               class_hierarchy_environment
               ~scheduler
               ~configuration
               alias_environment_update)
       in
-      profile_time_and_memory ~name:"Build ClassMetadataEnvironment" ~f:(fun _ ->
+      Profiling.track_duration_and_shared_memory "Build ClassMetadataEnvironment" ~f:(fun _ ->
           ClassMetadataEnvironment.update
             class_metadata_environment
             ~scheduler
             ~configuration
             class_hierarchy_environment_update)
     in
-    profile_time_and_memory ~name:"Build GlobalEnvironment" ~f:(fun _ ->
+    Profiling.track_duration_and_shared_memory "Build GlobalEnvironment" ~f:(fun _ ->
         populate ~configuration ~scheduler ~update_result environment qualifiers);
     Statistics.performance ~name:"full environment built" ~timer ();
     let indices () =
@@ -252,8 +252,6 @@ let check
     environment
   in
   let errors = analyze_sources ~scheduler ~configuration ~environment qualifiers in
-  Profiling.track_shared_memory_usage ();
-
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root

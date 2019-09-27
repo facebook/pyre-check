@@ -488,10 +488,11 @@ let update
             result
           in
           let { RawParseResult.syntax_error; system_error; _ }, raw_dependencies =
-            Raw.update_and_compute_dependencies
-              ast_environment
-              changed_modules
-              ~update:update_raw_sources
+            Profiling.track_duration_and_shared_memory "parse raw sources" ~f:(fun _ ->
+                Raw.update_and_compute_dependencies
+                  ast_environment
+                  changed_modules
+                  ~update:update_raw_sources)
           in
           let update_processed_sources () =
             process_sources
@@ -502,10 +503,11 @@ let update
               raw_dependencies
           in
           let triggered_dependencies =
-            update_and_compute_dependencies
-              ast_environment
-              raw_dependencies
-              ~update:update_processed_sources
+            Profiling.track_duration_and_shared_memory "parse processed sources" ~f:(fun _ ->
+                update_and_compute_dependencies
+                  ast_environment
+                  raw_dependencies
+                  ~update:update_processed_sources)
           in
           {
             UpdateResult.triggered_dependencies;
