@@ -443,12 +443,11 @@ let test_register_globals context =
       expected
       actual
   in
-  let environment =
-    populate
-      ~context
-      [
-        ( "qualifier.py",
-          {|
+  populate
+    ~context
+    [
+      ( "qualifier.py",
+        {|
         with_join = 1 or 'asdf'
         with_resolve = with_join
         annotated: int = 1
@@ -467,10 +466,9 @@ let test_register_globals context =
         class Foo:
           attribute: int = 1
       |}
-        );
-      ]
-  in
-  Environment.register_values environment resolution (Reference.create "qualifier");
+      );
+    ]
+  |> ignore;
   assert_global "qualifier.undefined" None;
   assert_global "qualifier.with_join" (Some (Type.union [Type.integer; Type.string]));
   assert_global "qualifier.with_resolve" (Some Type.Top);
@@ -482,34 +480,30 @@ let test_register_globals context =
   assert_global "qualifier.identifier.access" None;
   assert_global "qualifier.identifier().access" None;
   assert_global "Foo.attribute" None;
-  let environment =
-    populate
-      ~context
-      [
-        ( "test.py",
-          {|
+  populate
+    ~context
+    [
+      ( "test.py",
+        {|
         class Class: ...
         alias = Class
 
         GLOBAL: Class = ...
         GLOBAL2: alias = ...
       |}
-        );
-      ]
-  in
-  Environment.register_values environment resolution (Reference.create "test");
+      );
+    ]
+  |> ignore;
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
   assert_global "test.GLOBAL2" (Some (Type.Primitive "test.Class"));
-  let environment =
-    populate
-      ~context
-      ["tuples.py", {|
+  populate
+    ~context
+    ["tuples.py", {|
         def f():
           return 7, 8
         y, z = f()
-      |}]
-  in
-  Environment.register_values environment resolution (Reference.create "tuples");
+        |}]
+  |> ignore;
   assert_global "tuples.y" (Some Type.Top);
   assert_global "tuples.z" (Some Type.Top);
   ()
@@ -1107,209 +1101,6 @@ let test_modules context =
   ()
 
 
-let test_purge context =
-  let assert_type_errors = Test.assert_errors ~check:Analysis.TypeCheck.run ~debug:true in
-  let assert_type_errors = assert_type_errors ~context in
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T')
-      def expects_any(input: object) -> None: ...
-      def expects_string(inut: str) -> None: ...
-      def foo(input: T) -> None:
-        expects_any(input)
-        expects_string(input)
-    |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expects_string` but got `Variable[T]`.";
-    ];
-  let source =
-    {|
-      import a
-      class P(typing.Protocol): pass
-      class baz(): pass
-      _T = typing.TypeVar("_T")
-      x = 5
-      def foo(): pass
-    |}
-  in
-  let handler, ast_environment, project =
-    create_environments_and_project
-      ~include_typeshed_stubs:false
-      ~include_helpers:false
-      ~context
-      ~additional_sources:["test.py", source; "module.py", ""; "baz.py", ""]
-      ()
-  in
-  let global_resolution = Environment.resolution handler () in
-  assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "test.baz"));
-  assert_is_some (GlobalResolution.aliases global_resolution "test._T");
-  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
-  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
-  assert_true (GlobalResolution.is_tracked global_resolution "test.P");
-  let check_hierarchy () =
-    let indices =
-      Environment.unannotated_global_environment handler
-      |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
-    in
-    GlobalResolution.class_hierarchy global_resolution |> ClassHierarchy.check_integrity ~indices
-  in
-  check_hierarchy ();
-  let delete_file
-      { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-      relative
-    =
-    Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
-  in
-  delete_file project "test.py";
-  let update_result =
-    let ast_environment_update_result =
-      let { ScratchProject.module_tracker; _ } = project in
-      let configuration = ScratchProject.configuration_of project in
-      let { Configuration.Analysis.local_root; _ } = configuration in
-      let path = Path.create_relative ~root:local_root ~relative:"test.py" in
-      ModuleTracker.update ~configuration ~paths:[path] module_tracker
-      |> (fun updates -> AstEnvironment.Update updates)
-      |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
-    in
-    update_environments
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
-      ~configuration:(ScratchProject.configuration_of project)
-      ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
-      ~ast_environment_update_result
-      ()
-    |> snd
-  in
-  Environment.purge handler [Reference.create "test"] ~update_result;
-  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
-  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
-  assert_is_none (GlobalResolution.aliases global_resolution "test._T");
-  check_hierarchy ();
-  ()
-
-
-let test_purge_hierarchy context =
-  let order () =
-    let one_source = {|
-      from Two import Two
-      class One(Two):
-        pass
-    |} in
-    let two_source = {|
-      class Two:
-        pass
-    |} in
-    let a_source = {|
-      from One import One
-      class a(One):
-        pass
-    |} in
-    let b_source = {|
-      from One import One
-      class b(One):
-        pass
-    |} in
-    create_environments_and_project
-      ~include_typeshed_stubs:false
-      ~include_helpers:false
-      ~context
-      ~additional_sources:
-        ["A.py", a_source; "B.py", b_source; "One.py", one_source; "Two.py", two_source]
-      ()
-  in
-  let assert_backedges_equal wrapped_left unwrapped_right =
-    let printer set =
-      ClassHierarchy.Target.Set.to_list set |> List.to_string ~f:ClassHierarchy.Target.show
-    in
-    assert_equal
-      ~printer
-      ~cmp:ClassHierarchy.Target.Set.equal
-      wrapped_left
-      (ClassHierarchy.Target.Set.of_list unwrapped_right)
-  in
-  let assert_node_completely_deleted (module Handler : ClassHierarchy.Handler) annotation =
-    let index = IndexTracker.index annotation in
-    let printer (a, b) = Format.sprintf "%B %B" (Option.is_some a) (Option.is_some b) in
-    assert_equal ~printer (Handler.edges index, Handler.backedges index) (None, None)
-  in
-  let purge files ~handler ~project =
-    let delete_file
-        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-        relative
-      =
-      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
-    in
-    List.iter files ~f:(delete_file project);
-    let ast_environment_update_result =
-      let configuration = ScratchProject.configuration_of project in
-      let { ScratchProject.module_tracker; _ } = project in
-      let ast_environment = AstEnvironment.create module_tracker in
-      let { Configuration.Analysis.local_root; _ } = configuration in
-      let paths =
-        List.map files ~f:(fun relative -> Path.create_relative ~root:local_root ~relative)
-      in
-      ModuleTracker.update ~configuration ~paths module_tracker
-      |> (fun updates -> AstEnvironment.Update updates)
-      |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
-    in
-    let qualifiers =
-      Reference.Set.of_list (AstEnvironment.UpdateResult.reparsed ast_environment_update_result)
-    in
-    let update_result =
-      update_environments
-        ~ast_environment_update_result:(AstEnvironment.UpdateResult.create_for_testing ())
-        ~ast_environment:(Environment.ast_environment handler)
-        ~configuration:(Configuration.Analysis.create ())
-        ~qualifiers
-        ()
-      |> snd
-    in
-    Environment.purge handler (Reference.Set.to_list qualifiers) ~update_result
-  in
-  let () =
-    let handler, _, project = order () in
-    let (module Handler) = class_hierarchy handler in
-    let index key = IndexTracker.index key in
-    let one_index = index "One.One" in
-    purge ["One.py"] ~handler ~project;
-    assert_node_completely_deleted (module Handler) "One.One";
-    assert_backedges_equal (find_unsafe Handler.backedges (index "Two.Two")) [];
-    assert_equal
-      (find_unsafe Handler.edges (index "A.a"))
-      [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }]
-  in
-  let () =
-    let handler, _, project = order () in
-    let (module Handler) = class_hierarchy handler in
-    let index key = IndexTracker.index key in
-    purge ["A.py"] ~handler ~project;
-    assert_node_completely_deleted (module Handler) "A.a";
-    assert_backedges_equal
-      (find_unsafe Handler.backedges (index "One.One"))
-      [{ ClassHierarchy.Target.target = index "B.b"; parameters = Concrete [] }]
-  in
-  let () =
-    let handler, _, project = order () in
-    let (module Handler) = class_hierarchy handler in
-    let index key = IndexTracker.index key in
-    purge ~handler ["B.py"] ~project;
-    assert_node_completely_deleted (module Handler) "B.b";
-    assert_backedges_equal
-      (find_unsafe Handler.backedges (index "One.One"))
-      [{ ClassHierarchy.Target.target = index "A.a"; parameters = Concrete [] }]
-  in
-  let () =
-    let handler, _, project = order () in
-    let (module Handler) = class_hierarchy handler in
-    let index key = IndexTracker.index key in
-    purge ~handler ["A.py"; "B.py"] ~project;
-    assert_node_completely_deleted (module Handler) "A.a";
-    assert_node_completely_deleted (module Handler) "B.b";
-    assert_backedges_equal (find_unsafe Handler.backedges (index "One.One")) []
-  in
-  ()
-
-
 let test_default_class_hierarchy context =
   let order, _ = order_and_environment ~context [] in
   let open TypeOrder in
@@ -1409,7 +1200,12 @@ let test_connect_annotations_to_top context =
     Environment.shared_memory_handler
       (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
-  Environment.purge environment [Reference.create "test"] ~update_result;
+  Environment.update_and_compute_dependencies
+    environment
+    ~configuration:(ScratchProject.configuration_of project)
+    ~scheduler:(Test.mock_scheduler ())
+    update_result
+  |> ignore;
   let order = class_hierarchy environment in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"];
 
@@ -1447,7 +1243,12 @@ let test_deduplicate context =
     Environment.shared_memory_handler
       (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
-  Environment.purge environment [Reference.create "test"] ~update_result;
+  Environment.update_and_compute_dependencies
+    environment
+    ~configuration:(ScratchProject.configuration_of project)
+    ~scheduler:(Test.mock_scheduler ())
+    update_result
+  |> ignore;
   let (module Handler) = class_hierarchy environment in
   let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
@@ -1511,7 +1312,12 @@ let test_remove_extra_edges_to_object context =
     Environment.shared_memory_handler
       (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
-  Environment.purge environment [] ~update_result;
+  Environment.update_and_compute_dependencies
+    environment
+    ~configuration:(ScratchProject.configuration_of project)
+    ~scheduler:(Test.mock_scheduler ())
+    update_result
+  |> ignore;
   let (module Handler) = class_hierarchy environment in
   let zero_index = IndexTracker.index "test.Zero" in
   let one_index = IndexTracker.index "test.One" in
@@ -1564,20 +1370,7 @@ let test_update_and_compute_dependencies context =
   (* B read Bar *)
   global dependency_tracked_global_resolution_B "other.bar" |> Option.is_some |> assert_true;
 
-  let assert_update
-      ~repopulate_source_to
-      ~expected_state_in_update
-      ~expected_state_after_update
-      ~expected_dependencies
-    =
-    let repopulate { Source.source_path = { SourcePath.qualifier; _ }; _ } ~update_result =
-      Service.Environment.populate
-        ~configuration:(ScratchProject.configuration_of project)
-        ~scheduler:(Test.mock_scheduler ())
-        ~update_result
-        environment
-        [qualifier]
-    in
+  let assert_update ~repopulate_source_to ~expected_state_after_update ~expected_dependencies =
     let assert_state (primitive, expected) =
       global untracked_global_resolution primitive |> Option.is_some |> assert_equal expected
     in
@@ -1596,7 +1389,7 @@ let test_update_and_compute_dependencies context =
       =
       Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
     in
-    let (), dependents =
+    let dependents =
       delete_file project "source.py";
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
       add_file project repopulate_source_to ~relative:"source.py";
@@ -1618,19 +1411,11 @@ let test_update_and_compute_dependencies context =
           ()
         |> snd
       in
-      let update () =
-        List.iter expected_state_in_update ~f:assert_state;
-        AstEnvironment.ReadOnly.get_source
-          (AstEnvironment.read_only ast_environment)
-          (Reference.create "source")
-        |> (fun option -> Option.value_exn option)
-        |> repopulate ~update_result
-      in
       Environment.update_and_compute_dependencies
         environment
-        [Reference.create "source"]
-        ~update
-        ~update_result
+        ~configuration:(ScratchProject.configuration_of project)
+        ~scheduler:(Test.mock_scheduler ())
+        update_result
     in
     assert_equal
       ~printer:(List.to_string ~f:Reference.show)
@@ -1641,21 +1426,18 @@ let test_update_and_compute_dependencies context =
   (* Removes source without replacing it, triggers dependency *)
   assert_update
     ~repopulate_source_to:None
-    ~expected_state_in_update:["source.foo", false]
     ~expected_state_after_update:["source.foo", false]
     ~expected_dependencies:[dependency_A];
 
   (* Re-adds source, triggers dependency *)
   assert_update
     ~repopulate_source_to:(Some "foo = 7")
-    ~expected_state_in_update:["source.foo", false]
     ~expected_state_after_update:["source.foo", true]
     ~expected_dependencies:[dependency_A];
 
   (* Removes source, but replaces it exactly, does not trigger dependency *)
   assert_update
     ~repopulate_source_to:(Some "foo = 7")
-    ~expected_state_in_update:["source.foo", false]
     ~expected_state_after_update:["source.foo", true]
     ~expected_dependencies:[];
 
@@ -1664,7 +1446,6 @@ let test_update_and_compute_dependencies context =
     ~repopulate_source_to:(Some {|
       foo = "A"
       |})
-    ~expected_state_in_update:["source.foo", false]
     ~expected_state_after_update:["source.foo", true]
     ~expected_dependencies:[dependency_A];
 
@@ -1674,7 +1455,6 @@ let test_update_and_compute_dependencies context =
       foo = "A"
       irrelevant = 45
       |})
-    ~expected_state_in_update:["source.foo", false; "source.irrelevant", false]
     ~expected_state_after_update:["source.foo", true; "source.irrelevant", true]
     ~expected_dependencies:[];
   ()
@@ -1691,7 +1471,6 @@ let () =
          "class_definition" >:: test_class_definition;
          "modules" >:: test_modules;
          "populate" >:: test_populate;
-         "purge" >:: test_purge;
          "register_aliases" >:: test_register_aliases;
          "register_globals" >:: test_register_globals;
          "register_implicit_submodules" >:: test_register_implicit_submodules;
@@ -1699,7 +1478,6 @@ let () =
          "connect_to_top" >:: test_connect_annotations_to_top;
          "deduplicate" >:: test_deduplicate;
          "remove_extra" >:: test_remove_extra_edges_to_object;
-         "purge_hierarchy" >:: test_purge_hierarchy;
          "update_and_compute_dependencies" >:: test_update_and_compute_dependencies;
        ]
   |> Test.run

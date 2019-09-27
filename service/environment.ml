@@ -11,13 +11,13 @@ let populate
     environment
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
-    ~update_result:_
-    qualifiers
+    ~update_result
+    _
   =
-  let resolution = Environment.resolution environment () in
   let validate_hierarchy () =
     (* Validate integrity of the type order built so far before moving forward. Further
        transformations might be incorrect or not terminate otherwise. *)
+    let resolution = Environment.resolution environment () in
     let indices =
       Environment.unannotated_global_environment environment
       |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
@@ -26,18 +26,8 @@ let populate
   in
   if debug then
     validate_hierarchy ();
-  let register_values sources =
-    Environment.transaction
-      environment
-      ~only_global_keys:true
-      ~f:(fun () -> Environment.register_values environment resolution sources)
-      ()
-  in
-  Scheduler.iter
-    scheduler
-    ~configuration
-    ~f:(fun sources -> List.iter sources ~f:register_values)
-    ~inputs:qualifiers;
+  Environment.update_and_compute_dependencies environment ~scheduler ~configuration update_result
+  |> ignore;
 
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
   Annotated.Class.AttributeCache.clear ()

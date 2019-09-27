@@ -183,7 +183,6 @@ let check
       Environment.shared_memory_handler
         (ClassMetadataEnvironment.read_only class_metadata_environment)
     in
-    Environment.add_special_globals environment;
     Log.info "Building type environment...";
 
     let timer = Timer.start () in

@@ -44,8 +44,6 @@ let populate ~configuration environment sources ~update_result =
     sources
     |> List.map ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
   in
-  Environment.purge environment qualifiers ~update_result;
-  Environment.add_special_globals environment;
   Service.Environment.populate
     ~configuration
     ~scheduler:(Test.mock_scheduler ())

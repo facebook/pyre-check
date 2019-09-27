@@ -241,28 +241,6 @@ let test_check_globals context =
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
-    ~update_environment_with:[{ handle = "export.py"; source = "a, (b, c) = 1, (2, 3)" }]
-    {|
-      from export import b
-      def foo() -> str:
-        return b
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
-    ~update_environment_with:
-      [
-        {
-          handle = "export.py";
-          source = "(a, b), (c, d): typing.Tuple[typing.Tuple[int, int], ...] = ...";
-        };
-      ]
-    {|
-      from export import b
-      def foo() -> str:
-        return b
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-  assert_type_errors
     ~update_environment_with:
       [{ handle = "export.py"; source = {|
           str_to_int_dictionary = {"a": 1}

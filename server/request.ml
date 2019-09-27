@@ -496,7 +496,7 @@ let process_type_query_request
         in
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         let ast_environment = Environment.ast_environment environment in
-        let map = Analysis.Environment.shared_memory_hash_to_key_map ~qualifiers () in
+        let map = Analysis.Environment.hash_to_key_map environment in
         (* AST shared memory. *)
         let map =
           map |> extend_map ~new_map:(AstEnvironment.shared_memory_hash_to_key_map qualifiers)
@@ -591,7 +591,7 @@ let process_type_query_request
                   value >>| List.map ~f:Reference.show >>| String.concat ~sep:"," )
           | _ when Option.is_some (AstEnvironment.serialize_decoded decoded) ->
               AstEnvironment.serialize_decoded decoded
-          | _ -> Environment.serialize_decoded decoded
+          | _ -> Environment.serialize_decoded environment decoded
         in
         let build_response { TypeQuery.decoded; undecodable_keys } = function
           | TypeQuery.SerializedValue { serialized_key; serialized_value } -> (
@@ -621,8 +621,8 @@ let process_type_query_request
                         Option.equal LocalAnnotationMap.equal first second
                     | _ when Option.is_some (AstEnvironment.decoded_equal first second) ->
                         Option.value_exn (AstEnvironment.decoded_equal first second)
-                    | _ when Option.is_some (Environment.decoded_equal first second) ->
-                        Option.value_exn (Environment.decoded_equal first second)
+                    | _ when Option.is_some (Environment.decoded_equal environment first second) ->
+                        Option.value_exn (Environment.decoded_equal environment first second)
                     | _ -> false
                   in
                   match serialize_decoded first, serialize_decoded second with

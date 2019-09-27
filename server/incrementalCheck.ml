@@ -116,32 +116,24 @@ let recheck
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     match incremental_style with
     | FineGrained ->
-        let (), invalidated_type_checking_keys =
-          let update () =
-            let check_hierarchy () =
-              let indices =
-                UnannotatedGlobalEnvironment.read_only unannotated_global_environment
-                |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
-              in
-              Environment.resolution environment ()
-              |> GlobalResolution.class_hierarchy
-              |> ClassHierarchy.check_integrity ~indices
-            in
-            Service.Environment.populate
-              ~configuration
-              ~scheduler
-              ~update_result:class_metadata_update_result
-              environment
-              invalidated_environment_qualifiers;
-            if debug then
-              check_hierarchy ()
-          in
+        let invalidated_type_checking_keys =
           Analysis.Environment.update_and_compute_dependencies
             environment
-            invalidated_environment_qualifiers
-            ~update
-            ~update_result:class_metadata_update_result
+            ~configuration
+            ~scheduler
+            class_metadata_update_result
         in
+        let check_hierarchy () =
+          let indices =
+            UnannotatedGlobalEnvironment.read_only unannotated_global_environment
+            |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+          in
+          Environment.resolution environment ()
+          |> GlobalResolution.class_hierarchy
+          |> ClassHierarchy.check_integrity ~indices
+        in
+        if debug then
+          check_hierarchy ();
         let invalidated_type_checking_keys =
           let unannotated_global_environment_dependencies =
             UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
@@ -191,11 +183,6 @@ let recheck
         recheck_modules
     | _ ->
         let () =
-          Analysis.Environment.purge
-            environment
-            ~debug
-            invalidated_environment_qualifiers
-            ~update_result:class_metadata_update_result;
           Dependencies.purge legacy_dependency_tracker invalidated_environment_qualifiers;
           let re_environment_build_sources =
             let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
