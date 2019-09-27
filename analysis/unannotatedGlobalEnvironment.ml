@@ -355,6 +355,19 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
   |> KeyTracker.ClassKeys.add qualifier
 
 
+let missing_builtin_globals =
+  let assign name annotation =
+    ( Reference.create name,
+      SimpleAssign
+        {
+          explicit_annotation = Some (Type.expression annotation);
+          target_location = Location.Reference.any;
+          value = Node.create_with_default_location Expression.Ellipsis;
+        } )
+  in
+  [assign "None" Type.none; assign "..." Type.Any; assign "__debug__" Type.bool]
+
+
 let collect_unannotated_globals { Source.statements; source_path = { SourcePath.qualifier; _ }; _ }
   =
   let rec visit_statement ~qualifier globals { Node.value; location } =
@@ -441,12 +454,18 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
     |> Reference.Map.to_alist
     |> List.append not_defines
   in
-  List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
-  |> merge_defines
-  (* Preserve existing first alias wins semantics *)
-  |> List.rev
-  |> List.map ~f:write
-  |> KeyTracker.UnannotatedGlobalKeys.add qualifier
+  let globals =
+    List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
+    |> merge_defines
+    (* Preserve existing first alias wins semantics *)
+    |> List.rev
+  in
+  let globals =
+    match Reference.as_list qualifier with
+    | [] -> globals @ missing_builtin_globals
+    | _ -> globals
+  in
+  globals |> List.map ~f:write |> KeyTracker.UnannotatedGlobalKeys.add qualifier
 
 
 module UpdateResult = struct
