@@ -12,7 +12,7 @@ dev:
 	dune build @install -j auto --profile dev
 
 .PHONY: test
-test:
+test: configure
 	@OUNIT_SHARDS="1" dune runtest -j auto --profile dev
 
 .PHONY: python_tests
