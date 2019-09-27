@@ -2106,132 +2106,145 @@ module State (Context : Context) = struct
           { state = { state with errors }; resolved; resolved_annotation = None; base = None }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
-        let modified_call =
-          let has_method name =
-            let access =
-              {
-                Node.location;
-                value = Name (Name.Attribute { base = right; attribute = name; special = true });
-              }
-            in
-            forward_expression ~state ~expression:access
-            |> (fun { resolved; _ } -> resolved)
-            |> Type.is_top
-            |> not
+        let resolve_in_call
+            (state, joined_annotation)
+            { Annotated.Class.instantiated; class_definition; class_attributes }
+          =
+          let resolve_method ?(class_attributes = false) class_definition instantiated name =
+            Annotated.Class.attribute
+              ~transitive:true
+              ~class_attributes
+              class_definition
+              ~resolution:global_resolution
+              ~name
+              ~instantiated
+            |> Annotated.Attribute.annotation
+            |> Annotation.annotation
+            |> function
+            | Type.Top -> None
+            | annotation -> Some annotation
           in
-          let { Node.location; _ } = left in
-          if has_method "__contains__" then
-            {
-              Node.location;
-              value =
-                Call
+          let { state; resolved; _ } =
+            match
+              resolve_method ~class_attributes class_definition instantiated "__contains__"
+            with
+            | Some resolved ->
+                let callee =
                   {
-                    callee =
+                    Node.location;
+                    value =
+                      Name
+                        (Name.Attribute
+                           { base = right; attribute = "__contains__"; special = true });
+                  }
+                in
+                forward_callable
+                  ~state
+                  ~target:(Some instantiated)
+                  ~dynamic:true
+                  ~callee
+                  ~resolved
+                  ~arguments:[{ Call.Argument.name = None; value = left }]
+            | None -> (
+              match resolve_method ~class_attributes class_definition instantiated "__iter__" with
+              | Some iter_callable ->
+                  let forward_callable =
+                    let callee =
                       {
                         Node.location;
                         value =
                           Name
                             (Name.Attribute
-                               { base = right; attribute = "__contains__"; special = true });
-                      };
-                    arguments = [{ Call.Argument.name = None; value = left }];
-                  };
-            }
-          else if has_method "__iter__" then
-            let iter =
-              {
-                Node.location;
-                value =
-                  Call
-                    {
-                      callee =
-                        {
-                          Node.location;
-                          value =
-                            Name
-                              (Name.Attribute
-                                 { base = right; attribute = "__iter__"; special = true });
-                        };
-                      arguments = [];
-                    };
-              }
-            in
-            let next =
-              {
-                Node.location;
-                value =
-                  Call
-                    {
-                      callee =
-                        {
-                          Node.location;
-                          value =
-                            Name
-                              (Name.Attribute
-                                 { base = iter; attribute = "__next__"; special = true });
-                        };
-                      arguments = [];
-                    };
-              }
-            in
-            {
-              Node.location;
-              value =
-                Call
-                  {
-                    callee =
+                               { base = right; attribute = "__iter__"; special = true });
+                      }
+                    in
+                    forward_callable ~dynamic:true ~callee
+                  in
+                  (* Since we can't call forward_expression with the general type (we don't have a
+                     good way of saying "synthetic expression with type T", simulate what happens
+                     ourselves. *)
+                  let forward_method ~method_name ~arguments { state; resolved = parent; _ } =
+                    GlobalResolution.class_definition global_resolution parent
+                    >>| Annotated.Class.create
+                    >>= (fun class_definition ->
+                          resolve_method class_definition parent method_name)
+                    >>| fun callable ->
+                    forward_callable
+                      ~state
+                      ~target:(Some parent)
+                      ~resolved:callable
+                      ~arguments:
+                        (List.map arguments ~f:(fun value -> { Call.Argument.name = None; value }))
+                  in
+                  forward_callable
+                    ~state
+                    ~target:(Some instantiated)
+                    ~resolved:iter_callable
+                    ~arguments:[]
+                  |> forward_method ~method_name:"__next__" ~arguments:[]
+                  >>= forward_method ~method_name:"__eq__" ~arguments:[left]
+                  |> Option.value
+                       ~default:
+                         { state; resolved = Type.Top; resolved_annotation = None; base = None }
+              | None ->
+                  let call =
+                    let getitem =
                       {
                         Node.location;
                         value =
-                          Name
-                            (Name.Attribute { base = next; attribute = "__eq__"; special = true });
-                      };
-                    arguments = [{ Call.Argument.name = None; value = left }];
-                  };
-            }
-          else
-            let getitem =
-              {
-                Node.location;
-                value =
-                  Call
+                          Call
+                            {
+                              callee =
+                                {
+                                  Node.location;
+                                  value =
+                                    Name
+                                      (Name.Attribute
+                                         {
+                                           base = right;
+                                           attribute = "__getitem__";
+                                           special = true;
+                                         });
+                                };
+                              arguments =
+                                [
+                                  {
+                                    Call.Argument.name = None;
+                                    value = { Node.location; value = Expression.Integer 0 };
+                                  };
+                                ];
+                            };
+                      }
+                    in
                     {
-                      callee =
-                        {
-                          Node.location;
-                          value =
-                            Name
-                              (Name.Attribute
-                                 { base = right; attribute = "__getitem__"; special = true });
-                        };
-                      arguments =
-                        [
+                      Node.location;
+                      value =
+                        Call
                           {
-                            Call.Argument.name = None;
-                            value = { Node.location; value = Expression.Integer 0 };
+                            callee =
+                              {
+                                Node.location;
+                                value =
+                                  Name
+                                    (Name.Attribute
+                                       { base = getitem; attribute = "__eq__"; special = true });
+                              };
+                            arguments = [{ Call.Argument.name = None; value = left }];
                           };
-                        ];
-                    };
-              }
-            in
-            {
-              Node.location;
-              value =
-                Call
-                  {
-                    callee =
-                      {
-                        Node.location;
-                        value =
-                          Name
-                            (Name.Attribute
-                               { base = getitem; attribute = "__eq__"; special = true });
-                      };
-                    arguments = [{ Call.Argument.name = None; value = left }];
-                  };
-            }
+                    }
+                  in
+                  forward_expression ~state ~expression:call )
+          in
+          state, GlobalResolution.join global_resolution joined_annotation resolved
         in
-        forward_expression ~state ~expression:modified_call
+        let { state; resolved; _ } = forward_expression ~state ~expression:right in
+        let state, resolved =
+          Annotated.Class.resolve_class ~resolution:global_resolution resolved
+          >>| List.fold ~f:resolve_in_call ~init:(state, Type.Bottom)
+          |> Option.value ~default:(state, Type.Bottom)
+        in
+        let resolved = if Type.equal resolved Type.Bottom then Type.Top else resolved in
+        { state; resolved; resolved_annotation = None; base = None }
     | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) -> (
       match ComparisonOperator.override operator with
       | Some expression -> forward_expression ~state ~expression

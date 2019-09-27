@@ -1631,7 +1631,46 @@ let test_check_in context =
       def foo(a: typing.Union[GetItemA, GetItemB]) -> None:
         5 in a
     |}
-    []
+    [];
+
+  (* Unions of classes and `in`. *)
+  assert_type_errors
+    {|
+      class UsesContainsStr:
+        def __contains__(self, o: object) -> str:
+          ...
+
+      class UsesContainsInt:
+        def __contains__(self, o: object) -> int:
+          ...
+
+      def foo(a: typing.Union[UsesContainsInt, UsesContainsStr]) -> None:
+        reveal_type(5 in a)
+    |}
+    ["Revealed type [-1]: Revealed type for `5 in a` is `typing.Union[int, str]`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      T = TypeVar("T")
+      class Equal(Generic[T]):
+        def __eq__(self, other: object) -> T:
+          ...
+
+      class UsesContainsStr:
+        def __contains__(self, o: object) -> str:
+          ...
+
+      class WeirdIterator:
+        def __iter__(self) -> WeirdIterator:
+          ...
+
+        def __next__(self) -> Equal[int]:
+          ...
+
+      def foo(a: typing.Union[WeirdIterator, UsesContainsStr]) -> None:
+        reveal_type(5 in a)
+    |}
+    ["Revealed type [-1]: Revealed type for `5 in a` is `typing.Union[int, str]`."]
 
 
 let test_check_enter context =
