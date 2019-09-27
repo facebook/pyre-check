@@ -13,6 +13,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
     overload,
@@ -46,13 +47,6 @@ def _get_name_as_string(node: Union[cst.CSTNode, str]) -> str:
         return node
 
 
-def _is_in_list(list: List[cst.CSTNode], target: cst.CSTNode) -> bool:
-    for item in list:
-        if item.deep_equals(target):
-            return True
-    return False
-
-
 class FunctionAnnotation(NamedTuple):
     parameters: cst.Parameters
     returns: Optional[cst.Annotation]
@@ -60,7 +54,7 @@ class FunctionAnnotation(NamedTuple):
 
 class ImportStatement(NamedTuple):
     module: Union[cst.Name, cst.Attribute]
-    names: List[cst.CSTNode]
+    names: Set[str]
 
 
 class TypeCollector(cst.CSTVisitor):
@@ -174,17 +168,19 @@ class TypeCollector(cst.CSTVisitor):
             return returns
 
     def _add_to_imports(
-        self, names: List[cst.CSTNode], module: cst.BaseExpression, key: str
+        self, names: List[cst.ImportAlias], module: cst.BaseExpression, key: str
     ) -> None:
+        names_as_string = [_get_name_as_string(name.name) for name in names]
+        set_names = set(names_as_string)
         if key not in self.imports:
             # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 2nd param but got
             #  `BaseExpression`.
-            self.imports[key] = ImportStatement(names=names, module=module)
+            self.imports[key] = ImportStatement(names=set_names, module=module)
         else:
             import_statement = self.imports[key]
-            for name in names:
-                if not _is_in_list(import_statement.names, name):
-                    import_statement.names.append(name)
+            for name in set_names:
+                if name not in import_statement.names:
+                    import_statement.names.add(name)
 
     def _import_parameter_annotations(
         self, parameters: cst.Parameters
@@ -390,12 +386,16 @@ class TypeTransformer(cst.CSTTransformer):
         # pyre-fixme[6]: Expected `Union[Attribute, Name]` for 1st param but got
         #  `Optional[Union[Attribute, Name]]`.
         key = _get_attribute_as_string(original_node.module)
+        import_names = updated_node.names
+        module = original_node.module
         if (
-            original_node.module is not None
-            # pyre-fixme[16]: `Optional` has no attribute `value`.
-            and original_node.module.value in self.imports
+            module is not None
+            and module.value in self.imports
+            and not isinstance(import_names, cst.ImportStar)
         ):
-            names = list(updated_node.names) + self.imports[key].names
+            names_as_string = [_get_name_as_string(name.name) for name in import_names]
+            updated_names = self.imports[key].names.union(set(names_as_string))
+            names = [cst.ImportAlias(cst.Name(name)) for name in sorted(updated_names)]
             updated_node = updated_node.with_changes(names=tuple(names))
             del self.imports[key]
         return updated_node
@@ -411,7 +411,6 @@ class TypeTransformer(cst.CSTTransformer):
     ) -> cst.Module:
         if not self.toplevel_annotations and not self.imports:
             return updated_node
-
         toplevel_statements = []
 
         # First, find the insertion point for imports
@@ -423,11 +422,12 @@ class TypeTransformer(cst.CSTTransformer):
         statements_after_imports = self._insert_empty_line(statements_after_imports)
 
         for _, import_statement in self.imports.items():
+            names = [
+                cst.ImportAlias(cst.Name(name))
+                for name in sorted(import_statement.names)
+            ]
             import_statement = cst.ImportFrom(
-                module=import_statement.module,
-                # pyre-fixme[6]: Expected `Union[Sequence[ImportAlias], ImportStar]`
-                #  for 2nd param but got `List[ImportFrom]`.
-                names=import_statement.names,
+                module=import_statement.module, names=names
             )
             # Add import statements to module body.
             # Need to assign an Iterable, and the argument to SimpleStatementLine

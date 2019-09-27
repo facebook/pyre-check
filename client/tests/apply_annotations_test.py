@@ -207,15 +207,18 @@ class ApplyAnnotationsTest(unittest.TestCase):
         self.assert_annotations(
             """
             from typing import List
+
             def foo() -> List[int]: ...
             """,
             """
             from typing import Union
+
             def foo():
                 return [1]
             """,
             """
-            from typing import Union, List
+            from typing import List, Union
+
             def foo() -> List[int]:
                 return [1]
             """,
@@ -246,7 +249,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
             b: Dict[Any, Any] = ...
             """,
             """
-            from typing import  Tuple
+            from typing import Tuple
 
             def foo() -> Tuple[int, str]:
                 return 1, ""
@@ -257,7 +260,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
             """,
             """
-            from typing import  Tuple, Any, Dict
+            from typing import Any, Dict, Tuple
 
             def foo() -> Tuple[int, str]:
                 return 1, ""
@@ -468,5 +471,36 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
             def foo(x: HttpResponse) -> str:
                 pass
+            """,
+        )
+
+        self.assert_annotations(
+            """
+            from typing import Any, Dict, List
+
+            from typing import Any, List
+
+            def foo() -> List[Any]: ...
+            def goo() -> Dict[Any, Any]: ...
+            """,
+            """
+            from typing import Any
+
+            def foo():
+                return []
+
+            def goo():
+                return {}
+
+            """,
+            """
+            from typing import Any, Dict, List
+
+            def foo() -> List[Any]:
+                return []
+
+            def goo() -> Dict[Any, Any]:
+                return {}
+
             """,
         )
