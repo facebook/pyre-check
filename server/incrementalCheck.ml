@@ -118,6 +118,15 @@ let recheck
     | FineGrained ->
         let (), invalidated_type_checking_keys =
           let update () =
+            let check_hierarchy () =
+              let indices =
+                UnannotatedGlobalEnvironment.read_only unannotated_global_environment
+                |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+              in
+              Environment.resolution environment ()
+              |> GlobalResolution.class_hierarchy
+              |> ClassHierarchy.check_integrity ~indices
+            in
             Service.Environment.populate
               ~configuration
               ~scheduler
@@ -125,7 +134,7 @@ let recheck
               environment
               invalidated_environment_qualifiers;
             if debug then
-              Analysis.Environment.check_class_hierarchy_integrity environment
+              check_hierarchy ()
           in
           Analysis.Environment.update_and_compute_dependencies
             environment

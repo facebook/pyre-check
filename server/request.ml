@@ -702,8 +702,15 @@ let process_type_query_request
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         TypeQuery.Response (TypeQuery.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | TypeQuery.DumpClassHierarchy ->
-        let all_classes = Environment.class_hierarchy_json environment in
-        TypeQuery.Response (TypeQuery.ClassHierarchy all_classes)
+        let resolution = Environment.resolution environment () in
+        let class_hierarchy_json =
+          let indices =
+            Analysis.Environment.unannotated_global_environment environment
+            |> Analysis.UnannotatedGlobalEnvironment.ReadOnly.all_indices
+          in
+          ClassHierarchy.to_json (GlobalResolution.class_hierarchy resolution) ~indices
+        in
+        TypeQuery.Response (TypeQuery.ClassHierarchy class_hierarchy_json)
     | TypeQuery.DumpDependencies path ->
         let () =
           match ModuleTracker.lookup_path ~configuration module_tracker path with

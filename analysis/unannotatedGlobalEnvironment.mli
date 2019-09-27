@@ -46,6 +46,8 @@ module ReadOnly : sig
 
   val all_classes : t -> Type.Primitive.t list
 
+  val all_indices : t -> IndexTracker.t list
+
   val get_unannotated_global
     :  t ->
     ?dependency:dependency ->

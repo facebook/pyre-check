@@ -15,10 +15,17 @@ let populate
     qualifiers
   =
   let resolution = Environment.resolution environment () in
-  if debug then
+  let validate_hierarchy () =
     (* Validate integrity of the type order built so far before moving forward. Further
        transformations might be incorrect or not terminate otherwise. *)
-    Environment.check_class_hierarchy_integrity environment;
+    let indices =
+      Environment.unannotated_global_environment environment
+      |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+    in
+    GlobalResolution.class_hierarchy resolution |> ClassHierarchy.check_integrity ~indices
+  in
+  if debug then
+    validate_hierarchy ();
   let register_values sources =
     Environment.transaction
       environment

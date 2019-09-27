@@ -225,6 +225,11 @@ let check
     profile_time_and_memory ~name:"Build GlobalEnvironment" ~f:(fun _ ->
         populate ~configuration ~scheduler ~update_result environment qualifiers);
     Statistics.performance ~name:"full environment built" ~timer ();
+    let indices () =
+      UnannotatedGlobalEnvironment.read_only unannotated_global_environment
+      |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+    in
+    let resolution = Environment.resolution environment () in
     if Log.is_enabled `Dotty then (
       let type_order_file =
         Path.create_relative
@@ -232,10 +237,13 @@ let check
           ~relative:"type_order.dot"
       in
       Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
-      File.create ~content:(Environment.class_hierarchy_dot environment) type_order_file
-      |> File.write );
+      let class_hierarchy_dot =
+        ClassHierarchy.to_dot (GlobalResolution.class_hierarchy resolution) ~indices:(indices ())
+      in
+      File.create ~content:class_hierarchy_dot type_order_file |> File.write );
     if debug then (
-      Analysis.Environment.check_class_hierarchy_integrity environment;
+      GlobalResolution.class_hierarchy resolution
+      |> ClassHierarchy.check_integrity ~indices:(indices ());
       Statistics.event
         ~section:`Memory
         ~name:"shared memory size"

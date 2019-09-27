@@ -25,8 +25,6 @@ val register_values : t -> GlobalResolution.t -> Reference.t -> unit
 
 val is_module : t -> Reference.t -> bool
 
-val check_class_hierarchy_integrity : t -> unit
-
 val purge
   :  t ->
   ?debug:bool ->
@@ -50,7 +48,3 @@ val shared_memory_hash_to_key_map : qualifiers:Ast.Reference.t list -> unit -> s
 val serialize_decoded : Memory.decodable -> (string * string * string sexp_option) sexp_option
 
 val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
-
-val class_hierarchy_json : t -> Yojson.Safe.t
-
-val class_hierarchy_dot : t -> string

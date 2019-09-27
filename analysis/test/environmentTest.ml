@@ -1147,7 +1147,14 @@ let test_purge context =
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
   assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_true (GlobalResolution.is_tracked global_resolution "test.P");
-  Environment.check_class_hierarchy_integrity handler;
+  let check_hierarchy () =
+    let indices =
+      Environment.unannotated_global_environment handler
+      |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+    in
+    GlobalResolution.class_hierarchy global_resolution |> ClassHierarchy.check_integrity ~indices
+  in
+  check_hierarchy ();
   let delete_file
       { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
       relative
@@ -1177,7 +1184,7 @@ let test_purge context =
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.P"));
   assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "test.baz"));
   assert_is_none (GlobalResolution.aliases global_resolution "test._T");
-  Environment.check_class_hierarchy_integrity handler;
+  check_hierarchy ();
   ()
 
 

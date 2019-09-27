@@ -122,25 +122,6 @@ let unannotated_global_environment environment =
   alias_environment environment |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-let untracked_class_hierarchy_handler environment =
-  let class_hierarchy_environment = class_hierarchy_environment environment in
-  ( module struct
-    let edges =
-      ClassHierarchyEnvironment.ReadOnly.get_edges ?dependency:None class_hierarchy_environment
-
-
-    let backedges key =
-      ClassHierarchyEnvironment.ReadOnly.get_backedges class_hierarchy_environment key
-      >>| ClassHierarchy.Target.Set.of_tree
-
-
-    let contains =
-      UnannotatedGlobalEnvironment.ReadOnly.class_exists
-        ?dependency:None
-        (unannotated_global_environment environment)
-  end : ClassHierarchy.Handler )
-
-
 let ast_environment environment =
   unannotated_global_environment environment
   |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
@@ -371,16 +352,6 @@ let transaction _ ?(only_global_keys = false) ~f () =
   result
 
 
-let check_class_hierarchy_integrity environment =
-  let indices =
-    UnannotatedGlobalEnvironment.ReadOnly.all_classes (unannotated_global_environment environment)
-    |> Type.Primitive.Set.of_list
-    |> IndexTracker.indices
-    |> IndexTracker.Set.to_list
-  in
-  ClassHierarchy.check_integrity (untracked_class_hierarchy_handler environment) ~indices
-
-
 let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_result:_ =
   let { SharedMemoryDependencyHandler.globals } =
     SharedMemoryDependencyHandler.get_all_dependent_table_keys qualifiers
@@ -388,8 +359,33 @@ let purge environment ?(debug = false) (qualifiers : Reference.t list) ~update_r
   SharedMemory.Globals.remove_batch globals;
   SharedMemory.GlobalKeys.remove_batch (SharedMemory.GlobalKeys.KeySet.of_list qualifiers);
 
+  let check_hierarchy () =
+    let indices =
+      unannotated_global_environment environment
+      |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+    in
+    let untracked_class_hierarchy_handler environment =
+      let class_hierarchy_environment = class_hierarchy_environment environment in
+      ( module struct
+        let edges =
+          ClassHierarchyEnvironment.ReadOnly.get_edges ?dependency:None class_hierarchy_environment
+
+
+        let backedges key =
+          ClassHierarchyEnvironment.ReadOnly.get_backedges class_hierarchy_environment key
+          >>| ClassHierarchy.Target.Set.of_tree
+
+
+        let contains =
+          UnannotatedGlobalEnvironment.ReadOnly.class_exists
+            ?dependency:None
+            (unannotated_global_environment environment)
+      end : ClassHierarchy.Handler )
+    in
+    ClassHierarchy.check_integrity (untracked_class_hierarchy_handler environment) ~indices
+  in
   if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
-    check_class_hierarchy_integrity environment
+    check_hierarchy ()
 
 
 let update_and_compute_dependencies _ qualifiers ~update ~update_result:_ =
@@ -465,23 +461,3 @@ let decoded_equal first second =
   | GlobalKeys.Decoded (_, first), GlobalKeys.Decoded (_, second) ->
       Some (Option.equal (List.equal Reference.equal) first second)
   | _ -> None
-
-
-let indices environment =
-  unannotated_global_environment environment
-  |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
-  |> Type.Primitive.Set.of_list
-  |> IndexTracker.indices
-  |> IndexTracker.Set.to_list
-
-
-let class_hierarchy_json environment =
-  ClassHierarchy.to_json
-    (untracked_class_hierarchy_handler environment)
-    ~indices:(indices environment)
-
-
-let class_hierarchy_dot environment =
-  ClassHierarchy.to_dot
-    (untracked_class_hierarchy_handler environment)
-    ~indices:(indices environment)
