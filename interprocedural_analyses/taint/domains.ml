@@ -157,7 +157,7 @@ module TraceInfo = struct
   let to_json = create_json ~location_to_json
 
   let to_external_json ~environment =
-    let ast_environment = Environment.ast_environment environment in
+    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
     create_json
       ~location_to_json:
         (location_to_json ~filename_lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
@@ -282,7 +282,10 @@ module type TAINT_DOMAIN = sig
 
   val to_json : t -> Yojson.Safe.json
 
-  val to_external_json : environment:Analysis.Environment.t -> t -> Yojson.Safe.json
+  val to_external_json
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+    t ->
+    Yojson.Safe.json
 end
 
 module MakeTaint (Leaf : SET_ARG) : sig

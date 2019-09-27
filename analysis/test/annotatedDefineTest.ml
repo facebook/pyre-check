@@ -31,7 +31,8 @@ let test_parent_definition context =
     }
     |> Node.create_with_default_location
     |> Define.create
-    |> Define.parent_definition ~resolution:(Environment.resolution environment ())
+    |> Define.parent_definition
+         ~resolution:(AnnotatedGlobalEnvironment.ReadOnly.resolution environment)
   in
   let assert_parent ~expected ~source ~name ~parent =
     let _, _, environment =
@@ -84,7 +85,7 @@ let test_decorate context =
              (Reference.create "test")),
         environment )
     in
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let take_define = function
       | [{ Node.value = Statement.Define define; location }] -> Node.create define ~location
       | _ -> failwith "Expected a define"

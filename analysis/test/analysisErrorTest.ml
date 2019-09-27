@@ -705,7 +705,7 @@ let test_due_to_mismatch_with_any context =
 let test_join context =
   let resolution =
     let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
-    Environment.resolution environment ()
+    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
   in
   let assert_join left right expected =
     let result = Error.join ~resolution left right in
@@ -992,7 +992,7 @@ let test_join context =
 let test_less_or_equal context =
   let resolution =
     let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
-    Environment.resolution environment ()
+    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
   in
   assert_true
     (Error.less_or_equal
@@ -1075,7 +1075,7 @@ let test_filter context =
         ]
       |> ScratchProject.build_environment
     in
-    Environment.resolution environment ()
+    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
   in
   let assert_filtered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in

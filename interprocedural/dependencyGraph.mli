@@ -37,11 +37,14 @@ val from_callgraph : callgraph -> t
 
 val create_callgraph
   :  ?use_type_checking_callgraph:bool ->
-  environment:Environment.t ->
+  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
   source:Source.t ->
   callgraph
 
-val create_overrides : environment:Environment.t -> source:Source.t -> overrides
+val create_overrides
+  :  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+  source:Source.t ->
+  overrides
 
 val union : t -> t -> t
 

@@ -163,7 +163,7 @@ let assert_infer
     errors
   =
   let check_errors configuration environment source =
-    let ast_environment = Environment.ast_environment environment in
+    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
     Inference.run ~configuration ~environment ~source
     |> List.map
          ~f:

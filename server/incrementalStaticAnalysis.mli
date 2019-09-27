@@ -6,14 +6,14 @@
 val compute_type_check_resolution
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  environment:Analysis.Environment.t ->
+  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   source_paths:Ast.SourcePath.t list ->
   unit
 
 val run_additional_check
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  environment:Analysis.Environment.t ->
+  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   source_paths:Ast.SourcePath.t list ->
   check:string ->
   Analysis.Error.Instantiated.t list

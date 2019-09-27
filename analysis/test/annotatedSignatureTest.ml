@@ -67,7 +67,7 @@ let test_select context =
           ]
         |> ScratchProject.build_environment
       in
-      let global_resolution = Environment.resolution environment () in
+      let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
       let resolution = TypeCheck.resolution global_resolution () in
       let enforce_callable = function
         | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->

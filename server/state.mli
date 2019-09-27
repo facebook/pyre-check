@@ -22,7 +22,7 @@ type connections = {
 type t = {
   module_tracker: Analysis.ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
-  environment: Analysis.Environment.t;
+  environment: Analysis.AnnotatedGlobalEnvironment.ReadOnly.t;
   errors: Error.t list Ast.Reference.Table.t;
   lookups: Analysis.Lookup.t String.Table.t;
   symlink_targets_to_sources: PyrePath.t String.Table.t;

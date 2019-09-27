@@ -41,7 +41,7 @@ let test_generics context =
     let source = Option.value_exn source in
     match source |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
-        let resolution = Environment.resolution environment () in
+        let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
         let printer generics = Format.asprintf "%a" Type.OrderedTypes.pp_concise generics in
         assert_equal
           ~printer
@@ -129,7 +129,7 @@ let test_superclasses context =
     |> Node.create_with_default_location
     |> Class.create
   in
-  let resolution = Environment.resolution environment () in
+  let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let assert_successors target expected =
     let actual = Class.successors ~resolution target in
     assert_equal
@@ -167,7 +167,7 @@ let test_get_decorator context =
       let _, _, environment =
         ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
       in
-      Environment.resolution environment ()
+      AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     in
     let assert_logic expected =
       match parse_last_statement source with
@@ -281,7 +281,7 @@ let test_constructors context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let source =
       AstEnvironment.ReadOnly.get_source
         (AstEnvironment.read_only ast_environment)
@@ -443,7 +443,7 @@ let test_has_method context =
       let _, _, environment =
         ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
       in
-      Environment.resolution environment ()
+      AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
@@ -516,7 +516,8 @@ let test_class_attributes context =
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
-    Environment.resolution environment (), Class.create (Node.create_with_default_location parent)
+    ( AnnotatedGlobalEnvironment.ReadOnly.resolution environment,
+      Class.create (Node.create_with_default_location parent) )
   in
   let resolution, parent =
     setup
@@ -821,7 +822,7 @@ let test_fallback_attribute context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let global_resolution = Environment.resolution environment () in
+    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let resolution = TypeCheck.resolution global_resolution () in
     let attribute =
       let source =
@@ -944,7 +945,7 @@ let test_constraints context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let source =
       AstEnvironment.ReadOnly.get_source
         (AstEnvironment.read_only ast_environment)
@@ -1240,7 +1241,7 @@ let test_metaclasses context =
       in
       List.find_map ~f:target statements
     in
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     match target with
     | Some target ->
         assert_equal (Type.Primitive metaclass) (Annotated.Class.metaclass ~resolution target)
@@ -1363,7 +1364,7 @@ let test_overrides context =
         ]
       |> ScratchProject.build_environment
     in
-    Environment.resolution environment ()
+    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
   in
   let definition =
     let definition =
@@ -1383,7 +1384,7 @@ let test_unimplemented_abstract_methods context =
     let _, _, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let definition =
       let definition =
         GlobalResolution.class_definition resolution (Type.Primitive class_name) >>| Class.create
@@ -1428,7 +1429,7 @@ let test_implicit_attributes context =
     let _, _, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let definition =
       let definition =
         GlobalResolution.class_definition resolution (Type.Primitive class_name) >>| Class.create

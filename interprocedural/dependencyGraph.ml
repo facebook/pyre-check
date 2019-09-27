@@ -82,7 +82,7 @@ let create_callgraph ?(use_type_checking_callgraph = false) ~environment ~source
       let statements = Cfg.Node.statements node in
       let fold_statements index callees statement =
         let resolution =
-          let global_resolution = Environment.resolution environment () in
+          let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
           TypeCheck.resolution_with_key
             ~global_resolution
             ~parent
@@ -127,7 +127,7 @@ let create_callgraph ?(use_type_checking_callgraph = false) ~environment ~source
   in
   let fold_defines =
     if use_type_checking_callgraph then
-      let global_resolution = Environment.resolution environment () in
+      let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
       type_checking_callgraph ~resolution:global_resolution
     else
       fold_defines
@@ -262,7 +262,7 @@ let from_overrides overrides =
 
 
 let create_overrides ~environment ~source =
-  let global_resolution = Environment.resolution environment () in
+  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let resolution = TypeCheck.resolution global_resolution () in
   let resolution = Resolution.global_resolution resolution in
   if GlobalResolution.source_is_unit_test resolution ~source then

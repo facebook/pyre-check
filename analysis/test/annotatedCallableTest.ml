@@ -23,7 +23,10 @@ let test_return_annotation context =
         |}]
         |> ScratchProject.build_environment
       in
-      let parser = Environment.resolution environment () |> GlobalResolution.annotation_parser in
+      let parser =
+        AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+        |> GlobalResolution.annotation_parser
+      in
       {
         Define.signature =
           {

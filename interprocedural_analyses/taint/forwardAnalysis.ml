@@ -26,7 +26,7 @@ end
 module type FUNCTION_CONTEXT = sig
   val definition : Define.t Node.t
 
-  val environment : Environment.t
+  val environment : AnnotatedGlobalEnvironment.ReadOnly.t
 
   val check_flow
     :  location:Location.t ->
@@ -711,7 +711,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     let forward ?key state ~statement =
       log "State: %a\nAnalyzing statement: %a" pp state Statement.pp statement;
       let resolution =
-        let global_resolution = Environment.resolution FunctionContext.environment () in
+        let global_resolution =
+          AnnotatedGlobalEnvironment.ReadOnly.resolution FunctionContext.environment
+        in
         TypeCheck.resolution_with_key
           ~global_resolution
           ~parent:FunctionContext.definition.value.signature.parent
@@ -835,7 +837,7 @@ let run ~environment ~define ~existing_model =
   in
   let () = log "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state = Analyzer.forward ~cfg ~initial |> Analyzer.exit in
-  let resolution = Environment.resolution environment () in
+  let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let extract_model ({ FixpointState.taint; _ } as result) =
     (* Explicitly declared taint is not propagated to the result and needs to be picked up from the
        existing model. *)

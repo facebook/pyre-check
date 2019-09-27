@@ -72,7 +72,7 @@ let environment
       ()
   in
   let environment =
-    Environment.shared_memory_handler
+    AnnotatedGlobalEnvironment.create
       (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
   populate ~configuration ~update_result environment sources;
@@ -350,7 +350,7 @@ let check_expectation
     |> Option.value ~default:[]
   in
   let actual_errors =
-    let ast_environment = Environment.ast_environment environment in
+    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
     List.map
       actual_errors
       ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
@@ -383,7 +383,7 @@ let run_with_taint_models tests ~name =
     let _, _, environment =
       Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_environment
     in
-    let global_resolution = Environment.resolution environment () in
+    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     Model.parse
       ~resolution:(TypeCheck.resolution global_resolution ())
       ~source:model_source
@@ -406,7 +406,7 @@ type test_environment = {
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
   all_callables: Callable.t list;
-  environment: Environment.t;
+  environment: AnnotatedGlobalEnvironment.ReadOnly.t;
 }
 
 let initialize ?(handle = "test.py") ?models ~context source_content =
@@ -458,7 +458,9 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       ~source
   in
   let callables, stubs =
-    Service.StaticAnalysis.callables ~resolution:(Environment.resolution environment ()) ~source
+    Service.StaticAnalysis.callables
+      ~resolution:(AnnotatedGlobalEnvironment.ReadOnly.resolution environment)
+      ~source
     |> List.map ~f:(fun (callable, define) -> (callable :> Callable.t), define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
@@ -475,7 +477,8 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       | None -> Callable.Map.empty
       | Some source ->
           Model.parse
-            ~resolution:(TypeCheck.resolution (Environment.resolution environment ()) ())
+            ~resolution:
+              (TypeCheck.resolution (AnnotatedGlobalEnvironment.ReadOnly.resolution environment) ())
             ~source:(Test.trim_extra_indentation source)
             ~configuration:TaintConfiguration.default
             Callable.Map.empty

@@ -173,7 +173,7 @@ let test_resolve_exports context =
       let _, _, environment =
         ScratchProject.setup ~context sources |> ScratchProject.build_environment
       in
-      Environment.resolution environment ()
+      AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     in
     let reference =
       GlobalResolution.resolve_exports resolution ~reference:(Reference.create name)
@@ -358,7 +358,7 @@ let test_source_is_unit_test context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let source =
       AstEnvironment.ReadOnly.get_source
         (AstEnvironment.read_only ast_environment)

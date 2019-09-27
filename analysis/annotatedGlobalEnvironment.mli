@@ -23,6 +23,13 @@ module ReadOnly : sig
   val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
 
   val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
+
+  val resolution : t -> GlobalResolution.t
+
+  val dependency_tracked_resolution : t -> dependency:dependency -> GlobalResolution.t
+
+  (* Shortcut for walking through all of the environments *)
+  val ast_environment : t -> AstEnvironment.ReadOnly.t
 end
 
 val create : ClassMetadataEnvironment.ReadOnly.t -> t

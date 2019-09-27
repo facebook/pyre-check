@@ -19,7 +19,7 @@ let ignore_lines_test context =
     in
     let scheduler = Test.mock_scheduler () in
     let descriptions =
-      let ast_environment = Environment.ast_environment environment in
+      let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
             qualifier)

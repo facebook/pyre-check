@@ -139,7 +139,7 @@ let run_analysis
           ~qualifiers
           ()
       in
-      errors, Analysis.Environment.ast_environment environment
+      errors, Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment
     in
     let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
     Statistics.performance

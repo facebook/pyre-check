@@ -20,7 +20,7 @@ let empty_environment () =
   |> ClassHierarchyEnvironment.read_only
   |> ClassMetadataEnvironment.create
   |> ClassMetadataEnvironment.read_only
-  |> Environment.shared_memory_handler
+  |> AnnotatedGlobalEnvironment.create
 
 
 let test_populate context =
@@ -65,7 +65,7 @@ let test_populate context =
       ()
   in
   let environment =
-    Environment.shared_memory_handler
+    AnnotatedGlobalEnvironment.create
       (ClassMetadataEnvironment.read_only class_hierarchy_environment)
   in
   let qualifiers =
@@ -78,7 +78,8 @@ let test_populate context =
     ~update_result
     environment
     qualifiers;
-  let global_resolution = Analysis.Environment.resolution environment () in
+  let read_only = AnnotatedGlobalEnvironment.read_only environment in
+  let global_resolution = Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution read_only in
   let printer x = x >>| Type.Callable.show_overload Type.pp |> Option.value ~default:"o" in
   let ignore_define_location overload = { overload with Type.Callable.define_location = None } in
   assert_equal

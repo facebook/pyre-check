@@ -20,7 +20,9 @@ include TaintResult.Register (struct
       |> Option.value ~default:true
     in
     let create_models ~configuration sources =
-      let global_resolution = Analysis.Environment.resolution environment () in
+      let global_resolution =
+        Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+      in
       List.fold sources ~init:Callable.Map.empty ~f:(fun models (path, source) ->
           Model.parse
             ~resolution:(Analysis.TypeCheck.resolution global_resolution ())

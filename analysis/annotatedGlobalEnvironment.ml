@@ -59,6 +59,32 @@ module ReadOnly = struct
   let serialize_decoded { serialize_decoded; _ } = serialize_decoded
 
   let decoded_equal { decoded_equal; _ } = decoded_equal
+
+  let resolution_implementation ?dependency environment =
+    let class_metadata_environment = class_metadata_environment environment in
+    let class_metadata_dependency =
+      dependency
+      >>| fun (TypeCheckSource dependency) -> ClassMetadataEnvironment.TypeCheckSource dependency
+    in
+    GlobalResolution.create
+      ?dependency:class_metadata_dependency
+      ~class_metadata_environment
+      ~global:(get_global environment ?dependency)
+      (module AnnotatedClass)
+
+
+  let resolution = resolution_implementation ?dependency:None
+
+  let dependency_tracked_resolution environment ~dependency =
+    resolution_implementation ~dependency environment
+
+
+  let ast_environment environment =
+    class_metadata_environment environment
+    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+    |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+    |> AliasEnvironment.ReadOnly.unannotated_global_environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 end
 
 module GlobalValue = struct

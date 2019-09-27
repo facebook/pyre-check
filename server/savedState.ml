@@ -223,7 +223,7 @@ let load
       (Analysis.ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
   let environment =
-    Analysis.Environment.shared_memory_handler
+    Analysis.AnnotatedGlobalEnvironment.create
       (Analysis.ClassMetadataEnvironment.read_only class_metadata_environment)
   in
   let old_configuration = StoredConfiguration.load () in
@@ -247,7 +247,7 @@ let load
     {
       State.module_tracker;
       ast_environment;
-      environment;
+      environment = Analysis.AnnotatedGlobalEnvironment.read_only environment;
       errors;
       symlink_targets_to_sources;
       scheduler;

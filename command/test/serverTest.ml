@@ -1255,7 +1255,7 @@ let test_incremental_lookups context =
     Protocol.Request.TypeCheckRequest [Path.create_relative ~root:local_root ~relative:handle]
   in
   let { Request.state; _ } = Request.process ~state ~configuration:server_configuration ~request in
-  let global_resolution = Environment.resolution state.State.environment () in
+  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution state.State.environment in
   let annotations =
     let ast_environment = GlobalResolution.ast_environment global_resolution in
     AstEnvironment.ReadOnly.get_source ast_environment qualifier
@@ -1293,7 +1293,7 @@ let test_incremental_repopulate context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let get_annotation { State.environment; _ } access_name =
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     match
       GlobalResolution.function_definitions resolution (Reference.combine qualifier !&access_name)
     with
@@ -1397,7 +1397,7 @@ let test_incremental_attribute_caching context =
   in
   let assert_errors ~state expected =
     let get_error_strings { State.errors; environment; _ } =
-      let ast_environment = Environment.ast_environment environment in
+      let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
       Hashtbl.to_alist errors
       |> List.map ~f:snd
       |> List.concat

@@ -296,7 +296,7 @@ let run
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
   let module Context = struct
-    let global_resolution = Environment.resolution environment ()
+    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment
 
     let transformations = Location.Reference.Table.create ()
 

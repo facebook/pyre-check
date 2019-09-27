@@ -1503,7 +1503,7 @@ module ScratchProject = struct
           ()
       in
       let environment =
-        Environment.shared_memory_handler
+        AnnotatedGlobalEnvironment.create
           (ClassMetadataEnvironment.read_only class_metadata_environment)
       in
       let qualifiers =
@@ -1518,18 +1518,18 @@ module ScratchProject = struct
         qualifiers;
       environment
     in
-    sources, ast_environment, environment
+    sources, ast_environment, AnnotatedGlobalEnvironment.read_only environment
 
 
   let build_resolution project =
     let _, _, environment = build_environment project in
-    let global_resolution = Environment.resolution environment () in
+    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     TypeCheck.resolution global_resolution ()
 
 
   let build_global_resolution project =
     let _, _, environment = build_environment project in
-    Environment.resolution environment ()
+    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
 end
 
 type test_update_environment_with_t = {
@@ -1574,7 +1574,14 @@ let assert_errors
         let configuration = ScratchProject.configuration_of project in
         configuration, sources, environment
       in
-      let ast_environment = Environment.ast_environment environment in
+      let ast_environment =
+        environment
+        |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
+        |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+        |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+        |> AliasEnvironment.ReadOnly.unannotated_global_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+      in
       let configuration = { configuration with debug; strict; declare; infer } in
       let source =
         List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
@@ -1621,7 +1628,7 @@ let assert_equivalent_attributes ~context source expected =
     let _, _, environment =
       ScratchProject.setup ~context [handle, source] |> ScratchProject.build_environment
     in
-    let global_resolution = Environment.resolution environment () in
+    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in

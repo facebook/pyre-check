@@ -27,7 +27,7 @@ let generate_lookup ~context source =
     ScratchProject.configuration_of project, source, environment
   in
   TypeCheck.run ~configuration ~environment ~source |> ignore;
-  let global_resolution = Environment.resolution environment () in
+  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let lookup = Lookup.create_of_source global_resolution source in
   lookup
 

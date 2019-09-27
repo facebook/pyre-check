@@ -4985,8 +4985,10 @@ let run
     let global_resolution =
       match configuration with
       | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-          Environment.dependency_tracked_resolution environment ~dependency:qualifier ()
-      | _ -> Environment.resolution environment ()
+          AnnotatedGlobalEnvironment.ReadOnly.dependency_tracked_resolution
+            environment
+            ~dependency:(TypeCheckSource qualifier)
+      | _ -> AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     in
     check_defines ~configuration ~global_resolution ~source [toplevel]
   in

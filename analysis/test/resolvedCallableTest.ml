@@ -15,7 +15,7 @@ module Callable = Annotated.Callable
 
 let test_apply_decorators context =
   let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
-  let resolution = Environment.resolution environment () in
+  let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let create_define ~decorators ~parameters ~return_annotation =
     let decorators = List.map ~f:parse_single_expression decorators in
     {
@@ -80,7 +80,7 @@ let test_apply_decorators context =
         let _, _, environment =
           ScratchProject.setup ~context [] |> ScratchProject.build_environment
         in
-        Environment.resolution environment ()
+        AnnotatedGlobalEnvironment.ReadOnly.resolution environment
       in
       ResolvedCallable.apply_decorators ~resolution define
       |> fun { Type.Callable.parameters; _ } ->
@@ -130,7 +130,7 @@ let test_create context =
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
     in
-    let resolution = Environment.resolution environment () in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let expected =
       GlobalResolution.parse_annotation resolution (parse_single_expression expected)
     in

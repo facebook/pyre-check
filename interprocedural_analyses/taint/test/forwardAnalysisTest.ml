@@ -29,7 +29,7 @@ let assert_taint ?models ~context source expect =
       (Ast.Reference.create "qualifier")
     |> fun option -> Option.value_exn option
   in
-  let global_resolution = Environment.resolution environment () in
+  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->

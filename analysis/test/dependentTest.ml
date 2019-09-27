@@ -14,7 +14,7 @@ let default_environment context =
 
 
 let assert_dependencies ~environment ~modules ~expected function_to_test =
-  let ast_environment = Environment.ast_environment environment in
+  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
   let dependencies = Dependencies.create ast_environment in
   let dependencies =
     function_to_test dependencies ~modules:(List.map modules ~f:Reference.create)
@@ -27,7 +27,7 @@ let assert_dependencies ~environment ~modules ~expected function_to_test =
 
 
 let add_dependent environment handle dependent =
-  let ast_environment = Environment.ast_environment environment in
+  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
   let dependencies = Dependencies.create ast_environment in
   Dependencies.add_manual_dependency_for_test
     dependencies

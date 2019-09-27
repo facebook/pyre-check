@@ -348,7 +348,7 @@ let test_type_collection context =
       let annotations =
         LocalAnnotationMap.get_precondition lookup key |> fun value -> Option.value_exn value
       in
-      let global_resolution = Environment.resolution environment () in
+      let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
       let resolution = TypeCheck.resolution global_resolution ~annotations () in
       let statement = List.nth_exn statements statement_index in
       Visit.collect_calls_and_names statement

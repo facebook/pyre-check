@@ -11,7 +11,7 @@ module type Signature = sig
 
   val run
     :  configuration:Configuration.Analysis.t ->
-    environment:Environment.t ->
+    environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
     source:Source.t ->
     Error.t list
 end

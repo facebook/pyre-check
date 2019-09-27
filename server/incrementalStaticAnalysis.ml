@@ -27,7 +27,13 @@ let run_additional_check ~configuration ~scheduler ~environment ~source_paths ~c
   compute_type_check_resolution ~configuration ~scheduler ~environment ~source_paths;
   match Analysis.Check.get_check_to_run ~check_name:check with
   | Some (module Check) ->
-      let ast_environment = Environment.ast_environment environment in
+      let ast_environment =
+        AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment environment
+        |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+        |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+        |> AliasEnvironment.ReadOnly.unannotated_global_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+      in
       let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
       Service.Check.run_check ~configuration ~scheduler ~environment qualifiers (module Check)
       |> List.map

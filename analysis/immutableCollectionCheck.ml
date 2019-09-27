@@ -72,7 +72,7 @@ let run ~configuration:_ ~environment ~source =
     let module Context = struct
       let define = define
 
-      let global_resolution = Environment.resolution environment ()
+      let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     end
     in
     let module State = State (Context) in

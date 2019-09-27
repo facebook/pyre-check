@@ -7,7 +7,7 @@ open Ast
 open Analysis
 
 val populate
-  :  Environment.t ->
+  :  AnnotatedGlobalEnvironment.t ->
   configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
   update_result:ClassMetadataEnvironment.UpdateResult.t ->

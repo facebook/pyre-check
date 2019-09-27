@@ -102,22 +102,26 @@ let recheck
         ~configuration
         alias_update_result
     in
+    let class_metadata_environment =
+      ClassMetadataEnvironment.create
+        (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+    in
     let class_metadata_update_result =
-      let class_metadata_environment =
-        ClassMetadataEnvironment.create
-          (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
-      in
       ClassMetadataEnvironment.update
         class_metadata_environment
         ~scheduler
         ~configuration
         class_hierarchy_update_result
     in
+    let environment =
+      AnnotatedGlobalEnvironment.create
+        (ClassMetadataEnvironment.read_only class_metadata_environment)
+    in
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     match incremental_style with
     | FineGrained ->
-        let invalidated_type_checking_keys =
-          Analysis.Environment.update_and_compute_dependencies
+        let annotated_global_environment_update_result =
+          Analysis.AnnotatedGlobalEnvironment.update
             environment
             ~configuration
             ~scheduler
@@ -128,7 +132,8 @@ let recheck
             UnannotatedGlobalEnvironment.read_only unannotated_global_environment
             |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
           in
-          Environment.resolution environment ()
+          AnnotatedGlobalEnvironment.read_only environment
+          |> AnnotatedGlobalEnvironment.ReadOnly.resolution
           |> GlobalResolution.class_hierarchy
           |> ClassHierarchy.check_integrity ~indices
         in
@@ -158,23 +163,27 @@ let recheck
                    | ClassHierarchyEnvironment.TypeCheckSource source -> Some source
                    | _ -> None)
           in
+          let annotated_global_environment_dependencies =
+            AnnotatedGlobalEnvironment.UpdateResult.triggered_dependencies
+              annotated_global_environment_update_result
+            |> AnnotatedGlobalEnvironment.DependencyKey.KeySet.elements
+            |> List.map ~f:(fun (AnnotatedGlobalEnvironment.TypeCheckSource source) -> source)
+          in
           List.fold
             ( unannotated_global_environment_dependencies
             @ alias_environment_dependencies
-            @ class_hierarchy_dependencies )
-            ~f:(fun sofar element ->
-              SharedMemoryKeys.ReferenceDependencyKey.KeySet.add element sofar)
-            ~init:invalidated_type_checking_keys
+            @ class_hierarchy_dependencies
+            @ annotated_global_environment_dependencies )
+            ~f:Reference.Set.add
+            ~init:Reference.Set.empty
         in
         let invalidated_type_checking_keys =
           List.fold
             invalidated_environment_qualifiers
             ~init:invalidated_type_checking_keys
-            ~f:(fun sofar key -> SharedMemoryKeys.ReferenceDependencyKey.KeySet.add key sofar)
+            ~f:Reference.Set.add
         in
-        let invalidated_type_checking_keys =
-          SharedMemoryKeys.ReferenceDependencyKey.KeySet.elements invalidated_type_checking_keys
-        in
+        let invalidated_type_checking_keys = Set.to_list invalidated_type_checking_keys in
         let recheck_modules = invalidated_type_checking_keys in
         Log.log
           ~section:`Server

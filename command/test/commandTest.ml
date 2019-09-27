@@ -64,7 +64,7 @@ let make_errors ~context ?(handle = "test.py") source =
         String.equal relative handle)
   in
   let configuration = ScratchProject.configuration_of project in
-  let ast_environment = Environment.ast_environment environment in
+  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
   TypeCheck.run ~configuration ~environment ~source
   |> List.map
        ~f:

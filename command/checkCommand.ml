@@ -93,7 +93,9 @@ let run_check
 
     (* Print results. *)
     let errors =
-      let ast_environment = Analysis.Environment.ast_environment environment in
+      let ast_environment =
+        Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment
+      in
       List.map
         errors
         ~f:

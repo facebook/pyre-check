@@ -198,7 +198,14 @@ let to_json ~environment callable issue =
       ]
   in
   let issue_location =
-    let ast_environment = Analysis.Environment.ast_environment environment in
+    let ast_environment =
+      let open Analysis in
+      AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment environment
+      |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+      |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+      |> AliasEnvironment.ReadOnly.unannotated_global_environment
+      |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+    in
     issue.issue_location
     |> Location.instantiate ~lookup:(Analysis.AstEnvironment.ReadOnly.get_relative ast_environment)
   in

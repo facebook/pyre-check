@@ -26,7 +26,9 @@ let assert_model ?source ~context ~model_source ~expect () =
   let models =
     let source = Test.trim_extra_indentation model_source in
     let resolution =
-      let global_resolution = Analysis.Environment.resolution environment () in
+      let global_resolution =
+        Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+      in
       TypeCheck.resolution global_resolution ()
     in
     Taint.Model.parse ~resolution ~source ~configuration Callable.Map.empty

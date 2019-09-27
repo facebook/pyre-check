@@ -365,7 +365,7 @@ let callables_to_dump =
 
 
 let analyze_callable analyses step callable environment =
-  let resolution = Analysis.Environment.resolution environment () in
+  let resolution = Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let () =
     (* Verify invariants *)
     let open Fixpoint in
@@ -651,7 +651,9 @@ let compute_fixpoint
   try
     let iterations = iterate ~iteration:0 all_callables in
     let dump_callable callable =
-      let global_resolution = Analysis.Environment.resolution environment () in
+      let global_resolution =
+        Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+      in
       let resolution = Analysis.TypeCheck.resolution global_resolution () in
       let resolution = Analysis.Resolution.global_resolution resolution in
       let { Define.signature = { name; _ }; _ } =

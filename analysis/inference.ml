@@ -623,7 +623,7 @@ let run
               } as source )
   =
   Log.debug "Checking %s..." relative;
-  let global_resolution = Environment.resolution environment () in
+  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let resolution = TypeCheck.resolution global_resolution () in
   let dequalify_map = Preprocessing.dequalify_map source in
   let check

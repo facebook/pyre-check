@@ -92,6 +92,6 @@ val name : string
 
 val run
   :  configuration:Configuration.Analysis.t ->
-  environment:Environment.t ->
+  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
   source:Source.t ->
   Error.t list

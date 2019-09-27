@@ -10,7 +10,7 @@ open Pyre
 type result = {
   module_tracker: Analysis.ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
-  environment: Analysis.Environment.t;
+  environment: Analysis.AnnotatedGlobalEnvironment.ReadOnly.t;
   errors: Analysis.Error.t list;
 }
 
@@ -19,6 +19,15 @@ type analyze_source_results = {
   number_files: int;
 }
 (** Internal result type; not exposed. *)
+
+let ast_environment environment =
+  let open Analysis in
+  AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment environment
+  |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+  |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+  |> AliasEnvironment.ReadOnly.unannotated_global_environment
+  |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+
 
 let run_check
     ?open_documents
@@ -48,7 +57,7 @@ let run_check
       let new_errors = Check.run ~configuration ~environment ~source in
       { errors = List.append new_errors errors; number_files = number_files + 1 }
     in
-    let ast_environment = Analysis.Environment.ast_environment environment in
+    let ast_environment = ast_environment environment in
     List.filter_map qualifiers ~f:(Analysis.AstEnvironment.ReadOnly.get_source ast_environment)
     |> List.fold ~init:empty_result ~f:analyze_source
   in
@@ -86,7 +95,7 @@ let analyze_sources
     sources
   =
   let open Analysis in
-  let ast_environment = Environment.ast_environment environment in
+  let ast_environment = ast_environment environment in
   Annotated.Class.AttributeCache.clear ();
   let checked_sources =
     if filter_external_sources then
@@ -180,7 +189,7 @@ let check
         (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
     in
     let environment =
-      Environment.shared_memory_handler
+      AnnotatedGlobalEnvironment.create
         (ClassMetadataEnvironment.read_only class_metadata_environment)
     in
     Log.info "Building type environment...";
@@ -228,7 +237,10 @@ let check
       UnannotatedGlobalEnvironment.read_only unannotated_global_environment
       |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
     in
-    let resolution = Environment.resolution environment () in
+    let resolution =
+      AnnotatedGlobalEnvironment.ReadOnly.resolution
+        (AnnotatedGlobalEnvironment.read_only environment)
+    in
     if Log.is_enabled `Dotty then (
       let type_order_file =
         Path.create_relative
@@ -250,7 +262,15 @@ let check
         () );
     environment
   in
-  let errors = analyze_sources ~scheduler ~configuration ~environment qualifiers in
+  let errors =
+    analyze_sources
+      ~scheduler
+      ~configuration
+      ~environment:(Analysis.AnnotatedGlobalEnvironment.read_only environment)
+      qualifiers
+  in
+  Profiling.track_shared_memory_usage ();
+
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
@@ -293,4 +313,9 @@ let check
   ( match original_scheduler with
   | None -> Scheduler.destroy scheduler
   | Some _ -> () );
-  { module_tracker; ast_environment; environment; errors }
+  {
+    module_tracker;
+    ast_environment;
+    environment = AnnotatedGlobalEnvironment.read_only environment;
+    errors;
+  }

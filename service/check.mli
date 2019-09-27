@@ -8,7 +8,7 @@ open Analysis
 type result = {
   module_tracker: ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
-  environment: Environment.t;
+  environment: AnnotatedGlobalEnvironment.ReadOnly.t;
   errors: Error.t list;
 }
 
@@ -16,7 +16,7 @@ val run_check
   :  ?open_documents:(Ast.Reference.t -> bool) ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  environment:Environment.t ->
+  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
   Ast.Reference.t list ->
   (module Analysis.Check.Signature) ->
   Error.t list
@@ -26,7 +26,7 @@ val analyze_sources
   ?filter_external_sources:bool ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  environment:Environment.t ->
+  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
   Ast.Reference.t list ->
   Error.t list
 

@@ -32,7 +32,7 @@ module type ANALYSIS_PROVIDED = sig
   val get_errors : result -> InterproceduralError.t list
 
   val externalize
-    :  environment:Analysis.Environment.t ->
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     Callable.t ->
     result option ->
     call_model ->
@@ -98,7 +98,7 @@ module type ANALYZER = sig
 
   val analyze
     :  callable:Callable.real_target ->
-    environment:Analysis.Environment.t ->
+    environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     define:Statement.Define.t Node.t ->
     existing:call_model option ->
     result * call_model
@@ -106,7 +106,7 @@ module type ANALYZER = sig
   (* Called once on master before analysis of individual callables. *)
   val init
     :  configuration:Yojson.Safe.json ->
-    environment:Analysis.Environment.t ->
+    environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     functions:Callable.t list ->
     call_model Callable.Map.t
 end

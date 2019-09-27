@@ -13,7 +13,7 @@ type result = {
 val one_analysis_pass
   :  analyses:Kind.abstract list ->
   step:Fixpoint.step ->
-  environment:Analysis.Environment.t ->
+  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   callables:Callable.t list ->
   result
 
@@ -21,7 +21,7 @@ val one_analysis_pass
 val compute_fixpoint
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  environment:Analysis.Environment.t ->
+  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   analyses:Kind.abstract list ->
   dependencies:DependencyGraph.t ->
   all_callables:Callable.t list ->
@@ -29,7 +29,7 @@ val compute_fixpoint
   int
 
 val externalize
-  :  environment:Analysis.Environment.t ->
+  :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   AnalysisKind.abstract ->
   Callable.t ->
   Yojson.Safe.json list
@@ -42,7 +42,7 @@ val extract_errors
 
 val save_results
   :  configuration:Configuration.StaticAnalysis.t ->
-  environment:Analysis.Environment.t ->
+  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   analyses:AnalysisKind.abstract list ->
   Callable.t list ->
   unit
@@ -51,7 +51,7 @@ val save_results
 val initialize
   :  Kind.abstract list ->
   configuration:Yojson.Safe.json ->
-  environment:Analysis.Environment.t ->
+  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   functions:Callable.t list ->
   InterproceduralResult.model_t Callable.Map.t
 
