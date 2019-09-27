@@ -57,6 +57,7 @@ module ReadOnly = struct
     class_exists: ?dependency:dependency -> string -> bool;
     all_classes: unit -> Type.Primitive.t list;
     all_indices: unit -> IndexTracker.t list;
+    all_unannotated_globals: unit -> Reference.t list;
     get_unannotated_global: ?dependency:dependency -> Reference.t -> unannotated_global option;
   }
 
@@ -69,6 +70,8 @@ module ReadOnly = struct
   let all_classes { all_classes; _ } = all_classes ()
 
   let all_indices { all_indices; _ } = all_indices ()
+
+  let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
 
   let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
 end
@@ -213,6 +216,10 @@ end = struct
       |> IndexTracker.indices
       |> IndexTracker.Set.to_list
     in
+    let all_unannotated_globals () =
+      AstEnvironment.ReadOnly.all_explicit_modules ast_environment
+      |> KeyTracker.get_unannotated_global_keys
+    in
     let class_exists ?dependency name =
       Option.iter dependency ~f:(ClassDefinitions.add_dependency name);
       ClassDefinitions.mem name
@@ -224,6 +231,7 @@ end = struct
       all_indices;
       class_exists;
       get_unannotated_global = UnannotatedGlobals.get;
+      all_unannotated_globals;
     }
 end
 

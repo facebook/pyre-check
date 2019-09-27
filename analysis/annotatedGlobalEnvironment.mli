@@ -3,6 +3,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 open Ast
+open Core
 
 type t
 
@@ -16,6 +17,12 @@ module ReadOnly : sig
   val get_global : t -> ?dependency:dependency -> Reference.t -> GlobalResolution.global option
 
   val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
+
+  val hash_to_key_map : t -> string String.Map.t
+
+  val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
+
+  val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
 end
 
 val create : ClassMetadataEnvironment.ReadOnly.t -> t

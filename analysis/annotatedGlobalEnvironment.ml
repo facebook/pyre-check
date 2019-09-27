@@ -45,11 +45,20 @@ module ReadOnly = struct
   type t = {
     get_global: ?dependency:dependency -> Reference.t -> GlobalResolution.global option;
     class_metadata_environment: ClassMetadataEnvironment.ReadOnly.t;
+    hash_to_key_map: unit -> string String.Map.t;
+    serialize_decoded: Memory.decodable -> (string * string * string option) option;
+    decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
   }
 
   let class_metadata_environment { class_metadata_environment; _ } = class_metadata_environment
 
   let get_global { get_global; _ } = get_global
+
+  let hash_to_key_map { hash_to_key_map; _ } = hash_to_key_map ()
+
+  let serialize_decoded { serialize_decoded; _ } = serialize_decoded
+
+  let decoded_equal { decoded_equal; _ } = decoded_equal
 end
 
 module GlobalValue = struct
@@ -302,5 +311,31 @@ let update environment ~scheduler ~configuration upstream_result =
       }
 
 
-let read_only { class_metadata_environment } =
-  { ReadOnly.class_metadata_environment; get_global = Globals.get }
+let read_only ({ class_metadata_environment } as environment) =
+  let hash_to_key_map () =
+    let keys =
+      UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
+        (unannotated_global_environment environment)
+    in
+    Globals.compute_hashes_to_keys ~keys
+  in
+  let serialize_decoded decoded =
+    match decoded with
+    | Globals.Decoded (key, value) ->
+        let value = value >>| Node.value >>| Annotation.sexp_of_t >>| Sexp.to_string in
+        Some (GlobalValue.description, Reference.show key, value)
+    | _ -> None
+  in
+  let decoded_equal first second =
+    match first, second with
+    | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
+        Some (Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value))
+    | _ -> None
+  in
+  {
+    ReadOnly.class_metadata_environment;
+    get_global = Globals.get;
+    hash_to_key_map;
+    serialize_decoded;
+    decoded_equal;
+  }
