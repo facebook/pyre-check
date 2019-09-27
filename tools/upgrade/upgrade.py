@@ -526,7 +526,7 @@ def run_fixme_single(arguments: argparse.Namespace) -> None:
 
 def run_fixme_all(arguments: argparse.Namespace) -> None:
     # Create sandcastle command.
-    if arguments.sandcastle and isinstance(arguments.sandcastle, str):
+    if arguments.sandcastle:
         configurations = Configuration.gather_local_configurations(arguments)
         paths = [str(configuration.get_directory()) for configuration in configurations]
         with open(arguments.sandcastle) as sandcastle_file:
@@ -551,6 +551,13 @@ def run_fixme_all(arguments: argparse.Namespace) -> None:
     configurations = Configuration.gather_local_configurations(arguments)
     for configuration in configurations:
         _upgrade_project(arguments, configuration, project_configuration.parent)
+
+
+def path_exists(filename: str) -> Path:
+    path = Path(filename)
+    if not path.exists():
+        raise ValueError("No file at {}".format(filename))
+    return path
 
 
 def main():
@@ -598,7 +605,7 @@ def main():
     strict_default.add_argument(
         "-l",
         "--local-configuration",
-        type=Path,
+        type=path_exists,
         help="Path to project root with local configuration",
     )
     strict_default.add_argument(
@@ -622,7 +629,7 @@ def main():
         nargs="*",
         help="A list of paths to local Pyre projects.",
         default=[],
-        type=Path,
+        type=path_exists,
     )
     update_global_version.add_argument(
         "--submit", action="store_true", help=argparse.SUPPRESS
@@ -639,7 +646,7 @@ def main():
     fixme_single = commands.add_parser("fixme-single")
     fixme_single.set_defaults(function=run_fixme_single)
     fixme_single.add_argument(
-        "path", help="Path to project root with local configuration", type=Path
+        "path", help="Path to project root with local configuration", type=path_exists
     )
     fixme_single.add_argument(
         "--from-stdin", action="store_true", help=argparse.SUPPRESS
@@ -657,7 +664,10 @@ def main():
     fixme_all.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
     fixme_all.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
     fixme_all.add_argument(
-        "-s", "--sandcastle", help="Create upgrade stack on sandcastle."
+        "-s",
+        "--sandcastle",
+        help="Create upgrade stack on sandcastle.",
+        type=path_exists,
     )
     fixme_all.add_argument(
         "hash", nargs="?", default=None, help="Hash of new Pyre version"

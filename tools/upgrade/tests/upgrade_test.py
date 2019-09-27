@@ -23,6 +23,7 @@ class FixmeAllTest(unittest.TestCase):
     def test_gather_local_configurations(self, _find_project_configuration) -> None:
         process = MagicMock()
         arguments = MagicMock()
+        arguments.sandcastle = None
         arguments.push_blocking_only = None
 
         def configuration_lists_equal(expected_configurations, actual_configurations):
@@ -179,6 +180,7 @@ class FixmeAllTest(unittest.TestCase):
         subprocess,
     ) -> None:
         arguments = MagicMock()
+        arguments.sandcastle = None
         arguments.lint = False
         arguments.from_stdin = False
         gather.return_value = []
@@ -290,6 +292,7 @@ class FixmeAllTest(unittest.TestCase):
     ) -> None:
         arguments = MagicMock()
         arguments.lint = False
+        arguments.sandcastle = None
         gather.return_value = [
             upgrade.Configuration(
                 Path("local/.pyre_configuration.local"), {"version": 123}
@@ -422,7 +425,7 @@ def bar(x: str) -> str:
             return json.dumps(command).encode()
 
         arguments = MagicMock()
-        arguments.sandcastle = "sandcastle.json"
+        arguments.sandcastle = Path("sandcastle.json")
         arguments.push_blocking_only = False
         with patch("builtins.open", mock_open(read_data=command_json)):
             arguments.hash = "abc"
@@ -469,6 +472,7 @@ class FixmeSingleTest(unittest.TestCase):
         self, fix, get_errors, remove_version, find_configuration, subprocess
     ) -> None:
         arguments = MagicMock()
+        arguments.sandcastle = None
         arguments.submit = True
         arguments.path = Path("local")
         get_errors.return_value = []
@@ -523,6 +527,7 @@ class FixmeTest(unittest.TestCase):
         self, stdin_errors, run_errors, path_read_text, subprocess
     ) -> None:
         arguments = MagicMock()
+        arguments.sandcastle = None
         arguments.comment = None
         arguments.max_line_length = 88
         arguments.run = False
@@ -1032,6 +1037,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         subprocess,
     ) -> None:
         arguments = MagicMock()
+        arguments.sandcastle = None
         arguments.hash = "abcd"
         arguments.paths = []
         arguments.push_blocking_only = False
@@ -1153,6 +1159,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
 class FilterErrorTest(unittest.TestCase):
     def test_filter_errors(self) -> None:
         arguments = MagicMock()
+        arguments.sandcastle = None
         arguments.only_fix_error_code = 44
         pyre_errors = [
             {
@@ -1180,6 +1187,7 @@ class DefaultStrictTest(unittest.TestCase):
     @patch.object(Path, "read_text")
     def test_add_local_unsafe(self, read_text) -> None:
         arguments = MagicMock()
+        arguments.sandcastle = None
         with patch.object(Path, "write_text") as path_write_text:
             read_text.return_value = "1\n2"
             upgrade.add_local_unsafe(arguments, "local.py")
@@ -1218,6 +1226,7 @@ class DefaultStrictTest(unittest.TestCase):
         find_configuration,
     ) -> None:
         arguments = MagicMock()
+        arguments.sandcastle = None
         arguments.local_configuration = Path("local")
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
