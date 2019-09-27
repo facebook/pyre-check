@@ -196,6 +196,9 @@ let test_updates context =
             | UnannotatedGlobalEnvironment.SimpleAssign assign ->
                 UnannotatedGlobalEnvironment.SimpleAssign
                   { assign with target_location = Location.Reference.any }
+            | UnannotatedGlobalEnvironment.TupleAssign assign ->
+                UnannotatedGlobalEnvironment.TupleAssign
+                  { assign with target_location = Location.Reference.any }
             | global -> global
           in
           UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
@@ -472,18 +475,47 @@ let test_updates context =
     ~expected_triggers:[]
     ();
 
-  (* We do not pick up tuple assignments yet, as they are not relevant for aliases *)
   assert_updates
     ~original_source:{|
       X, Y, Z = int, str, bool
     |}
     ~middle_actions:
       [
-        `Global (Reference.create "test.X", dependency, None);
-        `Global (Reference.create "test.Y", dependency, None);
-        `Global (Reference.create "test.Z", dependency, None);
+        `Global
+          ( Reference.create "test.X",
+            dependency,
+            Some
+              (UnannotatedGlobalEnvironment.TupleAssign
+                 {
+                   value = parse_single_expression "int, str, bool";
+                   index = 0;
+                   target_location = Location.Reference.any;
+                   total_length = 3;
+                 }) );
+        `Global
+          ( Reference.create "test.Y",
+            dependency,
+            Some
+              (UnannotatedGlobalEnvironment.TupleAssign
+                 {
+                   value = parse_single_expression "int, str, bool";
+                   index = 1;
+                   target_location = Location.Reference.any;
+                   total_length = 3;
+                 }) );
+        `Global
+          ( Reference.create "test.Z",
+            dependency,
+            Some
+              (UnannotatedGlobalEnvironment.TupleAssign
+                 {
+                   value = parse_single_expression "int, str, bool";
+                   index = 2;
+                   target_location = Location.Reference.any;
+                   total_length = 3;
+                 }) );
       ]
-    ~expected_triggers:[]
+    ~expected_triggers:[dependency]
     ();
 
   (* First global wins. Kind of weird behavior, but that's the current approach so sticking with it

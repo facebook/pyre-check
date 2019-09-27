@@ -14,6 +14,12 @@ type unannotated_global =
       value: Expression.t;
       target_location: Location.t;
     }
+  | TupleAssign of {
+      value: Expression.t;
+      target_location: Location.t;
+      index: int;
+      total_length: int;
+    }
   | Imported of Reference.t
   | Define of Define.t Node.t list
 [@@deriving compare, show]

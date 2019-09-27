@@ -404,7 +404,9 @@ let extract_alias { unannotated_global_environment } name ~dependency =
                 Expression.from_reference ~location:Location.Reference.any original_name
               in
               Some (TypeAlias { target = name; value }) )
-    | Define _ -> None
+    | TupleAssign _
+    | Define _ ->
+        None
   in
   let unannotated_global_environment_dependency =
     dependency >>| fun dependency -> UnannotatedGlobalEnvironment.AliasRegister dependency

@@ -19,6 +19,12 @@ type unannotated_global =
       value: Expression.t;
       target_location: Location.t;
     }
+  | TupleAssign of {
+      value: Expression.t;
+      target_location: Location.t;
+      index: int;
+      total_length: int;
+    }
   | Imported of Reference.t
   | Define of Define.t Node.t list
 [@@deriving compare, show]
@@ -359,6 +365,19 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
               (qualified, SimpleAssign { explicit_annotation = annotation; value; target_location })
               :: globals)
         |> Option.value ~default:globals
+    | Statement.Assign { Assign.target = { Node.value = Tuple elements; _ }; value; _ } ->
+        let valid =
+          let total_length = List.length elements in
+          let is_simple_name index = function
+            | { Node.value = Name name; location = target_location }
+              when Expression.is_simple_name name ->
+                qualified_name name
+                >>| fun name -> name, TupleAssign { value; target_location; index; total_length }
+            | _ -> None
+          in
+          List.mapi elements ~f:is_simple_name
+        in
+        (Option.all valid |> Option.value ~default:[]) @ globals
     | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
       when String.equal (Reference.show name) "*" ->
         (* Don't register x.* as a global when a user writes `from x import *`. *)
