@@ -139,12 +139,15 @@ module OrderImplementation = struct
               in
               List.split_while concretes ~f:is_not_keyword_only
             in
-            let single_annotation = function
-              | Type.Callable.Parameter.Anonymous { annotation; _ } -> Some annotation
+            let extract_component = function
+              | Type.Callable.Parameter.Anonymous { annotation; _ } ->
+                  Some (Type.OrderedTypes.Concrete [annotation])
               | Named { annotation; _ } when not is_lower_bound ->
                   (* Named arguments can be called positionally, but positionals can't be called
                      with a name *)
-                  Some annotation
+                  Some (Type.OrderedTypes.Concrete [annotation])
+              | Variable (Concatenation concatenation) ->
+                  Some (Type.OrderedTypes.Concatenation concatenation)
               | _ -> None
             in
             let continue =
@@ -166,9 +169,12 @@ module OrderImplementation = struct
               in
               solve_ordered_types_less_or_equal order ~left ~right ~constraints
             in
-            List.map before_first_keyword ~f:single_annotation
+            let concatenate left right =
+              left >>= fun left -> Type.OrderedTypes.concatenate ~left ~right
+            in
+            List.map before_first_keyword ~f:extract_component
             |> Option.all
-            >>| (fun concretes -> Type.OrderedTypes.Concrete concretes)
+            >>= List.fold ~init:(Some (Type.OrderedTypes.Concrete [])) ~f:concatenate
             >>| add_bound
             >>| List.concat_map ~f:continue
             |> Option.value ~default:[]

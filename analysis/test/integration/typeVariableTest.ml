@@ -1524,6 +1524,49 @@ let test_concatenation_operator context =
        `typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2], \
        typing_extensions.Literal[3]]`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Callable, TypeVar
+      from pyre_extensions.type_variable_operators import Concatenate
+      Ts = pyre_extensions.ListVariadic("Ts")
+
+      def prepend_addition_argument(f: Callable[[Ts], int]) -> Callable[[Concatenate[int, Ts]], str]:
+           def inner(x: int, *args: Ts) -> str:
+               return str(x + f( *args))
+           return inner
+
+      @prepend_addition_argument
+      def foo(x: int, y: int) -> int:
+          return x + y
+
+      reveal_type(foo)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int, int, int], \
+       str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable, TypeVar, List
+      from pyre_extensions.type_variable_operators import Concatenate
+      Ts = pyre_extensions.ListVariadic("Ts")
+      TReturn = TypeVar("TReturn")
+
+      def simple_partial_application(
+        f: Callable[[Concatenate[float, Ts]], TReturn]
+      ) -> Callable[[Ts], TReturn]:
+          def inner( *args: Ts) -> TReturn:
+              return f(42.0, *args)
+          return inner
+      @simple_partial_application
+      def foo(x: float, y: str, z: bool) -> int:
+          return 3
+
+      reveal_type(foo)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[str, bool], int]`.";
+    ];
   ()
 
 
