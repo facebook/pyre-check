@@ -352,43 +352,38 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             else
               taint
           in
-          let indirect_targets =
+          let indirect_targets, receiver =
             Interprocedural.CallResolution.get_indirect_targets
               ~resolution
               ~receiver
               ~method_name:attribute
           in
-          let arguments =
-            match indirect_targets with
-            | (_, None) :: _ -> arguments
-            | _ ->
-                let receiver = { Call.Argument.name = None; value = receiver } in
-                receiver :: arguments
+          apply_call_targets
+            ~resolution
+            ~call_expression:(Expression.Call call_expression)
+            location
+            (Option.to_list receiver @ arguments)
+            state
+            taint
+            indirect_targets
+      | None, Name (Name.Identifier _name) ->
+          (* Since we're searching for ClassType.__init__(), Pyre will correctly not insert an
+             implicit type there. However, since the actual call was ClassType(), insert the
+             implicit receiver here ourselves and ignore the value from get_indirect_targets. *)
+          let indirect_targets, _ =
+            Interprocedural.CallResolution.get_indirect_targets
+              ~resolution
+              ~receiver:callee
+              ~method_name:"__init__"
           in
           apply_call_targets
             ~resolution
             ~call_expression:(Expression.Call call_expression)
             location
-            arguments
+            ({ Call.Argument.name = None; value = callee } :: arguments)
             state
             taint
             indirect_targets
-      | None, Name (Name.Identifier _name) ->
-          let arguments =
-            let receiver = { Call.Argument.name = None; value = callee } in
-            receiver :: arguments
-          in
-          Interprocedural.CallResolution.get_indirect_targets
-            ~resolution
-            ~receiver:callee
-            ~method_name:"__init__"
-          |> apply_call_targets
-               ~resolution
-               ~call_expression:(Expression.Call call_expression)
-               location
-               arguments
-               state
-               taint
       | _ ->
           (* No targets, treat call as obscure *)
           let obscure_taint =

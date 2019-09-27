@@ -222,7 +222,10 @@ let get_indirect_targets ~resolution ~receiver ~method_name =
     Name (Name.Attribute { base = receiver; attribute = method_name; special = false })
     |> Node.create_with_default_location
   in
-  resolve_target ~resolution ~receiver_type callee
+  let indirect_targets = resolve_target ~resolution ~receiver_type callee in
+  match indirect_targets with
+  | (_, None) :: _ -> indirect_targets, None
+  | _ -> indirect_targets, Some { Call.Argument.name = None; value = receiver }
 
 
 let resolve_property_targets ~resolution ~base ~attribute =

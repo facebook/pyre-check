@@ -17,11 +17,13 @@ val get_global_targets
   global:Reference.t ->
   (Callable.t * Type.Callable.implicit option) list
 
+(* Evaluates to the list of indirect targets and the implicit self that needs to be passed in, if
+   any. *)
 val get_indirect_targets
   :  resolution:Resolution.t ->
   receiver:Expression.t ->
   method_name:Identifier.t ->
-  (Callable.t * Type.Callable.implicit option) list
+  (Callable.t * Type.Callable.implicit option) list * Call.Argument.t option
 
 (* Given an attribute self.x, returns the underlying callable if x is a @property. *)
 val resolve_property_targets

@@ -413,18 +413,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution location arguments state targets
       | None, Name (Name.Attribute { base = receiver; attribute = method_name; _ }) ->
-          let indirect_targets =
+          let indirect_targets, receiver =
             Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
           in
-          let arguments =
-            (* For static methods or class invocations of non-class methods, we shouldn't pass a
-               receiver. *)
-            match indirect_targets with
-            | (_, None) :: _ -> arguments
-            | _ ->
-                let receiver = { Call.Argument.name = None; value = receiver } in
-                receiver :: arguments
-          in
+          let arguments = Option.to_list receiver @ arguments in
           let add_index_breadcrumb_if_necessary taint =
             if not (String.equal method_name "get") then
               taint
@@ -441,15 +433,21 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           apply_call_targets ~resolution location arguments state indirect_targets
           |>> add_index_breadcrumb_if_necessary
       | None, Name (Name.Identifier _name) ->
-          let arguments =
-            let receiver = { Call.Argument.name = None; value = callee } in
-            receiver :: arguments
+          (* Since we're searching for ClassType.__init__(), Pyre will correctly not insert an
+             implicit type there. However, since the actual call was ClassType(), insert the
+             implicit receiver here ourselves and ignore the value from get_indirect_targets. *)
+          let indirect_targets, _ =
+            Interprocedural.CallResolution.get_indirect_targets
+              ~resolution
+              ~receiver:callee
+              ~method_name:"__init__"
           in
-          Interprocedural.CallResolution.get_indirect_targets
+          apply_call_targets
             ~resolution
-            ~receiver:callee
-            ~method_name:"__init__"
-          |> apply_call_targets ~resolution location arguments state
+            location
+            ({ Call.Argument.name = None; value = callee } :: arguments)
+            state
+            indirect_targets
       | _ ->
           (* No target, treat call as obscure *)
           let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
