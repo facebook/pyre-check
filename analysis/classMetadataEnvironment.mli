@@ -6,7 +6,10 @@ open Ast
 
 type t
 
-type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
+type dependency =
+  | TypeCheckSource of Reference.t
+  | AnnotateGlobal of Reference.t
+[@@deriving show, compare, sexp]
 
 module DependencyKey : Memory.DependencyKey.S with type t = dependency
 

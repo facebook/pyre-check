@@ -11,7 +11,10 @@ type t = { class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t }
 
 let create class_hierarchy_environment = { class_hierarchy_environment }
 
-type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
+type dependency =
+  | TypeCheckSource of Reference.t
+  | AnnotateGlobal of Reference.t
+[@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct
   type nonrec t = dependency

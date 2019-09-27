@@ -11,6 +11,7 @@ type dependency =
   | ClassConnect of Type.Primitive.t
   | RegisterClassMetadata of Type.Primitive.t
   | UndecoratedFunction of Reference.t
+  | AnnotateGlobal of Reference.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey : Memory.DependencyKey.S with type t = dependency

@@ -17,6 +17,7 @@ type dependency =
   | ClassConnect of Type.Primitive.t
   | RegisterClassMetadata of Type.Primitive.t
   | UndecoratedFunction of Reference.t
+  | AnnotateGlobal of Reference.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct
@@ -70,6 +71,7 @@ module ReadOnly = struct
                       AstEnvironment.RegisterClassMetadata class_name
                   | UndecoratedFunction function_name ->
                       AstEnvironment.UndecoratedFunction function_name
+                  | AnnotateGlobal name -> AnnotateGlobal name
                 in
                 dependency >>| translate
               in
@@ -98,6 +100,7 @@ module ReadOnly = struct
               UnannotatedGlobalEnvironment.RegisterClassMetadata class_name
           | UndecoratedFunction function_name ->
               UnannotatedGlobalEnvironment.UndecoratedFunction function_name
+          | AnnotateGlobal name -> AnnotateGlobal name
         in
         dependency >>| translate
       in

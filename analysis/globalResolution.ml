@@ -32,7 +32,7 @@ type type_parameters_mismatch = {
 type global = Annotation.t Node.t [@@deriving eq, show, compare]
 
 type t = {
-  dependency: Reference.t option;
+  dependency: ClassMetadataEnvironment.dependency option;
   class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t;
   class_hierarchy: (module ClassHierarchy.Handler);
   aliases: Type.Primitive.t -> Type.alias option;
@@ -87,23 +87,42 @@ module type AnnotatedClass = sig
     AnnotatedAttribute.t
 end
 
+let alias_environment_dependency = function
+  | Some (ClassMetadataEnvironment.TypeCheckSource name) ->
+      Some (AliasEnvironment.TypeCheckSource name)
+  | Some (ClassMetadataEnvironment.AnnotateGlobal name) ->
+      Some (AliasEnvironment.AnnotateGlobal name)
+  | None -> None
+
+
 let create ?dependency ~class_metadata_environment ~global (module AnnotatedClass : AnnotatedClass)
   =
   let ast_environment_dependency =
-    dependency >>| fun dependency -> AstEnvironment.TypeCheckSource dependency
+    match dependency with
+    | Some (ClassMetadataEnvironment.TypeCheckSource name) ->
+        Some (AstEnvironment.TypeCheckSource name)
+    | Some (ClassMetadataEnvironment.AnnotateGlobal name) ->
+        Some (AstEnvironment.AnnotateGlobal name)
+    | None -> None
   in
   let unannotated_global_environment_dependency =
-    dependency >>| fun dependency -> UnannotatedGlobalEnvironment.TypeCheckSource dependency
+    match dependency with
+    | Some (ClassMetadataEnvironment.TypeCheckSource name) ->
+        Some (UnannotatedGlobalEnvironment.TypeCheckSource name)
+    | Some (ClassMetadataEnvironment.AnnotateGlobal name) ->
+        Some (UnannotatedGlobalEnvironment.AnnotateGlobal name)
+    | None -> None
   in
-  let alias_environment_dependency =
-    dependency >>| fun dependency -> AliasEnvironment.TypeCheckSource dependency
-  in
+  let alias_environment_dependency = alias_environment_dependency dependency in
   let class_hierarchy_environment_dependency =
-    dependency >>| fun dependency -> ClassHierarchyEnvironment.TypeCheckSource dependency
+    match dependency with
+    | Some (ClassMetadataEnvironment.TypeCheckSource name) ->
+        Some (ClassHierarchyEnvironment.TypeCheckSource name)
+    | Some (ClassMetadataEnvironment.AnnotateGlobal name) ->
+        Some (ClassHierarchyEnvironment.AnnotateGlobal name)
+    | None -> None
   in
-  let class_metadata_environment_dependency =
-    dependency >>| fun dependency -> ClassMetadataEnvironment.TypeCheckSource dependency
-  in
+  let class_metadata_environment_dependency = dependency in
   let class_hierarchy_environment =
     ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
   in
@@ -379,7 +398,7 @@ let parse_annotation
     ({ dependency; _ } as resolution)
     expression
   =
-  let dependency = dependency >>| fun dependency -> AliasEnvironment.TypeCheckSource dependency in
+  let dependency = alias_environment_dependency dependency in
   let modify_aliases =
     if allow_invalid_type_parameters then
       Fn.id
@@ -624,12 +643,12 @@ let parse_as_list_variadic ({ aliases; _ } as resolution) name =
 
 
 let parse_as_concatenation ({ dependency; _ } as resolution) =
-  let dependency = dependency >>| fun dependency -> AliasEnvironment.TypeCheckSource dependency in
+  let dependency = alias_environment_dependency dependency in
   AliasEnvironment.ReadOnly.parse_as_concatenation (alias_environment resolution) ?dependency
 
 
 let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as resolution) =
-  let dependency = dependency >>| fun dependency -> AliasEnvironment.TypeCheckSource dependency in
+  let dependency = alias_environment_dependency dependency in
   AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
     (alias_environment resolution)
     ?dependency

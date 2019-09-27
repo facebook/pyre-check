@@ -148,8 +148,11 @@ let ast_environment environment =
 
 let resolution_implementation ?dependency environment () =
   let class_metadata_environment = class_metadata_environment environment in
+  let class_metadata_dependency =
+    dependency >>| fun dependency -> ClassMetadataEnvironment.TypeCheckSource dependency
+  in
   GlobalResolution.create
-    ?dependency
+    ?dependency:class_metadata_dependency
     ~class_metadata_environment
     ~global:(SharedMemory.Globals.get ?dependency)
     (module Annotated.Class)
