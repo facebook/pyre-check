@@ -27,7 +27,7 @@ type type_parameters_mismatch = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-type global = Annotation.t Node.t [@@deriving eq, show, compare]
+type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
 
 type t
 
