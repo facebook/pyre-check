@@ -235,12 +235,10 @@ let test_infer context =
           return 5
     |}
     ["\"Missing return annotation [3]: Returning `int` but no return type is specified.\""];
-  assert_infer
-    {|
+  assert_infer {|
       def returns_dict ():
           return {}
-    |}
-    ["\"Missing return annotation [3]: Return type is not specified.\""];
+    |} [];
   assert_infer
     ~fields:["inference.parameters"]
     {|
@@ -387,13 +385,10 @@ let test_infer context =
       return x
     |}
     [];
-  assert_infer
-    ~fields:["inference.annotation"]
-    {|
+  assert_infer ~fields:["inference.annotation"] {|
       def foo():
         return {}
-    |}
-    ["\"typing.Dict[typing.Any, typing.Any]\""];
+    |} [];
 
   (* Forward-backward iteration *)
   assert_infer
@@ -491,6 +486,27 @@ let test_infer context =
       {|[{"name":"a","type":null,"value":null},{"name":"x","type":null,"value":"15"}]|};
       {|[{"name":"a","type":null,"value":null},{"name":"x","type":"int","value":"15"}]|};
     ];
+
+  (* Don't infer Anys. *)
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      def foo(a):
+          return {}
+      |}
+    [];
+
+  (* Allow Anys on Dict[str, Any] *)
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      from typing import Any
+      def bar() -> Any:
+        pass
+      def foo():
+        return {"": bar()}
+    |}
+    [{|"None"|}; {|"typing.Dict[str, typing.Any]"|}];
 
   assert_infer
     ~fields:["inference.parameters"]

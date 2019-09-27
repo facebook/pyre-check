@@ -2913,7 +2913,11 @@ let suppress ~mode ~resolution error =
     | MissingParameterAnnotation { annotation = Some actual; _ }
     | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
     | MissingGlobalAnnotation { annotation = Some actual; _ } ->
-        Type.is_untyped actual || Type.contains_unknown actual || Type.is_undeclared actual
+        Type.is_untyped actual
+        || Type.contains_unknown actual
+        || Type.is_undeclared actual
+        || Type.Variable.convert_all_escaped_free_variables_to_anys actual
+           |> GlobalResolution.contains_prohibited_any (Resolution.global_resolution resolution)
     | _ -> true
   in
   try
