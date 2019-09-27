@@ -15,7 +15,7 @@ type unannotated_global =
       target_location: Location.t;
     }
   | Imported of Reference.t
-  | Define of Define.t Node.t
+  | Define of Define.t Node.t list
 [@@deriving compare, show]
 
 type dependency =

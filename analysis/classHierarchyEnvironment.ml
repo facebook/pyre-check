@@ -243,32 +243,36 @@ let register_define_as_undecorated_function
       name
   in
   let handle = function
-    | UnannotatedGlobalEnvironment.Define define
-      when not (Define.is_overloaded_method (Node.value define)) ->
-        let dependency =
-          Option.some_if track_dependencies (AliasEnvironment.UndecoratedFunction name)
+    | UnannotatedGlobalEnvironment.Define defines ->
+        let handle define =
+          let dependency =
+            Option.some_if track_dependencies (AliasEnvironment.UndecoratedFunction name)
+          in
+          let parse_annotation =
+            AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+              ?dependency
+              alias_environment
+          in
+          let parse_as_concatenation =
+            AliasEnvironment.ReadOnly.parse_as_concatenation ?dependency alias_environment
+          in
+          let parse_as_parameter_specification_instance_annotation =
+            AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+              ?dependency
+              alias_environment
+          in
+          let parser =
+            {
+              AnnotatedCallable.parse_annotation;
+              parse_as_concatenation;
+              parse_as_parameter_specification_instance_annotation;
+            }
+          in
+          UndecoratedFunctions.add name (AnnotatedCallable.create_overload ~parser define)
         in
-        let parse_annotation =
-          AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
-            ?dependency
-            alias_environment
-        in
-        let parse_as_concatenation =
-          AliasEnvironment.ReadOnly.parse_as_concatenation ?dependency alias_environment
-        in
-        let parse_as_parameter_specification_instance_annotation =
-          AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
-            ?dependency
-            alias_environment
-        in
-        let parser =
-          {
-            AnnotatedCallable.parse_annotation;
-            parse_as_concatenation;
-            parse_as_parameter_specification_instance_annotation;
-          }
-        in
-        UndecoratedFunctions.add name (AnnotatedCallable.create_overload ~parser define)
+        List.find defines ~f:(fun define -> not (Define.is_overloaded_method (Node.value define)))
+        >>| handle
+        |> Option.value ~default:()
     | _ -> ()
   in
   global >>| handle |> Option.value ~default:()

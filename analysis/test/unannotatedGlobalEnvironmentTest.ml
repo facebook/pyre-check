@@ -60,7 +60,11 @@ let test_simple_global_registration context =
       >>| UnannotatedGlobalEnvironment.show_unannotated_global
       |> Option.value ~default:"None"
     in
+    let location_insensitive_compare left right =
+      Option.compare UnannotatedGlobalEnvironment.compare_unannotated_global left right = 0
+    in
     assert_equal
+      ~cmp:location_insensitive_compare
       ~printer
       (UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
          read_only
@@ -97,6 +101,33 @@ let test_simple_global_registration context =
   assert_registers {|
     other.bar = 8
   |} "other.bar" None;
+  let parse_define define =
+    match parse_single_statement define ~preprocess:true ~handle:"test.py" with
+    | { Node.value = Statement.Statement.Define define; location } -> Node.create define ~location
+    | _ -> failwith "not define"
+  in
+  assert_registers
+    {|
+      def foo(x: int) -> str:
+        pass
+      def foo(x: float) -> bool:
+        pass
+    |}
+    "test.foo"
+    (Some
+       (Define
+          [
+            parse_define
+              {|
+                def foo(x: int) -> str:
+                    pass
+              |};
+            parse_define
+              {|
+                def foo(x: float) -> bool:
+                  pass
+              |};
+          ]));
   ()
 
 

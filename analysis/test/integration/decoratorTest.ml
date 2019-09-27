@@ -370,7 +370,24 @@ let test_decorators context =
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous "
       ^ "parameter to call `int.__add__` but got `str`.";
-    ]
+    ];
+
+  (* We only apply the implementation. I'm not sure why this is our strategy *)
+  assert_type_errors
+    {|
+      from typing import overload, Callable
+      @overload
+      def overloaded_decorator(f: Callable[[int], int]) -> Callable[[int], int]: ...
+      def overloaded_decorator(f: Callable[[int], float]) -> Callable[[int], object]: ...
+
+      @overloaded_decorator
+      def foo(x: int) -> int:
+        return x
+
+      reveal_type(foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], object]`."];
+  ()
 
 
 let test_check_user_decorators context =

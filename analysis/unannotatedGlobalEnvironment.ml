@@ -20,7 +20,7 @@ type unannotated_global =
       target_location: Location.t;
     }
   | Imported of Reference.t
-  | Define of Define.t Node.t
+  | Define of Define.t Node.t list
 [@@deriving compare, show]
 
 type dependency =
@@ -383,7 +383,7 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
         in
         List.rev_append (List.map ~f:import_to_global imports) globals
     | Define ({ Define.signature = { Define.Signature.name; _ }; _ } as define) ->
-        (name, Define (Node.create define ~location)) :: globals
+        (name, Define [Node.create define ~location]) :: globals
     | If { If.body; orelse; _ } ->
         (* TODO(T28732125): Properly take an intersection here. *)
         List.fold ~init:globals ~f:(visit_statement ~qualifier) (body @ orelse)
@@ -393,7 +393,26 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
     WriteOnly.set_unannotated_global ~target o;
     target
   in
+  let merge_defines unannotated_globals_alist =
+    let not_defines, defines =
+      List.partition_map unannotated_globals_alist ~f:(function
+          | name, Define defines -> `Snd (name, defines)
+          | x -> `Fst x)
+    in
+    let add_to_map sofar (name, defines) =
+      let merge_with_existing to_merge = function
+        | None -> Some to_merge
+        | Some existing -> Some (to_merge @ existing)
+      in
+      Map.change sofar name ~f:(merge_with_existing defines)
+    in
+    List.fold defines ~f:add_to_map ~init:Reference.Map.empty
+    |> Reference.Map.map ~f:(fun x -> Define x)
+    |> Reference.Map.to_alist
+    |> List.append not_defines
+  in
   List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
+  |> merge_defines
   (* Preserve existing first alias wins semantics *)
   |> List.rev
   |> List.map ~f:write

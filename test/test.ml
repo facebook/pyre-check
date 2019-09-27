@@ -138,10 +138,10 @@ let parse ?(handle = "") ?(docstring = None) ?(coerce_special_methods = false) s
   trim_extra_indentation source |> parse_untrimmed ~handle ~docstring ~coerce_special_methods
 
 
-let parse_single_statement ?(preprocess = false) ?(coerce_special_methods = false) source =
+let parse_single_statement ?(preprocess = false) ?(coerce_special_methods = false) ?handle source =
   let source =
     if preprocess then
-      Preprocessing.preprocess (parse ~coerce_special_methods source)
+      Preprocessing.preprocess (parse ?handle ~coerce_special_methods source)
     else
       parse ~coerce_special_methods source
   in
