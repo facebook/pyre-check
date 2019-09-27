@@ -127,7 +127,7 @@ let annotate_global environment name ~track_dependencies =
   in
   let register_class_meta_annotation { Node.location; _ } =
     let primitive = Type.Primitive (Reference.show name) in
-    Annotation.create_immutable ~global:true ~original:(Some Type.Top) (Type.meta primitive)
+    Annotation.create_immutable ~global:true (Type.meta primitive)
     |> Node.create ~location
     |> Globals.add name
   in

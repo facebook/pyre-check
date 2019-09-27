@@ -1262,8 +1262,12 @@ let test_check_aliases context =
       "Redefined class [50]: Class `FOO` conflicts with an imported class.";
       "Illegal annotation target [35]: Target `test.FOO.x` cannot be annotated.";
       "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
+      "Incompatible variable type [9]: FOO is declared to have type `typing.Type[FOO]` but is \
+       used as type `typing.Type[BAR]`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `BAR` has no attribute `x`.";
+      "Incompatible parameter type [6]: Expected `BAR` for 1st anonymous parameter to call `foo` \
+       but got `FOO`.";
     ];
 
   (* Locals are not aliases *)

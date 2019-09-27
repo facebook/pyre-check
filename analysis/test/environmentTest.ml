@@ -746,10 +746,7 @@ let test_populate context =
     (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.Top);
   assert_global
     "test.Class"
-    (Annotation.create_immutable
-       ~global:true
-       ~original:(Some Type.Top)
-       (Type.meta (Type.Primitive "test.Class")));
+    (Annotation.create_immutable ~global:true (Type.meta (Type.Primitive "test.Class")));
   assert_no_global "test.Class.__init__";
 
   (* Properties. *)
@@ -791,10 +788,7 @@ let test_populate context =
   in
   assert_global
     "test.A"
-    (Some
-       ( Type.Primitive "test.A"
-       |> Type.meta
-       |> Annotation.create_immutable ~global:true ~original:(Some Type.Top) ));
+    (Some (Type.Primitive "test.A" |> Type.meta |> Annotation.create_immutable ~global:true));
 
   (* Callable classes. *)
   let environment =

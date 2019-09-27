@@ -87,8 +87,6 @@ let test_simple_registration context =
       class P: pass
     |}
     "test.P"
-    (* Not sure why this is, but keeping consistent with original implementation for now *)
-    ~original:(Some Type.Top)
     (Some (Type.meta (Type.Primitive "test.P")));
   assert_registers
     {|
