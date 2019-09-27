@@ -2853,7 +2853,10 @@ module State (Context : Context) = struct
           in
           match original_annotation with
           | None -> value_is_type
-          | Some annotation -> Type.is_type_alias annotation || Type.is_meta annotation
+          | Some annotation ->
+              Type.is_type_alias annotation
+              || Type.is_meta annotation
+                 && Type.is_typed_dictionary (Type.single_parameter annotation)
         in
         (* Ensure that we actually visit the target and resolve any property calls. *)
         let _ = forward_expression ~state ~expression:target in

@@ -196,7 +196,15 @@ let test_check_assign context =
     [
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
       "Revealed type [-1]: Revealed type for `x` is `unknown`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      from typing import Type
+      def foo(x: Type[Exception]) -> Exception:
+         y: Type[Exception] = x
+         return y()
+    |}
+    []
 
 
 let () = "assign" >::: ["check_assign" >:: test_check_assign] |> Test.run
