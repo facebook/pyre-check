@@ -164,7 +164,7 @@ def compare_server_to_full(
         start_time = time()
         LOG.info("Running pyre incremental check...")
         incremental_check_output = pyre_runner.run_incremental()
-        incremental_check_time = int(time() - start_time)
+        incremental_check_time = int((time() - start_time) * 1000)
         LOG.debug(f"Stopping pyre server...")
         pyre_runner.run_stop()
         LOG.info(
@@ -174,7 +174,7 @@ def compare_server_to_full(
         LOG.info("Running pyre full check...")
         start_time = time()
         full_check_output = pyre_runner.run_check()
-        full_check_time = int(time() - start_time)
+        full_check_time = int((time() - start_time) * 1000)
         LOG.info(
             f"Pyre full check successfully finished (with {len(full_check_output)} errors)."  # noqa: line too long
         )

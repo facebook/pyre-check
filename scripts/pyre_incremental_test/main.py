@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+from . import report
 from .batch import RunnerResult, run_batch
 from .environment import SubprocessEnvironment
 from .specification import InvalidSpecificationException, Specification
@@ -46,12 +47,12 @@ def _log_statistics(results: List[RunnerResult]) -> None:
         ]
         LOG.warning(
             "Average full check running time = {:.2f} seconds".format(
-                sum(check_times) / float(len(check_times))
+                sum(check_times) / (1000 * float(len(check_times)))
             )
         )
         LOG.warning(
             "Average incremental check running time = {:.2f} seconds".format(
-                sum(incremental_times) / float(len(incremental_times))
+                sum(incremental_times) / (1000 * float(len(incremental_times)))
             )
         )
 
@@ -85,12 +86,10 @@ def main(arguments: argparse.Namespace) -> int:
         LOG.info("Done testing.")
 
         _log_statistics(results)
-        print(
-            json.dumps(
-                [result.to_json(arguments.dont_show_discrepancy) for result in results],
-                indent=2,
-            )
-        )
+        if arguments.format == report.CONSOLE:
+            report.to_console(results, arguments.dont_show_discrepancy)
+        else:
+            report.to_scuba(results, arguments.test_identifier)
     except FileNotFoundError:
         LOG.exception(f"Specification file at {specification_path} does not exist")
         return ExitCode.FAILURE
@@ -124,6 +123,19 @@ if __name__ == "__main__":
         "--dont-show-discrepancy",
         action="store_true",
         help="Do not include error discrepancy in the result when the test fails",
+    )
+    parser.add_argument(
+        "-f",
+        "--format",
+        choices=[report.CONSOLE, report.SCUBA],
+        default=report.CONSOLE,
+        help="Where to send output",
+    )
+    parser.add_argument(
+        "-i",
+        "--test-identifier",
+        type=str,
+        help="An identifier to the run that makes it easy to filter results on scuba",
     )
     parser.add_argument(
         "-v",
