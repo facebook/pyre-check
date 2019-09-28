@@ -130,7 +130,8 @@ let test_initialize_request_parses _ =
             "didSave": true
           },
           "completion": {
-            "dynamicRegistration": false
+            "dynamicRegistration": false,
+            "completionItem": { "snippetSupport": true }
           },
           "hover": { "dynamicRegistration": false },
           "signatureHelp": { "dynamicRegistration": false },
@@ -406,7 +407,7 @@ let test_initialize_request_parses _ =
 
 let test_initialize_response _ =
   assert_equal
-    ( InitializeResponse.default (int_request_id 1) ~server_uuid:"1234"
+    ( InitializeResponse.default (int_request_id 1) ~server_uuid:"1234" ~offer_autocompletion:true
     |> InitializeResponse.to_yojson
     |> Yojson.Safe.sort )
     ( {|
@@ -416,6 +417,10 @@ let test_initialize_response _ =
         "result": {
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
+            "completionProvider": {
+              "resolveProvider": false,
+              "triggerCharacters": ["."]
+            },
             "definitionProvider": true,
             "executeCommandProvider": { "commands": [ "add_pyre_annotation_1234" ] },
             "hoverProvider": true,
@@ -434,6 +439,7 @@ let test_initialize_response _ =
     ( InitializeResponse.default
         (string_request_id "961810f9-ed94-4044-a7c8-82b4135925a7")
         ~server_uuid:"1234"
+        ~offer_autocompletion:false
     |> InitializeResponse.to_yojson
     |> Yojson.Safe.sort )
     ( {|

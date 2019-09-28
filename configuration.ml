@@ -41,6 +41,7 @@ module Analysis = struct
     store_type_check_resolution: bool;
     incremental_style: incremental_style;
     include_hints: bool;
+    perform_autocompletion: bool;
   }
   [@@deriving show]
 
@@ -80,6 +81,7 @@ module Analysis = struct
       ?(store_type_check_resolution = true)
       ?(incremental_style = Shallow)
       ?(include_hints = false)
+      ?(perform_autocompletion = false)
       ()
     =
     {
@@ -116,6 +118,7 @@ module Analysis = struct
       store_type_check_resolution;
       incremental_style;
       include_hints;
+      perform_autocompletion;
     }
 
 

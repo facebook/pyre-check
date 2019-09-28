@@ -58,7 +58,7 @@ end
 module InitializeResponse : sig
   type t [@@deriving to_yojson]
 
-  val default : Types.RequestId.t -> server_uuid:string -> t
+  val default : Types.RequestId.t -> server_uuid:string -> offer_autocompletion:bool -> t
   (** default [id] [response] the server initialize response message *)
 end
 

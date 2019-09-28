@@ -15,7 +15,12 @@ type exit_code = int
 
 exception ClientExit of reason * exit_code
 
-let communicate server_socket all_uris server_uuid =
+let communicate
+    server_socket
+    all_uris
+    server_uuid
+    ~configuration:{ Configuration.Analysis.perform_autocompletion; _ }
+  =
   let display_nuclide_message message =
     ShowMessage.create LanguageServer.Types.ShowMessageParameters.InfoMessage message
     |> ShowMessage.to_yojson
@@ -37,7 +42,7 @@ let communicate server_socket all_uris server_uuid =
             Log.info "%s" message;
             failwith message)
   (* Write the initialize response *)
-  >>| InitializeResponse.default ~server_uuid
+  >>| InitializeResponse.default ~server_uuid ~offer_autocompletion:perform_autocompletion
   >>| InitializeResponse.to_yojson
   >>| LanguageServer.Protocol.write_message Out_channel.stdout
   |> ignore;
@@ -103,10 +108,15 @@ let communicate server_socket all_uris server_uuid =
   listen server_socket ()
 
 
-let run_command expected_version log_identifier local_root () =
+let run_command expected_version log_identifier perform_autocompletion local_root () =
   let local_root = Path.create_absolute local_root in
   let configuration =
-    Configuration.Analysis.create ~local_root ~log_identifier ?expected_version ()
+    Configuration.Analysis.create
+      ~local_root
+      ~log_identifier
+      ~perform_autocompletion
+      ?expected_version
+      ()
   in
   (fun () ->
     (* Log stderr to file *)
@@ -162,7 +172,7 @@ let run_command expected_version log_identifier local_root () =
             Log.error "Exiting due to missing server uuid.";
             raise (ClientExit ("Missing server UUID", 1))
       in
-      communicate server_socket all_uris server_uuid
+      communicate server_socket all_uris server_uuid ~configuration
     with
     | ClientExit (reason, exit_code) ->
         Statistics.event
@@ -194,5 +204,6 @@ let command =
            "-log-identifier"
            (optional_with_default "" string)
            ~doc:"IDENTIFIER Add given identifier to logged samples."
+      +> flag "-autocomplete" no_arg ~doc:"Process autocomplete requests."
       +> anon (maybe_with_default "." ("source-root" %: string)))
     run_command

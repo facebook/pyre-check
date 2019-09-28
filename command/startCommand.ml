@@ -448,6 +448,7 @@ let run_start_command
     store_type_check_resolution
     transitive
     new_incremental_check
+    perform_autocompletion
     verbose
     expected_version
     sections
@@ -519,6 +520,7 @@ let run_start_command
       ~local_root:(Path.create_absolute local_root)
       ~store_type_check_resolution
       ~incremental_style
+      ~perform_autocompletion
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
@@ -603,5 +605,6 @@ let command =
            ~doc:"Store extra information, needed for `types_at_position` and `types` queries."
       +> flag "-transitive" no_arg ~doc:"Calculate dependencies of changed files transitively."
       +> flag "-new-incremental-check" no_arg ~doc:"Use the new fine grain dependency incremental"
+      +> flag "-autocomplete" no_arg ~doc:"Process autocomplete requests."
       ++ Specification.base_command_line_arguments)
     run_start_command

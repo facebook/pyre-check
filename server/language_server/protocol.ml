@@ -146,7 +146,7 @@ end
 module InitializeResponse = struct
   include Types.InitializeResponse
 
-  let default id ~server_uuid =
+  let default id ~server_uuid ~offer_autocompletion =
     let open TextDocumentSyncOptions in
     {
       jsonrpc = "2.0";
@@ -168,7 +168,13 @@ module InitializeResponse = struct
                           save = Some { SaveOptions.include_text = Some false };
                         };
                     hover_provider = Some true;
-                    completion_provider = None;
+                    completion_provider =
+                      Option.some_if
+                        offer_autocompletion
+                        {
+                          CompletionOptions.resolve_provider = Some false;
+                          trigger_characters = Some ["."];
+                        };
                     signature_help_provider = None;
                     definition_provider = Some true;
                     references_provider = None;

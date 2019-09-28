@@ -34,7 +34,11 @@ let instantiate_error ~configuration ~state:{ State.environment; _ } error =
     error
 
 
-let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~request =
+let parse_lsp
+    ~configuration:({ Configuration.Analysis.perform_autocompletion; _ } as configuration)
+    ~state:{ State.symlink_targets_to_sources; _ }
+    ~request
+  =
   let open LanguageServer.Types in
   let log_method_error method_name =
     Log.error
@@ -163,6 +167,18 @@ let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~req
           None )
     | "textDocument/completion" -> (
       match CompletionRequest.of_yojson request with
+      | Ok
+          {
+            CompletionRequest.parameters =
+              Some { textDocument = { TextDocumentIdentifier.uri; _ }; position; _ };
+            id;
+            _;
+          }
+        when perform_autocompletion ->
+          uri_to_path ~uri
+          >>| fun path ->
+          CompletionRequest
+            { Protocol.CompletionRequest.id; path; position = to_pyre_position position }
       | Ok _ -> None
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
