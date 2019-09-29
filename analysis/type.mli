@@ -397,6 +397,8 @@ val is_iterable : t -> bool
 
 val is_iterator : t -> bool
 
+val is_list : t -> bool
+
 val is_meta : t -> bool
 
 val is_none : t -> bool

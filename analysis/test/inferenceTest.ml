@@ -642,7 +642,26 @@ let test_infer context =
               y["a"] = num
           return y
       |}
-    [{|"typing.Dict[str, int]"|}]
+    [{|"typing.Dict[str, int]"|}];
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+        def a():
+            x = []
+            x.append("")
+            return x
+      |}
+    [{|"typing.List[str]"|}];
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+        def a():
+            x = []
+            x.append("")
+            x.append(1)
+            return x
+      |}
+    [{|"typing.List[typing.Union[int, str]]"|}]
 
 
 let test_infer_backward context =

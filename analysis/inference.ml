@@ -253,6 +253,7 @@ module State (Context : Context) = struct
       state
     else
       let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
+      let resolve annotation = Resolution.resolve resolution annotation |> Type.weaken_literals in
       match value with
       | Statement.Expression
           {
@@ -275,17 +276,55 @@ module State (Context : Context) = struct
                 };
             _;
           }
-        when Expression.is_simple_name name
-             && Type.is_dictionary (Resolution.resolve resolution base) ->
-          let resolve annotation =
-            Resolution.resolve resolution annotation |> Type.weaken_literals
-          in
+        when Expression.is_simple_name name && Type.is_dictionary (resolve base) ->
           let resolution =
             Resolution.set_local
               resolution
               ~reference:(Expression.name_to_reference_exn name)
               ~annotation:
                 (Annotation.create (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
+          in
+          { state with resolution }
+      | Statement.Expression
+          {
+            Node.value =
+              Call
+                {
+                  callee =
+                    {
+                      Node.value =
+                        Name
+                          (Name.Attribute
+                            {
+                              attribute = "append";
+                              base = { Node.value = Name name; _ } as base;
+                              _;
+                            });
+                      _;
+                    };
+                  arguments = [{ Call.Argument.value; _ }];
+                };
+            _;
+          }
+        when Expression.is_simple_name name && Type.is_list (resolve base) ->
+          let base_element =
+            match resolve base with
+            | Type.Parametric { name = "list"; parameters = Concrete [parameter] } -> parameter
+            | base -> base
+          in
+          let annotation =
+            GlobalResolution.join
+              (Resolution.global_resolution resolution)
+              (resolve value)
+              base_element
+            |> Type.list
+            |> Annotation.create
+          in
+          let resolution =
+            Resolution.set_local
+              resolution
+              ~reference:(Expression.name_to_reference_exn name)
+              ~annotation
           in
           { state with resolution }
       | Statement.Assign
@@ -300,6 +339,16 @@ module State (Context : Context) = struct
               resolution
               ~reference:(Expression.name_to_reference_exn name)
               ~annotation:(Annotation.create (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
+          in
+          { state with resolution }
+      | Statement.Assign
+          { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
+        when Expression.is_simple_name name ->
+          let resolution =
+            Resolution.set_local
+              resolution
+              ~reference:(Expression.name_to_reference_exn name)
+              ~annotation:(Annotation.create (Type.list Type.Bottom))
           in
           { state with resolution }
       | _ ->

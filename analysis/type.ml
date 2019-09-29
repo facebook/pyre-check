@@ -514,6 +514,11 @@ let is_iterator = function
   | _ -> false
 
 
+let is_list = function
+  | Parametric { name = "list"; _ } -> true
+  | _ -> false
+
+
 let is_meta = function
   | Parametric { name = "type"; _ } -> true
   | _ -> false
@@ -3789,6 +3794,10 @@ let infer_transform annotation =
             in
             let implementation = { implementation with parameters = Defined parameters } in
             Callable { callable with implementation }
+        | Parametric { name = "typing.Dict"; parameters = Concrete [Bottom; Bottom] } ->
+            Parametric { name = "typing.Dict"; parameters = Concrete [Any; Any] }
+        | Parametric { name = "List"; parameters = Concrete [Bottom] } ->
+            Parametric { name = "typing.List"; parameters = Concrete [Any] }
         | _ -> annotation
       in
       { Transform.transformed_annotation; new_state = () }
