@@ -504,3 +504,58 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
             """,
         )
+
+        self.assert_annotations(
+            """
+            def foo() -> b.b.A: ...
+            """,
+            """
+            from c import bar, A
+
+            def foo():
+                return bar()
+            """,
+            """
+            from c import bar, A
+
+            def foo() -> A:
+                return bar()
+            """,
+        )
+        self.assert_annotations(
+            """
+            def foo() -> b.b.A: ...
+            """,
+            """
+            from a import *
+            from c import bar, A
+
+            def foo():
+                return bar()
+            """,
+            """
+            from a import *
+            from c import bar, A
+
+            def foo() -> A:
+                return bar()
+            """,
+        )
+        self.assert_annotations(
+            """
+            def foo() -> b.b.A: ...
+            """,
+            """
+            from c import A as B, bar
+
+            def foo():
+                return bar()
+            """,
+            """
+            from c import A as B, bar
+            from b.b import A
+
+            def foo() -> A:
+                return bar()
+            """,
+        )

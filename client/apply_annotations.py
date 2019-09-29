@@ -216,7 +216,7 @@ class TypeTransformer(cst.CSTTransformer):
         self.attribute_annotations = attribute_annotations
         self.toplevel_annotations: Dict[str, cst.CSTNode] = {}
         self.imports = imports
-        self.import_statements: List[cst.CSTNode] = []
+        self.import_statements: List[cst.ImportFrom] = []
 
     def _qualifier_name(self) -> str:
         return ".".join(self.qualifier)
@@ -400,19 +400,12 @@ class TypeTransformer(cst.CSTTransformer):
             del self.imports[key]
         return updated_node
 
-    def visit_ImportAlias(self, node: cst.ImportAlias) -> None:
-        self.import_statements.append(node)
-
-    def visit_ImportStar(self, node: cst.ImportStar) -> None:
-        self.import_statements.append(node)
-
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
         if not self.toplevel_annotations and not self.imports:
             return updated_node
         toplevel_statements = []
-
         # First, find the insertion point for imports
         statements_before_imports, statements_after_imports = self._split_module(
             original_node, updated_node
@@ -421,11 +414,23 @@ class TypeTransformer(cst.CSTTransformer):
         # Make sure there's at least one empty line before the first non-import
         statements_after_imports = self._insert_empty_line(statements_after_imports)
 
+        imported = set()
+        for statement in self.import_statements:
+            names = statement.names
+            if isinstance(names, cst.ImportStar):
+                continue
+            for name in names:
+                if name.asname:
+                    name = name.asname
+                if name:
+                    imported.add(_get_name_as_string(name.name))
+
         for _, import_statement in self.imports.items():
-            names = [
-                cst.ImportAlias(cst.Name(name))
-                for name in sorted(import_statement.names)
-            ]
+            # Filter out anything that has already been imported.
+            names = import_statement.names.difference(imported)
+            names = [cst.ImportAlias(cst.Name(name)) for name in sorted(names)]
+            if not names:
+                continue
             import_statement = cst.ImportFrom(
                 module=import_statement.module, names=names
             )
