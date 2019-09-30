@@ -40,7 +40,7 @@ let defining_attribute ~resolution parent_type attribute =
   >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
 
 
-let strip_optional t = if Type.is_optional t then Type.optional_value t else t
+let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
 
 let rec resolve_ignoring_optional ~resolution expression =
   match Node.value expression with

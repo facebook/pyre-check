@@ -589,7 +589,7 @@ module State (Context : Context) = struct
             Annotated.Callable.return_annotation ~define ~parser
           in
           if async then
-            Type.coroutine_value annotation
+            Type.coroutine_value annotation |> Option.value ~default:Type.Top
           else
             annotation
         in
@@ -1805,6 +1805,7 @@ module State (Context : Context) = struct
         let resolved =
           GlobalResolution.join global_resolution (Type.awaitable Type.Bottom) resolved
           |> Type.awaitable_value
+          |> Option.value ~default:Type.Top
         in
         { state; resolved; resolved_annotation = None; base = None }
     | BooleanOperator { BooleanOperator.left; operator; right } ->
@@ -2716,7 +2717,7 @@ module State (Context : Context) = struct
           Annotated.Callable.return_annotation ~define ~parser
         in
         if async then
-          Type.coroutine_value annotation
+          Type.coroutine_value annotation |> Option.value ~default:Type.Top
         else
           annotation
       in

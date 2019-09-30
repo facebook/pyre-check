@@ -1008,23 +1008,26 @@ let test_class_name _ =
 
 let test_optional_value _ =
   assert_equal
-    (Type.optional_value
-       (Type.Optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })))
+    (Option.value_exn
+       (Type.optional_value
+          (Type.Optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }))))
     (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] });
-  assert_equal
-    (Type.optional_value (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }))
-    (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })
+  assert_true
+    (Option.is_none
+       (Type.optional_value
+          (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })))
 
 
 let test_async_generator_value _ =
   assert_equal
     ~printer:(Format.asprintf "%a" Type.pp)
-    (Type.async_generator_value
-       (Type.Parametric
-          {
-            name = "typing.AsyncGenerator";
-            parameters = ![Type.integer; Type.Optional Type.Bottom];
-          }))
+    (Option.value_exn
+       (Type.async_generator_value
+          (Type.Parametric
+             {
+               name = "typing.AsyncGenerator";
+               parameters = ![Type.integer; Type.Optional Type.Bottom];
+             })))
     (Type.Parametric
        {
          name = "typing.Generator";

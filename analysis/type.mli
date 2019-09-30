@@ -450,13 +450,13 @@ val is_untyped : t -> bool
 
 val contains_variable : t -> bool
 
-val optional_value : t -> t
+val optional_value : t -> t option
 
-val async_generator_value : t -> t
+val async_generator_value : t -> t option
 
-val awaitable_value : t -> t
+val awaitable_value : t -> t option
 
-val coroutine_value : t -> t
+val coroutine_value : t -> t option
 
 val parameters : t -> t Record.OrderedTypes.record option
 

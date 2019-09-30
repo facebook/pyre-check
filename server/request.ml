@@ -782,8 +782,8 @@ let process_type_query_request
         let right = parse_and_validate ~unknown_is_top:true right in
         let right =
           match Type.coroutine_value right with
-          | Type.Top -> right
-          | unwrapped -> unwrapped
+          | None -> right
+          | Some unwrapped -> unwrapped
         in
         GlobalResolution.is_compatible_with global_resolution ~left ~right
         |> fun result ->

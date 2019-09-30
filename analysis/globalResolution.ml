@@ -442,7 +442,10 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
     |> Option.value ~default:false
   in
   match Node.value expression with
-  | Await expression -> resolve_literal resolution expression |> Type.awaitable_value
+  | Await expression ->
+      resolve_literal resolution expression
+      |> Type.awaitable_value
+      |> Option.value ~default:Type.Top
   | BooleanOperator { BooleanOperator.left; right; _ } ->
       let annotation =
         join resolution (resolve_literal resolution left) (resolve_literal resolution right)

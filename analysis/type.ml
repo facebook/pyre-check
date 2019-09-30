@@ -2266,24 +2266,25 @@ let is_variable = function
 let contains_variable = exists ~predicate:is_variable
 
 let optional_value = function
-  | Optional annotation -> annotation
-  | annotation -> annotation
+  | Optional annotation -> Some annotation
+  | _ -> None
 
 
 let async_generator_value = function
   | Parametric { name = "typing.AsyncGenerator"; parameters = Concrete [parameter; _] } ->
-      generator parameter
-  | _ -> Top
+      Some (generator parameter)
+  | _ -> None
 
 
 let awaitable_value = function
-  | Parametric { name = "typing.Awaitable"; parameters = Concrete [parameter] } -> parameter
-  | _ -> Top
+  | Parametric { name = "typing.Awaitable"; parameters = Concrete [parameter] } -> Some parameter
+  | _ -> None
 
 
 let coroutine_value = function
-  | Parametric { name = "typing.Coroutine"; parameters = Concrete [_; _; parameter] } -> parameter
-  | _ -> Top
+  | Parametric { name = "typing.Coroutine"; parameters = Concrete [_; _; parameter] } ->
+      Some parameter
+  | _ -> None
 
 
 let parameters = function
