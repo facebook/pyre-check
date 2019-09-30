@@ -661,7 +661,17 @@ let test_infer context =
             x.append(1)
             return x
       |}
-    [{|"typing.List[typing.Union[int, str]]"|}]
+    [{|"typing.List[typing.Union[int, str]]"|}];
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      def foo() -> PathLike:
+          pass
+
+      def bar():
+          return foo()
+      |}
+    [{|"PathLike"|}]
 
 
 let test_infer_backward context =

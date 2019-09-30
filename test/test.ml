@@ -457,6 +457,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class obj():
           @staticmethod
           def static_int_to_str(i: int) -> str: ...
+        class _PathLike(typing.Generic[typing.AnyStr]): ...
       |}
     in
     let builtin_stubs =
@@ -1088,6 +1089,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     );
     ( "os/__init__.pyi",
       {|
+    from builtins import _PathLike as PathLike
     from . import path as path
     import typing
     environ: typing.Dict[str, str] = ...
@@ -1097,7 +1099,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         curdir: str
         pardir: str
         sep: str
-        |};
+      |};
     ( "unittest/case.pyi",
       {|
         class TestCase:

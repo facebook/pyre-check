@@ -3799,6 +3799,11 @@ let infer_transform annotation =
             Parametric { name = "typing.Dict"; parameters = Concrete [Any; Any] }
         | Parametric { name = "List"; parameters = Concrete [Bottom] } ->
             Parametric { name = "typing.List"; parameters = Concrete [Any] }
+        (* This is broken in typeshed:
+           https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
+        | Primitive "_PathLike" -> Primitive "PathLike"
+        | Parametric { name = "_PathLike"; parameters } ->
+            Parametric { name = "PathLike"; parameters }
         | _ -> annotation
       in
       { Transform.transformed_annotation; new_state = () }
