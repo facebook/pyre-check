@@ -2201,6 +2201,33 @@ let test_concatenation_zip _ =
   ()
 
 
+let test_infer_transform _ =
+  let assert_transform ~expected ~annotation =
+    assert_equal (Type.infer_transform annotation) expected
+  in
+  assert_transform
+    ~annotation:
+      (Type.Parametric { name = "_PathLike"; parameters = Concrete [Type.Primitive "string"] })
+    ~expected:
+      (Type.Parametric { name = "PathLike"; parameters = Concrete [Type.Primitive "string"] });
+  assert_transform
+    ~annotation:
+      (Type.Parametric { name = "typing.Dict"; parameters = Concrete [Type.Bottom; Type.Bottom] })
+    ~expected:
+      (Type.Parametric { name = "typing.Dict"; parameters = Concrete [Type.Any; Type.Any] });
+  assert_transform
+    ~annotation:
+      (Type.Tuple
+         (Type.Bounded
+            (Concrete [Type.Primitive "string"; Type.Primitive "string"; Type.Primitive "string"])))
+    ~expected:(Type.Tuple (Type.Unbounded (Type.Primitive "string")));
+  assert_transform
+    ~annotation:
+      (Type.Tuple (Type.Bounded (Concrete [Type.Primitive "string"; Type.Primitive "string"])))
+    ~expected:
+      (Type.Tuple (Type.Bounded (Concrete [Type.Primitive "string"; Type.Primitive "string"])))
+
+
 let () =
   "type"
   >::: [
@@ -2247,6 +2274,7 @@ let () =
          "concatenation_operator_variable" >:: test_concatenation_operator_variable;
          "concatenation_operator_replace_variable" >:: test_concatenation_operator_replace_variable;
          "concatenation_zip" >:: test_concatenation_zip;
+         "infer_transform" >:: test_infer_transform;
        ]
   |> Test.run;
   "callable"
