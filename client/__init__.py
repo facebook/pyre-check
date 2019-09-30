@@ -111,6 +111,20 @@ def switch_root(arguments) -> None:
     local_root = find_root(arguments.original_directory, CONFIGURATION_FILE + ".local")
     global_root = find_root(arguments.original_directory, CONFIGURATION_FILE)
 
+    # Check for illegal nested local configuration.
+    if local_root:
+        parent_local_root = find_root(
+            os.path.dirname(local_root), CONFIGURATION_FILE + ".local"
+        )
+        if parent_local_root:
+            raise EnvironmentException(
+                "Local configuration is nested under another local configuration at "
+                "`{}`. Please combine the sources into a single configuration or split "
+                "the parent configuration to avoid inconsistent errors.".format(
+                    parent_local_root
+                )
+            )
+
     # If the global configuration root is deeper than local configuration, ignore local.
     if global_root and local_root and global_root.startswith(local_root):
         local_root = None

@@ -46,6 +46,13 @@ class InitTest(unittest.TestCase):
                 self.assertEqual(arguments.original_directory, "/a/b/c")
                 self.assertEqual(arguments.local_configuration, "/a/b")
 
+                with self.assertRaises(EnvironmentException):
+                    isfile.side_effect = (
+                        lambda directory: directory == "/a/b/.pyre_configuration.local"
+                        or directory == "/a/.pyre_configuration.local"
+                    )
+                    switch_root(arguments)
+
         with patch("{}.find_root".format(filesystem_name)) as mock_find_root:
             with patch("os.getcwd", return_value="/a/b"):
                 arguments.original_directory = "/a/b"
