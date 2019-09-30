@@ -86,10 +86,11 @@ def main(arguments: argparse.Namespace) -> int:
         LOG.info("Done testing.")
 
         _log_statistics(results)
-        if arguments.format == report.CONSOLE:
+        logger = arguments.logger
+        if logger is None:
             report.to_console(results, arguments.dont_show_discrepancy)
         else:
-            report.to_scuba(results, arguments.test_identifier)
+            report.to_logger(logger, results, arguments.test_identifier)
     except FileNotFoundError:
         LOG.exception(f"Specification file at {specification_path} does not exist")
         return ExitCode.FAILURE
@@ -124,18 +125,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Do not include error discrepancy in the result when the test fails",
     )
-    parser.add_argument(
-        "-f",
-        "--format",
-        choices=[report.CONSOLE, report.SCUBA],
-        default=report.CONSOLE,
-        help="Where to send output",
-    )
+    parser.add_argument("-l", "--logger", type=str, help=argparse.SUPPRESS)
     parser.add_argument(
         "-i",
         "--test-identifier",
         type=str,
-        help="An identifier to the run that makes it easy to filter results on scuba",
+        help="An identifier to the run that makes it easy to filter results",
     )
     parser.add_argument(
         "-v",

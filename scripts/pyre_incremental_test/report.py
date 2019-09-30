@@ -11,9 +11,6 @@ from .batch import RunnerResult
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-CONSOLE: str = "console"
-SCUBA: str = "scuba"
-
 
 def to_console(results: Sequence[RunnerResult], dont_show_discrepancy: bool) -> None:
     print(
@@ -23,8 +20,10 @@ def to_console(results: Sequence[RunnerResult], dont_show_discrepancy: bool) -> 
     )
 
 
-def to_scuba(results: Sequence[RunnerResult], identifier: Optional[str]) -> None:
-    def to_scuba_sample(result: RunnerResult) -> Dict[str, Any]:
+def to_logger(
+    logger: str, results: Sequence[RunnerResult], identifier: Optional[str]
+) -> None:
+    def to_sample(result: RunnerResult) -> Dict[str, Any]:
         normals = {
             "input": json.dumps(result.input.to_json()),
             "status": result.get_status(),
@@ -40,11 +39,11 @@ def to_scuba(results: Sequence[RunnerResult], identifier: Optional[str]) -> None
 
         return {"normal": normals, "int": integers}
 
-    LOG.info(f"Sending {len(results)} results to scuba...")
+    LOG.info(f"Sending {len(results)} results to {logger}...")
     for result in results:
-        sample = to_scuba_sample(result)
+        sample = to_sample(result)
         subprocess.run(
-            ["scribe_cat", "perfpipe_pyre_incremental_test_result"],
+            [logger, "perfpipe_pyre_incremental_test_result"],
             input=json.dumps(sample),
             universal_newlines=True,
         )
