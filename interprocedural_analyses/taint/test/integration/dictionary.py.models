@@ -184,6 +184,60 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{dict::__setitem__}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(key)",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.SpecialSetitemDict.__setitem__",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(key)",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 82,
+              "start": 20,
+              "end": 23
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.dictionary_assign_to_index",
     "sources": [
       {
@@ -388,6 +442,84 @@
           {
             "decl": null,
             "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.tainted_setitem",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.tainted_setitem",
+    "callable_line": 85,
+    "code": 5002,
+    "line": 86,
+    "start": 6,
+    "end": 21,
+    "filename": "dictionary.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 86,
+              "start": 6,
+              "end": 21
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "dictionary.py",
+                "line": 86,
+                "start": 6,
+                "end": 21
+              },
+              "resolves_to": [ "dictionary.SpecialSetitemDict.__setitem__" ],
+              "port": "formal(key)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
           }
         ]
       }

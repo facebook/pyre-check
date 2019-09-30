@@ -75,3 +75,13 @@ def flow_through_keywords():
     tainted_map = {"a": __test_source()}
     new_map = {**tainted_map}
     __test_sink(tainted_map["a"])
+
+
+class SpecialSetitemDict(Dict[Any, Any]):
+    def __setitem__(self, key: Any, value: Any) -> None:
+        __test_sink(key)
+
+
+def tainted_setitem(d: SpecialSetitemDict) -> SpecialSetitemDict:
+    d[__test_source()] = 1
+    return d

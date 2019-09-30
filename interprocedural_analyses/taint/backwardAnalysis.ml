@@ -413,9 +413,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call
           {
             callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }];
+              { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as
+              callee;
+            arguments =
+              [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
           } ->
+          (* Ensure we simulate the body of __setitem__ in case the function contains taint. *)
+          let state = analyze_call ~resolution location ~taint ~state callee arguments in
           (* Handle base[index] = value. *)
           let taint =
             compute_assignment_taint ~resolution base state

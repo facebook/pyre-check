@@ -515,8 +515,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call
           {
             callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ };
-            arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }];
+              { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as
+              callee;
+            arguments =
+              [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
           } ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in
           let state =
@@ -528,7 +530,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               taint
               state
           in
-          ForwardState.Tree.empty, state
+          (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body
+             is tainted. *)
+          analyze_call ~resolution ~location ~state callee arguments
       | Call { callee; arguments } -> analyze_call ~resolution ~location ~state callee arguments
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary { Dictionary.entries; keywords } ->

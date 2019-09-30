@@ -1,8 +1,8 @@
 @generated
 Call dependencies
-constant_fields.test_untracked_constant (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
-constant_fields.tracked_constant_A (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
-constant_fields.tracked_constant_B (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
-constant_fields.tracked_index (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
-constant_fields.untracked_index_a (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
-constant_fields.untracked_index_b (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
+constant_fields.test_untracked_constant (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
+constant_fields.tracked_constant_A (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
+constant_fields.tracked_constant_B (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
+constant_fields.tracked_index (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
+constant_fields.untracked_index_a (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
+constant_fields.untracked_index_b (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
