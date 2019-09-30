@@ -138,6 +138,13 @@ let recheck
     match incremental_style with
     | FineGrained ->
         let invalidated_type_checking_keys =
+          let ast_environment_dependencies =
+            AstEnvironment.UpdateResult.triggered_dependencies ast_environment_update_result
+            |> AstEnvironment.DependencyKey.KeySet.elements
+            |> List.filter_map ~f:(function
+                   | AstEnvironment.TypeCheckSource source -> Some source
+                   | _ -> None)
+          in
           let unannotated_global_environment_dependencies =
             UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
               unannotated_global_environment_update_result
@@ -161,6 +168,14 @@ let recheck
                    | ClassHierarchyEnvironment.TypeCheckSource source -> Some source
                    | _ -> None)
           in
+          let class_metadata_dependencies =
+            ClassMetadataEnvironment.UpdateResult.triggered_dependencies
+              class_metadata_update_result
+            |> ClassMetadataEnvironment.DependencyKey.KeySet.elements
+            |> List.filter_map ~f:(function
+                   | ClassMetadataEnvironment.TypeCheckSource source -> Some source
+                   | _ -> None)
+          in
           let annotated_global_environment_dependencies =
             AnnotatedGlobalEnvironment.UpdateResult.triggered_dependencies
               annotated_global_environment_update_result
@@ -168,9 +183,11 @@ let recheck
             |> List.map ~f:(fun (AnnotatedGlobalEnvironment.TypeCheckSource source) -> source)
           in
           List.fold
-            ( unannotated_global_environment_dependencies
+            ( ast_environment_dependencies
+            @ unannotated_global_environment_dependencies
             @ alias_environment_dependencies
             @ class_hierarchy_dependencies
+            @ class_metadata_dependencies
             @ annotated_global_environment_dependencies )
             ~f:Reference.Set.add
             ~init:Reference.Set.empty
