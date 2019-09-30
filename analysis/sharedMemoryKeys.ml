@@ -44,6 +44,27 @@ end
 
 module ReferenceDependencyKey = Memory.DependencyKey.Make (ReferenceKey)
 
+type dependency =
+  | TypeCheckSource of Reference.t
+  | AliasRegister of Reference.t
+  | ClassConnect of Type.Primitive.t
+  | RegisterClassMetadata of Type.Primitive.t
+  | UndecoratedFunction of Reference.t
+  | AnnotateGlobal of Reference.t
+[@@deriving show, compare, sexp]
+
+module DependencyKey = Memory.DependencyKey.Make (struct
+  type nonrec t = dependency
+
+  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
+
+  let compare = compare_dependency
+
+  type out = dependency
+
+  let from_string string = Sexp.of_string string |> dependency_of_sexp
+end)
+
 module LocationKey = struct
   type t = Location.t
 

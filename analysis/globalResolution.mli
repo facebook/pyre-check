@@ -71,7 +71,7 @@ module type AnnotatedClass = sig
 end
 
 val create
-  :  ?dependency:ClassMetadataEnvironment.dependency ->
+  :  ?dependency:SharedMemoryKeys.dependency ->
   class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
   global:(Reference.t -> global option) ->
   (module AnnotatedClass) ->

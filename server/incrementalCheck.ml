@@ -140,47 +140,49 @@ let recheck
         let invalidated_type_checking_keys =
           let ast_environment_dependencies =
             AstEnvironment.UpdateResult.triggered_dependencies ast_environment_update_result
-            |> AstEnvironment.DependencyKey.KeySet.elements
+            |> SharedMemoryKeys.DependencyKey.KeySet.elements
             |> List.filter_map ~f:(function
-                   | AstEnvironment.TypeCheckSource source -> Some source
+                   | SharedMemoryKeys.TypeCheckSource source -> Some source
                    | _ -> None)
           in
           let unannotated_global_environment_dependencies =
             UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
               unannotated_global_environment_update_result
-            |> UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
+            |> SharedMemoryKeys.DependencyKey.KeySet.elements
             |> List.filter_map ~f:(function
-                   | UnannotatedGlobalEnvironment.TypeCheckSource source -> Some source
+                   | SharedMemoryKeys.TypeCheckSource source -> Some source
                    | _ -> None)
           in
           let alias_environment_dependencies =
             AliasEnvironment.UpdateResult.triggered_dependencies alias_update_result
-            |> AliasEnvironment.DependencyKey.KeySet.elements
+            |> SharedMemoryKeys.DependencyKey.KeySet.elements
             |> List.filter_map ~f:(function
-                   | AliasEnvironment.TypeCheckSource source -> Some source
+                   | SharedMemoryKeys.TypeCheckSource source -> Some source
                    | _ -> None)
           in
           let class_hierarchy_dependencies =
             ClassHierarchyEnvironment.UpdateResult.triggered_dependencies
               class_hierarchy_update_result
-            |> ClassHierarchyEnvironment.DependencyKey.KeySet.elements
+            |> SharedMemoryKeys.DependencyKey.KeySet.elements
             |> List.filter_map ~f:(function
-                   | ClassHierarchyEnvironment.TypeCheckSource source -> Some source
+                   | SharedMemoryKeys.TypeCheckSource source -> Some source
                    | _ -> None)
           in
           let class_metadata_dependencies =
             ClassMetadataEnvironment.UpdateResult.triggered_dependencies
               class_metadata_update_result
-            |> ClassMetadataEnvironment.DependencyKey.KeySet.elements
+            |> SharedMemoryKeys.DependencyKey.KeySet.elements
             |> List.filter_map ~f:(function
-                   | ClassMetadataEnvironment.TypeCheckSource source -> Some source
+                   | SharedMemoryKeys.TypeCheckSource source -> Some source
                    | _ -> None)
           in
           let annotated_global_environment_dependencies =
             AnnotatedGlobalEnvironment.UpdateResult.triggered_dependencies
               annotated_global_environment_update_result
-            |> AnnotatedGlobalEnvironment.DependencyKey.KeySet.elements
-            |> List.map ~f:(fun (AnnotatedGlobalEnvironment.TypeCheckSource source) -> source)
+            |> SharedMemoryKeys.DependencyKey.KeySet.elements
+            |> List.filter_map ~f:(function
+                   | SharedMemoryKeys.TypeCheckSource source -> Some source
+                   | _ -> None)
           in
           List.fold
             ( ast_environment_dependencies

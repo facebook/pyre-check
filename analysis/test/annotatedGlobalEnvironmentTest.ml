@@ -214,19 +214,17 @@ let test_updates context =
            ~configuration:(ScratchProject.configuration_of project)
     in
     let printer set =
-      AnnotatedGlobalEnvironment.DependencyKey.KeySet.elements set
-      |> List.to_string ~f:AnnotatedGlobalEnvironment.show_dependency
+      SharedMemoryKeys.DependencyKey.KeySet.elements set
+      |> List.to_string ~f:SharedMemoryKeys.show_dependency
     in
-    let expected_triggers =
-      AnnotatedGlobalEnvironment.DependencyKey.KeySet.of_list expected_triggers
-    in
+    let expected_triggers = SharedMemoryKeys.DependencyKey.KeySet.of_list expected_triggers in
     assert_equal
       ~printer
       expected_triggers
       (AnnotatedGlobalEnvironment.UpdateResult.triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = AnnotatedGlobalEnvironment.TypeCheckSource (Reference.create "dep") in
+  let dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "dep") in
   assert_updates
     ~original_source:{|
       x = 7

@@ -176,19 +176,17 @@ let test_updates context =
     in
     let update_result = update ~ast_environment_update_result () in
     let printer set =
-      ClassMetadataEnvironment.DependencyKey.KeySet.elements set
-      |> List.to_string ~f:ClassMetadataEnvironment.show_dependency
+      SharedMemoryKeys.DependencyKey.KeySet.elements set
+      |> List.to_string ~f:SharedMemoryKeys.show_dependency
     in
-    let expected_triggers =
-      ClassMetadataEnvironment.DependencyKey.KeySet.of_list expected_triggers
-    in
+    let expected_triggers = SharedMemoryKeys.DependencyKey.KeySet.of_list expected_triggers in
     assert_equal
       ~printer
       expected_triggers
       (ClassMetadataEnvironment.UpdateResult.triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = ClassMetadataEnvironment.TypeCheckSource (Reference.create "dep") in
+  let dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "dep") in
   assert_updates
     ~original_sources:["test.py", {|
       class C:

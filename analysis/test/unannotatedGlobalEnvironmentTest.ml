@@ -243,19 +243,17 @@ let test_updates context =
         (Reference.Set.singleton (Reference.create "test"))
     in
     let printer set =
-      UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements set
-      |> List.to_string ~f:UnannotatedGlobalEnvironment.show_dependency
+      SharedMemoryKeys.DependencyKey.KeySet.elements set
+      |> List.to_string ~f:SharedMemoryKeys.show_dependency
     in
-    let expected_triggers =
-      UnannotatedGlobalEnvironment.DependencyKey.KeySet.of_list expected_triggers
-    in
+    let expected_triggers = SharedMemoryKeys.DependencyKey.KeySet.of_list expected_triggers in
     assert_equal
       ~printer
       expected_triggers
       (UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = UnannotatedGlobalEnvironment.TypeCheckSource (Reference.create "dep") in
+  let dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "dep") in
   (* get_class_definition *)
   assert_updates
     ~original_source:{|
@@ -378,7 +376,7 @@ let test_updates context =
     ();
 
   (* get_unannotated_global *)
-  let dependency = UnannotatedGlobalEnvironment.AliasRegister (Reference.create "dep") in
+  let dependency = SharedMemoryKeys.AliasRegister (Reference.create "dep") in
   assert_updates
     ~original_source:{|
       x: int = 7
@@ -576,12 +574,8 @@ let test_updates context =
     ();
 
   (* Keep different dependencies straight *)
-  let alias_dependency =
-    UnannotatedGlobalEnvironment.AliasRegister (Reference.create "same_dep")
-  in
-  let check_dependency =
-    UnannotatedGlobalEnvironment.TypeCheckSource (Reference.create "same_dep")
-  in
+  let alias_dependency = SharedMemoryKeys.AliasRegister (Reference.create "same_dep") in
+  let check_dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "same_dep") in
   assert_updates
     ~original_source:{|
       class Foo:
@@ -593,7 +587,7 @@ let test_updates context =
     |}
     ~middle_actions:
       [`Get ("test.Foo", alias_dependency, Some 1); `Get ("test.Foo", check_dependency, Some 1)]
-    ~expected_triggers:[check_dependency; alias_dependency]
+    ~expected_triggers:[alias_dependency; check_dependency]
     ();
   ()
 

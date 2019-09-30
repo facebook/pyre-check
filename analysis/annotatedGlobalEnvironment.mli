@@ -4,12 +4,9 @@
  * LICENSE file in the root directory of this source tree. *)
 open Ast
 open Core
+open SharedMemoryKeys
 
 type t
-
-type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
-
-module DependencyKey : Memory.DependencyKey.S with type t = dependency
 
 module ReadOnly : sig
   type t

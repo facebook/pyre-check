@@ -32,7 +32,7 @@ type type_parameters_mismatch = {
 type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
 
 type t = {
-  dependency: ClassMetadataEnvironment.dependency option;
+  dependency: SharedMemoryKeys.dependency option;
   class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t;
   class_hierarchy: (module ClassHierarchy.Handler);
   aliases: Type.Primitive.t -> Type.alias option;
@@ -87,42 +87,8 @@ module type AnnotatedClass = sig
     AnnotatedAttribute.t
 end
 
-let alias_environment_dependency = function
-  | Some (ClassMetadataEnvironment.TypeCheckSource name) ->
-      Some (AliasEnvironment.TypeCheckSource name)
-  | Some (ClassMetadataEnvironment.AnnotateGlobal name) ->
-      Some (AliasEnvironment.AnnotateGlobal name)
-  | None -> None
-
-
 let create ?dependency ~class_metadata_environment ~global (module AnnotatedClass : AnnotatedClass)
   =
-  let ast_environment_dependency =
-    match dependency with
-    | Some (ClassMetadataEnvironment.TypeCheckSource name) ->
-        Some (AstEnvironment.TypeCheckSource name)
-    | Some (ClassMetadataEnvironment.AnnotateGlobal name) ->
-        Some (AstEnvironment.AnnotateGlobal name)
-    | None -> None
-  in
-  let unannotated_global_environment_dependency =
-    match dependency with
-    | Some (ClassMetadataEnvironment.TypeCheckSource name) ->
-        Some (UnannotatedGlobalEnvironment.TypeCheckSource name)
-    | Some (ClassMetadataEnvironment.AnnotateGlobal name) ->
-        Some (UnannotatedGlobalEnvironment.AnnotateGlobal name)
-    | None -> None
-  in
-  let alias_environment_dependency = alias_environment_dependency dependency in
-  let class_hierarchy_environment_dependency =
-    match dependency with
-    | Some (ClassMetadataEnvironment.TypeCheckSource name) ->
-        Some (ClassHierarchyEnvironment.TypeCheckSource name)
-    | Some (ClassMetadataEnvironment.AnnotateGlobal name) ->
-        Some (ClassHierarchyEnvironment.AnnotateGlobal name)
-    | None -> None
-  in
-  let class_metadata_environment_dependency = dependency in
   let class_hierarchy_environment =
     ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
   in
@@ -138,20 +104,14 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
   let class_definition =
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
       unannotated_global_environment
-      ?dependency:unannotated_global_environment_dependency
+      ?dependency
   in
   let module_definition =
-    AstEnvironment.ReadOnly.get_module_metadata
-      ?dependency:ast_environment_dependency
-      ast_environment
+    AstEnvironment.ReadOnly.get_module_metadata ?dependency ast_environment
   in
-  let aliases =
-    AliasEnvironment.ReadOnly.get_alias ?dependency:alias_environment_dependency alias_environment
-  in
+  let aliases = AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment in
   let edges =
-    ClassHierarchyEnvironment.ReadOnly.get_edges
-      ?dependency:class_hierarchy_environment_dependency
-      class_hierarchy_environment
+    ClassHierarchyEnvironment.ReadOnly.get_edges ?dependency class_hierarchy_environment
   in
   let backedges = ClassHierarchyEnvironment.ReadOnly.get_backedges class_hierarchy_environment in
   let constructor ~resolution class_name =
@@ -212,13 +172,11 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
     end : ClassHierarchy.Handler )
   in
   let class_metadata =
-    ClassMetadataEnvironment.ReadOnly.get_class_metadata
-      ?dependency:class_metadata_environment_dependency
-      class_metadata_environment
+    ClassMetadataEnvironment.ReadOnly.get_class_metadata ?dependency class_metadata_environment
   in
   let undecorated_signature =
     ClassHierarchyEnvironment.ReadOnly.get_undecorated_function
-      ?dependency:class_hierarchy_environment_dependency
+      ?dependency
       class_hierarchy_environment
   in
   {
@@ -398,7 +356,6 @@ let parse_annotation
     ({ dependency; _ } as resolution)
     expression
   =
-  let dependency = alias_environment_dependency dependency in
   let modify_aliases =
     if allow_invalid_type_parameters then
       Fn.id
@@ -646,12 +603,10 @@ let parse_as_list_variadic ({ aliases; _ } as resolution) name =
 
 
 let parse_as_concatenation ({ dependency; _ } as resolution) =
-  let dependency = alias_environment_dependency dependency in
   AliasEnvironment.ReadOnly.parse_as_concatenation (alias_environment resolution) ?dependency
 
 
 let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as resolution) =
-  let dependency = alias_environment_dependency dependency in
   AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
     (alias_environment resolution)
     ?dependency

@@ -11,24 +11,6 @@ open Statement
 
 type t = { alias_environment: AliasEnvironment.ReadOnly.t }
 
-type dependency =
-  | TypeCheckSource of Reference.t
-  | RegisterClassMetadata of Type.Primitive.t
-  | AnnotateGlobal of Reference.t
-[@@deriving show, compare, sexp]
-
-module DependencyKey = Memory.DependencyKey.Make (struct
-  type nonrec t = dependency
-
-  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
-
-  let compare = compare_dependency
-
-  type out = dependency
-
-  let from_string string = Sexp.of_string string |> dependency_of_sexp
-end)
-
 let create alias_environment = { alias_environment }
 
 let unannotated_global_environment { alias_environment } =
@@ -37,10 +19,15 @@ let unannotated_global_environment { alias_environment } =
 
 module ReadOnly = struct
   type t = {
-    get_edges: ?dependency:dependency -> IndexTracker.t -> ClassHierarchy.Target.t list option;
+    get_edges:
+      ?dependency:SharedMemoryKeys.dependency ->
+      IndexTracker.t ->
+      ClassHierarchy.Target.t list option;
     get_backedges: IndexTracker.t -> ClassHierarchy.Target.Set.Tree.t option;
     get_undecorated_function:
-      ?dependency:dependency -> Reference.t -> Type.t Type.Callable.overload option;
+      ?dependency:SharedMemoryKeys.dependency ->
+      Reference.t ->
+      Type.t Type.Callable.overload option;
     alias_environment: AliasEnvironment.ReadOnly.t;
   }
 
@@ -55,7 +42,7 @@ end
 
 module UpdateResult = struct
   type t = {
-    triggered_dependencies: DependencyKey.KeySet.t;
+    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
     upstream: AliasEnvironment.UpdateResult.t;
   }
 
@@ -85,7 +72,8 @@ module BackedgeValue = struct
 end
 
 module Edges =
-  Memory.DependencyTrackedTableWithCache (IndexTracker.IndexKey) (DependencyKey) (EdgeValue)
+  Memory.DependencyTrackedTableWithCache (IndexTracker.IndexKey) (SharedMemoryKeys.DependencyKey)
+    (EdgeValue)
 module Backedges = Memory.WithCache.Make (IndexTracker.IndexKey) (BackedgeValue)
 
 module UndecoratedFunctionValue = struct
@@ -99,7 +87,9 @@ module UndecoratedFunctionValue = struct
 end
 
 module UndecoratedFunctions =
-  Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
+  Memory.DependencyTrackedTableWithCache
+    (SharedMemoryKeys.ReferenceKey)
+    (SharedMemoryKeys.DependencyKey)
     (UndecoratedFunctionValue)
 
 let edges = Edges.get ?dependency:None
@@ -143,14 +133,12 @@ let disconnect_incoming_backedges_of_successors ~indices_to_disconnect =
 let get_parents ({ alias_environment } as environment) ~track_dependencies name =
   let object_index = IndexTracker.index "object" in
   let parse_annotation =
-    let dependency = Option.some_if track_dependencies (AliasEnvironment.ClassConnect name) in
+    let dependency = Option.some_if track_dependencies (SharedMemoryKeys.ClassConnect name) in
     AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
       ?dependency
       alias_environment
   in
-  let dependency =
-    Option.some_if track_dependencies (UnannotatedGlobalEnvironment.ClassConnect name)
-  in
+  let dependency = Option.some_if track_dependencies (SharedMemoryKeys.ClassConnect name) in
   (* Register normal annotations. *)
   let extract_supertype { Expression.Call.Argument.value; _ } =
     let value = Expression.delocalize value in
@@ -236,7 +224,7 @@ let register_define_as_undecorated_function
   =
   let global =
     let dependency =
-      Option.some_if track_dependencies (UnannotatedGlobalEnvironment.UndecoratedFunction name)
+      Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
     in
     UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
       ?dependency
@@ -247,7 +235,7 @@ let register_define_as_undecorated_function
     | UnannotatedGlobalEnvironment.Define defines ->
         let handle define =
           let dependency =
-            Option.some_if track_dependencies (AliasEnvironment.UndecoratedFunction name)
+            Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
           in
           let parse_annotation =
             AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
@@ -334,10 +322,10 @@ let update environment ~scheduler ~configuration upstream_update =
   | { incremental_style = FineGrained; _ } ->
       let class_dependencies, function_dependencies =
         AliasEnvironment.UpdateResult.triggered_dependencies upstream_update
-        |> AliasEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.partition3_map ~f:(function
-               | AliasEnvironment.ClassConnect name -> `Fst name
-               | AliasEnvironment.UndecoratedFunction name -> `Snd name
+               | SharedMemoryKeys.ClassConnect name -> `Fst name
+               | UndecoratedFunction name -> `Snd name
                | _ -> `Trd None)
         |> fun (classes, functions, _) ->
         Type.Primitive.Set.of_list classes, Reference.Set.of_list functions
@@ -345,10 +333,10 @@ let update environment ~scheduler ~configuration upstream_update =
       let class_dependencies, function_dependencies =
         AliasEnvironment.UpdateResult.upstream upstream_update
         |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
-        |> UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.partition3_map ~f:(function
-               | UnannotatedGlobalEnvironment.ClassConnect name -> `Fst name
-               | UnannotatedGlobalEnvironment.UndecoratedFunction name -> `Snd name
+               | SharedMemoryKeys.ClassConnect name -> `Fst name
+               | SharedMemoryKeys.UndecoratedFunction name -> `Snd name
                | _ -> `Trd None)
         |> (fun (classes, functions, _) ->
              Type.Primitive.Set.of_list classes, Reference.Set.of_list functions)
@@ -360,10 +348,10 @@ let update environment ~scheduler ~configuration upstream_update =
         AliasEnvironment.UpdateResult.upstream upstream_update
         |> UnannotatedGlobalEnvironment.UpdateResult.upstream
         |> AstEnvironment.UpdateResult.triggered_dependencies
-        |> AstEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.partition3_map ~f:(function
-               | AstEnvironment.ClassConnect name -> `Fst name
-               | AstEnvironment.UndecoratedFunction name -> `Snd name
+               | SharedMemoryKeys.ClassConnect name -> `Fst name
+               | SharedMemoryKeys.UndecoratedFunction name -> `Snd name
                | _ -> `Trd None)
         |> (fun (classes, functions, _) ->
              Type.Primitive.Set.of_list classes, Reference.Set.of_list functions)
@@ -393,10 +381,10 @@ let update environment ~scheduler ~configuration upstream_update =
           update_undecorated_functions ~function_names_to_update ~track_dependencies:true ()
         in
         Backedges.remove_batch class_keys;
-        DependencyKey.Transaction.empty
+        SharedMemoryKeys.DependencyKey.Transaction.empty
         |> Edges.add_to_transaction ~keys:class_keys
         |> UndecoratedFunctions.add_to_transaction ~keys:function_keys
-        |> DependencyKey.Transaction.execute ~update
+        |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
       in
       { UpdateResult.triggered_dependencies; upstream = upstream_update }
   | _ ->
@@ -428,7 +416,7 @@ let update environment ~scheduler ~configuration upstream_update =
         ~track_dependencies:false
         ();
       {
-        UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
+        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
         upstream = upstream_update;
       }
 

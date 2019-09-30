@@ -27,23 +27,10 @@ let unannotated_global_environment environment =
   alias_environment environment |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-type dependency = TypeCheckSource of Reference.t [@@deriving show, compare, sexp]
-
-module DependencyKey = Memory.DependencyKey.Make (struct
-  type nonrec t = dependency
-
-  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
-
-  let compare = compare_dependency
-
-  type out = dependency
-
-  let from_string string = Sexp.of_string string |> dependency_of_sexp
-end)
-
 module ReadOnly = struct
   type t = {
-    get_global: ?dependency:dependency -> Reference.t -> GlobalResolution.global option;
+    get_global:
+      ?dependency:SharedMemoryKeys.dependency -> Reference.t -> GlobalResolution.global option;
     class_metadata_environment: ClassMetadataEnvironment.ReadOnly.t;
     hash_to_key_map: unit -> string String.Map.t;
     serialize_decoded: Memory.decodable -> (string * string * string option) option;
@@ -62,12 +49,8 @@ module ReadOnly = struct
 
   let resolution_implementation ?dependency environment =
     let class_metadata_environment = class_metadata_environment environment in
-    let class_metadata_dependency =
-      dependency
-      >>| fun (TypeCheckSource dependency) -> ClassMetadataEnvironment.TypeCheckSource dependency
-    in
     GlobalResolution.create
-      ?dependency:class_metadata_dependency
+      ?dependency
       ~class_metadata_environment
       ~global:(get_global environment ?dependency)
       (module AnnotatedClass)
@@ -100,12 +83,14 @@ module GlobalValue = struct
 end
 
 module Globals =
-  Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
+  Memory.DependencyTrackedTableWithCache
+    (SharedMemoryKeys.ReferenceKey)
+    (SharedMemoryKeys.DependencyKey)
     (GlobalValue)
 
 module UpdateResult = struct
   type t = {
-    triggered_dependencies: DependencyKey.KeySet.t;
+    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
     upstream: ClassMetadataEnvironment.UpdateResult.t;
   }
 
@@ -115,10 +100,8 @@ module UpdateResult = struct
 end
 
 let annotate_global environment name ~track_dependencies =
+  let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
   let resolution =
-    let dependency =
-      Option.some_if track_dependencies (ClassMetadataEnvironment.AnnotateGlobal name)
-    in
     GlobalResolution.create
       ?dependency
       ~class_metadata_environment:(class_metadata_environment environment)
@@ -203,9 +186,6 @@ let annotate_global environment name ~track_dependencies =
         register_assignment_global ~name ~target_location ~is_explicit:false extracted
     | _ -> ()
   in
-  let dependency =
-    Option.some_if track_dependencies (UnannotatedGlobalEnvironment.AnnotateGlobal name)
-  in
   let class_lookup =
     Reference.show name
     |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
@@ -232,18 +212,18 @@ let update environment ~scheduler ~configuration upstream_result =
   | { incremental_style = FineGrained; _ } ->
       let dependencies =
         ClassMetadataEnvironment.UpdateResult.triggered_dependencies upstream_result
-        |> ClassMetadataEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | ClassMetadataEnvironment.AnnotateGlobal name -> Some name
+               | SharedMemoryKeys.AnnotateGlobal name -> Some name
                | _ -> None)
         |> Reference.Set.of_list
       in
       let dependencies =
         ClassMetadataEnvironment.UpdateResult.upstream upstream_result
         |> ClassHierarchyEnvironment.UpdateResult.triggered_dependencies
-        |> ClassHierarchyEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | ClassHierarchyEnvironment.AnnotateGlobal name -> Some name
+               | SharedMemoryKeys.AnnotateGlobal name -> Some name
                | _ -> None)
         |> Reference.Set.of_list
         |> Set.union dependencies
@@ -252,9 +232,9 @@ let update environment ~scheduler ~configuration upstream_result =
         ClassMetadataEnvironment.UpdateResult.upstream upstream_result
         |> ClassHierarchyEnvironment.UpdateResult.upstream
         |> AliasEnvironment.UpdateResult.triggered_dependencies
-        |> AliasEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | AliasEnvironment.AnnotateGlobal name -> Some name
+               | SharedMemoryKeys.AnnotateGlobal name -> Some name
                | _ -> None)
         |> Reference.Set.of_list
         |> Set.union dependencies
@@ -264,9 +244,9 @@ let update environment ~scheduler ~configuration upstream_result =
         |> ClassHierarchyEnvironment.UpdateResult.upstream
         |> AliasEnvironment.UpdateResult.upstream
         |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
-        |> UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | UnannotatedGlobalEnvironment.AnnotateGlobal name -> Some name
+               | SharedMemoryKeys.AnnotateGlobal name -> Some name
                | _ -> None)
         |> Reference.Set.of_list
         |> Set.union dependencies
@@ -277,9 +257,9 @@ let update environment ~scheduler ~configuration upstream_result =
         |> AliasEnvironment.UpdateResult.upstream
         |> UnannotatedGlobalEnvironment.UpdateResult.upstream
         |> AstEnvironment.UpdateResult.triggered_dependencies
-        |> AstEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | AstEnvironment.AnnotateGlobal name -> Some name
+               | SharedMemoryKeys.AnnotateGlobal name -> Some name
                | _ -> None)
         |> Reference.Set.of_list
         |> Set.union dependencies
@@ -304,9 +284,9 @@ let update environment ~scheduler ~configuration upstream_result =
       let globals = Globals.KeySet.of_list (Set.to_list dependencies) in
       let (), triggered_dependencies =
         let update = update ~names_to_update ~track_dependencies:true in
-        DependencyKey.Transaction.empty
+        SharedMemoryKeys.DependencyKey.Transaction.empty
         |> Globals.add_to_transaction ~keys:globals
-        |> DependencyKey.Transaction.execute ~update
+        |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
       in
       { UpdateResult.triggered_dependencies; upstream = upstream_result }
   | _ ->
@@ -332,7 +312,7 @@ let update environment ~scheduler ~configuration upstream_result =
       Set.to_list names_to_update |> Globals.KeySet.of_list |> Globals.remove_batch;
       update ~names_to_update ~track_dependencies:false ();
       {
-        UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
+        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
         upstream = upstream_result;
       }
 

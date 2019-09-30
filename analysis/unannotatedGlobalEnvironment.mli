@@ -5,6 +5,7 @@
 
 open Ast
 open Statement
+open SharedMemoryKeys
 
 type t
 
@@ -23,17 +24,6 @@ type unannotated_global =
   | Imported of Reference.t
   | Define of Define.t Node.t list
 [@@deriving compare, show]
-
-type dependency =
-  | AliasRegister of Reference.t
-  | TypeCheckSource of Reference.t
-  | ClassConnect of Type.Primitive.t
-  | RegisterClassMetadata of Type.Primitive.t
-  | UndecoratedFunction of Reference.t
-  | AnnotateGlobal of Reference.t
-[@@deriving show, compare, sexp]
-
-module DependencyKey : Memory.DependencyKey.S with type t = dependency
 
 module ReadOnly : sig
   type t

@@ -8,15 +8,6 @@ open Core
 open Pyre
 open PyreParser
 
-type dependency =
-  | TypeCheckSource of Reference.t
-  | AliasRegister of Reference.t
-  | ClassConnect of Type.Primitive.t
-  | RegisterClassMetadata of Type.Primitive.t
-  | UndecoratedFunction of Reference.t
-  | AnnotateGlobal of Reference.t
-[@@deriving show, compare, sexp]
-
 (* We cache results of `from_empty_stub` here since module definition lookup requires shared memory
    lookup, which can be expensive *)
 module FromEmptyStubCache = struct
@@ -24,18 +15,6 @@ module FromEmptyStubCache = struct
 
   let clear () = Reference.Table.clear cache
 end
-
-module DependencyKey = Memory.DependencyKey.Make (struct
-  type nonrec t = dependency
-
-  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
-
-  let compare = compare_dependency
-
-  type out = dependency
-
-  let from_string string = Sexp.of_string string |> dependency_of_sexp
-end)
 
 type t = { module_tracker: ModuleTracker.t }
 
@@ -88,7 +67,9 @@ module SourceValue = struct
 end
 
 module Sources =
-  Memory.DependencyTrackedTableNoCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
+  Memory.DependencyTrackedTableNoCache
+    (SharedMemoryKeys.ReferenceKey)
+    (SharedMemoryKeys.DependencyKey)
     (SourceValue)
 
 module WildcardExportsValue = struct
@@ -104,7 +85,9 @@ module WildcardExportsValue = struct
 end
 
 module WildcardExports =
-  Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
+  Memory.DependencyTrackedTableWithCache
+    (SharedMemoryKeys.ReferenceKey)
+    (SharedMemoryKeys.DependencyKey)
     (WildcardExportsValue)
 
 module ModuleMetadataValue = struct
@@ -120,7 +103,9 @@ module ModuleMetadataValue = struct
 end
 
 module ModuleMetadata =
-  Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.ReferenceKey) (DependencyKey)
+  Memory.DependencyTrackedTableWithCache
+    (SharedMemoryKeys.ReferenceKey)
+    (SharedMemoryKeys.DependencyKey)
     (ModuleMetadataValue)
 
 let create module_tracker = { module_tracker }
@@ -168,11 +153,11 @@ let remove_sources _ qualifiers =
 let update_and_compute_dependencies _ ~update qualifiers =
   let keys = Sources.KeySet.of_list qualifiers in
   let (), dependency_set =
-    DependencyKey.Transaction.empty
+    SharedMemoryKeys.DependencyKey.Transaction.empty
     |> Sources.add_to_transaction ~keys
     |> WildcardExports.add_to_transaction ~keys
     |> ModuleMetadata.add_to_transaction ~keys
-    |> DependencyKey.Transaction.execute ~update
+    |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
   in
   dependency_set
 
@@ -412,7 +397,7 @@ let log_parse_errors ~syntax_error ~system_error =
 
 module UpdateResult = struct
   type t = {
-    triggered_dependencies: DependencyKey.KeySet.t;
+    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
     reparsed: Reference.t list;
     syntax_error: SourcePath.t list;
     system_error: SourcePath.t list;
@@ -428,7 +413,7 @@ module UpdateResult = struct
 
   let create_for_testing () =
     {
-      triggered_dependencies = DependencyKey.KeySet.empty;
+      triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
       reparsed = [];
       syntax_error = [];
       system_error = [];
@@ -468,7 +453,7 @@ let update
               reparse_source_paths
           in
           {
-            UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
+            UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
             reparsed = List.append updated_submodules parsed;
             syntax_error;
             system_error;
@@ -537,7 +522,7 @@ let update
       Statistics.performance ~name:"sources parsed" ~timer ();
       {
         UpdateResult.reparsed = parsed;
-        triggered_dependencies = DependencyKey.KeySet.empty;
+        triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
         syntax_error;
         system_error;
       }
@@ -603,7 +588,7 @@ module ReadOnly = struct
     get_source_path: Reference.t -> SourcePath.t option;
     is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
-    get_module_metadata: ?dependency:dependency -> Reference.t -> Module.t option;
+    get_module_metadata: ?dependency:SharedMemoryKeys.dependency -> Reference.t -> Module.t option;
   }
 
   let create

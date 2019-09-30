@@ -11,23 +11,6 @@ type t = { class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t }
 
 let create class_hierarchy_environment = { class_hierarchy_environment }
 
-type dependency =
-  | TypeCheckSource of Reference.t
-  | AnnotateGlobal of Reference.t
-[@@deriving show, compare, sexp]
-
-module DependencyKey = Memory.DependencyKey.Make (struct
-  type nonrec t = dependency
-
-  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
-
-  let compare = compare_dependency
-
-  type out = dependency
-
-  let from_string string = Sexp.of_string string |> dependency_of_sexp
-end)
-
 type class_metadata = {
   successors: Type.Primitive.t list;
   is_test: bool;
@@ -38,7 +21,8 @@ type class_metadata = {
 
 module ReadOnly = struct
   type t = {
-    get_class_metadata: ?dependency:dependency -> Type.Primitive.t -> class_metadata option;
+    get_class_metadata:
+      ?dependency:SharedMemoryKeys.dependency -> Type.Primitive.t -> class_metadata option;
     class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t;
   }
 
@@ -60,12 +44,14 @@ module ClassMetadataValue = struct
 end
 
 module ClassMetadata =
-  Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.StringKey) (DependencyKey)
+  Memory.DependencyTrackedTableWithCache
+    (SharedMemoryKeys.StringKey)
+    (SharedMemoryKeys.DependencyKey)
     (ClassMetadataValue)
 
 module UpdateResult = struct
   type t = {
-    triggered_dependencies: DependencyKey.KeySet.t;
+    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
     upstream: ClassHierarchyEnvironment.UpdateResult.t;
   }
 
@@ -76,9 +62,7 @@ end
 
 let register_class_metadata { class_hierarchy_environment } class_name ~track_dependencies =
   let unannotated_global_environment_dependency =
-    Option.some_if
-      track_dependencies
-      (UnannotatedGlobalEnvironment.RegisterClassMetadata class_name)
+    Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
   in
   let alias_environment =
     ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
@@ -90,9 +74,7 @@ let register_class_metadata { class_hierarchy_environment } class_name ~track_de
     let successors annotation =
       let linearization =
         let dependency =
-          Option.some_if
-            track_dependencies
-            (ClassHierarchyEnvironment.RegisterClassMetadata class_name)
+          Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
         in
         ClassHierarchy.method_resolution_order_linearize
           ~get_successors:
@@ -123,22 +105,13 @@ let register_class_metadata { class_hierarchy_environment } class_name ~track_de
       List.exists ~f:is_unit_test successor_classes
     in
     let extends_placeholder_stub_class =
-      let alias_environment_dependency =
-        Option.some_if track_dependencies (AliasEnvironment.RegisterClassMetadata class_name)
-      in
-      let ast_environment_dependency =
-        Option.some_if track_dependencies (AstEnvironment.RegisterClassMetadata class_name)
+      let dependency =
+        Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
       in
       definition
       |> AnnotatedBases.extends_placeholder_stub_class
-           ~aliases:
-             (AliasEnvironment.ReadOnly.get_alias
-                alias_environment
-                ?dependency:alias_environment_dependency)
-           ~from_empty_stub:
-             (AstEnvironment.ReadOnly.from_empty_stub
-                ast_environment
-                ?dependency:ast_environment_dependency)
+           ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment ?dependency)
+           ~from_empty_stub:(AstEnvironment.ReadOnly.from_empty_stub ast_environment ?dependency)
     in
     ClassMetadata.add
       class_name
@@ -163,18 +136,18 @@ let update environment ~scheduler ~configuration upstream_update =
   | { incremental_style = FineGrained; _ } ->
       let dependencies =
         ClassHierarchyEnvironment.UpdateResult.triggered_dependencies upstream_update
-        |> ClassHierarchyEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | ClassHierarchyEnvironment.RegisterClassMetadata name -> Some name
+               | SharedMemoryKeys.RegisterClassMetadata name -> Some name
                | _ -> None)
         |> Type.Primitive.Set.of_list
       in
       let dependencies =
         ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
         |> AliasEnvironment.UpdateResult.triggered_dependencies
-        |> AliasEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | AliasEnvironment.RegisterClassMetadata name -> Some name
+               | SharedMemoryKeys.RegisterClassMetadata name -> Some name
                | _ -> None)
         |> Type.Primitive.Set.of_list
         |> Type.Primitive.Set.union dependencies
@@ -183,9 +156,9 @@ let update environment ~scheduler ~configuration upstream_update =
         ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
         |> AliasEnvironment.UpdateResult.upstream
         |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
-        |> UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | UnannotatedGlobalEnvironment.RegisterClassMetadata name -> Some name
+               | SharedMemoryKeys.RegisterClassMetadata name -> Some name
                | _ -> None)
         |> Type.Primitive.Set.of_list
         |> Type.Primitive.Set.union dependencies
@@ -195,9 +168,9 @@ let update environment ~scheduler ~configuration upstream_update =
         |> AliasEnvironment.UpdateResult.upstream
         |> UnannotatedGlobalEnvironment.UpdateResult.upstream
         |> AstEnvironment.UpdateResult.triggered_dependencies
-        |> AstEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | AstEnvironment.RegisterClassMetadata name -> Some name
+               | SharedMemoryKeys.RegisterClassMetadata name -> Some name
                | _ -> None)
         |> Type.Primitive.Set.of_list
         |> Type.Primitive.Set.union dependencies
@@ -210,9 +183,9 @@ let update environment ~scheduler ~configuration upstream_update =
       in
       let (), triggered_dependencies =
         let keys = names_to_update |> Set.to_list |> ClassMetadata.KeySet.of_list in
-        DependencyKey.Transaction.empty
+        SharedMemoryKeys.DependencyKey.Transaction.empty
         |> ClassMetadata.add_to_transaction ~keys
-        |> DependencyKey.Transaction.execute
+        |> SharedMemoryKeys.DependencyKey.Transaction.execute
              ~update:(update ~names_to_update ~track_dependencies:true)
       in
       { UpdateResult.triggered_dependencies; upstream = upstream_update }
@@ -228,7 +201,7 @@ let update environment ~scheduler ~configuration upstream_update =
       update ~names_to_update:current_and_previous () ~track_dependencies:false;
 
       {
-        UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
+        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
         upstream = upstream_update;
       }
 

@@ -12,29 +12,9 @@ type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly
 
 let create unannotated_global_environment = { unannotated_global_environment }
 
-type dependency =
-  | TypeCheckSource of Reference.t
-  | ClassConnect of Type.Primitive.t
-  | RegisterClassMetadata of Type.Primitive.t
-  | UndecoratedFunction of Reference.t
-  | AnnotateGlobal of Reference.t
-[@@deriving show, compare, sexp]
-
-module DependencyKey = Memory.DependencyKey.Make (struct
-  type nonrec t = dependency
-
-  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
-
-  let compare = compare_dependency
-
-  type out = dependency
-
-  let from_string string = Sexp.of_string string |> dependency_of_sexp
-end)
-
 module ReadOnly = struct
   type t = {
-    get_alias: ?dependency:dependency -> Type.Primitive.t -> Type.alias option;
+    get_alias: ?dependency:SharedMemoryKeys.dependency -> Type.Primitive.t -> Type.alias option;
     unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly.t;
   }
 
@@ -63,18 +43,6 @@ module ReadOnly = struct
       else
         let constraints = function
           | Type.Primitive name ->
-              let dependency =
-                let translate = function
-                  | TypeCheckSource source -> AstEnvironment.TypeCheckSource source
-                  | ClassConnect class_name -> AstEnvironment.ClassConnect class_name
-                  | RegisterClassMetadata class_name ->
-                      AstEnvironment.RegisterClassMetadata class_name
-                  | UndecoratedFunction function_name ->
-                      AstEnvironment.UndecoratedFunction function_name
-                  | AnnotateGlobal name -> AnnotateGlobal name
-                in
-                dependency >>| translate
-              in
               let originates_from_empty_stub =
                 let ast_environment =
                   UnannotatedGlobalEnvironment.ReadOnly.ast_environment
@@ -92,18 +60,6 @@ module ReadOnly = struct
         Type.instantiate parsed ~constraints
     in
     let contains_untracked annotation =
-      let dependency =
-        let translate = function
-          | TypeCheckSource source -> UnannotatedGlobalEnvironment.TypeCheckSource source
-          | ClassConnect class_name -> UnannotatedGlobalEnvironment.ClassConnect class_name
-          | RegisterClassMetadata class_name ->
-              UnannotatedGlobalEnvironment.RegisterClassMetadata class_name
-          | UndecoratedFunction function_name ->
-              UnannotatedGlobalEnvironment.UndecoratedFunction function_name
-          | AnnotateGlobal name -> AnnotateGlobal name
-        in
-        dependency >>| translate
-      in
       let is_tracked =
         UnannotatedGlobalEnvironment.ReadOnly.class_exists
           unannotated_global_environment
@@ -151,7 +107,10 @@ module AliasValue = struct
 end
 
 module Aliases =
-  Memory.DependencyTrackedTableNoCache (SharedMemoryKeys.StringKey) (DependencyKey) (AliasValue)
+  Memory.DependencyTrackedTableNoCache
+    (SharedMemoryKeys.StringKey)
+    (SharedMemoryKeys.DependencyKey)
+    (AliasValue)
 
 let ast_environment { unannotated_global_environment } =
   UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
@@ -186,12 +145,6 @@ module UnresolvedAlias = struct
       ~dependency
       ()
     =
-    let unannotated_global_environment_dependency =
-      dependency >>| fun dependency -> UnannotatedGlobalEnvironment.AliasRegister dependency
-    in
-    let ast_environment_dependency =
-      dependency >>| fun dependency -> AstEnvironment.AliasRegister dependency
-    in
     let value_annotation = unchecked_resolve ~unparsed:value ~target String.Map.empty in
     let dependencies = String.Hash_set.create () in
     let module TrackedTransform = Type.Transform.Make (struct
@@ -216,22 +169,17 @@ module UnresolvedAlias = struct
                 | _ -> Reference.create "typing.Any"
               in
               let ast_environment = ast_environment environment in
-              if
-                AstEnvironment.ReadOnly.from_empty_stub
-                  ast_environment
-                  ?dependency:ast_environment_dependency
-                  reference
-              then
+              if AstEnvironment.ReadOnly.from_empty_stub ast_environment ?dependency reference then
                 (), Type.Any
               else if
                 UnannotatedGlobalEnvironment.ReadOnly.class_exists
-                  ?dependency:unannotated_global_environment_dependency
+                  ?dependency
                   unannotated_global_environment
                   primitive
                 || Option.is_some
                      (AstEnvironment.ReadOnly.get_module_metadata
                         ast_environment
-                        ?dependency:ast_environment_dependency
+                        ?dependency
                         (Reference.create primitive))
               then
                 (), annotation
@@ -411,11 +359,8 @@ let extract_alias { unannotated_global_environment } name ~dependency =
     | Define _ ->
         None
   in
-  let unannotated_global_environment_dependency =
-    dependency >>| fun dependency -> UnannotatedGlobalEnvironment.AliasRegister dependency
-  in
   UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-    ?dependency:unannotated_global_environment_dependency
+    ?dependency
     unannotated_global_environment
     name
   >>= extract_alias
@@ -427,7 +372,9 @@ let register_aliases environment global_names ~track_dependencies =
   (* We must do this in every worker because global state is not shared *)
   Type.Cache.disable ();
   let register global_name =
-    let dependency = Option.some_if track_dependencies global_name in
+    let dependency =
+      Option.some_if track_dependencies (SharedMemoryKeys.AliasRegister global_name)
+    in
     let rec get_aliased_type_for current ~visited =
       (* This means we're in a loop *)
       if Set.mem visited current then
@@ -461,7 +408,7 @@ let register_aliases environment global_names ~track_dependencies =
 
 module UpdateResult = struct
   type t = {
-    triggered_dependencies: DependencyKey.KeySet.t;
+    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
     upstream: UnannotatedGlobalEnvironment.UpdateResult.t;
   }
 
@@ -485,18 +432,18 @@ let update environment ~scheduler ~configuration upstream_update =
   match configuration with
   | { incremental_style = FineGrained; _ } ->
       let global_environment_dependencies =
-        UnannotatedGlobalEnvironment.DependencyKey.KeySet.elements
+        SharedMemoryKeys.DependencyKey.KeySet.elements
           (UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies upstream_update)
         |> List.filter_map ~f:(function
-               | UnannotatedGlobalEnvironment.AliasRegister name -> Some name
+               | SharedMemoryKeys.AliasRegister name -> Some name
                | _ -> None)
       in
       let ast_environment_dependencies =
         UnannotatedGlobalEnvironment.UpdateResult.upstream upstream_update
         |> AstEnvironment.UpdateResult.triggered_dependencies
-        |> AstEnvironment.DependencyKey.KeySet.elements
+        |> SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.filter_map ~f:(function
-               | AstEnvironment.AliasRegister name -> Some name
+               | SharedMemoryKeys.AliasRegister name -> Some name
                | _ -> None)
       in
       let dependencies = global_environment_dependencies @ ast_environment_dependencies in
@@ -509,9 +456,9 @@ let update environment ~scheduler ~configuration upstream_update =
       in
       let keys_to_invalidate = List.map dependencies ~f:Reference.show |> Aliases.KeySet.of_list in
       let (), triggered_dependencies =
-        DependencyKey.Transaction.empty
+        SharedMemoryKeys.DependencyKey.Transaction.empty
         |> Aliases.add_to_transaction ~keys:keys_to_invalidate
-        |> DependencyKey.Transaction.execute ~update:(update ~names_to_update)
+        |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update:(update ~names_to_update)
       in
       { UpdateResult.triggered_dependencies; upstream = upstream_update }
   | _ ->
@@ -527,7 +474,7 @@ let update environment ~scheduler ~configuration upstream_update =
       in
       update ~names_to_update:current_and_previous ~track_dependencies:false ();
       {
-        UpdateResult.triggered_dependencies = DependencyKey.KeySet.empty;
+        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
         upstream = upstream_update;
       }
 

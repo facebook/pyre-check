@@ -8,6 +8,7 @@ open Pyre
 open Ast
 open Statement
 open Expression
+open SharedMemoryKeys
 
 type t = { ast_environment: AstEnvironment.ReadOnly.t }
 
@@ -28,27 +29,6 @@ type unannotated_global =
   | Imported of Reference.t
   | Define of Define.t Node.t list
 [@@deriving compare, show]
-
-type dependency =
-  | AliasRegister of Reference.t
-  | TypeCheckSource of Reference.t
-  | ClassConnect of Type.Primitive.t
-  | RegisterClassMetadata of Type.Primitive.t
-  | UndecoratedFunction of Reference.t
-  | AnnotateGlobal of Reference.t
-[@@deriving show, compare, sexp]
-
-module DependencyKey = Memory.DependencyKey.Make (struct
-  type nonrec t = dependency
-
-  let to_string dependency = sexp_of_dependency dependency |> Sexp.to_string_mach
-
-  let compare = compare_dependency
-
-  type out = dependency
-
-  let from_string string = Sexp.of_string string |> dependency_of_sexp
-end)
 
 module ReadOnly = struct
   type t = {

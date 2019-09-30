@@ -1355,8 +1355,8 @@ let test_update_and_compute_dependencies context =
       |}]
       ()
   in
-  let dependency_A = AnnotatedGlobalEnvironment.TypeCheckSource (Reference.create "A") in
-  let dependency_B = AnnotatedGlobalEnvironment.TypeCheckSource (Reference.create "B") in
+  let dependency_A = SharedMemoryKeys.TypeCheckSource (Reference.create "A") in
+  let dependency_B = SharedMemoryKeys.TypeCheckSource (Reference.create "B") in
   (* Establish dependencies *)
   let untracked_global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let dependency_tracked_global_resolution_A =
@@ -1430,8 +1430,8 @@ let test_update_and_compute_dependencies context =
       |> AnnotatedGlobalEnvironment.UpdateResult.triggered_dependencies
     in
     assert_equal
-      ~printer:(List.to_string ~f:AnnotatedGlobalEnvironment.show_dependency)
-      (AnnotatedGlobalEnvironment.DependencyKey.KeySet.elements dependents)
+      ~printer:(List.to_string ~f:SharedMemoryKeys.show_dependency)
+      (SharedMemoryKeys.DependencyKey.KeySet.elements dependents)
       expected_dependencies;
     List.iter expected_state_after_update ~f:assert_state
   in

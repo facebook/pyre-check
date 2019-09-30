@@ -3,16 +3,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 open Ast
+open SharedMemoryKeys
 
 type t
-
-type dependency =
-  | TypeCheckSource of Reference.t
-  | RegisterClassMetadata of Type.Primitive.t
-  | AnnotateGlobal of Reference.t
-[@@deriving show, compare, sexp]
-
-module DependencyKey : Memory.DependencyKey.S with type t = dependency
 
 module ReadOnly : sig
   type t
