@@ -86,7 +86,7 @@ let reached_fixpoint_model_only ~iteration ~previous ~next =
 
 let join_models ~iteration left right =
   let open Result in
-  let widen_pkg
+  let join_pkg
       _
       (Pkg { kind = ModelPart left_kind; value = left })
       (Pkg { kind = ModelPart right_kind; value = right })
@@ -95,12 +95,12 @@ let join_models ~iteration left right =
     | Kind.Equal ->
         let module Analysis = (val Result.get_analysis left_kind) in
         Some (Pkg { kind = ModelPart left_kind; value = Analysis.join ~iteration left right })
-    | Kind.Distinct -> failwith "Wrong kind matched up in widen."
+    | Kind.Distinct -> failwith "Wrong kind matched up in join."
   in
   if phys_equal left right then
     left
   else
-    Kind.Map.union widen_pkg left right
+    Kind.Map.union join_pkg left right
 
 
 let widen_models ~iteration ~previous ~next =
@@ -293,12 +293,8 @@ let analyze_define
     | Sys.Break as exn -> analysis_failed step ~exn ~message:"Hit Ctrl+C" callable
     | _ as exn -> analysis_failed step ~exn ~message:"Analysis failed" callable
   in
-  widen_if_necessary
-    step
-    callable
-    ~old_model
-    ~new_model:{ Result.models = new_model; is_obscure = false }
-    results
+  let new_model = { Result.models = new_model; is_obscure = false } in
+  widen_if_necessary step callable ~old_model ~new_model results
 
 
 let strip_for_callsite model =

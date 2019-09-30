@@ -39,3 +39,15 @@ def tito():
 
 def via_getattr(x, y):
     return getattr(x, "foo", y)
+
+
+class Recursive:
+    def __init__(self, select):
+        self.init_list = [
+            f[0].target.attname for f in select[self.cols_start : self.cols_end]
+        ]
+        self.related = get_related(select)
+
+
+def get_related(select):
+    return Recursive(select)

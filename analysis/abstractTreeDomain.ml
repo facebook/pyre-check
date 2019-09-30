@@ -285,9 +285,9 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
 
 
   (** Compute join of all element components in tree t. *)
-  let rec collapse_tree element_accumulator { element; children } =
-    let element_accumulator = Element.join element_accumulator element in
-    let collapse_child ~key:_ ~data:subtree = Fn.flip collapse_tree subtree in
+  let rec collapse_tree ~widen_depth element_accumulator { element; children } =
+    let element_accumulator = element_join ~widen_depth element_accumulator element in
+    let collapse_child ~key:_ ~data:subtree = Fn.flip (collapse_tree ~widen_depth) subtree in
     LabelMap.fold ~f:collapse_child ~init:element_accumulator children
 
 
@@ -359,8 +359,10 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     if must_widen_depth widen_depth then
       (* Collapse left_tree and right_tree to achieve depth limit. Note that left_tree is a leaf,
          only if the widen depth was exactly the depth of left_tree. *)
-      let collapsed_left_element = collapse_tree Element.bottom left_tree in
-      create_leaf_option ~ancestors ~element:(collapse_tree collapsed_left_element right_tree)
+      let collapsed_left_element = collapse_tree ~widen_depth Element.bottom left_tree in
+      create_leaf_option
+        ~ancestors
+        ~element:(collapse_tree ~widen_depth collapsed_left_element right_tree)
     else
       let joined_element = element_join ~widen_depth left_element right_element in
       let { new_element; ancestors } = filter_by_ancestors ~ancestors ~element:joined_element in
@@ -754,12 +756,13 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
       { element = left_element; children = left_children }
       ~mold:{ element = mold_element; children = mold_children }
     =
-    let joined_element = element_join ~widen_depth:None left_element mold_element in
+    let widen_depth = None in
+    let joined_element = element_join ~widen_depth left_element mold_element in
     let joined_element, left_children =
       let lift_dead_branches ~key ~data (lifted, result) =
         match data with
         | `Both (left, _mold) -> lifted, LabelMap.set result ~key ~data:left
-        | `Left left -> Element.join lifted (collapse left), result
+        | `Left left -> Element.join lifted (collapse ~widen_depth left), result
         | `Right _ -> lifted, result
       in
       LabelMap.fold2
@@ -952,6 +955,8 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     in
     List.fold parts ~init:bottom ~f:create_path
 
+
+  let collapse = collapse ~widen_depth:None
 
   let prepend = create_tree
 end

@@ -88,10 +88,14 @@ module Complex = struct
 
 
   let widen set =
+    let truncate = function
+      | ReturnAccessPath p when List.length p > 3 -> ReturnAccessPath (List.take p 3)
+      | x -> x
+    in
     if List.length set > 3 then
       [ReturnAccessPath []]
     else
-      set
+      List.map ~f:truncate set
 end
 
 module ComplexSet = AbstractElementSetDomain.Make (Complex)

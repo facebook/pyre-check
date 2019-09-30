@@ -16,6 +16,16 @@
         ]
       },
       {
+        "port": "formal(select)[*][*][0][target]",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
         "port": "formal(a)",
         "taint": [
           {
@@ -76,6 +86,36 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.Recursive.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(select)[*][*][0][target]",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 49, "start": 35, "end": 41 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.get_data",
     "sources": [],
     "sinks": [],
@@ -89,6 +129,27 @@
               { "kind": "LocalReturn", "name": "[name]" },
               { "kind": "LocalReturn", "name": "[id]" }
             ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.get_related",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(select)[*][*][0][target]",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 53, "start": 21, "end": 27 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "always-via": "tito" } ]
           }
         ]
       }
