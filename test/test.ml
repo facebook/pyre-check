@@ -1506,16 +1506,20 @@ module ScratchProject = struct
         AnnotatedGlobalEnvironment.create
           (ClassMetadataEnvironment.read_only class_metadata_environment)
       in
-      let qualifiers =
-        List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
-            qualifier)
+      let resolution =
+        AnnotatedGlobalEnvironment.ReadOnly.resolution
+          (AnnotatedGlobalEnvironment.read_only environment)
       in
-      Service.Environment.populate
-        ~configuration
-        ~scheduler:(Scheduler.mock ())
-        ~update_result
-        environment
-        qualifiers;
+      if configuration.debug then
+        GlobalResolution.check_class_hierarchy_integrity resolution;
+      let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
+        AnnotatedGlobalEnvironment.update
+          environment
+          ~configuration
+          ~scheduler:(Scheduler.mock ())
+          update_result
+      in
+      Annotated.Class.AttributeCache.clear ();
       environment
     in
     sources, ast_environment, AnnotatedGlobalEnvironment.read_only environment

@@ -39,17 +39,25 @@ type expectation = {
   obscure: bool option;
 }
 
-let populate ~configuration environment sources ~update_result =
-  let qualifiers =
-    sources
-    |> List.map ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
-  in
-  Service.Environment.populate
-    ~configuration
-    ~scheduler:(Test.mock_scheduler ())
-    ~update_result
+let populate
+    ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     environment
-    qualifiers
+    ~update_result
+  =
+  let resolution =
+    AnnotatedGlobalEnvironment.ReadOnly.resolution
+      (AnnotatedGlobalEnvironment.read_only environment)
+  in
+  if debug then
+    GlobalResolution.check_class_hierarchy_integrity resolution;
+  let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
+    AnnotatedGlobalEnvironment.update
+      environment
+      ~configuration
+      ~scheduler:(Scheduler.mock ())
+      update_result
+  in
+  Annotated.Class.AttributeCache.clear ()
 
 
 let environment
@@ -75,7 +83,7 @@ let environment
     AnnotatedGlobalEnvironment.create
       (ClassMetadataEnvironment.read_only class_metadata_environment)
   in
-  populate ~configuration ~update_result environment sources;
+  populate ~configuration ~update_result environment;
   environment
 
 

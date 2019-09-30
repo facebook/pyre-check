@@ -113,32 +113,30 @@ let recheck
         ~configuration
         class_hierarchy_update_result
     in
-    let environment =
+    let annotated_global_environment =
       AnnotatedGlobalEnvironment.create
         (ClassMetadataEnvironment.read_only class_metadata_environment)
     in
+    let validate_hierarchy () =
+      let resolution =
+        AnnotatedGlobalEnvironment.ReadOnly.resolution
+          (AnnotatedGlobalEnvironment.read_only annotated_global_environment)
+      in
+      GlobalResolution.check_class_hierarchy_integrity resolution
+    in
+    if debug then
+      validate_hierarchy ();
+    let annotated_global_environment_update_result =
+      AnnotatedGlobalEnvironment.update
+        annotated_global_environment
+        ~configuration
+        ~scheduler
+        class_metadata_update_result
+    in
+    Annotated.Class.AttributeCache.clear ();
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     match incremental_style with
     | FineGrained ->
-        let annotated_global_environment_update_result =
-          Analysis.AnnotatedGlobalEnvironment.update
-            environment
-            ~configuration
-            ~scheduler
-            class_metadata_update_result
-        in
-        let check_hierarchy () =
-          let indices =
-            UnannotatedGlobalEnvironment.read_only unannotated_global_environment
-            |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
-          in
-          AnnotatedGlobalEnvironment.read_only environment
-          |> AnnotatedGlobalEnvironment.ReadOnly.resolution
-          |> GlobalResolution.class_hierarchy
-          |> ClassHierarchy.check_integrity ~indices
-        in
-        if debug then
-          check_hierarchy ();
         let invalidated_type_checking_keys =
           let unannotated_global_environment_dependencies =
             UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
@@ -201,13 +199,7 @@ let recheck
           in
           Dependencies.register_all_dependencies
             legacy_dependency_tracker
-            re_environment_build_sources;
-          Service.Environment.populate
-            ~configuration
-            ~scheduler
-            ~update_result:class_metadata_update_result
-            environment
-            invalidated_environment_qualifiers
+            re_environment_build_sources
         in
         Log.log
           ~section:`Server

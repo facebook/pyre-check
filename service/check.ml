@@ -173,7 +173,6 @@ let check
     Profiling.track_duration_and_shared_memory "Build legacy dependency graph" ~f:(fun _ ->
         build_legacy_dependencies ()) );
   let environment =
-    let populate = Environment.populate in
     let open Analysis in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
@@ -195,7 +194,11 @@ let check
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let update_result =
+    let resolution =
+      AnnotatedGlobalEnvironment.ReadOnly.resolution
+        (AnnotatedGlobalEnvironment.read_only environment)
+    in
+    let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
       let unannotated_global_environment_update =
         Profiling.track_duration_and_shared_memory
           "Build UnannotatedGlobalEnvironment"
@@ -223,23 +226,28 @@ let check
               ~configuration
               alias_environment_update)
       in
-      Profiling.track_duration_and_shared_memory "Build ClassMetadataEnvironment" ~f:(fun _ ->
-          ClassMetadataEnvironment.update
-            class_metadata_environment
-            ~scheduler
+      let class_metadata_environment_update =
+        Profiling.track_duration_and_shared_memory "Build ClassMetadataEnvironment" ~f:(fun _ ->
+            ClassMetadataEnvironment.update
+              class_metadata_environment
+              ~scheduler
+              ~configuration
+              class_hierarchy_environment_update)
+      in
+      if debug then
+        GlobalResolution.check_class_hierarchy_integrity resolution;
+      Profiling.track_duration_and_shared_memory "Build AnnotatedGlobalEnvironment" ~f:(fun _ ->
+          AnnotatedGlobalEnvironment.update
+            environment
             ~configuration
-            class_hierarchy_environment_update)
+            ~scheduler
+            class_metadata_environment_update)
     in
-    Profiling.track_duration_and_shared_memory "Build GlobalEnvironment" ~f:(fun _ ->
-        populate ~configuration ~scheduler ~update_result environment qualifiers);
+    Annotated.Class.AttributeCache.clear ();
     Statistics.performance ~name:"full environment built" ~timer ();
     let indices () =
       UnannotatedGlobalEnvironment.read_only unannotated_global_environment
       |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
-    in
-    let resolution =
-      AnnotatedGlobalEnvironment.ReadOnly.resolution
-        (AnnotatedGlobalEnvironment.read_only environment)
     in
     if Log.is_enabled `Dotty then (
       let type_order_file =

@@ -207,3 +207,5 @@ val class_hierarchy : t -> (module ClassHierarchy.Handler)
 val attribute : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option
 
 val annotation_parser : t -> AnnotatedCallable.annotation_parser
+
+val check_class_hierarchy_integrity : t -> unit

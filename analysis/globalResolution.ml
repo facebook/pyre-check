@@ -790,3 +790,13 @@ let annotation_parser resolution =
     parse_as_parameter_specification_instance_annotation =
       parse_as_parameter_specification_instance_annotation resolution;
   }
+
+
+let check_class_hierarchy_integrity ({ class_hierarchy_environment; _ } as resolution) =
+  let indices =
+    class_hierarchy_environment
+    |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+    |> AliasEnvironment.ReadOnly.unannotated_global_environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+  in
+  class_hierarchy resolution |> ClassHierarchy.check_integrity ~indices
