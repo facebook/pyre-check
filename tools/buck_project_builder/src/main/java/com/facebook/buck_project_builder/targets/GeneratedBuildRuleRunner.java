@@ -1,17 +1,21 @@
 package com.facebook.buck_project_builder.targets;
 
 import com.facebook.buck_project_builder.CommandLine;
+import com.facebook.buck_project_builder.SimpleLogger;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import javax.annotation.Nullable;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 final class GeneratedBuildRuleRunner {
@@ -34,21 +38,31 @@ final class GeneratedBuildRuleRunner {
   }
 
   static boolean runBuilderCommand(String builderCommand, String buckRoot) throws IOException {
-    Process process =
-        new ProcessBuilder()
-            .command(org.apache.commons.exec.CommandLine.parse(builderCommand).toStrings())
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .redirectOutput(ProcessBuilder.Redirect.to(new File("/dev/null")))
-            .directory(new File(buckRoot))
-            .start();
+    @Nullable File outputFile = null;
     try {
+      outputFile = File.createTempFile("temp", null);
+      if (outputFile != null) {
+        outputFile.deleteOnExit();
+      }
+      Process process =
+        new ProcessBuilder()
+        .command(org.apache.commons.exec.CommandLine.parse(builderCommand).toStrings())
+        .redirectError(ProcessBuilder.Redirect.INHERIT)
+        .redirectOutput(ProcessBuilder.Redirect.to(outputFile))
+        .directory(new File(buckRoot))
+        .start();
       boolean hasTimedOut = !process.waitFor(60, TimeUnit.SECONDS);
       if (hasTimedOut) {
         return false;
       }
       return process.exitValue() == 0;
-    } catch (InterruptedException interruptedException) {
-      throw new IOException(interruptedException.getMessage());
+    } catch (IOException | InterruptedException exception) {
+      if (outputFile != null) {
+        String output = new String(Files.readAllBytes(outputFile.toPath()));
+        output = exception.getMessage() + output;
+        throw new IOException(output);
+      }
+      throw new IOException(exception.getMessage());
     }
   }
 

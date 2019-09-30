@@ -116,6 +116,7 @@ public final class ThriftLibraryTarget {
       return GeneratedBuildRuleRunner.runBuilderCommand(this.command, buckRoot);
     } catch (IOException exception) {
       SimpleLogger.error("Failed to build: " + this.sources);
+      SimpleLogger.error(exception.getMessage());
       return false;
     }
   }
