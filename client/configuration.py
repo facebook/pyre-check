@@ -211,6 +211,8 @@ class Configuration:
                 local_configuration, fail_on_error=True
             )
 
+        self.autocomplete = False
+
         # Order matters. The values will only be updated if a field is None.
         self._read(CONFIGURATION_FILE)
         self._override_version_hash()
@@ -502,6 +504,8 @@ class Configuration:
                 use_buck_builder = configuration.consume("use_buck_builder")
                 if self._use_buck_builder is None:
                     self._use_buck_builder = use_buck_builder
+
+                self.autocomplete = configuration.consume("autocomplete", default=False)
 
                 # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()

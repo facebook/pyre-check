@@ -529,3 +529,23 @@ class StartTest(unittest.TestCase):
                 "-new-incremental-check",
             ],
         )
+        arguments = mock_arguments()
+        configuration = mock_configuration(version_hash="hash")
+        configuration.autocomplete = True
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-project-root",
+                ".",
+                "-workers",
+                "5",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2,path3",
+                "-autocomplete",
+            ],
+        )

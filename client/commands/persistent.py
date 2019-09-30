@@ -35,12 +35,15 @@ class Persistent(Command):
         self._call_client(command=self.NAME, capture_output=False).check()
 
     def _flags(self) -> List[str]:
-        return [
+        flags = [
             "-log-identifier",
             '"{}"'.format(self._analysis_directory.get_root()),
             "-expected-binary-version",
             self._configuration.version_hash,
         ]
+        if self._configuration.autocomplete:
+            flags.append("-autocomplete")
+        return flags
 
     @classmethod
     def _initialize_response(cls, request_id: int) -> str:

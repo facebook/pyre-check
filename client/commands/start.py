@@ -179,4 +179,7 @@ class Start(Reporting):
         elif self._incremental_style == IncrementalStyle.FINE_GRAINED:
             flags.append("-new-incremental-check")
 
+        if self._configuration.autocomplete:
+            flags.append("-autocomplete")
+
         return flags

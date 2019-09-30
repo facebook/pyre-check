@@ -476,6 +476,13 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.extensions, [".a", ".b"])
 
+        json_load.side_effect = [{}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.autocomplete, False)
+        json_load.side_effect = [{"autocomplete": True}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.autocomplete, True)
+
     @patch("os.path.isfile")
     @patch("os.path.isdir")
     @patch("os.path.exists")
