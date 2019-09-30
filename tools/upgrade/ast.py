@@ -31,7 +31,12 @@ def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], Non
             # AST after changes
             file_modifier(arguments, filename, *args)
             new_text = path.read_text()
-            ast_after = ast.parse(new_text)
+            try:
+                ast_after = ast.parse(new_text)
+            except Exception as e:
+                LOG.warning("Could not parse file %s. Undoing.", filename)
+                LOG.warning(e)
+                path.write_text(text)
 
             # Undo changes if AST does not match
             if not ast.dump(ast_before) == ast.dump(ast_after):

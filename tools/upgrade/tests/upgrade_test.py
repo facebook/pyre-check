@@ -398,6 +398,25 @@ def bar(x: str) -> str:
             file.close()
             self.assertEqual(updated_contents, contents)
 
+        with tempfile.NamedTemporaryFile(delete=False) as file:
+            contents = """
+def foo(x: int) -> str:
+    return str(x)
+
+def bar(x: str) -> str:
+     if True \
+        and True \
+        and foo(x):
+         return x
+"""
+            file.write(contents.encode())
+            upgrade.fix_file(mock_arguments, file.name, error_map)
+
+            file.seek(0)
+            updated_contents = file.read().decode()
+            file.close()
+            self.assertEqual(updated_contents, contents)
+
     @patch("subprocess.run")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch.object(upgrade.Configuration, "find_project_configuration")
