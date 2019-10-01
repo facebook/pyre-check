@@ -2139,12 +2139,19 @@ module State (Context : Context) = struct
             (state, joined_annotation)
             { Annotated.Class.instantiated; class_definition; class_attributes }
           =
-          let resolve_method ?(class_attributes = false) class_definition instantiated name =
+          let resolve_method
+              ?(class_attributes = false)
+              ?(special_method = false)
+              class_definition
+              instantiated
+              name
+            =
             Annotated.Class.attribute
               ~transitive:true
               ~class_attributes
               class_definition
               ~resolution:global_resolution
+              ~special_method
               ~name
               ~instantiated
             |> Annotated.Attribute.annotation
@@ -2155,7 +2162,12 @@ module State (Context : Context) = struct
           in
           let { state; resolved; _ } =
             match
-              resolve_method ~class_attributes class_definition instantiated "__contains__"
+              resolve_method
+                ~class_attributes
+                ~special_method:true
+                class_definition
+                instantiated
+                "__contains__"
             with
             | Some resolved ->
                 let callee =
@@ -2175,7 +2187,14 @@ module State (Context : Context) = struct
                   ~resolved
                   ~arguments:[{ Call.Argument.name = None; value = left }]
             | None -> (
-              match resolve_method ~class_attributes class_definition instantiated "__iter__" with
+              match
+                resolve_method
+                  ~class_attributes
+                  ~special_method:true
+                  class_definition
+                  instantiated
+                  "__iter__"
+              with
               | Some iter_callable ->
                   let forward_callable =
                     let callee =

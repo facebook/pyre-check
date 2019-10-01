@@ -66,6 +66,19 @@ let test_enumeration_methods context =
         reveal_type(b)
     |}
     ["Revealed type [-1]: Revealed type for `b` is `bool`."];
+  ();
+  assert_type_errors
+    {|
+      import enum
+      class StringEnum(enum.Enum, str):
+        pass
+      class Foo(StringEnum):
+        A = "A"
+      def f() -> None:
+        b = "other" in Foo
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `bool`."];
   ()
 
 
