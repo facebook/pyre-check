@@ -42,22 +42,7 @@ module ReadOnly = struct
 end
 
 module HierarchyReadOnly = ReadOnly
-
-module UpdateResult = struct
-  type t = {
-    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
-    upstream: AliasEnvironment.UpdateResult.t;
-  }
-
-  type upstream = AliasEnvironment.UpdateResult.t
-
-  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-  let upstream { upstream; _ } = upstream
-
-  let all_triggered_dependencies { triggered_dependencies; upstream } =
-    triggered_dependencies :: AliasEnvironment.UpdateResult.all_triggered_dependencies upstream
-end
+module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 module EdgeValue = struct
   type t = ClassHierarchy.Target.t list [@@deriving compare]
@@ -374,7 +359,7 @@ let update environment ~scheduler ~configuration upstream_update =
         |> UndecoratedFunctions.add_to_transaction ~keys:function_keys
         |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
       in
-      { UpdateResult.triggered_dependencies; upstream = upstream_update }
+      UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
   | _ ->
       let upstream = AliasEnvironment.UpdateResult.upstream upstream_update in
       let current_and_previous_classes =
@@ -403,10 +388,9 @@ let update environment ~scheduler ~configuration upstream_update =
         ~function_names_to_update:current_and_previous_undecorated_functions
         ~track_dependencies:false
         ();
-      {
-        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
-        upstream = upstream_update;
-      }
+      UpdateResult.create
+        ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
+        ~upstream:upstream_update
 
 
 let read_only { alias_environment } =

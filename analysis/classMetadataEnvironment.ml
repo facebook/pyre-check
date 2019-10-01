@@ -51,23 +51,7 @@ module ClassMetadata =
     (SharedMemoryKeys.StringKey)
     (SharedMemoryKeys.DependencyKey)
     (ClassMetadataValue)
-
-module UpdateResult = struct
-  type t = {
-    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
-    upstream: ClassHierarchyEnvironment.UpdateResult.t;
-  }
-
-  type upstream = ClassHierarchyEnvironment.UpdateResult.t
-
-  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-  let upstream { upstream; _ } = upstream
-
-  let all_triggered_dependencies { triggered_dependencies; upstream } =
-    triggered_dependencies
-    :: ClassHierarchyEnvironment.UpdateResult.all_triggered_dependencies upstream
-end
+module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 let register_class_metadata { class_hierarchy_environment } class_name ~track_dependencies =
   let unannotated_global_environment_dependency =
@@ -167,7 +151,7 @@ let update environment ~scheduler ~configuration upstream_update =
         |> SharedMemoryKeys.DependencyKey.Transaction.execute
              ~update:(update ~names_to_update ~track_dependencies:true)
       in
-      { UpdateResult.triggered_dependencies; upstream = upstream_update }
+      UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
   | _ ->
       let current_and_previous =
         ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
@@ -179,10 +163,9 @@ let update environment ~scheduler ~configuration upstream_update =
       |> ClassMetadata.remove_batch;
       update ~names_to_update:current_and_previous () ~track_dependencies:false;
 
-      {
-        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
-        upstream = upstream_update;
-      }
+      UpdateResult.create
+        ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
+        ~upstream:upstream_update
 
 
 let read_only { class_hierarchy_environment } =

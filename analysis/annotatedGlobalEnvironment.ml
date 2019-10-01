@@ -90,23 +90,7 @@ module Globals =
     (SharedMemoryKeys.ReferenceKey)
     (SharedMemoryKeys.DependencyKey)
     (GlobalValue)
-
-module UpdateResult = struct
-  type t = {
-    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
-    upstream: ClassMetadataEnvironment.UpdateResult.t;
-  }
-
-  type upstream = ClassMetadataEnvironment.UpdateResult.t
-
-  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-  let upstream { upstream; _ } = upstream
-
-  let all_triggered_dependencies { triggered_dependencies; upstream } =
-    triggered_dependencies
-    :: ClassMetadataEnvironment.UpdateResult.all_triggered_dependencies upstream
-end
+module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 let annotate_global environment name ~track_dependencies =
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
@@ -254,7 +238,7 @@ let update environment ~scheduler ~configuration upstream_result =
         |> Globals.add_to_transaction ~keys:globals
         |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
       in
-      { UpdateResult.triggered_dependencies; upstream = upstream_result }
+      UpdateResult.create ~triggered_dependencies ~upstream:upstream_result
   | _ ->
       let upstream =
         ClassMetadataEnvironment.UpdateResult.upstream upstream_result
@@ -277,10 +261,9 @@ let update environment ~scheduler ~configuration upstream_result =
       in
       Set.to_list names_to_update |> Globals.KeySet.of_list |> Globals.remove_batch;
       update ~names_to_update ~track_dependencies:false ();
-      {
-        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
-        upstream = upstream_result;
-      }
+      UpdateResult.create
+        ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
+        ~upstream:upstream_result
 
 
 let read_only ({ class_metadata_environment } as environment) =

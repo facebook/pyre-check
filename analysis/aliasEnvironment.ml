@@ -409,22 +409,7 @@ let register_aliases environment global_names ~track_dependencies =
   Type.Cache.enable ()
 
 
-module UpdateResult = struct
-  type t = {
-    triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
-    upstream: UnannotatedGlobalEnvironment.UpdateResult.t;
-  }
-
-  type upstream = UnannotatedGlobalEnvironment.UpdateResult.t
-
-  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-  let upstream { upstream; _ } = upstream
-
-  let all_triggered_dependencies { triggered_dependencies; upstream } =
-    triggered_dependencies
-    :: UnannotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies upstream
-end
+module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 let update environment ~scheduler ~configuration upstream_update =
   let update ~names_to_update ?(track_dependencies = true) () =
@@ -466,7 +451,7 @@ let update environment ~scheduler ~configuration upstream_update =
         |> Aliases.add_to_transaction ~keys:keys_to_invalidate
         |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update:(update ~names_to_update)
       in
-      { UpdateResult.triggered_dependencies; upstream = upstream_update }
+      UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
   | _ ->
       let current_and_previous =
         UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
@@ -479,10 +464,9 @@ let update environment ~scheduler ~configuration upstream_update =
         |> Aliases.remove_batch
       in
       update ~names_to_update:current_and_previous ~track_dependencies:false ();
-      {
-        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
-        upstream = upstream_update;
-      }
+      UpdateResult.create
+        ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
+        ~upstream:upstream_update
 
 
 let read_only { unannotated_global_environment } =

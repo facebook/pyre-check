@@ -18,7 +18,7 @@ module type PreviousEnvironment = sig
   module UpdateResult : PreviousUpdateResult
 end
 
-module UpdateResult = struct
+module UpdateResult : sig
   module type S = sig
     include PreviousUpdateResult
 
@@ -27,24 +27,13 @@ module UpdateResult = struct
     val upstream : t -> upstream
   end
 
-  module Make (PreviousEnvironment : PreviousEnvironment) = struct
-    type upstream = PreviousEnvironment.UpdateResult.t
+  module Make (PreviousEnvironment : PreviousEnvironment) : sig
+    include S with type upstream = PreviousEnvironment.UpdateResult.t
 
-    type t = {
-      upstream: upstream;
-      triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
-    }
-
-    let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-    let upstream { upstream; _ } = upstream
-
-    let all_triggered_dependencies { triggered_dependencies; upstream } =
-      triggered_dependencies
-      :: PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
-
-
-    let create ~triggered_dependencies ~upstream = { triggered_dependencies; upstream }
+    val create
+      :  triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.t ->
+      upstream:upstream ->
+      t
   end
 end
 
