@@ -211,58 +211,31 @@ let update environment ~scheduler ~configuration upstream_result =
   match configuration with
   | { incremental_style = FineGrained; _ } ->
       let dependencies =
-        ClassMetadataEnvironment.UpdateResult.triggered_dependencies upstream_result
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | SharedMemoryKeys.AnnotateGlobal name -> Some name
-               | _ -> None)
+        let filter =
+          List.filter_map ~f:(function
+              | SharedMemoryKeys.AnnotateGlobal name -> Some name
+              | _ -> None)
+        in
+        [
+          ClassMetadataEnvironment.UpdateResult.triggered_dependencies upstream_result;
+          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
+          |> ClassHierarchyEnvironment.UpdateResult.triggered_dependencies;
+          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
+          |> ClassHierarchyEnvironment.UpdateResult.upstream
+          |> AliasEnvironment.UpdateResult.triggered_dependencies;
+          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
+          |> ClassHierarchyEnvironment.UpdateResult.upstream
+          |> AliasEnvironment.UpdateResult.upstream
+          |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies;
+          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
+          |> ClassHierarchyEnvironment.UpdateResult.upstream
+          |> AliasEnvironment.UpdateResult.upstream
+          |> UnannotatedGlobalEnvironment.UpdateResult.upstream
+          |> AstEnvironment.UpdateResult.triggered_dependencies;
+        ]
+        |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
+        |> List.concat_map ~f:filter
         |> Reference.Set.of_list
-      in
-      let dependencies =
-        ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-        |> ClassHierarchyEnvironment.UpdateResult.triggered_dependencies
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | SharedMemoryKeys.AnnotateGlobal name -> Some name
-               | _ -> None)
-        |> Reference.Set.of_list
-        |> Set.union dependencies
-      in
-      let dependencies =
-        ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-        |> ClassHierarchyEnvironment.UpdateResult.upstream
-        |> AliasEnvironment.UpdateResult.triggered_dependencies
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | SharedMemoryKeys.AnnotateGlobal name -> Some name
-               | _ -> None)
-        |> Reference.Set.of_list
-        |> Set.union dependencies
-      in
-      let dependencies =
-        ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-        |> ClassHierarchyEnvironment.UpdateResult.upstream
-        |> AliasEnvironment.UpdateResult.upstream
-        |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | SharedMemoryKeys.AnnotateGlobal name -> Some name
-               | _ -> None)
-        |> Reference.Set.of_list
-        |> Set.union dependencies
-      in
-      let dependencies =
-        ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-        |> ClassHierarchyEnvironment.UpdateResult.upstream
-        |> AliasEnvironment.UpdateResult.upstream
-        |> UnannotatedGlobalEnvironment.UpdateResult.upstream
-        |> AstEnvironment.UpdateResult.triggered_dependencies
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | SharedMemoryKeys.AnnotateGlobal name -> Some name
-               | _ -> None)
-        |> Reference.Set.of_list
-        |> Set.union dependencies
       in
       let names_to_update =
         let upstream =

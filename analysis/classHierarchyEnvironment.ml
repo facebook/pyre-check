@@ -321,43 +321,30 @@ let update environment ~scheduler ~configuration upstream_update =
   match configuration with
   | { incremental_style = FineGrained; _ } ->
       let class_dependencies, function_dependencies =
-        AliasEnvironment.UpdateResult.triggered_dependencies upstream_update
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.partition3_map ~f:(function
-               | SharedMemoryKeys.ClassConnect name -> `Fst name
-               | UndecoratedFunction name -> `Snd name
-               | _ -> `Trd None)
-        |> fun (classes, functions, _) ->
-        Type.Primitive.Set.of_list classes, Reference.Set.of_list functions
-      in
-      let class_dependencies, function_dependencies =
-        AliasEnvironment.UpdateResult.upstream upstream_update
-        |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.partition3_map ~f:(function
-               | SharedMemoryKeys.ClassConnect name -> `Fst name
-               | SharedMemoryKeys.UndecoratedFunction name -> `Snd name
-               | _ -> `Trd None)
-        |> (fun (classes, functions, _) ->
-             Type.Primitive.Set.of_list classes, Reference.Set.of_list functions)
-        |> fun (classes, functions) ->
-        ( Type.Primitive.Set.union class_dependencies classes,
-          Reference.Set.union function_dependencies functions )
-      in
-      let class_dependencies, function_dependencies =
-        AliasEnvironment.UpdateResult.upstream upstream_update
-        |> UnannotatedGlobalEnvironment.UpdateResult.upstream
-        |> AstEnvironment.UpdateResult.triggered_dependencies
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.partition3_map ~f:(function
-               | SharedMemoryKeys.ClassConnect name -> `Fst name
-               | SharedMemoryKeys.UndecoratedFunction name -> `Snd name
-               | _ -> `Trd None)
-        |> (fun (classes, functions, _) ->
-             Type.Primitive.Set.of_list classes, Reference.Set.of_list functions)
-        |> fun (classes, functions) ->
-        ( Type.Primitive.Set.union class_dependencies classes,
-          Reference.Set.union function_dependencies functions )
+        let filter dependencies =
+          let classes, functions, _ =
+            List.partition3_map dependencies ~f:(function
+                | SharedMemoryKeys.ClassConnect name -> `Fst name
+                | UndecoratedFunction name -> `Snd name
+                | _ -> `Trd None)
+          in
+          classes, functions
+        in
+        let add_to_sets (classes_sofar, functions_sofar) (classes, functions) =
+          ( List.fold classes ~f:Set.add ~init:classes_sofar,
+            List.fold functions ~f:Set.add ~init:functions_sofar )
+        in
+        [
+          AliasEnvironment.UpdateResult.triggered_dependencies upstream_update;
+          AliasEnvironment.UpdateResult.upstream upstream_update
+          |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies;
+          AliasEnvironment.UpdateResult.upstream upstream_update
+          |> UnannotatedGlobalEnvironment.UpdateResult.upstream
+          |> AstEnvironment.UpdateResult.triggered_dependencies;
+        ]
+        |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
+        |> List.map ~f:filter
+        |> List.fold ~f:add_to_sets ~init:(Type.Primitive.Set.empty, Reference.Set.empty)
       in
       let class_names_to_update =
         AliasEnvironment.UpdateResult.upstream upstream_update

@@ -431,31 +431,32 @@ let update environment ~scheduler ~configuration upstream_update =
   in
   match configuration with
   | { incremental_style = FineGrained; _ } ->
-      let global_environment_dependencies =
-        SharedMemoryKeys.DependencyKey.KeySet.elements
-          (UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies upstream_update)
-        |> List.filter_map ~f:(function
-               | SharedMemoryKeys.AliasRegister name -> Some name
-               | _ -> None)
-      in
-      let ast_environment_dependencies =
-        UnannotatedGlobalEnvironment.UpdateResult.upstream upstream_update
-        |> AstEnvironment.UpdateResult.triggered_dependencies
-        |> SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.filter_map ~f:(function
-               | SharedMemoryKeys.AliasRegister name -> Some name
-               | _ -> None)
-      in
-      let dependencies = global_environment_dependencies @ ast_environment_dependencies in
-      let names_to_update =
-        dependencies
-        |> List.fold
-             ~f:Set.add
-             ~init:
-               (UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals upstream_update)
-      in
-      let keys_to_invalidate = List.map dependencies ~f:Reference.show |> Aliases.KeySet.of_list in
       let (), triggered_dependencies =
+        let upstream_dependencies =
+          let filter =
+            List.filter_map ~f:(function
+                | SharedMemoryKeys.AliasRegister name -> Some name
+                | _ -> None)
+          in
+          [
+            UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies upstream_update;
+            UnannotatedGlobalEnvironment.UpdateResult.upstream upstream_update
+            |> AstEnvironment.UpdateResult.triggered_dependencies;
+          ]
+          |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
+          |> List.concat_map ~f:filter
+        in
+        let names_to_update =
+          upstream_dependencies
+          |> List.fold
+               ~f:Set.add
+               ~init:
+                 (UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals
+                    upstream_update)
+        in
+        let keys_to_invalidate =
+          List.map upstream_dependencies ~f:Reference.show |> Aliases.KeySet.of_list
+        in
         SharedMemoryKeys.DependencyKey.Transaction.empty
         |> Aliases.add_to_transaction ~keys:keys_to_invalidate
         |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update:(update ~names_to_update)
