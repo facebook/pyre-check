@@ -1427,7 +1427,7 @@ let test_update_and_compute_dependencies context =
         ~configuration:(ScratchProject.configuration_of project)
         ~scheduler:(Test.mock_scheduler ())
         update_result
-      |> AnnotatedGlobalEnvironment.UpdateResult.triggered_dependencies
+      |> AnnotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies
     in
     assert_equal
       ~printer:(List.to_string ~f:SharedMemoryKeys.show_dependency)

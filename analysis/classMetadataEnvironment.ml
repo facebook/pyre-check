@@ -6,6 +6,7 @@
 open Core
 open Ast
 open Pyre
+module PreviousEnvironment = ClassHierarchyEnvironment
 
 type t = { class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t }
 
@@ -31,6 +32,8 @@ module ReadOnly = struct
   let get_class_metadata { get_class_metadata; _ } = get_class_metadata
 end
 
+module MetadataReadOnly = ReadOnly
+
 module ClassMetadataValue = struct
   type t = class_metadata
 
@@ -55,7 +58,9 @@ module UpdateResult = struct
     upstream: ClassHierarchyEnvironment.UpdateResult.t;
   }
 
-  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+  type upstream = ClassHierarchyEnvironment.UpdateResult.t
+
+  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
 

@@ -5,9 +5,7 @@
 open Ast
 open SharedMemoryKeys
 
-type t
-
-module ReadOnly : sig
+module HierarchyReadOnly : sig
   type t
 
   val get_edges
@@ -27,23 +25,7 @@ module ReadOnly : sig
   val alias_environment : t -> AliasEnvironment.ReadOnly.t
 end
 
-val create : AliasEnvironment.ReadOnly.t -> t
-
-module UpdateResult : sig
-  type t
-
-  val triggered_dependencies : t -> DependencyKey.KeySet.t
-
-  val upstream : t -> AliasEnvironment.UpdateResult.t
-
-  val all_triggered_dependencies : t -> DependencyKey.KeySet.t list
-end
-
-val update
-  :  t ->
-  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  AliasEnvironment.UpdateResult.t ->
-  UpdateResult.t
-
-val read_only : t -> ReadOnly.t
+include
+  Environment.S
+    with module ReadOnly = HierarchyReadOnly
+     and module PreviousEnvironment = AliasEnvironment

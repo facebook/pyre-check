@@ -221,7 +221,7 @@ let test_updates context =
     assert_equal
       ~printer
       expected_triggers
-      (AnnotatedGlobalEnvironment.UpdateResult.triggered_dependencies update_result);
+      (AnnotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
   let dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "dep") in

@@ -488,12 +488,15 @@ module UpdateResult = struct
     Reference.Set.union current_unannotated_globals previous_unannotated_globals
 
 
-  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
 
   let all_triggered_dependencies { triggered_dependencies; upstream; _ } =
     [triggered_dependencies; AstEnvironment.UpdateResult.triggered_dependencies upstream]
+
+
+  let unannotated_global_environment_update_result = Fn.id
 end
 
 let update

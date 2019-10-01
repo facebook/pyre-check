@@ -5,9 +5,7 @@
 open Ast
 open SharedMemoryKeys
 
-type t
-
-module ReadOnly : sig
+module AliasReadOnly : sig
   type t
 
   val get_alias : t -> ?dependency:dependency -> Type.Primitive.t -> Type.alias option
@@ -38,23 +36,7 @@ module ReadOnly : sig
     Type.Variable.Variadic.Parameters.t option
 end
 
-val create : UnannotatedGlobalEnvironment.ReadOnly.t -> t
-
-module UpdateResult : sig
-  type t
-
-  val triggered_dependencies : t -> DependencyKey.KeySet.t
-
-  val upstream : t -> UnannotatedGlobalEnvironment.UpdateResult.t
-
-  val all_triggered_dependencies : t -> DependencyKey.KeySet.t list
-end
-
-val update
-  :  t ->
-  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  UnannotatedGlobalEnvironment.UpdateResult.t ->
-  UpdateResult.t
-
-val read_only : t -> ReadOnly.t
+include
+  Environment.S
+    with module ReadOnly = AliasReadOnly
+     and module PreviousEnvironment = UnannotatedGlobalEnvironment

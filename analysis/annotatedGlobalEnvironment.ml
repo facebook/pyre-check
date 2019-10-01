@@ -7,6 +7,7 @@ open Core
 open Ast
 open Pyre
 open Statement
+module PreviousEnvironment = ClassMetadataEnvironment
 
 type t = { class_metadata_environment: ClassMetadataEnvironment.ReadOnly.t }
 
@@ -70,6 +71,8 @@ module ReadOnly = struct
     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 end
 
+module AnnotatedReadOnly = ReadOnly
+
 module GlobalValue = struct
   type t = GlobalResolution.global
 
@@ -94,7 +97,9 @@ module UpdateResult = struct
     upstream: ClassMetadataEnvironment.UpdateResult.t;
   }
 
-  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+  type upstream = ClassMetadataEnvironment.UpdateResult.t
+
+  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
 

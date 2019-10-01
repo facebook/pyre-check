@@ -6,9 +6,7 @@ open Ast
 open Core
 open SharedMemoryKeys
 
-type t
-
-module ReadOnly : sig
+module AnnotatedReadOnly : sig
   type t
 
   val get_global : t -> ?dependency:dependency -> Reference.t -> GlobalResolution.global option
@@ -29,23 +27,7 @@ module ReadOnly : sig
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 end
 
-val create : ClassMetadataEnvironment.ReadOnly.t -> t
-
-module UpdateResult : sig
-  type t
-
-  val triggered_dependencies : t -> DependencyKey.KeySet.t
-
-  val upstream : t -> ClassMetadataEnvironment.UpdateResult.t
-
-  val all_triggered_dependencies : t -> DependencyKey.KeySet.t list
-end
-
-val update
-  :  t ->
-  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  ClassMetadataEnvironment.UpdateResult.t ->
-  UpdateResult.t
-
-val read_only : t -> ReadOnly.t
+include
+  Environment.S
+    with module ReadOnly = AnnotatedReadOnly
+     and module PreviousEnvironment = ClassMetadataEnvironment

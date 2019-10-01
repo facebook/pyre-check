@@ -8,6 +8,7 @@ open Ast
 open Pyre
 open Expression
 open Statement
+module PreviousEnvironment = AliasEnvironment
 
 type t = { alias_environment: AliasEnvironment.ReadOnly.t }
 
@@ -40,13 +41,17 @@ module ReadOnly = struct
   let alias_environment { alias_environment; _ } = alias_environment
 end
 
+module HierarchyReadOnly = ReadOnly
+
 module UpdateResult = struct
   type t = {
     triggered_dependencies: SharedMemoryKeys.DependencyKey.KeySet.t;
     upstream: AliasEnvironment.UpdateResult.t;
   }
 
-  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+  type upstream = AliasEnvironment.UpdateResult.t
+
+  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
 

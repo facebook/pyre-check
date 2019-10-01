@@ -7,6 +7,7 @@ open Core
 open Ast
 open Pyre
 open Expression
+module PreviousEnvironment = UnannotatedGlobalEnvironment
 
 type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly.t }
 
@@ -93,6 +94,8 @@ module ReadOnly = struct
       ~variable_parameter_annotation
       ~keywords_parameter_annotation
 end
+
+module AliasReadOnly = ReadOnly
 
 module AliasValue = struct
   type t = Type.alias
@@ -412,7 +415,9 @@ module UpdateResult = struct
     upstream: UnannotatedGlobalEnvironment.UpdateResult.t;
   }
 
-  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+  type upstream = UnannotatedGlobalEnvironment.UpdateResult.t
+
+  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
 
