@@ -491,6 +491,9 @@ module UpdateResult = struct
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
+
+  let all_triggered_dependencies { triggered_dependencies; upstream; _ } =
+    [triggered_dependencies; AstEnvironment.UpdateResult.triggered_dependencies upstream]
 end
 
 let update

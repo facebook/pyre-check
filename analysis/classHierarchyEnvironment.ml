@@ -49,6 +49,9 @@ module UpdateResult = struct
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
+
+  let all_triggered_dependencies { triggered_dependencies; upstream } =
+    triggered_dependencies :: AliasEnvironment.UpdateResult.all_triggered_dependencies upstream
 end
 
 module EdgeValue = struct
@@ -334,14 +337,7 @@ let update environment ~scheduler ~configuration upstream_update =
           ( List.fold classes ~f:Set.add ~init:classes_sofar,
             List.fold functions ~f:Set.add ~init:functions_sofar )
         in
-        [
-          AliasEnvironment.UpdateResult.triggered_dependencies upstream_update;
-          AliasEnvironment.UpdateResult.upstream upstream_update
-          |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies;
-          AliasEnvironment.UpdateResult.upstream upstream_update
-          |> UnannotatedGlobalEnvironment.UpdateResult.upstream
-          |> AstEnvironment.UpdateResult.triggered_dependencies;
-        ]
+        AliasEnvironment.UpdateResult.all_triggered_dependencies upstream_update
         |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.map ~f:filter
         |> List.fold ~f:add_to_sets ~init:(Type.Primitive.Set.empty, Reference.Set.empty)

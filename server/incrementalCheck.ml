@@ -143,18 +143,8 @@ let recheck
                 | SharedMemoryKeys.TypeCheckSource source -> Some source
                 | _ -> None)
           in
-          [
-            AstEnvironment.UpdateResult.triggered_dependencies ast_environment_update_result;
-            UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies
-              unannotated_global_environment_update_result;
-            AliasEnvironment.UpdateResult.triggered_dependencies alias_update_result;
-            ClassHierarchyEnvironment.UpdateResult.triggered_dependencies
-              class_hierarchy_update_result;
-            ClassMetadataEnvironment.UpdateResult.triggered_dependencies
-              class_metadata_update_result;
-            AnnotatedGlobalEnvironment.UpdateResult.triggered_dependencies
-              annotated_global_environment_update_result;
-          ]
+          AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies
+            annotated_global_environment_update_result
           |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
           |> List.concat_map ~f:filter
           |> Reference.Set.of_list

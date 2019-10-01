@@ -30,6 +30,8 @@ module UpdateResult : sig
   val triggered_dependencies : t -> DependencyKey.KeySet.t
 
   val upstream : t -> ClassHierarchyEnvironment.UpdateResult.t
+
+  val all_triggered_dependencies : t -> DependencyKey.KeySet.t list
 end
 
 val update

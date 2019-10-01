@@ -97,6 +97,10 @@ module UpdateResult = struct
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
+
+  let all_triggered_dependencies { triggered_dependencies; upstream } =
+    triggered_dependencies
+    :: ClassMetadataEnvironment.UpdateResult.all_triggered_dependencies upstream
 end
 
 let annotate_global environment name ~track_dependencies =
@@ -216,23 +220,7 @@ let update environment ~scheduler ~configuration upstream_result =
               | SharedMemoryKeys.AnnotateGlobal name -> Some name
               | _ -> None)
         in
-        [
-          ClassMetadataEnvironment.UpdateResult.triggered_dependencies upstream_result;
-          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-          |> ClassHierarchyEnvironment.UpdateResult.triggered_dependencies;
-          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-          |> ClassHierarchyEnvironment.UpdateResult.upstream
-          |> AliasEnvironment.UpdateResult.triggered_dependencies;
-          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-          |> ClassHierarchyEnvironment.UpdateResult.upstream
-          |> AliasEnvironment.UpdateResult.upstream
-          |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies;
-          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-          |> ClassHierarchyEnvironment.UpdateResult.upstream
-          |> AliasEnvironment.UpdateResult.upstream
-          |> UnannotatedGlobalEnvironment.UpdateResult.upstream
-          |> AstEnvironment.UpdateResult.triggered_dependencies;
-        ]
+        ClassMetadataEnvironment.UpdateResult.all_triggered_dependencies upstream_result
         |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.concat_map ~f:filter
         |> Reference.Set.of_list

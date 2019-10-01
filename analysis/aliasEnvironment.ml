@@ -415,6 +415,10 @@ module UpdateResult = struct
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
+
+  let all_triggered_dependencies { triggered_dependencies; upstream } =
+    triggered_dependencies
+    :: UnannotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies upstream
 end
 
 let update environment ~scheduler ~configuration upstream_update =
@@ -438,11 +442,7 @@ let update environment ~scheduler ~configuration upstream_update =
                 | SharedMemoryKeys.AliasRegister name -> Some name
                 | _ -> None)
           in
-          [
-            UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies upstream_update;
-            UnannotatedGlobalEnvironment.UpdateResult.upstream upstream_update
-            |> AstEnvironment.UpdateResult.triggered_dependencies;
-          ]
+          UnannotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies upstream_update
           |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
           |> List.concat_map ~f:filter
         in

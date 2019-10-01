@@ -58,6 +58,10 @@ module UpdateResult = struct
   let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let upstream { upstream; _ } = upstream
+
+  let all_triggered_dependencies { triggered_dependencies; upstream } =
+    triggered_dependencies
+    :: ClassHierarchyEnvironment.UpdateResult.all_triggered_dependencies upstream
 end
 
 let register_class_metadata { class_hierarchy_environment } class_name ~track_dependencies =
@@ -140,18 +144,7 @@ let update environment ~scheduler ~configuration upstream_update =
               | SharedMemoryKeys.RegisterClassMetadata name -> Some name
               | _ -> None)
         in
-        [
-          ClassHierarchyEnvironment.UpdateResult.triggered_dependencies upstream_update;
-          ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
-          |> AliasEnvironment.UpdateResult.triggered_dependencies;
-          ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
-          |> AliasEnvironment.UpdateResult.upstream
-          |> UnannotatedGlobalEnvironment.UpdateResult.triggered_dependencies;
-          ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
-          |> AliasEnvironment.UpdateResult.upstream
-          |> UnannotatedGlobalEnvironment.UpdateResult.upstream
-          |> AstEnvironment.UpdateResult.triggered_dependencies;
-        ]
+        ClassHierarchyEnvironment.UpdateResult.all_triggered_dependencies upstream_update
         |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
         |> List.concat_map ~f:filter
         |> Type.Primitive.Set.of_list
