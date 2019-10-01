@@ -73,8 +73,9 @@ class ConfigurationTest(unittest.TestCase):
             {"source_directories": ["a"]},
             {},
         ]
-        configuration = Configuration("local/path")
-        self.assertEqual(configuration.source_directories, ["local/path/a"])
+        with self.assertRaises(EnvironmentException):
+            configuration = Configuration("local/path")
+            self.assertEqual(configuration.source_directories, ["local/path/a"])
 
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()

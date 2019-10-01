@@ -93,7 +93,14 @@ class _ConfigurationFile:
         self.file_hash = hashlib.sha1(contents.encode("utf-8")).hexdigest()
         self._configuration = json.loads(contents)
 
-    def consume(self, key, default=None, current=None, print_on_success=False):
+    def consume(
+        self,
+        key,
+        default=None,
+        current=None,
+        print_on_success=False,
+        raise_on_override=False,
+    ):
         """
         Consume a key from the configuration. When a key is consumed, it
         is removed from the configuration.
@@ -104,6 +111,10 @@ class _ConfigurationFile:
         """
 
         value = self._configuration.pop(key, default)
+        if raise_on_override and current and value:
+            raise EnvironmentException(
+                "Configuration file may not override `{}` field.".format(key)
+            )
         if current:
             return current
         if value and print_on_success:
@@ -398,6 +409,7 @@ class Configuration:
                     default=[],
                     current=self.source_directories,
                     print_on_success=True,
+                    raise_on_override=True,
                 )
                 configuration_directory = os.path.dirname(path)
                 if configuration_directory:
@@ -412,7 +424,11 @@ class Configuration:
                     ]
 
                 self.targets = configuration.consume(
-                    "targets", default=[], current=self.targets, print_on_success=True
+                    "targets",
+                    default=[],
+                    current=self.targets,
+                    print_on_success=True,
+                    raise_on_override=True,
                 )
 
                 if configuration.consume("disabled", default=False):
