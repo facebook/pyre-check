@@ -234,13 +234,14 @@ class StubFile:
         classes = defaultdict(list)
         typing_imports = set()
         contents = ""
-
+        stubs_in_file = []
         for stub in self._fields:
             parent = _relativize_access(stub.parent, stub.path)
             # Ignore nested classes
             if len(parent) == 1:
                 classes[parent[0]].append(stub)
             else:
+                stubs_in_file.append(stub)
                 contents += stub.to_string() + "\n"
 
         for stub in self._methods:
@@ -250,14 +251,16 @@ class StubFile:
                 classes[parent[0]].append(stub)
 
         for stub in self._functions:
+            stubs_in_file.append(stub)
             contents += stub.to_string() + "\n"
 
         for parent, stubs in classes.items():
             contents += "\nclass {}:\n".format(parent)
             for stub in stubs:
+                stubs_in_file.append(stub)
                 contents += "    {}\n".format(stub.to_string().replace("\n", "\n    "))
 
-        for stub in self._stubs:
+        for stub in stubs_in_file:
             typing_imports.update(stub.get_typing_imports())
             alphabetical_imports = sorted(list(typing_imports))
             if alphabetical_imports and contents != "":

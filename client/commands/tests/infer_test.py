@@ -297,6 +297,38 @@ class PyreTest(unittest.TestCase):
             [
                 build_json(
                     {
+                        "annotation": "typing.Union[int, str]",
+                        "function_name": "ret_union",
+                        "parent": "test.Test.Test2",
+                        "parameters": [{"name": "self", "type": None, "value": None}],
+                        "decorators": ["classmethod"],
+                        "async": False,
+                    }
+                ),
+                build_json(
+                    {
+                        "annotation": "typing.Dict[int, str]",
+                        "function_name": "ret_dict",
+                        "parent": "test.Test",
+                        "parameters": [{"name": "self", "type": None, "value": None}],
+                        "decorators": [],
+                        "async": False,
+                    }
+                ),
+            ],
+            """\
+            from typing import Dict
+
+
+            class Test:
+                def ret_dict(self) -> Dict[int, str]: ...
+            """,
+        )
+
+        self.assert_stub(
+            [
+                build_json(
+                    {
                         "annotation": "int",
                         "function_name": "test.with_params",
                         "parent": None,
