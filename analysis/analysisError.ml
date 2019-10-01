@@ -2853,7 +2853,7 @@ let filter ~configuration ~resolution errors =
   | _ -> List.filter ~f:(fun error -> not (should_filter error)) errors
 
 
-let suppress ~mode ~resolution error =
+let suppress ~mode ~ignore_codes ~resolution error =
   let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
       true
@@ -2921,14 +2921,14 @@ let suppress ~mode ~resolution error =
     | _ -> true
   in
   try
-    match mode with
-    | Source.Infer -> suppress_in_infer error
-    | Source.Strict -> suppress_in_strict error
-    | Source.Declare -> true
-    | Source.DefaultButDontCheck suppressed_codes
-      when List.exists suppressed_codes ~f:(( = ) (code error)) ->
-        true
-    | _ -> suppress_in_default ~resolution error
+    let suppress_by_mode =
+      match mode with
+      | Source.Infer -> suppress_in_infer error
+      | Source.Strict -> suppress_in_strict error
+      | Source.Declare -> true
+      | _ -> suppress_in_default ~resolution error
+    in
+    List.exists ignore_codes ~f:(( = ) (code error)) || suppress_by_mode
   with
   | ClassHierarchy.Untracked annotation ->
       Log.warning "`%s` not found in the type order." (Type.show annotation);

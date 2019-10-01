@@ -4811,7 +4811,7 @@ let check_define
     ~global_resolution
     ~source:( {
                 Source.source_path = { SourcePath.qualifier; relative; _ };
-                metadata = { local_mode; _ };
+                metadata = { local_mode; ignore_codes; _ };
                 _;
               } as source )
     ~call_graph_builder:(module Builder : Dependencies.Callgraph.Builder)
@@ -4832,7 +4832,7 @@ let check_define
       if debug then
         errors
       else
-        let keep_error error = not (Error.suppress ~mode ~resolution error) in
+        let keep_error error = not (Error.suppress ~mode ~ignore_codes ~resolution error) in
         List.filter ~f:keep_error errors
     in
     let filter_hints errors =

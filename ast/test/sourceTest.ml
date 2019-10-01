@@ -24,10 +24,16 @@ let test_parse _ =
   assert_mode " # comment comment pyre-strict" Source.Default;
   assert_mode " # pyre-unsafe" Source.Unsafe;
   assert_mode " # pyre-durp" Source.Default;
-  assert_mode " # pyre-ignore-all-errors[42, 7,   15] " (Source.DefaultButDontCheck [42; 7; 15]);
+  assert_mode " # pyre-ignore-all-errors[42, 7,   15] " Source.Default;
+
+  let assert_ignore_codes line expected_codes =
+    let { Source.Metadata.ignore_codes; _ } = Source.Metadata.parse ~qualifier [line] in
+    assert_equal ignore_codes expected_codes
+  in
+  assert_ignore_codes " # pyre-ignore-all-errors[42, 7,   15] " [42; 7; 15];
 
   (* Prevent typos from being treated as error suppressors. *)
-  assert_mode " # pyre-ignore-all-errors[42, 7,   15" Source.Default;
+  assert_ignore_codes " # pyre-ignore-all-errors[42, 7,   15" [];
   let assert_ignore lines expected_ignore_lines =
     let { Source.Metadata.ignore_lines; _ } = Source.Metadata.parse ~qualifier lines in
     assert_equal

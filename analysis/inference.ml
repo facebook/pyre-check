@@ -667,7 +667,7 @@ let run
     ~environment
     ~source:( {
                 Source.source_path = { SourcePath.relative; is_stub; _ };
-                metadata = { local_mode; _ };
+                metadata = { local_mode; ignore_codes; _ };
                 _;
               } as source )
   =
@@ -735,7 +735,7 @@ let run
         else
           let keep_error error =
             let mode = Source.mode ~configuration ~local_mode in
-            not (Error.suppress ~mode ~resolution error)
+            not (Error.suppress ~mode ~ignore_codes ~resolution error)
           in
           List.filter ~f:keep_error errors
       in

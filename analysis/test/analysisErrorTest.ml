@@ -1151,11 +1151,13 @@ let test_filter context =
 
 let test_suppress context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  let assert_suppressed mode ?(signature = mock_signature) ?location kind =
-    assert_equal true (Error.suppress ~mode ~resolution (error ~signature ?location kind))
+  let assert_suppressed mode ?(ignore_codes = []) ?(signature = mock_signature) ?location kind =
+    assert_equal
+      true
+      (Error.suppress ~mode ~ignore_codes ~resolution (error ~signature ?location kind))
   in
-  let assert_not_suppressed mode ?(signature = mock_signature) kind =
-    assert_equal false (Error.suppress ~mode ~resolution (error ~signature kind))
+  let assert_not_suppressed mode ?(ignore_codes = []) ?(signature = mock_signature) kind =
+    assert_equal false (Error.suppress ~mode ~ignore_codes ~resolution (error ~signature kind))
   in
   (* Test different modes. *)
   assert_suppressed Source.Infer (missing_return Type.Top);
@@ -1190,15 +1192,26 @@ let test_suppress context =
     Source.Strict
     (Error.InvalidTypeParameters
        { name = "dict"; kind = IncorrectNumberOfParameters { expected = 2; actual = 0 } });
-  let suppress_missing_return =
-    Source.DefaultButDontCheck [Error.code (error (missing_return Type.Any))]
-  in
-  assert_suppressed suppress_missing_return (missing_return Type.integer);
-  assert_suppressed suppress_missing_return (missing_return Type.Any);
+  let suppress_missing_return = [Error.code (error (missing_return Type.Any))] in
+  assert_suppressed
+    Source.Default
+    ~ignore_codes:suppress_missing_return
+    (missing_return Type.integer);
+  assert_suppressed
+    Source.Strict
+    ~ignore_codes:suppress_missing_return
+    (missing_return Type.integer);
+  assert_suppressed Source.Default ~ignore_codes:suppress_missing_return (missing_return Type.Any);
 
   (* Defer to Default policy if not specifically suppressed *)
-  assert_not_suppressed suppress_missing_return (incompatible_return_type Type.integer Type.float);
-  assert_suppressed suppress_missing_return (Error.UndefinedName !&"reveal_type");
+  assert_not_suppressed
+    Source.Default
+    ~ignore_codes:suppress_missing_return
+    (incompatible_return_type Type.integer Type.float);
+  assert_suppressed
+    Source.Default
+    ~ignore_codes:suppress_missing_return
+    (Error.UndefinedName !&"reveal_type");
 
   assert_suppressed
     Source.Declare

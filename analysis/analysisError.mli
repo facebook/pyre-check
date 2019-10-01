@@ -300,7 +300,7 @@ val filter
   t list ->
   t list
 
-val suppress : mode:Source.mode -> resolution:Resolution.t -> t -> bool
+val suppress : mode:Source.mode -> ignore_codes:int list -> resolution:Resolution.t -> t -> bool
 
 val dequalify : Reference.t Reference.Map.t -> resolution:GlobalResolution.t -> t -> t
 
