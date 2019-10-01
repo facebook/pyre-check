@@ -158,10 +158,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             LOG.info("Notifying server of update to files %s.", updated_paths.updated)
             message = language_server_protocol.LanguageServerProtocolMessage(
                 method="updateFiles",
-                parameters={
-                    "files": updated_paths.updated,
-                    "invalidated": updated_paths.invalidated,
-                },
+                parameters={"files": updated_paths.updated, "invalidated": []},
             )
             if not language_server_protocol.write_message(
                 self._socket_connection.output, message

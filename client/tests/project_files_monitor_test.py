@@ -146,8 +146,7 @@ class MonitorTest(unittest.TestCase):
             analysis_directory = MagicMock()
             analysis_directory.get_root.return_value = root
             analysis_directory.process_updated_files.side_effect = lambda files: UpdatedPaths(
-                updated=[file.replace("ROOT", "ANALYSIS") for file in files],
-                invalidated=[],
+                updated=[file.replace("ROOT", "ANALYSIS") for file in files]
             )
 
             # only create the monitor once the socket is open

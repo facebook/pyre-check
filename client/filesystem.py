@@ -83,12 +83,11 @@ def make_pyre_directory() -> str:
 
 
 class UpdatedPaths:
-    def __init__(self, updated: List[str], invalidated: List[str]) -> None:
+    def __init__(self, updated: List[str]) -> None:
         self.updated = updated
-        self.invalidated = invalidated
 
     def is_empty(self) -> bool:
-        return (not self.updated) and (not self.invalidated)
+        return not self.updated
 
 
 class AnalysisDirectory:
@@ -131,8 +130,7 @@ class AnalysisDirectory:
             should be tracking.
         """
         tracked_paths = [path for path in paths if self._is_tracked(path)]
-        deleted_paths = [path for path in paths if not os.path.isfile(path)]
-        return UpdatedPaths(updated=tracked_paths, invalidated=deleted_paths)
+        return UpdatedPaths(updated=tracked_paths)
 
     def cleanup(self) -> None:
         pass
@@ -247,10 +245,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             This method will remove/add symbolic links for deleted/new files.
         """
         tracked_files = []
-
         deleted_paths = [path for path in paths if not os.path.isfile(path)]
-        # TODO(T40580762) use buck targets to properly identify what new files belong
-        # to the project rather than checking if they are within the current directory
         new_paths = [
             path
             for path in paths
@@ -264,41 +259,13 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             if path not in deleted_paths and path not in new_paths
         ]
 
-        if deleted_paths:
-            LOG.info("Detected deleted paths: `%s`.", "`,`".join(deleted_paths))
-        for path in deleted_paths:
-            link = self._symbolic_links.pop(path, None)
-            if link:
-                try:
-                    _delete_symbolic_link(link)
-                    tracked_files.append(link)
-                except OSError:
-                    LOG.warning("Failed to delete link at `%s`.", link)
-
-        if new_paths:
-            LOG.info("Detected new paths: %s.", ",".join(new_paths))
-            try:
-                for path, relative_link in buck.resolve_relative_paths(
-                    new_paths
-                ).items():
-                    link = os.path.join(self.get_root(), relative_link)
-                    try:
-                        add_symbolic_link(link, path)
-                        self._symbolic_links[path] = link
-                        tracked_files.append(link)
-                    except OSError:
-                        LOG.warning("Failed to add link at %s.", link)
-            except buck.BuckException as error:
-                LOG.error("Exception occurred when querying buck: %s", error)
-                LOG.error("No new paths will be added to the analysis directory.")
-
         for path in updated_paths:
             if path in self._symbolic_links:
                 tracked_files.append(self._symbolic_links[path])
             elif self._is_tracked(path):
                 tracked_files.append(path)
 
-        return UpdatedPaths(updated=tracked_files, invalidated=deleted_paths)
+        return UpdatedPaths(updated=tracked_files)
 
     def cleanup(self) -> None:
         try:
