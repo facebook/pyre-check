@@ -7,7 +7,6 @@
 
 import textwrap
 import unittest
-from collections import defaultdict
 from pathlib import Path
 from typing import Dict
 
@@ -176,6 +175,8 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "return_count": 1,
                 "globals_count": 0,
                 "parameter_count": 2,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
             },
         )
 
