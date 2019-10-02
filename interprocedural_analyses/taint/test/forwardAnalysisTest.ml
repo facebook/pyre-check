@@ -509,7 +509,27 @@ let test_dictionary context =
         second = { **first }
         return second["b"]
     |}
-    [outcome ~kind:`Function ~returns:[] "qualifier.dictionary_source"]
+    [outcome ~kind:`Function ~returns:[] "qualifier.dictionary_source"];
+
+  (* Keys. *)
+  assert_taint
+    ~context
+    {|
+      def dictionary_source():
+        d = { __test_source(): "a" }
+        return d
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_source"];
+
+  (* We're imprecise, and don't filter key taint when accessing a specific field at the moment. *)
+  assert_taint
+    ~context
+    {|
+      def dictionary_source():
+        d = { __test_source(): "a" }
+        return d[0]
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_source"]
 
 
 let test_comprehensions context =

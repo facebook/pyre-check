@@ -273,6 +273,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_dictionary_entry ~resolution taint state { Dictionary.key; value } =
+      let state = analyze_expression ~resolution ~taint ~state ~expression:key in
       let field_name = AccessPath.get_index key in
       let value_taint = read_tree [field_name] taint in
       analyze_expression ~resolution ~taint:value_taint ~state ~expression:value

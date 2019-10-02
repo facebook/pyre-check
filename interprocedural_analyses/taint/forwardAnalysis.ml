@@ -347,9 +347,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | String literal -> AbstractTreeDomain.Label.Field literal.value
         | _ -> AbstractTreeDomain.Label.Any
       in
+      (* Since we don't keep track of which keys are tainted, don't require an index for the key
+         taint, and join it as is. *)
+      let key_taint, state = analyze_expression ~resolution ~state ~expression:key in
       analyze_expression ~resolution ~state ~expression:value
       |>> ForwardState.Tree.prepend [field_name]
       |>> ForwardState.Tree.join taint
+      |>> ForwardState.Tree.join key_taint
 
 
     and analyze_list_element ~resolution position (taint, state) expression =

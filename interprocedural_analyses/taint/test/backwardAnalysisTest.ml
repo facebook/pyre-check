@@ -568,7 +568,7 @@ let test_dictionary context =
       outcome
         ~kind:`Function
         ~sink_parameters:[]
-        ~tito_parameters:["arg"]
+        ~tito_parameters:["arg"; "index"]
         "qualifier.dictionary_unknown_write_index";
     ];
   assert_taint
@@ -577,6 +577,18 @@ let test_dictionary context =
       def dictionary_sink(arg):
         second = { **(__test_sink(arg)) }
         return second
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        "qualifier.dictionary_sink";
+    ];
+  assert_taint
+    ~context
+    {|
+      def dictionary_sink(arg):
+        d = { __test_sink(arg): "a" }
     |}
     [
       outcome
