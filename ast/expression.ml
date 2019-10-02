@@ -663,6 +663,11 @@ let get_item_call base arguments ~location =
     }
 
 
+let is_private_attribute attribute_name =
+  String.is_prefix ~prefix:"__" attribute_name
+  && not (String.is_suffix ~suffix:"__" attribute_name)
+
+
 module PrettyPrinter = struct
   let rec pp_expression_t formatter expression_t =
     match expression_t with

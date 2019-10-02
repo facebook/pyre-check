@@ -2508,7 +2508,7 @@ module State (Context : Context) = struct
                   let attribute =
                     Annotated.Class.attribute
                       class_definition
-                      ~transitive:true
+                      ~transitive:(not (Expression.is_private_attribute attribute))
                       ~class_attributes
                       ~special_method:special
                       ~resolution:global_resolution
@@ -2579,7 +2579,32 @@ module State (Context : Context) = struct
                         }
                       |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                       |> emit_raw_error ~state
-                  | _ -> state
+                  | _ ->
+                      let enclosing_class_reference =
+                        let open Annotated in
+                        Define.parent_definition
+                          ~resolution:(Resolution.global_resolution resolution)
+                          (Define.create Context.define)
+                        >>= fun definition -> Some (AnnotatedClass.name definition)
+                      in
+                      let is_accessed_in_base_class =
+                        Option.value_map
+                          ~default:false
+                          ~f:(Reference.equal_sanitized (Type.class_name resolved_base))
+                          enclosing_class_reference
+                      in
+                      if Expression.is_private_attribute attribute && not is_accessed_in_base_class
+                      then
+                        Error.UndefinedAttribute
+                          {
+                            attribute = name;
+                            origin =
+                              Error.Class { annotation = resolved_base; class_attribute = false };
+                          }
+                        |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
+                        |> emit_raw_error ~state
+                      else
+                        state
                 in
                 let resolved =
                   let apply_global_override resolved =
