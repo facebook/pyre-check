@@ -128,17 +128,38 @@ let test_check_isinstance context =
   assert_type_errors
     "isinstance(str, '')"
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` "
-      ^ "but got `str`.";
+      "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
+       typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd anonymous parameter to call \
+       `isinstance` but got `str`.";
     ];
   assert_type_errors
     "isinstance(1, (int, ('', str)))"
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` "
-      ^ "but got `str`.";
-    ]
+      "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
+       typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd anonymous parameter to call \
+       `isinstance` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Type, Union
+      def foo(x: object, types: Union[Type[int], Type[str]]) -> None:
+        isinstance(x, types)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Type, Union, Tuple
+      def foo(x: object, types: Tuple[Type[int], ...]) -> None:
+        isinstance(x, types)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Type, Union, Tuple
+      def foo(x: object, types: Union[Tuple[Type[int], ...], Type[object]]) -> None:
+        isinstance(x, types)
+    |}
+    []
 
 
 let () = "isinstance" >::: ["check_isinstance" >:: test_check_isinstance] |> Test.run

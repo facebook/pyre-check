@@ -1398,7 +1398,9 @@ let test_forward_statement context =
       (`Specific
         [
           "Incompatible parameter type [6]: "
-          ^ "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` "
+          ^ "Expected `typing.Union[typing.Type[typing.Any], \
+             typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd anonymous parameter to call \
+             `isinstance` "
           ^ "but got `int`.";
         ])
     ["x", Type.integer]

@@ -1970,6 +1970,8 @@ module State (Context : Context) = struct
           ~dynamic:false
           ~callee;
 
+        (* Be angelic and compute errors using the typeshed annotation for isinstance. *)
+
         (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let state =
@@ -2014,12 +2016,26 @@ module State (Context : Context) = struct
                          {
                            Error.actual = non_meta;
                            actual_expressions = [];
-                           expected = Type.meta Type.Any;
+                           expected =
+                             Type.union
+                               [
+                                 Type.meta Type.Any;
+                                 Type.Tuple (Type.Unbounded (Type.meta Type.Any));
+                               ];
                            due_to_invariance = false;
                          };
                      })
             in
-            List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation))
+            let rec is_compatible annotation =
+              match annotation with
+              | _ when Type.is_meta annotation -> true
+              | Type.Tuple (Type.Unbounded annotation) -> Type.is_meta annotation
+              | Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete annotations)) ->
+                  List.for_all ~f:Type.is_meta annotations
+              | Type.Union annotations -> List.for_all annotations ~f:is_compatible
+              | _ -> false
+            in
+            List.find annotations ~f:(fun (annotation, _) -> not (is_compatible annotation))
             >>| add_incompatible_non_meta_error state
             |> Option.value ~default:state
         in
