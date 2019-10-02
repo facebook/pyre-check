@@ -14,13 +14,7 @@ let record_and_merge_call_graph ~environment ~call_graph ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
-  let use_type_checking_callgraph =
-    Sys.getenv "PYRE_USE_TYPE_CHECKING_CALLGRAPH"
-    >>| String.equal "true"
-    |> Option.value ~default:false
-  in
-  DependencyGraph.create_callgraph ~use_type_checking_callgraph ~environment ~source
-  |> record_and_merge_call_graph call_graph
+  DependencyGraph.create_callgraph ~environment ~source |> record_and_merge_call_graph call_graph
 
 
 let record_overrides overrides =

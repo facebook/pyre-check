@@ -26,12 +26,7 @@ let setup ?(update_environment_with = []) ~context ~handle source =
   ScratchProject.configuration_of project, source, environment
 
 
-let create_call_graph
-    ?(update_environment_with = [])
-    ~use_type_checking_callgraph
-    ~context
-    source_text
-  =
+let create_call_graph ?(update_environment_with = []) ~context source_text =
   let configuration, source, environment =
     setup ~update_environment_with ~context ~handle:"test.py" source_text
   in
@@ -50,7 +45,7 @@ let create_call_graph
       (Format.pp_print_list TypeCheck.Error.pp)
       errors
     |> failwith;
-  DependencyGraph.create_callgraph ~use_type_checking_callgraph ~environment ~source
+  DependencyGraph.create_callgraph ~environment ~source
 
 
 let create_callable = function
@@ -78,24 +73,22 @@ let compare_dependency_graph call_graph ~expected =
 
 
 let assert_call_graph ?update_environment_with ~context source ~expected =
-  let graph ~use_type_checking_callgraph =
-    create_call_graph ?update_environment_with ~use_type_checking_callgraph ~context source
+  let graph =
+    create_call_graph ?update_environment_with ~context source
     |> DependencyGraph.from_callgraph
     |> Callable.Map.to_alist
   in
-  compare_dependency_graph (graph ~use_type_checking_callgraph:false) ~expected;
-  compare_dependency_graph (graph ~use_type_checking_callgraph:true) ~expected
+  compare_dependency_graph graph ~expected
 
 
 let assert_reverse_call_graph ~context source ~expected =
-  let graph ~use_type_checking_callgraph =
-    create_call_graph ~use_type_checking_callgraph ~context source
+  let graph =
+    create_call_graph ~context source
     |> DependencyGraph.from_callgraph
     |> DependencyGraph.reverse
     |> Callable.Map.to_alist
   in
-  compare_dependency_graph (graph ~use_type_checking_callgraph:false) ~expected;
-  compare_dependency_graph (graph ~use_type_checking_callgraph:true) ~expected
+  compare_dependency_graph graph ~expected
 
 
 let test_construction context =
@@ -491,16 +484,14 @@ let test_strongly_connected_components context =
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
     let configuration, source, environment = setup ~context ~handle source in
     TypeCheck.run ~configuration ~environment ~source |> ignore;
-    let partitions ~use_type_checking_callgraph =
+    let partitions =
       let edges =
-        DependencyGraph.create_callgraph ~use_type_checking_callgraph ~environment ~source
-        |> DependencyGraph.from_callgraph
+        DependencyGraph.create_callgraph ~environment ~source |> DependencyGraph.from_callgraph
       in
       DependencyGraph.partition ~edges
     in
     let printer partitions = Format.asprintf "%a" DependencyGraph.pp_partitions partitions in
-    assert_equal ~printer expected (partitions ~use_type_checking_callgraph:false);
-    assert_equal ~printer expected (partitions ~use_type_checking_callgraph:true)
+    assert_equal ~printer expected partitions
   in
   assert_strongly_connected_components
     {|

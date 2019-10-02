@@ -36,8 +36,7 @@ val from_overrides : overrides -> t
 val from_callgraph : callgraph -> t
 
 val create_callgraph
-  :  ?use_type_checking_callgraph:bool ->
-  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+  :  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
   source:Source.t ->
   callgraph
 
