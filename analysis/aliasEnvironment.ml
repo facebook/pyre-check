@@ -406,6 +406,9 @@ let register_aliases environment global_names ~track_dependencies =
     |> Option.iter ~f:(Aliases.add (Reference.show global_name))
   in
   List.iter global_names ~f:register;
+
+  (* TODO(T53786398): make this no longer global state so we don't have to reset it per worker like
+     this *)
   Type.Cache.enable ()
 
 
@@ -417,11 +420,7 @@ let update environment ~scheduler ~configuration upstream_update =
       scheduler
       ~configuration
       ~f:(register_aliases environment ~track_dependencies)
-      ~inputs:(Set.to_list names_to_update);
-
-    (* TODO(T53786398): make this no longer global state so we don't have to reset it per worker
-       like this *)
-    Type.Cache.enable ()
+      ~inputs:(Set.to_list names_to_update)
   in
   match configuration with
   | { incremental_style = FineGrained; _ } ->
