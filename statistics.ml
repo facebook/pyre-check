@@ -196,3 +196,8 @@ let log_exception caught_exception ~fatal ~origin =
         ("fatal", if fatal then "true" else "false");
       ]
     ()
+
+
+let server_telemetry normals =
+  sample ~integers:["time", Unix.time () |> Int.of_float] ~normals ~metadata:false ()
+  |> log ~flush:true "perfpipe_pyre_server_telemetry"

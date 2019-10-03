@@ -167,6 +167,29 @@ let start
   ( match saved_state_action with
   | Some (Save saved_state_path) -> SavedState.save ~configuration ~saved_state_path state
   | _ -> () );
+  Telemetry.send_telemetry () ~f:(fun _ ->
+      let { Configuration.Analysis.local_root; project_root; _ } = configuration in
+      let { Configuration.Server.server_uuid; _ } = server_configuration in
+      let hash =
+        let command = Format.sprintf "cd %s && hg whereami" (Path.absolute project_root) in
+        let { Unix.Process_channels.stdout; stderr; stdin } =
+          Unix.open_process_full ~env:[||] command
+        in
+        Out_channel.close stdin;
+        let data = In_channel.input_all stdout |> String.strip in
+        let error_output = In_channel.input_all stderr |> String.strip in
+        In_channel.close stdout;
+        In_channel.close stderr;
+        if String.length error_output > 0 then
+          Log.log
+            ~section:`Server
+            "[Telemetry] Command '%s' has non-empty stderr: %s"
+            command
+            error_output;
+        data
+      in
+      let root = Path.last local_root in
+      { Telemetry.Message.uuid = server_uuid; message = Telemetry.Message.Base { root; hash } });
   state
 
 

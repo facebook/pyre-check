@@ -385,6 +385,11 @@ let run_server_daemon_entry : run_server_daemon_entry =
       (* Detach the from a controlling terminal *)
       Unix.Terminal_io.setsid () |> ignore;
       acquire_lock ~server_configuration;
+      let _ =
+        match Sys.getenv "PYRE_DISABLE_TELEMETRY" with
+        | Some _ -> ()
+        | None -> Telemetry.reset_budget ()
+      in
       serve ~socket ~json_socket ~server_configuration)
 
 

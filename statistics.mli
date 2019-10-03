@@ -46,3 +46,5 @@ val event
   unit
 
 val log_exception : exn -> fatal:bool -> origin:string -> unit
+
+val server_telemetry : (string * string) list -> unit
