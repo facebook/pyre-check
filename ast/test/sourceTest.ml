@@ -183,40 +183,8 @@ let test_expand_relative_import _ =
   assert_export ~relative:"module/__init__.py" ~from:"." ~expected:"module"
 
 
-let test_localize_configuration _ =
-  let unsafe_source =
-    Source.create ~metadata:(Source.Metadata.create_for_testing ~local_mode:Source.Unsafe ()) []
-  in
-  let strict_source =
-    Source.create ~metadata:(Source.Metadata.create_for_testing ~local_mode:Source.Strict ()) []
-  in
-  let default_configuration = Configuration.Analysis.create ~debug:true () in
-  let strict_configuration = Configuration.Analysis.create ~debug:true ~strict:true () in
-  assert_true
-    (Configuration.Analysis.equal
-       (Source.localize_configuration ~source:unsafe_source default_configuration)
-       default_configuration);
-  assert_true
-    (Configuration.Analysis.equal
-       (Source.localize_configuration ~source:strict_source default_configuration)
-       strict_configuration);
-  assert_true
-    (Configuration.Analysis.equal
-       (Source.localize_configuration ~source:unsafe_source strict_configuration)
-       default_configuration);
-  assert_true
-    (Configuration.Analysis.equal
-       (Source.localize_configuration ~source:strict_source strict_configuration)
-       strict_configuration);
-  ()
-
-
 let () =
   "metadata" >::: ["parse" >:: test_parse] |> Test.run;
   "source"
-  >::: [
-         "qualifier" >:: test_qualifier;
-         "expand_relative_import" >:: test_expand_relative_import;
-         "localize_configuration" >:: test_localize_configuration;
-       ]
+  >::: ["qualifier" >:: test_qualifier; "expand_relative_import" >:: test_expand_relative_import]
   |> Test.run

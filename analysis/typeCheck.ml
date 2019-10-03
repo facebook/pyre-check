@@ -4897,7 +4897,9 @@ let check_define
     in
     let filter_hints errors =
       match mode with
-      | Default when (not include_hints) && not debug ->
+      | Default
+      | Unsafe
+        when (not include_hints) && not debug ->
           List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
       | _ -> errors
     in
@@ -4997,7 +4999,11 @@ let check_define
 
 let check_defines ~configuration ~global_resolution ~source defines =
   let resolution = resolution global_resolution () in
-  let configuration = Source.localize_configuration ~source configuration in
+  let configuration =
+    let { Configuration.Analysis.debug; _ } = configuration in
+    let { Source.metadata = { Source.Metadata.debug = source_debug; _ }; _ } = source in
+    { configuration with debug = debug || source_debug }
+  in
   ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
   let results =
     let queue =

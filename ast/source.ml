@@ -217,15 +217,18 @@ let pp format { statements; _ } =
 let show source = Format.asprintf "%a" pp source
 
 let mode ~configuration ~local_mode =
-  match configuration, local_mode with
-  | { Configuration.Analysis.infer = true; _ }, _ -> Infer
-  | { Configuration.Analysis.strict = true; _ }, _
-  | _, Strict ->
-      Strict
-  | { Configuration.Analysis.declare = true; _ }, _
-  | _, Declare ->
+  match local_mode with
+  | Strict -> Strict
+  | Unsafe -> Unsafe
+  | Declare
+  | PlaceholderStub ->
       Declare
-  | _ -> Default
+  | _ -> (
+    match configuration with
+    | { Configuration.Analysis.infer = true; _ } -> Infer
+    | { Configuration.Analysis.strict = true; _ } -> Strict
+    | { Configuration.Analysis.declare = true; _ } -> Declare
+    | _ -> Default )
 
 
 let create_from_source_path ~docstring ~metadata ~source_path statements =
@@ -358,18 +361,3 @@ let expand_relative_import ~from { source_path = { SourcePath.is_init; qualifier
           Reference.empty
       in
       Reference.combine prefix postfix
-
-
-let localize_configuration
-    ~source:{ metadata = { Metadata.local_mode; debug = local_debug; _ }; _ }
-    ({ Configuration.Analysis.debug; strict; _ } as configuration)
-  =
-  let debug = debug || local_debug in
-  let strict, declare =
-    match local_mode with
-    | Strict -> true, false
-    | Unsafe -> false, false
-    | Declare -> false, true
-    | _ -> strict, false
-  in
-  { configuration with debug; strict; declare }
