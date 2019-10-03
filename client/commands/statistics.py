@@ -14,7 +14,7 @@ from typing import Dict, List, Pattern, Sequence
 
 import libcst as cst
 
-from .. import log
+from .. import log, log_statistics
 from ..configuration import Configuration
 from ..filesystem import AnalysisDirectory
 from .command import Command
@@ -168,13 +168,14 @@ def _count(
     return collector
 
 
-def _find_paths(local_configuration: str, paths: List[str]) -> List[Path]:
+def _pyre_configuration_directory(local_configuration: str) -> Path:
     if local_configuration:
-        pyre_configuration_directory = Path(
-            local_configuration.replace(".pyre_configuration.local", "")
-        )
-    else:
-        pyre_configuration_directory = Path.cwd()
+        return Path(local_configuration.replace(".pyre_configuration.local", ""))
+    return Path.cwd()
+
+
+def _find_paths(local_configuration: str, paths: List[str]) -> List[Path]:
+    pyre_configuration_directory = _pyre_configuration_directory(local_configuration)
 
     if paths:
         return [pyre_configuration_directory / path for path in paths]
@@ -193,6 +194,7 @@ class Statistics(Command):
         super(Statistics, self).__init__(arguments, configuration, analysis_directory)
         self._local_configuration: str = arguments.local_configuration
         self._filter_paths: List[str] = arguments.filter_paths
+        self._configuration = configuration
 
     def _run(self) -> None:
         self._analysis_directory.prepare()
@@ -201,9 +203,29 @@ class Statistics(Command):
         annotations = _count(parsed_paths, AnnotationCountCollector())
         fixmes = _count(parsed_paths, FixmeCountCollector())
         ignores = _count(parsed_paths, IgnoreCountCollector())
-        as_json = {
+        data = {
             "annotations": annotations.build_json(),
             "fixmes": fixmes.build_json(),
             "ignores": ignores.build_json(),
         }
-        log.stdout.write(json.dumps(as_json))
+        log.stdout.write(json.dumps(data))
+
+        if self._configuration and self._configuration.logger:
+            root = str(_pyre_configuration_directory(self._local_configuration))
+            log_statistics(
+                "perfpipe_pyre_annotation_counts",
+                configuration=self._configuration,
+                integers=data["annotations"],
+                normals={"root": root},
+            )
+            self._log_fixmes("fixme", data["fixmes"], root)
+            self._log_fixmes("ignore", data["ignores"], root)
+
+    def _log_fixmes(self, fixme_type: str, data: Dict[str, int], root: str) -> None:
+        for error_code, count in data.items():
+            log_statistics(
+                "perfpipe_pyre_fixme_counts",
+                configuration=self._configuration,
+                integers={"count": count},
+                normals={"root": root, "code": error_code, "type": fixme_type},
+            )
