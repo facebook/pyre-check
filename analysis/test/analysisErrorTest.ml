@@ -1160,6 +1160,10 @@ let test_suppress context =
     assert_equal false (Error.suppress ~mode ~ignore_codes ~resolution (error ~signature kind))
   in
   (* Test different modes. *)
+  assert_not_suppressed Source.Debug (missing_return Type.Top);
+  assert_not_suppressed Source.Debug (missing_return Type.Any);
+  assert_not_suppressed Source.Debug (Error.UndefinedType Type.integer);
+  assert_not_suppressed Source.Debug (Error.AnalysisFailure Type.Top);
   assert_suppressed Source.Infer (missing_return Type.Top);
   assert_suppressed Source.Infer (missing_return Type.Any);
   assert_not_suppressed Source.Infer (missing_return Type.integer);

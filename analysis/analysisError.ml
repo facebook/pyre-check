@@ -2921,14 +2921,13 @@ let suppress ~mode ~ignore_codes ~resolution error =
     | _ -> true
   in
   try
-    let suppress_by_mode =
-      match mode with
-      | Source.Infer -> suppress_in_infer error
-      | Source.Strict -> suppress_in_strict error
-      | Source.Declare -> true
-      | Source.Unsafe -> suppress_in_default ~resolution error
-    in
-    List.exists ignore_codes ~f:(( = ) (code error)) || suppress_by_mode
+    let suppress_by_code error = List.exists ignore_codes ~f:(( = ) (code error)) in
+    match mode with
+    | Source.Infer -> suppress_in_infer error || suppress_by_code error
+    | Source.Debug -> false
+    | Source.Strict -> suppress_in_strict error || suppress_by_code error
+    | Source.Unsafe -> suppress_in_default ~resolution error || suppress_by_code error
+    | Source.Declare -> true
   with
   | ClassHierarchy.Untracked annotation ->
       Log.warning "`%s` not found in the type order." (Type.show annotation);

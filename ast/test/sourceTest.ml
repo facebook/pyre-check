@@ -24,6 +24,7 @@ let test_parse _ =
   assert_mode " # comment comment pyre-strict" Source.Default;
   assert_mode " # pyre-unsafe" Source.Unsafe;
   assert_mode " # pyre-durp" Source.Default;
+  assert_mode " # pyre-debug" Source.Debug;
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " Source.Default;
 
   let assert_ignore_codes line expected_codes =
@@ -147,6 +148,28 @@ let test_parse _ =
     ]
 
 
+let test_mode _ =
+  let assert_mode ~configuration local_mode expected_mode =
+    let actual_mode = Source.mode ~configuration ~local_mode in
+    assert_equal actual_mode expected_mode
+  in
+  let configuration = Configuration.Analysis.create () in
+  assert_mode ~configuration Source.Default Source.Unsafe;
+  assert_mode ~configuration Source.Strict Source.Strict;
+  assert_mode ~configuration Source.Debug Source.Debug;
+
+  let configuration = Configuration.Analysis.create ~strict:true () in
+  assert_mode ~configuration Source.Default Source.Strict;
+  assert_mode ~configuration Source.Unsafe Source.Unsafe;
+  assert_mode ~configuration Source.Strict Source.Strict;
+  assert_mode ~configuration Source.Debug Source.Debug;
+
+  let configuration = Configuration.Analysis.create ~debug:true () in
+  assert_mode ~configuration Source.Default Source.Debug;
+  assert_mode ~configuration Source.Strict Source.Debug;
+  assert_mode ~configuration Source.Unsafe Source.Debug
+
+
 let test_qualifier _ =
   let qualifier = Reference.create_from_list in
   assert_equal (SourcePath.qualifier_of_relative "module.py") (qualifier ["module"]);
@@ -184,7 +207,7 @@ let test_expand_relative_import _ =
 
 
 let () =
-  "metadata" >::: ["parse" >:: test_parse] |> Test.run;
+  "metadata" >::: ["parse" >:: test_parse; "mode" >:: test_mode] |> Test.run;
   "source"
   >::: ["qualifier" >:: test_qualifier; "expand_relative_import" >:: test_expand_relative_import]
   |> Test.run

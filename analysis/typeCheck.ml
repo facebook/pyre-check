@@ -4867,7 +4867,7 @@ let resolution_with_key ~global_resolution ~parent ~name ~key =
 let name = "TypeCheck"
 
 let check_define
-    ~configuration:({ Configuration.Analysis.include_hints; debug; _ } as configuration)
+    ~configuration:({ Configuration.Analysis.include_hints; _ } as configuration)
     ~global_resolution
     ~source:( {
                 Source.source_path = { SourcePath.qualifier; relative; _ };
@@ -4889,15 +4889,12 @@ let check_define
   let filter_errors errors =
     let mode = Source.mode ~configuration ~local_mode in
     let filter errors =
-      if debug then
-        errors
-      else
-        let keep_error error = not (Error.suppress ~mode ~ignore_codes ~resolution error) in
-        List.filter ~f:keep_error errors
+      let keep_error error = not (Error.suppress ~mode ~ignore_codes ~resolution error) in
+      List.filter ~f:keep_error errors
     in
     let filter_hints errors =
       match mode with
-      | Unsafe when (not include_hints) && not debug ->
+      | Unsafe when not include_hints ->
           List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
       | _ -> errors
     in
@@ -4997,11 +4994,6 @@ let check_define
 
 let check_defines ~configuration ~global_resolution ~source defines =
   let resolution = resolution global_resolution () in
-  let configuration =
-    let { Configuration.Analysis.debug; _ } = configuration in
-    let { Source.metadata = { Source.Metadata.debug = source_debug; _ }; _ } = source in
-    { configuration with debug = debug || source_debug }
-  in
   ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
   let results =
     let queue =
