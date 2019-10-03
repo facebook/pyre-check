@@ -598,7 +598,7 @@ def main() -> int:
                     "exit_code": exit_code,
                     "runtime": int((time.time() - start) * 1000),
                 },
-                normals={"cwd": os.getcwd()},
+                normals={"cwd": os.getcwd(), "client_version": __version__},
             )
 
     return exit_code
