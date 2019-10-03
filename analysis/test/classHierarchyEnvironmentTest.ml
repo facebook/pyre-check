@@ -439,6 +439,19 @@ let test_updates context =
           ("test.decorator", dependency, Some "typing.Callable[[test.Second], test.Second]");
       ]
     ();
+
+  (* Addition should trigger previous failed reads *)
+  assert_updates
+    ~original_source:{|
+    |}
+    ~new_source:{|
+      class C:
+       pass
+    |}
+    ~middle_actions:[`Edges ("test.C", dependency, None)]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`Edges ("test.C", dependency, Some ["object"])]
+    ();
   ()
 
 

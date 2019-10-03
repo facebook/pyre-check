@@ -589,6 +589,30 @@ let test_updates context =
       [`Get ("test.Foo", alias_dependency, Some 1); `Get ("test.Foo", check_dependency, Some 1)]
     ~expected_triggers:[alias_dependency; check_dependency]
     ();
+
+  (* Addition should trigger previous failed reads *)
+  assert_updates
+    ~original_source:{|
+    |}
+    ~new_source:{|
+      x: int = 9
+    |}
+    ~middle_actions:[`Global (Reference.create "test.x", dependency, None)]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        `Global
+          ( Reference.create "test.x",
+            dependency,
+            Some
+              (UnannotatedGlobalEnvironment.SimpleAssign
+                 {
+                   explicit_annotation = Some (parse_single_expression "int");
+                   value = parse_single_expression "9";
+                   target_location = Location.Reference.any;
+                 }) );
+      ]
+    ();
   ()
 
 

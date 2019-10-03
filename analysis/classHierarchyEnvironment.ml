@@ -345,9 +345,14 @@ let update environment ~scheduler ~configuration upstream_update =
       let keys_to_invalidate = IndexTracker.indices class_dependencies in
       disconnect_incoming_backedges_of_successors ~indices_to_disconnect:keys_to_invalidate;
       let (), triggered_dependencies =
-        let class_keys = keys_to_invalidate |> IndexTracker.Set.to_list |> Edges.KeySet.of_list in
+        let class_keys =
+          class_names_to_update
+          |> IndexTracker.indices
+          |> IndexTracker.Set.to_list
+          |> Edges.KeySet.of_list
+        in
         let function_keys =
-          function_dependencies |> Set.to_list |> UndecoratedFunctions.KeySet.of_list
+          function_names_to_update |> Set.to_list |> UndecoratedFunctions.KeySet.of_list
         in
         let update () =
           update_class_hierarchy ~class_names_to_update ~track_dependencies:true ();

@@ -258,6 +258,18 @@ let test_updates context =
     ~expected_triggers:[]
     ~post_actions:["test.x", dependency, Some Type.integer]
     ();
+
+  (* Addition should trigger previous failed reads *)
+  assert_updates
+    ~original_source:{|
+    |}
+    ~new_source:{|
+     x = 7
+    |}
+    ~middle_actions:["test.x", dependency, None]
+    ~expected_triggers:[dependency]
+    ~post_actions:["test.x", dependency, Some Type.integer]
+    ();
   ()
 
 

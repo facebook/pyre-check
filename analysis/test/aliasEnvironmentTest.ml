@@ -321,6 +321,20 @@ let test_updates context =
     ~expected_triggers:[dependency]
     ~post_actions:["test.X", dependency, None]
     ();
+
+  (* Addition should trigger previous failed reads *)
+  assert_updates
+    ~original_sources:["test.py", {|
+        |}]
+    ~new_sources:["test.py", {|
+          class C:
+           pass
+          X = C
+        |}]
+    ~middle_actions:["test.X", dependency, None]
+    ~expected_triggers:[dependency]
+    ~post_actions:["test.X", dependency, Some "test.C"]
+    ();
   ()
 
 

@@ -148,7 +148,7 @@ module Updater = struct
               |> List.fold ~f:Set.add ~init:(In.added_keys upstream_update)
               |> Set.to_list
             in
-            let keys = List.map dependencies ~f:In.convert_trigger |> In.Table.KeySet.of_list in
+            let keys = List.map names_to_update ~f:In.convert_trigger |> In.Table.KeySet.of_list in
             SharedMemoryKeys.DependencyKey.Transaction.empty
             |> In.Table.add_to_transaction ~keys
             |> SharedMemoryKeys.DependencyKey.Transaction.execute

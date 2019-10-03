@@ -384,6 +384,29 @@ let test_updates context =
     ~expected_triggers:[]
     ();
 
+  (* Addition should trigger previous failed reads *)
+  assert_updates
+    ~original_sources:["test.py", {|
+      |}]
+    ~new_sources:["test.py", {|
+      class C:
+        pass
+      |}]
+    ~middle_actions:["test.C", dependency, None]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        ( "test.C",
+          dependency,
+          Some
+            {
+              successors = ["object"];
+              is_test = false;
+              is_final = false;
+              extends_placeholder_stub_class = false;
+            } );
+      ]
+    ();
   ()
 
 
