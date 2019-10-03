@@ -178,8 +178,14 @@ let create ~directories =
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
     let configuration_path = Path.append directory ~element:"taint.config" in
     if not (Path.file_exists configuration_path) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a file" Path.pp configuration_path));
-    configuration_path |> File.create |> File.content |> Option.value ~default:"" |> parse
+      None
+    else
+      configuration_path
+      |> File.create
+      |> File.content
+      |> Option.value ~default:""
+      |> parse
+      |> Option.some
   in
   let merge_rules left right =
     {
@@ -189,6 +195,7 @@ let create ~directories =
       rules = left.rules @ right.rules;
     }
   in
-  directories
-  |> List.map ~f:create_rule
-  |> List.fold_left ~f:merge_rules ~init:{ sources = []; sinks = []; features = []; rules = [] }
+  let rules = directories |> List.filter_map ~f:create_rule in
+  if List.is_empty rules then
+    raise (Invalid_argument "No `taint.config` was found in the taint directories.");
+  List.fold_left rules ~f:merge_rules ~init:{ sources = []; sinks = []; features = []; rules = [] }
