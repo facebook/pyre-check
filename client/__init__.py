@@ -107,10 +107,15 @@ def get_binary_version_from_file(local_path: Optional[str]) -> str:
 
 
 def switch_root(arguments) -> None:
+    """Pyre always runs from the directory containing the nearest .pyre_configuration,
+    if one exists."""
     arguments.original_directory = os.getcwd()
-    local_root = find_root(arguments.original_directory, CONFIGURATION_FILE + ".local")
     global_root = find_root(arguments.original_directory, CONFIGURATION_FILE)
+    root = global_root or arguments.original_directory
+    arguments.current_directory = root
+    os.chdir(root)
 
+    local_root = find_root(arguments.original_directory, CONFIGURATION_FILE + ".local")
     # Check for illegal nested local configuration.
     if local_root:
         parent_local_root = find_root(
@@ -130,10 +135,6 @@ def switch_root(arguments) -> None:
         local_root = None
     if local_root and arguments.local_configuration is None:
         arguments.local_configuration = local_root
-
-    root = global_root or arguments.original_directory
-    os.chdir(root)
-    arguments.current_directory = root
 
 
 def translate_arguments(commands, arguments):
