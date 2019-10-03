@@ -27,6 +27,17 @@ let test_parse _ =
   assert_mode " # pyre-debug" Source.Debug;
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " Source.Default;
 
+  let assert_mode_errors lines expected_mode_errors =
+    let { Source.Metadata.unused_local_modes; _ } = Source.Metadata.parse ~qualifier lines in
+    assert_equal unused_local_modes expected_mode_errors
+  in
+  assert_mode_errors ["# pyre-strict"; "# derp"] [];
+  assert_mode_errors ["# pyre-strict"; "# pyre-unsafe"] [Source.Unsafe];
+  assert_mode_errors ["# pyre-strict"; "# pyre-strict"] [Source.Strict];
+  assert_mode_errors
+    ["# pyre-strict"; "derp"; "# pyre-unsafe"; "# pyre-debug"]
+    [Source.Unsafe; Source.Debug];
+
   let assert_ignore_codes line expected_codes =
     let { Source.Metadata.ignore_codes; _ } = Source.Metadata.parse ~qualifier [line] in
     assert_equal ignore_codes expected_codes
