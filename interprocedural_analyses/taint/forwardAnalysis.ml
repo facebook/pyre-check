@@ -371,7 +371,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       ForwardState.Tree.join taint value_taint, state
 
 
-    and analyze_comprehension ~resolution { Comprehension.element; generators; _ } state =
+    and analyze_comprehension_generators ~resolution ~state generators =
       let add_binding (state, resolution) ({ Comprehension.target; iterator; _ } as generator) =
         let taint, state =
           analyze_expression ~resolution ~state ~expression:iterator
@@ -387,11 +387,29 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         let access_path = AccessPath.of_expression ~resolution target in
         store_taint_option access_path taint state, resolution
       in
+      List.fold ~f:add_binding generators ~init:(state, resolution)
+
+
+    and analyze_comprehension ~resolution { Comprehension.element; generators; _ } state =
       let bound_state, resolution =
-        List.fold ~f:add_binding generators ~init:(state, resolution)
+        analyze_comprehension_generators ~resolution ~state generators
       in
       analyze_expression ~resolution ~state:bound_state ~expression:element
       |>> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Any]
+
+
+    and analyze_dictionary_comprehension
+        ~resolution
+        ~state
+        { Comprehension.element = { Expression.Dictionary.key; value }; generators; _ }
+      =
+      let state, resolution = analyze_comprehension_generators ~resolution ~state generators in
+      let value_taint, state =
+        analyze_expression ~resolution ~state ~expression:value
+        |>> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Any]
+      in
+      let key_taint, state = analyze_expression ~resolution ~state ~expression:key in
+      ForwardState.Tree.join key_taint value_taint, state
 
 
     (* Skip through * and **. Used at call sites where * and ** are handled explicitly *)
@@ -551,7 +569,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ForwardState.Tree.join new_taint taint, state
           in
           List.fold keywords ~f:analyze_dictionary_keywords ~init:(taint, state)
-      | DictionaryComprehension _
+      | DictionaryComprehension comprehension ->
+          analyze_dictionary_comprehension ~resolution ~state comprehension
       | Ellipsis
       | False
       | Float _ ->

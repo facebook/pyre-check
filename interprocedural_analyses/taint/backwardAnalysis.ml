@@ -286,15 +286,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       analyze_expression ~resolution ~taint:value_taint ~state ~expression
 
 
-    and analyze_comprehension ~resolution taint { Comprehension.element; generators; _ } state =
+    and generator_resolution ~resolution generators =
       let resolve_generator resolution generator =
         Resolution.resolve_assignment
           resolution
           (Ast.Statement.Statement.generator_assignment generator)
       in
-      let resolution = List.fold generators ~init:resolution ~f:resolve_generator in
-      let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
-      let state = analyze_expression ~resolution ~taint:element_taint ~state ~expression:element in
+      List.fold generators ~init:resolution ~f:resolve_generator
+
+
+    and analyze_generators ~resolution ~state generators =
       let handle_generator state { Comprehension.target; iterator; _ } =
         let access_path = of_expression ~resolution target in
         let bound_variable_taint = get_taint access_path state in
@@ -304,6 +305,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_expression ~resolution ~taint:iterator_taint ~state ~expression:iterator
       in
       List.fold ~f:handle_generator generators ~init:state
+
+
+    and analyze_comprehension ~resolution taint { Comprehension.element; generators; _ } state =
+      let resolution = generator_resolution ~resolution generators in
+      let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
+      let state = analyze_expression ~resolution ~taint:element_taint ~state ~expression:element in
+      analyze_generators ~resolution ~state generators
 
 
     (* Skip through * and **. Used at call sites where * and ** are handled explicitly *)
@@ -448,7 +456,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~resolution ~taint ~state ~expression:keywords
           in
           List.fold keywords ~f:analyze_dictionary_keywords ~init:state
-      | DictionaryComprehension _
+      | DictionaryComprehension
+          { Comprehension.element = { Dictionary.key; value }; generators; _ } ->
+          let resolution = generator_resolution ~resolution generators in
+          let state = analyze_expression ~resolution ~taint ~state ~expression:key in
+          let state =
+            analyze_expression
+              ~resolution
+              ~taint:(read_tree [AbstractTreeDomain.Label.Any] taint)
+              ~state
+              ~expression:value
+          in
+          analyze_generators ~resolution ~state generators
       | Ellipsis
       | False
       | Float _ ->

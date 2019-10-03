@@ -85,3 +85,21 @@ class SpecialSetitemDict(Dict[Any, Any]):
 def tainted_setitem(d: SpecialSetitemDict) -> SpecialSetitemDict:
     d[__test_source()] = 1
     return d
+
+
+def forward_comprehension_value_source():
+    d = {"a": __test_source() for x in []}
+    return d
+
+
+def forward_comprehension_key_source():
+    d = {__test_source(): 0 for x in []}
+    return d
+
+
+def forward_comprehension_value_sink(arg):
+    d = {"a": __test_sink(x) for x in [arg]}
+
+
+def forward_comprehension_key_sink(arg):
+    d = {__test_sink(x): 0 for x in [arg]}

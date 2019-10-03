@@ -529,6 +529,24 @@ let test_dictionary context =
         d = { __test_source(): "a" }
         return d[0]
     |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_source"];
+
+  (* Comprehensions. *)
+  assert_taint
+    ~context
+    {|
+      def dictionary_source():
+        d = { 1: x for x in [__test_source()] }
+        return d
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_source"];
+  assert_taint
+    ~context
+    {|
+      def dictionary_source():
+        d = { x: 1 for x in [__test_source()] }
+        return d
+    |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_source"]
 
 

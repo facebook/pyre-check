@@ -595,6 +595,30 @@ let test_dictionary context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
         "qualifier.dictionary_sink";
+    ];
+  assert_taint
+    ~context
+    {|
+      def dictionary_sink(arg):
+        d = { __test_sink(a): "a" for a in arg }
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        "qualifier.dictionary_sink";
+    ];
+  assert_taint
+    ~context
+    {|
+      def dictionary_sink(arg):
+        d = { "a": __test_sink(a) for a in arg }
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        "qualifier.dictionary_sink";
     ]
 
 
