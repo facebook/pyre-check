@@ -414,59 +414,34 @@ let register_aliases environment global_names ~track_dependencies =
 
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
-let update environment ~scheduler ~configuration upstream_update =
-  let update ~names_to_update ?(track_dependencies = true) () =
-    Scheduler.iter
-      scheduler
-      ~configuration
-      ~f:(register_aliases environment ~track_dependencies)
-      ~inputs:(Set.to_list names_to_update)
-  in
-  match configuration with
-  | { incremental_style = FineGrained; _ } ->
-      let (), triggered_dependencies =
-        let upstream_dependencies =
-          let filter =
-            List.filter_map ~f:(function
-                | SharedMemoryKeys.AliasRegister name -> Some name
-                | _ -> None)
-          in
-          UnannotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies upstream_update
-          |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
-          |> List.concat_map ~f:filter
-        in
-        let names_to_update =
-          upstream_dependencies
-          |> List.fold
-               ~f:Set.add
-               ~init:
-                 (UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals
-                    upstream_update)
-        in
-        let keys_to_invalidate =
-          List.map upstream_dependencies ~f:Reference.show |> Aliases.KeySet.of_list
-        in
-        SharedMemoryKeys.DependencyKey.Transaction.empty
-        |> Aliases.add_to_transaction ~keys:keys_to_invalidate
-        |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update:(update ~names_to_update)
-      in
-      UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
-  | _ ->
-      let current_and_previous =
-        UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
-          upstream_update
-      in
-      let () =
-        Reference.Set.to_list current_and_previous
-        |> List.map ~f:Reference.show
-        |> Aliases.KeySet.of_list
-        |> Aliases.remove_batch
-      in
-      update ~names_to_update:current_and_previous ~track_dependencies:false ();
-      UpdateResult.create
-        ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
-        ~upstream:upstream_update
+include Environment.Updater.Make (struct
+  module PreviousEnvironment = PreviousEnvironment
+  module UpdateResult = UpdateResult
+  module Table = Aliases
 
+  type trigger = Reference.t
+
+  let convert_trigger = Reference.show
+
+  type nonrec t = t
+
+  module TriggerSet = Reference.Set
+
+  let register = register_aliases
+
+  let filter_upstream_dependency = function
+    | SharedMemoryKeys.AliasRegister name -> Some name
+    | _ -> None
+
+
+  let added_keys upstream_update =
+    UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals upstream_update
+
+
+  let current_and_previous_keys upstream_update =
+    UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
+      upstream_update
+end)
 
 let read_only { unannotated_global_environment } =
   { ReadOnly.unannotated_global_environment; get_alias = Aliases.get }

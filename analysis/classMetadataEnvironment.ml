@@ -118,55 +118,39 @@ let register_class_metadata { class_hierarchy_environment } class_name ~track_de
   |> Option.value ~default:()
 
 
-let update environment ~scheduler ~configuration upstream_update =
-  let update ~names_to_update ~track_dependencies () =
-    let register names =
-      List.iter names ~f:(register_class_metadata environment ~track_dependencies)
-    in
-    Scheduler.iter scheduler ~configuration ~f:register ~inputs:(Set.to_list names_to_update)
-  in
-  match configuration with
-  | { incremental_style = FineGrained; _ } ->
-      let dependencies =
-        let filter =
-          List.filter_map ~f:(function
-              | SharedMemoryKeys.RegisterClassMetadata name -> Some name
-              | _ -> None)
-        in
-        ClassHierarchyEnvironment.UpdateResult.all_triggered_dependencies upstream_update
-        |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.concat_map ~f:filter
-        |> Type.Primitive.Set.of_list
-      in
-      let names_to_update =
-        ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
-        |> AliasEnvironment.UpdateResult.upstream
-        |> UnannotatedGlobalEnvironment.UpdateResult.added_classes
-        |> Set.union dependencies
-      in
-      let (), triggered_dependencies =
-        let keys = names_to_update |> Set.to_list |> ClassMetadata.KeySet.of_list in
-        SharedMemoryKeys.DependencyKey.Transaction.empty
-        |> ClassMetadata.add_to_transaction ~keys
-        |> SharedMemoryKeys.DependencyKey.Transaction.execute
-             ~update:(update ~names_to_update ~track_dependencies:true)
-      in
-      UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
-  | _ ->
-      let current_and_previous =
-        ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
-        |> AliasEnvironment.UpdateResult.upstream
-        |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
-      in
-      Set.to_list current_and_previous
-      |> ClassMetadata.KeySet.of_list
-      |> ClassMetadata.remove_batch;
-      update ~names_to_update:current_and_previous () ~track_dependencies:false;
+include Environment.Updater.Make (struct
+  module PreviousEnvironment = PreviousEnvironment
+  module UpdateResult = UpdateResult
+  module Table = ClassMetadata
 
-      UpdateResult.create
-        ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
-        ~upstream:upstream_update
+  type nonrec t = t
 
+  type trigger = string
+
+  let convert_trigger = Fn.id
+
+  module TriggerSet = Type.Primitive.Set
+
+  let register environment names ~track_dependencies =
+    List.iter names ~f:(register_class_metadata environment ~track_dependencies)
+
+
+  let filter_upstream_dependency = function
+    | SharedMemoryKeys.RegisterClassMetadata name -> Some name
+    | _ -> None
+
+
+  let added_keys upstream_update =
+    ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
+    |> AliasEnvironment.UpdateResult.upstream
+    |> UnannotatedGlobalEnvironment.UpdateResult.added_classes
+
+
+  let current_and_previous_keys upstream_update =
+    ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
+    |> AliasEnvironment.UpdateResult.upstream
+    |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
+end)
 
 let read_only { class_hierarchy_environment } =
   { ReadOnly.class_hierarchy_environment; get_class_metadata = ClassMetadata.get }

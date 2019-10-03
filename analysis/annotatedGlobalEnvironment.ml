@@ -196,75 +196,64 @@ let annotate_global environment name ~track_dependencies =
       |> Option.value ~default:()
 
 
-let update environment ~scheduler ~configuration upstream_result =
-  let update ~names_to_update ~track_dependencies () =
-    let annotate = List.iter ~f:(annotate_global environment ~track_dependencies) in
-    Scheduler.iter scheduler ~configuration ~f:annotate ~inputs:(Set.to_list names_to_update)
-  in
-  match configuration with
-  | { incremental_style = FineGrained; _ } ->
-      let dependencies =
-        let filter =
-          List.filter_map ~f:(function
-              | SharedMemoryKeys.AnnotateGlobal name -> Some name
-              | _ -> None)
-        in
-        ClassMetadataEnvironment.UpdateResult.all_triggered_dependencies upstream_result
-        |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.concat_map ~f:filter
-        |> Reference.Set.of_list
-      in
-      let names_to_update =
-        let upstream =
-          ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-          |> ClassHierarchyEnvironment.UpdateResult.upstream
-          |> AliasEnvironment.UpdateResult.upstream
-        in
-        let new_classes =
-          UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes upstream
-          |> Set.to_list
-          |> List.map ~f:Reference.create
-        in
-        let new_ugs =
-          UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
-            upstream
-        in
-        List.fold ~init:(Set.union new_ugs dependencies) ~f:Set.add new_classes
-      in
-      let globals = Globals.KeySet.of_list (Set.to_list dependencies) in
-      let (), triggered_dependencies =
-        let update = update ~names_to_update ~track_dependencies:true in
-        SharedMemoryKeys.DependencyKey.Transaction.empty
-        |> Globals.add_to_transaction ~keys:globals
-        |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
-      in
-      UpdateResult.create ~triggered_dependencies ~upstream:upstream_result
-  | _ ->
-      let upstream =
-        ClassMetadataEnvironment.UpdateResult.upstream upstream_result
-        |> ClassHierarchyEnvironment.UpdateResult.upstream
-        |> AliasEnvironment.UpdateResult.upstream
-      in
-      let current_and_previous_classes =
-        UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes upstream
-        |> Set.to_list
-        |> List.map ~f:Reference.create
-      in
-      let current_and_previous_unannotated_globals =
-        UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals upstream
-      in
-      let names_to_update =
-        List.fold
-          ~init:current_and_previous_unannotated_globals
-          ~f:Set.add
-          current_and_previous_classes
-      in
-      Set.to_list names_to_update |> Globals.KeySet.of_list |> Globals.remove_batch;
-      update ~names_to_update ~track_dependencies:false ();
-      UpdateResult.create
-        ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
-        ~upstream:upstream_result
+include Environment.Updater.Make (struct
+  module PreviousEnvironment = PreviousEnvironment
+  module UpdateResult = UpdateResult
+  module Table = Globals
 
+  type nonrec t = t
+
+  type trigger = Reference.t
+
+  let convert_trigger = Fn.id
+
+  module TriggerSet = Reference.Set
+
+  let register environment names ~track_dependencies =
+    List.iter names ~f:(annotate_global environment ~track_dependencies)
+
+
+  let filter_upstream_dependency = function
+    | SharedMemoryKeys.AnnotateGlobal name -> Some name
+    | _ -> None
+
+
+  let added_keys upstream_update =
+    let upstream =
+      ClassMetadataEnvironment.UpdateResult.upstream upstream_update
+      |> ClassHierarchyEnvironment.UpdateResult.upstream
+      |> AliasEnvironment.UpdateResult.upstream
+    in
+    let new_classes =
+      UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes upstream
+      |> Type.Primitive.Set.to_list
+      |> List.map ~f:Reference.create
+    in
+    let new_unannotated_globals =
+      UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals upstream
+    in
+    List.fold ~init:new_unannotated_globals ~f:Set.add new_classes
+
+
+  let current_and_previous_keys upstream_update =
+    let upstream =
+      ClassMetadataEnvironment.UpdateResult.upstream upstream_update
+      |> ClassHierarchyEnvironment.UpdateResult.upstream
+      |> AliasEnvironment.UpdateResult.upstream
+    in
+    let current_and_previous_classes =
+      UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes upstream
+      |> Type.Primitive.Set.to_list
+      |> List.map ~f:Reference.create
+    in
+    let current_and_previous_unannotated_globals =
+      UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals upstream
+    in
+    List.fold
+      ~init:current_and_previous_unannotated_globals
+      ~f:Set.add
+      current_and_previous_classes
+end)
 
 let read_only ({ class_metadata_environment } as environment) =
   let hash_to_key_map () =
