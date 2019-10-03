@@ -4897,9 +4897,7 @@ let check_define
     in
     let filter_hints errors =
       match mode with
-      | Default
-      | Unsafe
-        when (not include_hints) && not debug ->
+      | Unsafe when (not include_hints) && not debug ->
           List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
       | _ -> errors
     in

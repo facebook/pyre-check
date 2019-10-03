@@ -1169,23 +1169,23 @@ let test_suppress context =
   assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
   assert_not_suppressed Source.Strict (missing_return Type.Any);
   assert_not_suppressed Source.Strict (Error.AnalysisFailure Type.integer);
-  assert_not_suppressed Source.Default (missing_return Type.integer);
-  assert_suppressed Source.Default (missing_return Type.Top);
-  assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
-  assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Any);
-  assert_not_suppressed Source.Default (revealed_type "a" (Annotation.create Type.integer));
+  assert_not_suppressed Source.Unsafe (missing_return Type.integer);
+  assert_suppressed Source.Unsafe (missing_return Type.Top);
+  assert_not_suppressed Source.Unsafe (incompatible_return_type Type.integer Type.float);
+  assert_suppressed Source.Unsafe (incompatible_return_type Type.integer Type.Any);
+  assert_not_suppressed Source.Unsafe (revealed_type "a" (Annotation.create Type.integer));
   assert_not_suppressed
     ~signature:untyped_signature
-    Source.Default
+    Source.Unsafe
     (revealed_type "a" (Annotation.create Type.integer));
-  assert_suppressed Source.Default (Error.UndefinedName !&"reveal_type");
-  assert_not_suppressed Source.Default (Error.AnalysisFailure Type.integer);
+  assert_suppressed Source.Unsafe (Error.UndefinedName !&"reveal_type");
+  assert_not_suppressed Source.Unsafe (Error.AnalysisFailure Type.integer);
   assert_suppressed
-    Source.Default
+    Source.Unsafe
     (Error.InvalidTypeParameters
        { name = "dict"; kind = IncorrectNumberOfParameters { expected = 2; actual = 0 } });
   assert_not_suppressed
-    Source.Default
+    Source.Unsafe
     (Error.InvalidTypeParameters
        { name = "dict"; kind = IncorrectNumberOfParameters { expected = 2; actual = 1 } });
   assert_not_suppressed
@@ -1194,22 +1194,22 @@ let test_suppress context =
        { name = "dict"; kind = IncorrectNumberOfParameters { expected = 2; actual = 0 } });
   let suppress_missing_return = [Error.code (error (missing_return Type.Any))] in
   assert_suppressed
-    Source.Default
+    Source.Unsafe
     ~ignore_codes:suppress_missing_return
     (missing_return Type.integer);
   assert_suppressed
     Source.Strict
     ~ignore_codes:suppress_missing_return
     (missing_return Type.integer);
-  assert_suppressed Source.Default ~ignore_codes:suppress_missing_return (missing_return Type.Any);
+  assert_suppressed Source.Unsafe ~ignore_codes:suppress_missing_return (missing_return Type.Any);
 
   (* Defer to Default policy if not specifically suppressed *)
   assert_not_suppressed
-    Source.Default
+    Source.Unsafe
     ~ignore_codes:suppress_missing_return
     (incompatible_return_type Type.integer Type.float);
   assert_suppressed
-    Source.Default
+    Source.Unsafe
     ~ignore_codes:suppress_missing_return
     (Error.UndefinedName !&"reveal_type");
 
@@ -1217,7 +1217,7 @@ let test_suppress context =
     Source.Declare
     (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
   assert_not_suppressed
-    Source.Default
+    Source.Unsafe
     (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
   assert_not_suppressed
     Source.Strict

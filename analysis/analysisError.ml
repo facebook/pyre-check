@@ -2926,7 +2926,7 @@ let suppress ~mode ~ignore_codes ~resolution error =
       | Source.Infer -> suppress_in_infer error
       | Source.Strict -> suppress_in_strict error
       | Source.Declare -> true
-      | _ -> suppress_in_default ~resolution error
+      | Source.Unsafe -> suppress_in_default ~resolution error
     in
     List.exists ignore_codes ~f:(( = ) (code error)) || suppress_by_mode
   with
