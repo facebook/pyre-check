@@ -73,49 +73,31 @@ let recheck
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
     in
-    let unannotated_global_environment_update_result =
+    let alias_environment =
+      AliasEnvironment.create
+        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
+    in
+    let class_hierarchy_environment =
+      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
+    in
+    let class_metadata_environment =
+      ClassMetadataEnvironment.create
+        (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+    in
+    let annotated_global_environment =
+      AnnotatedGlobalEnvironment.create
+        (ClassMetadataEnvironment.read_only class_metadata_environment)
+    in
+    let class_metadata_update_result =
       UnannotatedGlobalEnvironment.update
         unannotated_global_environment
         ~scheduler
         ~configuration
         ~ast_environment_update_result
         invalidated_environment_qualifiers
-    in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
-    let alias_update_result =
-      AliasEnvironment.update
-        alias_environment
-        ~scheduler
-        ~configuration
-        unannotated_global_environment_update_result
-    in
-    let class_hierarchy_environment =
-      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-    in
-    let class_hierarchy_update_result =
-      ClassHierarchyEnvironment.update
-        class_hierarchy_environment
-        ~scheduler
-        ~configuration
-        alias_update_result
-    in
-    let class_metadata_environment =
-      ClassMetadataEnvironment.create
-        (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
-    in
-    let class_metadata_update_result =
-      ClassMetadataEnvironment.update
-        class_metadata_environment
-        ~scheduler
-        ~configuration
-        class_hierarchy_update_result
-    in
-    let annotated_global_environment =
-      AnnotatedGlobalEnvironment.create
-        (ClassMetadataEnvironment.read_only class_metadata_environment)
+      |> AliasEnvironment.update alias_environment ~scheduler ~configuration
+      |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
+      |> ClassMetadataEnvironment.update class_metadata_environment ~scheduler ~configuration
     in
     let validate_hierarchy () =
       let resolution =
