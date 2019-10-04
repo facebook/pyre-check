@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import report
-from .batch import RunnerResult, run_batch
+from .batch import RunnerResult, run_batch_benchmark, run_batch_test
 from .environment import SubprocessEnvironment
 from .specification import InvalidSpecificationException, Specification
 
@@ -23,7 +23,7 @@ def _setup_logging(verbosity: int) -> None:
     )
 
 
-def _log_statistics(results: List[RunnerResult]) -> None:
+def _log_test_statistics(results: List[RunnerResult]) -> None:
     results_with_output = [
         result for result in results if result.get_status() != "exception"
     ]
@@ -38,6 +38,17 @@ def _log_statistics(results: List[RunnerResult]) -> None:
     ]
     LOG.warning(f"Tests passed = {len(passed_results)}")
     LOG.warning(f"Tests failed = {len(results_with_output) - len(passed_results)}")
+
+
+def _log_benchmark_statistics(results: List[RunnerResult]) -> None:
+    results_with_output = [
+        result for result in results if result.get_status() != "exception"
+    ]
+    LOG.warning(f"Total number of benchmarks = {len(results)}")
+    LOG.warning(f"Successfully finished benchmarks = {len(results_with_output)}")
+    LOG.warning(
+        f"Benchmarks finished with exceptions: {len(results) - len(results_with_output)}"  # noqa: line too long
+    )
 
 
 class ExitCode(enum.IntEnum):
@@ -64,11 +75,17 @@ def main(arguments: argparse.Namespace) -> int:
             Specification.from_json(input_json) for input_json in specification_jsons
         ]
 
-        LOG.info(f"Start testing {len(specifications)} specifications...")
-        results = run_batch(SubprocessEnvironment(), specifications)
-        LOG.info("Done testing.")
+        if arguments.benchmark:
+            LOG.info(f"Start benchmarking {len(specifications)} specifications...")
+            results = run_batch_benchmark(SubprocessEnvironment(), specifications)
+            _log_benchmark_statistics(results)
+            LOG.info("Done benchmarking.")
+        else:
+            LOG.info(f"Start testing {len(specifications)} specifications...")
+            results = run_batch_test(SubprocessEnvironment(), specifications)
+            _log_test_statistics(results)
+            LOG.info("Done testing.")
 
-        _log_statistics(results)
         logger = arguments.logger
         if logger is None:
             report.to_console(results, arguments.dont_show_discrepancy)
@@ -102,6 +119,15 @@ if __name__ == "__main__":
         type=Path,
         nargs="?",
         help="A JSON file containing a list of testing specifications",
+    )
+    parser.add_argument(
+        "-b",
+        "--benchmark",
+        action="store_true",
+        help=(
+            "Only run incremental check and record the time. "
+            "Do not run full check and compare results"
+        ),
     )
     parser.add_argument(
         "--dont-show-discrepancy",

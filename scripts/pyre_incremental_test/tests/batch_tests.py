@@ -5,7 +5,7 @@ import unittest
 from dataclasses import asdict
 from typing import ClassVar, Dict, List
 
-from ..batch import run_batch
+from ..batch import run_batch_test
 from ..runner import PyreError
 from ..specification import Specification
 from .test_environment import (
@@ -71,7 +71,7 @@ class RunnerTest(unittest.TestCase):
         expected_output: List[str],
     ) -> None:
         environment = TestEnvironment(mock_execute)
-        actual_output = run_batch(environment, specifications)
+        actual_output = run_batch_test(environment, specifications)
         self.assertEqual(len(actual_output), len(expected_output))
         for actual, expected in zip(actual_output, expected_output):
             self.assertEqual(actual.get_status(), expected)

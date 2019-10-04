@@ -185,3 +185,23 @@ def compare_server_to_full(
         else InconsistentOutput(full_check_output, incremental_check_output)
     )
     return ResultComparison(discrepancy, full_check_time, incremental_check_time)
+
+
+def benchmark_server(environment: Environment, specification: Specification) -> int:
+    LOG.info("Preparing base repository state...")
+    with _create_pyre_runner(environment, specification) as pyre_runner:
+        LOG.debug("Starting pyre server...")
+        pyre_runner.run_start()
+        LOG.debug("Preparing updated repository state...")
+        pyre_runner.update()
+
+        start_time = time()
+        LOG.info("Running pyre incremental check...")
+        incremental_check_output = pyre_runner.run_incremental()
+        incremental_check_time = int((time() - start_time) * 1000)
+        LOG.debug(f"Stopping pyre server...")
+        pyre_runner.run_stop()
+        LOG.info(
+            f"Pyre incremental check successfully finished (with {len(incremental_check_output)} errors)."  # noqa: line too long
+        )
+    return incremental_check_time

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List
 
 from .environment import Environment
-from .runner import ResultComparison, compare_server_to_full
+from .runner import ResultComparison, benchmark_server, compare_server_to_full
 from .specification import Specification
 
 
@@ -112,7 +112,34 @@ class FailedRunnerResult(FinishedRunnerResult):
         }
 
 
-def run_single(environment: Environment, input: Specification) -> RunnerResult:
+class BenchmarkResult(RunnerResult):
+    _incremental_check_time: int
+
+    def __init__(self, input: Specification, incremental_check_time: int) -> None:
+        super().__init__(input)
+        self._incremental_check_time = incremental_check_time
+
+    def get_status(self) -> str:
+        return "benchmark"
+
+    def to_json(self, dont_show_discrepancy: bool) -> Dict[str, Any]:
+        return {
+            "status": self.get_status(),
+            "input": self.input.to_json(),
+            "time": self._incremental_check_time,
+        }
+
+    def to_logger_sample(self) -> Sample:
+        return Sample(
+            normals={
+                "status": self.get_status(),
+                "input": json.dumps(self.input.to_json()),
+            },
+            integers={"incremental_check_time": self._incremental_check_time},
+        )
+
+
+def run_single_test(environment: Environment, input: Specification) -> RunnerResult:
     try:
         LOG.info(f"Running test on state '{input.old_state}' vs '{input.new_state}'")
         output = compare_server_to_full(environment, input)
@@ -127,7 +154,29 @@ def run_single(environment: Environment, input: Specification) -> RunnerResult:
     return result
 
 
-def run_batch(
+def run_batch_test(
     environment: Environment, inputs: Iterable[Specification]
 ) -> List[RunnerResult]:
-    return [run_single(environment, input) for input in inputs]
+    return [run_single_test(environment, input) for input in inputs]
+
+
+def run_single_benchmark(
+    environment: Environment, input: Specification
+) -> RunnerResult:
+    try:
+        LOG.info(
+            f"Running benchmark on state '{input.old_state}' vs '{input.new_state}'"
+        )
+        output = benchmark_server(environment, input)
+        result = BenchmarkResult(input, output)
+    except Exception:
+        result = ExceptionalRunnerResult(input, traceback.format_exc())
+
+    LOG.info(f"Test finished with status = {result.get_status()}")
+    return result
+
+
+def run_batch_benchmark(
+    environment: Environment, inputs: Iterable[Specification]
+) -> List[RunnerResult]:
+    return [run_single_benchmark(environment, input) for input in inputs]
