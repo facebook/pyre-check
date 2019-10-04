@@ -1049,7 +1049,7 @@ let test_meet_type_order context =
   assert_meet (Type.Union [Type.integer; Type.string]) Type.integer Type.integer;
   assert_meet a b b;
   assert_meet a c c;
-  assert_meet b c d;
+  assert_meet b c Type.Bottom;
   assert_meet b d d;
   assert_meet c d d;
 
@@ -1209,10 +1209,7 @@ let test_connect_annotations_to_top context =
     update_result
   |> ignore;
   let order = class_hierarchy (AnnotatedGlobalEnvironment.read_only environment) in
-  assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"];
-
-  (* Ensure that the backedge gets added as well *)
-  assert_equal (ClassHierarchy.greatest_lower_bound order "test.One" "object") ["test.One"]
+  assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
 
 
 let test_deduplicate context =
@@ -1271,12 +1268,6 @@ let test_deduplicate context =
     "test.One"
     [Type.integer; Type.integer]
     (fun target -> [target]);
-  BackwardsAsserter.assert_targets
-    Handler.backedges
-    "test.One"
-    "test.Zero"
-    [Type.integer; Type.integer]
-    (fun target -> ClassHierarchy.Target.Set.of_list [target]);
   ()
 
 
@@ -1323,22 +1314,11 @@ let test_remove_extra_edges_to_object context =
   let (module Handler) = class_hierarchy (AnnotatedGlobalEnvironment.read_only environment) in
   let zero_index = IndexTracker.index "test.Zero" in
   let one_index = IndexTracker.index "test.One" in
-  let two_index = IndexTracker.index "test.Two" in
-  let object_index = IndexTracker.index "object" in
   let printer = List.to_string ~f:ClassHierarchy.Target.show in
   assert_equal
     ~printer
     (find_unsafe Handler.edges zero_index)
     [{ ClassHierarchy.Target.target = one_index; parameters = Concrete [] }];
-  let filter_only_relevant_targets =
-    Set.filter ~f:(fun { ClassHierarchy.Target.target; _ } ->
-        List.mem [zero_index; one_index; two_index; object_index] target ~equal:IndexTracker.equal)
-  in
-  assert_equal
-    ~cmp:ClassHierarchy.Target.Set.equal
-    (find_unsafe Handler.backedges object_index |> filter_only_relevant_targets)
-    (ClassHierarchy.Target.Set.of_list
-       [{ ClassHierarchy.Target.target = two_index; parameters = Concrete [] }]);
   ()
 
 

@@ -113,7 +113,6 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
   let edges =
     ClassHierarchyEnvironment.ReadOnly.get_edges ?dependency class_hierarchy_environment
   in
-  let backedges = ClassHierarchyEnvironment.ReadOnly.get_backedges class_hierarchy_environment in
   let constructor ~resolution class_name =
     let instantiated = Type.Primitive class_name in
     class_definition class_name
@@ -165,8 +164,6 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
   let class_hierarchy =
     ( module struct
       let edges = edges
-
-      let backedges key = backedges key >>| ClassHierarchy.Target.Set.of_tree
 
       let contains key = class_definition key |> Option.is_some
     end : ClassHierarchy.Handler )

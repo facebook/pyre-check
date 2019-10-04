@@ -14,8 +14,6 @@ module HierarchyReadOnly : sig
     IndexTracker.t ->
     ClassHierarchy.Target.t list option
 
-  val get_backedges : t -> IndexTracker.t -> ClassHierarchy.Target.Set.Tree.t option
-
   val get_undecorated_function
     :  t ->
     ?dependency:dependency ->

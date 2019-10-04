@@ -1190,7 +1190,7 @@ module OrderImplementation = struct
 
     and meet
         ( {
-            handler = (module Handler : ClassHierarchy.Handler) as handler;
+            handler = (module Handler : ClassHierarchy.Handler);
             constructor;
             is_protocol;
             protocol_assumptions;
@@ -1235,82 +1235,14 @@ module OrderImplementation = struct
               other
             else
               List.map elements ~f:(meet order other) |> List.fold ~f:(meet order) ~init:Type.Top
-        | ( Type.Parametric { name = left_primitive; _ },
-            Type.Parametric { name = right_primitive; _ } ) -> (
+        | Type.Parametric _, Type.Parametric _
+        | Type.Primitive _, Type.Primitive _ ->
             if always_less_or_equal order ~left ~right then
               left
             else if always_less_or_equal order ~left:right ~right:left then
               right
             else
-              let target = meet order (Primitive left_primitive) (Primitive right_primitive) in
-              match target with
-              | Primitive target when Option.is_some (Handler.edges (IndexTracker.index target))
-                -> (
-                  let step ~predecessor_variables ~parameters =
-                    solve_ordered_types_less_or_equal
-                      order
-                      ~constraints:TypeConstraints.empty
-                      ~left:predecessor_variables
-                      ~right:parameters
-                    |> List.filter_map ~f:(OrderedConstraints.solve ~order)
-                    |> List.hd
-                  in
-                  let left_parameters =
-                    ClassHierarchy.instantiate_predecessors_parameters
-                      handler
-                      ~source:left
-                      ~target
-                      ~step
-                  in
-                  let right_parameters =
-                    ClassHierarchy.instantiate_predecessors_parameters
-                      handler
-                      ~source:right
-                      ~target
-                      ~step
-                  in
-                  let variables = ClassHierarchy.variables handler target in
-                  let parameters =
-                    let meet_parameters left right { Type.Variable.Unary.variance; _ } =
-                      match left, right, variance with
-                      | Type.Bottom, _, _
-                      | _, Type.Bottom, _ ->
-                          Type.Bottom
-                      | Type.Top, other, _
-                      | other, Type.Top, _ ->
-                          other
-                      | Type.Any, _, _
-                      | _, Type.Any, _ ->
-                          Type.Bottom
-                      | _, _, Covariant -> meet order left right
-                      | _, _, Contravariant -> join order left right
-                      | _, _, Invariant ->
-                          if
-                            always_less_or_equal order ~left ~right
-                            && always_less_or_equal order ~left:right ~right:left
-                          then
-                            left
-                          else
-                            (* We fallback to Type.Bottom if type equality fails to help display
-                               meaningful error messages. *)
-                            Type.Bottom
-                    in
-                    match left_parameters, right_parameters, variables with
-                    | Some (Concrete []), Some (Concrete []), None -> Some []
-                    | Some (Concrete left), Some (Concrete right), Some (Unaries variables)
-                      when List.length left = List.length right
-                           && List.length left = List.length variables ->
-                        Some (List.map3_exn ~f:meet_parameters left right variables)
-                    | _ ->
-                        (* TODO:(T47348519) handle meeting variadics *)
-                        None
-                  in
-                  match parameters with
-                  | Some [] -> Type.Primitive target
-                  | Some parameters ->
-                      Type.Parametric { name = target; parameters = Concrete parameters }
-                  | _ -> Type.Bottom )
-              | _ -> Type.Bottom )
+              Type.Bottom
         (* A <= B -> glb(A, Optional[B]) = A. *)
         | other, Type.Optional parameter
         | Type.Optional parameter, other ->
@@ -1403,10 +1335,6 @@ module OrderImplementation = struct
           when is_protocol left ~protocol_assumptions
                && always_less_or_equal order ~left:right ~right:left ->
             right
-        | Type.Primitive left, Type.Primitive right -> (
-          match List.hd (ClassHierarchy.greatest_lower_bound handler left right) with
-          | Some node -> Type.Primitive node
-          | None -> Type.Bottom )
         | _ ->
             Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
             Type.Bottom

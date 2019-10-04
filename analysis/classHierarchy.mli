@@ -56,8 +56,6 @@ end
 module type Handler = sig
   val edges : IndexTracker.t -> Target.t list option
 
-  val backedges : IndexTracker.t -> Target.Set.t option
-
   val contains : Type.Primitive.t -> bool
 end
 
@@ -96,12 +94,6 @@ val least_upper_bound
   Type.Primitive.t ->
   Type.Primitive.t list
 
-val greatest_lower_bound
-  :  (module Handler) ->
-  Type.Primitive.t ->
-  Type.Primitive.t ->
-  Type.Primitive.t list
-
 val check_integrity : (module Handler) -> indices:IndexTracker.t list -> unit
 
 val to_json : (module Handler) -> indices:IndexTracker.t list -> Yojson.Safe.t
@@ -118,14 +110,4 @@ val instantiate_successors_parameters
   :  (module Handler) ->
   source:Type.t ->
   target:Type.Primitive.t ->
-  Type.OrderedTypes.t Option.t
-
-val instantiate_predecessors_parameters
-  :  (module Handler) ->
-  source:Type.t ->
-  target:Type.Primitive.t ->
-  step:
-    (predecessor_variables:Type.OrderedTypes.t ->
-    parameters:Type.OrderedTypes.t ->
-    TypeConstraints.Solution.t option) ->
   Type.OrderedTypes.t Option.t

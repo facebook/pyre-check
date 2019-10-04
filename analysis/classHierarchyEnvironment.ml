@@ -24,7 +24,6 @@ module ReadOnly = struct
       ?dependency:SharedMemoryKeys.dependency ->
       IndexTracker.t ->
       ClassHierarchy.Target.t list option;
-    get_backedges: IndexTracker.t -> ClassHierarchy.Target.Set.Tree.t option;
     get_undecorated_function:
       ?dependency:SharedMemoryKeys.dependency ->
       Reference.t ->
@@ -33,8 +32,6 @@ module ReadOnly = struct
   }
 
   let get_edges { get_edges; _ } = get_edges
-
-  let get_backedges { get_backedges; _ } = get_backedges
 
   let get_undecorated_function { get_undecorated_function; _ } = get_undecorated_function
 
@@ -54,20 +51,9 @@ module EdgeValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module BackedgeValue = struct
-  type t = ClassHierarchy.Target.Set.Tree.t
-
-  let prefix = Prefix.make ()
-
-  let description = "Backedges"
-
-  let unmarshall value = Marshal.from_string value 0
-end
-
 module Edges =
   Memory.DependencyTrackedTableWithCache (IndexTracker.IndexKey) (SharedMemoryKeys.DependencyKey)
     (EdgeValue)
-module Backedges = Memory.WithCache.Make (IndexTracker.IndexKey) (BackedgeValue)
 
 module UndecoratedFunctionValue = struct
   type t = Type.t Type.Callable.overload [@@deriving compare]
@@ -84,44 +70,6 @@ module UndecoratedFunctions =
     (SharedMemoryKeys.ReferenceKey)
     (SharedMemoryKeys.DependencyKey)
     (UndecoratedFunctionValue)
-
-let edges = Edges.get ?dependency:None
-
-let backedges key = Backedges.get key >>| ClassHierarchy.Target.Set.of_tree
-
-let set_backedges ~index:key ~targets:data =
-  let value = ClassHierarchy.Target.Set.to_tree data in
-  Backedges.remove_batch (Backedges.KeySet.singleton key);
-  Backedges.add key value
-
-
-let disconnect_incoming_backedges_of_successors ~indices_to_disconnect =
-  let all_successors =
-    let all_successors = IndexTracker.Hash_set.create () in
-    let add_successors key =
-      match edges key with
-      | Some successors ->
-          List.iter successors ~f:(fun { ClassHierarchy.Target.target; _ } ->
-              Hash_set.add all_successors target)
-      | None -> ()
-    in
-    IndexTracker.Set.iter indices_to_disconnect ~f:add_successors;
-    all_successors
-  in
-  let remove_backedges successor =
-    backedges successor
-    >>| (fun current_predecessors ->
-          let new_predecessors =
-            Set.filter
-              ~f:(fun { ClassHierarchy.Target.target; _ } ->
-                not (IndexTracker.Set.mem indices_to_disconnect target))
-              current_predecessors
-          in
-          set_backedges ~index:successor ~targets:new_predecessors)
-    |> ignore
-  in
-  Hash_set.iter all_successors ~f:remove_backedges
-
 
 let get_parents ({ alias_environment } as environment) ~track_dependencies name =
   let object_index = IndexTracker.index "object" in
@@ -260,24 +208,6 @@ let register_define_as_undecorated_function
   global >>| handle |> Option.value ~default:()
 
 
-let add_backedges class_name =
-  let predecessor = IndexTracker.index class_name in
-  let handle_targets targets =
-    let add_backedge { ClassHierarchy.Target.target = successor; parameters } =
-      let predecessors =
-        backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
-      in
-      set_backedges
-        ~index:successor
-        ~targets:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
-    in
-    if not (Backedges.mem predecessor) then
-      set_backedges ~index:predecessor ~targets:ClassHierarchy.Target.Set.empty;
-    List.iter targets ~f:add_backedge
-  in
-  Edges.get predecessor |> Option.iter ~f:handle_targets
-
-
 let update environment ~scheduler ~configuration upstream_update =
   let update_class_hierarchy ~class_names_to_update ~track_dependencies () =
     let connect environment names =
@@ -292,13 +222,7 @@ let update environment ~scheduler ~configuration upstream_update =
           scheduler
           ~configuration
           ~f:(connect environment)
-          ~inputs:(Set.to_list class_names_to_update));
-
-    Profiling.track_duration_and_shared_memory "class backward edge" ~f:(fun _ ->
-        Backedges.LocalChanges.push_stack ();
-        Set.iter class_names_to_update ~f:add_backedges;
-        Backedges.LocalChanges.commit_all ();
-        Backedges.LocalChanges.pop_stack ())
+          ~inputs:(Set.to_list class_names_to_update))
   in
   let update_undecorated_functions ~function_names_to_update ~track_dependencies () =
     let register environment names =
@@ -342,8 +266,6 @@ let update environment ~scheduler ~configuration upstream_update =
         |> UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals
         |> Set.union function_dependencies
       in
-      let keys_to_invalidate = IndexTracker.indices class_dependencies in
-      disconnect_incoming_backedges_of_successors ~indices_to_disconnect:keys_to_invalidate;
       let (), triggered_dependencies =
         let class_keys =
           class_names_to_update
@@ -358,7 +280,6 @@ let update environment ~scheduler ~configuration upstream_update =
           update_class_hierarchy ~class_names_to_update ~track_dependencies:true ();
           update_undecorated_functions ~function_names_to_update ~track_dependencies:true ()
         in
-        Backedges.remove_batch class_keys;
         SharedMemoryKeys.DependencyKey.Transaction.empty
         |> Edges.add_to_transaction ~keys:class_keys
         |> UndecoratedFunctions.add_to_transaction ~keys:function_keys
@@ -375,12 +296,9 @@ let update environment ~scheduler ~configuration upstream_update =
         |> UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
       in
       let current_and_previous_indices = IndexTracker.indices current_and_previous_classes in
-      disconnect_incoming_backedges_of_successors
-        ~indices_to_disconnect:current_and_previous_indices;
       let () =
         let s = current_and_previous_indices |> IndexTracker.Set.to_list |> Edges.KeySet.of_list in
         Edges.remove_batch s;
-        Backedges.remove_batch s;
         Set.to_list current_and_previous_undecorated_functions
         |> UndecoratedFunctions.KeySet.of_list
         |> UndecoratedFunctions.remove_batch
@@ -402,6 +320,5 @@ let read_only { alias_environment } =
   {
     ReadOnly.alias_environment;
     get_edges = Edges.get;
-    get_backedges = Backedges.get;
     get_undecorated_function = UndecoratedFunctions.get;
   }

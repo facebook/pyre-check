@@ -2248,17 +2248,11 @@ let test_meet _ =
 
   (* Parametric types. *)
   assert_meet "typing.List[int]" "typing.Iterator[int]" "typing.List[int]";
-  assert_meet "typing.List[float]" "typing.Iterator[int]" "typing.List[$bottom]";
+  assert_meet "typing.List[float]" "typing.Iterator[int]" "$bottom";
   assert_meet "typing.List[float]" "float[int]" "$bottom";
-  assert_meet
-    "typing.Dict[str, str]"
-    "typing.Dict[str, typing.List[str]]"
-    "typing.Dict[str, $bottom]";
+  assert_meet "typing.Dict[str, str]" "typing.Dict[str, typing.List[str]]" "$bottom";
   assert_meet ~order:disconnected_order "A" "B" "$bottom";
-  assert_meet
-    "GenericContainer[int, str]"
-    "DifferentGenericContainer[int, str]"
-    "CommonNonGenericChild";
+  assert_meet "GenericContainer[int, str]" "DifferentGenericContainer[int, str]" "$bottom";
   assert_meet "GenericContainer[int, str]" "DifferentGenericContainer[str, int]" "$bottom";
 
   (* TypedDictionaries *)
@@ -2319,13 +2313,13 @@ let test_meet _ =
        variance_order
        (Type.parametric "LinkedList" ![Type.integer])
        (Type.parametric "LinkedList" ![Type.Any]))
-    (Type.parametric "LinkedList" ![Type.Bottom]);
+    Type.Bottom;
   assert_type_equal
     (meet
        variance_order
        (Type.parametric "LinkedList" ![Type.Any])
        (Type.parametric "LinkedList" ![Type.integer]))
-    (Type.parametric "LinkedList" ![Type.Bottom]);
+    Type.Bottom;
 
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
   let _obsolete_tests () =
@@ -2405,12 +2399,12 @@ let test_meet _ =
     ~order:(make_potentially_inconsistent_order ~x_before_y:true)
     "B[int, str]"
     "A[str]"
-    "M[str]";
+    "$bottom";
   assert_meet
     ~order:(make_potentially_inconsistent_order ~x_before_y:false)
     "B[int, str]"
     "A[str]"
-    "M[str]";
+    "$bottom";
   ()
 
 

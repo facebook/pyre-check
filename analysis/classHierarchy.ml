@@ -89,12 +89,8 @@ let generic_primitive = "typing.Generic"
 module type Handler = sig
   val edges : IndexTracker.t -> Target.t list option
 
-  val backedges : IndexTracker.t -> Target.Set.t option
-
   val contains : Type.Primitive.t -> bool
 end
-
-let find_unsafe lookup key = lookup key |> fun option -> Option.value_exn option
 
 let index_of annotation = IndexTracker.index annotation
 
@@ -274,15 +270,6 @@ let least_upper_bound ((module Handler : Handler) as order) =
   least_common_successor order ~successors
 
 
-let greatest_lower_bound ((module Handler : Handler) as order) =
-  let predecessors index =
-    match Handler.backedges index with
-    | Some targets -> Set.to_list targets |> List.map ~f:Target.target |> IndexTracker.Set.of_list
-    | None -> IndexTracker.Set.empty
-  in
-  least_common_successor order ~successors:predecessors
-
-
 let is_transitive_successor ((module Handler : Handler) as handler) ~source ~target =
   raise_if_untracked handler source;
   raise_if_untracked handler target;
@@ -435,72 +422,6 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       split >>= handle_split
 
 
-let instantiate_predecessors_parameters
-    ((module Handler : Handler) as handler)
-    ~source
-    ~target
-    ~step
-  =
-  match Type.split source with
-  | Type.Primitive primitive, parameters ->
-      raise_if_untracked handler primitive;
-      raise_if_untracked handler target;
-      let generic_index = IndexTracker.index generic_primitive in
-      let worklist = Queue.create () in
-      Queue.enqueue worklist { Target.target = index_of primitive; parameters };
-      let rec iterate worklist =
-        match Queue.dequeue worklist with
-        | Some { Target.target = target_index; parameters } ->
-            let get_instantiated_predecessors
-                (module Handler : Handler)
-                ~generic_index
-                ~parameters
-                ~step
-                predecessors
-              =
-              let instantiate { Target.target; parameters = predecessor_variables } =
-                let generic_parameters =
-                  Handler.edges target
-                  >>= get_generic_parameters ~generic_index
-                  |> Option.value ~default:(Type.OrderedTypes.Concrete [])
-                in
-                (* Mappings from the generic variables, as they appear in the predecessor, to the
-                   instantiated parameter in the current annotation. For example, given:
-
-                   Derived(Base[T1, int, T2], Generic[ ...irrelevant... ])
-
-                   and an instantiated: Base[str, int, float] This mapping would include: { T1 =>
-                   str; T2 => float } *)
-                let handle_substitutions substitutions =
-                  {
-                    Target.target;
-                    parameters =
-                      TypeConstraints.Solution.instantiate_ordered_types
-                        substitutions
-                        generic_parameters;
-                  }
-                in
-                step ~predecessor_variables ~parameters >>| handle_substitutions
-              in
-              List.filter_map predecessors ~f:instantiate
-            in
-            if IndexTracker.equal target_index (index_of target) then
-              Some parameters
-            else (
-              Handler.backedges target_index
-              >>| Set.to_list
-              >>| get_instantiated_predecessors handler ~generic_index ~parameters ~step
-              >>| List.iter ~f:(Queue.enqueue worklist)
-              |> ignore;
-              iterate worklist )
-        | None -> None
-      in
-      iterate worklist
-  | _ ->
-      (* We can't propagate from something that does not split off a primitive *)
-      None
-
-
 let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) =
   (* Ensure keys are consistent. *)
   let key_consistent key =
@@ -509,8 +430,7 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
         Log.error "Inconsistency in type order: No value for key %s" (IndexTracker.show key);
         raise Incomplete )
     in
-    raise_if_none (Handler.edges key);
-    raise_if_none (Handler.backedges key)
+    raise_if_none (Handler.edges key)
   in
   List.iter ~f:key_consistent indices;
 
@@ -537,37 +457,7 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
       in
       visit [] start
   in
-  indices |> List.iter ~f:find_cycle;
-
-  (* Check that backedges are complete. *)
-  let module InverseChecker (Edges : Target.ListOrSet) (Backedges : Target.ListOrSet) = struct
-    let check_inverse ~edges ~backedges =
-      let check_backedge index =
-        let check_backedge { Target.target; _ } =
-          let has_backedge =
-            match backedges target with
-            | Some targets ->
-                Backedges.exists
-                  ~f:(fun { Target.target; _ } -> IndexTracker.equal target index)
-                  targets
-            | None -> false
-          in
-          if not has_backedge then (
-            Log.error
-              "No back-edge found for %s -> %s"
-              (IndexTracker.annotation index)
-              (IndexTracker.annotation target);
-            raise Incomplete )
-        in
-        Edges.iter ~f:check_backedge (find_unsafe edges index)
-      in
-      indices |> List.iter ~f:check_backedge
-  end
-  in
-  let module ForwardCheckInverse = InverseChecker (Target.List) (Target.Set) in
-  ForwardCheckInverse.check_inverse ~edges:Handler.edges ~backedges:Handler.backedges;
-  let module ReverseCheckInverse = InverseChecker (Target.Set) (Target.List) in
-  ReverseCheckInverse.check_inverse ~edges:Handler.backedges ~backedges:Handler.edges
+  indices |> List.iter ~f:find_cycle
 
 
 let to_json (module Handler : Handler) ~indices =

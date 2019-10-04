@@ -1705,27 +1705,18 @@ let assert_equivalent_attributes ~context source expected =
 module MockClassHierarchyHandler = struct
   type t = {
     edges: ClassHierarchy.Target.t list IndexTracker.Table.t;
-    backedges: ClassHierarchy.Target.Set.t IndexTracker.Table.t;
     all_indices: IndexTracker.Hash_set.t;
   }
 
   let create () =
-    {
-      edges = IndexTracker.Table.create ();
-      backedges = IndexTracker.Table.create ();
-      all_indices = IndexTracker.Hash_set.create ();
-    }
+    { edges = IndexTracker.Table.create (); all_indices = IndexTracker.Hash_set.create () }
 
 
-  let copy { edges; backedges; all_indices } =
-    {
-      edges = Hashtbl.copy edges;
-      backedges = Hashtbl.copy backedges;
-      all_indices = Hash_set.copy all_indices;
-    }
+  let copy { edges; all_indices } =
+    { edges = Hashtbl.copy edges; all_indices = Hash_set.copy all_indices }
 
 
-  let pp format { edges; backedges; _ } =
+  let pp format { edges; _ } =
     let print_edge (source, targets) =
       let targets =
         let target { ClassHierarchy.Target.target; parameters } =
@@ -1740,9 +1731,7 @@ module MockClassHierarchyHandler = struct
       Format.fprintf format "  %s -> %s\n" (IndexTracker.annotation source) targets
     in
     Format.fprintf format "Edges:\n";
-    List.iter ~f:print_edge (Hashtbl.to_alist edges);
-    Format.fprintf format "Back-edges:\n";
-    Hashtbl.to_alist backedges |> List.Assoc.map ~f:Set.to_list |> List.iter ~f:print_edge
+    List.iter ~f:print_edge (Hashtbl.to_alist edges)
 
 
   let show order = Format.asprintf "%a" pp order
@@ -1753,8 +1742,6 @@ module MockClassHierarchyHandler = struct
     ( module struct
       let edges = Hashtbl.find order.edges
 
-      let backedges = Hashtbl.find order.backedges
-
       let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
     end : ClassHierarchy.Handler )
 
@@ -1763,27 +1750,16 @@ module MockClassHierarchyHandler = struct
     let predecessor = IndexTracker.index predecessor in
     let successor = IndexTracker.index successor in
     let edges = order.edges in
-    let backedges = order.backedges in
     (* Add edges. *)
     let successors = Hashtbl.find edges predecessor |> Option.value ~default:[] in
     Hashtbl.set
       edges
       ~key:predecessor
-      ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors);
-
-    (* Add backedges. *)
-    let predecessors =
-      Hashtbl.find backedges successor |> Option.value ~default:ClassHierarchy.Target.Set.empty
-    in
-    Hashtbl.set
-      backedges
-      ~key:successor
-      ~data:(Set.add predecessors { ClassHierarchy.Target.target = predecessor; parameters })
+      ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors)
 
 
   let insert order annotation =
     let index = IndexTracker.index annotation in
     Hash_set.add order.all_indices index;
-    Hashtbl.set order.edges ~key:index ~data:[];
-    Hashtbl.set order.backedges ~key:index ~data:ClassHierarchy.Target.Set.empty
+    Hashtbl.set order.edges ~key:index ~data:[]
 end

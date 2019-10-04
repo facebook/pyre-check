@@ -368,7 +368,7 @@ let test_query context =
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"meet(list[test.C], list[int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (Type.list Type.Bottom)));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.Bottom));
 
   assert_type_query_response
     ~source:"class C(int): ..."

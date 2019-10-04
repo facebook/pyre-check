@@ -134,20 +134,6 @@ let test_least_upper_bound _ =
   assert_equal (least_upper_bound butterfly "0" "1") ["2"; "3"]
 
 
-let test_greatest_lower_bound _ =
-  let assert_greatest_lower_bound ~order type1 type2 expected =
-    let actual = greatest_lower_bound order type1 type2 |> List.sort ~compare:String.compare in
-    assert_equal ~printer:(List.to_string ~f:Fn.id) actual expected
-  in
-  let (module H : ClassHierarchy.Handler) = diamond_order in
-  assert_greatest_lower_bound ~order:diamond_order "A" "C" ["C"];
-  assert_greatest_lower_bound ~order:diamond_order "A" "B" ["B"];
-  assert_greatest_lower_bound ~order:diamond_order "A" "D" ["D"];
-  assert_greatest_lower_bound ~order:diamond_order "B" "D" ["D"];
-  assert_greatest_lower_bound ~order:diamond_order "B" "C" ["D"];
-  assert_greatest_lower_bound ~order:butterfly "2" "3" ["0"; "1"]
-
-
 let test_check_integrity _ =
   check_integrity order ~indices:order_indices;
   check_integrity butterfly ~indices:butterfly_indices;
@@ -553,72 +539,10 @@ let test_instantiate_successors_parameters _ =
   ()
 
 
-let test_instantiate_predecessors_parameters _ =
-  let assert_instantiates_to ~source ~target expected =
-    let handler = variadic_order in
-    let order =
-      {
-        TypeOrder.handler;
-        constructor = (fun _ ~protocol_assumptions:_ -> None);
-        attributes = (fun _ ~protocol_assumptions:_ -> None);
-        is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-        any_is_bottom = false;
-        protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
-      }
-    in
-    let step ~predecessor_variables ~parameters =
-      TypeOrder.solve_ordered_types_less_or_equal
-        order
-        ~constraints:TypeConstraints.empty
-        ~left:predecessor_variables
-        ~right:parameters
-      |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-      |> List.hd
-    in
-    let printer optional_ordered_types =
-      optional_ordered_types
-      >>| Format.asprintf "%a" Type.OrderedTypes.pp_concise
-      |> Option.value ~default:"None"
-    in
-    assert_equal
-      ~printer
-      expected
-      (ClassHierarchy.instantiate_predecessors_parameters handler ~source ~target ~step)
-  in
-  assert_instantiates_to
-    ~source:(Type.parametric "GenericContainer" ![Type.Primitive "int"; Type.Primitive "str"])
-    ~target:"NonGenericContainerChild"
-    (Some (Concrete []));
-  assert_instantiates_to
-    ~source:(Type.parametric "GenericContainer" ![Type.Primitive "int"; Type.Primitive "int"])
-    ~target:"NonGenericContainerChild"
-    None;
-  assert_instantiates_to
-    ~source:(Type.list (Type.tuple [Type.integer; Type.string; Type.bool]))
-    ~target:"UserTuple"
-    (Some (Concrete [Type.integer; Type.string; Type.bool]));
-  assert_instantiates_to
-    ~source:
-      (Type.parametric
-         "UserTuple"
-         ![Type.list Type.integer; Type.list Type.string; Type.list Type.bool])
-    ~target:"SimpleTupleChild"
-    (Some (Concrete [Type.list Type.integer; Type.list Type.string; Type.list Type.bool]));
-  assert_instantiates_to
-    ~source:
-      (Type.parametric
-         "UserTuple"
-         ![Type.list Type.integer; Type.list Type.string; Type.list Type.bool])
-    ~target:"TupleOfLists"
-    (Some (Concrete [Type.integer; Type.string; Type.bool]));
-  ()
-
-
 let () =
   "order"
   >::: [
          "check_integrity" >:: test_check_integrity;
-         "greatest_lower_bound" >:: test_greatest_lower_bound;
          "is_instantiated" >:: test_is_instantiated;
          "least_upper_bound" >:: test_least_upper_bound;
          "successors" >:: test_successors;
@@ -626,6 +550,5 @@ let () =
          "to_json" >:: test_to_json;
          "variables" >:: test_variables;
          "instantiate_successors_parameters" >:: test_instantiate_successors_parameters;
-         "instantiate_predecessors_parameters" >:: test_instantiate_predecessors_parameters;
        ]
   |> Test.run
