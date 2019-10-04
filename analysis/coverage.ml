@@ -106,7 +106,7 @@ let coverage ~configuration ~ast_environment qualifiers =
   let number_of_files = List.length qualifiers in
   let strict_coverage, declare_coverage =
     List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_module_metadata ast_environment)
-    |> List.filter_map ~f:Module.local_mode
+    |> List.map ~f:Module.local_mode
     |> List.fold ~init:(0, 0) ~f:(fun (prev_strict, prev_declare) local_mode ->
            let mode = Source.mode ~local_mode ~configuration in
            ( (prev_strict + if Source.equal_mode mode Source.Strict then 1 else 0),

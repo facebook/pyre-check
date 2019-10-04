@@ -10,11 +10,12 @@ open Test
 
 let test_empty_stub _ =
   assert_true
-    (Module.create_for_testing ~local_mode:Source.PlaceholderStub ~stub:true |> Module.empty_stub);
+    ( Module.create_for_testing ~local_mode:(Some Source.PlaceholderStub) ~stub:true
+    |> Module.empty_stub );
   assert_false
-    (Module.create_for_testing ~local_mode:Source.PlaceholderStub ~stub:false |> Module.empty_stub);
-  assert_false
-    (Module.create_for_testing ~local_mode:Source.Default ~stub:true |> Module.empty_stub)
+    ( Module.create_for_testing ~local_mode:(Some Source.PlaceholderStub) ~stub:false
+    |> Module.empty_stub );
+  assert_false (Module.create_for_testing ~local_mode:None ~stub:true |> Module.empty_stub)
 
 
 let test_aliased_export _ =

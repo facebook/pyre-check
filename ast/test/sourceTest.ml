@@ -16,16 +16,16 @@ let test_parse _ =
     let { Source.Metadata.local_mode; _ } = Source.Metadata.parse ~qualifier [line] in
     assert_equal local_mode expected_mode
   in
-  assert_mode " # pyre-placeholder-stub" Source.PlaceholderStub;
-  assert_mode "  # pyre-ignore-all-errors " Source.Declare;
-  assert_mode "\t# pyre-ignore-all-errors" Source.Declare;
-  assert_mode " # pyre-strict" Source.Strict;
-  assert_mode " # pyre-strict comment comment" Source.Default;
-  assert_mode " # comment comment pyre-strict" Source.Default;
-  assert_mode " # pyre-unsafe" Source.Unsafe;
-  assert_mode " # pyre-durp" Source.Default;
-  assert_mode " # pyre-debug" Source.Debug;
-  assert_mode " # pyre-ignore-all-errors[42, 7,   15] " Source.Default;
+  assert_mode " # pyre-placeholder-stub" (Some Source.PlaceholderStub);
+  assert_mode "  # pyre-ignore-all-errors " (Some Source.Declare);
+  assert_mode "\t# pyre-ignore-all-errors" (Some Source.Declare);
+  assert_mode " # pyre-strict" (Some Source.Strict);
+  assert_mode " # pyre-strict comment comment" None;
+  assert_mode " # comment comment pyre-strict" None;
+  assert_mode " # pyre-unsafe" (Some Source.Unsafe);
+  assert_mode " # pyre-durp" None;
+  assert_mode " # pyre-debug" (Some Source.Debug);
+  assert_mode " # pyre-ignore-all-errors[42, 7,   15] " None;
 
   let assert_mode_errors lines expected_mode_errors =
     let { Source.Metadata.unused_local_modes; _ } = Source.Metadata.parse ~qualifier lines in
@@ -165,20 +165,20 @@ let test_mode _ =
     assert_equal actual_mode expected_mode
   in
   let configuration = Configuration.Analysis.create () in
-  assert_mode ~configuration Source.Default Source.Unsafe;
-  assert_mode ~configuration Source.Strict Source.Strict;
-  assert_mode ~configuration Source.Debug Source.Debug;
+  assert_mode ~configuration None Source.Unsafe;
+  assert_mode ~configuration (Some Source.Strict) Source.Strict;
+  assert_mode ~configuration (Some Source.Debug) Source.Debug;
 
   let configuration = Configuration.Analysis.create ~strict:true () in
-  assert_mode ~configuration Source.Default Source.Strict;
-  assert_mode ~configuration Source.Unsafe Source.Unsafe;
-  assert_mode ~configuration Source.Strict Source.Strict;
-  assert_mode ~configuration Source.Debug Source.Debug;
+  assert_mode ~configuration None Source.Strict;
+  assert_mode ~configuration (Some Source.Unsafe) Source.Unsafe;
+  assert_mode ~configuration (Some Source.Strict) Source.Strict;
+  assert_mode ~configuration (Some Source.Debug) Source.Debug;
 
   let configuration = Configuration.Analysis.create ~debug:true () in
-  assert_mode ~configuration Source.Default Source.Debug;
-  assert_mode ~configuration Source.Strict Source.Debug;
-  assert_mode ~configuration Source.Unsafe Source.Debug
+  assert_mode ~configuration None Source.Debug;
+  assert_mode ~configuration (Some Source.Strict) Source.Debug;
+  assert_mode ~configuration (Some Source.Unsafe) Source.Debug
 
 
 let test_qualifier _ =
