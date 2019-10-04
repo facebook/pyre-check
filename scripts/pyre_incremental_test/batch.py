@@ -2,6 +2,7 @@
 
 import json
 import logging
+import traceback
 from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List
@@ -44,20 +45,24 @@ class RunnerResult(ABC):
 
 
 class ExceptionalRunnerResult(RunnerResult):
-    def __init__(self, input: Specification) -> None:
+    _trace: str
+
+    def __init__(self, input: Specification, trace: str) -> None:
         super().__init__(input)
+        self._trace = trace
 
     def get_status(self) -> str:
         return "exception"
 
     def to_json(self, dont_show_discrepancy: bool) -> Dict[str, Any]:
-        return {"status": self.get_status()}
+        return {"status": self.get_status(), "trace": self._trace}
 
     def to_logger_sample(self) -> Sample:
         return Sample(
             normals={
                 "status": self.get_status(),
                 "input": json.dumps(self.input.to_json()),
+                "exception": self._trace,
             },
             integers={},
         )
@@ -116,7 +121,7 @@ def run_single(environment: Environment, input: Specification) -> RunnerResult:
         else:
             result = FailedRunnerResult(input, output)
     except Exception:
-        result = ExceptionalRunnerResult(input)
+        result = ExceptionalRunnerResult(input, traceback.format_exc())
 
     LOG.info(f"Test finished with status = {result.get_status()}")
     return result
