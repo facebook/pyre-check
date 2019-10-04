@@ -893,7 +893,7 @@ let test_callable_parameter_variadics context =
       from pyre_extensions.type_variable_operators import PositionalArgumentsOf, KeywordArgumentsOf
       V = ParameterSpecification("V")
       def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]:
-        def decorated( *args: PositionalArgumentsOf[V], **kwargs: KeywordArgumentsOf[V]) -> typing.List[int]:
+        def decorated( *args: V.args, **kwargs: V.kwargs) -> typing.List[int]:
           return [x( *args, **kwargs)]
         return decorated
     |}

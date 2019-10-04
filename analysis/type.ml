@@ -108,13 +108,12 @@ module Record = struct
           [@@deriving compare, eq, sexp, show, hash]
 
           let component_name = function
-            | KeywordArguments -> "pyre_extensions.type_variable_operators.KeywordArgumentsOf"
-            | PositionalArguments ->
-                "pyre_extensions.type_variable_operators.PositionalArgumentsOf"
+            | KeywordArguments -> "kwargs"
+            | PositionalArguments -> "args"
 
 
           let pp_concise format { component; variable_name; _ } =
-            Format.fprintf format "%s[%s]" (component_name component) variable_name
+            Format.fprintf format "%s.%s" variable_name (component_name component)
         end
 
         let create ?(variance = Invariant) name =
@@ -1101,10 +1100,11 @@ let rec expression annotation =
         in
         get_item_call (reverse_substitute name) parameters
     | ParameterVariadicComponent { component; variable_name; _ } ->
-        get_item_call
-          (Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name
-             component)
-          [expression (Primitive variable_name)]
+        let attribute =
+          Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name component
+        in
+        Expression.Name
+          (Attribute { base = expression (Primitive variable_name); attribute; special = false })
     | Primitive name -> create_name name
     | Top -> create_name "$unknown"
     | Tuple (Bounded (Concrete [])) ->
@@ -2969,22 +2969,33 @@ end = struct
           | Some (VariableAlias (ParameterVariadic variable)) -> Some variable
           | _ -> None
         in
-        match
-          ( create_type variable_parameter_annotation ~aliases,
-            create_type keywords_parameter_annotation ~aliases )
-        with
-        | ( Parametric
-              {
-                name = "pyre_extensions.type_variable_operators.PositionalArgumentsOf";
-                parameters = Concrete [Primitive positional_name];
-              },
-            Parametric
-              {
-                name = "pyre_extensions.type_variable_operators.KeywordArgumentsOf";
-                parameters = Concrete [Primitive keywords_name];
-              } )
-          when Identifier.equal positional_name keywords_name ->
-            get_variable positional_name
+        let open Record.Variable.RecordVariadic.RecordParameters.RecordComponents in
+        match variable_parameter_annotation, keywords_parameter_annotation with
+        | ( {
+              Node.value =
+                Name
+                  (Attribute
+                    { base = variable_parameter_base; attribute = variable_parameter_attribute; _ });
+              _;
+            },
+            {
+              Node.value =
+                Name
+                  (Attribute
+                    { base = keywords_parameter_base; attribute = keywords_parameter_attribute; _ });
+              _;
+            } )
+          when Identifier.equal variable_parameter_attribute (component_name PositionalArguments)
+               && Identifier.equal keywords_parameter_attribute (component_name KeywordArguments)
+          -> (
+          match
+            ( create_type variable_parameter_base ~aliases,
+              create_type keywords_parameter_base ~aliases )
+          with
+          | Primitive positionals_base, Primitive keywords_base
+            when Identifier.equal positionals_base keywords_base ->
+              get_variable positionals_base
+          | _ -> None )
         | _ -> None
 
 
