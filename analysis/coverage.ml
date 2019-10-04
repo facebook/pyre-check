@@ -58,6 +58,7 @@ let aggregate_over_source ~source coverages =
 
 let log { full; partial; untyped; ignore; crashes } ~total_errors ~path =
   Statistics.coverage
+    ~randomly_log_every:50
     ~path
     ~coverage:
       [
