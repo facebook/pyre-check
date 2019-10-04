@@ -39,7 +39,7 @@ def safe_cast(new_type: Type[_T], value: Any) -> _T:
     return new_type(value)
 
 
-def ParameterSpecification(name):
+class ParameterSpecification(list):
     """This kind of type variable captures callable parameter specifications
     (known as argspecs in the runtime and inspect library) instead of types,
     allowing the typing of decorators which transform the return type of the
@@ -58,11 +58,24 @@ def ParameterSpecification(name):
     decorates foo into a callable that returns int, but still has the same
     parameters, including their names and whether they are required.
 
-    The empty list is required for backwards compatibility with the runtime
+    The list inheritance is required for backwards compatibility with the runtime
     implementation for callables, which requires the first argument to be
-    a list of types
+    a list.
+
+    The args and kwargs properties are used for specifying that a literal definition
+    has the same signature as a ParameterSpecification, like:
+    def listify(
+        f: Callable[TParams, TReturn]
+    ) -> Callable[TParams, List[TReturn]]:
+        def wrapped( *args: TParams.args, **kwargs: TParams.kwargs):
+            return [f(*args, **kwargs)]
     """
-    return []
+
+    args = object()
+    kwargs = object()
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        pass
 
 
 def ListVariadic(name):

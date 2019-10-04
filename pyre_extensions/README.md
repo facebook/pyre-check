@@ -15,10 +15,21 @@ from typing import TypeVar, Callable, List
 from pyre_extensions import ParameterSpecification
 Tparams = ParameterSpecification("Tparams")
 Treturn = TypeVar("Treturn")
-def unwrap(f: Callable[Tparams, List[Treturn]) -> Callable[Tparams, Treturn]: ...
+def unwrap(f: Callable[Tparams, List[Treturn]) -> Callable[Tparams, Treturn]:
+    def inner(*args: TParams.args, **kwargs: TParams.kwargs):
+        return f(*args, **kwargs)[0]
+
+    return inner
 @unwrap
 def foo(x: int, y: str, z: bool = False) -> List[int]:
     return [1, 2, 3]
 ```
 decorates foo into a callable that returns int, but still has the same parameters, including their
 names and whether they are required.
+
+These `ParameterSpecification` variables also have two special properties, `args` and `kwargs`,
+which correspond to the positional and keyword arguments for a specific call to the 
+`ParameterSpecification` function.  Because the division of parameters into these two argument
+collections can be different each invocation, these special annotations can only be used in one
+manner: together, in a function definition, as `*args` and `**kwargs` with no other parameters
+listed.

@@ -7,10 +7,6 @@ class BasicTestCase(unittest.TestCase):
     def test_parameter_specification(self):
         try:
             from .. import ParameterSpecification
-            from ..type_variable_operators import (
-                KeywordArgumentsOf,
-                PositionalArgumentsOf,
-            )
 
             TParams = ParameterSpecification("TParams")
             TReturn = TypeVar("T")
@@ -18,13 +14,15 @@ class BasicTestCase(unittest.TestCase):
             def listify(
                 f: Callable[TParams, TReturn]
             ) -> Callable[TParams, List[TReturn]]:
-                def wrapped(
-                    *args: PositionalArgumentsOf[TParams],
-                    **kwargs: KeywordArgumentsOf[TParams]
-                ):
+                def wrapped(*args: TParams.args, **kwargs: TParams.kwargs):
                     return [f(*args, **kwargs)]
 
                 return wrapped
+
+            def foo():
+                return 9
+
+            listify(foo)
 
         except Exception:
             self.fail("ParameterSpecification missing or broken")

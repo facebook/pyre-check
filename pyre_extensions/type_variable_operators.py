@@ -13,14 +13,6 @@ class ParameterSpecificationComponentMeta(type):
         return Any
 
 
-class PositionalArgumentsOf(metaclass=ParameterSpecificationComponentMeta):
-    pass
-
-
-class KeywordArgumentsOf(metaclass=ParameterSpecificationComponentMeta):
-    pass
-
-
 class Map(Generic[_T1, _T2]):
     pass
 
