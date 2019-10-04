@@ -2,11 +2,11 @@
 
 import json
 import unittest
-from dataclasses import asdict, dataclass
-from typing import ClassVar, Dict, List, Optional
+from dataclasses import asdict
+from typing import ClassVar, Dict, List
 
 from ..batch import run_batch
-from ..runner import InconsistentOutput, PyreError
+from ..runner import PyreError
 from ..specification import Specification
 from .test_environment import (
     CommandInput,
@@ -14,12 +14,6 @@ from .test_environment import (
     MockExecuteCallable,
     TestEnvironment,
 )
-
-
-@dataclass
-class ExpectedOutput:
-    status: str
-    discrepancy: Optional[InconsistentOutput]
 
 
 class BasicExecute:
@@ -74,14 +68,13 @@ class RunnerTest(unittest.TestCase):
         self,
         mock_execute: MockExecuteCallable,
         specifications: List[Specification],
-        expected_output: List[ExpectedOutput],
+        expected_output: List[str],
     ) -> None:
         environment = TestEnvironment(mock_execute)
         actual_output = run_batch(environment, specifications)
         self.assertEqual(len(actual_output), len(expected_output))
         for actual, expected in zip(actual_output, expected_output):
-            self.assertEqual(actual.get_status(), expected.status)
-            self.assertEqual(actual.get_discrepancy(), expected.discrepancy)
+            self.assertEqual(actual.get_status(), expected)
 
     def test_basic(self) -> None:
         def create_dummy_state_json(commit_hash: str) -> Dict[str, str]:
@@ -115,14 +108,5 @@ class RunnerTest(unittest.TestCase):
         self.assert_batch_run(
             BasicExecute(mock_pyre_error),
             [specification0, specification1, specification2],
-            [
-                ExpectedOutput(
-                    "fail",
-                    InconsistentOutput(
-                        full_check_output=[mock_pyre_error], incremental_check_output=[]
-                    ),
-                ),
-                ExpectedOutput("pass", None),
-                ExpectedOutput("exception", None),
-            ],
+            ["fail", "pass", "exception"],
         )

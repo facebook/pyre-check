@@ -6,7 +6,7 @@ import subprocess
 import time
 from typing import Any, Dict, Optional, Sequence
 
-from .batch import RunnerResult
+from .batch import RunnerResult, Sample
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -23,25 +23,16 @@ def to_console(results: Sequence[RunnerResult], dont_show_discrepancy: bool) -> 
 def to_logger(
     logger: str, results: Sequence[RunnerResult], identifier: Optional[str]
 ) -> None:
-    def to_sample(result: RunnerResult) -> Dict[str, Any]:
-        normals = {
-            "input": json.dumps(result.input.to_json()),
-            "status": result.get_status(),
-        }
+    def expand_sample(sample: Sample) -> Dict[str, Any]:
+        normals = {**sample.normals}
         if identifier is not None:
             normals["identifier"] = identifier
-
-        integers = {"time": int(time.time())}
-        output = result.output
-        if output is not None:
-            integers["full_check_time"] = output.full_check_time
-            integers["incremental_check_time"] = output.incremental_check_time
-
+        integers = {"time": int(time.time()), **sample.integers}
         return {"normal": normals, "int": integers}
 
     LOG.info(f"Sending {len(results)} results to {logger}...")
     for result in results:
-        sample = to_sample(result)
+        sample = expand_sample(result.to_logger_sample())
         subprocess.run(
             [logger, "perfpipe_pyre_incremental_test_result"],
             input=json.dumps(sample),

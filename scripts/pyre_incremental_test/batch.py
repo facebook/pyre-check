@@ -1,76 +1,123 @@
 # pyre-strict
 
+import json
 import logging
-from typing import Any, Dict, Iterable, List, Optional
+from abc import ABC, ABCMeta, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, List
 
 from .environment import Environment
-from .runner import InconsistentOutput, ResultComparison, compare_server_to_full
+from .runner import ResultComparison, compare_server_to_full
 from .specification import Specification
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class RunnerResult:
-    _input: Specification
-    _output: Optional[ResultComparison]
+@dataclass
+class Sample:
+    integers: Dict[str, int]
+    normals: Dict[str, str]
 
-    def __init__(
-        self, input: Specification, output: Optional[ResultComparison] = None
-    ) -> None:
+
+class RunnerResult(ABC):
+    _input: Specification
+
+    def __init__(self, input: Specification) -> None:
         self._input = input
-        self._output = output
 
     @property
     def input(self) -> Specification:
         return self._input
 
-    @property
-    def output(self) -> Optional[ResultComparison]:
-        return self._output
+    @abstractmethod
+    def get_status(self) -> str:
+        raise NotImplementedError
 
-    def get_discrepancy(self) -> Optional[InconsistentOutput]:
-        output = self.output
-        if output is None:
-            return None
-        else:
-            return output.discrepancy
+    @abstractmethod
+    def to_json(self, dont_show_discrepancy: bool) -> Dict[str, Any]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_logger_sample(self) -> Sample:
+        raise NotImplementedError
+
+
+class ExceptionalRunnerResult(RunnerResult):
+    def __init__(self, input: Specification) -> None:
+        super().__init__(input)
 
     def get_status(self) -> str:
-        output = self.output
-        if output is None:
-            return "exception"
-        elif self.get_discrepancy() is None:
-            return "pass"
-        else:
-            return "fail"
+        return "exception"
 
-    def to_json(self, dont_show_discrepancy: bool = False) -> Dict[str, Any]:
-        status = self.get_status()
-        if status == "exception":
-            return {"status": status, "input": self.input.to_json()}
-        output = self.output
-        assert output is not None
-        if output.discrepancy is None:
-            # Don't bother include the input specification in the result
-            # if the test passes.
-            return {"status": status, "output": output.to_json()}
-        else:
-            return {
-                "status": status,
-                "output": output.to_json(dont_show_discrepancy),
-                "input": self.input.to_json(),
-            }
+    def to_json(self, dont_show_discrepancy: bool) -> Dict[str, Any]:
+        return {"status": self.get_status()}
+
+    def to_logger_sample(self) -> Sample:
+        return Sample(
+            normals={
+                "status": self.get_status(),
+                "input": json.dumps(self.input.to_json()),
+            },
+            integers={},
+        )
+
+
+class FinishedRunnerResult(RunnerResult, metaclass=ABCMeta):
+    _output: ResultComparison
+
+    def __init__(self, input: Specification, output: ResultComparison) -> None:
+        super().__init__(input)
+        self._output = output
+
+    def to_logger_sample(self) -> Sample:
+        return Sample(
+            normals={
+                "status": self.get_status(),
+                "input": json.dumps(self.input.to_json()),
+            },
+            integers={
+                "full_check_time": self._output.full_check_time,
+                "incremental_check_time": self._output.incremental_check_time,
+            },
+        )
+
+
+class PassedRunnerResult(FinishedRunnerResult):
+    def get_status(self) -> str:
+        return "pass"
+
+    def to_json(self, dont_show_discrepancy: bool) -> Dict[str, Any]:
+        # Don't bother include the input specification in the result if the test passes.
+        return {
+            "status": self.get_status(),
+            "output": self._output.to_json(dont_show_discrepancy),
+        }
+
+
+class FailedRunnerResult(FinishedRunnerResult):
+    def get_status(self) -> str:
+        return "fail"
+
+    def to_json(self, dont_show_discrepancy: bool) -> Dict[str, Any]:
+        return {
+            "status": self.get_status(),
+            "input": self.input.to_json(),
+            "output": self._output.to_json(dont_show_discrepancy),
+        }
 
 
 def run_single(environment: Environment, input: Specification) -> RunnerResult:
     try:
         LOG.info(f"Running test on state '{input.old_state}' vs '{input.new_state}'")
         output = compare_server_to_full(environment, input)
+        if output.discrepancy is None:
+            result = PassedRunnerResult(input, output)
+        else:
+            result = FailedRunnerResult(input, output)
     except Exception:
-        output = None
+        result = ExceptionalRunnerResult(input)
 
-    result = RunnerResult(input, output)
     LOG.info(f"Test finished with status = {result.get_status()}")
     return result
 

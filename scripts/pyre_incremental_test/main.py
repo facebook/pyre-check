@@ -24,7 +24,9 @@ def _setup_logging(verbosity: int) -> None:
 
 
 def _log_statistics(results: List[RunnerResult]) -> None:
-    results_with_output = [result for result in results if result.output is not None]
+    results_with_output = [
+        result for result in results if result.get_status() != "exception"
+    ]
     LOG.warning(f"Total number of tests = {len(results)}")
     LOG.warning(f"Successfully finished tests = {len(results_with_output)}")
     LOG.warning(
@@ -32,29 +34,10 @@ def _log_statistics(results: List[RunnerResult]) -> None:
     )
 
     passed_results = [
-        result for result in results_with_output if result.get_discrepancy() is not None
+        result for result in results_with_output if result.get_status() == "pass"
     ]
     LOG.warning(f"Tests passed = {len(passed_results)}")
     LOG.warning(f"Tests failed = {len(results_with_output) - len(passed_results)}")
-
-    if len(results_with_output) > 0:
-        outputs = [result.output for result in results_with_output]
-        check_times = [
-            output.full_check_time for output in outputs if output is not None
-        ]
-        incremental_times = [
-            output.incremental_check_time for output in outputs if output is not None
-        ]
-        LOG.warning(
-            "Average full check running time = {:.2f} seconds".format(
-                sum(check_times) / (1000 * float(len(check_times)))
-            )
-        )
-        LOG.warning(
-            "Average incremental check running time = {:.2f} seconds".format(
-                sum(incremental_times) / (1000 * float(len(incremental_times)))
-            )
-        )
 
 
 class ExitCode(enum.IntEnum):
