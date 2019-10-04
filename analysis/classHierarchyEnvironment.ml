@@ -208,112 +208,89 @@ let register_define_as_undecorated_function
   global >>| handle |> Option.value ~default:()
 
 
+module EdgesUpdater = Environment.Updater.Make (struct
+  module PreviousEnvironment = PreviousEnvironment
+  module UpdateResult = UpdateResult
+  module Table = Edges
+
+  type trigger = string
+
+  let convert_trigger = IndexTracker.index
+
+  type nonrec t = t
+
+  module TriggerSet = Type.Primitive.Set
+
+  let register environment names ~track_dependencies =
+    let set_edges name =
+      let targets = get_parents environment name ~track_dependencies in
+      Option.iter targets ~f:(Edges.add (IndexTracker.index name))
+    in
+    List.iter names ~f:set_edges
+
+
+  let filter_upstream_dependency = function
+    | SharedMemoryKeys.ClassConnect name -> Some name
+    | _ -> None
+
+
+  let added_keys upstream_update =
+    AliasEnvironment.UpdateResult.upstream upstream_update
+    |> UnannotatedGlobalEnvironment.UpdateResult.added_classes
+
+
+  let current_and_previous_keys upstream_update =
+    AliasEnvironment.UpdateResult.upstream upstream_update
+    |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
+end)
+
+module UndecoratedFunctionsUpdater = Environment.Updater.Make (struct
+  module PreviousEnvironment = PreviousEnvironment
+  module UpdateResult = UpdateResult
+  module Table = UndecoratedFunctions
+
+  type nonrec t = t
+
+  type trigger = Reference.t
+
+  let convert_trigger = Fn.id
+
+  module TriggerSet = Reference.Set
+
+  let register environment names ~track_dependencies =
+    List.iter names ~f:(register_define_as_undecorated_function environment ~track_dependencies)
+
+
+  let filter_upstream_dependency = function
+    | SharedMemoryKeys.UndecoratedFunction name -> Some name
+    | _ -> None
+
+
+  let added_keys upstream_update =
+    AliasEnvironment.UpdateResult.upstream upstream_update
+    |> UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals
+
+
+  let current_and_previous_keys upstream_update =
+    AliasEnvironment.UpdateResult.upstream upstream_update
+    |> UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
+end)
+
 let update environment ~scheduler ~configuration upstream_update =
-  let update_class_hierarchy ~class_names_to_update ~track_dependencies () =
-    let connect environment names =
-      let set_edges name =
-        let targets = get_parents environment name ~track_dependencies in
-        Option.iter targets ~f:(Edges.add (IndexTracker.index name))
-      in
-      List.iter names ~f:set_edges
-    in
+  let edge_result =
     Profiling.track_duration_and_shared_memory "class forward edge" ~f:(fun _ ->
-        Scheduler.iter
-          scheduler
-          ~configuration
-          ~f:(connect environment)
-          ~inputs:(Set.to_list class_names_to_update))
+        EdgesUpdater.update environment ~scheduler ~configuration upstream_update)
   in
-  let update_undecorated_functions ~function_names_to_update ~track_dependencies () =
-    let register environment names =
-      List.iter names ~f:(register_define_as_undecorated_function environment ~track_dependencies)
-    in
+  let undecorated_functions_result =
     Profiling.track_duration_and_shared_memory "undecorated functions" ~f:(fun _ ->
-        Scheduler.iter
-          scheduler
-          ~configuration
-          ~f:(register environment)
-          ~inputs:(Set.to_list function_names_to_update))
+        UndecoratedFunctionsUpdater.update environment ~scheduler ~configuration upstream_update)
   in
-  match configuration with
-  | { incremental_style = FineGrained; _ } ->
-      let class_dependencies, function_dependencies =
-        let filter dependencies =
-          let classes, functions, _ =
-            List.partition3_map dependencies ~f:(function
-                | SharedMemoryKeys.ClassConnect name -> `Fst name
-                | UndecoratedFunction name -> `Snd name
-                | _ -> `Trd None)
-          in
-          classes, functions
-        in
-        let add_to_sets (classes_sofar, functions_sofar) (classes, functions) =
-          ( List.fold classes ~f:Set.add ~init:classes_sofar,
-            List.fold functions ~f:Set.add ~init:functions_sofar )
-        in
-        AliasEnvironment.UpdateResult.all_triggered_dependencies upstream_update
-        |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
-        |> List.map ~f:filter
-        |> List.fold ~f:add_to_sets ~init:(Type.Primitive.Set.empty, Reference.Set.empty)
-      in
-      let class_names_to_update =
-        AliasEnvironment.UpdateResult.upstream upstream_update
-        |> UnannotatedGlobalEnvironment.UpdateResult.added_classes
-        |> Set.union class_dependencies
-      in
-      let function_names_to_update =
-        AliasEnvironment.UpdateResult.upstream upstream_update
-        |> UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals
-        |> Set.union function_dependencies
-      in
-      let (), triggered_dependencies =
-        let class_keys =
-          class_names_to_update
-          |> IndexTracker.indices
-          |> IndexTracker.Set.to_list
-          |> Edges.KeySet.of_list
-        in
-        let function_keys =
-          function_names_to_update |> Set.to_list |> UndecoratedFunctions.KeySet.of_list
-        in
-        let update () =
-          update_class_hierarchy ~class_names_to_update ~track_dependencies:true ();
-          update_undecorated_functions ~function_names_to_update ~track_dependencies:true ()
-        in
-        SharedMemoryKeys.DependencyKey.Transaction.empty
-        |> Edges.add_to_transaction ~keys:class_keys
-        |> UndecoratedFunctions.add_to_transaction ~keys:function_keys
-        |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
-      in
-      UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
-  | _ ->
-      let upstream = AliasEnvironment.UpdateResult.upstream upstream_update in
-      let current_and_previous_classes =
-        upstream |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
-      in
-      let current_and_previous_undecorated_functions =
-        upstream
-        |> UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
-      in
-      let current_and_previous_indices = IndexTracker.indices current_and_previous_classes in
-      let () =
-        let s = current_and_previous_indices |> IndexTracker.Set.to_list |> Edges.KeySet.of_list in
-        Edges.remove_batch s;
-        Set.to_list current_and_previous_undecorated_functions
-        |> UndecoratedFunctions.KeySet.of_list
-        |> UndecoratedFunctions.remove_batch
-      in
-      update_class_hierarchy
-        ~class_names_to_update:current_and_previous_classes
-        ~track_dependencies:false
-        ();
-      update_undecorated_functions
-        ~function_names_to_update:current_and_previous_undecorated_functions
-        ~track_dependencies:false
-        ();
-      UpdateResult.create
-        ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
-        ~upstream:upstream_update
+  let triggered_dependencies =
+    SharedMemoryKeys.DependencyKey.KeySet.union
+      (UpdateResult.locally_triggered_dependencies edge_result)
+      (UpdateResult.locally_triggered_dependencies undecorated_functions_result)
+  in
+  UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
 
 
 let read_only { alias_environment } =
