@@ -539,6 +539,7 @@ def main() -> int:
                 typeshed=arguments.typeshed,
                 preserve_pythonpath=arguments.preserve_pythonpath,
                 excludes=arguments.exclude,
+                logger=arguments.logger,
             )
             if configuration.disabled:
                 LOG.log(

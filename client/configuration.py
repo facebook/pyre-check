@@ -163,10 +163,11 @@ class Configuration:
         typeshed: Optional[str] = None,
         preserve_pythonpath=False,
         excludes: Optional[List[str]] = None,
+        logger: Optional[str] = None,
     ) -> None:
         self.source_directories = []
         self.targets = []
-        self.logger = None
+        self.logger = logger
         self.ignore_all_errors = []
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
