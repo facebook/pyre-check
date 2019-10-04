@@ -821,6 +821,18 @@ let test_check_attribute_initialization context =
     {|
         import abc
         class Foo(abc.ABC):
+          a: int
+        class Bar(Foo):
+          a = 1
+        class Baz(Bar):
+          pass
+    |}
+    [];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
           x: int
           y: int
         class Bar(Foo):
