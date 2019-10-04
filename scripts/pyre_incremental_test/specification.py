@@ -299,16 +299,23 @@ class Specification:
     pyre_incremental_options: str
 
     def to_json(self) -> Dict[str, Any]:
-        return {
+        result: Dict[str, Any] = {
             "old_state": self.old_state.to_json(),
             "new_state": self.new_state.to_json(),
-            "pyre_check_pyre_options": self.pyre_check_pyre_options,
-            "pyre_check_options": self.pyre_check_options,
-            "pyre_start_pyre_options": self.pyre_start_pyre_options,
-            "pyre_start_options": self.pyre_start_options,
-            "pyre_incremental_pyre_options": self.pyre_incremental_pyre_options,
-            "pyre_incremental_options": self.pyre_incremental_options,
         }
+        if len(self.pyre_check_pyre_options) > 0:
+            result["pyre_check_pyre_options"] = self.pyre_check_pyre_options
+        if len(self.pyre_check_options) > 0:
+            result["pyre_check_options"] = self.pyre_check_options
+        if len(self.pyre_start_pyre_options) > 0:
+            result["pyre_start_pyre_options"] = self.pyre_start_pyre_options
+        if len(self.pyre_start_options) > 0:
+            result["pyre_start_options"] = self.pyre_start_options
+        if len(self.pyre_incremental_pyre_options) > 0:
+            result["pyre_incremental_pyre_options"] = self.pyre_incremental_pyre_options
+        if len(self.pyre_incremental_options) > 0:
+            result["pyre_incremental_options"] = self.pyre_incremental_options
+        return result
 
     @staticmethod
     def from_json(input_json: Dict[str, Any]) -> "Specification":
