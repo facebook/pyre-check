@@ -12,6 +12,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Pattern,
     Sequence,
     Set,
     Tuple,
@@ -217,6 +218,7 @@ class TypeTransformer(cst.CSTTransformer):
         self.toplevel_annotations: Dict[str, cst.CSTNode] = {}
         self.imports = imports
         self.import_statements: List[cst.ImportFrom] = []
+        self.is_generated: bool = False
 
     def _qualifier_name(self) -> str:
         return ".".join(self.qualifier)
@@ -400,9 +402,15 @@ class TypeTransformer(cst.CSTTransformer):
             del self.imports[key]
         return updated_node
 
+    def visit_Comment(self, node: cst.Comment) -> None:
+        if "@" "generated" in node.value:
+            self.is_generated = True
+
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
+        if self.is_generated:
+            return original_node
         if not self.toplevel_annotations and not self.imports:
             return updated_node
         toplevel_statements = []

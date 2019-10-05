@@ -559,3 +559,20 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 return bar()
             """,
         )
+        # Work around to avoid marking this test file as generated.
+        generated = "generated"
+        self.assert_annotations(
+            """
+            def foo() -> int: ...
+            """,
+            f"""
+            # @{generated}
+            def foo():
+                return 1
+            """,
+            f"""
+            # @{generated}
+            def foo():
+                return 1
+            """,
+        )
