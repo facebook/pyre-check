@@ -200,9 +200,7 @@ module Set : Set.S with type Elt.t = t
 include Hashable with type t := t
 
 module Cache : sig
-  val enable : unit -> unit
-
-  val disable : unit -> unit
+  val clear : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> unit
 end
 
 val pp_concise : Format.formatter -> t -> unit
@@ -373,7 +371,7 @@ type alias =
   | VariableAlias of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
-val create : aliases:(Primitive.t -> alias option) -> Expression.t -> t
+val create : ?use_cache:bool -> aliases:(Primitive.t -> alias option) -> Expression.t -> t
 
 val contains_callable : t -> bool
 

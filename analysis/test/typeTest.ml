@@ -24,6 +24,9 @@ let create_concatenation ?head ?tail ?mappers variable
 
 let test_create _ =
   let assert_create ?(aliases = fun _ -> None) source annotation =
+    Type.Cache.clear
+      ~scheduler:(Test.mock_scheduler ())
+      ~configuration:(Configuration.Analysis.create ());
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal

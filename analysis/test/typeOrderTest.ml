@@ -2530,7 +2530,9 @@ let test_solve_less_or_equal context =
     in
     let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
     let parse_annotation annotation =
-      Type.Cache.disable ();
+      Type.Cache.clear
+        ~scheduler:(Test.mock_scheduler ())
+        ~configuration:(Configuration.Analysis.create ());
       annotation
       |> String.substr_replace_all ~pattern:"typing.Callable[V" ~with_:"typing.Callable[test.V"
       |> parse_single_expression

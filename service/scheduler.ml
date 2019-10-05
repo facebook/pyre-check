@@ -13,6 +13,8 @@ type t = {
   bucket_multiplier: int;
 }
 
+let number_of_workers { number_of_workers; _ } = number_of_workers
+
 let entry = Worker.register_entry_point ~restore:(fun _ -> ())
 
 let create
@@ -82,9 +84,10 @@ let map_reduce
     map initial inputs |> fun mapped -> reduce mapped initial
 
 
-let iter scheduler ~configuration ~f ~inputs =
+let iter ?bucket_size scheduler ~configuration ~f ~inputs =
   map_reduce
     scheduler
+    ?bucket_size
     ~configuration
     ~initial:()
     ~map:(fun _ inputs -> f inputs)

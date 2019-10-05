@@ -15,7 +15,7 @@ let initialize () =
   Memory.get_heap_handle (Configuration.Analysis.create ()) |> ignore;
   Log.initialize_for_tests ();
   Statistics.disable ();
-  Type.Cache.disable ()
+  Type.Cache.clear ~scheduler:(Scheduler.mock ()) ~configuration:(Configuration.Analysis.create ())
 
 
 let () = initialize ()

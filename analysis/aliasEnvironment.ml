@@ -126,7 +126,7 @@ module UnresolvedAlias = struct
   }
 
   let unchecked_resolve ~unparsed ~target map =
-    match Type.create ~aliases:(Map.find map) unparsed with
+    match Type.create ~aliases:(Map.find map) ~use_cache:false unparsed with
     | Type.Variable variable ->
         if Type.Variable.Unary.contains_subvariable variable then
           Type.Any
@@ -211,6 +211,7 @@ let extract_alias { unannotated_global_environment } name ~dependency =
         let target_annotation =
           Type.create
             ~aliases:(fun _ -> None)
+            ~use_cache:false
             (Expression.from_reference ~location:Location.Reference.any name)
         in
         match Node.value value, explicit_annotation with
@@ -326,7 +327,7 @@ let extract_alias { unannotated_global_environment } name ~dependency =
         | Call _, None
         | Name _, None -> (
             let value = Expression.delocalize value in
-            let value_annotation = Type.create ~aliases:(fun _ -> None) value in
+            let value_annotation = Type.create ~aliases:(fun _ -> None) ~use_cache:false value in
             match Type.Variable.parse_declaration value ~target:name with
             | Some variable -> Some (VariableAlias variable)
             | _ ->
@@ -372,8 +373,6 @@ let extract_alias { unannotated_global_environment } name ~dependency =
 let register_aliases environment global_names ~track_dependencies =
   (* TODO(T53786399): Optimize this function. Theres a lot of perf potentially to be gained here,
      currently biasing towards simplicity *)
-  (* We must do this in every worker because global state is not shared *)
-  Type.Cache.disable ();
   let register global_name =
     let dependency =
       Option.some_if track_dependencies (SharedMemoryKeys.AliasRegister global_name)
@@ -405,16 +404,12 @@ let register_aliases environment global_names ~track_dependencies =
     get_aliased_type_for global_name ~visited:Reference.Set.empty
     |> Option.iter ~f:(Aliases.add (Reference.show global_name))
   in
-  List.iter global_names ~f:register;
-
-  (* TODO(T53786398): make this no longer global state so we don't have to reset it per worker like
-     this *)
-  Type.Cache.enable ()
+  List.iter global_names ~f:register
 
 
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
-include Environment.Updater.Make (struct
+module Updater = Environment.Updater.Make (struct
   module PreviousEnvironment = PreviousEnvironment
   module UpdateResult = UpdateResult
   module Table = Aliases
@@ -442,6 +437,12 @@ include Environment.Updater.Make (struct
     UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
       upstream_update
 end)
+
+let update environment ~scheduler ~configuration upstream =
+  let result = Updater.update environment ~scheduler ~configuration upstream in
+  Type.Cache.clear ~scheduler ~configuration;
+  result
+
 
 let read_only { unannotated_global_environment } =
   { ReadOnly.unannotated_global_environment; get_alias = Aliases.get }

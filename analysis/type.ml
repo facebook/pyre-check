@@ -436,28 +436,20 @@ module Cache = struct
 
   let cache = Table.create ~size:1023 ()
 
-  let enabled = ref true
+  let find element = Hashtbl.find cache element
 
-  let find element =
-    if !enabled then
-      Hashtbl.find cache element
-    else
-      None
+  let set ~key ~data = Hashtbl.set ~key ~data cache
 
-
-  let set ~key ~data =
-    if !enabled then
-      Hashtbl.set ~key ~data cache
-    else
-      ()
-
-
-  let disable () =
-    enabled := false;
+  let clear ~scheduler ~configuration =
+    let number_of_workers = Scheduler.number_of_workers scheduler in
+    (* We need to clear the cache in each of the workers :( *)
+    Scheduler.iter
+      scheduler
+      ~bucket_size:1
+      ~configuration
+      ~f:(fun _ -> Hashtbl.clear cache)
+      ~inputs:(List.init number_of_workers ~f:Fn.id);
     Hashtbl.clear cache
-
-
-  let enable () = enabled := true
 end
 
 let is_any = function
@@ -2113,7 +2105,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
       result
 
 
-let create ~aliases =
+let create ?use_cache ~aliases =
   let variable_aliases name =
     match aliases name with
     | Some (VariableAlias variable) -> Some variable
@@ -2126,7 +2118,7 @@ let create ~aliases =
       | _ -> None )
     | _ -> None
   in
-  create_logic ~use_cache:true ~aliases ~variable_aliases
+  create_logic ?use_cache ~aliases ~variable_aliases
 
 
 let contains_callable annotation = exists annotation ~predicate:is_callable

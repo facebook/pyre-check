@@ -10,6 +10,8 @@ type t
 
 val create : configuration:Configuration.Analysis.t -> ?bucket_multiplier:int -> unit -> t
 
+val number_of_workers : t -> int
+
 val run_process : configuration:Configuration.Analysis.t -> (unit -> 'result) -> 'result
 
 val map_reduce
@@ -24,7 +26,8 @@ val map_reduce
   'state
 
 val iter
-  :  t ->
+  :  ?bucket_size:int ->
+  t ->
   configuration:Configuration.Analysis.t ->
   f:('input list -> unit) ->
   inputs:'input list ->
