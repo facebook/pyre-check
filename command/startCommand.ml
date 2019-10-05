@@ -41,7 +41,6 @@ let computation_thread
         let key = Error.Instantiated.path error in
         Hashtbl.update table key ~f:update
       in
-      List.iter error_list ~f:add_to_table;
       let add_empty_error_array reference =
         let update = function
           | None -> []
