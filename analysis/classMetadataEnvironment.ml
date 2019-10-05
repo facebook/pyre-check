@@ -53,7 +53,7 @@ module ClassMetadata =
     (ClassMetadataValue)
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
-let register_class_metadata { class_hierarchy_environment } class_name ~track_dependencies =
+let produce_class_metadata { class_hierarchy_environment } class_name ~track_dependencies =
   let unannotated_global_environment_dependency =
     Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
   in
@@ -106,16 +106,13 @@ let register_class_metadata { class_hierarchy_environment } class_name ~track_de
            ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment ?dependency)
            ~from_empty_stub:(AstEnvironment.ReadOnly.from_empty_stub ast_environment ?dependency)
     in
-    ClassMetadata.add
-      class_name
-      { is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+    { is_test = in_test; successors; is_final; extends_placeholder_stub_class }
   in
   UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
     unannotated_global_environment
     class_name
     ?dependency:unannotated_global_environment_dependency
   >>| add
-  |> Option.value ~default:()
 
 
 include Environment.Updater.Make (struct
@@ -131,9 +128,7 @@ include Environment.Updater.Make (struct
 
   module TriggerSet = Type.Primitive.Set
 
-  let register environment names ~track_dependencies =
-    List.iter names ~f:(register_class_metadata environment ~track_dependencies)
-
+  let produce_value = produce_class_metadata
 
   let filter_upstream_dependency = function
     | SharedMemoryKeys.RegisterClassMetadata name -> Some name

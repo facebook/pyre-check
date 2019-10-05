@@ -128,9 +128,8 @@ module Updater : sig
        either current_and_previous_classes or current_and_previous_unannotated_globals *)
     val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
 
-    (* This is the actual main function of the update. This should write the correct data into the
-       table for the given keys *)
-    val register : t -> trigger list -> track_dependencies:bool -> unit
+    (* This is the actual main function of the update. *)
+    val produce_value : t -> trigger -> track_dependencies:bool -> Table.t option
   end
 
   module Make (In : In) : sig

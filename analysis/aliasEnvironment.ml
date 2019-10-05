@@ -370,41 +370,37 @@ let extract_alias { unannotated_global_environment } name ~dependency =
   >>= extract_alias
 
 
-let register_aliases environment global_names ~track_dependencies =
+let produce_alias environment global_name ~track_dependencies =
   (* TODO(T53786399): Optimize this function. Theres a lot of perf potentially to be gained here,
      currently biasing towards simplicity *)
-  let register global_name =
-    let dependency =
-      Option.some_if track_dependencies (SharedMemoryKeys.AliasRegister global_name)
-    in
-    let rec get_aliased_type_for current ~visited =
-      (* This means we're in a loop *)
-      if Set.mem visited current then
-        None
-      else
-        let visited = Set.add visited current in
-        let handle_extracted = function
-          | VariableAlias variable -> Some (Type.VariableAlias variable)
-          | TypeAlias unresolved -> (
-            match UnresolvedAlias.checked_resolve environment unresolved ~dependency () with
-            | Resolved alias -> Some alias
-            | HasDependents { unparsed; dependencies } ->
-                let solve_pair dependency =
-                  get_aliased_type_for (Reference.create dependency) ~visited
-                  >>| fun solution -> dependency, solution
-                in
-                List.map dependencies ~f:solve_pair
-                |> Option.all
-                >>| String.Map.of_alist_exn
-                >>| UnresolvedAlias.unchecked_resolve ~target:current ~unparsed
-                >>| fun alias -> Type.TypeAlias alias )
-        in
-        extract_alias environment current ~dependency >>= handle_extracted
-    in
-    get_aliased_type_for global_name ~visited:Reference.Set.empty
-    |> Option.iter ~f:(Aliases.add (Reference.show global_name))
+  let dependency =
+    Option.some_if track_dependencies (SharedMemoryKeys.AliasRegister global_name)
   in
-  List.iter global_names ~f:register
+  let rec get_aliased_type_for current ~visited =
+    (* This means we're in a loop *)
+    if Set.mem visited current then
+      None
+    else
+      let visited = Set.add visited current in
+      let handle_extracted = function
+        | VariableAlias variable -> Some (Type.VariableAlias variable)
+        | TypeAlias unresolved -> (
+          match UnresolvedAlias.checked_resolve environment unresolved ~dependency () with
+          | Resolved alias -> Some alias
+          | HasDependents { unparsed; dependencies } ->
+              let solve_pair dependency =
+                get_aliased_type_for (Reference.create dependency) ~visited
+                >>| fun solution -> dependency, solution
+              in
+              List.map dependencies ~f:solve_pair
+              |> Option.all
+              >>| String.Map.of_alist_exn
+              >>| UnresolvedAlias.unchecked_resolve ~target:current ~unparsed
+              >>| fun alias -> Type.TypeAlias alias )
+      in
+      extract_alias environment current ~dependency >>= handle_extracted
+  in
+  get_aliased_type_for global_name ~visited:Reference.Set.empty
 
 
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
@@ -422,7 +418,7 @@ module Updater = Environment.Updater.Make (struct
 
   module TriggerSet = Reference.Set
 
-  let register = register_aliases
+  let produce_value = produce_alias
 
   let filter_upstream_dependency = function
     | SharedMemoryKeys.AliasRegister name -> Some name

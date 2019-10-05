@@ -92,7 +92,7 @@ module Globals =
     (GlobalValue)
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
-let annotate_global environment name ~track_dependencies =
+let produce_global_annotation environment name ~track_dependencies =
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
   let resolution =
     GlobalResolution.create
@@ -101,14 +101,12 @@ let annotate_global environment name ~track_dependencies =
       ~global:(fun _ -> None)
       (module Annotated.Class)
   in
-  let register_class_meta_annotation { Node.location; _ } =
+  let produce_class_meta_annotation { Node.location; _ } =
     let primitive = Type.Primitive (Reference.show name) in
-    Annotation.create_immutable ~global:true (Type.meta primitive)
-    |> Node.create ~location
-    |> Globals.add name
+    Annotation.create_immutable ~global:true (Type.meta primitive) |> Node.create ~location
   in
-  let register_unannotated_global global =
-    let register_assignment_global ~name ~target_location ~is_explicit annotation =
+  let process_unannotated_global global =
+    let produce_assignment_global ~target_location ~is_explicit annotation =
       let original =
         if is_explicit then
           None
@@ -122,7 +120,6 @@ let annotate_global environment name ~track_dependencies =
       in
       Annotation.create_immutable ~global:true ~original annotation
       |> Node.create ~location:target_location
-      |> Globals.add name
     in
     match global with
     | UnannotatedGlobalEnvironment.Define (head :: _ as defines) ->
@@ -145,8 +142,6 @@ let annotate_global environment name ~track_dependencies =
         >>| (fun callable -> Type.Callable callable)
         >>| Annotation.create_immutable ~global:true
         >>| Node.create ~location:(Node.location head)
-        >>| Globals.add name
-        |> Option.value ~default:()
     | SimpleAssign { explicit_annotation; value; target_location } ->
         let explicit_annotation =
           explicit_annotation
@@ -160,11 +155,11 @@ let annotate_global environment name ~track_dependencies =
           | Some explicit -> explicit
           | None -> GlobalResolution.resolve_literal resolution value
         in
-        register_assignment_global
-          ~name
+        produce_assignment_global
           ~target_location
           ~is_explicit:(Option.is_some explicit_annotation)
           annotation
+        |> Option.some
     | TupleAssign { value; target_location; index; total_length } ->
         let extracted =
           match GlobalResolution.resolve_literal resolution value with
@@ -176,8 +171,8 @@ let annotate_global environment name ~track_dependencies =
           | Type.Tuple (Type.Unbounded parameter) -> parameter
           | _ -> Type.Top
         in
-        register_assignment_global ~name ~target_location ~is_explicit:false extracted
-    | _ -> ()
+        produce_assignment_global ~target_location ~is_explicit:false extracted |> Option.some
+    | _ -> None
   in
   let class_lookup =
     Reference.show name
@@ -186,14 +181,13 @@ let annotate_global environment name ~track_dependencies =
          ?dependency
   in
   match class_lookup with
-  | Some retrieved_class -> register_class_meta_annotation retrieved_class
+  | Some retrieved_class -> produce_class_meta_annotation retrieved_class |> Option.some
   | None ->
       UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
         (unannotated_global_environment environment)
         ?dependency
         name
-      >>| register_unannotated_global
-      |> Option.value ~default:()
+      >>= process_unannotated_global
 
 
 include Environment.Updater.Make (struct
@@ -209,9 +203,7 @@ include Environment.Updater.Make (struct
 
   module TriggerSet = Reference.Set
 
-  let register environment names ~track_dependencies =
-    List.iter names ~f:(annotate_global environment ~track_dependencies)
-
+  let produce_value = produce_global_annotation
 
   let filter_upstream_dependency = function
     | SharedMemoryKeys.AnnotateGlobal name -> Some name

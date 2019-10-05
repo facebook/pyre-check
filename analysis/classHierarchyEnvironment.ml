@@ -71,7 +71,7 @@ module UndecoratedFunctions =
     (SharedMemoryKeys.DependencyKey)
     (UndecoratedFunctionValue)
 
-let get_parents ({ alias_environment } as environment) ~track_dependencies name =
+let get_parents ({ alias_environment } as environment) name ~track_dependencies =
   let object_index = IndexTracker.index "object" in
   let parse_annotation =
     let dependency = Option.some_if track_dependencies (SharedMemoryKeys.ClassConnect name) in
@@ -158,11 +158,7 @@ let get_parents ({ alias_environment } as environment) ~track_dependencies name 
   >>| remove_extra_edges_to_object
 
 
-let register_define_as_undecorated_function
-    ({ alias_environment } as environment)
-    name
-    ~track_dependencies
-  =
+let produce_undecorated_function ({ alias_environment } as environment) name ~track_dependencies =
   let global =
     let dependency =
       Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
@@ -198,14 +194,13 @@ let register_define_as_undecorated_function
               parse_as_parameter_specification_instance_annotation;
             }
           in
-          UndecoratedFunctions.add name (AnnotatedCallable.create_overload ~parser define)
+          AnnotatedCallable.create_overload ~parser define
         in
         List.find defines ~f:(fun define -> not (Define.is_overloaded_method (Node.value define)))
         >>| handle
-        |> Option.value ~default:()
-    | _ -> ()
+    | _ -> None
   in
-  global >>| handle |> Option.value ~default:()
+  global >>= handle
 
 
 module EdgesUpdater = Environment.Updater.Make (struct
@@ -221,13 +216,7 @@ module EdgesUpdater = Environment.Updater.Make (struct
 
   module TriggerSet = Type.Primitive.Set
 
-  let register environment names ~track_dependencies =
-    let set_edges name =
-      let targets = get_parents environment name ~track_dependencies in
-      Option.iter targets ~f:(Edges.add (IndexTracker.index name))
-    in
-    List.iter names ~f:set_edges
-
+  let produce_value = get_parents
 
   let filter_upstream_dependency = function
     | SharedMemoryKeys.ClassConnect name -> Some name
@@ -257,9 +246,7 @@ module UndecoratedFunctionsUpdater = Environment.Updater.Make (struct
 
   module TriggerSet = Reference.Set
 
-  let register environment names ~track_dependencies =
-    List.iter names ~f:(register_define_as_undecorated_function environment ~track_dependencies)
-
+  let produce_value = produce_undecorated_function
 
   let filter_upstream_dependency = function
     | SharedMemoryKeys.UndecoratedFunction name -> Some name

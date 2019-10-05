@@ -122,17 +122,20 @@ module Updater = struct
 
     val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
 
-    val register : t -> trigger list -> track_dependencies:bool -> unit
+    val produce_value : t -> trigger -> track_dependencies:bool -> Table.t option
   end
 
   module Make (In : In) = struct
     let update environment ~scheduler ~configuration upstream_update =
       let update ~names_to_update ~track_dependencies () =
-        Scheduler.iter
-          scheduler
-          ~configuration
-          ~f:(In.register environment ~track_dependencies)
-          ~inputs:names_to_update
+        let register =
+          let set name =
+            In.produce_value environment name ~track_dependencies
+            |> Option.iter ~f:(In.Table.add (In.convert_trigger name))
+          in
+          List.iter ~f:set
+        in
+        Scheduler.iter scheduler ~configuration ~f:register ~inputs:names_to_update
       in
       match configuration with
       | { incremental_style = FineGrained; _ } ->
