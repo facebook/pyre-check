@@ -200,48 +200,41 @@ let check
     in
     let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
       let unannotated_global_environment_update =
-        Profiling.track_duration_and_shared_memory
-          "Build UnannotatedGlobalEnvironment"
-          ~f:(fun _ ->
-            UnannotatedGlobalEnvironment.update
-              unannotated_global_environment
-              ~scheduler
-              ~configuration
-              ~ast_environment_update_result
-              (Ast.Reference.Set.of_list qualifiers))
+        UnannotatedGlobalEnvironment.update
+          unannotated_global_environment
+          ~scheduler
+          ~configuration
+          ~ast_environment_update_result
+          (Ast.Reference.Set.of_list qualifiers)
       in
       let alias_environment_update =
-        Profiling.track_duration_and_shared_memory "Build AliasEnvironment" ~f:(fun _ ->
-            AliasEnvironment.update
-              alias_environment
-              ~scheduler
-              ~configuration
-              unannotated_global_environment_update)
+        AliasEnvironment.update
+          alias_environment
+          ~scheduler
+          ~configuration
+          unannotated_global_environment_update
       in
       let class_hierarchy_environment_update =
-        Profiling.track_duration_and_shared_memory "Build ClassHierarchyEnvironment" ~f:(fun _ ->
-            ClassHierarchyEnvironment.update
-              class_hierarchy_environment
-              ~scheduler
-              ~configuration
-              alias_environment_update)
+        ClassHierarchyEnvironment.update
+          class_hierarchy_environment
+          ~scheduler
+          ~configuration
+          alias_environment_update
       in
       let class_metadata_environment_update =
-        Profiling.track_duration_and_shared_memory "Build ClassMetadataEnvironment" ~f:(fun _ ->
-            ClassMetadataEnvironment.update
-              class_metadata_environment
-              ~scheduler
-              ~configuration
-              class_hierarchy_environment_update)
+        ClassMetadataEnvironment.update
+          class_metadata_environment
+          ~scheduler
+          ~configuration
+          class_hierarchy_environment_update
       in
       if debug then
         GlobalResolution.check_class_hierarchy_integrity resolution;
-      Profiling.track_duration_and_shared_memory "Build AnnotatedGlobalEnvironment" ~f:(fun _ ->
-          AnnotatedGlobalEnvironment.update
-            environment
-            ~configuration
-            ~scheduler
-            class_metadata_environment_update)
+      AnnotatedGlobalEnvironment.update
+        environment
+        ~configuration
+        ~scheduler
+        class_metadata_environment_update
     in
     Annotated.Class.AttributeCache.clear ();
     Statistics.performance ~name:"full environment built" ~timer ();

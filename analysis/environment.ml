@@ -176,35 +176,45 @@ module EnvironmentTable = struct
       in
       match configuration with
       | { incremental_style = FineGrained; _ } ->
-          let dependencies =
-            let filter = List.filter_map ~f:In.filter_upstream_dependency in
-            In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
-            |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
-            |> List.concat_map ~f:filter
-          in
-          let (), triggered_dependencies =
-            let names_to_update =
-              dependencies
-              |> List.fold ~f:Set.add ~init:(In.added_keys upstream_update)
-              |> Set.to_list
-            in
-            let keys = List.map names_to_update ~f:In.convert_trigger |> Table.KeySet.of_list in
-            SharedMemoryKeys.DependencyKey.Transaction.empty
-            |> Table.add_to_transaction ~keys
-            |> SharedMemoryKeys.DependencyKey.Transaction.execute
-                 ~update:(update ~names_to_update ~track_dependencies:true)
+          let triggered_dependencies =
+            let name = Format.sprintf "TableUpdate(%s)" In.Value.description in
+            Profiling.track_duration_and_shared_memory name ~f:(fun _ ->
+                let dependencies =
+                  let filter = List.filter_map ~f:In.filter_upstream_dependency in
+                  In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
+                  |> List.map ~f:SharedMemoryKeys.DependencyKey.KeySet.elements
+                  |> List.concat_map ~f:filter
+                in
+                let (), triggered_dependencies =
+                  let names_to_update =
+                    dependencies
+                    |> List.fold ~f:Set.add ~init:(In.added_keys upstream_update)
+                    |> Set.to_list
+                  in
+                  let keys =
+                    List.map names_to_update ~f:In.convert_trigger |> Table.KeySet.of_list
+                  in
+                  SharedMemoryKeys.DependencyKey.Transaction.empty
+                  |> Table.add_to_transaction ~keys
+                  |> SharedMemoryKeys.DependencyKey.Transaction.execute
+                       ~update:(update ~names_to_update ~track_dependencies:true)
+                in
+                triggered_dependencies)
           in
           In.UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
       | _ ->
-          let current_and_previous_keys =
-            In.current_and_previous_keys upstream_update |> Set.to_list
+          let _ =
+            let name = Format.sprintf "LegacyTableUpdate(%s)" In.Value.description in
+            Profiling.track_duration_and_shared_memory name ~f:(fun _ ->
+                let current_and_previous_keys =
+                  In.current_and_previous_keys upstream_update |> Set.to_list
+                in
+                current_and_previous_keys
+                |> List.map ~f:In.convert_trigger
+                |> Table.KeySet.of_list
+                |> Table.remove_batch;
+                update ~names_to_update:current_and_previous_keys () ~track_dependencies:false)
           in
-          current_and_previous_keys
-          |> List.map ~f:In.convert_trigger
-          |> Table.KeySet.of_list
-          |> Table.remove_batch;
-          update ~names_to_update:current_and_previous_keys () ~track_dependencies:false;
-
           In.UpdateResult.create
             ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
             ~upstream:upstream_update

@@ -473,7 +473,7 @@ let update
             result
           in
           let { RawParseResult.syntax_error; system_error; _ }, raw_dependencies =
-            Profiling.track_duration_and_shared_memory "parse raw sources" ~f:(fun _ ->
+            Profiling.track_duration_and_shared_memory "Parse Raw Sources" ~f:(fun _ ->
                 Raw.update_and_compute_dependencies
                   ast_environment
                   changed_modules
@@ -488,7 +488,7 @@ let update
               raw_dependencies
           in
           let triggered_dependencies =
-            Profiling.track_duration_and_shared_memory "parse processed sources" ~f:(fun _ ->
+            Profiling.track_duration_and_shared_memory "Parse Processed Sources" ~f:(fun _ ->
                 update_and_compute_dependencies
                   ast_environment
                   raw_dependencies

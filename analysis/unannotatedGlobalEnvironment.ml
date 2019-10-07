@@ -529,28 +529,33 @@ let update
   |> KeyTracker.UnannotatedGlobalKeys.remove_batch;
   match configuration with
   | { incremental_style = FineGrained; _ } ->
-      let (), mutation_triggers =
-        DependencyKey.Transaction.empty
-        |> WriteOnly.add_to_transaction ~previous_classes_list ~previous_unannotated_globals_list
-        |> DependencyKey.Transaction.execute ~update
-      in
-      let current_classes =
-        KeyTracker.get_keys modified_qualifiers |> Type.Primitive.Set.of_list
-      in
-      let current_unannotated_globals =
-        KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list
-      in
-      let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
-      let unannotated_global_additions =
-        Reference.Set.diff current_unannotated_globals previous_unannotated_globals
-      in
-      let addition_triggers =
-        WriteOnly.get_all_dependents
-          ~class_additions:(Set.to_list class_additions)
-          ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
-      in
-      let triggered_dependencies =
-        DependencyKey.KeySet.union addition_triggers mutation_triggers
+      let current_classes, current_unannotated_globals, triggered_dependencies =
+        Profiling.track_duration_and_shared_memory "TableUpdate(Unannotated globals)" ~f:(fun _ ->
+            let (), mutation_triggers =
+              DependencyKey.Transaction.empty
+              |> WriteOnly.add_to_transaction
+                   ~previous_classes_list
+                   ~previous_unannotated_globals_list
+              |> DependencyKey.Transaction.execute ~update
+            in
+            let current_classes =
+              KeyTracker.get_keys modified_qualifiers |> Type.Primitive.Set.of_list
+            in
+            let current_unannotated_globals =
+              KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list
+            in
+            let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
+            let unannotated_global_additions =
+              Reference.Set.diff current_unannotated_globals previous_unannotated_globals
+            in
+            let addition_triggers =
+              WriteOnly.get_all_dependents
+                ~class_additions:(Set.to_list class_additions)
+                ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
+            in
+            ( current_classes,
+              current_unannotated_globals,
+              DependencyKey.KeySet.union addition_triggers mutation_triggers ))
       in
       {
         UpdateResult.current_classes;
@@ -561,15 +566,16 @@ let update
         upstream;
       }
   | _ ->
-      WriteOnly.direct_data_purge ~previous_classes_list ~previous_unannotated_globals_list;
-      update ();
-      let current_classes =
-        KeyTracker.get_keys modified_qualifiers |> Type.Primitive.Set.of_list
+      let current_classes, current_unannotated_globals, triggered_dependencies =
+        Profiling.track_duration_and_shared_memory
+          "LegacyTableUpdate(Unannotated globals)"
+          ~f:(fun _ ->
+            WriteOnly.direct_data_purge ~previous_classes_list ~previous_unannotated_globals_list;
+            update ();
+            ( KeyTracker.get_keys modified_qualifiers |> Type.Primitive.Set.of_list,
+              KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list,
+              DependencyKey.KeySet.empty ))
       in
-      let current_unannotated_globals =
-        KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list
-      in
-      let triggered_dependencies = DependencyKey.KeySet.empty in
       {
         current_classes;
         previous_classes;

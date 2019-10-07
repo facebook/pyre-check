@@ -289,13 +289,9 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
 end)
 
 let update environment ~scheduler ~configuration upstream_update =
-  let edge_result =
-    Profiling.track_duration_and_shared_memory "class forward edge" ~f:(fun _ ->
-        Edges.update environment ~scheduler ~configuration upstream_update)
-  in
+  let edge_result = Edges.update environment ~scheduler ~configuration upstream_update in
   let undecorated_functions_result =
-    Profiling.track_duration_and_shared_memory "undecorated functions" ~f:(fun _ ->
-        UndecoratedFunctions.update environment ~scheduler ~configuration upstream_update)
+    UndecoratedFunctions.update environment ~scheduler ~configuration upstream_update
   in
   let triggered_dependencies =
     SharedMemoryKeys.DependencyKey.KeySet.union

@@ -81,7 +81,7 @@ let track_shared_memory_usage ?name () =
 
 
 let track_duration_and_shared_memory ~f name =
-  track_shared_memory_usage () ~name:(Format.sprintf "Before [%s]" name);
+  track_shared_memory_usage () ~name:(Format.sprintf "Before %s" name);
   let result = track_duration_event name ~f in
-  track_shared_memory_usage () ~name:(Format.sprintf "After [%s]" name);
+  track_shared_memory_usage () ~name:(Format.sprintf "After %s" name);
   result
