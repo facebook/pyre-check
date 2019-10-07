@@ -4253,7 +4253,8 @@ module State (Context : Context) = struct
     in
     let class_initialization_errors errors =
       (* Ensure all attributes are instantiated. This must happen after typechecking is finished to
-         access the annotations added to resolution. *)
+         access the annotations added to resolution in the constructor. If a constructor does not
+         exist, this function is triggered in the toplevel. *)
       let check_attribute_initialization ~is_dynamically_initialized definition errors =
         if
           (not (AnnotatedClass.is_protocol definition))
