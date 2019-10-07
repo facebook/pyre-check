@@ -46,11 +46,6 @@ module ClassMetadataValue = struct
   let compare = compare_class_metadata
 end
 
-module ClassMetadata =
-  Memory.DependencyTrackedTableWithCache
-    (SharedMemoryKeys.StringKey)
-    (SharedMemoryKeys.DependencyKey)
-    (ClassMetadataValue)
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 let produce_class_metadata { class_hierarchy_environment } class_name ~track_dependencies =
@@ -115,10 +110,11 @@ let produce_class_metadata { class_hierarchy_environment } class_name ~track_dep
   >>| add
 
 
-include Environment.Updater.Make (struct
+include Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module UpdateResult = UpdateResult
-  module Table = ClassMetadata
+  module Key = SharedMemoryKeys.StringKey
+  module Value = ClassMetadataValue
 
   type nonrec t = t
 
@@ -145,7 +141,29 @@ include Environment.Updater.Make (struct
     ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
     |> AliasEnvironment.UpdateResult.upstream
     |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
+
+
+  let all_keys { class_hierarchy_environment } =
+    ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
+    |> AliasEnvironment.ReadOnly.unannotated_global_environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+
+
+  let serialize_value { successors; is_test; is_final; extends_placeholder_stub_class } =
+    `Assoc
+      [
+        "successors", `String (List.to_string ~f:Type.Primitive.show successors);
+        "is_test", `Bool is_test;
+        "is_final", `Bool is_final;
+        "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class;
+      ]
+    |> Yojson.to_string
+
+
+  let show_key = Fn.id
+
+  let equal_value = equal_class_metadata
 end)
 
 let read_only { class_hierarchy_environment } =
-  { ReadOnly.class_hierarchy_environment; get_class_metadata = ClassMetadata.get }
+  { ReadOnly.class_hierarchy_environment; get_class_metadata = get }

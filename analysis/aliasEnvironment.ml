@@ -109,12 +109,6 @@ module AliasValue = struct
   let compare = Type.compare_alias
 end
 
-module Aliases =
-  Memory.DependencyTrackedTableNoCache
-    (SharedMemoryKeys.StringKey)
-    (SharedMemoryKeys.DependencyKey)
-    (AliasValue)
-
 let ast_environment { unannotated_global_environment } =
   UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
 
@@ -405,10 +399,11 @@ let produce_alias environment global_name ~track_dependencies =
 
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
-module Updater = Environment.Updater.Make (struct
+module Aliases = Environment.EnvironmentTable.NoCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module UpdateResult = UpdateResult
-  module Table = Aliases
+  module Key = SharedMemoryKeys.StringKey
+  module Value = AliasValue
 
   type trigger = Reference.t
 
@@ -432,10 +427,22 @@ module Updater = Environment.Updater.Make (struct
   let current_and_previous_keys upstream_update =
     UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
       upstream_update
+
+
+  let all_keys { unannotated_global_environment } =
+    UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
+    |> List.map ~f:Reference.show
+
+
+  let serialize_value = Type.show_alias
+
+  let show_key = Fn.id
+
+  let equal_value = Type.equal_alias
 end)
 
 let update environment ~scheduler ~configuration upstream =
-  let result = Updater.update environment ~scheduler ~configuration upstream in
+  let result = Aliases.update environment ~scheduler ~configuration upstream in
   Type.Cache.clear ~scheduler ~configuration;
   result
 

@@ -51,10 +51,6 @@ module EdgeValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module Edges =
-  Memory.DependencyTrackedTableWithCache (IndexTracker.IndexKey) (SharedMemoryKeys.DependencyKey)
-    (EdgeValue)
-
 module UndecoratedFunctionValue = struct
   type t = Type.t Type.Callable.overload [@@deriving compare]
 
@@ -64,12 +60,6 @@ module UndecoratedFunctionValue = struct
 
   let unmarshall value = Marshal.from_string value 0
 end
-
-module UndecoratedFunctions =
-  Memory.DependencyTrackedTableWithCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.DependencyKey)
-    (UndecoratedFunctionValue)
 
 let get_parents ({ alias_environment } as environment) name ~track_dependencies =
   let object_index = IndexTracker.index "object" in
@@ -203,10 +193,11 @@ let produce_undecorated_function ({ alias_environment } as environment) name ~tr
   global >>= handle
 
 
-module EdgesUpdater = Environment.Updater.Make (struct
+module Edges = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module UpdateResult = UpdateResult
-  module Table = Edges
+  module Key = IndexTracker.IndexKey
+  module Value = EdgeValue
 
   type trigger = string
 
@@ -231,12 +222,34 @@ module EdgesUpdater = Environment.Updater.Make (struct
   let current_and_previous_keys upstream_update =
     AliasEnvironment.UpdateResult.upstream upstream_update
     |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
+
+
+  let all_keys environment =
+    unannotated_global_environment environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+    |> List.map ~f:IndexTracker.index
+
+
+  let decode_target { ClassHierarchy.Target.target; parameters } =
+    Format.asprintf
+      "%s[%a]"
+      (IndexTracker.annotation target)
+      Type.OrderedTypes.pp_concise
+      parameters
+
+
+  let serialize_value = List.to_string ~f:decode_target
+
+  let show_key = IndexTracker.annotation
+
+  let equal_value = List.equal ClassHierarchy.Target.equal
 end)
 
-module UndecoratedFunctionsUpdater = Environment.Updater.Make (struct
+module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module UpdateResult = UpdateResult
-  module Table = UndecoratedFunctions
+  module Key = SharedMemoryKeys.ReferenceKey
+  module Value = UndecoratedFunctionValue
 
   type nonrec t = t
 
@@ -261,16 +274,28 @@ module UndecoratedFunctionsUpdater = Environment.Updater.Make (struct
   let current_and_previous_keys upstream_update =
     AliasEnvironment.UpdateResult.upstream upstream_update
     |> UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
+
+
+  let all_keys environment =
+    unannotated_global_environment environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
+
+
+  let serialize_value = Type.Callable.show_overload Type.pp
+
+  let show_key = Reference.show
+
+  let equal_value = Type.Callable.equal_overload Type.equal
 end)
 
 let update environment ~scheduler ~configuration upstream_update =
   let edge_result =
     Profiling.track_duration_and_shared_memory "class forward edge" ~f:(fun _ ->
-        EdgesUpdater.update environment ~scheduler ~configuration upstream_update)
+        Edges.update environment ~scheduler ~configuration upstream_update)
   in
   let undecorated_functions_result =
     Profiling.track_duration_and_shared_memory "undecorated functions" ~f:(fun _ ->
-        UndecoratedFunctionsUpdater.update environment ~scheduler ~configuration upstream_update)
+        UndecoratedFunctions.update environment ~scheduler ~configuration upstream_update)
   in
   let triggered_dependencies =
     SharedMemoryKeys.DependencyKey.KeySet.union

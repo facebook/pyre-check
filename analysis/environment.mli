@@ -73,25 +73,13 @@ module type S = sig
   val read_only : t -> ReadOnly.t
 end
 
-(* Updaters: The following functors are aids to producing the update function expected by the above
-   module signature. This update function executes a parallelized update of the shared memory
-   tables contained in the environment, based off of the triggers from the previous environment
-   updates. This then generates triggers for further downstream environments. *)
+(* The following is a special form of a shared memory table optimized for incremental type
+   checking. This update function executes a parallelized update of the shared memory tables
+   contained in the environment, based off of the triggers from the previous environment updates.
+   This then generates triggers for further downstream environments. *)
 
-module Updater : sig
+module EnvironmentTable : sig
   module type In = sig
-    (* This is the table that the updater is actually updating *)
-    module Table : sig
-      include Memory.NoCache.S
-
-      val add_to_transaction
-        :  SharedMemoryKeys.DependencyKey.Transaction.t ->
-        keys:KeySet.t ->
-        SharedMemoryKeys.DependencyKey.Transaction.t
-
-      val get : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> t option
-    end
-
     (* This refers to the immediately preceding environment *)
     module PreviousEnvironment : PreviousEnvironment
 
@@ -102,6 +90,10 @@ module Updater : sig
       include UpdateResult.Private with type upstream := upstream and type t := t
     end
 
+    module Key : Memory.KeyType
+
+    module Value : Memory.ComparableValueType
+
     (* This is the environment's internal data type, only used for the actual update function *)
     type t
 
@@ -110,7 +102,7 @@ module Updater : sig
        one with a one-to-one conversion, done by convert_trigger *)
     type trigger
 
-    val convert_trigger : trigger -> Table.key
+    val convert_trigger : trigger -> Key.t
 
     module TriggerSet : Set.S with type Elt.t = trigger
 
@@ -129,15 +121,37 @@ module Updater : sig
     val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
 
     (* This is the actual main function of the update. *)
-    val produce_value : t -> trigger -> track_dependencies:bool -> Table.t option
+    val produce_value : t -> trigger -> track_dependencies:bool -> Value.t option
+
+    val all_keys : t -> Key.t list
+
+    val serialize_value : Value.t -> string
+
+    val show_key : Key.out -> string
+
+    val equal_value : Value.t -> Value.t -> bool
   end
 
-  module Make (In : In) : sig
+  module type S = sig
+    module In : In
+
     val update
       :  In.t ->
       scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
       In.PreviousEnvironment.UpdateResult.t ->
       In.UpdateResult.t
+
+    val get : ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t sexp_option
+
+    val hash_to_key_map : In.t -> string String.Map.t
+
+    val serialize_decoded : Memory.decodable -> (string * string * string option) option
+
+    val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
   end
+
+  module WithCache (In : In) : S with module In = In
+
+  module NoCache (In : In) : S with module In = In
 end

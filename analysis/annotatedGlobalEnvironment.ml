@@ -85,11 +85,6 @@ module GlobalValue = struct
   let compare = GlobalResolution.compare_global
 end
 
-module Globals =
-  Memory.DependencyTrackedTableWithCache
-    (SharedMemoryKeys.ReferenceKey)
-    (SharedMemoryKeys.DependencyKey)
-    (GlobalValue)
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 let produce_global_annotation environment name ~track_dependencies =
@@ -190,10 +185,11 @@ let produce_global_annotation environment name ~track_dependencies =
       >>= process_unannotated_global
 
 
-include Environment.Updater.Make (struct
+include Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module UpdateResult = UpdateResult
-  module Table = Globals
+  module Key = SharedMemoryKeys.ReferenceKey
+  module Value = GlobalValue
 
   type nonrec t = t
 
@@ -245,32 +241,25 @@ include Environment.Updater.Make (struct
       ~init:current_and_previous_unannotated_globals
       ~f:Set.add
       current_and_previous_classes
+
+
+  let all_keys environment =
+    UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
+      (unannotated_global_environment environment)
+
+
+  let serialize_value annotation = Node.value annotation |> Annotation.sexp_of_t |> Sexp.to_string
+
+  let show_key = Reference.show
+
+  let equal_value first second = Annotation.equal (Node.value first) (Node.value second)
 end)
 
 let read_only ({ class_metadata_environment } as environment) =
-  let hash_to_key_map () =
-    let keys =
-      UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
-        (unannotated_global_environment environment)
-    in
-    Globals.compute_hashes_to_keys ~keys
-  in
-  let serialize_decoded decoded =
-    match decoded with
-    | Globals.Decoded (key, value) ->
-        let value = value >>| Node.value >>| Annotation.sexp_of_t >>| Sexp.to_string in
-        Some (GlobalValue.description, Reference.show key, value)
-    | _ -> None
-  in
-  let decoded_equal first second =
-    match first, second with
-    | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
-        Some (Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value))
-    | _ -> None
-  in
+  let hash_to_key_map () = hash_to_key_map environment in
   {
     ReadOnly.class_metadata_environment;
-    get_global = Globals.get;
+    get_global = get;
     hash_to_key_map;
     serialize_decoded;
     decoded_equal;

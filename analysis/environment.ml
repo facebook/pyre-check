@@ -4,6 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
+open Pyre
 
 module type ReadOnly = sig
   type t
@@ -87,19 +88,8 @@ module type S = sig
   val read_only : t -> ReadOnly.t
 end
 
-module Updater = struct
+module EnvironmentTable = struct
   module type In = sig
-    module Table : sig
-      include Memory.NoCache.S
-
-      val add_to_transaction
-        :  SharedMemoryKeys.DependencyKey.Transaction.t ->
-        keys:KeySet.t ->
-        SharedMemoryKeys.DependencyKey.Transaction.t
-
-      val get : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> t option
-    end
-
     module PreviousEnvironment : PreviousEnvironment
 
     module UpdateResult : sig
@@ -108,11 +98,15 @@ module Updater = struct
       include UpdateResult.Private with type upstream := upstream and type t := t
     end
 
+    module Key : Memory.KeyType
+
+    module Value : Memory.ComparableValueType
+
     type t
 
     type trigger
 
-    val convert_trigger : trigger -> Table.key
+    val convert_trigger : trigger -> Key.t
 
     module TriggerSet : Set.S with type Elt.t = trigger
 
@@ -122,16 +116,59 @@ module Updater = struct
 
     val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
 
-    val produce_value : t -> trigger -> track_dependencies:bool -> Table.t option
+    val produce_value : t -> trigger -> track_dependencies:bool -> Value.t option
+
+    val all_keys : t -> Key.t list
+
+    val serialize_value : Value.t -> string
+
+    val show_key : Key.out -> string
+
+    val equal_value : Value.t -> Value.t -> bool
   end
 
-  module Make (In : In) = struct
+  module type Table = sig
+    include Memory.NoCache.S
+
+    val add_to_transaction
+      :  SharedMemoryKeys.DependencyKey.Transaction.t ->
+      keys:KeySet.t ->
+      SharedMemoryKeys.DependencyKey.Transaction.t
+
+    val get : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> t option
+  end
+
+  module type S = sig
+    module In : In
+
+    val update
+      :  In.t ->
+      scheduler:Scheduler.t ->
+      configuration:Configuration.Analysis.t ->
+      In.PreviousEnvironment.UpdateResult.t ->
+      In.UpdateResult.t
+
+    val get : ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t sexp_option
+
+    val hash_to_key_map : In.t -> string String.Map.t
+
+    val serialize_decoded : Memory.decodable -> (string * string * string option) option
+
+    val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
+  end
+
+  module Make
+      (In : In)
+      (Table : Table with type t = In.Value.t and type key = In.Key.t and type key_out = In.Key.out) =
+  struct
+    module In = In
+
     let update environment ~scheduler ~configuration upstream_update =
       let update ~names_to_update ~track_dependencies () =
         let register =
           let set name =
             In.produce_value environment name ~track_dependencies
-            |> Option.iter ~f:(In.Table.add (In.convert_trigger name))
+            |> Option.iter ~f:(Table.add (In.convert_trigger name))
           in
           List.iter ~f:set
         in
@@ -151,9 +188,9 @@ module Updater = struct
               |> List.fold ~f:Set.add ~init:(In.added_keys upstream_update)
               |> Set.to_list
             in
-            let keys = List.map names_to_update ~f:In.convert_trigger |> In.Table.KeySet.of_list in
+            let keys = List.map names_to_update ~f:In.convert_trigger |> Table.KeySet.of_list in
             SharedMemoryKeys.DependencyKey.Transaction.empty
-            |> In.Table.add_to_transaction ~keys
+            |> Table.add_to_transaction ~keys
             |> SharedMemoryKeys.DependencyKey.Transaction.execute
                  ~update:(update ~names_to_update ~track_dependencies:true)
           in
@@ -164,12 +201,41 @@ module Updater = struct
           in
           current_and_previous_keys
           |> List.map ~f:In.convert_trigger
-          |> In.Table.KeySet.of_list
-          |> In.Table.remove_batch;
+          |> Table.KeySet.of_list
+          |> Table.remove_batch;
           update ~names_to_update:current_and_previous_keys () ~track_dependencies:false;
 
           In.UpdateResult.create
             ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
             ~upstream:upstream_update
+
+
+    let get = Table.get
+
+    let hash_to_key_map environment = Table.compute_hashes_to_keys ~keys:(In.all_keys environment)
+
+    let serialize_decoded decoded =
+      match decoded with
+      | Table.Decoded (key, value) ->
+          let value = value >>| In.serialize_value in
+          let key = In.show_key key in
+          Some (In.Value.description, key, value)
+      | _ -> None
+
+
+    let decoded_equal first second =
+      match first, second with
+      | Table.Decoded (_, first), Table.Decoded (_, second) ->
+          Some (Option.equal In.equal_value first second)
+      | _ -> None
   end
+
+  module WithCache (In : In) =
+    Make
+      (In)
+      (Memory.DependencyTrackedTableWithCache (In.Key) (SharedMemoryKeys.DependencyKey) (In.Value))
+  module NoCache (In : In) =
+    Make
+      (In)
+      (Memory.DependencyTrackedTableNoCache (In.Key) (SharedMemoryKeys.DependencyKey) (In.Value))
 end
