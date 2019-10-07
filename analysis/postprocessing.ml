@@ -77,3 +77,23 @@ let ignore { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
     List.map (Hashtbl.data unused_ignores) ~f:to_error
   in
   List.rev_append unused_ignore_errors errors
+
+
+let add_local_mode_errors
+    ~define
+    { Source.metadata = { Source.Metadata.unused_local_modes; local_mode = actual_mode; _ }; _ }
+    errors
+  =
+  let add_error errors unused_mode =
+    match actual_mode with
+    | Some actual_mode ->
+        Error.create
+          ~location:(Node.location unused_mode)
+          ~kind:(Error.UnusedLocalMode { unused_mode; actual_mode })
+          ~define
+        :: errors
+    | None ->
+        Log.debug "Impossible unused local mode error - no local mode is set.";
+        errors
+  in
+  List.fold ~f:add_error ~init:errors unused_local_modes

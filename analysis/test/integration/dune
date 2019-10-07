@@ -43,6 +43,7 @@
   isinstanceTest
   literalTest
   methodTest
+  modeTest
   overloadTest
   protocolTest
   redundantCastTest

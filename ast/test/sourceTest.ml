@@ -14,17 +14,29 @@ let test_parse _ =
   let qualifier = !&"test" in
   let assert_mode line expected_mode =
     let { Source.Metadata.local_mode; _ } = Source.Metadata.parse ~qualifier [line] in
-    assert_equal local_mode expected_mode
+    let show_local_mode = function
+      | Some { Node.value = mode; _ } -> Source.show_local_mode mode
+      | None -> "None"
+    in
+    assert_equal ~printer:show_local_mode expected_mode local_mode
   in
-  assert_mode " # pyre-placeholder-stub" (Some Source.PlaceholderStub);
-  assert_mode "  # pyre-ignore-all-errors " (Some Source.Declare);
-  assert_mode "\t# pyre-ignore-all-errors" (Some Source.Declare);
-  assert_mode " # pyre-strict" (Some Source.Strict);
+  let create_mode line start stop mode =
+    let location =
+      let start = { Location.line; column = start } in
+      let stop = { Location.line; column = stop } in
+      { Location.path = Reference.create "test"; start; stop }
+    in
+    Node.create ~location mode
+  in
+  assert_mode " # pyre-placeholder-stub" (Some (create_mode 1 0 23 Source.PlaceholderStub));
+  assert_mode "  # pyre-ignore-all-errors " (Some (create_mode 1 0 24 Source.Declare));
+  assert_mode "\t# pyre-ignore-all-errors" (Some (create_mode 1 0 24 Source.Declare));
+  assert_mode " # pyre-strict" (Some (create_mode 1 0 13 Source.Strict));
   assert_mode " # pyre-strict comment comment" None;
   assert_mode " # comment comment pyre-strict" None;
-  assert_mode " # pyre-unsafe" (Some Source.Unsafe);
+  assert_mode " # pyre-unsafe" (Some (create_mode 1 0 13 Source.Unsafe));
   assert_mode " # pyre-durp" None;
-  assert_mode " # pyre-debug" (Some Source.Debug);
+  assert_mode " # pyre-debug" (Some (create_mode 1 0 12 Source.Debug));
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " None;
 
   let assert_mode_errors lines expected_mode_errors =
@@ -32,11 +44,11 @@ let test_parse _ =
     assert_equal unused_local_modes expected_mode_errors
   in
   assert_mode_errors ["# pyre-strict"; "# derp"] [];
-  assert_mode_errors ["# pyre-strict"; "# pyre-unsafe"] [Source.Unsafe];
-  assert_mode_errors ["# pyre-strict"; "# pyre-strict"] [Source.Strict];
+  assert_mode_errors ["# pyre-strict"; "# pyre-unsafe"] [create_mode 2 0 13 Source.Unsafe];
+  assert_mode_errors ["# pyre-strict"; "# pyre-strict"] [create_mode 2 0 13 Source.Strict];
   assert_mode_errors
     ["# pyre-strict"; "derp"; "# pyre-unsafe"; "# pyre-debug"]
-    [Source.Unsafe; Source.Debug];
+    [create_mode 3 0 13 Source.Unsafe; create_mode 4 0 12 Source.Debug];
 
   let assert_ignore_codes line expected_codes =
     let { Source.Metadata.ignore_codes; _ } = Source.Metadata.parse ~qualifier [line] in
@@ -166,19 +178,19 @@ let test_mode _ =
   in
   let configuration = Configuration.Analysis.create () in
   assert_mode ~configuration None Source.Unsafe;
-  assert_mode ~configuration (Some Source.Strict) Source.Strict;
-  assert_mode ~configuration (Some Source.Debug) Source.Debug;
+  assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Strict;
+  assert_mode ~configuration (Some (Node.create_with_default_location Source.Debug)) Source.Debug;
 
   let configuration = Configuration.Analysis.create ~strict:true () in
   assert_mode ~configuration None Source.Strict;
-  assert_mode ~configuration (Some Source.Unsafe) Source.Unsafe;
-  assert_mode ~configuration (Some Source.Strict) Source.Strict;
-  assert_mode ~configuration (Some Source.Debug) Source.Debug;
+  assert_mode ~configuration (Some (Node.create_with_default_location Source.Unsafe)) Source.Unsafe;
+  assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Strict;
+  assert_mode ~configuration (Some (Node.create_with_default_location Source.Debug)) Source.Debug;
 
   let configuration = Configuration.Analysis.create ~debug:true () in
   assert_mode ~configuration None Source.Debug;
-  assert_mode ~configuration (Some Source.Strict) Source.Debug;
-  assert_mode ~configuration (Some Source.Unsafe) Source.Debug
+  assert_mode ~configuration (Some (Node.create_with_default_location Source.Strict)) Source.Debug;
+  assert_mode ~configuration (Some (Node.create_with_default_location Source.Unsafe)) Source.Debug
 
 
 let test_qualifier _ =

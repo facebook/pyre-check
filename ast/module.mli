@@ -14,6 +14,6 @@ val create : Source.t -> t
 val create_implicit : ?empty_stub:bool -> unit -> t
 
 (* Exposed for testing only *)
-val create_for_testing : local_mode:Source.local_mode option -> stub:bool -> t
+val create_for_testing : local_mode:Source.local_mode Node.t option -> stub:bool -> t
 
-val local_mode : t -> Source.local_mode option
+val local_mode : t -> Source.local_mode Node.t option

@@ -5034,8 +5034,8 @@ let run
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%s`..." relative;
+  let toplevel = Source.top_level_define_node source in
   let results =
-    let toplevel = Source.top_level_define_node source in
     let global_resolution =
       match configuration with
       | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
@@ -5048,6 +5048,7 @@ let run
   in
   let errors =
     List.concat_map results ~f:(fun { errors; _ } -> errors)
+    |> Postprocessing.add_local_mode_errors ~define:toplevel source
     |> Postprocessing.ignore source
     |> List.sort ~compare:Error.compare
   in

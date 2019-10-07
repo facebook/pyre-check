@@ -264,6 +264,10 @@ type kind =
       unpack_problem: unpack_problem;
     }
   | UnusedIgnore of int list
+  | UnusedLocalMode of {
+      unused_mode: Source.local_mode Node.t;
+      actual_mode: Source.local_mode Node.t;
+    }
   (* Additional errors. *)
   | DeadStore of Identifier.t
   | Deobfuscation of Source.t

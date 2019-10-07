@@ -273,6 +273,10 @@ type kind =
       unpack_problem: unpack_problem;
     }
   | UnusedIgnore of int list
+  | UnusedLocalMode of {
+      unused_mode: Source.local_mode Node.t;
+      actual_mode: Source.local_mode Node.t;
+    }
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | DeadStore of Identifier.t
@@ -334,6 +338,7 @@ let code = function
   | InvalidException _ -> 48
   | UnsafeCast _ -> 49
   | RedefinedClass _ -> 50
+  | UnusedLocalMode _ -> 51
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -394,6 +399,7 @@ let name = function
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | Unpack _ -> "Unable to unpack"
   | UnusedIgnore _ -> "Unused ignore"
+  | UnusedLocalMode _ -> "Unused local mode"
 
 
 let weaken_literals kind =
@@ -1751,6 +1757,21 @@ let messages ~concise ~signature location kind =
           (string_from_codes codes)
           (if plural then "are" else "is");
       ]
+  | UnusedLocalMode { unused_mode; actual_mode } ->
+      let mode_string = function
+        | { Node.value = Source.Debug; _ } -> "pyre-debug"
+        | { Node.value = Source.Strict; _ } -> "pyre-strict"
+        | { Node.value = Source.Unsafe; _ } -> "pyre-unsafe"
+        | { Node.value = Source.Declare; _ } -> "pyre-ignore-all-errors"
+        | { Node.value = Source.PlaceholderStub; _ } -> "pyre-placeholder-stub"
+      in
+      [
+        Format.asprintf
+          "Mode `%s` is unused. This conflicts with `%s` mode set on line %d."
+          (mode_string unused_mode)
+          (mode_string actual_mode)
+          (Location.line (Node.location actual_mode));
+      ]
 
 
 let inference_information
@@ -1964,7 +1985,8 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedType _
   | UnexpectedKeyword _
   | AbstractClass _
-  | UnusedIgnore _ ->
+  | UnusedIgnore _
+  | UnusedLocalMode _ ->
       false
 
 
@@ -2067,7 +2089,8 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | UndefinedImport _
   | AbstractClass _
   | Unpack _
-  | UnusedIgnore _ ->
+  | UnusedIgnore _
+  | UnusedLocalMode _ ->
       false
 
 
@@ -2240,6 +2263,10 @@ let less_or_equal ~resolution left right =
   | UndefinedImport left, UndefinedImport right -> Reference.equal_sanitized left right
   | UnusedIgnore left, UnusedIgnore right ->
       IntSet.is_subset (IntSet.of_list left) ~of_:(IntSet.of_list right)
+  | ( UnusedLocalMode { unused_mode = left_unused_mode; actual_mode = left_actual_mode },
+      UnusedLocalMode { unused_mode = right_unused_mode; actual_mode = right_actual_mode } ) ->
+      Source.equal_local_mode left_unused_mode.Node.value right_unused_mode.Node.value
+      && Source.equal_local_mode left_actual_mode.Node.value right_actual_mode.Node.value
   | ( Unpack { expected_count = left_count; unpack_problem = left_problem },
       Unpack { expected_count = right_count; unpack_problem = right_problem } ) -> (
       left_count = right_count
@@ -2304,7 +2331,8 @@ let less_or_equal ~resolution left right =
   | UninitializedAttribute _, _
   | AbstractClass _, _
   | Unpack _, _
-  | UnusedIgnore _, _ ->
+  | UnusedIgnore _, _
+  | UnusedLocalMode _, _ ->
       false
 
 
@@ -2637,7 +2665,8 @@ let join ~resolution left right =
     | UninitializedAttribute _, _
     | AbstractClass _, _
     | Unpack _, _
-    | UnusedIgnore _, _ ->
+    | UnusedIgnore _, _
+    | UnusedLocalMode _, _ ->
         let { location; _ } = left in
         Log.debug
           "Incompatible type in error join at %a: %a %a"
@@ -3176,6 +3205,7 @@ let dequalify
     | MissingArgument { callee; parameter } ->
         MissingArgument { callee = Option.map callee ~f:dequalify_reference; parameter }
     | UnusedIgnore codes -> UnusedIgnore codes
+    | UnusedLocalMode mode -> UnusedLocalMode mode
     | Unpack unpack -> Unpack unpack
   in
   let signature =

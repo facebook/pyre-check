@@ -15,7 +15,7 @@ type t =
   | Explicit of {
       aliased_exports: aliased_exports;
       empty_stub: bool;
-      local_mode: Source.local_mode option;
+      local_mode: Source.local_mode Node.t option;
     }
   | Implicit of { empty_stub: bool }
 [@@deriving eq, sexp, compare]
@@ -47,8 +47,7 @@ let create_for_testing ~local_mode ~stub =
   Explicit
     {
       aliased_exports = Reference.Map.empty |> Map.to_tree;
-      empty_stub =
-        stub && Option.equal Source.equal_local_mode local_mode (Some Source.PlaceholderStub);
+      empty_stub = stub && Source.Metadata.is_placeholder_stub local_mode;
       local_mode = None;
     }
 
@@ -103,8 +102,7 @@ let create
   Explicit
     {
       aliased_exports;
-      empty_stub =
-        is_stub && Option.equal Source.equal_local_mode local_mode (Some Source.PlaceholderStub);
+      empty_stub = is_stub && Source.Metadata.is_placeholder_stub local_mode;
       local_mode;
     }
 
