@@ -15,7 +15,6 @@ let run_check
     sections
     debug
     strict
-    declare
     show_error_traces
     infer
     additional_checks
@@ -53,7 +52,6 @@ let run_check
       ~sections
       ~debug
       ~strict
-      ~declare
       ~show_error_traces
       ~log_identifier
       ?logger

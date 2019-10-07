@@ -30,7 +30,6 @@ module Analysis : sig
     verbose: bool;
     expected_version: string option;
     strict: bool;
-    declare: bool;
     show_error_traces: bool;
     log_identifier: string;
     logger: string option;
@@ -61,7 +60,6 @@ module Analysis : sig
     ?verbose:bool ->
     ?expected_version:string ->
     ?strict:bool ->
-    ?declare:bool ->
     ?debug:bool ->
     ?show_error_traces:bool ->
     ?log_identifier:string ->

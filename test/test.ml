@@ -1547,7 +1547,6 @@ type test_update_environment_with_t = {
 let assert_errors
     ?(debug = true)
     ?(strict = false)
-    ?(declare = false)
     ?(infer = false)
     ?(show_error_traces = false)
     ?(concise = false)
@@ -1588,7 +1587,7 @@ let assert_errors
         |> AliasEnvironment.ReadOnly.unannotated_global_environment
         |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
       in
-      let configuration = { configuration with debug; strict; declare; infer } in
+      let configuration = { configuration with debug; strict; infer } in
       let source =
         List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
             String.equal handle relative)

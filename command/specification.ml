@@ -22,7 +22,6 @@ let base_command_line_arguments =
             dash to disable it."
     +> flag "-debug" no_arg ~doc:"Turn on debug mode"
     +> flag "-strict" no_arg ~doc:"Turn on strict mode"
-    +> flag "-declare" no_arg ~doc:"Turn on declare mode"
     +> flag "-show-error-traces" no_arg ~doc:"Outputs additional error information"
     +> flag "-infer" no_arg ~doc:"Outputs extra information and errors for inference purposes"
     +> flag

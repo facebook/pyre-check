@@ -31,7 +31,6 @@ module Analysis = struct
     verbose: bool;
     expected_version: string option;
     strict: bool;
-    declare: bool;
     show_error_traces: bool;
     log_identifier: string;
     logger: string option;
@@ -50,7 +49,6 @@ module Analysis = struct
     && [%compare.equal: string list] first.additional_checks second.additional_checks
     && [%compare.equal: string option] first.expected_version second.expected_version
     && Bool.equal first.strict second.strict
-    && Bool.equal first.declare second.declare
 
 
   let create
@@ -70,7 +68,6 @@ module Analysis = struct
       ?(verbose = false)
       ?expected_version
       ?(strict = false)
-      ?(declare = false)
       ?(debug = false)
       ?(show_error_traces = false)
       ?(log_identifier = "")
@@ -102,7 +99,6 @@ module Analysis = struct
       verbose;
       expected_version;
       strict;
-      declare;
       show_error_traces;
       log_identifier;
       logger;

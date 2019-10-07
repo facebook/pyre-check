@@ -253,7 +253,6 @@ let mode ~configuration ~local_mode : mode =
   | Some { Node.value = PlaceholderStub; _ }, _ ->
       Declare
   | None, { Configuration.Analysis.strict = true; _ } -> Strict
-  | None, { Configuration.Analysis.declare = true; _ } -> Declare
   | None, _ -> Unsafe
 
 

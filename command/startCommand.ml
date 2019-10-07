@@ -458,7 +458,6 @@ let run_start_command
     sections
     debug
     strict
-    declare
     show_error_traces
     infer
     additional_checks
@@ -507,7 +506,6 @@ let run_start_command
       ~additional_checks
       ?configuration_file_hash
       ~strict
-      ~declare
       ~show_error_traces
       ~log_identifier
       ?logger
