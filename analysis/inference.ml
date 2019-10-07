@@ -638,12 +638,11 @@ module State (Context : Context) = struct
         when Expression.is_simple_name name ->
           let return_annotation =
             Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
-            |> Annotation.annotation
           in
           Resolution.set_local
             resolution
             ~reference:(Expression.name_to_reference_exn name)
-            ~annotation:(Annotation.create return_annotation)
+            ~annotation:return_annotation
       | _ -> annotate_call_accesses statement resolution
     in
     { state with resolution }
