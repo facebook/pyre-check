@@ -283,7 +283,7 @@ let test_ast_hash _ =
   assert_hash_changed ~old_source:"# pyre-strict" ~new_source:"" ~expected:true;
   assert_hash_changed
     ~old_source:"# pyre-strict"
-    ~new_source:"# pyre-declare-but-dont-check"
+    ~new_source:"# pyre-ignore-all-errors"
     ~expected:true;
 
   (* Assignments. *)
