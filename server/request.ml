@@ -454,6 +454,18 @@ let process_type_query_request
       else
         raise (ClassHierarchy.Untracked annotation)
     in
+    let class_metadata_environment =
+      AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment environment
+    in
+    let class_hierarchy_environment =
+      ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
+    in
+    let alias_environment =
+      ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
+    in
+    let unannotated_global_environment =
+      AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
+    in
     match request with
     | TypeQuery.RunCheck { check_name; paths } ->
         let source_paths =
@@ -512,7 +524,18 @@ let process_type_query_request
         in
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
-        let map = AnnotatedGlobalEnvironment.ReadOnly.hash_to_key_map environment in
+        (* Environments *)
+        let map =
+          List.fold
+            [
+              ClassMetadataEnvironment.ReadOnly.hash_to_key_map class_metadata_environment;
+              ClassHierarchyEnvironment.ReadOnly.hash_to_key_map class_hierarchy_environment;
+              AliasEnvironment.ReadOnly.hash_to_key_map alias_environment;
+              UnannotatedGlobalEnvironment.ReadOnly.hash_to_key_map unannotated_global_environment;
+            ]
+            ~f:(fun sofar new_map -> extend_map sofar ~new_map)
+            ~init:(AnnotatedGlobalEnvironment.ReadOnly.hash_to_key_map environment)
+        in
         (* AST shared memory. *)
         let map =
           map |> extend_map ~new_map:(AstEnvironment.shared_memory_hash_to_key_map qualifiers)
@@ -605,9 +628,18 @@ let process_type_query_request
                 ( ResolutionSharedMemory.AnnotationsKeyValue.description,
                   Reference.show key,
                   value >>| List.map ~f:Reference.show >>| String.concat ~sep:"," )
-          | _ when Option.is_some (AstEnvironment.serialize_decoded decoded) ->
-              AstEnvironment.serialize_decoded decoded
-          | _ -> AnnotatedGlobalEnvironment.ReadOnly.serialize_decoded environment decoded
+          | _ ->
+              List.find_map
+                [
+                  AnnotatedGlobalEnvironment.ReadOnly.serialize_decoded environment;
+                  ClassMetadataEnvironment.ReadOnly.serialize_decoded class_metadata_environment;
+                  ClassHierarchyEnvironment.ReadOnly.serialize_decoded class_hierarchy_environment;
+                  AliasEnvironment.ReadOnly.serialize_decoded alias_environment;
+                  UnannotatedGlobalEnvironment.ReadOnly.serialize_decoded
+                    unannotated_global_environment;
+                  AstEnvironment.serialize_decoded;
+                ]
+                ~f:(fun serialize -> serialize decoded)
         in
         let build_response { TypeQuery.decoded; undecodable_keys } = function
           | TypeQuery.SerializedValue { serialized_key; serialized_value } -> (
@@ -635,20 +667,21 @@ let process_type_query_request
                     | ( ResolutionSharedMemory.Decoded (_, first),
                         ResolutionSharedMemory.Decoded (_, second) ) ->
                         Option.equal LocalAnnotationMap.equal first second
-                    | _ when Option.is_some (AstEnvironment.decoded_equal first second) ->
-                        Option.value_exn (AstEnvironment.decoded_equal first second)
-                    | _
-                      when Option.is_some
-                             (AnnotatedGlobalEnvironment.ReadOnly.decoded_equal
-                                environment
-                                first
-                                second) ->
-                        Option.value_exn
-                          (AnnotatedGlobalEnvironment.ReadOnly.decoded_equal
-                             environment
-                             first
-                             second)
-                    | _ -> false
+                    | _ ->
+                        List.find_map
+                          [
+                            AnnotatedGlobalEnvironment.ReadOnly.decoded_equal environment;
+                            ClassMetadataEnvironment.ReadOnly.decoded_equal
+                              class_metadata_environment;
+                            ClassHierarchyEnvironment.ReadOnly.decoded_equal
+                              class_hierarchy_environment;
+                            AliasEnvironment.ReadOnly.decoded_equal alias_environment;
+                            UnannotatedGlobalEnvironment.ReadOnly.decoded_equal
+                              unannotated_global_environment;
+                            AstEnvironment.decoded_equal;
+                          ]
+                          ~f:(fun decoded_equal -> decoded_equal first second)
+                        |> Option.value ~default:false
                   in
                   match serialize_decoded first, serialize_decoded second with
                   | Some (kind, key, first_value), Some (_, _, second_value) ->
