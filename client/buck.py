@@ -19,8 +19,6 @@ from .filesystem import BuckBuilder, find_root
 
 
 LOG = logging.getLogger(__name__)
-CACHE_PATH = ".pyre/buckcache.json"
-
 BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
 
 
