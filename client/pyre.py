@@ -18,6 +18,7 @@ from . import (
     assert_writable_directory,
     buck,
     commands,
+    find_log_directory,
     get_binary_version_from_file,
     is_capable_terminal,
     log,
@@ -516,6 +517,7 @@ def main() -> int:
 
         switch_root(arguments)
         translate_arguments(commands, arguments)
+        find_log_directory(arguments)
         log.initialize(arguments)
 
         if arguments.command in [commands.Initialize]:
@@ -540,6 +542,7 @@ def main() -> int:
                 preserve_pythonpath=arguments.preserve_pythonpath,
                 excludes=arguments.exclude,
                 logger=arguments.logger,
+                log_directory=arguments.log_directory,
             )
             if configuration.disabled:
                 LOG.log(

@@ -17,6 +17,7 @@ from typing import Dict, List, Optional, Union
 from . import (
     BINARY_NAME,
     CONFIGURATION_FILE,
+    LOG_DIRECTORY,
     assert_readable_directory,
     find_typeshed,
     number_of_workers,
@@ -164,6 +165,7 @@ class Configuration:
         preserve_pythonpath=False,
         excludes: Optional[List[str]] = None,
         logger: Optional[str] = None,
+        log_directory: Optional[str] = None,
     ) -> None:
         self.source_directories = []
         self.targets = []
@@ -179,7 +181,6 @@ class Configuration:
         self._binary = None  # type: Optional[str]
         self._typeshed = None  # type: Optional[str]
         self.strict = False  # type: bool
-
         self._use_buck_builder = None  # type: Optional[bool]
 
         # Handle search path from multiple sources
@@ -222,6 +223,8 @@ class Configuration:
             self._check_read_local_configuration(
                 local_configuration, fail_on_error=True
             )
+        if log_directory:
+            self.ignore_all_errors.append(log_directory)
 
         self.autocomplete = False
 

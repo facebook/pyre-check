@@ -68,6 +68,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
         self.assertEqual(configuration.file_hash, None)
 
+        # Local configurations
         json_load.side_effect = [
             {"source_directories": ["a"]},
             {"source_directories": ["a"]},
@@ -77,13 +78,18 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration("local/path")
             self.assertEqual(configuration.source_directories, ["local/path/a"])
 
+        json_load.side_effect = [{"version": "abc"}, {"source_directories": ["a"]}, {}]
+        configuration = Configuration("local/path", log_directory=".pyre/local/path")
+        self.assertEqual(configuration.source_directories, ["a"])
+        self.assertEqual(configuration.ignore_all_errors, [".pyre/local/path"])
+
+        # Configuration fields
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()
         self.assertEqual(configuration.targets, ["//a/b/c"])
         self.assertEqual(configuration.source_directories, [])
         self.assertEqual(configuration.version_hash, "unversioned")
         self.assertEqual(configuration.logger, None)
-        self.assertEqual(configuration.ignore_all_errors, [])
         self.assertEqual(configuration.file_hash, None)
         self.assertTrue(configuration.disabled)
 
@@ -450,7 +456,6 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
-
         # Normalize number of workers if zero.
         json_load.side_effect = [{"typeshed": "/TYPESHED/", "workers": 0}, {}]
         configuration = Configuration()
@@ -635,7 +640,6 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.targets, [])
             self.assertEqual(configuration.version_hash, "unversioned")
             self.assertEqual(configuration.logger, None)
-            self.assertEqual(configuration.ignore_all_errors, [])
             self.assertFalse(configuration.disabled)
             self.assertEqual(configuration._typeshed, None)
             self.assertEqual(configuration.excludes, [])

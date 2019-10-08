@@ -34,6 +34,7 @@ LOG = logging.getLogger(__name__)
 CONFIGURATION_FILE = ".pyre_configuration"
 BINARY_NAME = "pyre.bin"
 CLIENT_NAME = "pyre-client"
+LOG_DIRECTORY = ".pyre"
 
 
 def assert_readable_directory(directory: str) -> None:
