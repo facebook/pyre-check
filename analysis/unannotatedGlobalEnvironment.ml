@@ -28,7 +28,7 @@ type unannotated_global =
     }
   | Imported of Reference.t
   | Define of Define.t Node.t list
-[@@deriving compare, show]
+[@@deriving compare, show, equal]
 
 module ReadOnly = struct
   type t = {
@@ -39,6 +39,9 @@ module ReadOnly = struct
     all_indices: unit -> IndexTracker.t list;
     all_unannotated_globals: unit -> Reference.t list;
     get_unannotated_global: ?dependency:dependency -> Reference.t -> unannotated_global option;
+    hash_to_key_map: unit -> string String.Map.t;
+    serialize_decoded: Memory.decodable -> (string * string * string option) option;
+    decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
   }
 
   let ast_environment { ast_environment; _ } = ast_environment
@@ -54,6 +57,12 @@ module ReadOnly = struct
   let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
 
   let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
+
+  let hash_to_key_map { hash_to_key_map; _ } = hash_to_key_map ()
+
+  let serialize_decoded { serialize_decoded; _ } = serialize_decoded
+
+  let decoded_equal { decoded_equal; _ } = decoded_equal
 end
 
 (* The key tracking is necessary because there is no empirical way to determine which classes exist
@@ -204,6 +213,29 @@ end = struct
       Option.iter dependency ~f:(ClassDefinitions.add_dependency name);
       ClassDefinitions.mem name
     in
+    let hash_to_key_map () =
+      Map.merge_skewed
+        (ClassDefinitions.compute_hashes_to_keys ~keys:(all_classes ()))
+        (UnannotatedGlobals.compute_hashes_to_keys ~keys:(all_unannotated_globals ()))
+        ~combine:(fun ~key:_ value _ -> value)
+    in
+    let serialize_decoded = function
+      | ClassDefinitions.Decoded (key, value) ->
+          let value = value >>| Node.value >>| Class.show in
+          Some (ClassValue.description, key, value)
+      | UnannotatedGlobals.Decoded (key, value) ->
+          let value = value >>| show_unannotated_global in
+          Some (ClassValue.description, Reference.show key, value)
+      | _ -> None
+    in
+    let decoded_equal first second =
+      match first, second with
+      | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
+          Some (Option.equal (Node.equal Class.equal) first second)
+      | UnannotatedGlobals.Decoded (_, first), UnannotatedGlobals.Decoded (_, second) ->
+          Some (Option.equal equal_unannotated_global first second)
+      | _ -> None
+    in
     {
       ast_environment;
       ReadOnly.get_class_definition = ClassDefinitions.get;
@@ -212,6 +244,9 @@ end = struct
       class_exists;
       get_unannotated_global = UnannotatedGlobals.get;
       all_unannotated_globals;
+      hash_to_key_map;
+      serialize_decoded;
+      decoded_equal;
     }
 end
 

@@ -8,6 +8,12 @@ open Pyre
 
 module type ReadOnly = sig
   type t
+
+  val hash_to_key_map : t -> string String.Map.t
+
+  val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
+
+  val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
 end
 
 module type PreviousUpdateResult = sig
@@ -118,7 +124,7 @@ module EnvironmentTable = struct
 
     val produce_value : t -> trigger -> track_dependencies:bool -> Value.t option
 
-    val all_keys : t -> Key.t list
+    val all_keys : PreviousEnvironment.ReadOnly.t -> Key.t list
 
     val serialize_value : Value.t -> string
 
@@ -148,13 +154,21 @@ module EnvironmentTable = struct
       In.PreviousEnvironment.UpdateResult.t ->
       In.UpdateResult.t
 
-    val get : ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t sexp_option
+    module ReadOnly : sig
+      type t
 
-    val hash_to_key_map : In.t -> string String.Map.t
+      val get : t -> ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t option
 
-    val serialize_decoded : Memory.decodable -> (string * string * string option) option
+      val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
-    val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
+      val hash_to_key_map : t -> string String.Map.t
+
+      val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
+
+      val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
+    end
+
+    val read_only : In.PreviousEnvironment.ReadOnly.t -> ReadOnly.t
   end
 
   module Make
@@ -220,24 +234,48 @@ module EnvironmentTable = struct
             ~upstream:upstream_update
 
 
-    let get = Table.get
+    module ReadOnly = struct
+      type t = {
+        upstream_environment: In.PreviousEnvironment.ReadOnly.t;
+        get: ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t option;
+        hash_to_key_map: In.PreviousEnvironment.ReadOnly.t -> string String.Map.t;
+        serialize_decoded: Memory.decodable -> (string * string * string option) option;
+        decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
+      }
 
-    let hash_to_key_map environment = Table.compute_hashes_to_keys ~keys:(In.all_keys environment)
+      let upstream_environment { upstream_environment; _ } = upstream_environment
 
-    let serialize_decoded decoded =
-      match decoded with
-      | Table.Decoded (key, value) ->
-          let value = value >>| In.serialize_value in
-          let key = In.show_key key in
-          Some (In.Value.description, key, value)
-      | _ -> None
+      let get { get; _ } = get
+
+      let hash_to_key_map { hash_to_key_map; upstream_environment; _ } =
+        hash_to_key_map upstream_environment
 
 
-    let decoded_equal first second =
-      match first, second with
-      | Table.Decoded (_, first), Table.Decoded (_, second) ->
-          Some (Option.equal In.equal_value first second)
-      | _ -> None
+      let serialize_decoded { serialize_decoded; _ } = serialize_decoded
+
+      let decoded_equal { decoded_equal; _ } = decoded_equal
+    end
+
+    let read_only upstream_environment =
+      let get = Table.get in
+      let hash_to_key_map environment =
+        Table.compute_hashes_to_keys ~keys:(In.all_keys environment)
+      in
+      let serialize_decoded decoded =
+        match decoded with
+        | Table.Decoded (key, value) ->
+            let value = value >>| In.serialize_value in
+            let key = In.show_key key in
+            Some (In.Value.description, key, value)
+        | _ -> None
+      in
+      let decoded_equal first second =
+        match first, second with
+        | Table.Decoded (_, first), Table.Decoded (_, second) ->
+            Some (Option.equal In.equal_value first second)
+        | _ -> None
+      in
+      { ReadOnly.upstream_environment; get; hash_to_key_map; serialize_decoded; decoded_equal }
   end
 
   module WithCache (In : In) =

@@ -18,27 +18,6 @@ let unannotated_global_environment { alias_environment } =
   AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
 
 
-module ReadOnly = struct
-  type t = {
-    get_edges:
-      ?dependency:SharedMemoryKeys.dependency ->
-      IndexTracker.t ->
-      ClassHierarchy.Target.t list option;
-    get_undecorated_function:
-      ?dependency:SharedMemoryKeys.dependency ->
-      Reference.t ->
-      Type.t Type.Callable.overload option;
-    alias_environment: AliasEnvironment.ReadOnly.t;
-  }
-
-  let get_edges { get_edges; _ } = get_edges
-
-  let get_undecorated_function { get_undecorated_function; _ } = get_undecorated_function
-
-  let alias_environment { alias_environment; _ } = alias_environment
-end
-
-module HierarchyReadOnly = ReadOnly
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 module EdgeValue = struct
@@ -224,8 +203,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
     |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
 
 
-  let all_keys environment =
-    unannotated_global_environment environment
+  let all_keys alias_environment =
+    unannotated_global_environment { alias_environment }
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
     |> List.map ~f:IndexTracker.index
 
@@ -276,8 +255,8 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
     |> UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
 
 
-  let all_keys environment =
-    unannotated_global_environment environment
+  let all_keys alias_environment =
+    unannotated_global_environment { alias_environment }
     |> UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
 
 
@@ -301,9 +280,46 @@ let update environment ~scheduler ~configuration upstream_update =
   UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
 
 
+module ReadOnly = struct
+  type t = {
+    edges_read_only: Edges.ReadOnly.t;
+    undecorated_function_read_only: UndecoratedFunctions.ReadOnly.t;
+    alias_environment: AliasEnvironment.ReadOnly.t;
+  }
+
+  let get_edges { edges_read_only; _ } = Edges.ReadOnly.get edges_read_only
+
+  let get_undecorated_function { undecorated_function_read_only; _ } =
+    UndecoratedFunctions.ReadOnly.get undecorated_function_read_only
+
+
+  let alias_environment { alias_environment; _ } = alias_environment
+
+  let hash_to_key_map { edges_read_only; undecorated_function_read_only; _ } =
+    Map.merge_skewed
+      (Edges.ReadOnly.hash_to_key_map edges_read_only)
+      (UndecoratedFunctions.ReadOnly.hash_to_key_map undecorated_function_read_only)
+      ~combine:(fun ~key:_ value _ -> value)
+
+
+  let serialize_decoded { edges_read_only; undecorated_function_read_only; _ } decodable =
+    match Edges.ReadOnly.serialize_decoded edges_read_only decodable with
+    | Some decoded -> Some decoded
+    | None ->
+        UndecoratedFunctions.ReadOnly.serialize_decoded undecorated_function_read_only decodable
+
+
+  let decoded_equal { edges_read_only; undecorated_function_read_only; _ } left right =
+    match Edges.ReadOnly.decoded_equal edges_read_only left right with
+    | Some result -> Some result
+    | None -> UndecoratedFunctions.ReadOnly.decoded_equal undecorated_function_read_only left right
+end
+
+module HierarchyReadOnly = ReadOnly
+
 let read_only { alias_environment } =
   {
-    ReadOnly.alias_environment;
-    get_edges = Edges.get;
-    get_undecorated_function = UndecoratedFunctions.get;
+    ReadOnly.edges_read_only = Edges.read_only alias_environment;
+    undecorated_function_read_only = UndecoratedFunctions.read_only alias_environment;
+    alias_environment;
   }

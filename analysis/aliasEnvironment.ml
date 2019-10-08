@@ -13,90 +13,6 @@ type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly
 
 let create unannotated_global_environment = { unannotated_global_environment }
 
-module ReadOnly = struct
-  type t = {
-    get_alias: ?dependency:SharedMemoryKeys.dependency -> Type.Primitive.t -> Type.alias option;
-    unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly.t;
-  }
-
-  let get_alias { get_alias; _ } = get_alias
-
-  let unannotated_global_environment { unannotated_global_environment; _ } =
-    unannotated_global_environment
-
-
-  let parse_annotation_without_validating_type_parameters
-      { get_alias; unannotated_global_environment; _ }
-      ?(modify_aliases = Fn.id)
-      ?dependency
-      ?(allow_untracked = false)
-      ?(allow_primitives_from_empty_stubs = false)
-      expression
-    =
-    let parsed =
-      let expression = Expression.delocalize expression in
-      let aliases name = get_alias ?dependency name >>| modify_aliases in
-      Type.create ~aliases expression
-    in
-    let annotation =
-      if allow_primitives_from_empty_stubs then
-        parsed
-      else
-        let constraints = function
-          | Type.Primitive name ->
-              let originates_from_empty_stub =
-                let ast_environment =
-                  UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-                    unannotated_global_environment
-                in
-                let reference = Reference.create name in
-                AstEnvironment.ReadOnly.from_empty_stub ?dependency ast_environment reference
-              in
-              if originates_from_empty_stub then
-                Some Type.Any
-              else
-                None
-          | _ -> None
-        in
-        Type.instantiate parsed ~constraints
-    in
-    let contains_untracked annotation =
-      let is_tracked =
-        UnannotatedGlobalEnvironment.ReadOnly.class_exists
-          unannotated_global_environment
-          ?dependency
-      in
-      List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
-    in
-    if contains_untracked annotation && not allow_untracked then
-      Type.Top
-    else
-      annotation
-
-
-  let parse_as_concatenation { get_alias; _ } ?dependency expression =
-    Expression.delocalize expression
-    |> Type.OrderedTypes.Concatenation.parse ~aliases:(get_alias ?dependency)
-
-
-  let parse_as_parameter_specification_instance_annotation
-      { get_alias; _ }
-      ?dependency
-      ~variable_parameter_annotation
-      ~keywords_parameter_annotation
-    =
-    let variable_parameter_annotation, keywords_parameter_annotation =
-      ( Expression.delocalize variable_parameter_annotation,
-        Expression.delocalize keywords_parameter_annotation )
-    in
-    Type.Variable.Variadic.Parameters.parse_instance_annotation
-      ~aliases:(get_alias ?dependency)
-      ~variable_parameter_annotation
-      ~keywords_parameter_annotation
-end
-
-module AliasReadOnly = ReadOnly
-
 module AliasValue = struct
   type t = Type.alias
 
@@ -429,7 +345,7 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
       upstream_update
 
 
-  let all_keys { unannotated_global_environment } =
+  let all_keys unannotated_global_environment =
     UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
     |> List.map ~f:Reference.show
 
@@ -447,5 +363,83 @@ let update environment ~scheduler ~configuration upstream =
   result
 
 
-let read_only { unannotated_global_environment } =
-  { ReadOnly.unannotated_global_environment; get_alias = Aliases.get }
+let read_only { unannotated_global_environment } = Aliases.read_only unannotated_global_environment
+
+module ReadOnly = struct
+  include Aliases.ReadOnly
+
+  let get_alias = get
+
+  let unannotated_global_environment = upstream_environment
+
+  let parse_annotation_without_validating_type_parameters
+      environment
+      ?(modify_aliases = Fn.id)
+      ?dependency
+      ?(allow_untracked = false)
+      ?(allow_primitives_from_empty_stubs = false)
+      expression
+    =
+    let parsed =
+      let expression = Expression.delocalize expression in
+      let aliases name = get_alias environment ?dependency name >>| modify_aliases in
+      Type.create ~aliases expression
+    in
+    let annotation =
+      if allow_primitives_from_empty_stubs then
+        parsed
+      else
+        let constraints = function
+          | Type.Primitive name ->
+              let originates_from_empty_stub =
+                let ast_environment =
+                  UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+                    (unannotated_global_environment environment)
+                in
+                let reference = Reference.create name in
+                AstEnvironment.ReadOnly.from_empty_stub ?dependency ast_environment reference
+              in
+              if originates_from_empty_stub then
+                Some Type.Any
+              else
+                None
+          | _ -> None
+        in
+        Type.instantiate parsed ~constraints
+    in
+    let contains_untracked annotation =
+      let is_tracked =
+        UnannotatedGlobalEnvironment.ReadOnly.class_exists
+          (unannotated_global_environment environment)
+          ?dependency
+      in
+      List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
+    in
+    if contains_untracked annotation && not allow_untracked then
+      Type.Top
+    else
+      annotation
+
+
+  let parse_as_concatenation environment ?dependency expression =
+    Expression.delocalize expression
+    |> Type.OrderedTypes.Concatenation.parse ~aliases:(get_alias environment ?dependency)
+
+
+  let parse_as_parameter_specification_instance_annotation
+      environment
+      ?dependency
+      ~variable_parameter_annotation
+      ~keywords_parameter_annotation
+    =
+    let variable_parameter_annotation, keywords_parameter_annotation =
+      ( Expression.delocalize variable_parameter_annotation,
+        Expression.delocalize keywords_parameter_annotation )
+    in
+    Type.Variable.Variadic.Parameters.parse_instance_annotation
+      ~aliases:(get_alias environment ?dependency)
+      ~variable_parameter_annotation
+      ~keywords_parameter_annotation
+end
+
+module AliasReadOnly = ReadOnly

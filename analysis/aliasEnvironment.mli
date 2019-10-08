@@ -6,7 +6,7 @@ open Ast
 open SharedMemoryKeys
 
 module AliasReadOnly : sig
-  type t
+  include Environment.ReadOnly
 
   val get_alias : t -> ?dependency:dependency -> Type.Primitive.t -> Type.alias option
 

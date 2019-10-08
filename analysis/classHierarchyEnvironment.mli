@@ -6,7 +6,7 @@ open Ast
 open SharedMemoryKeys
 
 module HierarchyReadOnly : sig
-  type t
+  include Environment.ReadOnly
 
   val get_edges
     :  t ->

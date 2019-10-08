@@ -13,7 +13,7 @@ type class_metadata = {
 [@@deriving eq, compare, show]
 
 module MetadataReadOnly : sig
-  type t
+  include Environment.ReadOnly
 
   val get_class_metadata : t -> ?dependency:dependency -> Type.Primitive.t -> class_metadata option
 

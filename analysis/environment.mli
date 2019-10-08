@@ -7,6 +7,12 @@ open Core
 
 module type ReadOnly = sig
   type t
+
+  val hash_to_key_map : t -> string String.Map.t
+
+  val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
+
+  val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
 end
 
 module type PreviousUpdateResult = sig
@@ -123,7 +129,7 @@ module EnvironmentTable : sig
     (* This is the actual main function of the update. *)
     val produce_value : t -> trigger -> track_dependencies:bool -> Value.t option
 
-    val all_keys : t -> Key.t list
+    val all_keys : PreviousEnvironment.ReadOnly.t -> Key.t list
 
     val serialize_value : Value.t -> string
 
@@ -142,13 +148,21 @@ module EnvironmentTable : sig
       In.PreviousEnvironment.UpdateResult.t ->
       In.UpdateResult.t
 
-    val get : ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t sexp_option
+    module ReadOnly : sig
+      type t
 
-    val hash_to_key_map : In.t -> string String.Map.t
+      val get : t -> ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t option
 
-    val serialize_decoded : Memory.decodable -> (string * string * string option) option
+      val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
-    val decoded_equal : Memory.decodable -> Memory.decodable -> bool option
+      val hash_to_key_map : t -> string String.Map.t
+
+      val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
+
+      val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
+    end
+
+    val read_only : In.PreviousEnvironment.ReadOnly.t -> ReadOnly.t
   end
 
   module WithCache (In : In) : S with module In = In

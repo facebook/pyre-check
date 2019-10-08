@@ -28,51 +28,6 @@ let unannotated_global_environment environment =
   alias_environment environment |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-module ReadOnly = struct
-  type t = {
-    get_global:
-      ?dependency:SharedMemoryKeys.dependency -> Reference.t -> GlobalResolution.global option;
-    class_metadata_environment: ClassMetadataEnvironment.ReadOnly.t;
-    hash_to_key_map: unit -> string String.Map.t;
-    serialize_decoded: Memory.decodable -> (string * string * string option) option;
-    decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
-  }
-
-  let class_metadata_environment { class_metadata_environment; _ } = class_metadata_environment
-
-  let get_global { get_global; _ } = get_global
-
-  let hash_to_key_map { hash_to_key_map; _ } = hash_to_key_map ()
-
-  let serialize_decoded { serialize_decoded; _ } = serialize_decoded
-
-  let decoded_equal { decoded_equal; _ } = decoded_equal
-
-  let resolution_implementation ?dependency environment =
-    let class_metadata_environment = class_metadata_environment environment in
-    GlobalResolution.create
-      ?dependency
-      ~class_metadata_environment
-      ~global:(get_global environment ?dependency)
-      (module AnnotatedClass)
-
-
-  let resolution = resolution_implementation ?dependency:None
-
-  let dependency_tracked_resolution environment ~dependency =
-    resolution_implementation ~dependency environment
-
-
-  let ast_environment environment =
-    class_metadata_environment environment
-    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-    |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-    |> AliasEnvironment.ReadOnly.unannotated_global_environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-end
-
-module AnnotatedReadOnly = ReadOnly
-
 module GlobalValue = struct
   type t = GlobalResolution.global
 
@@ -185,7 +140,7 @@ let produce_global_annotation environment name ~track_dependencies =
       >>= process_unannotated_global
 
 
-include Environment.EnvironmentTable.WithCache (struct
+module GlobalTable = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module UpdateResult = UpdateResult
   module Key = SharedMemoryKeys.ReferenceKey
@@ -243,9 +198,9 @@ include Environment.EnvironmentTable.WithCache (struct
       current_and_previous_classes
 
 
-  let all_keys environment =
+  let all_keys class_metadata_environment =
     UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
-      (unannotated_global_environment environment)
+      (unannotated_global_environment { class_metadata_environment })
 
 
   let serialize_value annotation = Node.value annotation |> Annotation.sexp_of_t |> Sexp.to_string
@@ -255,12 +210,38 @@ include Environment.EnvironmentTable.WithCache (struct
   let equal_value first second = Annotation.equal (Node.value first) (Node.value second)
 end)
 
-let read_only ({ class_metadata_environment } as environment) =
-  let hash_to_key_map () = hash_to_key_map environment in
-  {
-    ReadOnly.class_metadata_environment;
-    get_global = get;
-    hash_to_key_map;
-    serialize_decoded;
-    decoded_equal;
-  }
+let update = GlobalTable.update
+
+let read_only { class_metadata_environment } = GlobalTable.read_only class_metadata_environment
+
+module ReadOnly = struct
+  include GlobalTable.ReadOnly
+
+  let get_global = get
+
+  let class_metadata_environment = upstream_environment
+
+  let resolution_implementation ?dependency environment =
+    let class_metadata_environment = class_metadata_environment environment in
+    GlobalResolution.create
+      ?dependency
+      ~class_metadata_environment
+      ~global:(get_global environment ?dependency)
+      (module AnnotatedClass)
+
+
+  let resolution = resolution_implementation ?dependency:None
+
+  let dependency_tracked_resolution environment ~dependency =
+    resolution_implementation ~dependency environment
+
+
+  let ast_environment environment =
+    class_metadata_environment environment
+    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+    |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+    |> AliasEnvironment.ReadOnly.unannotated_global_environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+end
+
+module AnnotatedReadOnly = ReadOnly

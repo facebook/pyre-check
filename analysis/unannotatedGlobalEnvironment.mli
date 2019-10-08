@@ -26,7 +26,7 @@ type unannotated_global =
 [@@deriving compare, show]
 
 module ReadOnly : sig
-  type t
+  include Environment.ReadOnly
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 

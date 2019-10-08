@@ -20,20 +20,6 @@ type class_metadata = {
 }
 [@@deriving eq, compare, show]
 
-module ReadOnly = struct
-  type t = {
-    get_class_metadata:
-      ?dependency:SharedMemoryKeys.dependency -> Type.Primitive.t -> class_metadata option;
-    class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t;
-  }
-
-  let class_hierarchy_environment { class_hierarchy_environment; _ } = class_hierarchy_environment
-
-  let get_class_metadata { get_class_metadata; _ } = get_class_metadata
-end
-
-module MetadataReadOnly = ReadOnly
-
 module ClassMetadataValue = struct
   type t = class_metadata
 
@@ -110,7 +96,7 @@ let produce_class_metadata { class_hierarchy_environment } class_name ~track_dep
   >>| add
 
 
-include Environment.EnvironmentTable.WithCache (struct
+module MetadataTable = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module UpdateResult = UpdateResult
   module Key = SharedMemoryKeys.StringKey
@@ -143,7 +129,7 @@ include Environment.EnvironmentTable.WithCache (struct
     |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
 
 
-  let all_keys { class_hierarchy_environment } =
+  let all_keys class_hierarchy_environment =
     ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
     |> AliasEnvironment.ReadOnly.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
@@ -165,5 +151,16 @@ include Environment.EnvironmentTable.WithCache (struct
   let equal_value = equal_class_metadata
 end)
 
-let read_only { class_hierarchy_environment } =
-  { ReadOnly.class_hierarchy_environment; get_class_metadata = get }
+let update = MetadataTable.update
+
+let read_only { class_hierarchy_environment } = MetadataTable.read_only class_hierarchy_environment
+
+module ReadOnly = struct
+  include MetadataTable.ReadOnly
+
+  let get_class_metadata = get
+
+  let class_hierarchy_environment = upstream_environment
+end
+
+module MetadataReadOnly = ReadOnly
