@@ -401,7 +401,6 @@ let test_infer context =
     |}
     [];
 
-  (* TODO(T37338460): We should be inferring tuples. *)
   assert_infer
     ~fields:["inference.parameters"]
     {|
@@ -410,9 +409,8 @@ let test_infer context =
           z = y
           return (x, z)
     |}
-    [];
+    [{|[{"name":"y","type":"int","value":null}]|}];
 
-  (* TODO(T37338460): We should be inferring tuples. *)
   assert_infer
     ~fields:["inference.parameters"]
     {|
@@ -421,7 +419,19 @@ let test_infer context =
           x = y
           return (x, z)
     |}
-    [];
+    [{|[{"name":"x","type":"int","value":null}]|}];
+
+  (* TODO: T55207164: Handle nested tuples. *)
+  assert_infer
+    ~fields:["inference.parameters"]
+    {|
+    def foo(x, y, z) -> typing.Tuple[typing.Tuple[str, int], bool]:
+        return ((x, y), z)
+
+    |}
+    [
+      {|[{"name":"x","type":null,"value":null},{"name":"y","type":null,"value":null},{"name":"z","type":"bool","value":null}]|};
+    ];
   assert_infer
     ~fields:["inference.parameters"]
     {|

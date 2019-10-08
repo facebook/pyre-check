@@ -643,6 +643,27 @@ module State (Context : Context) = struct
             resolution
             ~reference:(Expression.name_to_reference_exn name)
             ~annotation:return_annotation
+      | Return { Return.expression = Some { Node.value = Tuple expressions; _ }; _ } -> (
+          let return_annotation =
+            Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
+            |> Annotation.annotation
+          in
+          match return_annotation with
+          | Tuple (Bounded (Concrete parameters))
+            when Int.equal (List.length parameters) (List.length expressions) ->
+              List.fold2_exn
+                parameters
+                expressions
+                ~init:resolution
+                ~f:(fun resolution annotation expression ->
+                  match Node.value expression with
+                  | Name name when Expression.is_simple_name name ->
+                      Resolution.set_local
+                        resolution
+                        ~reference:(Expression.name_to_reference_exn name)
+                        ~annotation:(Annotation.create annotation)
+                  | _ -> resolution)
+          | _ -> resolution )
       | _ -> annotate_call_accesses statement resolution
     in
     { state with resolution }
