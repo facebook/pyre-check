@@ -56,6 +56,7 @@ public final class BuckProjectBuilder {
   }
 
   public static void main(String[] arguments) {
+    System.setProperty("java.net.preferIPv6Addresses", "true");
     new BuckProjectBuilder(arguments, new PlatformSelector() {}, new CommandRewriter() {});
   }
 }
