@@ -137,6 +137,19 @@ def switch_root(arguments) -> None:
         arguments.local_configuration = local_root
 
 
+def find_log_directory(arguments) -> None:
+    """Pyre outputs all logs to a .pyre directory that lives in the project root."""
+    if not arguments.current_directory:
+        switch_root(arguments)
+    log_directory = os.path.join(arguments.current_directory, ".pyre")
+    local_configuration = arguments.local_configuration
+    if local_configuration:
+        log_directory = os.path.join(log_directory, local_configuration)
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+    arguments.log_directory = log_directory
+
+
 def translate_arguments(commands, arguments):
     root = arguments.original_directory
 

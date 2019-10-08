@@ -11,9 +11,11 @@ from unittest.mock import MagicMock, patch
 
 from .. import (
     EnvironmentException,
+    __name__ as client_name,
     _resolve_filter_paths,
     buck,
     commands,
+    find_log_directory,
     get_binary_version_from_file,
     resolve_analysis_directory,
     switch_root,
@@ -63,6 +65,21 @@ class InitTest(unittest.TestCase):
                 self.assertEqual(arguments.original_directory, "/a/b")
                 self.assertEqual(arguments.current_directory, "/a/b")
                 self.assertEqual(arguments.local_configuration, None)
+
+    @patch("{}.switch_root".format(client_name))
+    def test_find_log_directory(self, switch_root) -> None:
+        arguments = MagicMock()
+        arguments.local_configuration = None
+        arguments.original_directory = "project/subdirectory"
+        arguments.current_directory = "project"
+        find_log_directory(arguments)
+        self.assertEqual(arguments.log_directory, "project/.pyre")
+
+        arguments.local_configuration = "subdirectory"
+        arguments.original_directory = "project"
+        arguments.current_directory = "project"
+        find_log_directory(arguments)
+        self.assertEqual(arguments.log_directory, "project/.pyre/subdirectory")
 
     def test_resolve_filter_paths(self) -> None:
         arguments = MagicMock()
