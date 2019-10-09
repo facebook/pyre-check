@@ -1121,6 +1121,10 @@ let test_filter context =
         override_kind = Method;
       }
   in
+  let abstract_class_instantiation name =
+    InvalidClassInstantiation
+      (AbstractClassInstantiation { class_name = !&name; abstract_methods = [] })
+  in
   (* Suppress parameter errors on override of dunder methods *)
   assert_unfiltered
     (inconsistent_override "foo" (StrengthenedPrecondition (NotFound (Keywords Type.integer))));
@@ -1146,7 +1150,13 @@ let test_filter context =
                due_to_invariance = false;
              })));
   assert_filtered
-    (inconsistent_override "__foo__" (StrengthenedPrecondition (NotFound (Keywords Type.integer))))
+    (inconsistent_override "__foo__" (StrengthenedPrecondition (NotFound (Keywords Type.integer))));
+
+  (* Suppress errors due to typeshed inconsistencies. *)
+  assert_filtered (abstract_class_instantiation "int");
+  assert_filtered (abstract_class_instantiation "float");
+  assert_filtered (abstract_class_instantiation "bool");
+  assert_unfiltered (abstract_class_instantiation "str")
 
 
 let test_suppress context =

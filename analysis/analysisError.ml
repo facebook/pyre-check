@@ -2833,6 +2833,17 @@ let filter ~configuration ~resolution errors =
           | _ -> false )
       | _ -> false
     in
+    let is_invalid_abstract_error { kind; _ } =
+      match kind with
+      | InvalidClassInstantiation (AbstractClassInstantiation { class_name; _ }) -> (
+        match Reference.show class_name with
+        | "int"
+        | "float"
+        | "bool" ->
+            true
+        | _ -> false )
+      | _ -> false
+    in
     Location.equal Location.Reference.synthetic location
     || is_stub_error error
     || is_mock_error error
@@ -2842,6 +2853,7 @@ let filter ~configuration ~resolution errors =
     || is_unnecessary_missing_annotation_error error
     || is_unknown_callable_error error
     || is_callable_attribute_error error
+    || is_invalid_abstract_error error
   in
   match configuration with
   | { Configuration.Analysis.debug = true; _ } -> errors
