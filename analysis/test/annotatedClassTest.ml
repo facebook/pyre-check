@@ -773,6 +773,7 @@ let test_class_attributes context =
     {
       Class.Attribute.annotation =
         Annotation.create_immutable ~global:true (parse_callable callable);
+      abstract = false;
       async = false;
       class_attribute = false;
       defined = true;
@@ -1379,51 +1380,6 @@ let test_overrides context =
   assert_equal (Option.value_exn overrides |> Attribute.parent |> Type.show) "test.Foo"
 
 
-let test_unimplemented_abstract_methods context =
-  let assert_unimplemented_methods_equal ~source ~class_name ~expected =
-    let _, _, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
-    in
-    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
-    let definition =
-      let definition =
-        GlobalResolution.class_definition resolution (Type.Primitive class_name) >>| Class.create
-      in
-      Option.value_exn ~message:"Missing definition." definition
-    in
-    let unimplemented_methods =
-      Class.unimplemented_abstract_methods ~resolution definition
-      |> List.map ~f:StatementDefine.unqualified_name
-    in
-    assert_equal unimplemented_methods expected
-  in
-  assert_unimplemented_methods_equal
-    ~expected:["foo"]
-    ~source:
-      {|
-      class Foo(metaclass=abc.ABCMeta):
-        @abstractmethod
-        def foo(self) -> None:
-          pass
-      class Bar(Foo):
-        pass
-    |}
-    ~class_name:"test.Bar";
-  assert_unimplemented_methods_equal
-    ~expected:[]
-    ~source:
-      {|
-      class Foo(metaclass=abc.ABCMeta):
-        @abstractmethod
-        def foo(self) -> None:
-          pass
-      class Bar(Foo):
-        def foo() -> None:
-          pass
-    |}
-    ~class_name:"test.Bar"
-
-
 let test_implicit_attributes context =
   let assert_unimplemented_attributes_equal ~source ~class_name ~expected =
     let _, _, environment =
@@ -1470,7 +1426,6 @@ let () =
          "methods" >:: test_methods;
          "overrides" >:: test_overrides;
          "superclasses" >:: test_superclasses;
-         "unimplemented_abstract_methods" >:: test_unimplemented_abstract_methods;
          "implicit_attributes" >:: test_implicit_attributes;
        ]
   |> Test.run

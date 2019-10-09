@@ -1609,7 +1609,11 @@ module State (Context : Context) = struct
               >>| (function
                     | { Node.value = definition; _ } ->
                         let { Class.name = class_name; _ } = definition in
-                        if Class.is_abstract definition then
+                        if
+                          Annotated.Class.is_abstract
+                            ~resolution:global_resolution
+                            (Annotated.Class.create (Node.create ~location definition))
+                        then
                           Annotated.Signature.NotFound
                             { callable; reason = Some (AbstractClassInstantiation class_name) }
                         else if Class.is_protocol definition then
@@ -4258,7 +4262,7 @@ module State (Context : Context) = struct
       let check_attribute_initialization ~is_dynamically_initialized definition errors =
         if
           (not (AnnotatedClass.is_protocol definition))
-          && not (AnnotatedClass.is_abstract definition)
+          && not (AnnotatedClass.has_abstract_base definition)
         then
           let unimplemented_errors =
             let uninitialized_attributes =
@@ -4309,14 +4313,18 @@ module State (Context : Context) = struct
                 |> List.map ~f:AnnotatedAttribute.name
                 |> List.fold ~init:attribute_map ~f:Map.remove
               in
-              AnnotatedClass.superclasses definition ~resolution:global_resolution
-              |> List.filter ~f:(fun superclass ->
-                     AnnotatedClass.is_protocol superclass || AnnotatedClass.is_abstract superclass)
-              |> List.cons definition
-              |> List.fold_right ~init:String.Map.empty ~f:add_uninitialized
-              |> (fun attribute_map ->
-                   List.fold_right ~init:attribute_map ~f:remove_initialized [definition])
-              |> String.Map.to_alist
+              if AnnotatedClass.has_abstract_base definition then
+                []
+              else
+                AnnotatedClass.superclasses definition ~resolution:global_resolution
+                |> List.filter ~f:(fun superclass ->
+                       AnnotatedClass.is_protocol superclass
+                       || AnnotatedClass.has_abstract_base superclass)
+                |> List.cons definition
+                |> List.fold_right ~init:String.Map.empty ~f:add_uninitialized
+                |> (fun attribute_map ->
+                     List.fold_right ~init:attribute_map ~f:remove_initialized [definition])
+                |> String.Map.to_alist
             in
             uninitialized_attributes
             |> List.filter_map ~f:(fun (name, (annotation, original_definition)) ->
@@ -4327,7 +4335,7 @@ module State (Context : Context) = struct
                      let error_kind =
                        if AnnotatedClass.is_protocol original_definition then
                          Error.Protocol (AnnotatedClass.name original_definition)
-                       else if AnnotatedClass.is_abstract original_definition then
+                       else if AnnotatedClass.has_abstract_base original_definition then
                          Error.Abstract (AnnotatedClass.name original_definition)
                        else
                          Error.Class
@@ -4406,47 +4414,6 @@ module State (Context : Context) = struct
           >>| Class.bases
           >>| List.fold ~init:errors ~f:is_final
           |> Option.value ~default:errors
-        in
-        let check_unimplemented_abstract_methods definition errors =
-          if AnnotatedClass.is_abstract definition then
-            errors
-          else
-            let abstract_methods =
-              AnnotatedClass.unimplemented_abstract_methods
-                ~resolution:global_resolution
-                definition
-              |> List.map ~f:Define.unqualified_name
-            in
-            if List.is_empty abstract_methods then
-              errors
-            else
-              let error =
-                Error.create
-                  ~location
-                  ~kind:
-                    (Error.AbstractClass
-                       {
-                         class_name = AnnotatedClass.name definition;
-                         method_names = abstract_methods;
-                       })
-                  ~define:Context.define
-              in
-              error :: errors
-        in
-        let check_abstract_methods definition errors =
-          if
-            (not (AnnotatedClass.is_abstract definition))
-            && AnnotatedClass.has_abstract_methods definition
-          then
-            let error =
-              Error.create
-                ~location
-                ~kind:(Error.InvalidClass (AnnotatedClass.name definition))
-                ~define:Context.define
-            in
-            error :: errors
-          else
-            errors
         in
         let check_attributes definition errors =
           (* Error on uninitialized attributes if there was no constructor in which to do so. *)
@@ -4540,8 +4507,6 @@ module State (Context : Context) = struct
               |> check_bases
               |> check_attributes definition
               |> check_overrides definition
-              |> check_abstract_methods definition
-              |> check_unimplemented_abstract_methods definition
               |> check_redefined_class definition)
         |> Option.value ~default:errors
       else

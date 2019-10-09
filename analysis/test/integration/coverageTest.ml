@@ -99,7 +99,13 @@ let test_check_coverage context =
 
   (* Binary operator. *)
   assert_covered "ERROR | 1";
-  assert_covered "1 % ERROR";
+  assert_covered
+    ~additional_errors:
+      [
+        "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+         `int.__mod__` but got `unknown`.";
+      ]
+    "1 % ERROR";
 
   (* Boolean operator. *)
   assert_covered "ERROR or False";

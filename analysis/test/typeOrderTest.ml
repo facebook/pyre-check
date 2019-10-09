@@ -36,6 +36,7 @@ let parse_attributes ~parse_annotation ~class_name =
   let parse_attribute (name, annotation) =
     {
       Attribute.annotation = Annotation.create (parse_annotation annotation);
+      abstract = false;
       async = false;
       class_attribute = false;
       defined = true;

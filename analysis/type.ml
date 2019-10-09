@@ -3707,11 +3707,22 @@ module TypedDictionary = struct
         }
       |> Node.create_with_default_location
     in
+    let common_methods =
+      let total_methods =
+        if total then
+          [define ~self_parameter:t_self_expression ~return_annotation:t_self_expression "copy"]
+        else
+          []
+      in
+      total_methods
+      @ [
+          define ~self_parameter:t_self_expression ~return_annotation:(expression integer) "__len__";
+        ]
+    in
     if total then
-      define ~self_parameter:t_self_expression ~return_annotation:t_self_expression "copy"
-      :: List.map total_special_methods ~f:(fun { name; _ } -> define name)
+      common_methods @ List.map total_special_methods ~f:(fun { name; _ } -> define name)
     else
-      List.map non_total_special_methods ~f:(fun { name; _ } -> define name)
+      common_methods @ List.map non_total_special_methods ~f:(fun { name; _ } -> define name)
 end
 
 let remove_undeclared annotation =

@@ -569,11 +569,10 @@ let test_check_constructors context =
               pass
       class B(A):
          pass
+      def foo() -> None:
+        B()
     |}
-    [
-      "Abstract class [38]: Class `B` does not implement abstract methods `a`, `b`, `c` and 3 \
-       others.";
-    ];
+    ["Invalid class instantiation [45]: Cannot instantiate abstract class `B`."];
   assert_type_errors
     {|
       from abc import abstractmethod
@@ -584,10 +583,7 @@ let test_check_constructors context =
       def foo() -> None:
         Foo()
       |}
-    [
-      "Invalid class [44]: `Foo` is a non-abstract class with abstract methods. Did you mean to \
-       make this class abstract?";
-    ];
+    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -597,7 +593,7 @@ let test_check_constructors context =
       def foo() -> None:
         Foo()
       |}
-    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
+    [];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -610,7 +606,7 @@ let test_check_constructors context =
       def foo() -> None:
          B()
    |}
-    ["Abstract class [38]: Class `B` does not implement abstract method `f`."];
+    ["Invalid class instantiation [45]: Cannot instantiate abstract class `B`."];
   assert_type_errors
     {|
       from abc import abstractproperty, ABCMeta
@@ -623,27 +619,7 @@ let test_check_constructors context =
       def foo() -> None:
          B()
    |}
-    ["Abstract class [38]: Class `B` does not implement abstract method `f`."];
-  assert_type_errors
-    {|
-      from abc import abstractmethod, ABCMeta
-      class A(metaclass=ABCMeta):
-          @abstractmethod
-          def h(self) -> None:
-              pass
-          @abstractmethod
-          def g(self) -> None:
-              pass
-      class B(A):
-          def g(self) -> None:
-              pass
-      class C(B):
-          pass
-    |}
-    [
-      "Abstract class [38]: Class `B` does not implement abstract method `h`.";
-      "Abstract class [38]: Class `C` does not implement abstract method `h`.";
-    ];
+    [];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -660,12 +636,14 @@ let test_check_constructors context =
       class C(B):
           pass
       def foo() -> None:
+        A()
         B()
         C()
     |}
     [
-      "Abstract class [38]: Class `B` does not implement abstract method `h`.";
-      "Abstract class [38]: Class `C` does not implement abstract method `h`.";
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `A`.";
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `B`.";
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `C`.";
     ];
   assert_type_errors
     {|

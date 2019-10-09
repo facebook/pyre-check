@@ -12,6 +12,7 @@ type property =
 [@@deriving eq, show, compare, sexp]
 
 type attribute = {
+  abstract: bool;
   annotation: Annotation.t;
   async: bool;
   class_attribute: bool;
@@ -48,6 +49,8 @@ let location { Node.location; _ } = location
 let defined { Node.value = { defined; _ }; _ } = defined
 
 let class_attribute { Node.value = { class_attribute; _ }; _ } = class_attribute
+
+let abstract { Node.value = { abstract; _ }; _ } = abstract
 
 let async { Node.value = { async; _ }; _ } = async
 

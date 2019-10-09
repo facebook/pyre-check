@@ -105,8 +105,6 @@ let successors_fold class_node ~resolution ~f ~initial =
 
 let is_unit_test { Node.value; _ } = Class.is_unit_test value
 
-let is_abstract { Node.value; _ } = Class.is_abstract value
-
 let resolve_class ~resolution annotation =
   let rec extract ~is_meta original_annotation =
     let annotation =
@@ -249,39 +247,6 @@ let superclasses definition ~resolution =
   |> List.map ~f:create
 
 
-let unimplemented_abstract_methods definition ~resolution =
-  let gather_abstract_methods { Node.value = class_definition; _ } sofar =
-    let abstract_methods, base_methods =
-      class_definition |> Class.defines |> List.partition_tf ~f:Define.is_abstract_method
-    in
-    let add_to_map sofar definition =
-      let name = Define.unqualified_name definition in
-      match String.Map.add sofar ~key:name ~data:definition with
-      | `Ok map -> map
-      | `Duplicate -> sofar
-    in
-    let sofar =
-      if Class.is_abstract class_definition then
-        abstract_methods
-        |> List.filter ~f:(fun method_definition -> not (Define.is_property method_definition))
-        |> List.fold ~init:sofar ~f:add_to_map
-      else
-        sofar
-    in
-    base_methods
-    |> List.map ~f:Define.unqualified_name
-    |> List.fold ~init:sofar ~f:String.Map.remove
-  in
-  let successors = definition |> superclasses ~resolution in
-  if List.exists successors ~f:(fun { Node.value; _ } -> Class.is_abstract value) then
-    successors
-    |> List.cons definition
-    |> List.fold_right ~init:String.Map.empty ~f:gather_abstract_methods
-    |> Map.data
-  else
-    []
-
-
 let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resolution =
   (* See https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
      for why we need to consider all metaclasses. *)
@@ -349,10 +314,6 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
     | _ -> None
   in
   List.filter_map ~f:extract_define body
-
-
-let has_abstract_methods { Node.value; _ } =
-  not (value |> Class.defines |> List.filter ~f:Define.is_abstract_method |> List.is_empty)
 
 
 let is_protocol { Node.value; _ } = Class.is_protocol value
@@ -627,11 +588,17 @@ let create_attribute
     | _, _ when frozen -> Some AnnotatedAttribute.ReadOnly
     | _, _ -> None
   in
+  let abstract =
+    match defines with
+    | None -> false
+    | Some defines -> List.exists defines ~f:Define.is_abstract_method
+  in
   {
     Node.location;
     value =
       {
         AnnotatedAttribute.annotation;
+        abstract;
         async;
         class_attribute;
         defined;
@@ -948,6 +915,7 @@ module ClassDecorators = struct
             Node.create_with_default_location
               {
                 AnnotatedAttribute.annotation = Annotation.create_immutable ~global:true annotation;
+                abstract = false;
                 async = false;
                 class_attribute = false;
                 defined = true;
@@ -1028,6 +996,7 @@ let rec attribute_table
                  {
                    AnnotatedAttribute.annotation =
                      Annotation.create (Type.Callable.create ~annotation:Type.none ());
+                   abstract = false;
                    async = false;
                    class_attribute = false;
                    defined = true;
@@ -1046,6 +1015,7 @@ let rec attribute_table
                  {
                    AnnotatedAttribute.annotation =
                      Annotation.create (Type.Callable.create ~annotation:Type.Any ());
+                   abstract = false;
                    async = false;
                    class_attribute = false;
                    defined = true;
@@ -1430,3 +1400,12 @@ let has_method ?transitive definition ~resolution ~name =
   |> AnnotatedAttribute.annotation
   |> Annotation.annotation
   |> Type.is_callable
+
+
+let has_abstract_base definition = Class.is_abstract (Node.value definition)
+
+let is_abstract ~resolution definition =
+  let attributes =
+    attributes ~transitive:true ~instantiated:(annotation definition) definition ~resolution
+  in
+  List.exists attributes ~f:AnnotatedAttribute.abstract

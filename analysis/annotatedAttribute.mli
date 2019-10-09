@@ -11,6 +11,7 @@ type property =
 [@@deriving eq, show, compare]
 
 type attribute = {
+  abstract: bool;
   annotation: Annotation.t;
   async: bool;
   class_attribute: bool;
@@ -28,6 +29,8 @@ type attribute = {
 type t = attribute Node.t [@@deriving eq, show]
 
 val name : t -> Identifier.t
+
+val abstract : t -> bool
 
 val async : t -> bool
 

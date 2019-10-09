@@ -134,10 +134,6 @@ and incompatible_overload_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
-  | AbstractClass of {
-      class_name: Reference.t;
-      method_names: Identifier.t list;
-    }
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleAssertion of {
@@ -177,7 +173,6 @@ type kind =
       override_kind: override_kind;
     }
   | InvalidArgument of invalid_argument
-  | InvalidClass of Reference.t
   | InvalidClassInstantiation of class_kind
   | InvalidException of {
       expression: Expression.t;

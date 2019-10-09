@@ -1407,6 +1407,7 @@ module OrderImplementation = struct
                         Ast.Node.create_with_default_location
                           {
                             AnnotatedAttribute.annotation = Annotation.create callable;
+                            abstract = false;
                             async = false;
                             class_attribute = false;
                             defined = true;

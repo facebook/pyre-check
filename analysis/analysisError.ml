@@ -143,10 +143,6 @@ and incompatible_overload_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
-  | AbstractClass of {
-      class_name: Reference.t;
-      method_names: Identifier.t list;
-    }
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleAssertion of {
@@ -186,7 +182,6 @@ type kind =
       override_kind: override_kind;
     }
   | InvalidArgument of invalid_argument
-  | InvalidClass of Reference.t
   | InvalidClassInstantiation of class_kind
   | InvalidException of {
       expression: Expression.t;
@@ -325,13 +320,11 @@ let code = function
   | IllegalAnnotationTarget _ -> 35
   | MutuallyRecursiveTypeVariables _ -> 36
   | IncompleteType _ -> 37
-  | AbstractClass _ -> 38
   | InvalidInheritance _ -> 39
   | InvalidOverride _ -> 40
   | InvalidAssignment _ -> 41
   | MissingOverloadImplementation _ -> 42
   | IncompatibleOverload _ -> 43
-  | InvalidClass _ -> 44
   | InvalidClassInstantiation _ -> 45
   | InvalidTypeVariance _ -> 46
   | InvalidMethodSignature _ -> 47
@@ -346,7 +339,6 @@ let code = function
 
 
 let name = function
-  | AbstractClass _ -> "Abstract class"
   | AnalysisFailure _ -> "Analysis failure"
   | DeadStore _ -> "Dead store"
   | Deobfuscation _ -> "Deobfuscation"
@@ -363,7 +355,6 @@ let name = function
   | IncompleteType _ -> "Incomplete type"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
-  | InvalidClass _ -> "Invalid class"
   | InvalidClassInstantiation _ -> "Invalid class instantiation"
   | InvalidException _ -> "Invalid Exception"
   | InvalidType _ -> "Invalid type"
@@ -1103,16 +1094,6 @@ let messages ~concise ~signature location kind =
         [
           Format.asprintf "`%a` cannot be reassigned. It is a read-only property." pp_reference name;
         ] )
-  | InvalidClass name when concise ->
-      [Format.asprintf "`%a` non-abstract class with abstract methods." pp_reference name]
-  | InvalidClass name ->
-      [
-        Format.asprintf
-          "`%a` is a non-abstract class with abstract methods. Did you mean to make this class \
-           abstract?"
-          pp_reference
-          name;
-      ]
   | InvalidClassInstantiation kind ->
       let class_type, class_name =
         match kind with
@@ -1709,39 +1690,6 @@ let messages ~concise ~signature location kind =
                 expected
       in
       [message]
-  | AbstractClass { class_name; _ } when concise ->
-      [
-        Format.asprintf
-          "`%a` does not implement all inherited abstract methods."
-          pp_reference
-          class_name;
-      ]
-  | AbstractClass { class_name; method_names } ->
-      let method_names = List.map method_names ~f:(fun name -> Format.asprintf "`%s`" name) in
-      let method_message =
-        if List.length method_names > 3 then
-          let method_names, not_shown = List.split_n method_names 3 in
-          Format.asprintf
-            "%a and %d others"
-            pp_identifier
-            (String.concat ~sep:", " method_names)
-            (List.length not_shown)
-        else
-          String.concat ~sep:", " method_names
-      in
-      let method_pluralization =
-        match method_names with
-        | [_] -> "method"
-        | _ -> "methods"
-      in
-      [
-        Format.asprintf
-          "Class `%a` does not implement abstract %s %s."
-          pp_reference
-          class_name
-          method_pluralization
-          method_message;
-      ]
   | UnusedIgnore codes ->
       let string_from_codes codes =
         if List.length codes > 0 then
@@ -1958,7 +1906,6 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidInheritance _
   | InvalidOverride _
   | InvalidAssignment _
-  | InvalidClass _
   | InvalidClassInstantiation _
   | InvalidType _
   | IncompatibleOverload _
@@ -1984,7 +1931,6 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedImport _
   | UndefinedType _
   | UnexpectedKeyword _
-  | AbstractClass _
   | UnusedIgnore _
   | UnusedLocalMode _ ->
       false
@@ -2063,7 +2009,6 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | InvalidInheritance _
   | InvalidOverride _
   | InvalidAssignment _
-  | InvalidClass _
   | InvalidClassInstantiation _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
@@ -2087,7 +2032,6 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
-  | AbstractClass _
   | Unpack _
   | UnusedIgnore _
   | UnusedLocalMode _ ->
@@ -2207,7 +2151,6 @@ let less_or_equal ~resolution left right =
       Option.equal Reference.equal_sanitized left_callee right_callee && left_index = right_index
   | InvalidException left, InvalidException right ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
-  | InvalidClass left, InvalidClass right -> Reference.equal left right
   | InvalidClassInstantiation left, InvalidClassInstantiation right -> (
     match left, right with
     | Protocol left_name, Protocol right_name
@@ -2276,8 +2219,6 @@ let less_or_equal ~resolution left right =
           GlobalResolution.less_or_equal resolution ~left ~right
       | CountMismatch left, CountMismatch right -> left = right
       | _ -> false )
-  | AbstractClass left, AbstractClass right ->
-      Reference.equal_sanitized left.class_name right.class_name
   | _, Top -> true
   | AnalysisFailure _, _
   | DeadStore _, _
@@ -2303,7 +2244,6 @@ let less_or_equal ~resolution left right =
   | InvalidInheritance _, _
   | InvalidOverride _, _
   | InvalidAssignment _, _
-  | InvalidClass _, _
   | InvalidClassInstantiation _, _
   | MissingArgument _, _
   | MissingAttributeAnnotation _, _
@@ -2329,7 +2269,6 @@ let less_or_equal ~resolution left right =
   | UndefinedType _, _
   | UnexpectedKeyword _, _
   | UninitializedAttribute _, _
-  | AbstractClass _, _
   | Unpack _, _
   | UnusedIgnore _, _
   | UnusedLocalMode _, _ ->
@@ -2638,7 +2577,6 @@ let join ~resolution left right =
     | InvalidInheritance _, _
     | InvalidOverride _, _
     | InvalidAssignment _, _
-    | InvalidClass _, _
     | InvalidClassInstantiation _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
@@ -2663,7 +2601,6 @@ let join ~resolution left right =
     | UndefinedType _, _
     | UnexpectedKeyword _, _
     | UninitializedAttribute _, _
-    | AbstractClass _, _
     | Unpack _, _
     | UnusedIgnore _, _
     | UnusedLocalMode _, _ ->
@@ -3083,7 +3020,6 @@ let dequalify
     | InvalidOverride { parent; decorator } ->
         InvalidOverride { parent = dequalify_identifier parent; decorator }
     | InvalidAssignment kind -> InvalidAssignment (dequalify_invalid_assignment kind)
-    | InvalidClass name -> InvalidClass (dequalify_reference name)
     | InvalidClassInstantiation kind -> InvalidClassInstantiation (dequalify_class_kind kind)
     | TooManyArguments ({ callee; _ } as extra_argument) ->
         TooManyArguments { extra_argument with callee = Option.map ~f:dequalify_reference callee }
@@ -3177,8 +3113,6 @@ let dequalify
             parent = dequalify parent;
             mismatch = dequalify_mismatch mismatch;
           }
-    | AbstractClass { class_name; method_names } ->
-        AbstractClass { class_name = dequalify_reference class_name; method_names }
     | UnsafeCast kind -> UnsafeCast kind
     | UnawaitedAwaitable { references; expression } ->
         UnawaitedAwaitable { references = List.map references ~f:dequalify_reference; expression }

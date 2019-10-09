@@ -45,7 +45,9 @@ val successors_fold
 
 val is_unit_test : t -> bool
 
-val is_abstract : t -> bool
+val has_abstract_base : t -> bool
+
+val is_abstract : resolution:GlobalResolution.t -> t -> bool
 
 val metaclass : t -> resolution:GlobalResolution.t -> Type.t
 
@@ -79,14 +81,7 @@ val constraints
 
 val superclasses : t -> resolution:GlobalResolution.t -> t list
 
-val unimplemented_abstract_methods
-  :  t ->
-  resolution:GlobalResolution.t ->
-  Ast.Statement.Define.t list
-
 val methods : t -> Method.t list
-
-val has_abstract_methods : t -> bool
 
 val is_protocol : t -> bool
 
