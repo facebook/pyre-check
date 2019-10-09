@@ -1404,8 +1404,8 @@ let has_method ?transitive definition ~resolution ~name =
 
 let has_abstract_base definition = Class.is_abstract (Node.value definition)
 
-let is_abstract ~resolution definition =
+let get_abstract_attributes ~resolution definition =
   let attributes =
     attributes ~transitive:true ~instantiated:(annotation definition) definition ~resolution
   in
-  List.exists attributes ~f:AnnotatedAttribute.abstract
+  List.filter attributes ~f:AnnotatedAttribute.abstract

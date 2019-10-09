@@ -33,7 +33,10 @@ type mismatch_with_list_variadic_type_variable =
 [@@deriving compare, eq, show, sexp, hash]
 
 type reason =
-  | AbstractClassInstantiation of Reference.t
+  | AbstractClassInstantiation of {
+      class_name: Reference.t;
+      abstract_methods: string list;
+    }
   | CallingParameterVariadicTypeVariable
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t

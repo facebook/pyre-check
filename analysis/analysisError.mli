@@ -21,6 +21,14 @@ type class_kind =
   | Abstract of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
+type invalid_class_instantiation =
+  | AbstractClassInstantiation of {
+      class_name: Reference.t;
+      abstract_methods: string list;
+    }
+  | ProtocolInstantiation of Reference.t
+[@@deriving compare, eq, sexp, show, hash]
+
 type origin =
   | Callable of Reference.t option
   | Class of {
@@ -173,7 +181,7 @@ type kind =
       override_kind: override_kind;
     }
   | InvalidArgument of invalid_argument
-  | InvalidClassInstantiation of class_kind
+  | InvalidClassInstantiation of invalid_class_instantiation
   | InvalidException of {
       expression: Expression.t;
       annotation: Type.t;

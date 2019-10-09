@@ -530,7 +530,10 @@ let test_check_constructors context =
       def foo() -> None:
         Foo()
       |}
-    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
+    [
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `Foo` with abstract \
+       method `bar`.";
+    ];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -544,7 +547,10 @@ let test_check_constructors context =
       def foo() -> None:
         Foo()
       |}
-    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
+    [
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `Foo` with abstract \
+       methods `bar`, `foo`.";
+    ];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -572,7 +578,10 @@ let test_check_constructors context =
       def foo() -> None:
         B()
     |}
-    ["Invalid class instantiation [45]: Cannot instantiate abstract class `B`."];
+    [
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `B` with `a`, `b`, `c` \
+       and 3 additional abstract methods.";
+    ];
   assert_type_errors
     {|
       from abc import abstractmethod
@@ -583,7 +592,10 @@ let test_check_constructors context =
       def foo() -> None:
         Foo()
       |}
-    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
+    [
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `Foo` with abstract \
+       method `bar`.";
+    ];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -606,7 +618,10 @@ let test_check_constructors context =
       def foo() -> None:
          B()
    |}
-    ["Invalid class instantiation [45]: Cannot instantiate abstract class `B`."];
+    [
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `B` with abstract \
+       method `f`.";
+    ];
   assert_type_errors
     {|
       from abc import abstractproperty, ABCMeta
@@ -641,9 +656,12 @@ let test_check_constructors context =
         C()
     |}
     [
-      "Invalid class instantiation [45]: Cannot instantiate abstract class `A`.";
-      "Invalid class instantiation [45]: Cannot instantiate abstract class `B`.";
-      "Invalid class instantiation [45]: Cannot instantiate abstract class `C`.";
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `A` with abstract \
+       methods `g`, `h`.";
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `B` with abstract \
+       method `h`.";
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `C` with abstract \
+       method `h`.";
     ];
   assert_type_errors
     {|
@@ -670,7 +688,10 @@ let test_check_constructors context =
       def foo() -> None:
         Foo()
       |}
-    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
+    [
+      "Invalid class instantiation [45]: Cannot instantiate abstract class `Foo` with abstract \
+       method `bar`.";
+    ];
 
   (* Explicit call. *)
   assert_type_errors

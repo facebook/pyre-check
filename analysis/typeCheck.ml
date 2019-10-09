@@ -1609,13 +1609,19 @@ module State (Context : Context) = struct
               >>| (function
                     | { Node.value = definition; _ } ->
                         let { Class.name = class_name; _ } = definition in
-                        if
-                          Annotated.Class.is_abstract
+                        let abstract_methods =
+                          Annotated.Class.get_abstract_attributes
                             ~resolution:global_resolution
                             (Annotated.Class.create (Node.create ~location definition))
-                        then
+                          |> List.map ~f:Annotated.Attribute.name
+                        in
+                        if not (List.is_empty abstract_methods) then
                           Annotated.Signature.NotFound
-                            { callable; reason = Some (AbstractClassInstantiation class_name) }
+                            {
+                              callable;
+                              reason =
+                                Some (AbstractClassInstantiation { class_name; abstract_methods });
+                            }
                         else if Class.is_protocol definition then
                           Annotated.Signature.NotFound
                             { callable; reason = Some (ProtocolInstantiation class_name) }
@@ -1674,10 +1680,12 @@ module State (Context : Context) = struct
                 | _ -> None
               in
               match reason with
-              | AbstractClassInstantiation class_name ->
+              | AbstractClassInstantiation { class_name; abstract_methods } ->
                   Error.create
                     ~location
-                    ~kind:(Error.InvalidClassInstantiation (Abstract class_name))
+                    ~kind:
+                      (Error.InvalidClassInstantiation
+                         (Error.AbstractClassInstantiation { class_name; abstract_methods }))
                     ~define:Context.define
               | CallingParameterVariadicTypeVariable ->
                   Error.create
@@ -1748,7 +1756,7 @@ module State (Context : Context) = struct
               | ProtocolInstantiation class_name ->
                   Error.create
                     ~location
-                    ~kind:(Error.InvalidClassInstantiation (Protocol class_name))
+                    ~kind:(Error.InvalidClassInstantiation (ProtocolInstantiation class_name))
                     ~define:Context.define
               | TooManyArguments { expected; provided } ->
                   Error.create

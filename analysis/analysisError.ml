@@ -30,6 +30,14 @@ type class_kind =
   | Abstract of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
+type invalid_class_instantiation =
+  | AbstractClassInstantiation of {
+      class_name: Reference.t;
+      abstract_methods: string list;
+    }
+  | ProtocolInstantiation of Reference.t
+[@@deriving compare, eq, sexp, show, hash]
+
 type origin =
   | Callable of Reference.t option
   | Class of {
@@ -182,7 +190,7 @@ type kind =
       override_kind: override_kind;
     }
   | InvalidArgument of invalid_argument
-  | InvalidClassInstantiation of class_kind
+  | InvalidClassInstantiation of invalid_class_instantiation
   | InvalidException of {
       expression: Expression.t;
       annotation: Type.t;
@@ -1094,14 +1102,35 @@ let messages ~concise ~signature location kind =
         [
           Format.asprintf "`%a` cannot be reassigned. It is a read-only property." pp_reference name;
         ] )
-  | InvalidClassInstantiation kind ->
-      let class_type, class_name =
-        match kind with
-        | Protocol class_name -> "protocol", class_name
-        | Abstract class_name -> "abstract class", class_name
-        | Class -> failwith "Impossible"
-      in
-      [Format.asprintf "Cannot instantiate %s `%a`." class_type pp_reference class_name]
+  | InvalidClassInstantiation kind -> (
+    match kind with
+    | ProtocolInstantiation class_name ->
+        [Format.asprintf "Cannot instantiate protocol `%a`." pp_reference class_name]
+    | AbstractClassInstantiation { class_name; abstract_methods } ->
+        let method_message =
+          let to_string methods =
+            List.map methods ~f:(fun name -> Format.sprintf "`%s`" name) |> String.concat ~sep:", "
+          in
+          let number_to_keep = 3 in
+          if List.length abstract_methods <= number_to_keep then
+            Format.asprintf
+              " with abstract method%s %s."
+              (if List.length abstract_methods > 1 then "s" else "")
+              (to_string abstract_methods)
+          else
+            let examples = List.take abstract_methods number_to_keep |> to_string in
+            Format.sprintf
+              " with %s and %d additional abstract methods."
+              examples
+              (List.length abstract_methods - number_to_keep)
+        in
+        [
+          Format.asprintf
+            "Cannot instantiate abstract class `%a`%s"
+            pp_reference
+            class_name
+            (if concise then "." else method_message);
+        ] )
   | MissingArgument { parameter = AnnotatedSignature.Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { parameter = AnnotatedSignature.Anonymous index; _ } when concise ->
@@ -2153,8 +2182,8 @@ let less_or_equal ~resolution left right =
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidClassInstantiation left, InvalidClassInstantiation right -> (
     match left, right with
-    | Protocol left_name, Protocol right_name
-    | Abstract left_name, Protocol right_name ->
+    | ProtocolInstantiation left_name, ProtocolInstantiation right_name
+    | AbstractClassInstantiation { class_name = left_name; _ }, ProtocolInstantiation right_name ->
         Reference.equal left_name right_name
     | _, _ -> false )
   | ProhibitedAny { missing_annotation = left; _ }, ProhibitedAny { missing_annotation = right; _ }
@@ -2919,6 +2948,12 @@ let dequalify
     | Protocol reference -> Protocol (dequalify_reference reference)
     | Abstract reference -> Abstract (dequalify_reference reference)
   in
+  let dequalify_invalid_class_instantiation = function
+    | ProtocolInstantiation reference -> ProtocolInstantiation (dequalify_reference reference)
+    | AbstractClassInstantiation { class_name; abstract_methods } ->
+        AbstractClassInstantiation
+          { class_name = dequalify_reference class_name; abstract_methods }
+  in
   let dequalify_invalid_inheritance = function
     | ClassName name -> ClassName (dequalify_identifier name)
     | NonMethodFunction name -> NonMethodFunction (dequalify_identifier name)
@@ -3020,7 +3055,8 @@ let dequalify
     | InvalidOverride { parent; decorator } ->
         InvalidOverride { parent = dequalify_identifier parent; decorator }
     | InvalidAssignment kind -> InvalidAssignment (dequalify_invalid_assignment kind)
-    | InvalidClassInstantiation kind -> InvalidClassInstantiation (dequalify_class_kind kind)
+    | InvalidClassInstantiation kind ->
+        InvalidClassInstantiation (dequalify_invalid_class_instantiation kind)
     | TooManyArguments ({ callee; _ } as extra_argument) ->
         TooManyArguments { extra_argument with callee = Option.map ~f:dequalify_reference callee }
     | Top -> Top

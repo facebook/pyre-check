@@ -47,7 +47,7 @@ val is_unit_test : t -> bool
 
 val has_abstract_base : t -> bool
 
-val is_abstract : resolution:GlobalResolution.t -> t -> bool
+val get_abstract_attributes : resolution:GlobalResolution.t -> t -> AnnotatedAttribute.t list
 
 val metaclass : t -> resolution:GlobalResolution.t -> Type.t
 
