@@ -785,4 +785,7 @@ let test_transform_environment context =
     ]
 
 
-let () = "dataClass" >::: ["transform_environment" >:: test_transform_environment] |> Test.run
+let () =
+  "dataClass"
+  >::: ["transform_environment" >: test_case ~length:Long test_transform_environment]
+  |> Test.run

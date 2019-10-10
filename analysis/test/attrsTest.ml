@@ -620,4 +620,7 @@ let test_transform_environment context =
     ]
 
 
-let () = "attrs" >::: ["transform_environment" >:: test_transform_environment] |> Test.run
+let () =
+  "attrs"
+  >::: ["transform_environment" >: test_case ~length:Long test_transform_environment]
+  |> Test.run
