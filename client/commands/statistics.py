@@ -47,6 +47,7 @@ class AnnotationCountCollector(StatisticsCollector):
         self.annotated_attribute_count = annotated_attribute_count
         self.in_class_definition = False
         self.in_function_definition = False
+        self.is_static_function = False
 
     def build_json(self) -> Dict[str, int]:
         return {
@@ -60,14 +61,25 @@ class AnnotationCountCollector(StatisticsCollector):
             "annotated_attribute_count": self.annotated_attribute_count,
         }
 
+    def _is_self(self, parameter: cst.Param) -> bool:
+        return (
+            parameter.name.value == "self"
+            and self.in_class_definition
+            and not self.is_static_function
+        )
+
     def _check_parameter_annotations(self, parameters: Sequence[cst.Param]) -> None:
         for parameter in list(parameters):
             self.parameter_count += 1
             annotation = parameter.annotation
-            if annotation is not None or parameter.name.value == "self":
+            if annotation is not None or self._is_self(parameter):
                 self.annotated_parameter_count += 1
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+        for decorator in node.decorators:
+            # pyre-fixme[16]: `Call` has no attribute `value`.
+            if decorator.decorator.value == "staticmethod":
+                self.is_static_function = True
         self.in_function_definition = True
         self.return_count += 1
         if node.returns is not None:
@@ -78,6 +90,7 @@ class AnnotationCountCollector(StatisticsCollector):
 
     def leave_FunctionDef(self, node: cst.FunctionDef) -> None:
         self.in_function_definition = False
+        self.is_static_function = False
 
     def visit_Assign(self, node: cst.Assign) -> None:
         if self.in_function_definition:
