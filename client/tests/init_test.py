@@ -67,7 +67,8 @@ class InitTest(unittest.TestCase):
                 self.assertEqual(arguments.local_configuration, None)
 
     @patch("{}.switch_root".format(client_name))
-    def test_find_log_directory(self, switch_root) -> None:
+    @patch("os.makedirs")
+    def test_find_log_directory(self, mkdirs, switch_root) -> None:
         arguments = MagicMock()
         arguments.local_configuration = None
         arguments.original_directory = "project/subdirectory"
@@ -75,11 +76,11 @@ class InitTest(unittest.TestCase):
         find_log_directory(arguments)
         self.assertEqual(arguments.log_directory, "project/.pyre")
 
-        arguments.local_configuration = "subdirectory"
-        arguments.original_directory = "project"
-        arguments.current_directory = "project"
+        arguments.local_configuration = "/project/subdirectory"
+        arguments.original_directory = "/project"
+        arguments.current_directory = "/project"
         find_log_directory(arguments)
-        self.assertEqual(arguments.log_directory, "project/.pyre/subdirectory")
+        self.assertEqual(arguments.log_directory, "/project/.pyre/subdirectory")
 
     def test_resolve_filter_paths(self) -> None:
         arguments = MagicMock()

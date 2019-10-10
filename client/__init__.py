@@ -143,9 +143,12 @@ def find_log_directory(arguments) -> None:
     if not arguments.current_directory:
         switch_root(arguments)
     log_directory = os.path.join(arguments.current_directory, ".pyre")
-    local_configuration = arguments.local_configuration
+    local_configuration: Optional[str] = arguments.local_configuration
     if local_configuration:
-        log_directory = os.path.join(log_directory, local_configuration)
+        # `log_directory` will never escape `.pyre/` because in `switch_root` we have
+        # guaranteed that configurations are never deeper than local configurations
+        relative = os.path.relpath(local_configuration, arguments.current_directory)
+        log_directory = os.path.join(log_directory, relative)
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
     arguments.log_directory = log_directory
