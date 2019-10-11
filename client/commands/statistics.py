@@ -77,9 +77,10 @@ class AnnotationCountCollector(StatisticsCollector):
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         for decorator in node.decorators:
-            # pyre-fixme[16]: `Call` has no attribute `value`.
-            if decorator.decorator.value == "staticmethod":
-                self.is_static_function = True
+            decorator_node = decorator.decorator
+            if isinstance(decorator_node, cst.Name):
+                if decorator_node.value == "staticmethod":
+                    self.is_static_function = True
         self.in_function_definition = True
         self.return_count += 1
         if node.returns is not None:

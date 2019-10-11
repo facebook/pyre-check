@@ -216,6 +216,29 @@ class AnnotationCountCollectorTest(unittest.TestCase):
             },
         )
 
+        self.assert_counts(
+            """
+            def foo(x):
+                def bar(x):
+                    return x
+                return bar
+
+            class A:
+                @foo(42)
+                def baz(self): ...
+            """,
+            {
+                "annotated_return_count": 0,
+                "annotated_globals_count": 0,
+                "annotated_parameter_count": 1,
+                "return_count": 3,
+                "globals_count": 0,
+                "parameter_count": 3,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+            },
+        )
+
 
 class FixmeCountCollectorTest(unittest.TestCase):
     @staticmethod
