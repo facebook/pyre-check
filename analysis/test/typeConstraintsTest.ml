@@ -72,6 +72,8 @@ let add_bound constraints bound =
   match bound with
   | `Lower pair -> DiamondOrderedConstraints.add_lower_bound constraints ~order ~pair
   | `Upper pair -> DiamondOrderedConstraints.add_upper_bound constraints ~order ~pair
+  | `Fallback variable ->
+      DiamondOrderedConstraints.add_fallback_to_any constraints variable |> Option.some
 
 
 let test_add_bound _ =
@@ -269,6 +271,13 @@ let test_single_variable_solution _ =
         `Upper (ListVariadicPair (list_variadic, Type.OrderedTypes.Concrete [right_parent; child]));
       ]
     None;
+  assert_solution
+    ~sequentially_applied_bounds:[`Fallback (Unary unconstrained)]
+    (Some [UnaryPair (unconstrained, Type.Any)]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [`Fallback (Unary unconstrained); `Lower (UnaryPair (unconstrained, Type.integer))]
+    (Some [UnaryPair (unconstrained, Type.integer)]);
   ()
 
 
@@ -447,6 +456,13 @@ let test_multiple_variable_solution _ =
                ] );
          ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]);
        ]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [
+        `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Fallback (Unary unconstrained_b);
+      ]
+    (Some [UnaryPair (unconstrained_a, Type.Any); UnaryPair (unconstrained_b, Type.Any)]);
   ()
 
 

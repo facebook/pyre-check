@@ -2680,6 +2680,34 @@ let test_solve_less_or_equal context =
   assert_solve ~left:"C" ~right:"T_Bound_D" [];
   assert_solve ~left:"C" ~right:"T_C_Q" [["T_C_Q", "C"]];
 
+  assert_solve
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    ~left:"T_Unconstrained"
+    ~right:"typing.Any"
+    [["T_Unconstrained", "typing.Any"]];
+  assert_solve
+    ~leave_unbound_in_left:["T_Bound_C"]
+    ~left:"T_Bound_C"
+    ~right:"typing.Any"
+    [["T_Bound_C", "typing.Any"]];
+  assert_solve
+    ~leave_unbound_in_left:["T_C_Q"]
+    ~left:"T_C_Q"
+    ~right:"typing.Any"
+    [["T_C_Q", "typing.Any"]];
+
+  assert_solve
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    ~left:"typing.List[T_Unconstrained]"
+    ~right:"typing.Any"
+    [["T_Unconstrained", "typing.Any"]];
+
+  assert_solve
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    ~left:"typing.Tuple[T_Unconstrained, T_Unconstrained]"
+    ~right:"typing.Tuple[typing.Any, int]"
+    [["T_Unconstrained", "int"]];
+
   (* Annotated types. *)
   assert_solve ~left:"typing.Annotated[C]" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
   assert_solve ~left:"C" ~right:"typing.Annotated[T_Unconstrained]" [["T_Unconstrained", "C"]];

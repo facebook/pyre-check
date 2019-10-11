@@ -382,11 +382,14 @@ module OrderImplementation = struct
         ~left
         ~right
       =
+      let add_fallbacks other =
+        Type.Variable.all_free_variables other
+        |> List.fold ~init:constraints ~f:OrderedConstraints.add_fallback_to_any
+      in
       match left, right with
       | _, _ when Type.equal left right -> [constraints]
-      | _, Type.Primitive "object"
-      | _, Type.Any ->
-          [constraints]
+      | _, Type.Primitive "object" -> [constraints]
+      | other, Type.Any -> [add_fallbacks other]
       | other, Type.Top ->
           if Type.exists other ~predicate:(fun annotation -> Type.equal annotation Type.undeclared)
           then
@@ -398,7 +401,7 @@ module OrderImplementation = struct
           []
       | Type.Annotated left, _ -> solve_less_or_equal order ~constraints ~left ~right
       | _, Type.Annotated right -> solve_less_or_equal order ~constraints ~left ~right
-      | Type.Any, _ when any_is_bottom -> [constraints]
+      | Type.Any, other when any_is_bottom -> [add_fallbacks other]
       | Type.Variable left_variable, Type.Variable right_variable
         when Type.Variable.Unary.is_free left_variable
              && Type.Variable.Unary.is_free right_variable ->

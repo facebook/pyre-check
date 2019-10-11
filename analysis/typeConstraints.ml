@@ -37,6 +37,7 @@ type t = {
   unaries: unary_interval UnaryVariable.Map.t;
   callable_parameters: callable_parameter_interval ParameterVariable.Map.t;
   list_variadics: list_variadic_interval ListVariadic.Map.t;
+  have_fallbacks: Type.Variable.Set.t;
 }
 
 let show_map map ~show_key ~show_data ~short_name =
@@ -51,7 +52,7 @@ let show_map map ~show_key ~show_data ~short_name =
     |> Format.sprintf "%s: [%s]" short_name
 
 
-let pp format { unaries; callable_parameters; list_variadics } =
+let pp format { unaries; callable_parameters; list_variadics; have_fallbacks } =
   let unaries =
     show_map unaries ~show_key:UnaryVariable.show ~show_data:show_unary_interval ~short_name:"un"
   in
@@ -69,7 +70,12 @@ let pp format { unaries; callable_parameters; list_variadics } =
       ~show_data:show_list_variadic_interval
       ~short_name:"lv"
   in
-  Format.fprintf format "{%s%s%s}" unaries callable_parameters list_variadics
+  let have_fallbacks =
+    Set.to_list have_fallbacks
+    |> List.to_string ~f:Type.Variable.show
+    |> Format.sprintf "\nHave Fallbacks to Any: %s"
+  in
+  Format.fprintf format "{%s%s%s%s}" unaries callable_parameters list_variadics have_fallbacks
 
 
 let show annotation = Format.asprintf "%a" pp annotation
@@ -79,10 +85,11 @@ let empty =
     unaries = UnaryVariable.Map.empty;
     callable_parameters = ParameterVariable.Map.empty;
     list_variadics = ListVariadic.Map.empty;
+    have_fallbacks = Type.Variable.Set.empty;
   }
 
 
-let exists_in_bounds { unaries; callable_parameters; list_variadics } ~variables =
+let exists_in_bounds { unaries; callable_parameters; list_variadics; _ } ~variables =
   let contains_variable annotation =
     let contains_unary =
       Type.Variable.GlobalTransforms.Unary.collect_all annotation
@@ -140,18 +147,6 @@ let exists_in_bounds { unaries; callable_parameters; list_variadics } ~variables
        callable_parameters
        ~f:exists_in_callable_parameter_interval_bounds
   || ListVariadic.Map.exists list_variadics ~f:exists_in_list_variadic_interval_bounds
-
-
-let is_empty { unaries; callable_parameters; list_variadics } =
-  UnaryVariable.Map.is_empty unaries
-  && ParameterVariable.Map.is_empty callable_parameters
-  && ListVariadic.Map.is_empty list_variadics
-
-
-let contains_key { unaries; callable_parameters; list_variadics } = function
-  | Type.Variable.Unary unary -> Map.mem unaries unary
-  | Type.Variable.ParameterVariadic parameters -> Map.mem callable_parameters parameters
-  | Type.Variable.ListVariadic variable -> Map.mem list_variadics variable
 
 
 module Solution = struct
@@ -251,6 +246,8 @@ module type OrderedConstraintsType = sig
 
   val add_upper_bound : t -> order:order -> pair:Type.Variable.pair -> t option
 
+  val add_fallback_to_any : t -> Type.Variable.t -> t
+
   val solve : t -> order:order -> Solution.t option
 
   val extract_partial_solution
@@ -323,6 +320,15 @@ module OrderedConstraints (Order : OrderType) = struct
 
 
       let partition_independent_dependent container ~with_regards_to =
+        let contains_key { unaries; callable_parameters; list_variadics; have_fallbacks } key =
+          let has_constraints =
+            match key with
+            | Type.Variable.Unary unary -> Map.mem unaries unary
+            | Type.Variable.ParameterVariadic parameters -> Map.mem callable_parameters parameters
+            | Type.Variable.ListVariadic variable -> Map.mem list_variadics variable
+          in
+          has_constraints || Set.mem have_fallbacks key
+        in
         let is_independent target =
           Interval.free_variables target |> List.exists ~f:(contains_key with_regards_to) |> not
         in
@@ -662,7 +668,7 @@ module OrderedConstraints (Order : OrderType) = struct
   type order = Order.t
 
   let add_bound
-      ({ unaries; callable_parameters; list_variadics } as constraints)
+      ({ unaries; callable_parameters; list_variadics; _ } as constraints)
       ~order
       ~pair
       ~is_lower_bound
@@ -693,13 +699,42 @@ module OrderedConstraints (Order : OrderType) = struct
 
   let add_upper_bound = add_bound ~is_lower_bound:false
 
-  let merge_solution { unaries; callable_parameters; list_variadics } solution =
+  let add_fallback_to_any ({ have_fallbacks; _ } as constraints) addition =
+    { constraints with have_fallbacks = Set.add have_fallbacks addition }
+
+
+  let merge_solution { unaries; callable_parameters; list_variadics; have_fallbacks } solution =
     {
       unaries = UnaryIntervalContainer.merge_solution unaries ~solution;
       callable_parameters =
         CallableParametersIntervalContainer.merge_solution callable_parameters ~solution;
       list_variadics = ListVariadicIntervalContainer.merge_solution list_variadics ~solution;
+      have_fallbacks;
     }
+
+
+  let apply_fallbacks solution ~have_fallbacks =
+    let optional_add map key data =
+      match Map.add map ~key ~data with
+      | `Ok map -> map
+      | `Duplicate -> map
+    in
+    let add_fallback ({ Solution.unaries; callable_parameters; list_variadics } as solution)
+      = function
+      | Type.Variable.Unary variable ->
+          { solution with unaries = optional_add unaries variable Type.Any }
+      | Type.Variable.ParameterVariadic variable ->
+          {
+            solution with
+            callable_parameters = optional_add callable_parameters variable Type.Callable.Undefined;
+          }
+      | Type.Variable.ListVariadic variable ->
+          {
+            solution with
+            list_variadics = optional_add list_variadics variable Type.OrderedTypes.Any;
+          }
+    in
+    Set.to_list have_fallbacks |> List.fold ~init:solution ~f:add_fallback
 
 
   let solve constraints ~order =
@@ -720,18 +755,34 @@ module OrderedConstraints (Order : OrderType) = struct
             remaining_constraints.list_variadics
             ~with_regards_to:remaining_constraints
         in
+        let independent_fallbacks, dependent_fallbacks =
+          let matches = function
+            | Type.Variable.Unary key -> not (Map.mem dependent_unaries key)
+            | ParameterVariadic key -> not (Map.mem dependent_parameters key)
+            | ListVariadic key -> not (Map.mem dependent_list_variadics key)
+          in
+          Set.partition_tf remaining_constraints.have_fallbacks ~f:matches
+        in
         ( {
             unaries = independent_unaries;
             callable_parameters = independent_parameters;
             list_variadics = independent_list_variadics;
+            have_fallbacks = independent_fallbacks;
           },
           {
             unaries = dependent_unaries;
             callable_parameters = dependent_parameters;
             list_variadics = dependent_list_variadics;
+            have_fallbacks = dependent_fallbacks;
           } )
       in
       let handle_dependent_constraints partial_solution =
+        let is_empty { unaries; callable_parameters; list_variadics; have_fallbacks } =
+          UnaryVariable.Map.is_empty unaries
+          && ParameterVariable.Map.is_empty callable_parameters
+          && ListVariadic.Map.is_empty list_variadics
+          && Set.is_empty have_fallbacks
+        in
         if is_empty dependent_constraints then
           Some partial_solution
         else if is_empty independent_constraints then
@@ -745,12 +796,17 @@ module OrderedConstraints (Order : OrderType) = struct
             independent_constraints.callable_parameters
             ~order
       >>= ListVariadicIntervalContainer.add_solution independent_constraints.list_variadics ~order
+      >>| apply_fallbacks ~have_fallbacks:independent_constraints.have_fallbacks
       >>= handle_dependent_constraints
     in
     build_solution ~remaining_constraints:constraints ~partial_solution:Solution.empty
 
 
-  let extract_partial_solution { unaries; callable_parameters; list_variadics } ~order ~variables =
+  let extract_partial_solution
+      { unaries; callable_parameters; list_variadics; have_fallbacks }
+      ~order
+      ~variables
+    =
     let extracted_constraints, remaining_constraints =
       let unary_matches ~key ~data:_ =
         List.exists variables ~f:(Type.Variable.equal (Type.Variable.Unary key))
@@ -770,15 +826,25 @@ module OrderedConstraints (Order : OrderType) = struct
       let extracted_list_variadics, remaining_list_variadics =
         ListVariadic.Map.partitioni_tf list_variadics ~f:list_variadic_matches
       in
+      let extracted_fallbacks, remaining_fallbacks =
+        let matches = function
+          | Type.Variable.Unary key -> unary_matches ~key ~data:()
+          | ParameterVariadic key -> callable_parameters_matches ~key ~data:()
+          | ListVariadic key -> list_variadic_matches ~key ~data:()
+        in
+        Set.partition_tf have_fallbacks ~f:matches
+      in
       ( {
           unaries = extracted_unaries;
           callable_parameters = extracted_variadics;
           list_variadics = extracted_list_variadics;
+          have_fallbacks = extracted_fallbacks;
         },
         {
           unaries = remaining_unaries;
           callable_parameters = remaining_variadics;
           list_variadics = remaining_list_variadics;
+          have_fallbacks = remaining_fallbacks;
         } )
     in
     solve extracted_constraints ~order

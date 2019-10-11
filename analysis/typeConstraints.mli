@@ -43,6 +43,8 @@ module type OrderedConstraintsType = sig
 
   val add_upper_bound : t -> order:order -> pair:Type.Variable.pair -> t option
 
+  val add_fallback_to_any : t -> Type.Variable.t -> t
+
   val solve : t -> order:order -> Solution.t option
 
   (* This solves the constraints for the given variables, and then substitutes those solution in
