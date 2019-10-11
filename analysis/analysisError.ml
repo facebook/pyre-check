@@ -2924,7 +2924,7 @@ let suppress ~mode ~ignore_codes ~resolution error =
         || Type.contains_unknown actual
         || Type.is_undeclared actual
         || Type.Variable.convert_all_escaped_free_variables_to_anys actual
-           |> GlobalResolution.contains_prohibited_any (Resolution.global_resolution resolution)
+           |> Type.contains_prohibited_any
     | _ -> true
   in
   try

@@ -3830,4 +3830,27 @@ let infer_transform annotation =
   snd (InferTransform.visit () annotation)
 
 
+let contains_prohibited_any annotation =
+  let is_string_to_any_mapping
+    = (* TODO(T40377122): Remove special-casing of Dict[str, Any] in strict. *)
+    function
+    | Parametric { name = "typing.Mapping"; parameters = Concrete [Primitive "str"; Any] }
+    | Parametric { name = "dict"; parameters = Concrete [Primitive "str"; Any] } ->
+        true
+    | _ -> false
+  in
+  let module Exists = Transform.Make (struct
+    type state = bool
+
+    let visit_children_before _ annotation = not (is_string_to_any_mapping annotation)
+
+    let visit_children_after = false
+
+    let visit sofar annotation =
+      { Transform.transformed_annotation = annotation; new_state = sofar || is_any annotation }
+  end)
+  in
+  fst (Exists.visit false annotation)
+
+
 let to_yojson annotation = `String (show annotation)

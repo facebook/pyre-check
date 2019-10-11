@@ -595,7 +595,7 @@ module State (Context : Context) = struct
         in
         let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
         let contains_literal_any =
-          GlobalResolution.contains_prohibited_any global_resolution return_annotation
+          Type.contains_prohibited_any return_annotation
           && annotation >>| Type.expression_contains_any |> Option.value ~default:false
         in
         if
@@ -809,8 +809,7 @@ module State (Context : Context) = struct
                     let contains_literal_any =
                       annotation >>| Type.expression_contains_any |> Option.value ~default:false
                     in
-                    contains_literal_any
-                    && GlobalResolution.contains_prohibited_any global_resolution parsed_annotation
+                    contains_literal_any && Type.contains_prohibited_any parsed_annotation
                   in
                   match annotation_and_state, value with
                   | Some (_, annotation), Some value when Type.contains_final annotation ->
@@ -2853,8 +2852,7 @@ module State (Context : Context) = struct
         in
         if
           (not (Define.has_return_annotation define))
-          || contains_literal_any
-             && GlobalResolution.contains_prohibited_any global_resolution return_annotation
+          || (contains_literal_any && Type.contains_prohibited_any return_annotation)
         then
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
@@ -3301,7 +3299,7 @@ module State (Context : Context) = struct
                   match annotation with
                   | Some annotation when Type.expression_contains_any annotation ->
                       original_annotation
-                      >>| GlobalResolution.contains_prohibited_any global_resolution
+                      >>| Type.contains_prohibited_any
                       |> Option.value ~default:false
                       |> fun insufficient -> insufficient, true
                   | None when is_immutable && not is_reassignment ->
@@ -3310,8 +3308,7 @@ module State (Context : Context) = struct
                         || Define.is_class_toplevel define
                         || Define.is_constructor define
                       in
-                      ( Type.equal expected Type.Top
-                        || GlobalResolution.contains_prohibited_any global_resolution expected,
+                      ( Type.equal expected Type.Top || Type.contains_prohibited_any expected,
                         is_toplevel )
                   | _ -> false, false
                 in
@@ -3403,10 +3400,7 @@ module State (Context : Context) = struct
                                is_type_alias;
                              })
                         ~define:Context.define
-                      |> Option.some_if
-                           (GlobalResolution.contains_prohibited_any
-                              global_resolution
-                              value_annotation)
+                      |> Option.some_if (Type.contains_prohibited_any value_annotation)
                     else
                       None
                 | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ }, None

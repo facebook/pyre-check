@@ -785,4 +785,6 @@ val remove_undeclared : t -> t
 
 val infer_transform : t -> t
 
+val contains_prohibited_any : t -> bool
+
 val to_yojson : t -> Yojson.Safe.json

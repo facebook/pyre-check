@@ -806,6 +806,12 @@ let test_check_immutable_annotations context =
         x = { 'a': 'b' }
     |}
     [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Dict[str, typing.List[typing.Any]] = {}
+    |}
+    ["Prohibited any [33]: Explicit annotation for `x` cannot contain `Any`."];
   assert_default_type_errors
     {|
       constant = 1

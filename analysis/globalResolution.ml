@@ -560,31 +560,6 @@ let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compat
 
 let is_instantiated { class_hierarchy; _ } = ClassHierarchy.is_instantiated class_hierarchy
 
-let contains_prohibited_any resolution annotation =
-  let is_string_to_any_mapping resolution annotation =
-    (* TODO(T40377122): Remove special-casing of Dict[str, Any] in strict. *)
-    less_or_equal
-      resolution
-      ~left:annotation
-      ~right:(Type.optional (Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Any])))
-  in
-  let module Exists = Type.Transform.Make (struct
-    type state = bool
-
-    let visit_children_before _ annotation = not (is_string_to_any_mapping resolution annotation)
-
-    let visit_children_after = false
-
-    let visit sofar annotation =
-      {
-        Type.Transform.transformed_annotation = annotation;
-        new_state = sofar || Type.is_any annotation;
-      }
-  end)
-  in
-  fst (Exists.visit false annotation)
-
-
 let parse_reference ?(allow_untracked = false) resolution reference =
   Expression.from_reference ~location:Location.Reference.any reference
   |> parse_annotation ~allow_untracked ~allow_invalid_type_parameters:true resolution

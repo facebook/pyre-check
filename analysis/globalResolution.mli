@@ -190,8 +190,6 @@ val is_tracked : t -> Type.Primitive.t -> bool
 
 val contains_untracked : t -> Type.t -> bool
 
-val contains_prohibited_any : t -> Type.t -> bool
-
 val parse_as_parameter_specification_instance_annotation
   :  t ->
   variable_parameter_annotation:Expression.t ->
