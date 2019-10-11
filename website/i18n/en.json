@@ -17,6 +17,9 @@
         "title": "Pyre Errors",
         "sidebar_label": "Error Types"
       },
+      "formal/coq_formalization/README": {
+        "title": "formal/coq_formalization/README"
+      },
       "gradual-typing": {
         "title": "Gradual Typing",
         "sidebar_label": "Gradual Typing"
