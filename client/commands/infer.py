@@ -351,7 +351,7 @@ def annotate_path(arguments, stub_path, file_path) -> None:
             LOG.debug("Error: {}".format(error))
 
 
-def annotate_paths(arguments, stubs, type_directory) -> None:
+def annotate_paths(arguments, formatter: Optional[str], stubs, type_directory) -> None:
     if arguments.in_place != []:
         stubs = filter_paths(arguments, stubs, type_directory)
 
@@ -360,9 +360,13 @@ def annotate_paths(arguments, stubs, type_directory) -> None:
         stub_path = stub.path(type_directory)
         file_path = str(stub.path(project_directory)).rstrip("i")
         annotate_path(arguments, stub_path, file_path)
+    if formatter:
+        subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def annotate_from_existing_stubs(arguments, type_directory: Path) -> None:
+def annotate_from_existing_stubs(
+    arguments, formatter: Optional[str], type_directory: Path
+) -> None:
     stub_files = []
     for path, _, files in os.walk(type_directory):
         for file in files:
@@ -377,12 +381,8 @@ def annotate_from_existing_stubs(arguments, type_directory: Path) -> None:
     for stub_path in stub_files:
         file_path = str(stub_path).replace("/.pyre/types", "").rstrip("i")
         annotate_path(arguments, stub_path, file_path)
-    with open(os.devnull, "w") as FNULL:
-        subprocess.call(
-            ["arc", "lint", "--apply-patches", "--only-changed"],
-            stdout=FNULL,
-            stderr=FNULL,
-        )
+    if formatter:
+        subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def file_exists(path):
@@ -409,6 +409,7 @@ class Infer(Reporting):
         self._local_configuration = arguments.local_configuration
         self._json = arguments.json
         self._annotate_from_existing_stubs = arguments.annotate_from_existing_stubs
+        self._formatter = configuration.formatter
 
     def run(self) -> Command:
         self._analysis_directory.prepare()
@@ -421,7 +422,9 @@ class Infer(Reporting):
             type_directory = pyre_configuration_directory(self._arguments) / Path(
                 ".pyre/types"
             )
-            annotate_from_existing_stubs(self._arguments, type_directory)
+            annotate_from_existing_stubs(
+                self._arguments, self._formatter, type_directory
+            )
             return self
         if self._json:
             result = self._errors_from_stdin()
@@ -439,7 +442,7 @@ class Infer(Reporting):
             write_stubs_to_disk(self._arguments, stubs, type_directory)
             if self._arguments.in_place is not None:
                 LOG.info("Annotating files")
-                annotate_paths(self._arguments, stubs, type_directory)
+                annotate_paths(self._arguments, self._formatter, stubs, type_directory)
 
         return self
 

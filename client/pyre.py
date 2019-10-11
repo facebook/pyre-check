@@ -128,6 +128,7 @@ def main() -> int:
     parser.add_argument(
         "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
     )
+    parser.add_argument("--formatter", help=argparse.SUPPRESS)
 
     # Link tree determination.
     buck_arguments = parser.add_argument_group("buck")
@@ -533,7 +534,6 @@ def main() -> int:
                     )
                 )
                 return ExitCode.SUCCESS
-
             configuration = Configuration(
                 local_configuration=arguments.local_configuration,
                 search_path=arguments.search_path,
@@ -542,6 +542,7 @@ def main() -> int:
                 preserve_pythonpath=arguments.preserve_pythonpath,
                 excludes=arguments.exclude,
                 logger=arguments.logger,
+                formatter=arguments.formatter,
                 log_directory=arguments.log_directory,
             )
             if configuration.disabled:

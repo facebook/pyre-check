@@ -164,12 +164,14 @@ class Configuration:
         typeshed: Optional[str] = None,
         preserve_pythonpath=False,
         excludes: Optional[List[str]] = None,
+        formatter: Optional[List[str]] = None,
         logger: Optional[str] = None,
         log_directory: Optional[str] = None,
     ) -> None:
         self.source_directories = []
         self.targets = []
         self.logger = logger
+        self.formatter = formatter
         self.ignore_all_errors = []
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
@@ -439,6 +441,10 @@ class Configuration:
                     self.disabled = True
 
                 self.logger = configuration.consume("logger", current=self.logger)
+
+                self.formatter = configuration.consume(
+                    "formatter", current=self.formatter
+                )
 
                 self.strict = configuration.consume("strict", default=self.strict)
                 ignore_all_errors = configuration.consume(
