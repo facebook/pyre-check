@@ -8,7 +8,7 @@ class RecordSchema:
 
 
 class DictRecord:
-    items: Any = ...
+    items: Any = {}
 
 
 class MutableRecord:

@@ -1998,8 +1998,7 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | IncompatibleReturnType { mismatch = { actual; actual_expressions; expected; _ }; _ }
   | IncompatibleAttributeType
       { incompatible_type = { mismatch = { actual; actual_expressions; expected; _ }; _ }; _ }
-  | IncompatibleVariableType { mismatch = { actual; actual_expressions; expected; _ }; _ }
-  | UninitializedAttribute { mismatch = { actual; actual_expressions; expected; _ }; _ } ->
+  | IncompatibleVariableType { mismatch = { actual; actual_expressions; expected; _ }; _ } ->
       let consistent () =
         let expressions =
           match actual_expressions with
@@ -2054,6 +2053,7 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | Top
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
+  | UninitializedAttribute _
   | UndefinedType _
   | UnexpectedKeyword _
   | MissingArgument _

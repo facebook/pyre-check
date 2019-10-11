@@ -684,7 +684,11 @@ let test_attribute_strict context =
           self.bar = 1
           return self.bar
     |}
-    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
+    [
+      "Prohibited any [33]: `MyType` cannot alias to `Any`.";
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
+       `typing.Any` but is never initialized.";
+    ];
 
   assert_strict_type_errors
     {|
@@ -1054,11 +1058,17 @@ let test_check_missing_attribute context =
           self.a = 1
     |}
     [];
-  assert_default_type_errors {|
+  assert_default_type_errors
+    {|
       class Foo:
         a: typing.Any
       Foo.a = 1
-    |} []
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have type \
+       `typing.Any` but is never initialized.";
+    ];
+  ()
 
 
 let test_attribute_type_variable_resolution context =

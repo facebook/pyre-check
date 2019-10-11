@@ -631,7 +631,7 @@ let test_due_to_mismatch_with_any context =
     (Error.UndefinedAttribute { attribute = "foo"; origin = Error.Module !&"module" });
 
   (* Uninitialized Attribute *)
-  assert_due_to_mismatch_with_any
+  assert_not_due_to_mismatch_with_any
     (Error.UninitializedAttribute
        {
          name = "";
@@ -640,7 +640,7 @@ let test_due_to_mismatch_with_any context =
            {
              Error.actual = Type.Any;
              actual_expressions = [];
-             expected = Type.Optional Type.integer;
+             expected = Type.Any;
              due_to_invariance = false;
            };
          kind = Class;
