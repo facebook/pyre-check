@@ -297,7 +297,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
     [
       make
-        ~bases:[Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Any])]
+        ~bases:[Type.parametric "typing.Mapping" (Concrete [Type.string; Type.object_primitive])]
         ~body:(Type.TypedDictionary.defines ~t_self_expression ~total:true)
         "TypedDictionary";
       make

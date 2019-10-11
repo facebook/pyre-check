@@ -230,9 +230,7 @@ let test_check_typed_dictionaries context =
             q = b
         return q
     |}
-    [
-      "Incompatible return type [7]: Expected `Mapping[str, A]` but got `Mapping[str, typing.Any]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Mapping[str, A]` but got `Mapping[str, object]`."];
   assert_test_typed_dictionary
     {|
       import mypy_extensions
@@ -534,9 +532,9 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Revealed type [-1]: Revealed type for `v` is `typing.AbstractSet[str]`.";
-      "Revealed type [-1]: Revealed type for `v` is `typing.ValuesView[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `v` is `typing.ValuesView[object]`.";
       "Revealed type [-1]: Revealed type for `v` is "
-      ^ "`typing.AbstractSet[typing.Tuple[str, typing.Any]]`.";
+      ^ "`typing.AbstractSet[typing.Tuple[str, object]]`.";
     ];
   assert_test_typed_dictionary
     {|

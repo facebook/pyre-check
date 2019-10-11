@@ -1114,7 +1114,10 @@ module OrderImplementation = struct
               || left_total <> right_total
             then
               Type.Parametric
-                { name = "typing.Mapping"; parameters = Concrete [Type.string; Type.Any] }
+                {
+                  name = "typing.Mapping";
+                  parameters = Concrete [Type.string; Type.object_primitive];
+                }
             else
               let join_fields =
                 if always_less_or_equal order ~left ~right then

@@ -339,6 +339,7 @@ let default =
   insert order "bool";
   insert order "float";
   insert order "object";
+  connect order ~predecessor:"str" ~successor:"object";
   connect order ~predecessor:"int" ~successor:"float";
   connect order ~predecessor:"float" ~successor:"object";
   let type_builtin = "type" in
@@ -359,7 +360,7 @@ let default =
   connect
     order
     ~predecessor:typed_dictionary
-    ~parameters:(Concrete [Type.string; Type.Any])
+    ~parameters:(Concrete [Type.string; Type.object_primitive])
     ~successor:typing_mapping;
   let variable = Type.variable "_T" in
   let other_variable = Type.variable "_T2" in
@@ -419,12 +420,12 @@ let default =
     ~predecessor:"typing.Generator"
     ~successor:"typing.Generic"
     ~parameters:[variable];
-  insert order "str";
   concrete_connect
     order
     ~predecessor:"str"
     ~successor:"typing.Iterable"
     ~parameters:[Type.Primitive "str"];
+  connect order ~predecessor:"typing.Iterable" ~successor:"object";
   insert order "AnyIterable";
   connect order ~predecessor:"AnyIterable" ~successor:"typing.Iterable";
   insert order "typing.Mapping";
@@ -432,7 +433,7 @@ let default =
     order
     ~predecessor:"typing.Mapping"
     ~successor:"typing.Generic"
-    ~parameters:[variable; other_variable];
+    ~parameters:[variable; variable_covariant];
   insert order "dict";
 
   concrete_connect
@@ -693,11 +694,11 @@ let test_less_or_equal context =
     concrete_connect
       order
       ~predecessor:typed_dictionary
-      ~parameters:[Type.string; Type.Any]
+      ~parameters:[Type.string; Type.object_primitive]
       ~successor:typing_mapping;
     concrete_connect
       order
-      ~parameters:[Type.variable "_T"; Type.variable "_T2"]
+      ~parameters:[Type.variable "_T"; Type.variable ~variance:Covariant "_TCov"]
       ~predecessor:typing_mapping
       ~successor:"typing.Generic";
     insert order "dict";
@@ -1946,23 +1947,23 @@ let test_join context =
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
     "mypy_extensions.TypedDict[('Beta', True, ('foo', int))]"
-    "typing.Mapping[str, typing.Any]";
+    "typing.Mapping[str, object]";
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
     "mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int), ('baz', int))]"
-    "typing.Mapping[str, typing.Any]";
+    "typing.Mapping[str, object]";
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Mapping[str, str]"
-    "typing.Mapping[str, typing.Any]";
+    "typing.Mapping[str, object]";
   assert_join
     "mypy_extensions.TypedDict[('Alpha', False, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Mapping[str, str]"
-    "typing.Mapping[str, typing.Any]";
+    "typing.Mapping[str, object]";
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Mapping[int, str]"
-    "typing.Mapping[typing.Any, typing.Any]";
+    "typing.Mapping[typing.Any, object]";
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Dict[str, str]"
