@@ -3717,6 +3717,10 @@ module TypedDictionary = struct
       total_methods
       @ [
           define ~self_parameter:t_self_expression ~return_annotation:(expression integer) "__len__";
+          define
+            ~self_parameter:t_self_expression
+            ~return_annotation:(expression (iterator string))
+            "__iter__";
         ]
     in
     if total then

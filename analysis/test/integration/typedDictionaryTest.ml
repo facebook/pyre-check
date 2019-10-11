@@ -916,7 +916,22 @@ let test_check_typed_dictionaries context =
       "Invalid inheritance [39]: Building TypedDicts up through inheritance is not yet supported.";
       "Invalid type [31]: Expression `False` is not a valid type.";
     ];
-  ()
+  assert_test_typed_dictionary
+    {|
+      import mypy_extensions
+      class TotalTypedDict(mypy_extensions.TypedDict):
+        required: int
+      foo = TotalTypedDict(required=0)
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      import mypy_extensions
+      class NotTotalTypedDict(mypy_extensions.TypedDict, total=False):
+        required: int
+      foo = NotTotalTypedDict()
+    |}
+    []
 
 
 let () =
