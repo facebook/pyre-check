@@ -129,6 +129,7 @@ let performance
     ?(category = "perfpipe_pyre_performance")
     ~name
     ~timer
+    ?phase_name
     ?(integers = [])
     ?(normals = [])
     ()
@@ -143,7 +144,12 @@ let performance
   in
   Log.log ~section "%s: %fs" (String.capitalize name) (Int.to_float milliseconds /. 1000.0);
   Profiling.log_event (fun () ->
-      Profiling.Event.create name ~event_type:(Duration milliseconds) ~tags:normals);
+      let tags =
+        match phase_name with
+        | None -> normals
+        | Some name -> ("phase_name", name) :: normals
+      in
+      Profiling.Event.create name ~event_type:(Duration milliseconds) ~tags);
   sample
     ~integers:(("elapsed_time", milliseconds) :: integers)
     ~normals:(("name", name) :: normals)

@@ -130,7 +130,7 @@ let create configuration =
   let timer = Timer.start () in
   let module_to_files = create_module_to_files configuration in
   let submodule_refcounts = create_submodule_refcounts module_to_files in
-  Statistics.performance ~name:"module tracker built" ~timer ();
+  Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
   { module_to_files; submodule_refcounts }
 
 

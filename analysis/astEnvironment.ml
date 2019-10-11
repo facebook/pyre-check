@@ -473,7 +473,10 @@ let update
             result
           in
           let { RawParseResult.syntax_error; system_error; _ }, raw_dependencies =
-            Profiling.track_duration_and_shared_memory "Parse Raw Sources" ~f:(fun _ ->
+            Profiling.track_duration_and_shared_memory
+              "Parse Raw Sources"
+              ~tags:["phase_name", "Parsing"]
+              ~f:(fun _ ->
                 Raw.update_and_compute_dependencies
                   ast_environment
                   changed_modules
@@ -488,7 +491,10 @@ let update
               raw_dependencies
           in
           let triggered_dependencies =
-            Profiling.track_duration_and_shared_memory "Parse Processed Sources" ~f:(fun _ ->
+            Profiling.track_duration_and_shared_memory
+              "Parse Processed Sources"
+              ~tags:["phase_name", "Preprocessing"]
+              ~f:(fun _ ->
                 update_and_compute_dependencies
                   ast_environment
                   raw_dependencies
@@ -519,7 +525,11 @@ let update
              ~ast_environment
       in
       log_parse_errors ~syntax_error ~system_error;
-      Statistics.performance ~name:"sources parsed" ~timer ();
+      Statistics.performance
+        ~name:"sources parsed"
+        ~phase_name:"Parsing and preprocessing"
+        ~timer
+        ();
       {
         UpdateResult.reparsed = parsed;
         triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;

@@ -32,5 +32,9 @@ val track_duration_event : ?tags:(string * string) list -> f:(unit -> 'a) -> str
 
 val track_shared_memory_usage : ?name:string -> unit -> unit
 
-val track_duration_and_shared_memory : f:(unit -> 'a) -> string -> 'a
+val track_duration_and_shared_memory
+  :  ?tags:(string * string) list ->
+  f:(unit -> 'a) ->
+  string ->
+  'a
 (** Convenient function to track both time and shared memory usage *)

@@ -192,7 +192,10 @@ module EnvironmentTable = struct
       | { incremental_style = FineGrained; _ } ->
           let triggered_dependencies =
             let name = Format.sprintf "TableUpdate(%s)" In.Value.description in
-            Profiling.track_duration_and_shared_memory name ~f:(fun _ ->
+            Profiling.track_duration_and_shared_memory
+              name
+              ~tags:["phase_name", In.Value.description]
+              ~f:(fun _ ->
                 let dependencies =
                   let filter = List.filter_map ~f:In.filter_upstream_dependency in
                   In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
@@ -219,7 +222,10 @@ module EnvironmentTable = struct
       | _ ->
           let _ =
             let name = Format.sprintf "LegacyTableUpdate(%s)" In.Value.description in
-            Profiling.track_duration_and_shared_memory name ~f:(fun _ ->
+            Profiling.track_duration_and_shared_memory
+              name
+              ~tags:["phase_name", In.Value.description]
+              ~f:(fun _ ->
                 let current_and_previous_keys =
                   In.current_and_previous_keys upstream_update |> Set.to_list
                 in

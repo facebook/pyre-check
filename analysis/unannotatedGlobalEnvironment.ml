@@ -565,7 +565,10 @@ let update
   match configuration with
   | { incremental_style = FineGrained; _ } ->
       let current_classes, current_unannotated_globals, triggered_dependencies =
-        Profiling.track_duration_and_shared_memory "TableUpdate(Unannotated globals)" ~f:(fun _ ->
+        Profiling.track_duration_and_shared_memory
+          "TableUpdate(Unannotated globals)"
+          ~tags:["phase_name", "global discovery"]
+          ~f:(fun _ ->
             let (), mutation_triggers =
               DependencyKey.Transaction.empty
               |> WriteOnly.add_to_transaction
@@ -604,6 +607,7 @@ let update
       let current_classes, current_unannotated_globals, triggered_dependencies =
         Profiling.track_duration_and_shared_memory
           "LegacyTableUpdate(Unannotated globals)"
+          ~tags:["phase_name", "global discovery"]
           ~f:(fun _ ->
             WriteOnly.direct_data_purge ~previous_classes_list ~previous_unannotated_globals_list;
             update ();
