@@ -93,6 +93,12 @@ def typeshed_search_path(typeshed_root: str) -> List[str]:
     return search_path
 
 
+def profiling_log_path() -> str:
+    # TODO (T54901955): Redirect this to the centralized logging directory
+    pyre_directory = make_pyre_directory()
+    return os.path.join(pyre_directory, "profiling.log")
+
+
 # pyre-fixme[44]: `Command` non-abstract class with abstract methods
 class Command:
     _buffer = []  # type: List[str]
@@ -182,8 +188,7 @@ class Command:
         if self._logging_sections:
             flags.extend(["-logging-sections", self._logging_sections])
         if self._enable_profiling:
-            pyre_directory = make_pyre_directory()
-            profiling_output = os.path.join(pyre_directory, "profiling.log")
+            profiling_output = profiling_log_path()
             # Clear the profiling log first since in pyre binary it's append-only
             remove_if_exists(profiling_output)
             flags.extend(["-profiling-output", profiling_output])

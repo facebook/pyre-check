@@ -483,6 +483,9 @@ def main() -> int:
     )
     statistics.set_defaults(command=commands.Statistics)
 
+    profile = parsed_commands.add_parser(commands.Profile.NAME)
+    profile.set_defaults(command=commands.Profile)
+
     arguments = parser.parse_args()
 
     if not hasattr(arguments, "command"):
