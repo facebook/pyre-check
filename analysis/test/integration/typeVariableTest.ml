@@ -660,6 +660,19 @@ let test_unbound_variables context =
          return a or [], b or []
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import Generic, TypeVar, Any
+      T = TypeVar('T')
+      class G(Generic[T]):
+        prop: T
+        def __init__(self, prop: T) -> None:
+          self.prop = prop
+      class C(G[int]):
+        def foo(self) -> None:
+          reveal_type(self.prop)
+    |}
+    ["Revealed type [-1]: Revealed type for `self.prop` is `int`."];
   ()
 
 

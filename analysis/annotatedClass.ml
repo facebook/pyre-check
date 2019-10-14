@@ -27,7 +27,7 @@ module AttributeCache = struct
     include_generated_attributes: bool;
     special_method: bool;
     name: Reference.t;
-    instantiated: Type.t;
+    instantiated: Type.t option;
   }
   [@@deriving compare, sexp, hash]
 
@@ -951,8 +951,6 @@ let rec attribute_table
     ({ Node.value = { Class.name; _ }; _ } as definition)
     ~resolution
   =
-  let original_instantiated = instantiated in
-  let instantiated = Option.value instantiated ~default:(annotation definition) in
   let key =
     {
       AttributeCache.transitive;
@@ -966,6 +964,8 @@ let rec attribute_table
   match Hashtbl.find AttributeCache.cache key with
   | Some result -> result
   | None ->
+      let original_instantiated = instantiated in
+      let instantiated = Option.value instantiated ~default:(annotation definition) in
       let definition_attributes
           ~in_test
           ~instantiated
