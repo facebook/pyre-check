@@ -200,3 +200,7 @@ val attribute : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option
 val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
 val check_class_hierarchy_integrity : t -> unit
+
+module AnnotationCache : sig
+  val clear : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> unit
+end

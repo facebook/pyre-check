@@ -441,14 +441,8 @@ module Cache = struct
   let set ~key ~data = Hashtbl.set ~key ~data cache
 
   let clear ~scheduler ~configuration =
-    let number_of_workers = Scheduler.number_of_workers scheduler in
     (* We need to clear the cache in each of the workers :( *)
-    Scheduler.iter
-      scheduler
-      ~bucket_size:1
-      ~configuration
-      ~f:(fun _ -> Hashtbl.clear cache)
-      ~inputs:(List.init number_of_workers ~f:Fn.id);
+    Scheduler.once_per_worker scheduler ~configuration ~f:(fun () -> Hashtbl.clear cache);
     Hashtbl.clear cache
 end
 

@@ -374,16 +374,18 @@ module ReadOnly = struct
 
   let parse_annotation_without_validating_type_parameters
       environment
-      ?(modify_aliases = Fn.id)
+      ?modify_aliases
       ?dependency
       ?(allow_untracked = false)
       ?(allow_primitives_from_empty_stubs = false)
       expression
     =
+    let use_type_create_cache = Option.is_none modify_aliases in
+    let modify_aliases = Option.value modify_aliases ~default:Fn.id in
     let parsed =
       let expression = Expression.delocalize expression in
       let aliases name = get_alias environment ?dependency name >>| modify_aliases in
-      Type.create ~aliases expression
+      Type.create ~aliases ~use_cache:use_type_create_cache expression
     in
     let annotation =
       if allow_primitives_from_empty_stubs then

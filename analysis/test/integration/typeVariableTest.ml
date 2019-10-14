@@ -392,6 +392,14 @@ let test_check_variable_bindings context =
       class AnyChild(ConstrainedBase[typing.Any]): pass
     |}
     [];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      T = TypeVar('T', bound="G")
+      class G(Generic[T]):
+        pass
+    |}
+    ["Invalid type parameters [24]: Generic type `G` expects 1 type parameter."];
   ()
 
 

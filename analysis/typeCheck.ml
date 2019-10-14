@@ -4716,7 +4716,19 @@ module State (Context : Context) = struct
         match Node.value statement with
         | Class { Class.name; body; _ } ->
             let variables =
-              let unarize = List.map ~f:(fun unary -> Type.Variable.Unary unary) in
+              let unarize unaries =
+                let fix_invalid_parameters_in_bounds unary =
+                  match
+                    GlobalResolution.check_invalid_type_parameters
+                      global_resolution
+                      (Type.Variable unary)
+                  with
+                  | _, Type.Variable unary -> unary
+                  | _ -> failwith "did not transform"
+                in
+                List.map unaries ~f:fix_invalid_parameters_in_bounds
+                |> List.map ~f:(fun unary -> Type.Variable.Unary unary)
+              in
               let extract = function
                 | ClassHierarchy.Unaries unaries -> unarize unaries
                 | ClassHierarchy.Concatenation concatenation ->

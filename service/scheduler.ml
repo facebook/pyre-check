@@ -5,6 +5,7 @@
 
 open Hack_parallel.Std
 module Daemon = Daemon
+open Core
 
 type t = {
   is_parallel: bool;
@@ -121,3 +122,8 @@ let with_parallel ~is_parallel service = { service with is_parallel }
 let workers { workers; _ } = workers
 
 let destroy _ = Worker.killall ()
+
+let once_per_worker scheduler ~configuration ~f =
+  let number_of_workers = number_of_workers scheduler in
+  let f _ = f () in
+  iter scheduler ~bucket_size:1 ~configuration ~f ~inputs:(List.init number_of_workers ~f:Fn.id)

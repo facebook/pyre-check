@@ -342,6 +342,37 @@ let check_invalid_type_parameters resolution annotation =
   InvalidTypeParametersTransform.visit [] annotation
 
 
+module AnnotationCache = struct
+  type t = {
+    allow_untracked: bool;
+    allow_invalid_type_parameters: bool;
+    allow_primitives_from_empty_stubs: bool;
+    expression: Expression.t;
+  }
+  [@@deriving compare, sexp, hash]
+
+  include Hashable.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let hash = Hashtbl.hash
+
+    let hash_fold_t = hash_fold_t
+
+    let sexp_of_t = sexp_of_t
+
+    let t_of_sexp = t_of_sexp
+  end)
+
+  let cache = Table.create ~size:1023 ()
+
+  let clear ~scheduler ~configuration =
+    (* We need to clear the cache in each of the workers :( *)
+    Scheduler.once_per_worker scheduler ~configuration ~f:(fun () -> Hashtbl.clear cache);
+    Hashtbl.clear cache
+end
+
 let parse_annotation
     ?(allow_untracked = false)
     ?(allow_invalid_type_parameters = false)
@@ -349,28 +380,41 @@ let parse_annotation
     ({ dependency; _ } as resolution)
     expression
   =
-  let modify_aliases =
-    if allow_invalid_type_parameters then
-      Fn.id
-    else
-      function
-    | Type.TypeAlias alias ->
-        check_invalid_type_parameters resolution alias |> snd |> fun alias -> Type.TypeAlias alias
-    | result -> result
+  let key =
+    {
+      AnnotationCache.allow_untracked;
+      allow_invalid_type_parameters;
+      allow_primitives_from_empty_stubs;
+      expression;
+    }
   in
-  let annotation =
-    AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
-      (alias_environment resolution)
-      ~modify_aliases
-      ?dependency
-      ~allow_untracked
-      ~allow_primitives_from_empty_stubs
-      expression
-  in
-  if not allow_invalid_type_parameters then
-    check_invalid_type_parameters resolution annotation |> snd
-  else
-    annotation
+  match Hashtbl.find AnnotationCache.cache key with
+  | Some result -> result
+  | None ->
+      let modify_aliases = function
+        | Type.TypeAlias alias ->
+            check_invalid_type_parameters resolution alias
+            |> snd
+            |> fun alias -> Type.TypeAlias alias
+        | result -> result
+      in
+      let annotation =
+        AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+          (alias_environment resolution)
+          ~modify_aliases
+          ?dependency
+          ~allow_untracked
+          ~allow_primitives_from_empty_stubs
+          expression
+      in
+      let result =
+        if not allow_invalid_type_parameters then
+          check_invalid_type_parameters resolution annotation |> snd
+        else
+          annotation
+      in
+      Hashtbl.set ~key ~data:result AnnotationCache.cache;
+      result
 
 
 let join resolution = full_order resolution |> TypeOrder.join

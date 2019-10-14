@@ -210,7 +210,10 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
   let equal_value first second = Annotation.equal (Node.value first) (Node.value second)
 end)
 
-let update = GlobalTable.update
+let update environment ~scheduler ~configuration upstream_update =
+  GlobalResolution.AnnotationCache.clear ~scheduler ~configuration;
+  GlobalTable.update environment ~scheduler ~configuration upstream_update
+
 
 let read_only { class_metadata_environment } = GlobalTable.read_only class_metadata_environment
 

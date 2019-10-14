@@ -10,8 +10,6 @@ type t
 
 val create : configuration:Configuration.Analysis.t -> ?bucket_multiplier:int -> unit -> t
 
-val number_of_workers : t -> int
-
 val run_process : configuration:Configuration.Analysis.t -> (unit -> 'result) -> 'result
 
 val map_reduce
@@ -44,3 +42,5 @@ val workers : t -> Worker.t list
 val mock : unit -> t
 
 val destroy : t -> unit
+
+val once_per_worker : t -> configuration:Configuration.Analysis.t -> f:(unit -> unit) -> unit
