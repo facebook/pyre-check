@@ -164,6 +164,9 @@ class TypeCollector(cst.CSTVisitor):
             attr = self._add_annotation_to_imports(annotation)
             return cst.Annotation(annotation=attr)
         if isinstance(annotation, cst.Subscript):
+            value = annotation.value
+            if isinstance(value, cst.Name) and value.value == "Type":
+                return returns
             return cst.Annotation(annotation=self._handle_Subscript(annotation))
         else:
             return returns

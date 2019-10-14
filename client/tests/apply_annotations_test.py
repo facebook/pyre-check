@@ -576,3 +576,25 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 return 1
             """,
         )
+        self.assert_annotations(
+            """
+            from typing import Type
+
+            def foo() -> Type[foo.A]: ...
+            """,
+            """
+            def foo():
+                class A:
+                    x = 1
+                return A
+
+            """,
+            """
+            from typing import Type
+
+            def foo() -> Type[foo.A]:
+                class A:
+                    x = 1
+                return A
+            """,
+        )
