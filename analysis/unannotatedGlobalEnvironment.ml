@@ -567,7 +567,7 @@ let update
       let current_classes, current_unannotated_globals, triggered_dependencies =
         Profiling.track_duration_and_shared_memory
           "TableUpdate(Unannotated globals)"
-          ~tags:["phase_name", "global discovery"]
+          ~tags:["phase_name", "Global discovery"]
           ~f:(fun _ ->
             let (), mutation_triggers =
               DependencyKey.Transaction.empty
