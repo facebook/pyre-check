@@ -555,10 +555,7 @@ let test_check_immutable_annotations context =
         x = y
         expects_str(x)
     |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st anonymous parameter to call `expects_str` but got `int`.";
-    ];
+    [];
   assert_type_errors
     {|
       def foo(x: str = 1) -> str:
@@ -753,11 +750,7 @@ let test_check_immutable_annotations context =
       def foo(any: typing.Any) -> None:
         x: int = any
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`.";
-      "Incompatible variable type [9]: x is declared to have type `int` "
-      ^ "but is used as type `typing.Any`.";
-    ];
+    ["Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`."];
   assert_strict_type_errors
     {|
       def foo(any: typing.Any) -> None:
@@ -1023,6 +1016,8 @@ let test_check_refinement context =
         x = 1.0
     |}
     [];
+
+  (* List[Any] correctly can refine to List[int] *)
   assert_type_errors
     {|
       def foo() -> None:
@@ -1030,7 +1025,11 @@ let test_check_refinement context =
         l = [1]
         l.append('asdf')
     |}
-    ["Prohibited any [33]: Explicit annotation for `l` cannot contain `Any`."];
+    [
+      "Prohibited any [33]: Explicit annotation for `l` cannot contain `Any`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `list.append` but got `str`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:

@@ -210,11 +210,7 @@ let test_check_generators context =
       def foo() -> typing.Generator:
         return x
     |}
-    [
-      "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters.";
-      "Incompatible return type [7]: Expected `typing.Generator[typing.Any, typing.Any, "
-      ^ "typing.Any]` but got `typing.Generator[int, int, int]`.";
-    ];
+    ["Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters."];
   assert_type_errors
     {|
       import typing

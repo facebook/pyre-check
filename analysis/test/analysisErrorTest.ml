@@ -402,306 +402,6 @@ let test_due_to_analysis_limitations _ =
     (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Top })
 
 
-let test_due_to_mismatch_with_any context =
-  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  let assert_due_to_mismatch_with_any kind =
-    assert_true (Error.due_to_mismatch_with_any resolution (error kind))
-  in
-  let assert_not_due_to_mismatch_with_any kind =
-    assert_false (Error.due_to_mismatch_with_any resolution (error kind))
-  in
-  (* ImpossibleAssertion *)
-  assert_due_to_mismatch_with_any
-    (Error.ImpossibleAssertion
-       {
-         expression = !"expression";
-         annotation = Type.Any;
-         statement = parse_single_statement "assert expression";
-       });
-
-  (* IncompatibleAttributeType. *)
-  assert_due_to_mismatch_with_any
-    (Error.IncompatibleAttributeType
-       {
-         parent = mock_parent;
-         incompatible_type =
-           {
-             Error.name = !&"";
-             mismatch =
-               {
-                 Error.actual = Type.Any;
-                 actual_expressions = [];
-                 expected = Type.Any;
-                 due_to_invariance = false;
-               };
-             declare_location = Location.Instantiated.any;
-           };
-       });
-
-  (* IncompatibleAwaitableType *)
-  assert_due_to_mismatch_with_any (Error.IncompatibleAwaitableType Type.Any);
-
-  (* IncompatibleParameterType *)
-  assert_due_to_mismatch_with_any
-    (Error.IncompatibleParameterType
-       {
-         name = Some "";
-         position = 1;
-         callee = Some !&"callee";
-         mismatch =
-           {
-             Error.actual = Type.Any;
-             actual_expressions = [];
-             expected = Type.Any;
-             due_to_invariance = false;
-           };
-       });
-  assert_due_to_mismatch_with_any
-    (Error.IncompatibleParameterType
-       {
-         name = Some "";
-         position = 1;
-         callee = Some !&"callee";
-         mismatch =
-           {
-             Error.actual = Type.string;
-             actual_expressions = [];
-             expected = Type.Any;
-             due_to_invariance = false;
-           };
-       });
-
-  (* IncompatibleReturnType *)
-  assert_due_to_mismatch_with_any
-    (Error.IncompatibleReturnType
-       {
-         mismatch =
-           {
-             Error.actual = Type.Any;
-             actual_expressions = [];
-             expected = Type.Any;
-             due_to_invariance = false;
-           };
-         is_implicit = false;
-         is_unimplemented = false;
-         define_location = Node.location mock_define;
-       });
-  assert_due_to_mismatch_with_any
-    (Error.IncompatibleReturnType
-       {
-         mismatch =
-           {
-             Error.actual = Type.Any;
-             actual_expressions = [];
-             expected = Type.string;
-             due_to_invariance = false;
-           };
-         is_implicit = false;
-         is_unimplemented = false;
-         define_location = Node.location mock_define;
-       });
-  assert_not_due_to_mismatch_with_any
-    (Error.IncompatibleReturnType
-       {
-         mismatch =
-           {
-             Error.actual = Type.string;
-             actual_expressions = [];
-             expected = Type.integer;
-             due_to_invariance = false;
-           };
-         is_implicit = false;
-         is_unimplemented = false;
-         define_location = Node.location mock_define;
-       });
-
-  (* IncompatibleVariableType *)
-  assert_due_to_mismatch_with_any
-    (Error.IncompatibleVariableType
-       {
-         name = !&"name";
-         mismatch =
-           {
-             Error.actual = Type.string;
-             actual_expressions = [];
-             expected = Type.Any;
-             due_to_invariance = false;
-           };
-         declare_location = Location.Instantiated.any;
-       });
-
-  (* InconsistentOverride *)
-  assert_not_due_to_mismatch_with_any
-    (InconsistentOverride
-       {
-         overridden_method = "foo";
-         parent = !&(Type.show mock_parent);
-         override = StrengthenedPrecondition (NotFound (Keywords Type.integer));
-         override_kind = Method;
-       });
-  assert_not_due_to_mismatch_with_any
-    (InconsistentOverride
-       {
-         overridden_method = "foo";
-         parent = !&(Type.show mock_parent);
-         override =
-           WeakenedPostcondition
-             {
-               actual = Type.Top;
-               actual_expressions = [];
-               expected = Type.integer;
-               due_to_invariance = false;
-             };
-         override_kind = Method;
-       });
-  assert_due_to_mismatch_with_any
-    (InconsistentOverride
-       {
-         overridden_method = "foo";
-         parent = !&(Type.show mock_parent);
-         override =
-           WeakenedPostcondition
-             {
-               actual = Type.Any;
-               actual_expressions = [];
-               expected = Type.integer;
-               due_to_invariance = false;
-             };
-         override_kind = Method;
-       });
-  assert_not_due_to_mismatch_with_any
-    (InconsistentOverride
-       {
-         overridden_method = "foo";
-         parent = !&(Type.show mock_parent);
-         override =
-           StrengthenedPrecondition
-             (Found
-                {
-                  actual = Type.none;
-                  actual_expressions = [];
-                  expected = Type.integer;
-                  due_to_invariance = false;
-                });
-         override_kind = Method;
-       });
-  assert_due_to_mismatch_with_any
-    (InconsistentOverride
-       {
-         overridden_method = "foo";
-         parent = !&(Type.show mock_parent);
-         override =
-           StrengthenedPrecondition
-             (Found
-                {
-                  actual = Type.none;
-                  actual_expressions = [];
-                  expected = Type.Any;
-                  due_to_invariance = false;
-                });
-         override_kind = Method;
-       });
-
-  (* InvalidArgument *)
-  assert_not_due_to_mismatch_with_any
-    (InvalidArgument (Keyword { expression = !"name"; annotation = Type.integer }));
-  assert_not_due_to_mismatch_with_any
-    (InvalidArgument (ConcreteVariable { expression = !"name"; annotation = Type.integer }));
-  assert_due_to_mismatch_with_any
-    (InvalidArgument (Keyword { expression = !"name"; annotation = Type.Any }));
-  assert_due_to_mismatch_with_any
-    (InvalidArgument (ConcreteVariable { expression = !"name"; annotation = Type.Any }));
-  assert_due_to_mismatch_with_any
-    (InvalidArgument
-       (Keyword
-          { expression = !"name"; annotation = Type.dictionary ~key:Type.Any ~value:Type.Any }));
-
-  (* NotCallable *)
-  assert_due_to_mismatch_with_any (Error.NotCallable Type.Any);
-  assert_not_due_to_mismatch_with_any (Error.NotCallable Type.Top);
-
-  (* UndefinedAttribute *)
-  assert_due_to_mismatch_with_any
-    (Error.UndefinedAttribute
-       {
-         attribute = "foo";
-         origin = Error.Class { annotation = Type.Any; class_attribute = false };
-       });
-  assert_not_due_to_mismatch_with_any
-    (Error.UndefinedAttribute { attribute = "foo"; origin = Error.Module !&"module" });
-
-  (* Uninitialized Attribute *)
-  assert_not_due_to_mismatch_with_any
-    (Error.UninitializedAttribute
-       {
-         name = "";
-         parent = mock_parent;
-         mismatch =
-           {
-             Error.actual = Type.Any;
-             actual_expressions = [];
-             expected = Type.Any;
-             due_to_invariance = false;
-           };
-         kind = Class;
-       });
-  assert_not_due_to_mismatch_with_any
-    (Error.UninitializedAttribute
-       {
-         name = "";
-         parent = mock_parent;
-         mismatch =
-           {
-             Error.actual = Type.string;
-             actual_expressions = [];
-             expected = Type.Optional Type.string;
-             due_to_invariance = false;
-           };
-         kind = Class;
-       });
-
-  (* Unpack *)
-  assert_not_due_to_mismatch_with_any
-    (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 });
-  assert_not_due_to_mismatch_with_any
-    (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer });
-  assert_due_to_mismatch_with_any
-    (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Any });
-
-  (* Missing X errors *)
-  assert_not_due_to_mismatch_with_any
-    (Error.MissingParameterAnnotation
-       {
-         name = !&"";
-         annotation = Some Type.Any;
-         given_annotation = None;
-         evidence_locations = [];
-         thrown_at_source = true;
-       });
-  assert_not_due_to_mismatch_with_any
-    (Error.MissingReturnAnnotation
-       {
-         name = !&"$return_annotation";
-         annotation = Some Type.Top;
-         given_annotation = None;
-         evidence_locations = [];
-         thrown_at_source = true;
-       });
-  assert_not_due_to_mismatch_with_any
-    (Error.MissingAttributeAnnotation
-       {
-         parent = mock_parent;
-         missing_annotation =
-           {
-             Error.name = !&"";
-             annotation = Some Type.Any;
-             given_annotation = None;
-             evidence_locations = [];
-             thrown_at_source = true;
-           };
-       })
-
-
 let test_join context =
   let resolution =
     let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
@@ -1159,15 +859,12 @@ let test_filter context =
   assert_unfiltered (abstract_class_instantiation "str")
 
 
-let test_suppress context =
-  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
+let test_suppress _ =
   let assert_suppressed mode ?(ignore_codes = []) ?(signature = mock_signature) ?location kind =
-    assert_equal
-      true
-      (Error.suppress ~mode ~ignore_codes ~resolution (error ~signature ?location kind))
+    assert_equal true (Error.suppress ~mode ~ignore_codes (error ~signature ?location kind))
   in
   let assert_not_suppressed mode ?(ignore_codes = []) ?(signature = mock_signature) kind =
-    assert_equal false (Error.suppress ~mode ~ignore_codes ~resolution (error ~signature kind))
+    assert_equal false (Error.suppress ~mode ~ignore_codes (error ~signature kind))
   in
   (* Test different modes. *)
   assert_not_suppressed Source.Debug (missing_return Type.Top);
@@ -1186,7 +883,9 @@ let test_suppress context =
   assert_not_suppressed Source.Unsafe (missing_return Type.integer);
   assert_suppressed Source.Unsafe (missing_return Type.Top);
   assert_not_suppressed Source.Unsafe (incompatible_return_type Type.integer Type.float);
-  assert_suppressed Source.Unsafe (incompatible_return_type Type.integer Type.Any);
+
+  (* Should not be made *)
+  assert_not_suppressed Source.Unsafe (incompatible_return_type Type.integer Type.Any);
   assert_not_suppressed Source.Unsafe (revealed_type "a" (Annotation.create Type.integer));
   assert_not_suppressed
     ~signature:untyped_signature
@@ -1259,7 +958,6 @@ let () =
   "error"
   >::: [
          "due_to_analysis_limitations" >:: test_due_to_analysis_limitations;
-         "due_to_mismatch_with_any" >:: test_due_to_mismatch_with_any;
          "join" >:: test_join;
          "less_or_equal" >:: test_less_or_equal;
          "filter" >:: test_filter;

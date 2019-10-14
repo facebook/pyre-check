@@ -100,11 +100,7 @@ val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
 val class_extends_placeholder_stub_class : t -> Class.t -> bool
 
-val solve_constraints
-  :  ?any_is_bottom:bool ->
-  t ->
-  TypeConstraints.t ->
-  TypeConstraints.Solution.t option
+val solve_constraints : t -> TypeConstraints.t -> TypeConstraints.Solution.t option
 
 val partial_solve_constraints
   :  t ->
@@ -115,8 +111,7 @@ val partial_solve_constraints
 val constraints_solution_exists : left:Type.t -> right:Type.t -> t -> bool
 
 val solve_less_or_equal
-  :  ?any_is_bottom:bool ->
-  t ->
+  :  t ->
   constraints:TypeConstraints.t ->
   left:Type.t ->
   right:Type.t ->
@@ -195,8 +190,6 @@ val parse_as_parameter_specification_instance_annotation
   variable_parameter_annotation:Expression.t ->
   keywords_parameter_annotation:Expression.t ->
   Type.Variable.Variadic.Parameters.t option
-
-val consistent_solution_exists : t -> Type.t -> Type.t -> bool
 
 val global : t -> Reference.t -> global option
 

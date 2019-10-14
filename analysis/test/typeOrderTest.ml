@@ -65,7 +65,6 @@ let less_or_equal
       constructor;
       attributes;
       is_protocol;
-      any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty;
     }
 
@@ -77,7 +76,6 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) ha
       constructor;
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-      any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty;
     }
 
@@ -93,7 +91,6 @@ let join
       constructor;
       attributes;
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-      any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty;
     }
 
@@ -105,7 +102,6 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
       constructor;
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-      any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty;
     }
 
@@ -732,7 +728,7 @@ let test_less_or_equal context =
   (* Variables. *)
   assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Any);
   assert_false (less_or_equal order ~left:(Type.variable "T") ~right:Type.integer);
-  assert_false (less_or_equal order ~left:Type.Any ~right:(Type.variable "T"));
+  assert_true (less_or_equal order ~left:Type.Any ~right:(Type.variable "T"));
   assert_false (less_or_equal order ~left:Type.integer ~right:(Type.variable "T"));
   assert_true
     (less_or_equal
@@ -1256,7 +1252,6 @@ let test_less_or_equal context =
     ~right:"test.GenericBase[typing.Any, typing.Any]"
     true;
 
-  (* This should get filtered by mismatch with any postprocessing *)
   assert_less_or_equal
     ~source:
       {|
@@ -1268,7 +1263,7 @@ let test_less_or_equal context =
     |}
     ~left:"test.NonGenericChild"
     ~right:"test.GenericBase[int, str]"
-    false;
+    true;
   assert_less_or_equal
     ~source:
       {|
@@ -1482,12 +1477,12 @@ let test_less_or_equal_variance _ =
        variance_order
        ~left:(Type.parametric "LinkedList" ![Type.float])
        ~right:(Type.parametric "LinkedList" ![Type.integer]));
-  assert_false
+  assert_true
     (less_or_equal
        variance_order
        ~left:(Type.parametric "LinkedList" ![Type.integer])
        ~right:(Type.parametric "LinkedList" ![Type.Any]));
-  assert_false
+  assert_true
     (less_or_equal
        variance_order
        ~left:(Type.parametric "LinkedList" ![Type.Any])
@@ -1502,20 +1497,22 @@ let test_less_or_equal_variance _ =
     ~order:variance_order
     ~left:(Type.parametric "Box" ![Type.integer])
     ~right:(Type.parametric "Box" ![Type.float]);
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Box" ![Type.integer])
-    ~right:(Type.parametric "Box" ![Type.Any]);
+  assert_true
+    (less_or_equal
+       variance_order
+       ~left:(Type.parametric "Box" ![Type.integer])
+       ~right:(Type.parametric "Box" ![Type.Any]));
 
   (* Contravariant. *)
   assert_strict_less
     ~order:variance_order
     ~left:(Type.parametric "Sink" ![Type.float])
     ~right:(Type.parametric "Sink" ![Type.integer]);
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Sink" ![Type.Any])
-    ~right:(Type.parametric "Sink" ![Type.integer]);
+  assert_true
+    (less_or_equal
+       variance_order
+       ~left:(Type.parametric "Sink" ![Type.Any])
+       ~right:(Type.parametric "Sink" ![Type.integer]));
 
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
   let _obsolete_tests () =
@@ -2072,7 +2069,7 @@ let test_join context =
        variance_order
        (Type.parametric "LinkedList" ![Type.Any])
        (Type.parametric "LinkedList" ![Type.integer]))
-    (Type.parametric "LinkedList" ![Type.Any]);
+    (Type.parametric "LinkedList" ![Type.integer]);
   let variance_aliases =
     Identifier.Table.of_alist_exn
       [
@@ -2315,13 +2312,13 @@ let test_meet _ =
        variance_order
        (Type.parametric "LinkedList" ![Type.integer])
        (Type.parametric "LinkedList" ![Type.Any]))
-    Type.Bottom;
+    (Type.parametric "LinkedList" ![Type.integer]);
   assert_type_equal
     (meet
        variance_order
        (Type.parametric "LinkedList" ![Type.Any])
        (Type.parametric "LinkedList" ![Type.integer]))
-    Type.Bottom;
+    (Type.parametric "LinkedList" ![Type.Any]);
 
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
   let _obsolete_tests () =
@@ -2526,7 +2523,6 @@ let test_solve_less_or_equal context =
         constructor;
         attributes;
         is_protocol;
-        any_is_bottom = false;
         protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
@@ -2706,6 +2702,20 @@ let test_solve_less_or_equal context =
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Tuple[T_Unconstrained, T_Unconstrained]"
     ~right:"typing.Tuple[typing.Any, int]"
+    [["T_Unconstrained", "int"]];
+
+  assert_solve ~left:"typing.Any" ~right:"T_Unconstrained" [["T_Unconstrained", "typing.Any"]];
+  assert_solve ~left:"typing.Any" ~right:"T_Bound_C" [["T_Bound_C", "typing.Any"]];
+  assert_solve ~left:"typing.Any" ~right:"T_C_Q" [["T_C_Q", "typing.Any"]];
+
+  assert_solve
+    ~left:"typing.Any"
+    ~right:"typing.List[T_Unconstrained]"
+    [["T_Unconstrained", "typing.Any"]];
+
+  assert_solve
+    ~left:"typing.Tuple[typing.Any, int]"
+    ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained]"
     [["T_Unconstrained", "int"]];
 
   (* Annotated types. *)
@@ -3134,159 +3144,6 @@ let test_solve_less_or_equal context =
   ()
 
 
-let test_is_consistent_with _ =
-  let is_consistent_with =
-    let order =
-      {
-        handler = default;
-        constructor = (fun _ ~protocol_assumptions:_ -> None);
-        attributes = (fun _ ~protocol_assumptions:_ -> None);
-        is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-        any_is_bottom = false;
-        protocol_assumptions = ProtocolAssumptions.empty;
-      }
-    in
-    is_consistent_with order
-  in
-  assert_true (is_consistent_with Type.Bottom Type.Top);
-  assert_false (is_consistent_with Type.integer Type.string);
-  assert_true (is_consistent_with Type.Any Type.string);
-  assert_true (is_consistent_with Type.integer Type.Any);
-  assert_false (is_consistent_with (Type.Optional Type.integer) (Type.Optional Type.string));
-  assert_true (is_consistent_with (Type.Optional Type.Any) (Type.Optional Type.string));
-  assert_false (is_consistent_with (Type.list Type.integer) (Type.list Type.string));
-  assert_true (is_consistent_with (Type.list Type.Any) (Type.list Type.string));
-  assert_false
-    (is_consistent_with
-       (Type.dictionary ~key:Type.string ~value:Type.integer)
-       (Type.dictionary ~key:Type.string ~value:Type.string));
-  assert_true
-    (is_consistent_with
-       (Type.dictionary ~key:Type.string ~value:Type.Any)
-       (Type.dictionary ~key:Type.string ~value:Type.string));
-  assert_true
-    (is_consistent_with
-       (Type.dictionary ~key:Type.Any ~value:Type.Any)
-       (Type.dictionary ~key:Type.string ~value:(Type.list Type.integer)));
-  assert_true
-    (is_consistent_with
-       (Type.dictionary ~key:Type.Any ~value:Type.Any)
-       (Type.dictionary
-          ~key:Type.string
-          ~value:(Type.dictionary ~key:Type.string ~value:Type.integer)));
-  assert_true
-    (is_consistent_with
-       (Type.dictionary ~key:Type.Any ~value:Type.Any)
-       (Type.Optional (Type.dictionary ~key:Type.string ~value:Type.string)));
-  assert_true
-    (is_consistent_with
-       (Type.dictionary ~key:Type.Any ~value:Type.bool)
-       (Type.parametric "typing.Mapping" ![Type.integer; Type.bool]));
-  assert_false
-    (is_consistent_with
-       (Type.dictionary ~key:Type.Any ~value:Type.bool)
-       (Type.parametric "collections.OrderedDict" ![Type.integer; Type.bool]));
-  assert_false
-    (is_consistent_with
-       (Type.dictionary ~key:Type.integer ~value:Type.bool)
-       (Type.parametric "collections.OrderedDict" ![Type.Any; Type.bool]));
-  assert_true
-    (is_consistent_with
-       (Type.parametric "collections.OrderedDict" ![Type.integer; Type.bool])
-       (Type.dictionary ~key:Type.Any ~value:Type.bool));
-  assert_true
-    (is_consistent_with
-       (Type.parametric "collections.OrderedDict" ![Type.Any; Type.bool])
-       (Type.dictionary ~key:Type.integer ~value:Type.bool));
-  assert_true (is_consistent_with (Type.list Type.Any) (Type.iterable Type.string));
-  assert_true (is_consistent_with (Type.list Type.integer) (Type.sequence Type.Any));
-  assert_true (is_consistent_with (Type.iterable Type.string) (Type.Optional Type.Any));
-  assert_false (is_consistent_with (Type.iterable Type.string) (Type.Optional Type.string));
-  assert_false (is_consistent_with (Type.iterable Type.string) (Type.list Type.Any));
-  assert_false (is_consistent_with (Type.iterable Type.Any) (Type.list Type.string));
-  assert_false (is_consistent_with (Type.iterable Type.integer) (Type.set Type.Any));
-  assert_false
-    (is_consistent_with
-       (Type.parametric "typing.AbstractSet" ![Type.object_primitive])
-       (Type.set Type.Any));
-  assert_true
-    (is_consistent_with
-       (Type.set Type.Any)
-       (Type.parametric "typing.AbstractSet" ![Type.object_primitive]));
-  assert_false
-    (is_consistent_with
-       (Type.tuple [Type.string; Type.string])
-       (Type.tuple [Type.string; Type.integer]));
-  assert_true
-    (is_consistent_with
-       (Type.tuple [Type.string; Type.string])
-       (Type.tuple [Type.string; Type.Any]));
-  assert_false
-    (is_consistent_with
-       (Type.Tuple (Type.Unbounded Type.integer))
-       (Type.Tuple (Type.Unbounded Type.string)));
-  assert_true
-    (is_consistent_with
-       (Type.Tuple (Type.Unbounded Type.integer))
-       (Type.Tuple (Type.Unbounded Type.Any)));
-  assert_true
-    (is_consistent_with
-       (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.Any])))
-       (Type.Tuple (Type.Unbounded Type.integer)));
-  assert_true
-    (is_consistent_with
-       (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.string])))
-       (Type.Tuple (Type.Unbounded Type.Any)));
-  assert_false
-    (is_consistent_with
-       (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.string])))
-       (Type.Tuple (Type.Unbounded Type.string)));
-  assert_false
-    (is_consistent_with
-       (Type.union [Type.integer; Type.string])
-       (Type.union [Type.integer; Type.float]));
-  assert_true
-    (is_consistent_with
-       (Type.union [Type.integer; Type.string])
-       (Type.union [Type.integer; Type.Any]));
-  assert_true (is_consistent_with (Type.union [Type.integer; Type.Any]) Type.integer);
-  assert_false (is_consistent_with (Type.iterator Type.integer) (Type.generator Type.Any));
-  assert_true (is_consistent_with (Type.generator Type.Any) (Type.iterator Type.integer));
-  assert_false
-    (is_consistent_with
-       (Type.iterator (Type.list Type.integer))
-       (Type.generator (Type.list Type.Any)));
-  assert_true
-    (is_consistent_with
-       (Type.generator (Type.list Type.Any))
-       (Type.iterator (Type.list Type.integer)));
-  assert_false (is_consistent_with (Type.iterator Type.integer) (Type.generator Type.float));
-  assert_false
-    (is_consistent_with (Type.Union [Type.list Type.integer; Type.string]) (Type.list Type.Any));
-  assert_true (is_consistent_with (Type.Callable.create ~annotation:Type.integer ()) Type.Any);
-  assert_true (is_consistent_with Type.Any (Type.Callable.create ~annotation:Type.integer ()));
-  assert_true
-    (is_consistent_with
-       Type.Any
-       (Type.union [Type.integer; Type.Callable.create ~annotation:Type.integer ()]));
-  assert_true
-    (is_consistent_with
-       (parse_callable "typing.Callable[[typing.Any], int]")
-       (parse_callable "typing.Callable[[str], int]"));
-  assert_true
-    (is_consistent_with
-       (parse_callable "typing.Callable[[int], typing.Any]")
-       (parse_callable "typing.Callable[[int], int]"));
-  assert_false
-    (is_consistent_with
-       (parse_callable "typing.Callable[[int], typing.Any]")
-       (parse_callable "typing.Callable[[str], int]"));
-  assert_false
-    (is_consistent_with
-       (parse_callable "typing.Callable[[typing.Any, typing.Any], typing.Any]")
-       (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
-
-
 let test_instantiate_protocol_parameters context =
   let assert_instantiate_protocol_parameters
       ?source
@@ -3348,7 +3205,6 @@ let test_instantiate_protocol_parameters context =
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes;
         is_protocol;
-        any_is_bottom = false;
         protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
@@ -3532,7 +3388,6 @@ let test_mark_escaped_as_escaped context =
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes = (fun _ ~protocol_assumptions:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-        any_is_bottom = false;
         protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
@@ -3562,7 +3417,6 @@ let () =
          "is_compatible_with" >:: test_is_compatible_with;
          "meet" >:: test_meet;
          "solve_less_or_equal" >:: test_solve_less_or_equal;
-         "is_consistent_with" >:: test_is_consistent_with;
          "instantiate_protocol_parameters" >:: test_instantiate_protocol_parameters;
          "marks_escaped_as_escaped" >:: test_mark_escaped_as_escaped;
        ]

@@ -152,12 +152,10 @@ let create_callable ~resolution ~parent ~name overloads =
               try
                 GlobalResolution.solve_less_or_equal
                   resolution
-                  ~any_is_bottom:true
                   ~left:parent
                   ~right:annotation
                   ~constraints:TypeConstraints.empty
-                |> List.filter_map
-                     ~f:(GlobalResolution.solve_constraints ~any_is_bottom:true resolution)
+                |> List.filter_map ~f:(GlobalResolution.solve_constraints resolution)
                 |> List.hd
                 |> Option.value ~default:TypeConstraints.Solution.empty
               with

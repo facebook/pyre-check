@@ -285,8 +285,6 @@ val weaken_literals : kind -> kind
 
 val due_to_analysis_limitations : t -> bool
 
-val due_to_mismatch_with_any : Resolution.t -> t -> bool
-
 val less_or_equal : resolution:GlobalResolution.t -> t -> t -> bool
 
 val join : resolution:GlobalResolution.t -> t -> t -> t
@@ -307,7 +305,7 @@ val filter
   t list ->
   t list
 
-val suppress : mode:Source.mode -> ignore_codes:int list -> resolution:Resolution.t -> t -> bool
+val suppress : mode:Source.mode -> ignore_codes:int list -> t -> bool
 
 val dequalify : Reference.t Reference.Map.t -> resolution:GlobalResolution.t -> t -> t
 

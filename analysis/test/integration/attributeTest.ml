@@ -991,7 +991,6 @@ let test_check_missing_attribute context =
        `Any`.";
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but type \
        `Any` is specified.";
-      "Incompatible return type [7]: Expected `bool` but got `typing.Any`.";
     ];
   assert_type_errors
     {|

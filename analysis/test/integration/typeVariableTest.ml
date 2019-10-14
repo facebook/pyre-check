@@ -499,7 +499,6 @@ let test_unbound_variables context =
       "Incomplete type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `g` is "
       ^ "incomplete, add an explicit annotation.";
       "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
-      "Incompatible return type [7]: Expected `G[int]` but got `G[typing.Any]`.";
     ];
   assert_default_type_errors
     {|
@@ -539,8 +538,6 @@ let test_unbound_variables context =
     [
       "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
       ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
-      "Incompatible variable type [9]: g is declared to have type `G[typing.Any]` but is used "
-      ^ "as type `G[Variable[T_Explicit <: [int, str]]]`.";
       "Invalid type parameters [24]: Type parameter `bool` violates constraints on "
       ^ "`Variable[T_Explicit <: [int, str]]` in generic type `G`.";
       "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
@@ -601,10 +598,9 @@ let test_unbound_variables context =
           pass
     |}
     [
-      "Incomplete type [37]: Type `typing.Union[typing.List[Variable[_T]], \
-       typing.List[Variable[_T]]]` inferred for `[]` is incomplete, so attribute `__iter__` \
-       cannot be accessed. Separate the expression into an assignment and give it an explicit \
-       annotation.";
+      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `[]` is incomplete, so \
+       attribute `__iter__` cannot be accessed. Separate the expression into an assignment and \
+       give it an explicit annotation.";
     ];
   assert_type_errors
     {|

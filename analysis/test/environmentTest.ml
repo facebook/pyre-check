@@ -65,7 +65,6 @@ let order_and_environment ~context source =
       constructor = (fun _ ~protocol_assumptions:_ -> None);
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-      any_is_bottom = false;
       protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
     },
     environment )

@@ -106,6 +106,7 @@ let add_type_breadcrumb ~resolution annotation =
   let is_scalar =
     match annotation with
     | None -> false
+    | Some Type.Any -> false
     | Some return_type ->
         GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.number
         || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.bool

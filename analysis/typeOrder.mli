@@ -18,7 +18,6 @@ type order = {
   attributes:
     Type.t -> protocol_assumptions:ProtocolAssumptions.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
-  any_is_bottom: bool;
   protocol_assumptions: ProtocolAssumptions.t;
 }
 
@@ -59,7 +58,3 @@ val solve_ordered_types_less_or_equal
   right:Type.OrderedTypes.t ->
   constraints:TypeConstraints.t ->
   TypeConstraints.t sexp_list
-
-val is_consistent_with : order -> Type.t -> Type.t -> bool
-
-val consistent_solution_exists : order -> Type.t -> Type.t -> bool

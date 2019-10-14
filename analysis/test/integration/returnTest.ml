@@ -261,7 +261,6 @@ let test_check_return_control_flow context =
     [
       "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
        `typing.List` to avoid runtime subscripting errors.";
-      "Incompatible return type [7]: Expected `typing.List[typing.Any]` but got `typing.List[int]`.";
     ];
   assert_type_errors
     {|
@@ -450,8 +449,6 @@ let test_check_return_control_flow context =
     [
       "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
        `typing.Type` to avoid runtime subscripting errors.";
-      "Incompatible return type [7]: Expected `typing.Type[int]` but got "
-      ^ "`typing.Type[typing.Any]`.";
     ];
   assert_type_errors
     {|

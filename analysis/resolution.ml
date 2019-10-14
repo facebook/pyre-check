@@ -172,7 +172,7 @@ let resolve_mutable_literals ({ global_resolution; _ } as resolution) =
 
 let is_consistent_with ({ global_resolution; _ } as resolution) left right ~expression =
   let comparator ~left ~right =
-    GlobalResolution.consistent_solution_exists global_resolution left right
+    GlobalResolution.constraints_solution_exists global_resolution ~left ~right
   in
   let left =
     weaken_mutable_literals resolution ~expression ~resolved:left ~expected:right ~comparator

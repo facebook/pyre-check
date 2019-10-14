@@ -246,7 +246,6 @@ let full_order ({ class_hierarchy; attributes = a; protocol_assumptions; _ } as 
     attributes;
     is_protocol;
     protocol_assumptions;
-    any_is_bottom = false;
   }
 
 
@@ -287,10 +286,7 @@ let check_invalid_type_parameters resolution annotation =
             | Ok paired ->
                 let check_parameter (generic, given) =
                   let invalid =
-                    let order =
-                      let order = full_order resolution in
-                      { order with any_is_bottom = true }
-                    in
+                    let order = full_order resolution in
                     let pair = Type.Variable.UnaryPair (generic, given) in
                     TypeOrder.OrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
                     >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
@@ -529,9 +525,8 @@ let is_suppressed_module resolution reference =
   AstEnvironment.ReadOnly.from_empty_stub (ast_environment resolution) reference
 
 
-let solve_less_or_equal ?(any_is_bottom = false) resolution ~constraints ~left ~right =
-  { (full_order resolution) with any_is_bottom }
-  |> TypeOrder.solve_less_or_equal ~constraints ~left ~right
+let solve_less_or_equal resolution ~constraints ~left ~right =
+  full_order resolution |> TypeOrder.solve_less_or_equal ~constraints ~left ~right
 
 
 let constraints_solution_exists ~left ~right resolution =
@@ -541,12 +536,8 @@ let constraints_solution_exists ~left ~right resolution =
     |> List.is_empty )
 
 
-let consistent_solution_exists resolution =
-  TypeOrder.consistent_solution_exists (full_order resolution)
-
-
-let solve_constraints ?(any_is_bottom = false) resolution =
-  let order = { (full_order resolution) with any_is_bottom } in
+let solve_constraints resolution =
+  let order = full_order resolution in
   TypeOrder.OrderedConstraints.solve ~order
 
 

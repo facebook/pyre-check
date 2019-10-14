@@ -263,11 +263,7 @@ let test_check_function_parameters context =
       def foo(i) -> None:
         int_to_int(i)
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `i` has no type specified.";
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
-      ^ "to call `int_to_int` but got `typing.Any`.";
-    ];
+    ["Missing parameter annotation [2]: Parameter `i` has no type specified."];
 
   (* Type aliases in signatures are resolved. *)
   assert_type_errors
@@ -390,11 +386,7 @@ let test_check_function_parameters context =
       def foo(x) -> None:
         takes_iterable(x)
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
-      "Incompatible parameter type [6]: Expected `typing.Iterable[Variable[_T]]` "
-      ^ "for 1st anonymous parameter to call `takes_iterable` but got `typing.Any`.";
-    ];
+    ["Missing parameter annotation [2]: Parameter `x` has no type specified."];
   assert_type_errors
     {|
       import typing
@@ -900,8 +892,6 @@ let test_check_variable_arguments context =
     [
       "Missing parameter annotation [2]: Parameter `b` has no type specified.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Invalid argument [32]: Variable argument `b` has type `typing.Any` "
-      ^ "but must be an iterable.";
     ];
   assert_type_errors
     {|
@@ -911,10 +901,7 @@ let test_check_variable_arguments context =
       def bar(b: typing.Any) -> int:
         return foo ( *b )
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
-      "Invalid argument [32]: Variable argument `b` has type `typing.Any` but must be an iterable.";
-    ];
+    ["Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`."];
   assert_type_errors
     {|
       import typing
@@ -926,8 +913,6 @@ let test_check_variable_arguments context =
     [
       "Missing parameter annotation [2]: Parameter `b` must have a type that "
       ^ "does not contain `Any`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` "
-      ^ "but got `typing.Any`.";
     ];
   assert_strict_type_errors
     {|

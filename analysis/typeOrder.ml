@@ -57,7 +57,6 @@ type order = {
   attributes:
     Type.t -> protocol_assumptions:ProtocolAssumptions.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
-  any_is_bottom: bool;
   protocol_assumptions: ProtocolAssumptions.t;
 }
 
@@ -377,7 +376,7 @@ module OrderImplementation = struct
        extract possible solutions to the constraints set you have built up with List.filter_map
        ~f:OrderedConstraints.solve *)
     and solve_less_or_equal
-        ({ handler; constructor; any_is_bottom; is_protocol; protocol_assumptions; _ } as order)
+        ({ handler; constructor; is_protocol; protocol_assumptions; _ } as order)
         ~constraints
         ~left
         ~right
@@ -401,7 +400,7 @@ module OrderImplementation = struct
           []
       | Type.Annotated left, _ -> solve_less_or_equal order ~constraints ~left ~right
       | _, Type.Annotated right -> solve_less_or_equal order ~constraints ~left ~right
-      | Type.Any, other when any_is_bottom -> [add_fallbacks other]
+      | Type.Any, other -> [add_fallbacks other]
       | Type.Variable left_variable, Type.Variable right_variable
         when Type.Variable.Unary.is_free left_variable
              && Type.Variable.Unary.is_free right_variable ->
@@ -427,7 +426,6 @@ module OrderImplementation = struct
       | bound, Type.Variable variable when Type.Variable.Unary.is_free variable ->
           let pair = Type.Variable.UnaryPair (variable, bound) in
           OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
-      | Type.Any, _
       | _, Type.Bottom
       | Type.Top, _ ->
           []
@@ -1546,10 +1544,6 @@ module IncludableImplementation : FullOrderTypeWithoutT = Implementation
 
 include IncludableImplementation
 
-let rec is_consistent_with order left right =
-  always_less_or_equal { order with any_is_bottom = true } ~left ~right
-
-
 let rec is_compatible_with order ~left ~right =
   match left, right with
   (* Any *)
@@ -1586,15 +1580,7 @@ let rec is_compatible_with order ~left ~right =
       List.for_all2_exn left_parameters right_parameters ~f:(fun left right ->
           is_compatible_with order ~left ~right)
   (* Fallback *)
-  | _, _ -> is_consistent_with order left right
-
-
-let rec consistent_solution_exists order left right =
-  let order = { order with any_is_bottom = true } in
-  solve_less_or_equal order ~left ~right ~constraints:TypeConstraints.empty
-  |> List.filter_map ~f:(OrderedConstraints.solve ~order)
-  |> List.is_empty
-  |> not
+  | _, _ -> always_less_or_equal order ~left ~right
 
 
 let widen order ~widening_threshold ~previous ~next ~iteration =

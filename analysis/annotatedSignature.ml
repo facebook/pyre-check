@@ -496,10 +496,11 @@ let select
                       GlobalResolution.solve_constraints
                         (Resolution.global_resolution resolution)
                         iterable_constraint
-                      >>= (fun solution ->
+                      >>| (fun solution ->
                             TypeConstraints.Solution.instantiate_single_variable
                               solution
-                              synthetic_variable)
+                              synthetic_variable
+                            |> Option.value ~default:Type.Any)
                       >>| set_constraints_and_reasons
                       |> Option.value ~default:signature_with_error
                 in

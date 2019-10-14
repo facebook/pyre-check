@@ -1971,102 +1971,6 @@ let due_to_builtin_import { kind; _ } =
   | _ -> false
 
 
-let due_to_mismatch_with_any local_resolution { kind; _ } =
-  let resolution = Resolution.global_resolution local_resolution in
-  let is_consistent_with ~actual ~expected =
-    (Type.contains_any actual || Type.contains_any expected)
-    && GlobalResolution.consistent_solution_exists resolution actual expected
-  in
-  match kind with
-  | ImpossibleAssertion { annotation = actual; _ }
-  | IncompatibleAwaitableType actual
-  | InvalidArgument (ConcreteVariable { annotation = actual; _ })
-  | InvalidArgument
-      (ListVariadicVariable { mismatch = NotDefiniteTuple { annotation = actual; _ }; _ })
-  | NotCallable actual
-  | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
-  | Unpack { unpack_problem = UnacceptableType actual; _ } ->
-      Type.is_any actual
-  | InconsistentOverride
-      {
-        override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ });
-        _;
-      }
-  | InconsistentOverride
-      { override = WeakenedPostcondition { actual; actual_expressions; expected; _ }; _ }
-  | IncompatibleParameterType { mismatch = { actual; actual_expressions; expected; _ }; _ }
-  | IncompatibleReturnType { mismatch = { actual; actual_expressions; expected; _ }; _ }
-  | IncompatibleAttributeType
-      { incompatible_type = { mismatch = { actual; actual_expressions; expected; _ }; _ }; _ }
-  | IncompatibleVariableType { mismatch = { actual; actual_expressions; expected; _ }; _ } ->
-      let consistent () =
-        let expressions =
-          match actual_expressions with
-          | [] -> [None]
-          | expressions -> List.map expressions ~f:Option.some
-        in
-        let check_consistent sofar expression =
-          sofar && Resolution.is_consistent_with local_resolution actual expected ~expression
-        in
-        List.fold expressions ~init:true ~f:check_consistent
-      in
-      ( Type.contains_any actual
-      || Type.contains_any expected
-      || GlobalResolution.is_protocol resolution expected )
-      && consistent ()
-  | InvalidArgument (Keyword { annotation = actual; _ }) ->
-      is_consistent_with
-        ~actual
-        ~expected:(Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Top]))
-  | InvalidException { annotation = actual; _ } ->
-      Type.is_any actual || (Type.is_union actual && Type.contains_any actual)
-  | AnalysisFailure _
-  | DeadStore _
-  | Deobfuscation _
-  | IllegalAnnotationTarget _
-  | IncompatibleConstructorAnnotation _
-  | InconsistentOverride _
-  | IncompatibleOverload _
-  | IncompleteType _
-  | InvalidMethodSignature _
-  | InvalidArgument (ListVariadicVariable _)
-  | InvalidType _
-  | InvalidTypeParameters _
-  | InvalidTypeVariable _
-  | InvalidTypeVariance _
-  | InvalidInheritance _
-  | InvalidOverride _
-  | InvalidAssignment _
-  | InvalidClassInstantiation _
-  | MissingAttributeAnnotation _
-  | MissingGlobalAnnotation _
-  | MissingOverloadImplementation _
-  | MissingParameterAnnotation _
-  | MissingReturnAnnotation _
-  | MutuallyRecursiveTypeVariables _
-  | ProhibitedAny _
-  | RedefinedClass _
-  | RedundantCast _
-  | RevealedType _
-  | UnsafeCast _
-  | TooManyArguments _
-  | Top
-  | TypedDictionaryAccessWithNonLiteral _
-  | TypedDictionaryKeyNotFound _
-  | UninitializedAttribute _
-  | UndefinedType _
-  | UnexpectedKeyword _
-  | MissingArgument _
-  | UnawaitedAwaitable _
-  | UndefinedAttribute _
-  | UndefinedName _
-  | UndefinedImport _
-  | Unpack _
-  | UnusedIgnore _
-  | UnusedLocalMode _ ->
-      false
-
-
 let less_or_equal ~resolution left right =
   let less_or_equal_mismatch left right =
     GlobalResolution.less_or_equal resolution ~left:left.actual ~right:right.actual
@@ -2739,6 +2643,7 @@ let filter ~configuration ~resolution errors =
           let is_subclass_of_mock annotation =
             try
               (not (Type.is_unbound annotation))
+              && (not (Type.is_any annotation))
               && ( GlobalResolution.less_or_equal
                      resolution
                      ~left:annotation
@@ -2860,7 +2765,7 @@ let filter ~configuration ~resolution errors =
   | _ -> List.filter ~f:(fun error -> not (should_filter error)) errors
 
 
-let suppress ~mode ~ignore_codes ~resolution error =
+let suppress ~mode ~ignore_codes error =
   let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
       true
@@ -2870,12 +2775,9 @@ let suppress ~mode ~ignore_codes ~resolution error =
       | IncompleteType _ ->
           (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
           true
-      | _ -> due_to_mismatch_with_any resolution error
+      | _ -> false
   in
-  let suppress_in_default
-      ~resolution
-      ({ kind; signature = { Node.value = signature; _ }; _ } as error)
-    =
+  let suppress_in_default ({ kind; signature = { Node.value = signature; _ }; _ } as error) =
     match kind with
     | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
         false
@@ -2908,7 +2810,6 @@ let suppress ~mode ~ignore_codes ~resolution error =
     | UnsafeCast _ -> false
     | _ ->
         due_to_analysis_limitations error
-        || due_to_mismatch_with_any resolution error
         || Define.Signature.is_untyped signature
            && not
                 ( Define.Signature.is_toplevel signature
@@ -2933,7 +2834,7 @@ let suppress ~mode ~ignore_codes ~resolution error =
     | Source.Infer -> suppress_in_infer error || suppress_by_code error
     | Source.Debug -> false
     | Source.Strict -> suppress_in_strict error || suppress_by_code error
-    | Source.Unsafe -> suppress_in_default ~resolution error || suppress_by_code error
+    | Source.Unsafe -> suppress_in_default error || suppress_by_code error
     | Source.Declare -> true
   with
   | ClassHierarchy.Untracked annotation ->

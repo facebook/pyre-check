@@ -755,7 +755,7 @@ let run
         else
           let keep_error error =
             let mode = Source.mode ~configuration ~local_mode in
-            not (Error.suppress ~mode ~ignore_codes ~resolution error)
+            not (Error.suppress ~mode ~ignore_codes error)
           in
           List.filter ~f:keep_error errors
       in

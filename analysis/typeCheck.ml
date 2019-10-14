@@ -3744,7 +3744,8 @@ module State (Context : Context) = struct
                   ~resolution:global_resolution
                   existing_annotation
                   (Annotation.create annotation)
-                && not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom)
+                && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
+                && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
               in
               let set_local annotation = Resolution.set_local resolution ~reference ~annotation in
               match Resolution.get_local resolution ~global_fallback:false ~reference with
@@ -3841,6 +3842,7 @@ module State (Context : Context) = struct
                   if
                     Type.is_unbound resolved
                     || Type.is_unknown resolved
+                    || Type.is_any resolved
                     || not
                          (GlobalResolution.less_or_equal
                             global_resolution
@@ -4851,7 +4853,7 @@ let check_define
   let filter_errors errors =
     let mode = Source.mode ~configuration ~local_mode in
     let filter errors =
-      let keep_error error = not (Error.suppress ~mode ~ignore_codes ~resolution error) in
+      let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
       List.filter ~f:keep_error errors
     in
     let filter_hints errors =
