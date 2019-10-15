@@ -16,7 +16,6 @@ module StatementAttribute = Attribute
 module StatementDefine = Define
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
-module Method = Annotated.Method
 module Argument = Call.Argument
 
 let ( !! ) concretes = Type.OrderedTypes.Concrete concretes
@@ -400,41 +399,6 @@ let test_constructors context =
     "A"
     (Some "typing.Callable('test.A.__init__')[[Named(foo, int, default)], test.A]");
   ()
-
-
-let test_methods context =
-  let assert_methods source methods =
-    let _, ast_environment, _ =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
-    in
-    let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
-    in
-    let source = Option.value_exn source in
-    match source |> last_statement_exn with
-    | { Node.value = Statement.Class definition; _ } ->
-        let actuals =
-          let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
-          Node.create_with_default_location definition
-          |> Class.create
-          |> Class.methods
-          |> List.map ~f:(fun definition -> Method.define definition |> method_name)
-        in
-        assert_equal methods actuals
-    | _ -> assert_unreached ()
-  in
-  assert_methods "class A: pass" [];
-  assert_methods
-    {|
-      class A:
-        def A.foo(): pass
-        def A.bar(): pass
-        1 + 1
-        def A.baz(): ...
-    |}
-    ["foo"; "bar"; "baz"]
 
 
 let test_has_method context =
@@ -1423,7 +1387,6 @@ let () =
          "get_decorator" >:: test_get_decorator;
          "is_protocol" >:: test_is_protocol;
          "metaclasses" >:: test_metaclasses;
-         "methods" >:: test_methods;
          "overrides" >:: test_overrides;
          "superclasses" >:: test_superclasses;
          "implicit_attributes" >:: test_implicit_attributes;

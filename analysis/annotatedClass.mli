@@ -53,22 +53,6 @@ val metaclass : t -> resolution:GlobalResolution.t -> Type.t
 
 val resolve_class : resolution:GlobalResolution.t -> Type.t -> class_data list option
 
-module Method : sig
-  type t [@@deriving compare, eq, sexp, show, hash]
-
-  val create : define:Define.t -> parent:Type.t -> t
-
-  val name : t -> Identifier.t
-
-  val define : t -> Define.t
-
-  val parent : t -> Type.t
-
-  val parameter_annotations : t -> resolution:GlobalResolution.t -> (Identifier.t * Type.t) list
-
-  val return_annotation : t -> resolution:GlobalResolution.t -> Type.t
-end
-
 val generics : t -> resolution:GlobalResolution.t -> Type.OrderedTypes.t
 
 val constraints
@@ -80,8 +64,6 @@ val constraints
   TypeConstraints.Solution.t
 
 val superclasses : t -> resolution:GlobalResolution.t -> t list
-
-val methods : t -> Method.t list
 
 val is_protocol : t -> bool
 

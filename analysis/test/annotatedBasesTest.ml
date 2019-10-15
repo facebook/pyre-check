@@ -15,7 +15,6 @@ module StatementAttribute = Attribute
 module StatementDefine = Define
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
-module Method = Annotated.Method
 module Argument = Call.Argument
 
 let ( !! ) concretes = Type.OrderedTypes.Concrete concretes

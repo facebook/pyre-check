@@ -1160,8 +1160,22 @@ module State (Context : Context) = struct
                       in
                       (* Check weakening of precondition. *)
                       let overriding_parameters =
-                        Method.create ~define ~parent:(Annotated.Class.annotation definition)
-                        |> Method.parameter_annotations ~resolution:global_resolution
+                        let parameter_annotations
+                            { StatementDefine.signature = { parameters; _ }; _ }
+                            ~resolution
+                          =
+                          let element { Node.value = { Parameter.name; annotation; _ }; _ } =
+                            let annotation =
+                              annotation
+                              >>| (fun annotation ->
+                                    GlobalResolution.parse_annotation resolution annotation)
+                              |> Option.value ~default:Type.Top
+                            in
+                            name, annotation
+                          in
+                          List.map parameters ~f:element
+                        in
+                        parameter_annotations define ~resolution:global_resolution
                         |> List.map ~f:(fun (name, annotation) ->
                                { Type.Callable.Parameter.name; annotation; default = false })
                         |> Type.Callable.Parameter.create

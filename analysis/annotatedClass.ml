@@ -145,56 +145,6 @@ let resolve_class ~resolution annotation =
   extract ~is_meta:false annotation
 
 
-module Method = struct
-  type t = {
-    define: Define.t;
-    parent: Type.t;
-  }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  let create ~define ~parent = { define; parent }
-
-  let name { define; _ } = Define.unqualified_name define
-
-  let define { define; _ } = define
-
-  let parent { parent; _ } = parent
-
-  let parameter_annotations { define = { Define.signature = { parameters; _ }; _ }; _ } ~resolution
-    =
-    let element { Node.value = { Parameter.name; annotation; _ }; _ } =
-      let annotation =
-        annotation
-        >>| (fun annotation -> GlobalResolution.parse_annotation resolution annotation)
-        |> Option.value ~default:Type.Top
-      in
-      name, annotation
-    in
-    List.map parameters ~f:element
-
-
-  let return_annotation
-      { define = { Define.signature = { return_annotation; async; _ }; _ } as define; _ }
-      ~resolution
-    =
-    let annotation =
-      Option.value_map
-        return_annotation
-        ~f:(GlobalResolution.parse_annotation resolution)
-        ~default:Type.Top
-    in
-    if async then
-      Type.awaitable annotation
-    else if Define.is_coroutine define then
-      match annotation with
-      | Type.Parametric { name; parameters = Concrete [_; _; return_annotation] }
-        when String.equal name "typing.Generator" ->
-          Type.awaitable return_annotation
-      | _ -> Type.Top
-    else
-      annotation
-end
-
 let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
   let parse_annotation =
     GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
@@ -305,15 +255,6 @@ let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resoluti
           (* If we get Bottom here, we don't have a "most derived metaclass", so default to one. *)
           first
       | _ -> candidate )
-
-
-let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
-  let extract_define = function
-    | { Node.value = Statement.Define define; _ } ->
-        Some (Method.create ~define ~parent:(annotation definition))
-    | _ -> None
-  in
-  List.filter_map ~f:extract_define body
 
 
 let is_protocol { Node.value; _ } = Class.is_protocol value

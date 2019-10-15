@@ -64,7 +64,6 @@ module TypeQuery : sig
     | Join of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | Meet of Expression.t * Expression.t
-    | Methods of Reference.t
     | NormalizeType of Expression.t
     | PathOfModule of Reference.t
     | SaveServerState of Path.t
@@ -188,7 +187,6 @@ module TypeQuery : sig
     | Errors of Error.Instantiated.t list
     | FoundAttributes of attribute list
     | FoundKeyMapping of key_mapping list
-    | FoundMethods of method_representation list
     | FoundPath of string
     | FoundSignature of found_signature list
     | Path of Pyre.Path.t

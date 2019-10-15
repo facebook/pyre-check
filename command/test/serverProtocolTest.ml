@@ -20,29 +20,6 @@ let test_type_query_json _ =
   assert_serializes
     (Response (FoundAttributes [{ name = "name"; annotation = Analysis.Type.integer }]))
     {|{"response": {"attributes": [{"name": "name", "annotation": "int"}]}}|};
-  assert_serializes
-    (Response
-       (FoundMethods
-          [
-            {
-              name = "method";
-              parameters = [Analysis.Type.integer];
-              return_annotation = Analysis.Type.string;
-            };
-          ]))
-    {|
-      {
-       "response": {
-         "methods": [
-           {
-             "name": "method",
-             "parameters": ["int"],
-             "return_annotation": "str"
-           }
-         ]
-       }
-      }
-    |};
   assert_serializes (Response (Type Analysis.Type.integer)) {|{"response": {"type": "int"}}|};
   assert_serializes
     (Response (Superclasses [Analysis.Type.integer; Analysis.Type.string]))

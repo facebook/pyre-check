@@ -8,6 +8,5 @@ module Call = AnnotatedCall
 module Callable = AnnotatedCallable
 module Class = AnnotatedClass
 module Attribute = AnnotatedAttribute
-module Method = Class.Method
 module Define = AnnotatedDefine
 module Signature = AnnotatedSignature
