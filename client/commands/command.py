@@ -134,6 +134,7 @@ class Command:
         self._logger = arguments.logger or (
             configuration and configuration.logger
         )  # type: str
+        self._log_directory = arguments.log_directory  # type: str
 
         self._original_directory = arguments.original_directory  # type: str
         self._current_directory = arguments.current_directory  # type: str

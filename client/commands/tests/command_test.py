@@ -49,6 +49,7 @@ def mock_arguments(  # noqa
     arguments.load_initial_state_from = load_initial_state_from
     arguments.local = False
     arguments.local_configuration = None
+    arguments.log_directory = ".pyre"
     arguments.log_identifier = None
     arguments.logger = None
     arguments.logging_sections = None

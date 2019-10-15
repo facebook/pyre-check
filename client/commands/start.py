@@ -55,11 +55,12 @@ class Start(Reporting):
 
     def _run(self) -> None:
         blocking = False
+        lock = os.path.join(self._log_directory, "client.lock")
         while True:
             # Be optimistic in grabbing the lock in order to provide users with
             # a message when the lock is being waited on.
             try:
-                with filesystem.acquire_lock(".pyre/client.lock", blocking):
+                with filesystem.acquire_lock(lock, blocking):
                     configuration_monitor.ConfigurationMonitor(
                         self._arguments, self._configuration, self._analysis_directory
                     ).daemonize()
