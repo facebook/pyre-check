@@ -7,12 +7,11 @@
 
 import json
 import logging
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .command import Command, profiling_log_path
+from .command import Command
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -129,7 +128,7 @@ class Profile(Command):
 
     def _run(self) -> None:
         try:
-            profiling_output = Path(profiling_log_path())
+            profiling_output = Path(self.profiling_log_path())
             if not profiling_output.is_file():
                 raise RuntimeError(
                     "Cannot find profiling output at `{}`. "

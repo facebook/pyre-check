@@ -16,8 +16,6 @@ import threading
 import time
 from typing import List, Optional, Sequence  # noqa
 
-from . import filesystem
-
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger
 PERFORMANCE = 15  # type: int
@@ -184,7 +182,7 @@ def initialize(arguments: argparse.Namespace) -> None:
     handlers = [stream_handler]  # type: List[logging.Handler]
 
     if not arguments.noninteractive:
-        pyre_directory = filesystem.make_pyre_directory()
+        pyre_directory = arguments.log_directory
         file_handler = logging.FileHandler(os.path.join(pyre_directory, "pyre.stderr"))
         file_handler.setFormatter(SectionFormatter())
         file_handler.setLevel(logging.DEBUG)
