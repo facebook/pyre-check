@@ -476,13 +476,11 @@ let qualify
         ~f:rename_parameter
     in
     scope, List.rev parameters
-  and qualify_statements ?(qualify_assigns = false) ~scope statements =
+  and qualify_statements ~scope statements =
     let scope = explore_scope ~scope statements in
     let scope, reversed_statements =
       let qualify (scope, statements) statement =
-        let scope, statement =
-          qualify_statement ~qualify_assign:qualify_assigns ~scope statement
-        in
+        let scope, statement = qualify_statement ~qualify_assign:false ~scope statement in
         scope, statement :: statements
       in
       List.fold statements ~init:(scope, []) ~f:qualify
