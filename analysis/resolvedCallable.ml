@@ -90,18 +90,12 @@ let apply_decorators
                       define_location;
                     };
                   _;
-                } -> (
-              (* Typeshed currently exhibits the common behavior of decorating with `Callable[...,
-                 T] -> Modified[T]` when the parameters are meant to be left alone. Support this by
-                 hard coding :( *)
-              match decorated_parameters with
-              | Undefined -> { overload with Type.Callable.annotation = decorated_annotation }
-              | _ ->
-                  {
-                    Type.Callable.annotation = decorated_annotation;
-                    parameters = decorated_parameters;
-                    define_location;
-                  } )
+                } ->
+                {
+                  Type.Callable.annotation = decorated_annotation;
+                  parameters = decorated_parameters;
+                  define_location;
+                }
             | _ -> overload )
         | _ -> overload )
     in

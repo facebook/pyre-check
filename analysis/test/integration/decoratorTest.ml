@@ -467,7 +467,7 @@ let test_check_user_decorators context =
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
       "Revealed type [-1]: Revealed type for `test.am_i_async` is \
-       `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
+       `typing.Callable(am_i_async)[..., str]`.";
     ]
 
 
