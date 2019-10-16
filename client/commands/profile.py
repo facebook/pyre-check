@@ -9,12 +9,14 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
-from .command import Command
+from .command import Command, ProfileOutput
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+PHASE_NAME: str = "phase_name"
 
 
 @dataclass(frozen=True)
@@ -86,7 +88,7 @@ def parse_events(input_string: str) -> List[Event]:
     return output
 
 
-def to_traceevents(events: List[Event]) -> List[Dict[str, Any]]:
+def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
     def to_traceevent(event: Event) -> Optional[Dict[str, Any]]:
         if isinstance(event, DurationEvent):
             duration_ms = event.duration
@@ -123,6 +125,22 @@ def to_traceevents(events: List[Event]) -> List[Dict[str, Any]]:
     ]
 
 
+def to_cold_start_phases(events: Sequence[Event]) -> Dict[str, Any]:
+    result: Dict[str, Any] = {}
+    for event in events:
+        if event.metadata.name == "initialization":
+            # Cold start ends with server initialization message
+            break
+        if not isinstance(event, DurationEvent):
+            continue
+
+        tags = event.metadata.tags
+        if PHASE_NAME in tags:
+            phase_name = tags[PHASE_NAME]
+            result[phase_name] = event.duration
+    return result
+
+
 class Profile(Command):
     NAME = "profile"
 
@@ -137,6 +155,13 @@ class Profile(Command):
                     )
                 )
             events = parse_events(profiling_output.read_text())
-            print(json.dumps(to_traceevents(events)))
+            output = self._arguments.output
+            if output == ProfileOutput.TRACE_EVENT:
+                print(json.dumps(to_traceevents(events)))
+            elif output == ProfileOutput.COLD_START_PHASES:
+                print(json.dumps(to_cold_start_phases(events), indent=2))
+            else:
+                raise RuntimeError("Unrecognized output format: {}".format(output))
+
         except Exception as e:
             LOG.error("Failed to inspect profiling log: {}".format(e))

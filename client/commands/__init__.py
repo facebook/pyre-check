@@ -28,6 +28,7 @@ from .command import (  # noqa; noqa; noqa
     ClientException as ClientException,
     Command as Command,
     ExitCode as ExitCode,
+    ProfileOutput as ProfileOutput,
     typeshed_search_path as typeshed_search_path,
     IncrementalStyle as IncrementalStyle,
 )

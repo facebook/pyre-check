@@ -53,6 +53,14 @@ class IncrementalStyle(enum.Enum):
         return self.value
 
 
+class ProfileOutput(enum.Enum):
+    TRACE_EVENT: str = "trace_event"
+    COLD_START_PHASES: str = "cold_start_phases"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class Result:
     def __init__(self, code: int, output: str) -> None:
         self.code = code

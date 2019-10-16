@@ -28,7 +28,13 @@ from . import (
     switch_root,
     translate_arguments,
 )
-from .commands import Command, ExitCode, IncrementalStyle, reporting  # noqa
+from .commands import (  # noqa
+    Command,
+    ExitCode,
+    IncrementalStyle,
+    ProfileOutput,
+    reporting,
+)
 from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .filesystem import AnalysisDirectory
@@ -484,6 +490,13 @@ def main() -> int:
     statistics.set_defaults(command=commands.Statistics)
 
     profile = parsed_commands.add_parser(commands.Profile.NAME)
+    profile.add_argument(
+        "--output",
+        type=ProfileOutput,
+        choices=ProfileOutput,
+        help="Specify what to output.",
+        default=ProfileOutput.COLD_START_PHASES,
+    )
     profile.set_defaults(command=commands.Profile)
 
     arguments = parser.parse_args()
