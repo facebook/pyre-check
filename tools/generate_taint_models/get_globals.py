@@ -209,6 +209,8 @@ class GlobalModelGenerator(ModelGenerator):
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return []
 
+    # pyre-fixme[14]: `compute_models` overrides method defined in `ModelGenerator`
+    #  inconsistently.
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., None]]
     ) -> Iterable[str]:

@@ -29,7 +29,6 @@ class EventMetadata:
 
 @dataclass(frozen=True)
 class Event:
-    # pyre-ignore[13]: We shouldn't throw an uninitialized attribute error here
     metadata: EventMetadata
 
     def __init__(self, metadata: EventMetadata) -> None:

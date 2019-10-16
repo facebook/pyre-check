@@ -580,10 +580,7 @@ def main() -> int:
 
         command = arguments.command
         exit_code = (
-            # pyre-fixme: need to disentangle the initialize command.
-            command(arguments, configuration, analysis_directory)
-            .run()
-            .exit_code()
+            command(arguments, configuration, analysis_directory).run().exit_code()
         )
     except buck.BuckException as error:
         LOG.error(str(error))

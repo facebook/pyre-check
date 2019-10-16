@@ -72,7 +72,6 @@ class Reporting(Command):
             results = json.loads(result.output)
             # TODO(T39755668): deprecate 'if' condition eventually.
             if "errors" in results:
-                # pyre-ignore: T39755668
                 results = results["errors"]
         except (json.JSONDecodeError, ValueError):
             raise ClientException("Invalid output: `{}`.".format(result.output))
