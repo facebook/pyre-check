@@ -139,7 +139,7 @@ let produce_undecorated_function ({ alias_environment } as environment) name ~tr
   in
   let handle = function
     | UnannotatedGlobalEnvironment.Define defines ->
-        let handle define =
+        let handle { Node.value = { Define.signature; _ }; location } =
           let dependency =
             Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
           in
@@ -163,7 +163,7 @@ let produce_undecorated_function ({ alias_environment } as environment) name ~tr
               parse_as_parameter_specification_instance_annotation;
             }
           in
-          AnnotatedCallable.create_overload ~parser define
+          Node.create signature ~location |> AnnotatedCallable.create_overload ~parser
         in
         List.find defines ~f:(fun define -> not (Define.is_overloaded_method (Node.value define)))
         >>| handle

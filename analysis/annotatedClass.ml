@@ -272,7 +272,7 @@ let create_attribute
         {
           StatementAttribute.name = attribute_name;
           annotation = attribute_annotation;
-          defines;
+          signatures;
           value;
           async;
           setter;
@@ -288,7 +288,7 @@ let create_attribute
   =
   let class_annotation = annotation parent in
   let initialized =
-    match value, defines with
+    match value, signatures with
     | Some { Node.value = Ellipsis; _ }, None
     | None, None ->
         false
@@ -340,18 +340,18 @@ let create_attribute
       | Some instantiated -> instantiated
       | None -> class_annotation
     in
-    match defines with
-    | Some (({ Define.signature = { Define.Signature.name; _ }; _ } as define) :: _ as defines) ->
+    match signatures with
+    | Some (({ Define.Signature.name; _ } as define) :: _ as defines) ->
         let parent =
           (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't play well
              with our logic here - we should clean up the call logic to handle passing the extra
              argument, and eliminate the special fields from here. *)
           if
-            Define.is_static_method define
-            && not (String.equal (Define.unqualified_name define) "__new__")
+            Define.Signature.is_static_method define
+            && not (String.equal (Define.Signature.unqualified_name define) "__new__")
           then
             None
-          else if Define.is_class_method define then
+          else if Define.Signature.is_class_method define then
             Some (Type.meta instantiated)
           else if class_attribute then
             (* Keep first argument around when calling instance methods from class attributes. *)
@@ -360,7 +360,7 @@ let create_attribute
             Some instantiated
         in
         let apply_decorators define =
-          ( Define.is_overloaded_method define,
+          ( Define.Signature.is_overloaded_method define,
             ResolvedCallable.apply_decorators ~resolution (Node.create define ~location) )
         in
         List.map defines ~f:apply_decorators
@@ -530,9 +530,9 @@ let create_attribute
     | _, _ -> None
   in
   let abstract =
-    match defines with
+    match signatures with
     | None -> false
-    | Some defines -> List.exists defines ~f:Define.is_abstract_method
+    | Some defines -> List.exists defines ~f:Define.Signature.is_abstract_method
   in
   {
     Node.location;
@@ -1106,7 +1106,7 @@ let attribute
             {
               StatementAttribute.name;
               annotation = None;
-              defines = None;
+              signatures = None;
               value = None;
               async = false;
               setter = false;
@@ -1200,7 +1200,7 @@ let rec fallback_attribute
                    {
                      StatementAttribute.name;
                      annotation = Some (Type.expression return_annotation);
-                     defines = None;
+                     signatures = None;
                      value = None;
                      async = false;
                      setter = false;

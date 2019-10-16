@@ -118,7 +118,8 @@ module State (Context : Context) = struct
     let global_resolution = Resolution.global_resolution resolution in
     let expected =
       let parser = GlobalResolution.annotation_parser global_resolution in
-      Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~parser
+      let { Node.value = { Define.signature; _ }; _ } = Context.define in
+      Annotated.Callable.return_annotation ~signature ~parser
     in
     let nested_defines =
       let nested_define_to_string nested_define =
@@ -531,7 +532,8 @@ module State (Context : Context) = struct
       Node.location;
       value =
         {
-          Define.signature = { name; parent; parameters; return_annotation; decorators; async; _ };
+          Define.signature =
+            { name; parent; parameters; return_annotation; decorators; async; _ } as signature;
           _;
         } as define;
     }
@@ -586,7 +588,7 @@ module State (Context : Context) = struct
         let return_annotation =
           let annotation =
             let parser = GlobalResolution.annotation_parser global_resolution in
-            Annotated.Callable.return_annotation ~define ~parser
+            Annotated.Callable.return_annotation ~signature ~parser
           in
           if async then
             Type.coroutine_value annotation |> Option.value ~default:Type.Top
@@ -2788,7 +2790,7 @@ module State (Context : Context) = struct
               return_annotation = return_annotation_expression;
               generator;
               _;
-            };
+            } as signature;
           body;
         } as define;
     }
@@ -2805,7 +2807,7 @@ module State (Context : Context) = struct
       let return_annotation =
         let annotation =
           let parser = GlobalResolution.annotation_parser global_resolution in
-          Annotated.Callable.return_annotation ~define ~parser
+          Annotated.Callable.return_annotation ~signature ~parser
         in
         if async then
           Type.coroutine_value annotation |> Option.value ~default:Type.Top
@@ -4206,17 +4208,17 @@ module State (Context : Context) = struct
         in
         validate_return ~expression:None ~state ~actual ~is_implicit:false
     | YieldFrom _ -> state
-    | Define define ->
-        if Reference.is_local define.signature.name then
+    | Define { signature; _ } ->
+        if Reference.is_local signature.name then
           let parser = GlobalResolution.annotation_parser global_resolution in
-          Node.create define ~location
+          Node.create signature ~location
           |> AnnotatedCallable.create_overload ~parser
           |> Type.Callable.create_from_implementation
           |> Type.Variable.mark_all_variables_as_bound
                ~specific:(Resolution.all_type_variables_in_scope resolution)
           |> Annotation.create
           |> (fun annotation ->
-               Resolution.set_local resolution ~reference:define.signature.name ~annotation)
+               Resolution.set_local resolution ~reference:signature.name ~annotation)
           |> fun resolution -> { state with resolution }
         else
           state
@@ -4767,10 +4769,10 @@ module State (Context : Context) = struct
             schedule
               ~variables
               ~define:(Define.create_class_toplevel ~parent:name ~statements:body)
-        | Define define ->
+        | Define ({ signature; _ } as define) ->
             let variables =
               let parser = GlobalResolution.annotation_parser global_resolution in
-              Node.create define ~location
+              Node.create signature ~location
               |> AnnotatedCallable.create_overload ~parser
               |> (fun { parameters; _ } ->
                    Type.Callable.create ~parameters ~annotation:Type.Top ())

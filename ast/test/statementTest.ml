@@ -271,7 +271,7 @@ let test_is_unit_test _ =
 let test_attributes _ =
   let create_attribute
       ~annotation
-      ?defines
+      ?signatures
       ?(final = false)
       ?(frozen = false)
       ?(implicit = true)
@@ -288,7 +288,7 @@ let test_attributes _ =
     {
       Attribute.annotation;
       async = false;
-      defines;
+      signatures;
       final;
       frozen;
       implicit;
@@ -479,22 +479,18 @@ let test_attributes _ =
                   stop = { Location.line = stop_line; column = stop_column };
                 }
         in
-        let defines =
+        let signatures =
           if number_of_defines > 0 then
             let define =
               {
-                Define.signature =
-                  {
-                    name = !&"foo";
-                    parameters = [];
-                    decorators = [];
-                    docstring = None;
-                    return_annotation = Some !"int";
-                    async = false;
-                    generator = false;
-                    parent = None;
-                  };
-                body = [];
+                Define.Signature.name = !&"foo";
+                parameters = [];
+                decorators = [];
+                docstring = None;
+                return_annotation = Some !"int";
+                async = false;
+                generator = false;
+                parent = None;
               }
             in
             Some (List.init ~f:(fun _ -> define) number_of_defines)
@@ -505,7 +501,7 @@ let test_attributes _ =
           ~name
           ~annotation:(annotation >>| Type.expression)
           ?location
-          ?defines
+          ?signatures
           ~value:(value >>| parse_single_expression)
           ~setter
           ()
@@ -523,7 +519,7 @@ let test_attributes _ =
       && String.equal left.name right.name
       && Option.equal Expression.equal left.annotation right.annotation
       && Option.equal Expression.equal left.value right.value
-      && Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length)
+      && Option.equal Int.equal (left.signatures >>| List.length) (right.signatures >>| List.length)
       && ( Location.equal left_location Location.Reference.any
          || Location.equal left_location right_location )
     in

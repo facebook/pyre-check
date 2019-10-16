@@ -10,8 +10,7 @@ open Statement
 
 let apply_decorators
     ~resolution
-    ( { Node.value = { Define.signature = { Define.Signature.decorators; _ }; _ }; _ } as
-    define_node )
+    { Node.value = { Define.Signature.decorators; _ } as signature; location }
   =
   let apply_decorator
       ({ Type.Callable.annotation; parameters; _ } as overload)
@@ -109,9 +108,8 @@ let apply_decorators
     | _ -> overload
   in
   let parser = GlobalResolution.annotation_parser resolution in
-  decorators
-  |> List.rev
-  |> List.fold ~init:(AnnotatedCallable.create_overload define_node ~parser) ~f:apply_decorator
+  let init = Node.create signature ~location |> AnnotatedCallable.create_overload ~parser in
+  decorators |> List.rev |> List.fold ~init ~f:apply_decorator
 
 
 let create_callable ~resolution ~parent ~name overloads =

@@ -91,7 +91,7 @@ and Attribute : sig
   type attribute = {
     annotation: Expression.t option;
     async: bool;
-    defines: Define.t list option;
+    signatures: Define.Signature.t list option;
     final: bool;
     implicit: bool;
     frozen: bool;
@@ -116,7 +116,7 @@ and Attribute : sig
     ?toplevel:bool ->
     ?value:Expression.t ->
     ?annotation:Expression.t ->
-    ?defines:Define.t list ->
+    ?signatures:Define.Signature.t list ->
     ?final:bool ->
     ?static:bool ->
     ?frozen:bool ->
@@ -130,7 +130,7 @@ end = struct
   type attribute = {
     annotation: Expression.t option;
     async: bool;
-    defines: Define.t list option;
+    signatures: Define.Signature.t list option;
     final: bool;
     implicit: bool;
     frozen: bool;
@@ -155,7 +155,7 @@ end = struct
       ?(toplevel = true)
       ?value
       ?annotation
-      ?defines
+      ?signatures
       ?(final = false)
       ?(static = false)
       ?(frozen = false)
@@ -166,7 +166,7 @@ end = struct
     {
       name;
       annotation;
-      defines;
+      signatures;
       value;
       async;
       setter;
@@ -429,16 +429,17 @@ end = struct
     let callable_attributes =
       let callable_attributes map { Node.location; value } =
         match value with
-        | Statement.Define ({ Define.signature = { name = target; _ }; _ } as define) ->
+        | Statement.Define ({ Define.signature = { name = target; _ } as signature; _ } as define)
+          ->
             Attribute.name (Expression.from_reference ~location target) ~parent:name
             >>| (fun name ->
                   let attribute =
                     match Identifier.SerializableMap.find_opt name map with
-                    | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
+                    | Some { Node.value = { Attribute.signatures = Some signatures; _ }; _ } ->
                         Attribute.create
                           ~location
                           ~name
-                          ~defines:(define :: defines)
+                          ~signatures:(signature :: signatures)
                           ~final:(Define.is_final_method define)
                           ~static:(Define.is_static_method define)
                           ()
@@ -446,7 +447,7 @@ end = struct
                         Attribute.create
                           ~location
                           ~name
-                          ~defines:[define]
+                          ~signatures:[signature]
                           ~final:(Define.is_final_method define)
                           ~static:(Define.is_static_method define)
                           ()

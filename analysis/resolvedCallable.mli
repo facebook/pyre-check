@@ -15,5 +15,5 @@ val create_callable
 
 val apply_decorators
   :  resolution:GlobalResolution.t ->
-  Define.t Node.t ->
+  Define.Signature.t Node.t ->
   Type.t Type.Callable.overload

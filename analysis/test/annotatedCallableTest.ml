@@ -27,21 +27,19 @@ let test_return_annotation context =
         AnnotatedGlobalEnvironment.ReadOnly.resolution environment
         |> GlobalResolution.annotation_parser
       in
-      {
-        Define.signature =
-          {
-            name = !&"derp";
-            parameters = [];
-            decorators = [];
-            docstring = None;
-            return_annotation;
-            async;
-            generator;
-            parent = None;
-          };
-        body = [+Statement.Pass];
-      }
-      |> fun define -> Callable.return_annotation ~define ~parser
+      let signature =
+        {
+          Define.Signature.name = !&"derp";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation;
+          async;
+          generator;
+          parent = None;
+        }
+      in
+      Callable.return_annotation ~signature ~parser
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal expected return_annotation
   in
@@ -80,8 +78,9 @@ let test_create_overload context =
       expected
       ( source
       |> Test.parse_single_define
-      |> fun define -> Callable.create_overload ~parser (Node.create_with_default_location define)
-      )
+      |> (fun { Define.signature; _ } -> signature)
+      |> Node.create_with_default_location
+      |> Callable.create_overload ~parser )
   in
   assert_overload
     {|

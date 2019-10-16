@@ -17,21 +17,17 @@ let test_apply_decorators context =
   let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
   let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let create_define ~decorators ~parameters ~return_annotation =
-    let decorators = List.map ~f:parse_single_expression decorators in
-    {
-      Define.signature =
-        {
-          name = !&"define";
-          parameters;
-          decorators;
-          docstring = None;
-          return_annotation;
-          async = false;
-          generator = false;
-          parent = None;
-        };
-      body = [+Statement.Pass];
-    }
+    (let decorators = List.map ~f:parse_single_expression decorators in
+     {
+       Define.Signature.name = !&"define";
+       parameters;
+       decorators;
+       docstring = None;
+       return_annotation;
+       async = false;
+       generator = false;
+       parent = None;
+     })
     |> Node.create_with_default_location
   in
   (* Contextlib related tests *)
@@ -169,14 +165,12 @@ let test_create context =
       let { Define.signature = { name; _ }; _ } = List.hd_exn defines |> Node.value in
       let to_overload define =
         let parser = GlobalResolution.annotation_parser resolution in
-        ( Define.is_overloaded_method define,
+        ( Define.Signature.is_overloaded_method define,
           Callable.create_overload ~parser (Node.create_with_default_location define) )
       in
       defines
       |> List.map ~f:Node.value
-      |> List.map ~f:(fun define ->
-             let signature = { define.Define.signature with parent } in
-             { define with signature })
+      |> List.map ~f:(fun define -> { define.Define.signature with parent })
       |> (fun defines -> List.map defines ~f:to_overload)
       |> ResolvedCallable.create_callable
            ~resolution

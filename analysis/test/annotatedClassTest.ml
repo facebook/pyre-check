@@ -509,7 +509,7 @@ let test_class_attributes context =
   let create_attribute
       ?(annotation = Some !"int")
       ?(async = false)
-      ?defines
+      ?signatures
       ?(final = false)
       ?(frozen = false)
       ?(implicit = false)
@@ -524,7 +524,7 @@ let test_class_attributes context =
     +{
        StatementAttribute.annotation;
        async;
-       defines;
+       signatures;
        final;
        frozen;
        implicit;

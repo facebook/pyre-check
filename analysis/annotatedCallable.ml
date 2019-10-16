@@ -21,14 +21,13 @@ type annotation_parser = {
 }
 
 let return_annotation
-    ~define:( { Define.signature = { Define.Signature.return_annotation; async; generator; _ }; _ }
-            as define )
+    ~signature:({ Define.Signature.return_annotation; async; generator; _ } as signature)
     ~parser:{ parse_annotation; _ }
   =
   let annotation = Option.value_map return_annotation ~f:parse_annotation ~default:Type.Top in
   if async && not generator then
     Type.coroutine (Concrete [Type.Any; Type.Any; annotation])
-  else if Define.is_coroutine define then
+  else if Define.Signature.is_coroutine signature then
     match annotation with
     | Type.Parametric
         { name = "typing.Generator"; parameters = Concrete [_; _; return_annotation] } ->
@@ -45,7 +44,7 @@ let create_overload
                 parse_as_parameter_specification_instance_annotation;
                 _;
               } as parser )
-    { Node.value = { Define.signature = { parameters; _ }; _ } as define; location }
+    { Node.value = { Define.Signature.parameters; _ } as signature; location }
   =
   let open Type.Callable in
   let parameters =
@@ -89,4 +88,8 @@ let create_overload
     in
     List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
   in
-  { annotation = return_annotation ~define ~parser; parameters; define_location = Some location }
+  {
+    annotation = return_annotation ~signature ~parser;
+    parameters;
+    define_location = Some location;
+  }

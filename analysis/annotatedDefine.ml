@@ -55,7 +55,7 @@ let decorate
   | [] -> define_node
   | _ ->
       let { Type.Callable.parameters; annotation; _ } =
-        ResolvedCallable.apply_decorators ~resolution define_node
+        Node.create signature ~location |> ResolvedCallable.apply_decorators ~resolution
       in
       let parameters =
         match parameters with

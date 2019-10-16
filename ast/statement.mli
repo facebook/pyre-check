@@ -69,7 +69,7 @@ and Attribute : sig
   type attribute = {
     annotation: Expression.t option;
     async: bool;
-    defines: Define.t list option;
+    signatures: Define.Signature.t list option;
     final: bool;
     implicit: bool;
     frozen: bool;

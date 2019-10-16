@@ -18,6 +18,9 @@ type annotation_parser = {
     Type.Variable.Variadic.Parameters.t option;
 }
 
-val return_annotation : define:Define.t -> parser:annotation_parser -> Type.t
+val return_annotation : signature:Define.Signature.t -> parser:annotation_parser -> Type.t
 
-val create_overload : parser:annotation_parser -> Define.t Node.t -> Type.t Type.Callable.overload
+val create_overload
+  :  parser:annotation_parser ->
+  Define.Signature.t Node.t ->
+  Type.t Type.Callable.overload
