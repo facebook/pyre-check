@@ -597,6 +597,7 @@ let test_class_locations _ =
                             docstring = None;
                             return_annotation = None;
                             async = false;
+                            generator = false;
                             parent = Some !&"foo";
                           };
                         body = [+Statement.Pass];
@@ -664,6 +665,7 @@ let test_class_locations _ =
                                      docstring = None;
                                      return_annotation = None;
                                      async = false;
+                                     generator = false;
                                      parent = Some !&"foo";
                                    };
                                  body = [+Statement.Pass];
@@ -695,6 +697,7 @@ let test_define_locations _ =
                  docstring = None;
                  return_annotation = None;
                  async = true;
+                 generator = false;
                  parent = None;
                };
              body = [node ~start:(2, 2) ~stop:(2, 3) (Statement.Expression (+Integer 1))];
@@ -722,6 +725,7 @@ let test_define_locations _ =
                  docstring = None;
                  return_annotation = None;
                  async = false;
+                 generator = false;
                  parent = None;
                };
              body =
@@ -739,6 +743,7 @@ let test_define_locations _ =
                             docstring = None;
                             return_annotation = None;
                             async = false;
+                            generator = false;
                             parent = None;
                           };
                         body =
@@ -778,6 +783,7 @@ let test_define_locations _ =
                  docstring = None;
                  return_annotation = None;
                  async = false;
+                 generator = false;
                  parent = None;
                };
              body = [+Statement.Pass];
@@ -805,6 +811,7 @@ let test_define_locations _ =
                return_annotation =
                  Some (node ~start:(2, 20) ~stop:(2, 41) (String (StringLiteral.create "str")));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1800,6 +1807,7 @@ let test_stub_locations _ =
                  docstring = None;
                  return_annotation = None;
                  async = false;
+                 generator = false;
                  parent = None;
                };
              body = [node ~start:(1, 12) ~stop:(1, 15) (Statement.Expression (+Ellipsis))];
@@ -1822,6 +1830,7 @@ let test_stub_locations _ =
                  docstring = None;
                  return_annotation = None;
                  async = false;
+                 generator = false;
                  parent = None;
                };
              body = [node ~start:(3, 1) ~stop:(3, 4) (Statement.Expression (+Ellipsis))];

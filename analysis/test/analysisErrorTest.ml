@@ -19,6 +19,7 @@ let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
     docstring = None;
     return_annotation;
     async = false;
+    generator = false;
     parent = None;
   }
 

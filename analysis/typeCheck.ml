@@ -2782,7 +2782,13 @@ module State (Context : Context) = struct
       value =
         {
           Define.signature =
-            { async; parent = define_parent; return_annotation = return_annotation_expression; _ };
+            {
+              async;
+              parent = define_parent;
+              return_annotation = return_annotation_expression;
+              generator;
+              _;
+            };
           body;
         } as define;
     }
@@ -2824,7 +2830,7 @@ module State (Context : Context) = struct
                    ~right:return_annotation))
           && (not (Define.is_abstract_method define))
           && (not (Define.is_overloaded_method define))
-          && (not (Type.is_none actual && Annotated.Callable.is_generator define))
+          && (not (Type.is_none actual && generator))
           && not (Type.is_none actual && Type.is_noreturn return_annotation)
         then
           let rec check_unimplemented = function

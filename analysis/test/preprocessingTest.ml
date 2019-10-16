@@ -1719,6 +1719,7 @@ let test_expand_implicit_returns _ =
                     docstring = None;
                     return_annotation = None;
                     async = false;
+                    generator = false;
                     parent = None;
                   };
                 body = expected_body;
@@ -1899,6 +1900,7 @@ let test_defines _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = None;
         };
       body = [+Statement.Expression (+Float 1.0)];
@@ -1914,6 +1916,7 @@ let test_defines _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = None;
         };
       body;
@@ -1929,6 +1932,7 @@ let test_defines _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = Some (Reference.create parent);
         };
       body;
@@ -1946,6 +1950,7 @@ let test_defines _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = None;
         };
       body = [+Statement.Expression (+Float 1.0)];
@@ -1961,6 +1966,7 @@ let test_defines _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = None;
         };
       body = [+Statement.Expression (+Float 1.0); +Statement.Define inner];
@@ -2008,6 +2014,7 @@ let test_classes _ =
                    docstring = None;
                    return_annotation = None;
                    async = false;
+                   generator = false;
                    parent = Some !&"foo";
                  };
                body = [+Statement.Pass];

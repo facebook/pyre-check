@@ -24,6 +24,7 @@ let test_is_method _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = parent >>| Reference.create;
         };
       body = [+Statement.Pass];
@@ -44,6 +45,7 @@ let test_is_classmethod _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = Some !&"bar";
         };
       body = [+Statement.Pass];
@@ -68,6 +70,7 @@ let test_is_class_property _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = Some !&"bar";
         };
       body = [+Statement.Pass];
@@ -90,6 +93,7 @@ let test_decorator _ =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = None;
         };
       body = [+Statement.Pass];
@@ -125,6 +129,7 @@ let test_is_constructor _ =
             docstring = None;
             return_annotation = None;
             async = false;
+            generator = false;
             parent = parent >>| Reference.create;
           };
         body = [+Statement.Pass];
@@ -486,6 +491,7 @@ let test_attributes _ =
                     docstring = None;
                     return_annotation = Some !"int";
                     async = false;
+                    generator = false;
                     parent = None;
                   };
                 body = [];

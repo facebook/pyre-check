@@ -57,6 +57,7 @@ let assert_fixpoint body expected =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = None;
         };
       body;

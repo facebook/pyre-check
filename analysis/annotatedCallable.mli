@@ -6,8 +6,6 @@
 open Ast
 open Statement
 
-val is_generator : Define.t -> bool
-
 type annotation_parser = {
   parse_annotation: Expression.expression Node.t -> Type.t;
   parse_as_concatenation:

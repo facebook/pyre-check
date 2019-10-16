@@ -694,6 +694,7 @@ let create ~resolution ?path ~configuration ~verify source =
               docstring = None;
               return_annotation = Some annotation;
               async = false;
+              generator = false;
               parent = None;
             }
           in
@@ -716,6 +717,7 @@ let create ~resolution ?path ~configuration ~verify source =
               docstring = None;
               return_annotation = None;
               async = false;
+              generator = false;
               parent = None;
             }
           in

@@ -27,6 +27,7 @@ let test_apply_decorators context =
           docstring = None;
           return_annotation;
           async = false;
+          generator = false;
           parent = None;
         };
       body = [+Statement.Pass];

@@ -134,6 +134,7 @@ and Define : sig
       docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
+      generator: bool;
       parent: Reference.t option; (* The class owning the method. *)
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]

@@ -25,6 +25,7 @@ let test_parent_definition context =
           docstring = None;
           return_annotation = None;
           async = false;
+          generator = false;
           parent = Some (Reference.create parent);
         };
       body = [+Statement.Pass];

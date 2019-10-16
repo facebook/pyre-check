@@ -12,7 +12,7 @@ open Test
 module Callable = Annotated.Callable
 
 let test_return_annotation context =
-  let assert_return_annotation return_annotation async expected =
+  let assert_return_annotation expected ~return_annotation ~async ~generator =
     let return_annotation =
       let _, _, environment =
         ScratchProject.setup
@@ -36,6 +36,7 @@ let test_return_annotation context =
             docstring = None;
             return_annotation;
             async;
+            generator;
             parent = None;
           };
         body = [+Statement.Pass];
@@ -44,11 +45,27 @@ let test_return_annotation context =
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal expected return_annotation
   in
-  assert_return_annotation (Some (Type.expression Type.integer)) false Type.integer;
   assert_return_annotation
-    (Some (Type.expression Type.integer))
-    true
-    (Type.coroutine (Concrete [Type.Any; Type.Any; Type.integer]))
+    ~return_annotation:(Some (Type.expression Type.integer))
+    ~async:false
+    ~generator:false
+    Type.integer;
+  assert_return_annotation
+    ~return_annotation:(Some (Type.expression Type.integer))
+    ~async:true
+    ~generator:false
+    (Type.coroutine (Concrete [Type.Any; Type.Any; Type.integer]));
+  assert_return_annotation
+    ~return_annotation:(Some (Type.expression Type.integer))
+    ~async:true
+    ~generator:true
+    Type.integer;
+  assert_return_annotation
+    ~return_annotation:(Some (Type.expression (Type.generator ~async:true Type.integer)))
+    ~async:true
+    ~generator:true
+    (Type.generator ~async:true Type.integer);
+  ()
 
 
 let test_create_overload context =

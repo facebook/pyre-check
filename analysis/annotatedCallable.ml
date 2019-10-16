@@ -8,33 +8,6 @@ open Pyre
 open Ast
 open Statement
 
-let is_generator { Define.body; _ } =
-  let module YieldVisit = Visit.Make (struct
-    type t = bool
-
-    let expression result expression =
-      match result, expression with
-      | true, _ -> true
-      | false, { Node.value = Expression.Yield _; _ } -> true
-      | false, _ -> false
-
-
-    let statement result statement =
-      match result, statement with
-      | true, _ -> true
-      | false, { Node.value = Statement.Yield _; _ } -> true
-      | false, { Node.value = Statement.YieldFrom _; _ } -> true
-      | false, _ -> false
-  end)
-  in
-  let body =
-    List.filter body ~f:(function
-        | { Node.value = Statement.(Define _ | Class _); _ } -> false
-        | _ -> true)
-  in
-  YieldVisit.visit false (Source.create body)
-
-
 type annotation_parser = {
   parse_annotation: Expression.expression Node.t -> Type.t;
   parse_as_concatenation:
@@ -48,11 +21,12 @@ type annotation_parser = {
 }
 
 let return_annotation
-    ~define:({ Define.signature = { Define.Signature.return_annotation; async; _ }; _ } as define)
+    ~define:( { Define.signature = { Define.Signature.return_annotation; async; generator; _ }; _ }
+            as define )
     ~parser:{ parse_annotation; _ }
   =
   let annotation = Option.value_map return_annotation ~f:parse_annotation ~default:Type.Top in
-  if async && not (is_generator define) then
+  if async && not generator then
     Type.coroutine (Concrete [Type.Any; Type.Any; annotation])
   else if Define.is_coroutine define then
     match annotation with

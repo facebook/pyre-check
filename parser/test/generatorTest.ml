@@ -492,7 +492,8 @@ let test_name _ =
                  ];
              });
     ];
-  assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed "a.((2, 3))")
+  assert_raises (Failure "Could not parse test") (fun () ->
+      parse_untrimmed ~silent:true "a.((2, 3))")
 
 
 let test_starred _ =
@@ -531,6 +532,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -553,6 +555,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -571,6 +574,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -589,6 +593,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = true;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -607,6 +612,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = true;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Ellipsis)];
@@ -625,6 +631,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = true;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -643,6 +650,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -672,6 +680,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -690,6 +699,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -712,6 +722,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -734,6 +745,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -753,6 +765,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -771,6 +784,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1); +Statement.Expression (+Integer 2)];
@@ -789,6 +803,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1); +Statement.Expression (+Integer 2)];
@@ -808,6 +823,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -822,6 +838,7 @@ let test_define _ =
                         docstring = None;
                         return_annotation = None;
                         async = false;
+                        generator = false;
                         parent = None;
                       };
                     body = [+Statement.Expression (+Integer 1); +Statement.Expression (+Integer 2)];
@@ -843,6 +860,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -862,6 +880,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -884,6 +903,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -923,6 +943,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -945,6 +966,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some !"c";
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1)];
@@ -963,6 +985,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some !"str";
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Integer 1); +Statement.Expression (+Integer 2)];
@@ -986,6 +1009,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "int"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1010,6 +1034,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "int"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1034,6 +1059,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "int"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1057,6 +1083,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1079,6 +1106,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1101,6 +1129,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1131,6 +1160,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1161,6 +1191,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1196,6 +1227,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1227,6 +1259,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1256,6 +1289,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1280,6 +1314,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1316,6 +1351,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1352,6 +1388,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1389,6 +1426,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1417,6 +1455,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1441,6 +1480,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "List[str]"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1481,6 +1521,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "int"));
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Pass];
@@ -1518,6 +1559,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Pass];
@@ -1551,6 +1593,7 @@ let test_define _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Pass];
@@ -1580,6 +1623,7 @@ let test_define _ =
                docstring = None;
                return_annotation = Some (+String (StringLiteral.create "str"));
                async = false;
+               generator = false;
                parent = None;
              };
            body =
@@ -1591,7 +1635,30 @@ let test_define _ =
                   };
              ];
          };
-    ]
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation {|
+        async def foo(a):
+          yield "A"
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = true;
+               generator = true;
+               parent = None;
+             };
+           body = [+Statement.Yield (+Yield (Some (+String (StringLiteral.create "A"))))];
+         };
+    ];
+  ()
 
 
 let test_boolean_operator _ =
@@ -2945,6 +3012,7 @@ let test_class _ =
                         docstring = None;
                         return_annotation = None;
                         async = false;
+                        generator = false;
                         parent = Some !&"foo";
                       };
                     body = [+Statement.Pass];
@@ -2973,6 +3041,7 @@ let test_class _ =
                         docstring = None;
                         return_annotation = None;
                         async = false;
+                        generator = false;
                         parent = Some !&"foo";
                       };
                     body =
@@ -2987,6 +3056,7 @@ let test_class _ =
                                  docstring = None;
                                  return_annotation = None;
                                  async = false;
+                                 generator = false;
                                  parent = None;
                                };
                              body = [+Statement.Pass];
@@ -3124,6 +3194,7 @@ let test_class _ =
                         docstring = None;
                         return_annotation = None;
                         async = false;
+                        generator = false;
                         parent = Some !&"foo";
                       };
                     body = [+Statement.Pass];
@@ -3153,6 +3224,7 @@ let test_class _ =
                         docstring = None;
                         return_annotation = None;
                         async = false;
+                        generator = false;
                         parent = Some !&"foo";
                       };
                     body =
@@ -3206,6 +3278,7 @@ let test_class _ =
                                  docstring = None;
                                  return_annotation = None;
                                  async = false;
+                                 generator = false;
                                  parent = Some !&"foo";
                                };
                              body = [+Statement.Pass];
@@ -4339,6 +4412,7 @@ let test_stubs _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Ellipsis)];
@@ -4357,6 +4431,7 @@ let test_stubs _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Ellipsis)];
@@ -4375,6 +4450,7 @@ let test_stubs _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Ellipsis)];
@@ -4394,6 +4470,7 @@ let test_stubs _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Expression (+Ellipsis)];
@@ -4457,6 +4534,7 @@ let test_ellipsis _ =
                docstring = None;
                return_annotation = None;
                async = false;
+               generator = false;
                parent = None;
              };
            body = [+Statement.Pass];

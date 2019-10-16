@@ -3695,6 +3695,7 @@ module TypedDictionary = struct
               docstring = None;
               return_annotation;
               async = false;
+              generator = false;
               parent = Some (Reference.create class_name);
             };
           body = [];

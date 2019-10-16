@@ -1912,6 +1912,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                              special = false;
                            })));
               async = false;
+              generator = false;
               parent = Some parent;
             };
           body =
@@ -2099,6 +2100,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                     return_annotation =
                       Some (Node.create ~location (Name (Name.Identifier "None")));
                     async = false;
+                    generator = false;
                     parent = Some name;
                   };
                 body = [Node.create Statement.Pass ~location];

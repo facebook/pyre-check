@@ -1357,6 +1357,7 @@ let mock_signature =
     docstring = None;
     return_annotation = None;
     async = false;
+    generator = false;
     parent = None;
   }
 

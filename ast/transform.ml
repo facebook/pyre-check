@@ -232,7 +232,16 @@ module Make (Transformer : Transformer) = struct
         | Define
             {
               signature =
-                { name; parameters; decorators; return_annotation; async; parent; docstring };
+                {
+                  name;
+                  parameters;
+                  decorators;
+                  return_annotation;
+                  async;
+                  parent;
+                  generator;
+                  docstring;
+                };
               body;
             } ->
             Define
@@ -246,6 +255,7 @@ module Make (Transformer : Transformer) = struct
                     return_annotation = return_annotation >>| transform_expression;
                     async;
                     parent;
+                    generator;
                     docstring;
                   };
                 body = transform_list body ~f:transform_statement |> List.concat;
