@@ -266,290 +266,310 @@ let create_attribute
     ?(defined = true)
     ?(inherited = false)
     ?(default_class_attribute = false)
-    {
-      Node.location;
-      value =
-        {
-          StatementAttribute.name = attribute_name;
-          annotation = attribute_annotation;
-          signatures;
-          value;
-          async;
-          setter;
-          property;
-          primitive;
-          toplevel;
-          final;
-          static;
-          frozen;
-          implicit;
-        };
-    }
+    { Node.location; value = { StatementAttribute.name = attribute_name; kind } }
   =
   let class_annotation = annotation parent in
-  let initialized =
-    match value, signatures with
-    | Some { Node.value = Ellipsis; _ }, None
-    | None, None ->
-        false
-    | _ -> true
-  in
-  let parsed_annotation = attribute_annotation >>| GlobalResolution.parse_annotation resolution in
-  (* Account for class attributes. *)
-  let annotation, class_attribute =
-    parsed_annotation
-    >>| (fun annotation ->
-          let annotation_value =
-            if Type.is_final annotation then
-              Type.final_value annotation
-            else
-              Type.class_variable_value annotation
+  let annotation, value, class_attribute, final =
+    match kind with
+    | Simple { annotation; value; frozen = _; toplevel; implicit; primitive } ->
+        let parsed_annotation = annotation >>| GlobalResolution.parse_annotation resolution in
+        (* Account for class attributes. *)
+        let annotation, class_attribute =
+          parsed_annotation
+          >>| (fun annotation ->
+                let annotation_value =
+                  if Type.is_final annotation then
+                    Type.final_value annotation
+                  else
+                    Type.class_variable_value annotation
+                in
+                match annotation_value with
+                | Some annotation -> Some annotation, true
+                | _ -> Some annotation, false)
+          |> Option.value ~default:(None, default_class_attribute)
+        in
+        (* Handle enumeration attributes. *)
+        let annotation, value, class_attribute =
+          let superclasses =
+            superclasses ~resolution parent
+            |> List.map ~f:(fun definition -> name definition |> Reference.show)
+            |> String.Set.of_list
           in
-          match annotation_value with
-          | Some annotation -> Some annotation, true
-          | _ -> Some annotation, false)
-    |> Option.value ~default:(None, default_class_attribute)
-  in
-  let final =
-    let is_final_annotation = parsed_annotation >>| Type.is_final |> Option.value ~default:false in
-    final || is_final_annotation
-  in
-  (* Handle enumeration attributes. *)
-  let annotation, value, class_attribute =
-    let superclasses =
-      superclasses ~resolution parent
-      |> List.map ~f:(fun definition -> name definition |> Reference.show)
-      |> String.Set.of_list
-    in
-    if
-      (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
-      && (not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
-      && (not inherited)
-      && primitive
-      && defined
-      && not implicit
-    then
-      Some class_annotation, None, true (* Enums override values. *)
-    else
-      annotation, value, class_attribute
-  in
-  (* Handle Callables *)
-  let annotation =
-    let instantiated =
-      match instantiated with
-      | Some instantiated -> instantiated
-      | None -> class_annotation
-    in
-    match signatures with
-    | Some (({ Define.Signature.name; _ } as define) :: _ as defines) ->
-        let parent =
-          (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't play well
-             with our logic here - we should clean up the call logic to handle passing the extra
-             argument, and eliminate the special fields from here. *)
           if
-            Define.Signature.is_static_method define
-            && not (String.equal (Define.Signature.unqualified_name define) "__new__")
+            (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
+            && (not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
+            && (not inherited)
+            && primitive
+            && defined
+            && not implicit
           then
-            None
-          else if Define.Signature.is_class_method define then
-            Some (Type.meta instantiated)
-          else if class_attribute then
-            (* Keep first argument around when calling instance methods from class attributes. *)
-            None
+            Some class_annotation, None, true (* Enums override values. *)
           else
-            Some instantiated
+            annotation, value, class_attribute
         in
-        let apply_decorators define =
-          ( Define.Signature.is_overloaded_method define,
-            ResolvedCallable.apply_decorators ~resolution (Node.create define ~location) )
+        let final = parsed_annotation >>| Type.is_final |> Option.value ~default:false in
+        let annotation =
+          match annotation, value with
+          | Some annotation, Some _ ->
+              Annotation.create_immutable
+                ~global:true
+                ~final
+                ~original:(Some annotation)
+                annotation
+          | Some annotation, None -> Annotation.create_immutable ~global:true ~final annotation
+          | None, Some value ->
+              let literal_value_annotation = GlobalResolution.resolve_literal resolution value in
+              let is_dataclass_attribute =
+                let get_dataclass_decorator annotated =
+                  get_decorator annotated ~resolution ~decorator:"dataclasses.dataclass"
+                  @ get_decorator annotated ~resolution ~decorator:"dataclass"
+                in
+                not (List.is_empty (get_dataclass_decorator parent))
+              in
+              if
+                (not (Type.is_partially_typed literal_value_annotation))
+                && (not is_dataclass_attribute)
+                && toplevel
+              then (* Treat literal attributes as having been explicitly annotated. *)
+                Annotation.create_immutable ~global:true ~final literal_value_annotation
+              else
+                Annotation.create_immutable
+                  ~global:true
+                  ~final
+                  ~original:(Some Type.Top)
+                  (GlobalResolution.parse_annotation resolution value)
+          | _ -> Annotation.create_immutable ~global:true ~final Type.Top
         in
-        List.map defines ~f:apply_decorators
-        |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)
-        |> fun callable -> Some (Type.Callable callable)
-    | _ -> annotation
-  in
-  (* Special cases *)
-  let annotation =
-    match instantiated, attribute_name, annotation with
-    | Some (Type.TypedDictionary { fields; total; _ }), method_name, Some (Type.Callable callable)
-      ->
-        Type.TypedDictionary.special_overloads ~fields ~method_name ~total
-        >>| (fun overloads ->
-              Some
-                (Type.Callable
-                   {
-                     callable with
-                     implementation =
-                       { annotation = Type.Top; parameters = Undefined; define_location = None };
-                     overloads;
-                   }))
-        |> Option.value ~default:annotation
-    | ( Some (Type.Tuple (Bounded (Concrete members))),
-        "__getitem__",
-        Some (Type.Callable ({ overloads; _ } as callable)) ) ->
-        let overload index member =
-          {
-            Type.Callable.annotation = member;
-            parameters =
-              Defined
-                [Named { name = "x"; annotation = Type.literal_integer index; default = false }];
-            define_location = None;
-          }
-        in
-        let overloads = List.mapi ~f:overload members @ overloads in
-        Some (Type.Callable { callable with overloads })
-    | ( Some (Parametric { name = "type"; parameters = Concrete [Type.Primitive name] }),
-        "__getitem__",
-        Some (Type.Callable ({ kind = Named callable_name; _ } as callable)) )
-      when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
-        let implementation =
-          let generics =
-            GlobalResolution.class_definition resolution (Type.Primitive name)
-            >>| create
-            >>| generics ~resolution
-            |> Option.value ~default:(Type.OrderedTypes.Concrete [])
+        annotation, value, class_attribute, final
+    | Method { signatures; static = _; final } ->
+        (* Handle Callables *)
+        let annotation =
+          let instantiated =
+            match instantiated with
+            | Some instantiated -> instantiated
+            | None -> class_annotation
           in
-          match generics with
-          | Concrete generics ->
-              let parameters =
-                let create_parameter annotation =
-                  Type.Callable.Parameter.Anonymous { index = 0; annotation; default = false }
+          match signatures with
+          | ({ Define.Signature.name; _ } as define) :: _ as defines ->
+              let parent =
+                (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't play
+                   well with our logic here - we should clean up the call logic to handle passing
+                   the extra argument, and eliminate the special fields from here. *)
+                if
+                  Define.Signature.is_static_method define
+                  && not (String.equal (Define.Signature.unqualified_name define) "__new__")
+                then
+                  None
+                else if Define.Signature.is_class_method define then
+                  Some (Type.meta instantiated)
+                else if default_class_attribute then
+                  (* Keep first argument around when calling instance methods from class
+                     attributes. *)
+                  None
+                else
+                  Some instantiated
+              in
+              let apply_decorators define =
+                ( Define.Signature.is_overloaded_method define,
+                  ResolvedCallable.apply_decorators ~resolution (Node.create define ~location) )
+              in
+              List.map defines ~f:apply_decorators
+              |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)
+              |> fun callable -> Some (Type.Callable callable)
+          | [] -> failwith "impossible"
+        in
+        (* Special cases *)
+        let annotation =
+          match instantiated, attribute_name, annotation with
+          | ( Some (Type.TypedDictionary { fields; total; _ }),
+              method_name,
+              Some (Type.Callable callable) ) ->
+              Type.TypedDictionary.special_overloads ~fields ~method_name ~total
+              >>| (fun overloads ->
+                    Some
+                      (Type.Callable
+                         {
+                           callable with
+                           implementation =
+                             {
+                               annotation = Type.Top;
+                               parameters = Undefined;
+                               define_location = None;
+                             };
+                           overloads;
+                         }))
+              |> Option.value ~default:annotation
+          | ( Some (Type.Tuple (Bounded (Concrete members))),
+              "__getitem__",
+              Some (Type.Callable ({ overloads; _ } as callable)) ) ->
+              let overload index member =
+                {
+                  Type.Callable.annotation = member;
+                  parameters =
+                    Defined
+                      [
+                        Named
+                          { name = "x"; annotation = Type.literal_integer index; default = false };
+                      ];
+                  define_location = None;
+                }
+              in
+              let overloads = List.mapi ~f:overload members @ overloads in
+              Some (Type.Callable { callable with overloads })
+          | ( Some (Parametric { name = "type"; parameters = Concrete [Type.Primitive name] }),
+              "__getitem__",
+              Some (Type.Callable ({ kind = Named callable_name; _ } as callable)) )
+            when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
+              let implementation =
+                let generics =
+                  GlobalResolution.class_definition resolution (Type.Primitive name)
+                  >>| create
+                  >>| generics ~resolution
+                  |> Option.value ~default:(Type.OrderedTypes.Concrete [])
                 in
                 match generics with
-                | [] -> []
-                | [generic] -> [create_parameter (Type.meta generic)]
-                | generics -> [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
+                | Concrete generics ->
+                    let parameters =
+                      let create_parameter annotation =
+                        Type.Callable.Parameter.Anonymous
+                          { index = 0; annotation; default = false }
+                      in
+                      match generics with
+                      | [] -> []
+                      | [generic] -> [create_parameter (Type.meta generic)]
+                      | generics ->
+                          [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
+                    in
+                    {
+                      Type.Callable.annotation =
+                        Type.meta (Type.Parametric { name; parameters = Concrete generics });
+                      parameters = Defined parameters;
+                      define_location = None;
+                    }
+                | _ ->
+                    (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and ignore
+                       the others *)
+                    {
+                      Type.Callable.annotation =
+                        Type.meta (Type.Parametric { name; parameters = generics });
+                      parameters = Undefined;
+                      define_location = None;
+                    }
               in
-              {
-                Type.Callable.annotation =
-                  Type.meta (Type.Parametric { name; parameters = Concrete generics });
-                parameters = Defined parameters;
-                define_location = None;
-              }
-          | _ ->
-              (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and ignore the
-                 others *)
-              {
-                Type.Callable.annotation =
-                  Type.meta (Type.Parametric { name; parameters = generics });
-                parameters = Undefined;
-                define_location = None;
-              }
+              Some (Type.Callable { callable with implementation; overloads = [] })
+          | _ -> annotation
         in
-        Some (Type.Callable { callable with implementation; overloads = [] })
-    | _ -> annotation
-  in
-  let annotation =
-    match annotation, value with
-    | Some annotation, Some value ->
-        Annotation.create_immutable
-          ~global:true
-          ~final
-          ~original:(Some annotation)
-          ( if setter then
-              GlobalResolution.parse_annotation resolution value
-          else
-            annotation )
-    | Some annotation, None -> Annotation.create_immutable ~global:true ~final annotation
-    | None, Some value ->
-        let literal_value_annotation =
-          if setter then
-            GlobalResolution.parse_annotation resolution value
-          else
-            GlobalResolution.resolve_literal resolution value
+        let annotation =
+          match annotation with
+          | Some annotation -> Annotation.create_immutable ~global:true ~final annotation
+          | None -> Annotation.create_immutable ~global:true ~final Type.Top
         in
-        let is_dataclass_attribute =
-          let get_dataclass_decorator annotated =
-            get_decorator annotated ~resolution ~decorator:"dataclasses.dataclass"
-            @ get_decorator annotated ~resolution ~decorator:"dataclass"
+        annotation, None, default_class_attribute, final
+    | Property { kind; class_property; _ } ->
+        let annotation =
+          match kind with
+          | ReadWrite { setter_annotation; getter_annotation } ->
+              let current =
+                getter_annotation
+                >>| GlobalResolution.parse_annotation resolution
+                |> Option.value ~default:Type.Top
+              in
+              let original =
+                setter_annotation
+                >>| GlobalResolution.parse_annotation resolution
+                |> Option.value ~default:Type.Top
+                |> Option.some
+              in
+              Annotation.create_immutable ~global:true ~final:false ~original current
+          | ReadOnly { getter_annotation } ->
+              getter_annotation
+              >>| GlobalResolution.parse_annotation resolution
+              |> Option.value ~default:Type.Top
+              |> Annotation.create_immutable ~global:true ~final:false
+        in
+        (* Special case properties with type variables. *)
+        (* TODO(T44676629): handle this correctly *)
+        let annotation =
+          let free_variables =
+            let variables =
+              Annotation.annotation annotation
+              |> Type.Variable.all_free_variables
+              |> List.filter_map ~f:(function
+                     | Type.Variable.Unary variable -> Some (Type.Variable variable)
+                     | _ -> None)
+              |> Type.Set.of_list
+            in
+            let generics =
+              match generics parent ~resolution with
+              | Concrete generics -> Type.Set.of_list generics
+              | _ ->
+                  (* TODO(T44676629): This case should be handled when we re-do this handling *)
+                  Type.Set.empty
+            in
+            Set.diff variables generics |> Set.to_list
           in
-          not (List.is_empty (get_dataclass_decorator parent))
+          if not (List.is_empty free_variables) then
+            let constraints =
+              let instantiated = Option.value instantiated ~default:class_annotation in
+              List.fold free_variables ~init:Type.Map.empty ~f:(fun map variable ->
+                  Map.set map ~key:variable ~data:instantiated)
+              |> Map.find
+            in
+            Annotation.annotation annotation
+            |> Type.instantiate ~constraints
+            |> Annotation.create_immutable ~global:true ~final:false
+          else
+            annotation
         in
-        if
-          (not (Type.is_partially_typed literal_value_annotation))
-          && (not is_dataclass_attribute)
-          && toplevel
-        then (* Treat literal attributes as having been explicitly annotated. *)
-          Annotation.create_immutable ~global:true ~final literal_value_annotation
-        else
-          Annotation.create_immutable
-            ~global:true
-            ~final
-            ~original:(Some Type.Top)
-            (GlobalResolution.parse_annotation resolution value)
-    | _ -> Annotation.create_immutable ~global:true ~final Type.Top
-  in
-  (* Special case properties with type variables. *)
-  (* TODO(T44676629): handle this correctly *)
-  let annotation =
-    let free_variables =
-      let variables =
-        Annotation.annotation annotation
-        |> Type.Variable.all_free_variables
-        |> List.filter_map ~f:(function
-               | Type.Variable.Unary variable -> Some (Type.Variable variable)
-               | _ -> None)
-        |> Type.Set.of_list
-      in
-      let generics =
-        match generics parent ~resolution with
-        | Concrete generics -> Type.Set.of_list generics
-        | _ ->
-            (* TODO(T44676629): This case should be handled when we re-do this handling *)
-            Type.Set.empty
-      in
-      Set.diff variables generics |> Set.to_list
-    in
-    if property && not (List.is_empty free_variables) then
-      let constraints =
-        let instantiated = Option.value instantiated ~default:class_annotation in
-        List.fold free_variables ~init:Type.Map.empty ~f:(fun map variable ->
-            Map.set map ~key:variable ~data:instantiated)
-        |> Map.find
-      in
-      Annotation.annotation annotation
-      |> Type.instantiate ~constraints
-      |> Annotation.create_immutable ~global:true ~final
-    else
-      annotation
-  in
-  (* We need to distinguish between unannotated attributes and non-existent ones - ensure that the
-     annotation is viewed as mutable to distinguish from user-defined globals. *)
-  let annotation =
-    if not defined then
-      { annotation with Annotation.mutability = Annotation.Mutable }
-    else
-      annotation
-  in
-  let value = Option.value value ~default:(Node.create Ellipsis ~location) in
-  let property =
-    match property, setter with
-    | true, true when not frozen -> Some AnnotatedAttribute.ReadWrite
-    | true, false -> Some AnnotatedAttribute.ReadOnly
-    | _, _ when frozen -> Some AnnotatedAttribute.ReadOnly
-    | _, _ -> None
-  in
-  let abstract =
-    match signatures with
-    | None -> false
-    | Some defines -> List.exists defines ~f:Define.Signature.is_abstract_method
+        annotation, None, class_property, false
   in
   {
     Node.location;
     value =
       {
-        AnnotatedAttribute.annotation;
-        abstract;
-        async;
+        (* We need to distinguish between unannotated attributes and non-existent ones - ensure
+           that the annotation is viewed as mutable to distinguish from user-defined globals. *)
+        AnnotatedAttribute.annotation =
+          ( if not defined then
+              { annotation with Annotation.mutability = Annotation.Mutable }
+          else
+            annotation );
+        abstract =
+          ( match kind with
+          | Method { signatures; _ } ->
+              List.exists signatures ~f:Define.Signature.is_abstract_method
+          | _ -> false );
+        async =
+          ( match kind with
+          | Property { async; _ } -> async
+          | _ -> false );
         class_attribute;
         defined;
-        initialized;
+        initialized =
+          ( match kind with
+          | Simple { value = Some { Node.value = Ellipsis; _ }; _ }
+          | Simple { value = None; _ } ->
+              false
+          (* TODO fix this *)
+          | Property { kind = ReadOnly _; _ } -> false
+          | Simple { value = Some _; _ }
+          | Method _
+          | Property _ ->
+              true );
         final;
         name = attribute_name;
         parent = class_annotation;
-        property;
-        static;
-        value;
+        property =
+          ( match kind with
+          | Property { kind = ReadWrite _; _ } -> Some AnnotatedAttribute.ReadWrite
+          | Property { kind = ReadOnly _; _ } -> Some AnnotatedAttribute.ReadOnly
+          | Simple { frozen; _ } when frozen -> Some AnnotatedAttribute.ReadOnly
+          | _ -> None );
+        static =
+          ( match kind with
+          | Method { static; _ } -> static
+          | _ -> false );
+        value = Option.value value ~default:(Node.create Ellipsis ~location);
       };
   }
 
@@ -1105,18 +1125,16 @@ let attribute
           value =
             {
               StatementAttribute.name;
-              annotation = None;
-              signatures = None;
-              value = None;
-              async = false;
-              setter = false;
-              property = false;
-              primitive = true;
-              toplevel = true;
-              final = false;
-              static = false;
-              frozen = false;
-              implicit = false;
+              kind =
+                Simple
+                  {
+                    annotation = None;
+                    value = None;
+                    primitive = true;
+                    toplevel = true;
+                    frozen = false;
+                    implicit = false;
+                  };
             };
         }
 
@@ -1199,18 +1217,16 @@ let rec fallback_attribute
                  value =
                    {
                      StatementAttribute.name;
-                     annotation = Some (Type.expression return_annotation);
-                     signatures = None;
-                     value = None;
-                     async = false;
-                     setter = false;
-                     property = false;
-                     primitive = true;
-                     toplevel = true;
-                     final = false;
-                     static = false;
-                     frozen = false;
-                     implicit = false;
+                     kind =
+                       Simple
+                         {
+                           annotation = Some (Type.expression return_annotation);
+                           value = None;
+                           primitive = true;
+                           toplevel = true;
+                           frozen = false;
+                           implicit = false;
+                         };
                    };
                })
       | _ -> None

@@ -88,38 +88,50 @@ end = struct
 end
 
 and Attribute : sig
+  type property_kind =
+    | ReadOnly of { getter_annotation: Expression.t option }
+    | ReadWrite of {
+        getter_annotation: Expression.t option;
+        setter_annotation: Expression.t option;
+      }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type kind =
+    | Simple of {
+        annotation: Expression.t option;
+        value: Expression.t option;
+        primitive: bool;
+        frozen: bool;
+        toplevel: bool;
+        implicit: bool;
+      }
+    | Method of {
+        signatures: Define.Signature.t list;
+        static: bool;
+        final: bool;
+      }
+    | Property of {
+        async: bool;
+        class_property: bool;
+        kind: property_kind;
+      }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type attribute = {
-    annotation: Expression.t option;
-    async: bool;
-    signatures: Define.Signature.t list option;
-    final: bool;
-    implicit: bool;
-    frozen: bool;
+    kind: kind;
     name: Identifier.t;
-    primitive: bool;
-    property: bool;
-    setter: bool;
-    static: bool;
-    toplevel: bool;
-    value: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
 
-  val create
+  val create_simple
     :  location:Location.t ->
-    ?async:bool ->
-    ?setter:bool ->
-    ?primitive:bool ->
-    ?property:bool ->
-    ?toplevel:bool ->
-    ?value:Expression.t ->
     ?annotation:Expression.t ->
-    ?signatures:Define.Signature.t list ->
-    ?final:bool ->
-    ?static:bool ->
+    ?value:Expression.t ->
+    ?primitive:bool ->
     ?frozen:bool ->
+    ?toplevel:bool ->
     ?implicit:bool ->
     name:string ->
     unit ->
@@ -127,57 +139,55 @@ and Attribute : sig
 
   val name : parent:Reference.t -> Expression.t -> string option
 end = struct
+  type property_kind =
+    | ReadOnly of { getter_annotation: Expression.t option }
+    | ReadWrite of {
+        getter_annotation: Expression.t option;
+        setter_annotation: Expression.t option;
+      }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type kind =
+    | Simple of {
+        annotation: Expression.t option;
+        value: Expression.t option;
+        primitive: bool;
+        frozen: bool;
+        toplevel: bool;
+        implicit: bool;
+      }
+    | Method of {
+        signatures: Define.Signature.t list;
+        static: bool;
+        final: bool;
+      }
+    | Property of {
+        async: bool;
+        class_property: bool;
+        kind: property_kind;
+      }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type attribute = {
-    annotation: Expression.t option;
-    async: bool;
-    signatures: Define.Signature.t list option;
-    final: bool;
-    implicit: bool;
-    frozen: bool;
+    kind: kind;
     name: Identifier.t;
-    primitive: bool;
-    property: bool;
-    setter: bool;
-    static: bool;
-    toplevel: bool;
-    value: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
 
-  let create
+  let create_simple
       ~location
-      ?(async = false)
-      ?(setter = false)
-      ?(primitive = false)
-      ?(property = false)
-      ?(toplevel = true)
-      ?value
       ?annotation
-      ?signatures
-      ?(final = false)
-      ?(static = false)
+      ?value
+      ?(primitive = false)
       ?(frozen = false)
+      ?(toplevel = true)
       ?(implicit = false)
       ~name
       ()
     =
-    {
-      name;
-      annotation;
-      signatures;
-      value;
-      async;
-      setter;
-      property;
-      primitive;
-      toplevel;
-      final;
-      static;
-      frozen;
-      implicit;
-    }
+    { name; kind = Simple { annotation; value; primitive; frozen; toplevel; implicit } }
     |> Node.create ~location
 
 
@@ -316,7 +326,9 @@ end = struct
             Attribute.name ~parent:name target
             |> function
             | Some name ->
-                let attribute = Attribute.create ~primitive:true ~location ~name ~value () in
+                let attribute =
+                  Attribute.create_simple ~location ~name ~value ~primitive:true ()
+                in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute
             | _ -> map
           in
@@ -358,7 +370,8 @@ end = struct
                   | _ -> None
                 in
                 value
-                >>| (fun value -> Attribute.create ~primitive:true ~location ~name ~value ())
+                >>| (fun value ->
+                      Attribute.create_simple ~location ~name ~value ~primitive:true ())
                 >>| (fun data -> Identifier.SerializableMap.set map ~key:name ~data)
                 |> Option.value ~default:map
             | _ -> map
@@ -370,7 +383,14 @@ end = struct
           | Some name ->
               let frozen = is_frozen definition in
               let attribute =
-                Attribute.create ~primitive:true ~location ~name ?annotation ~frozen ~value ()
+                Attribute.create_simple
+                  ~location
+                  ~name
+                  ~value
+                  ?annotation
+                  ~primitive:true
+                  ~frozen
+                  ()
               in
               Identifier.SerializableMap.set map ~key:name ~data:attribute
           | _ -> map )
@@ -378,6 +398,49 @@ end = struct
     in
     List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
 
+
+  module PropertyDefine = struct
+    type getter = {
+      name: string;
+      annotation: Expression.t option;
+      location: Location.t;
+      async: bool;
+      is_class_property: bool;
+    }
+
+    type setter = {
+      name: string;
+      annotation: Expression.t option;
+      location: Location.t;
+      async: bool;
+    }
+
+    type t =
+      | Getter of getter
+      | Setter of setter
+
+    let create
+        ~location
+        ({ Define.signature = { name; return_annotation; parameters; parent; _ }; _ } as define)
+      =
+      let name =
+        parent >>= fun parent -> Attribute.name ~parent (Expression.from_reference ~location name)
+      in
+      let async = Define.is_async define in
+      match name with
+      | Some name -> (
+        match String.Set.find ~f:(Define.has_decorator define) Recognized.property_decorators with
+        | Some decorator ->
+            let is_class_property = Set.mem Recognized.classproperty_decorators decorator in
+            Some
+              (Getter { name; annotation = return_annotation; is_class_property; async; location })
+        | None -> (
+          match Define.is_property_setter define, parameters with
+          | true, _ :: { Node.value = { Parameter.annotation; _ }; _ } :: _ ->
+              Some (Setter { name; annotation; async; location })
+          | _ -> None ) )
+      | None -> None
+  end
 
   let implicit_attributes ?(in_test = false) ({ name; body; _ } as definition) =
     (* Bias towards the right (previously occuring map in the `|> merge other_map` flow). *)
@@ -396,35 +459,76 @@ end = struct
     let property_attributes =
       let property_attributes map = function
         | { Node.location; value = Statement.Define define } -> (
-          match Define.property_attribute ~location define with
-          | Some
-              ( {
-                  Node.value =
-                    { Attribute.name; setter = new_setter; annotation = new_annotation; _ } as
-                    attribute;
-                  _;
-                } as attribute_node ) ->
-              let merged_attribute =
-                let existing_attribute = Identifier.SerializableMap.find_opt name map in
-                match existing_attribute, new_setter with
-                | Some { Node.value = { Attribute.setter = true; annotation; _ }; _ }, false ->
-                    { attribute with Attribute.annotation; value = new_annotation; setter = true }
-                    |> fun edited -> { attribute_node with Node.value = edited }
-                | Some { Node.value = { Attribute.setter = false; annotation; _ }; _ }, true ->
-                    {
-                      attribute with
-                      Attribute.annotation = new_annotation;
-                      value = annotation;
-                      setter = true;
-                    }
-                    |> fun edited -> { attribute_node with Node.value = edited }
-                | _ -> attribute_node
+          match PropertyDefine.create ~location define with
+          | Some (Setter { name; _ } as kind)
+          | Some (Getter { name; _ } as kind) ->
+              let data =
+                Identifier.SerializableMap.find_opt name map
+                |> Option.value ~default:(None, None)
+                |> fun (existing_getter, existing_setter) ->
+                match kind with
+                | Setter setter -> existing_getter, Some setter
+                | Getter getter -> Some getter, existing_setter
               in
-              Identifier.SerializableMap.set map ~key:name ~data:merged_attribute
-          | _ -> map )
+              Identifier.SerializableMap.set map ~key:name ~data
+          | None -> map )
         | _ -> map
       in
+      let consolidate = function
+        | _, (None, None)
+        | _, (None, Some _) ->
+            None (* not allowed *)
+        | ( _,
+            ( Some
+                {
+                  PropertyDefine.name;
+                  annotation = getter_annotation;
+                  async;
+                  location;
+                  is_class_property;
+                },
+              None ) ) ->
+            ( name,
+              {
+                Attribute.name;
+                kind =
+                  Property
+                    {
+                      kind = ReadOnly { getter_annotation };
+                      async;
+                      class_property = is_class_property;
+                    };
+              }
+              |> Node.create ~location )
+            |> Option.some
+        | ( _,
+            ( Some
+                {
+                  PropertyDefine.name;
+                  annotation = getter_annotation;
+                  async;
+                  location;
+                  is_class_property;
+                },
+              Some { PropertyDefine.annotation = setter_annotation; _ } ) ) ->
+            ( name,
+              {
+                Attribute.name;
+                kind =
+                  Property
+                    {
+                      kind = ReadWrite { getter_annotation; setter_annotation };
+                      async;
+                      class_property = is_class_property;
+                    };
+              }
+              |> Node.create ~location )
+            |> Option.some
+      in
       List.fold ~init:Identifier.SerializableMap.empty ~f:property_attributes body
+      |> Identifier.SerializableMap.to_seq
+      |> Seq.filter_map consolidate
+      |> Identifier.SerializableMap.of_seq
     in
     let callable_attributes =
       let callable_attributes map { Node.location; value } =
@@ -435,22 +539,30 @@ end = struct
             >>| (fun name ->
                   let attribute =
                     match Identifier.SerializableMap.find_opt name map with
-                    | Some { Node.value = { Attribute.signatures = Some signatures; _ }; _ } ->
-                        Attribute.create
-                          ~location
-                          ~name
-                          ~signatures:(signature :: signatures)
-                          ~final:(Define.is_final_method define)
-                          ~static:(Define.is_static_method define)
-                          ()
+                    | Some { Node.value = { Attribute.kind = Method { signatures; _ }; _ }; _ } ->
+                        {
+                          Attribute.name;
+                          kind =
+                            Method
+                              {
+                                signatures = signature :: signatures;
+                                static = Define.is_static_method define;
+                                final = Define.is_final_method define;
+                              };
+                        }
+                        |> Node.create ~location
                     | _ ->
-                        Attribute.create
-                          ~location
-                          ~name
-                          ~signatures:[signature]
-                          ~final:(Define.is_final_method define)
-                          ~static:(Define.is_static_method define)
-                          ()
+                        {
+                          Attribute.name;
+                          kind =
+                            Method
+                              {
+                                signatures = [signature];
+                                static = Define.is_static_method define;
+                                final = Define.is_final_method define;
+                              };
+                        }
+                        |> Node.create ~location
                   in
                   Identifier.SerializableMap.set map ~key:name ~data:attribute)
             |> Option.value ~default:map
@@ -548,7 +660,7 @@ end = struct
             Identifier.SerializableMap.set
               map
               ~key:attribute_name
-              ~data:(Attribute.create ~location ~name:attribute_name ~annotation ())
+              ~data:(Attribute.create_simple ~location ~name:attribute_name ~annotation ())
         | _ -> map
       in
       List.fold ~init:Identifier.SerializableMap.empty ~f:callable_attributes body
@@ -573,7 +685,7 @@ end = struct
             let add_attribute map { Node.value; _ } =
               match value with
               | String { StringLiteral.value; _ } ->
-                  Attribute.create ~location ~name:value ()
+                  Attribute.create_simple ~location ~name:value ()
                   |> fun attribute -> Identifier.SerializableMap.set map ~key:value ~data:attribute
               | _ -> map
             in
@@ -784,6 +896,8 @@ and Define : sig
 
   val is_class_toplevel : t -> bool
 
+  val is_async : t -> bool
+
   val dump : t -> bool
 
   val dump_cfg : t -> bool
@@ -793,8 +907,6 @@ and Define : sig
   val show_json : t -> string
 
   val implicit_attributes : t -> definition:Class.t -> Attribute.t Identifier.SerializableMap.t
-
-  val property_attribute : location:Location.t -> t -> Attribute.t option
 
   val has_decorator : ?match_prefix:bool -> t -> string -> bool
 
@@ -1037,7 +1149,7 @@ end = struct
     let attribute ~toplevel map { Node.value; _ } =
       match value with
       | Statement.Assign { Assign.target; annotation; value; _ } -> (
-          let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
+          let simple_attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
             | {
              Node.value =
@@ -1048,13 +1160,13 @@ end = struct
             }
               when Identifier.equal self (self_identifier define) ->
                 let attribute =
-                  Attribute.create
-                    ~primitive:true
+                  Attribute.create_simple
                     ~toplevel
                     ~location
                     ~name
                     ?annotation
                     ~value
+                    ~primitive:true
                     ~implicit:true
                     ()
                 in
@@ -1092,18 +1204,30 @@ end = struct
                     Identifier.SerializableMap.find_opt value parameter_annotations
                 | _ -> annotation
               in
-              attribute ~map ~target ~annotation
+              simple_attribute ~map ~target ~annotation
           | { Node.value = Tuple targets; _ } ->
-              List.fold ~init:map ~f:(fun map target -> attribute ~map ~target ~annotation) targets
+              List.fold
+                ~init:map
+                ~f:(fun map target -> simple_attribute ~map ~target ~annotation)
+                targets
           | _ -> map )
       | _ -> map
     in
     let merge_attributes = function
       | [attribute] -> attribute
-      | { Node.location; value = attribute } :: _ as attributes ->
+      | {
+          Node.location;
+          value =
+            { Attribute.kind = Simple { value; primitive; frozen; toplevel; implicit; _ }; _ } as
+            attribute;
+        }
+        :: _ as attributes ->
           let annotation =
             let annotation = function
-              | { Node.value = { Attribute.annotation = Some annotation; _ }; _ } ->
+              | {
+                  Node.value = { Attribute.kind = Simple { annotation = Some annotation; _ }; _ };
+                  _;
+                } ->
                   Some annotation
               | _ -> None
             in
@@ -1153,8 +1277,16 @@ end = struct
                           };
                     }
           in
-          { Node.location; value = { attribute with Attribute.annotation } }
-      | [] -> failwith "Unpossible!"
+          {
+            Node.location;
+            value =
+              {
+                attribute with
+                Attribute.kind =
+                  Simple { annotation; value; primitive; frozen; toplevel; implicit };
+              };
+          }
+      | _ -> failwith "Unpossible!"
     in
     let rec gather_nested_statements ~toplevel body =
       (* Can't use `Visit` module due to circularity :( *)
@@ -1219,76 +1351,6 @@ end = struct
     gather_nested_statements ~toplevel:true body
     |> List.fold ~init:toplevel_attributes ~f:(attribute ~toplevel:false)
     |> Identifier.SerializableMap.map merge_attributes
-
-
-  let property_attribute
-      ~location
-      ({ signature = { name; return_annotation; parameters; parent; _ }; _ } as define)
-    =
-    let attribute ?(setter = false) annotation =
-      parent
-      >>= (fun parent -> Attribute.name ~parent (Expression.from_reference ~location name))
-      >>| fun name ->
-      Attribute.create
-        ~location
-        ~setter
-        ~name
-        ~property:true
-        ?annotation
-        ~async:(is_async define)
-        ()
-    in
-    match String.Set.find ~f:(has_decorator define) Recognized.property_decorators with
-    | Some decorator when Set.mem Recognized.classproperty_decorators decorator ->
-        let return_annotation =
-          let open Expression in
-          match return_annotation with
-          | Some ({ Node.location; value = Name _ } as name) ->
-              Some
-                {
-                  Node.location;
-                  value =
-                    Call
-                      {
-                        callee =
-                          {
-                            Node.location;
-                            value =
-                              Name
-                                (Name.Attribute
-                                   {
-                                     base =
-                                       {
-                                         Node.location;
-                                         value =
-                                           Name
-                                             (Name.Attribute
-                                                {
-                                                  base =
-                                                    {
-                                                      Node.location;
-                                                      value = Name (Name.Identifier "typing");
-                                                    };
-                                                  attribute = "ClassVar";
-                                                  special = false;
-                                                });
-                                       };
-                                     attribute = "__getitem__";
-                                     special = true;
-                                   });
-                          };
-                        arguments = [{ Call.Argument.name = None; value = name }];
-                      };
-                }
-          | _ -> None
-        in
-        attribute return_annotation
-    | Some _ -> attribute return_annotation
-    | None -> (
-      match is_property_setter define, parameters with
-      | true, _ :: { Node.value = { Parameter.annotation; _ }; _ } :: _ ->
-          attribute ~setter:true annotation
-      | _ -> None )
 end
 
 and For : sig

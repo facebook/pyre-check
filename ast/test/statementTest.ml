@@ -271,35 +271,16 @@ let test_is_unit_test _ =
 let test_attributes _ =
   let create_attribute
       ~annotation
-      ?signatures
-      ?(final = false)
       ?(frozen = false)
       ?(implicit = true)
       ?(location = Location.Reference.any)
       ~name
       ?(primitive = false)
-      ?(property = false)
-      ?(setter = false)
-      ?(static = false)
       ?(toplevel = true)
       ~value
       ()
     =
-    {
-      Attribute.annotation;
-      async = false;
-      signatures;
-      final;
-      frozen;
-      implicit;
-      name;
-      primitive;
-      property;
-      setter;
-      static;
-      toplevel;
-      value;
-    }
+    { Attribute.kind = Simple { annotation; frozen; implicit; primitive; toplevel; value }; name }
     |> Node.create ~location
   in
   (* Test define field assigns. *)
@@ -419,55 +400,10 @@ let test_attributes _ =
   |}
     ["attribute", Some Type.integer, Some "value", true];
 
-  (* Test define field assigns. *)
-  let assert_property_attribute source expected =
-    let expected =
-      expected
-      >>| fun (name, annotation, value, setter) ->
-      create_attribute
-        ~setter
-        ~name
-        ~annotation:(annotation >>| Type.expression)
-        ~value
-        ~property:true
-        ~implicit:false
-        ()
-    in
-    let define =
-      let define = parse_single_define source in
-      let signature = { define.signature with parent = Some !&"Parent" } in
-      { define with signature }
-    in
-    assert_equal
-      ~cmp:(Option.equal Attribute.equal)
-      expected
-      (Define.property_attribute define ~location:Location.Reference.any)
-  in
-  assert_property_attribute "def Parent.foo(): pass" None;
-  assert_property_attribute "@property\ndef Parent.foo(): pass" (Some ("foo", None, None, false));
-  assert_property_attribute
-    {|
-      @foo.setter
-      def Parent.foo(self, value: int) -> None: pass
-    |}
-    (Some ("foo", Some Type.integer, None, true));
-  assert_property_attribute
-    {|
-      @__property__
-      def Parent.foo(): pass
-    |}
-    (Some ("foo", None, None, false));
-  assert_property_attribute
-    {|
-      @abc.abstractproperty
-      def Parent.foo() -> int: pass
-    |}
-    (Some ("foo", Some Type.integer, None, false));
-
   (* Test class attributes. *)
   let assert_attributes ?(in_test = false) ?(include_generated_attributes = true) source expected =
     let expected =
-      let attribute (name, location, annotation, value, setter, number_of_defines) =
+      let attribute (name, location, annotation, value, setter, number_of_defines, property) =
         let location =
           match location with
           | None -> None
@@ -479,7 +415,7 @@ let test_attributes _ =
                   stop = { Location.line = stop_line; column = stop_column };
                 }
         in
-        let signatures =
+        let kind =
           if number_of_defines > 0 then
             let define =
               {
@@ -493,33 +429,53 @@ let test_attributes _ =
                 parent = None;
               }
             in
-            Some (List.init ~f:(fun _ -> define) number_of_defines)
+            let signatures = List.init ~f:(fun _ -> define) number_of_defines in
+            Attribute.Method { signatures; static = false; final = false }
+          else if property then
+            let kind =
+              if setter then
+                Attribute.ReadWrite
+                  {
+                    getter_annotation = value >>| parse_single_expression;
+                    setter_annotation = annotation >>| Type.expression;
+                  }
+              else
+                Attribute.ReadOnly { getter_annotation = annotation >>| Type.expression }
+            in
+            Attribute.Property { kind; async = false; class_property = false }
           else
-            None
+            Attribute.Simple
+              {
+                annotation = annotation >>| Type.expression;
+                primitive = true;
+                value = value >>| parse_single_expression;
+                frozen = false;
+                toplevel = true;
+                implicit = false;
+              }
         in
-        create_attribute
-          ~name
-          ~annotation:(annotation >>| Type.expression)
-          ?location
-          ?signatures
-          ~value:(value >>| parse_single_expression)
-          ~setter
-          ()
+        { Attribute.kind; name }
+        |> Node.create ~location:(Option.value location ~default:Location.Reference.any)
       in
       List.map expected ~f:attribute
     in
     let printer attributes = List.map attributes ~f:Attribute.show |> String.concat ~sep:"\n\n" in
     let equal
-        { Node.value = left; location = left_location }
-        { Node.value = right; location = right_location }
+        { Node.value = { Attribute.kind = left; name = left_name }; location = left_location }
+        { Node.value = { Attribute.kind = right; name = right_name }; location = right_location }
       =
       let open Attribute in
-      left.async = right.async
-      && left.setter = right.setter
-      && String.equal left.name right.name
-      && Option.equal Expression.equal left.annotation right.annotation
-      && Option.equal Expression.equal left.value right.value
-      && Option.equal Int.equal (left.signatures >>| List.length) (right.signatures >>| List.length)
+      let equal_kind =
+        match left, right with
+        | Simple left, Simple right ->
+            Option.equal Expression.equal left.annotation right.annotation
+            && Option.equal Expression.equal left.value right.value
+        | Method left, Method right ->
+            Int.equal (left.signatures |> List.length) (right.signatures |> List.length)
+        | _ -> Attribute.equal_kind left right
+      in
+      equal_kind
+      && String.equal left_name right_name
       && ( Location.equal left_location Location.Reference.any
          || Location.equal left_location right_location )
     in
@@ -532,8 +488,17 @@ let test_attributes _ =
       |> Identifier.SerializableMap.bindings
       |> List.map ~f:snd )
   in
-  let attribute ~name ?location ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
-    name, location, annotation, value, setter, number_of_defines
+  let attribute
+      ~name
+      ?location
+      ?annotation
+      ?value
+      ?(number_of_defines = 0)
+      ?(property = false)
+      ?(setter = false)
+      ()
+    =
+    name, location, annotation, value, setter, number_of_defines, property
   in
   assert_attributes
     {|
@@ -600,14 +565,14 @@ let test_attributes _ =
         def Foo.property(self) -> int:
           pass
     |}
-    [attribute ~name:"property" ~annotation:Type.integer ()];
+    [attribute ~name:"property" ~annotation:Type.integer ~property:true ()];
   assert_attributes
     {|
       class Foo:
         @property
         def Foo.property(self) -> int: ...
     |}
-    [attribute ~name:"property" ~annotation:Type.integer ()];
+    [attribute ~name:"property" ~annotation:Type.integer ~property:true ()];
   assert_attributes
     {|
       class Foo:
@@ -623,19 +588,12 @@ let test_attributes _ =
   assert_attributes
     {|
       class Foo:
-        @property.setter
-        def Foo.property(self, value: str) -> None: ...
-    |}
-    [attribute ~name:"property" ~annotation:Type.string ~setter:true ()];
-  assert_attributes
-    {|
-      class Foo:
         @property
         def Foo.x(self) -> int: ...
         @x.setter
         def Foo.x(self, value:str) -> None: ...
     |}
-    [attribute ~name:"x" ~annotation:Type.string ~value:"int" ~setter:true ()];
+    [attribute ~name:"x" ~annotation:Type.string ~value:"int" ~property:true ~setter:true ()];
 
   (* Simultaneous assignment *)
   assert_attributes
@@ -643,15 +601,15 @@ let test_attributes _ =
       class Foo:
         Foo.a, Foo.b = 1, 2
      |}
-    ["a", None, None, Some "1", false, 0; "b", None, None, Some "2", false, 0];
+    ["a", None, None, Some "1", false, 0, false; "b", None, None, Some "2", false, 0, false];
   assert_attributes
     {|
       class Foo:
         Foo.a, Foo.b = list(range(2))
     |}
     [
-      "a", None, None, Some "list(range(2))[0]", false, 0;
-      "b", None, None, Some "list(range(2))[1]", false, 0;
+      "a", None, None, Some "list(range(2))[0]", false, 0, false;
+      "b", None, None, Some "list(range(2))[1]", false, 0, false;
     ];
 
   (* Implicit attributes in tests. *)

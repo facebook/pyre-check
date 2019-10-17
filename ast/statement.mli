@@ -66,20 +66,38 @@ module rec Assert : sig
 end
 
 and Attribute : sig
+  type property_kind =
+    | ReadOnly of { getter_annotation: Expression.t option }
+    | ReadWrite of {
+        getter_annotation: Expression.t option;
+        setter_annotation: Expression.t option;
+      }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type kind =
+    | Simple of {
+        annotation: Expression.t option;
+        value: Expression.t option;
+        primitive: bool;
+        frozen: bool;
+        toplevel: bool;
+        implicit: bool;
+      }
+    | Method of {
+        signatures: Define.Signature.t list;
+        static: bool;
+        final: bool;
+      }
+    | Property of {
+        async: bool;
+        class_property: bool;
+        kind: property_kind;
+      }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type attribute = {
-    annotation: Expression.t option;
-    async: bool;
-    signatures: Define.Signature.t list option;
-    final: bool;
-    implicit: bool;
-    frozen: bool;
+    kind: kind;
     name: Identifier.t;
-    primitive: bool;
-    property: bool;
-    setter: bool;
-    static: bool;
-    toplevel: bool;
-    value: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -237,8 +255,6 @@ and Define : sig
   val show_json : t -> string
 
   val implicit_attributes : t -> definition:Class.t -> Attribute.t Identifier.SerializableMap.t
-
-  val property_attribute : location:Location.t -> t -> Attribute.t option
 
   val has_decorator : ?match_prefix:bool -> t -> string -> bool
 

@@ -506,35 +506,19 @@ let test_class_attributes context =
           class_attribute: typing.ClassVar[int]
       |}
   in
-  let create_attribute
+  let create_simple_attribute
       ?(annotation = Some !"int")
-      ?(async = false)
-      ?signatures
-      ?(final = false)
       ?(frozen = false)
       ?(implicit = false)
       ?(primitive = false)
-      ?(property = false)
-      ?(setter = false)
-      ?(static = false)
       ?(toplevel = true)
       ?value
       name
     =
     +{
-       StatementAttribute.annotation;
-       async;
-       signatures;
-       final;
-       frozen;
-       implicit;
+       StatementAttribute.kind =
+         Simple { annotation; frozen; implicit; primitive; toplevel; value };
        name;
-       property;
-       primitive;
-       setter;
-       static;
-       toplevel;
-       value;
      }
   in
   (* Test `Class.attributes`. *)
@@ -560,17 +544,23 @@ let test_class_attributes context =
   assert_attributes
     parent
     [
-      Class.create_attribute ~resolution ~parent (create_attribute "__init__");
-      Class.create_attribute ~resolution ~parent (create_attribute "class_attribute");
-      Class.create_attribute ~resolution ~parent (create_attribute "first");
-      Class.create_attribute ~resolution ~parent (create_attribute "implicit");
-      Class.create_attribute ~resolution ~parent (create_attribute "second");
-      Class.create_attribute ~resolution ~parent (create_attribute "third" ~value:(+Integer 1));
+      Class.create_attribute ~resolution ~parent (create_simple_attribute "__init__");
+      Class.create_attribute ~resolution ~parent (create_simple_attribute "class_attribute");
+      Class.create_attribute ~resolution ~parent (create_simple_attribute "first");
+      Class.create_attribute ~resolution ~parent (create_simple_attribute "implicit");
+      Class.create_attribute ~resolution ~parent (create_simple_attribute "second");
+      Class.create_attribute
+        ~resolution
+        ~parent
+        (create_simple_attribute "third" ~value:(+Integer 1));
     ];
 
   (* Test `Attribute`. *)
   let attribute =
-    Class.create_attribute ~resolution ~parent (create_attribute ~annotation:(Some !"int") "first")
+    Class.create_attribute
+      ~resolution
+      ~parent
+      (create_simple_attribute ~annotation:(Some !"int") "first")
   in
   assert_equal (Attribute.name attribute) "first";
   assert_equal
@@ -581,7 +571,7 @@ let test_class_attributes context =
     Class.create_attribute
       ~resolution
       ~parent
-      (create_attribute
+      (create_simple_attribute
          ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" !![Type.integer])))
          "first")
   in
@@ -778,7 +768,8 @@ let test_class_attributes context =
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
     ~attribute_name:"property"
     ~expected_attribute:
-      (create_expected_attribute ~initialized:false ~property:(Some ReadOnly) "property" "str")
+      (create_expected_attribute ~initialized:false ~property:(Some ReadOnly) "property" "str");
+  ()
 
 
 let test_fallback_attribute context =
