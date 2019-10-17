@@ -6,7 +6,7 @@
 # pyre-strict
 
 import json
-from typing import Dict, List, Type, TypeVar, cast
+from typing import Any, Dict, List, Type, TypeVar, cast
 
 from typing_inspect import get_last_args, get_origin
 
@@ -46,7 +46,9 @@ def _validate_dictionary(
 
 
 def _validate_value(value: object, target_type: Type[object]) -> None:
-    if _is_list(target_type):
+    if target_type is Any:
+        return
+    elif _is_list(target_type):
         _validate_list(value, cast(Type[List[object]], target_type))
     elif _is_dictionary(target_type):
         _validate_dictionary(value, cast(Type[Dict[object, object]], target_type))

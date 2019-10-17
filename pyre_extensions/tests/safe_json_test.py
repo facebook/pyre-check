@@ -1,7 +1,7 @@
 # pyre-ignore-all-errors
 
 import unittest
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from .. import safe_json
 
@@ -33,6 +33,10 @@ class BasicTestCase(unittest.TestCase):
             safe_json.loads('{"1": {"2": 3}}', Dict[str, Dict[str, int]]),
             {"1": {"2": 3}},
         )
+
+        # Any.
+        self.assertEqual(safe_json.loads("[1]", List[Any]), [1])
+        self.assertEqual(safe_json.loads('[{"1": 1}]', List[Any]), [{"1": 1}])
 
 
 if __name__ == "__main__":
