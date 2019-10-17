@@ -768,7 +768,7 @@ let test_class_attributes context =
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
     ~attribute_name:"property"
     ~expected_attribute:
-      (create_expected_attribute ~initialized:false ~property:(Some ReadOnly) "property" "str");
+      (create_expected_attribute ~initialized:true ~property:(Some ReadOnly) "property" "str");
   ()
 
 

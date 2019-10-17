@@ -550,8 +550,6 @@ let create_attribute
           | Simple { value = Some { Node.value = Ellipsis; _ }; _ }
           | Simple { value = None; _ } ->
               false
-          (* TODO fix this *)
-          | Property { kind = ReadOnly _; _ } -> false
           | Simple { value = Some _; _ }
           | Method _
           | Property _ ->
