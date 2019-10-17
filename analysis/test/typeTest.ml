@@ -2216,8 +2216,7 @@ let test_infer_transform _ =
   assert_transform
     ~annotation:
       (Type.Parametric { name = "typing.Dict"; parameters = Concrete [Type.Bottom; Type.Bottom] })
-    ~expected:
-      (Type.Parametric { name = "typing.Dict"; parameters = Concrete [Type.Any; Type.Any] });
+    ~expected:(Type.Parametric { name = "dict"; parameters = Concrete [Type.Any; Type.Any] });
   assert_transform
     ~annotation:
       (Type.Tuple
@@ -2228,7 +2227,29 @@ let test_infer_transform _ =
     ~annotation:
       (Type.Tuple (Type.Bounded (Concrete [Type.Primitive "string"; Type.Primitive "string"])))
     ~expected:
-      (Type.Tuple (Type.Bounded (Concrete [Type.Primitive "string"; Type.Primitive "string"])))
+      (Type.Tuple (Type.Bounded (Concrete [Type.Primitive "string"; Type.Primitive "string"])));
+  assert_transform
+    ~annotation:
+      (Type.Parametric
+         {
+           name = "Union";
+           parameters =
+             Concrete [Type.Primitive "string"; Type.Primitive "string"; Type.Primitive "int"];
+         })
+    ~expected:(Type.Union [Type.Primitive "int"; Type.Primitive "string"]);
+  assert_transform
+    ~annotation:
+      (Type.Parametric
+         {
+           name = "Union";
+           parameters = Concrete [Type.Primitive "string"; Type.Primitive "string"];
+         })
+    ~expected:(Type.Primitive "string");
+  assert_transform
+    ~annotation:
+      (Type.Parametric
+         { name = "Union"; parameters = Concrete [Type.Optional Bottom; Type.Primitive "string"] })
+    ~expected:(Type.Optional (Type.Primitive "string"))
 
 
 let () =

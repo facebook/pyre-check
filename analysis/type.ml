@@ -3809,14 +3809,15 @@ let infer_transform annotation =
             let implementation = { implementation with parameters = Defined parameters } in
             Callable { callable with implementation }
         | Parametric { name = "typing.Dict"; parameters = Concrete [Bottom; Bottom] } ->
-            Parametric { name = "typing.Dict"; parameters = Concrete [Any; Any] }
-        | Parametric { name = "List"; parameters = Concrete [Bottom] } ->
-            Parametric { name = "typing.List"; parameters = Concrete [Any] }
+            dictionary ~key:Any ~value:Any
+        | Parametric { name = "List" | "typing.List"; parameters = Concrete [Bottom] } -> list Any
         (* This is broken in typeshed:
            https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
         | Primitive "_PathLike" -> Primitive "PathLike"
         | Parametric { name = "_PathLike"; parameters } ->
             Parametric { name = "PathLike"; parameters }
+        | Parametric { name = "Union" | "typing.Union"; parameters = Concrete parameters } ->
+            union parameters
         | _ -> annotation
       in
       { Transform.transformed_annotation; new_state = () }
