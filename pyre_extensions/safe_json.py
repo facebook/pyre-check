@@ -8,7 +8,7 @@
 import json
 from typing import Any, Dict, List, Type, TypeVar, cast
 
-from typing_inspect import get_last_args, get_origin
+from typing_inspect import get_last_args, get_origin, is_optional_type
 
 
 class InvalidJson(json.JSONDecodeError):
@@ -52,6 +52,10 @@ def _validate_value(value: object, target_type: Type[object]) -> None:
         _validate_list(value, cast(Type[List[object]], target_type))
     elif _is_dictionary(target_type):
         _validate_dictionary(value, cast(Type[Dict[object, object]], target_type))
+    elif is_optional_type(target_type):
+        if value is None:
+            return
+        _validate_value(value, get_last_args(target_type)[0])
     else:
         if target_type not in [int, float, str, bool]:
             raise InvalidJson(f"Invalid value type {target_type}")
