@@ -74,20 +74,17 @@ let produce_global_annotation environment name ~track_dependencies =
     match global with
     | UnannotatedGlobalEnvironment.Define (head :: _ as defines) ->
         let create_overload
-            {
-              Node.location;
-              Node.value = { Define.signature = { name; parent; _ } as signature; _ } as define;
-            }
+            { Node.location; Node.value = { Define.Signature.name; parent; _ } as signature }
           =
           let parent =
-            if Define.is_class_method define then
+            if Define.Signature.is_class_method signature then
               parent >>| Reference.show >>| (fun name -> Type.Primitive name) >>| Type.meta
             else
               None
           in
           Node.create ~location signature
           |> ResolvedCallable.apply_decorators ~resolution
-          |> (fun overload -> [Define.is_overloaded_method define, overload])
+          |> (fun overload -> [Define.Signature.is_overloaded_method signature, overload])
           |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)
         in
         List.map defines ~f:create_overload

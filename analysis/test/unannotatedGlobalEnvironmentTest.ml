@@ -103,7 +103,8 @@ let test_simple_global_registration context =
   |} "other.bar" None;
   let parse_define define =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
-    | { Node.value = Statement.Statement.Define define; location } -> Node.create define ~location
+    | { Node.value = Statement.Statement.Define { signature; _ }; location } ->
+        Node.create signature ~location
     | _ -> failwith "not define"
   in
   assert_registers
@@ -648,6 +649,37 @@ let test_updates context =
     ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
     ~expected_triggers:[]
     ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ();
+  let parse_define define =
+    match parse_single_statement define ~preprocess:true ~handle:"test.py" with
+    | { Node.value = Statement.Statement.Define { signature; _ }; location } ->
+        Node.create signature ~location
+    | _ -> failwith "not define"
+  in
+  assert_updates
+    ~original_source:{|
+      def foo() -> None:
+       print("hello")
+    |}
+    ~new_source:{|
+      def foo() -> None:
+       print("goodbye")
+    |}
+    ~middle_actions:
+      [
+        `Global
+          ( Reference.create "test.foo",
+            dependency,
+            Some (UnannotatedGlobalEnvironment.Define [parse_define "def foo() -> None: pass"]) );
+      ]
+    ~expected_triggers:[]
+    ~post_actions:
+      [
+        `Global
+          ( Reference.create "test.foo",
+            dependency,
+            Some (UnannotatedGlobalEnvironment.Define [parse_define "def foo() -> None: pass"]) );
+      ]
     ();
   ()
 

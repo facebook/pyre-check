@@ -22,7 +22,7 @@ type unannotated_global =
       total_length: int;
     }
   | Imported of Reference.t
-  | Define of Define.t Node.t list
+  | Define of Define.Signature.t Node.t list
 [@@deriving compare, show]
 
 module ReadOnly : sig
