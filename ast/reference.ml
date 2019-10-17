@@ -8,7 +8,7 @@ open Pyre
 open Sexplib.Conv
 
 module T = struct
-  type t = Identifier.t list [@@deriving compare, eq, sexp, hash, to_yojson]
+  type t = Identifier.t list [@@deriving compare, eq, sexp, hash, to_yojson, show]
 end
 
 include T

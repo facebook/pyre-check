@@ -7,7 +7,7 @@ open Core
 open Sexplib.Conv
 
 module T = struct
-  type t = string [@@deriving compare, eq, sexp, hash, to_yojson]
+  type t = string [@@deriving compare, eq, sexp, hash, to_yojson, show]
 end
 
 include T
