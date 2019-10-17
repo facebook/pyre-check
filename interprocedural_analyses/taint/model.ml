@@ -626,9 +626,8 @@ let create ~resolution ?path ~configuration ~verify source =
             List.find_map bases ~f:class_source_base
           in
           if Option.is_some sink_annotation || Option.is_some source_annotation then
-            GlobalResolution.class_definition
-              global_resolution
-              (Type.Primitive (Reference.show name))
+            GlobalResolution.class_definitions global_resolution name
+            >>= List.hd
             >>| (fun { Node.value = { Class.body; _ }; _ } ->
                   let signature { Node.value; location } =
                     match value with
@@ -806,9 +805,8 @@ let create ~resolution ?path ~configuration ~verify source =
                   None
             | _ -> None
           in
-          GlobalResolution.class_definition
-            global_resolution
-            (Type.Primitive (Reference.show parent))
+          GlobalResolution.class_definitions global_resolution parent
+          >>= List.hd
           >>| (fun definition -> definition.Node.value.Class.body)
           >>= List.find_map ~f:get_matching_define
           >>| Annotation.create

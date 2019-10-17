@@ -537,32 +537,40 @@ module FunctionDefinitionsCache = struct
   let invalidate () = Hashtbl.clear cache
 end
 
+let containing_source resolution reference =
+  let ast_environment = ast_environment resolution in
+  let rec qualifier ~lead ~tail =
+    match tail with
+    | head :: tail ->
+        let new_lead = Reference.create ~prefix:lead head in
+        if Option.is_none (module_definition resolution new_lead) then
+          lead
+        else
+          qualifier ~lead:new_lead ~tail
+    | _ -> lead
+  in
+  qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
+  |> AstEnvironment.ReadOnly.get_source ast_environment
+
+
 let function_definitions resolution reference =
   match FunctionDefinitionsCache.get reference with
   | Some result -> result
   | None ->
-      let qualifier =
-        let rec qualifier ~lead ~tail =
-          match tail with
-          | head :: tail ->
-              let new_lead = Reference.create ~prefix:lead head in
-              if Option.is_none (module_definition resolution new_lead) then
-                lead
-              else
-                qualifier ~lead:new_lead ~tail
-          | _ -> lead
-        in
-        qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
-      in
       let result =
-        let ast_environment = ast_environment resolution in
-        AstEnvironment.ReadOnly.get_source ast_environment qualifier
+        containing_source resolution reference
         >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
         >>| List.filter ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
                 Reference.equal reference name)
       in
       FunctionDefinitionsCache.set reference result;
       result
+
+
+let class_definitions resolution reference =
+  containing_source resolution reference
+  >>| Preprocessing.classes
+  >>| List.filter ~f:(fun { Node.value = { Class.name; _ }; _ } -> Reference.equal reference name)
 
 
 let is_suppressed_module resolution reference =

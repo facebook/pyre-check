@@ -201,6 +201,8 @@ val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
 val check_class_hierarchy_integrity : t -> unit
 
+val class_definitions : t -> Reference.t -> Class.t Node.t list option
+
 module AnnotationCache : sig
   val clear : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> unit
 end
