@@ -96,15 +96,18 @@ and Attribute : sig
       }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type simple = {
+    annotation: Expression.t option;
+    value: Expression.t option;
+    primitive: bool;
+    frozen: bool;
+    toplevel: bool;
+    implicit: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type kind =
-    | Simple of {
-        annotation: Expression.t option;
-        value: Expression.t option;
-        primitive: bool;
-        frozen: bool;
-        toplevel: bool;
-        implicit: bool;
-      }
+    | Simple of simple
     | Method of {
         signatures: Define.Signature.t list;
         static: bool;
@@ -147,15 +150,18 @@ end = struct
       }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type simple = {
+    annotation: Expression.t option;
+    value: Expression.t option;
+    primitive: bool;
+    frozen: bool;
+    toplevel: bool;
+    implicit: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type kind =
-    | Simple of {
-        annotation: Expression.t option;
-        value: Expression.t option;
-        primitive: bool;
-        frozen: bool;
-        toplevel: bool;
-        implicit: bool;
-      }
+    | Simple of simple
     | Method of {
         signatures: Define.Signature.t list;
         static: bool;
@@ -1166,20 +1172,20 @@ end = struct
              _;
             }
               when Identifier.equal self (self_identifier define) ->
-                let attribute =
-                  Attribute.create_simple
-                    ~toplevel
-                    ~location
-                    ~name
-                    ?annotation
-                    ~value
-                    ~primitive:true
-                    ~implicit:true
-                    ()
+                let simple =
+                  {
+                    Attribute.annotation;
+                    value = Some value;
+                    primitive = true;
+                    frozen = false;
+                    toplevel;
+                    implicit = true;
+                  }
+                  |> Node.create ~location
                 in
                 let update = function
-                  | Some attributes -> Some (attribute :: attributes)
-                  | None -> Some [attribute]
+                  | Some (head, tail) -> Some (simple, head :: tail)
+                  | None -> Some (simple, [])
                 in
                 Identifier.SerializableMap.update name update map
             | _ -> map
@@ -1220,25 +1226,17 @@ end = struct
           | _ -> map )
       | _ -> map
     in
-    let merge_attributes = function
-      | [attribute] -> attribute
-      | {
-          Node.location;
-          value =
-            { Attribute.kind = Simple { value; primitive; frozen; toplevel; implicit; _ }; _ } as
-            attribute;
-        }
-        :: _ as attributes ->
+    let merge_attributes name = function
+      | { Node.location; value = simple }, [] ->
+          { Attribute.kind = Simple simple; name } |> Node.create ~location
+      | ({ Node.location; value = simple } as head), tail ->
           let annotation =
             let annotation = function
-              | {
-                  Node.value = { Attribute.kind = Simple { annotation = Some annotation; _ }; _ };
-                  _;
-                } ->
+              | { Node.value = { Attribute.annotation = Some annotation; _ }; _ } ->
                   Some annotation
               | _ -> None
             in
-            match List.filter_map ~f:annotation attributes with
+            match List.filter_map ~f:annotation (head :: tail) with
             | [] -> None
             | ({ Node.location; _ } as annotation) :: annotations ->
                 let argument_value =
@@ -1286,14 +1284,8 @@ end = struct
           in
           {
             Node.location;
-            value =
-              {
-                attribute with
-                Attribute.kind =
-                  Simple { annotation; value; primitive; frozen; toplevel; implicit };
-              };
+            value = { Attribute.name; Attribute.kind = Simple { simple with annotation } };
           }
-      | _ -> failwith "Unpossible!"
     in
     let rec gather_nested_statements ~toplevel body =
       (* Can't use `Visit` module due to circularity :( *)
@@ -1357,7 +1349,7 @@ end = struct
     in
     gather_nested_statements ~toplevel:true body
     |> List.fold ~init:toplevel_attributes ~f:(attribute ~toplevel:false)
-    |> Identifier.SerializableMap.map merge_attributes
+    |> Identifier.SerializableMap.mapi merge_attributes
 end
 
 and For : sig

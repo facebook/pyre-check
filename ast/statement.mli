@@ -74,15 +74,18 @@ and Attribute : sig
       }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type simple = {
+    annotation: Expression.t option;
+    value: Expression.t option;
+    primitive: bool;
+    frozen: bool;
+    toplevel: bool;
+    implicit: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type kind =
-    | Simple of {
-        annotation: Expression.t option;
-        value: Expression.t option;
-        primitive: bool;
-        frozen: bool;
-        toplevel: bool;
-        implicit: bool;
-      }
+    | Simple of simple
     | Method of {
         signatures: Define.Signature.t list;
         static: bool;
