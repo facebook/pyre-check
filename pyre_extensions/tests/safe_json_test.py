@@ -42,6 +42,9 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(safe_json.loads("[1]", List[Optional[int]]), [1])
         self.assertEqual(safe_json.loads("[null, 2]", List[Optional[int]]), [None, 2])
 
+        # Validation can be turned off.
+        self.assertEqual(safe_json.loads("[1]", List[str], validate=False), [1])
+
 
 if __name__ == "__main__":
     unittest.main()

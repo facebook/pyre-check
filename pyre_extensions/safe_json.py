@@ -75,10 +75,11 @@ def _validate_toplevel(value: object, target_type: Type[object]) -> None:
 T = TypeVar("T")
 
 
-def loads(input: str, target: Type[T]) -> T:
+def loads(input: str, target: Type[T], *, validate: bool = True) -> T:
     try:
         parsed = json.loads(input)
-        _validate_toplevel(parsed, target)
+        if validate:
+            _validate_toplevel(parsed, target)
         return parsed
     except Exception as exception:
         raise InvalidJson(str(exception))
