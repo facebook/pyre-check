@@ -1622,12 +1622,12 @@ module State (Context : Context) = struct
             when String.equal "__init__" (Reference.last access) ->
               GlobalResolution.class_definition global_resolution implementation.annotation
               >>| (function
-                    | { Node.value = definition; _ } ->
-                        let { Class.name = class_name; _ } = definition in
+                    | { Node.value = summary; _ } ->
+                        let { ClassSummary.name = class_name; _ } = summary in
                         let abstract_methods =
                           Annotated.Class.get_abstract_attributes
                             ~resolution:global_resolution
-                            (Annotated.Class.create (Node.create ~location definition))
+                            (Annotated.Class.create (Node.create ~location summary))
                           |> List.map ~f:Annotated.Attribute.name
                         in
                         if not (List.is_empty abstract_methods) then
@@ -1637,7 +1637,7 @@ module State (Context : Context) = struct
                               reason =
                                 Some (AbstractClassInstantiation { class_name; abstract_methods });
                             }
-                        else if Class.is_protocol definition then
+                        else if ClassSummary.is_protocol summary then
                           Annotated.Signature.NotFound
                             { callable; reason = Some (ProtocolInstantiation class_name) }
                         else

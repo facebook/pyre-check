@@ -24,7 +24,7 @@ type class_data = {
 
 val name_equal : t -> t -> bool
 
-val create : Class.t Node.t -> t
+val create : ClassSummary.t Node.t -> t
 
 val name : t -> Reference.t
 
@@ -37,7 +37,7 @@ val annotation : t -> Type.t
 val successors : t -> resolution:GlobalResolution.t -> Type.Primitive.t list
 
 val successors_fold
-  :  Class.t Node.t ->
+  :  t ->
   resolution:GlobalResolution.t ->
   f:('b -> string -> 'b) ->
   initial:'b ->

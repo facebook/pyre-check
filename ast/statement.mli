@@ -122,25 +122,26 @@ and Class : sig
 
   val is_frozen : t -> bool
 
-  val implicit_attributes : ?in_test:bool -> t -> Attribute.t Identifier.SerializableMap.t
-
   val explicitly_assigned_attributes : t -> Attribute.t Identifier.SerializableMap.t
+
+  type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  module AttributeComponents : sig
+    type t [@@deriving compare, eq, sexp, show, hash]
+
+    val create : class_t -> t
+  end
+
+  val implicit_attributes
+    :  ?in_test:bool ->
+    AttributeComponents.t ->
+    Attribute.t Identifier.SerializableMap.t
 
   val attributes
     :  ?include_generated_attributes:bool ->
     ?in_test:bool ->
-    t ->
+    AttributeComponents.t ->
     Attribute.t Identifier.SerializableMap.t
-
-  val has_decorator : t -> string -> bool
-
-  val is_unit_test : t -> bool
-
-  val is_final : t -> bool
-
-  val is_abstract : t -> bool
-
-  val is_protocol : t -> bool
 end
 
 and Define : sig

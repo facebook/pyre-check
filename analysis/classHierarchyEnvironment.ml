@@ -76,7 +76,7 @@ let get_parents ({ alias_environment } as environment) name ~track_dependencies 
         | _ -> None )
     | _ -> None
   in
-  let bases ({ Node.value = { Class.bases; _ }; _ } as definition) =
+  let bases ({ Node.value = { ClassSummary.bases; _ }; _ } as definition) =
     let inferred_base = AnnotatedBases.inferred_generic_base definition ~parse_annotation in
     inferred_base @ bases
   in

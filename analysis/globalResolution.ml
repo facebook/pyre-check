@@ -37,7 +37,7 @@ type t = {
   class_hierarchy: (module ClassHierarchy.Handler);
   aliases: Type.Primitive.t -> Type.alias option;
   module_definition: Reference.t -> Module.t option;
-  class_definition: Type.Primitive.t -> Class.t Node.t option;
+  class_definition: Type.Primitive.t -> ClassSummary.t Node.t option;
   class_metadata: Type.Primitive.t -> ClassMetadataEnvironment.class_metadata option;
   constructor: resolution:t -> Type.Primitive.t -> Type.t option;
   attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
@@ -59,7 +59,7 @@ module type AnnotatedClass = sig
     class_definition: t;
   }
 
-  val create : Class.t Node.t -> t
+  val create : ClassSummary.t Node.t -> t
 
   val constructor : t -> instantiated:Type.t -> resolution:global_resolution_t -> Type.t
 
@@ -430,7 +430,7 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
   let is_concrete_constructable class_type =
     primitive_name class_type
     >>= class_definition
-    >>| (fun { Node.value = { Class.name; _ }; _ } -> Reference.show name)
+    >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
     >>= variables ~default:(Some (ClassHierarchy.Unaries [])) resolution
     >>| ClassHierarchy.equal_variables (ClassHierarchy.Unaries [])
     |> Option.value ~default:false
@@ -707,7 +707,7 @@ let source_is_unit_test resolution ~source =
   List.exists (Preprocessing.classes source) ~f:is_unittest
 
 
-let class_extends_placeholder_stub_class resolution { Class.bases; _ } =
+let class_extends_placeholder_stub_class resolution { ClassSummary.bases; _ } =
   let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
     let parsed =
       parse_annotation

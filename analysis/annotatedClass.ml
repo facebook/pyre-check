@@ -12,7 +12,7 @@ module StatementAttribute = Attribute
 module Callable = AnnotatedCallable
 module Attribute = AnnotatedAttribute
 
-type t = Class.t Node.t [@@deriving compare, eq, sexp, show, hash]
+type t = ClassSummary.t Node.t [@@deriving compare, eq, sexp, show, hash]
 
 type decorator = {
   name: string;
@@ -57,17 +57,17 @@ type class_data = {
 }
 
 let name_equal
-    { Node.value = { Class.name = left; _ }; _ }
-    { Node.value = { Class.name = right; _ }; _ }
+    { Node.value = { ClassSummary.name = left; _ }; _ }
+    { Node.value = { ClassSummary.name = right; _ }; _ }
   =
   Reference.equal left right
 
 
 let create definition = definition
 
-let name { Node.value = { Class.name; _ }; _ } = name
+let name { Node.value = { ClassSummary.name; _ }; _ } = name
 
-let bases { Node.value = { Class.bases; _ }; _ } = bases
+let bases { Node.value = { ClassSummary.bases; _ }; _ } = bases
 
 let matches_decorator decorator ~target ~resolution =
   let name_resolves_to_target ~name =
@@ -86,13 +86,13 @@ let matches_decorator decorator ~target ~resolution =
   | _ -> None
 
 
-let get_decorator { Node.value = { Class.decorators; _ }; _ } ~resolution ~decorator =
+let get_decorator { Node.value = { ClassSummary.decorators; _ }; _ } ~resolution ~decorator =
   List.filter_map ~f:(matches_decorator ~target:decorator ~resolution) decorators
 
 
-let annotation { Node.value = { Class.name; _ }; _ } = Type.Primitive (Reference.show name)
+let annotation { Node.value = { ClassSummary.name; _ }; _ } = Type.Primitive (Reference.show name)
 
-let successors { Node.value = { Class.name; _ }; _ } ~resolution =
+let successors { Node.value = { ClassSummary.name; _ }; _ } ~resolution =
   Type.Primitive (Reference.show name)
   |> GlobalResolution.class_metadata resolution
   >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
@@ -103,7 +103,7 @@ let successors_fold class_node ~resolution ~f ~initial =
   successors class_node ~resolution |> List.fold ~init:initial ~f
 
 
-let is_unit_test { Node.value; _ } = Class.is_unit_test value
+let is_unit_test { Node.value; _ } = ClassSummary.is_unit_test value
 
 let resolve_class ~resolution annotation =
   let rec extract ~is_meta original_annotation =
@@ -145,7 +145,7 @@ let resolve_class ~resolution annotation =
   extract ~is_meta:false annotation
 
 
-let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
+let generics { Node.value = { ClassSummary.bases; _ }; _ } ~resolution =
   let parse_annotation =
     GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
   in
@@ -197,7 +197,7 @@ let superclasses definition ~resolution =
   |> List.map ~f:create
 
 
-let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resolution =
+let rec metaclass ({ Node.value = { ClassSummary.bases; _ }; _ } as original) ~resolution =
   (* See https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
      for why we need to consider all metaclasses. *)
   let metaclass_candidates =
@@ -257,7 +257,7 @@ let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resoluti
       | _ -> candidate )
 
 
-let is_protocol { Node.value; _ } = Class.is_protocol value
+let is_protocol { Node.value; _ } = ClassSummary.is_protocol value
 
 let create_attribute
     ~resolution
@@ -572,7 +572,9 @@ let create_attribute
   }
 
 
-let implicit_attributes { Node.value; _ } = Class.implicit_attributes value
+let implicit_attributes { Node.value = { ClassSummary.attribute_components; _ }; _ } =
+  Class.implicit_attributes attribute_components
+
 
 module ClassDecorators = struct
   type options = {
@@ -590,7 +592,7 @@ module ClassDecorators = struct
       ~repr
       ~eq
       ~order
-      { Node.value = { Class.decorators; _ }; _ }
+      { Node.value = { ClassSummary.decorators; _ }; _ }
     =
     let get_decorators ~names =
       let get_decorator decorator =
@@ -907,7 +909,7 @@ let rec attribute_table
     ~include_generated_attributes
     ?(special_method = false)
     ?instantiated
-    ({ Node.value = { Class.name; _ }; _ } as definition)
+    ({ Node.value = { ClassSummary.name; _ }; _ } as definition)
     ~resolution
   =
   let key =
@@ -930,7 +932,8 @@ let rec attribute_table
           ~instantiated
           ~class_attributes
           ~table
-          ({ Node.value = { Class.name = parent_name; _ } as definition; _ } as parent)
+          ( { Node.value = { ClassSummary.name = parent_name; attribute_components; _ }; _ } as
+          parent )
         =
         let add_actual () =
           let collect_attributes attribute =
@@ -943,7 +946,7 @@ let rec attribute_table
               ~default_class_attribute:class_attributes
             |> AnnotatedAttribute.Table.add table
           in
-          Class.attributes ~include_generated_attributes ~in_test definition
+          Class.attributes ~include_generated_attributes ~in_test attribute_components
           |> fun attribute_map ->
           Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in
@@ -1010,7 +1013,7 @@ let rec attribute_table
       let superclass_definitions = superclasses ~resolution definition in
       let in_test =
         List.exists (definition :: superclass_definitions) ~f:(fun { Node.value; _ } ->
-            Class.is_unit_test value)
+            ClassSummary.is_unit_test value)
       in
       let table = AnnotatedAttribute.Table.create () in
       (* Pass over normal class hierarchy. *)
@@ -1140,7 +1143,7 @@ let attribute
 let rec fallback_attribute
     ~(resolution : Resolution.t)
     ~name
-    ({ Node.value = { Class.name = class_name; _ }; _ } as definition)
+    ({ Node.value = { ClassSummary.name = class_name; _ }; _ } as definition)
   =
   let compound_backup =
     let name =
@@ -1357,7 +1360,7 @@ let has_method ?transitive definition ~resolution ~name =
   |> Type.is_callable
 
 
-let has_abstract_base definition = Class.is_abstract (Node.value definition)
+let has_abstract_base { Node.value = summary; _ } = ClassSummary.is_abstract summary
 
 let get_abstract_attributes ~resolution definition =
   let attributes =

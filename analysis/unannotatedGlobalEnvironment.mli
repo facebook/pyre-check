@@ -30,7 +30,7 @@ module ReadOnly : sig
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
-  val get_class_definition : t -> ?dependency:dependency -> string -> Class.t Node.t option
+  val get_class_definition : t -> ?dependency:dependency -> string -> ClassSummary.t Node.t option
 
   val class_exists : t -> ?dependency:dependency -> string -> bool
 

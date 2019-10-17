@@ -244,30 +244,6 @@ let test_defines _ =
     ~exists:false
 
 
-let test_is_unit_test _ =
-  assert_true
-    (Class.is_unit_test
-       (parse_single_class
-          {|
-          class unittest.TestCase(object):
-            pass
-        |}));
-  assert_true
-    (Class.is_unit_test
-       (parse_single_class
-          {|
-          class unittest.case.TestCase(object):
-            pass
-        |}));
-  assert_false
-    (Class.is_unit_test
-       (parse_single_class
-          {|
-          class a.TestCase(unittest.TestCase):
-            pass
-        |}))
-
-
 let test_attributes _ =
   let create_attribute
       ~annotation
@@ -486,6 +462,7 @@ let test_attributes _ =
       ~printer
       expected
       ( parse_single_class source
+      |> Class.AttributeComponents.create
       |> Class.attributes ~in_test ~include_generated_attributes
       |> Identifier.SerializableMap.bindings
       |> List.map ~f:snd )
@@ -1001,7 +978,6 @@ let () =
          "constructor" >:: test_constructor;
          "defines" >:: test_defines;
          "attributes" >:: test_attributes;
-         "is_unit_test" >:: test_is_unit_test;
        ]
   |> Test.run;
 

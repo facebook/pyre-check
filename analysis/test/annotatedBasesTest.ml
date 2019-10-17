@@ -40,7 +40,7 @@ let test_inferred_generic_base context =
             Some { Node.location; value = definition }
         | _ -> None
       in
-      List.find_map ~f:target statements |> value
+      List.find_map ~f:target statements |> value |> Node.map ~f:ClassSummary.create
     in
     let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let parse_annotation =

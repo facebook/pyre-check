@@ -167,14 +167,17 @@ let test_updates context =
       | `Get (class_name, dependency, expected_number_of_statements) ->
           let printer number =
             number
-            >>| Format.sprintf "number of statements: %d"
+            >>| Format.sprintf "number of attributes: %d"
             |> Option.value ~default:"No class"
           in
           UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
             read_only
             ~dependency
             class_name
-          >>| (fun { Node.value = { body; _ }; _ } -> body)
+          >>| Node.value
+          >>| (fun { ClassSummary.attribute_components; _ } -> attribute_components)
+          >>| Ast.Statement.Class.attributes
+          >>| Identifier.SerializableMap.bindings
           >>| List.length
           |> assert_equal ~printer expected_number_of_statements
       | `Mem (class_name, dependency, expectation) ->
@@ -612,6 +615,39 @@ let test_updates context =
                    target_location = Location.Reference.any;
                  }) );
       ]
+    ();
+  assert_updates
+    ~original_source:
+      {|
+      class Foo:
+        def method(self) -> None:
+         print("hello")
+    |}
+    ~new_source:{|
+      class Foo:
+        def method(self) -> int:
+          return 1
+    |}
+    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ();
+  assert_updates
+    ~original_source:
+      {|
+      class Foo:
+        def method(self) -> None:
+         print("hello")
+    |}
+    ~new_source:
+      {|
+      class Foo:
+        def method(self) -> None:
+         print("goodbye")
+    |}
+    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ~expected_triggers:[]
+    ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
     ();
   ()
 

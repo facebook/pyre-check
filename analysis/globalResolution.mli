@@ -42,7 +42,7 @@ module type AnnotatedClass = sig
     class_definition: t;
   }
 
-  val create : Class.t Node.t -> t
+  val create : ClassSummary.t Node.t -> t
 
   val constructor : t -> instantiated:Type.t -> resolution:global_resolution_t -> Type.t
 
@@ -87,7 +87,7 @@ val parse_annotation
   Expression.t ->
   Type.t
 
-val class_definition : t -> Type.t -> Class.t Node.t option
+val class_definition : t -> Type.t -> ClassSummary.t Node.t option
 
 val solve_ordered_types_less_or_equal
   :  t ->
@@ -98,7 +98,7 @@ val solve_ordered_types_less_or_equal
 
 val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
-val class_extends_placeholder_stub_class : t -> Class.t -> bool
+val class_extends_placeholder_stub_class : t -> ClassSummary.t -> bool
 
 val solve_constraints : t -> TypeConstraints.t -> TypeConstraints.Solution.t option
 

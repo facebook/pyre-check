@@ -33,7 +33,7 @@ type unannotated_global =
 module ReadOnly = struct
   type t = {
     ast_environment: AstEnvironment.ReadOnly.t;
-    get_class_definition: ?dependency:dependency -> string -> Class.t Node.t option;
+    get_class_definition: ?dependency:dependency -> string -> ClassSummary.t Node.t option;
     class_exists: ?dependency:dependency -> string -> bool;
     all_classes: unit -> Type.Primitive.t list;
     all_indices: unit -> IndexTracker.t list;
@@ -115,7 +115,7 @@ end
 (* We want to ensure that we are only writing to this table in this phase, not creating internal
    dependencies with self-reads. Accordingly read_only should only be called by downstream clients *)
 module WriteOnly : sig
-  val set_class_definition : name:string -> definition:Class.t Node.t -> unit
+  val set_class_definition : name:string -> definition:ClassSummary.t Node.t -> unit
 
   val add_to_transaction
     :  DependencyKey.Transaction.t ->
@@ -138,7 +138,7 @@ module WriteOnly : sig
   val read_only : ast_environment:AstEnvironment.ReadOnly.t -> ReadOnly.t
 end = struct
   module ClassValue = struct
-    type t = Class.t Node.t
+    type t = ClassSummary.t Node.t
 
     let prefix = Prefix.make ()
 
@@ -146,7 +146,7 @@ end = struct
 
     let unmarshall value = Marshal.from_string value 0
 
-    let compare = Node.compare Class.compare
+    let compare = Node.compare ClassSummary.compare
   end
 
   module ClassDefinitions =
@@ -221,7 +221,7 @@ end = struct
     in
     let serialize_decoded = function
       | ClassDefinitions.Decoded (key, value) ->
-          let value = value >>| Node.value >>| Class.show in
+          let value = value >>| Node.value >>| ClassSummary.show in
           Some (ClassValue.description, key, value)
       | UnannotatedGlobals.Decoded (key, value) ->
           let value = value >>| show_unannotated_global in
@@ -231,7 +231,7 @@ end = struct
     let decoded_equal first second =
       match first, second with
       | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
-          Some (Option.equal (Node.equal Class.equal) first second)
+          Some (Option.equal (Node.equal ClassSummary.equal) first second)
       | UnannotatedGlobals.Decoded (_, first), UnannotatedGlobals.Decoded (_, second) ->
           Some (Option.equal equal_unannotated_global first second)
       | _ -> None
@@ -371,7 +371,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
     in
     WriteOnly.set_class_definition
       ~name:primitive
-      ~definition:{ Node.location; value = definition };
+      ~definition:{ Node.location; value = ClassSummary.create definition };
     Set.add new_annotations primitive
   in
   List.fold classes ~init:Type.Primitive.Set.empty ~f:register

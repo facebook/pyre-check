@@ -224,7 +224,7 @@ let create_overrides ~environment ~source =
         | _ -> None
       in
       let methods = List.filter_map ~f:extract_define body in
-      let annotated_class = Annotated.Class.create class_node in
+      let annotated_class = Node.map class_node ~f:ClassSummary.create |> Annotated.Class.create in
       List.filter_map methods ~f:(get_method_overrides annotated_class)
     in
     let record_overrides map (ancestor_method, overriding_type) =

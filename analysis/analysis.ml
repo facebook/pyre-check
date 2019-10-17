@@ -23,6 +23,7 @@ module Check = Check
 module ClassHierarchy = ClassHierarchy
 module ClassHierarchyEnvironment = ClassHierarchyEnvironment
 module ClassMetadataEnvironment = ClassMetadataEnvironment
+module ClassSummary = ClassSummary
 module Coverage = Coverage
 module CustomAnalysis = CustomAnalysis
 module DeobfuscationCheck = DeobfuscationCheck

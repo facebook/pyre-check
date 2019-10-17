@@ -5,7 +5,6 @@
 
 open Core
 open Ast
-open Statement
 
 let find_propagated_type_variables bases ~parse_annotation =
   let find_type_variables { Expression.Call.Argument.value; _ } =
@@ -28,7 +27,7 @@ let find_propagated_type_variables bases ~parse_annotation =
   |> handle_deduplicated
 
 
-let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~parse_annotation =
+let inferred_generic_base { Node.value = { ClassSummary.bases; _ }; _ } ~parse_annotation =
   let is_generic { Expression.Call.Argument.value; _ } =
     let primitive, _ = parse_annotation value |> Type.split in
     Type.is_generic_primitive primitive
@@ -48,7 +47,10 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~parse_annotati
       ]
 
 
-let extends_placeholder_stub_class { Node.value = { Class.bases; _ }; _ } ~aliases ~from_empty_stub
+let extends_placeholder_stub_class
+    { Node.value = { ClassSummary.bases; _ }; _ }
+    ~aliases
+    ~from_empty_stub
   =
   let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
     let value = Expression.delocalize value in

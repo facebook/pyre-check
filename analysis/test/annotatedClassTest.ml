@@ -45,7 +45,9 @@ let test_generics context =
         assert_equal
           ~printer
           ~cmp:Type.OrderedTypes.equal
-          ( Class.create (Node.create_with_default_location definition)
+          ( Node.create_with_default_location definition
+          |> Node.map ~f:ClassSummary.create
+          |> Class.create
           |> Class.generics ~resolution )
           generics
     | _ -> assert_unreached ()
@@ -126,6 +128,7 @@ let test_superclasses context =
       docstring = None;
     }
     |> Node.create_with_default_location
+    |> Node.map ~f:ClassSummary.create
     |> Class.create
   in
   let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
@@ -173,6 +176,7 @@ let test_get_decorator context =
       | { Node.value = Statement.Class definition; _ } ->
           let actual =
             Node.create_with_default_location definition
+            |> Node.map ~f:ClassSummary.create
             |> Class.create
             |> Class.get_decorator ~resolution ~decorator
           in
@@ -301,6 +305,7 @@ let test_constructors context =
         in
         let actual =
           Node.create_with_default_location definition
+          |> Node.map ~f:ClassSummary.create
           |> Class.create
           |> Class.constructor ~resolution ~instantiated
         in
@@ -413,6 +418,7 @@ let test_has_method context =
     | { Node.value = Statement.Class definition; _ } ->
         let actual =
           Node.create_with_default_location definition
+          |> Node.map ~f:ClassSummary.create
           |> Class.create
           |> Class.has_method ~resolution ~name:target_method
         in
@@ -449,6 +455,7 @@ let test_is_protocol _ =
     let is_protocol bases =
       { StatementClass.name = !&"Derp"; bases; body = []; decorators = []; docstring = None }
       |> Node.create_with_default_location
+      |> Node.map ~f:ClassSummary.create
       |> Class.create
       |> Class.is_protocol
     in
@@ -481,7 +488,7 @@ let test_class_attributes context =
       | _ -> failwith "Could not parse class"
     in
     ( AnnotatedGlobalEnvironment.ReadOnly.resolution environment,
-      Class.create (Node.create_with_default_location parent) )
+      Node.create_with_default_location parent |> Node.map ~f:ClassSummary.create |> Class.create )
   in
   let resolution, parent =
     setup
@@ -790,7 +797,7 @@ let test_fallback_attribute context =
       last_statement_exn source
       |> (function
            | { Node.location; value = Statement.Class definition; _ } ->
-               Class.create (Node.create ~location definition)
+               Node.create ~location definition |> Node.map ~f:ClassSummary.create |> Class.create
            | _ -> failwith "Last statement was not a class")
       |> Class.fallback_attribute ~resolution ~name
     in
@@ -913,7 +920,10 @@ let test_constraints context =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
           when Reference.show name = target ->
-            Some (Class.create { Node.location; value = definition })
+            Some
+              ( { Node.location; value = definition }
+              |> Node.map ~f:ClassSummary.create
+              |> Class.create )
         | _ -> None
       in
       List.find_map ~f:target statements |> value
@@ -922,7 +932,7 @@ let test_constraints context =
       last_statement_exn source
       |> (function
            | { Node.location; value = Statement.Class definition; _ } ->
-               Class.create (Node.create ~location definition)
+               Node.create ~location definition |> Node.map ~f:ClassSummary.create |> Class.create
            | _ -> failwith "Last statement was not a class")
       |> Class.constraints ~target ~resolution ?parameters ~instantiated
     in
@@ -1192,7 +1202,10 @@ let test_metaclasses context =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
           when Reference.show name = target ->
-            Some (Class.create { Node.location; value = definition })
+            { Node.location; value = definition }
+            |> Node.map ~f:ClassSummary.create
+            |> Class.create
+            |> Option.some
         | _ -> None
       in
       List.find_map ~f:target statements

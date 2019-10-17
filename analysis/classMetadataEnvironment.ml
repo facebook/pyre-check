@@ -64,10 +64,10 @@ let produce_class_metadata { class_hierarchy_environment } class_name ~track_dep
     in
     let successors = successors class_name in
     let is_final =
-      definition |> fun { Node.value = definition; _ } -> Statement.Class.is_final definition
+      definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
     in
     let in_test =
-      let is_unit_test { Node.value = definition; _ } = Statement.Class.is_unit_test definition in
+      let is_unit_test { Node.value = definition; _ } = ClassSummary.is_unit_test definition in
       let successor_classes =
         List.filter_map
           ~f:

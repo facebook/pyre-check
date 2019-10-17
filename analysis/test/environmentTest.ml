@@ -8,7 +8,6 @@ open OUnit2
 open Ast
 open Analysis
 open Pyre
-open Statement
 open Test
 
 let value option = Option.value_exn option
@@ -1082,7 +1081,7 @@ let test_class_definition context =
   assert_false (is_defined environment (Type.parametric "bar.bar" (Concrete [Type.integer])));
   assert_is_none (class_definition environment (Type.Primitive "bar.bar"));
   let any = class_definition environment Type.object_primitive |> value |> Node.value in
-  assert_equal any.Class.name !&"object"
+  assert_equal any.ClassSummary.name !&"object"
 
 
 let test_modules context =

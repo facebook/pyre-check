@@ -16,6 +16,7 @@
   classHierarchyTest
   classHierarchyEnvironmentTest
   classMetadataEnvironmentTest
+  classSummaryTest
   coverageTest
   customAnalysisTest
   deobfuscationCheckTest
