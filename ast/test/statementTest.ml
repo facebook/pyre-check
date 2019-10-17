@@ -403,7 +403,9 @@ let test_attributes _ =
   (* Test class attributes. *)
   let assert_attributes ?(in_test = false) ?(include_generated_attributes = true) source expected =
     let expected =
-      let attribute (name, location, annotation, value, setter, number_of_defines, property) =
+      let attribute
+          (name, location, annotation, value, setter, number_of_defines, property, class_property)
+        =
         let location =
           match location with
           | None -> None
@@ -442,7 +444,7 @@ let test_attributes _ =
               else
                 Attribute.ReadOnly { getter_annotation = annotation >>| Type.expression }
             in
-            Attribute.Property { kind; async = false; class_property = false }
+            Attribute.Property { kind; async = false; class_property }
           else
             Attribute.Simple
               {
@@ -496,9 +498,10 @@ let test_attributes _ =
       ?(number_of_defines = 0)
       ?(property = false)
       ?(setter = false)
+      ?(class_property = false)
       ()
     =
-    name, location, annotation, value, setter, number_of_defines, property
+    name, location, annotation, value, setter, number_of_defines, property, class_property
   in
   assert_attributes
     {|
@@ -595,21 +598,32 @@ let test_attributes _ =
     |}
     [attribute ~name:"x" ~annotation:Type.string ~value:"int" ~property:true ~setter:true ()];
 
+  assert_attributes
+    {|
+      class Foo:
+        @pyre_extensions.classproperty
+        def Foo.property(self) -> int: ...
+    |}
+    [attribute ~name:"property" ~annotation:Type.integer ~property:true ~class_property:true ()];
+
   (* Simultaneous assignment *)
   assert_attributes
     {|
       class Foo:
         Foo.a, Foo.b = 1, 2
      |}
-    ["a", None, None, Some "1", false, 0, false; "b", None, None, Some "2", false, 0, false];
+    [
+      "a", None, None, Some "1", false, 0, false, false;
+      "b", None, None, Some "2", false, 0, false, false;
+    ];
   assert_attributes
     {|
       class Foo:
         Foo.a, Foo.b = list(range(2))
     |}
     [
-      "a", None, None, Some "list(range(2))[0]", false, 0, false;
-      "b", None, None, Some "list(range(2))[1]", false, 0, false;
+      "a", None, None, Some "list(range(2))[0]", false, 0, false, false;
+      "b", None, None, Some "list(range(2))[1]", false, 0, false, false;
     ];
 
   (* Implicit attributes in tests. *)

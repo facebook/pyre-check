@@ -423,23 +423,31 @@ end = struct
         ~location
         ({ Define.signature = { name; return_annotation; parameters; parent; _ }; _ } as define)
       =
-      let name =
-        parent >>= fun parent -> Attribute.name ~parent (Expression.from_reference ~location name)
-      in
-      let async = Define.is_async define in
-      match name with
-      | Some name -> (
-        match String.Set.find ~f:(Define.has_decorator define) Recognized.property_decorators with
-        | Some decorator ->
-            let is_class_property = Set.mem Recognized.classproperty_decorators decorator in
-            Some
-              (Getter { name; annotation = return_annotation; is_class_property; async; location })
-        | None -> (
+      let inspect_decorators name =
+        let async = Define.is_async define in
+        let is_instance_property () =
+          String.Set.exists Recognized.property_decorators ~f:(Define.has_decorator define)
+        in
+        let is_class_property () =
+          String.Set.exists Recognized.classproperty_decorators ~f:(Define.has_decorator define)
+        in
+        let getter ~is_class_property =
+          Some
+            (Getter { name; annotation = return_annotation; is_class_property; async; location })
+        in
+        if is_instance_property () then
+          getter ~is_class_property:false
+        else if is_class_property () then
+          getter ~is_class_property:true
+        else
           match Define.is_property_setter define, parameters with
           | true, _ :: { Node.value = { Parameter.annotation; _ }; _ } :: _ ->
               Some (Setter { name; annotation; async; location })
-          | _ -> None ) )
-      | None -> None
+          | _ -> None
+      in
+      parent
+      >>= fun parent ->
+      Attribute.name ~parent (Expression.from_reference ~location name) >>= inspect_decorators
   end
 
   let implicit_attributes ?(in_test = false) ({ name; body; _ } as definition) =
