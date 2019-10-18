@@ -669,7 +669,7 @@ let test_check_immutable_annotations context =
           return 0
         return constant
     |}
-    ["Incompatible return type [7]: Expected `int` but got `None`."];
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
       def foo() -> None:
@@ -791,6 +791,7 @@ let test_check_immutable_annotations context =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but \
        no type is specified.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|

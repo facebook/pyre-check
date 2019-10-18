@@ -163,7 +163,6 @@ let test_check_attributes context =
        than `Any`.";
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but type \
        `Any` is specified.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -265,6 +264,7 @@ let test_check_attributes context =
     [
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
       ^ "to have type `typing.Optional[int]` but is never initialized.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
   assert_type_errors
     {|
@@ -321,6 +321,7 @@ let test_check_attributes context =
        type is specified.";
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` "
       ^ "has type `int` but no type is specified.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|
@@ -542,6 +543,7 @@ let test_check_attributes context =
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
       ^ "`int` but is used as type `unknown`.";
+      "Undefined attribute [16]: `int` has no attribute `something`.";
     ];
 
   (* Do not resolve optional attributes to the optional type. *)

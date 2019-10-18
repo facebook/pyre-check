@@ -139,10 +139,7 @@ let test_reveal_type context =
          Foo.attribute = 1
          reveal_type(Foo.attribute)
      |}
-    [
-      "Revealed type [-1]: Revealed type for `test.Foo.attribute` is `typing.Optional[int]` \
-       (inferred: `typing_extensions.Literal[1]`).";
-    ];
+    ["Revealed type [-1]: Revealed type for `test.Foo.attribute` is `typing.Optional[int]`."];
   assert_type_errors
     {|
       def f( *args) -> None: # type: ( *str) -> None

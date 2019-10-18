@@ -123,6 +123,8 @@ let test_show_error_traces context =
        test.py:7:4.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`.";
+      "Incompatible return type [7]: Expected `str` but got `unknown`. Type `str` expected on \
+       line 8, specified on line 5.";
     ];
   assert_type_errors
     {|

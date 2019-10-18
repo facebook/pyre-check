@@ -43,27 +43,28 @@ let pp format { annotations; type_variables; _ } =
 
 let show resolution = Format.asprintf "%a" pp resolution
 
-let set_local ({ annotations; _ } as resolution) ~reference ~annotation =
-  { resolution with annotations = Map.set annotations ~key:reference ~data:annotation }
-
-
-let get_local ?(global_fallback = true) ~reference { annotations; global_resolution; _ } =
-  let global = GlobalResolution.global global_resolution in
-  match Map.find annotations reference with
-  | Some result -> Some result
-  | _ when global_fallback -> Reference.delocalize reference |> global >>| Node.value
-  | _ -> None
-
-
-let unset_local ({ annotations; _ } as resolution) ~reference =
-  { resolution with annotations = Map.remove annotations reference }
-
-
 let is_global { annotations; global_resolution; _ } ~reference =
   let global = GlobalResolution.global global_resolution in
   match Map.find annotations reference with
   | Some annotation -> Annotation.is_global annotation
   | _ -> Reference.delocalize reference |> global |> Option.is_some
+
+
+let set_local ({ annotations; _ } as resolution) ~reference ~annotation =
+  { resolution with annotations = Map.set annotations ~key:reference ~data:annotation }
+
+
+let get_local ?(global_fallback = true) ~reference { annotations; global_resolution; _ } =
+  match Map.find annotations reference with
+  | Some result when global_fallback || not (Annotation.is_global result) -> Some result
+  | _ when global_fallback ->
+      let global = GlobalResolution.global global_resolution in
+      Reference.delocalize reference |> global >>| Node.value
+  | _ -> None
+
+
+let unset_local ({ annotations; _ } as resolution) ~reference =
+  { resolution with annotations = Map.remove annotations reference }
 
 
 let add_type_variable ({ type_variables; _ } as resolution) ~variable =

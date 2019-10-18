@@ -250,8 +250,9 @@ let test_check_ternary context =
   assert_type_errors
     {|
       def foo(x: typing.Optional[bytes]) -> None: ...
-      a: typing.Union[int, bytes]
-      foo(x=a if isinstance(a, bytes) else None)
+      def bar() -> None:
+        a: typing.Union[int, bytes]
+        foo(x=a if isinstance(a, bytes) else None)
     |}
     []
 

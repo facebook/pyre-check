@@ -204,8 +204,7 @@ let test_check_isinstance context =
         if isinstance(MY_GLOBAL, str):
           reveal_type(MY_GLOBAL)
     |}
-    (* TODO(T47870649): Refinement should not work. *)
-    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `str`."];
+    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Union[int, str]`."];
 
   assert_type_errors
     {|
