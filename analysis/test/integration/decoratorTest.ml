@@ -528,6 +528,91 @@ let test_check_callable_class_decorators context =
     ]
 
 
+let test_decorator_factories context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def decorator_factory() -> Callable[[Callable[[str], int]], Callable[[], str]]:
+         def decorator(func: Callable[[str], int]) -> Callable[[], str]:
+             def inner() -> str:
+                 return str(func("foo"))
+             return inner
+         return decorator
+
+     @decorator_factory()
+     def foo(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[], str]`."];
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def decorator_factory(name: str) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+     @decorator_factory("literal")
+     def foo(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[], str]`."];
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def decorator_factory(name: str) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+     @decorator_factory(name="literal")
+     def foo(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[], str]`."];
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def decorator_factory(index: int) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+     @decorator_factory(3 + 4)
+     def foo(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+    |}
+    [
+      (* We don't handle non-literal expressions as arguments *)
+        "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
+         str)], int]`.";
+    ];
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def decorator_factory(index: int) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+     global_value = 3
+
+     @decorator_factory(global_value)
+     def foo(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+    |}
+    [
+      (* We don't handle globals as arguments *)
+        "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
+         str)], int]`.";
+    ];
+  ()
+
+
 let () =
   "decorator"
   >::: [
@@ -537,5 +622,6 @@ let () =
          "check_user_decorators" >:: test_check_user_decorators;
          "check_callable_class_decorators" >:: test_check_callable_class_decorators;
          "decorators" >:: test_decorators;
+         "decorator_factories" >:: test_decorator_factories;
        ]
   |> Test.run
