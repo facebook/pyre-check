@@ -21,20 +21,85 @@ def yaml.load(
   Loader=...,
 ): ...
 
-def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution]): ...
+# Subprocess
+def subprocess.run(
+    args: TaintSink[RemoteCodeExecution],
+    bufsize: TaintSink[RemoteCodeExecution],
+    executable: TaintSink[RemoteCodeExecution],
+    stdin,
+    stdout,
+    stderr,
+    preexec_fn: TaintSink[RemoteCodeExecution],
+    close_fds: TaintSink[RemoteCodeExecution],
+    shell: TaintSink[RemoteCodeExecution],
+    cwd: TaintSink[RemoteCodeExecution],
+    env: TaintSink[RemoteCodeExecution],
+    universal_newlines,
+    startupinfo,
+    creationflags,
+    restore_signals,
+    start_new_session,
+    pass_fds,
+    *,
+    capture_output,
+    check,
+    encoding,
+    errors,
+    input: TaintSink[RemoteCodeExecution],
+    text,
+    timeout: TaintSink[RemoteCodeExecution],
+): ...
 
-def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution]): ...
-
-def subprocess.Popen.__new__(
-  self,
+def subprocess.call(
   args: TaintSink[RemoteCodeExecution],
-  bufsize,
+  bufsize: TaintSink[RemoteCodeExecution],
   executable: TaintSink[RemoteCodeExecution],
   stdin,
   stdout,
   stderr,
   preexec_fn: TaintSink[RemoteCodeExecution],
-  close_fds,
+  close_fds: TaintSink[RemoteCodeExecution],
+  shell: TaintSink[RemoteCodeExecution],
+  cwd: TaintSink[RemoteCodeExecution],
+  env: TaintSink[RemoteCodeExecution],
+  universal_newlines,
+  startupinfo,
+  creationflags,
+  restore_signals,
+  start_new_session,
+  pass_fds,
+  timeout: TaintSink[RemoteCodeExecution],
+): ...
+
+def subprocess.check_call(
+  args: TaintSink[RemoteCodeExecution],
+  bufsize: TaintSink[RemoteCodeExecution],
+  executable: TaintSink[RemoteCodeExecution],
+  stdin,
+  stdout,
+  stderr,
+  preexec_fn: TaintSink[RemoteCodeExecution],
+  close_fds: TaintSink[RemoteCodeExecution],
+  shell: TaintSink[RemoteCodeExecution],
+  cwd: TaintSink[RemoteCodeExecution],
+  env: TaintSink[RemoteCodeExecution],
+  universal_newlines,
+  startupinfo,
+  creationflags,
+  restore_signals,
+  start_new_session,
+  pass_fds,
+  timeout: TaintSink[RemoteCodeExecution],
+): ...
+
+def subprocess.check_output(
+  args: TaintSink[RemoteCodeExecution],
+  bufsize: TaintSink[RemoteCodeExecution],
+  executable: TaintSink[RemoteCodeExecution],
+  stdin,
+  stderr,
+  preexec_fn: TaintSink[RemoteCodeExecution],
+  close_fds: TaintSink[RemoteCodeExecution],
   shell: TaintSink[RemoteCodeExecution],
   cwd: TaintSink[RemoteCodeExecution],
   env: TaintSink[RemoteCodeExecution],
@@ -45,6 +110,21 @@ def subprocess.Popen.__new__(
   start_new_session,
   pass_fds,
   *,
+  timeout: TaintSink[RemoteCodeExecution],
+  input: TaintSink[RemoteCodeExecution],
   encoding,
-  errors
-): ...
+  errors,
+  text,
+ ): ...
+
+def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution]): ...
+
+def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution]): ...
+
+def subprocess.Popen.__new__(self, args: TaintSink[RemoteCodeExecution], bufsize, executable: TaintSink[RemoteCodeExecution],
+                 stdin, stdout, stderr,
+                 preexec_fn: TaintSink[RemoteCodeExecution], close_fds,
+                 shell: TaintSink[RemoteCodeExecution], cwd: TaintSink[RemoteCodeExecution], env: TaintSink[RemoteCodeExecution], universal_newlines,
+                 startupinfo, creationflags,
+                 restore_signals, start_new_session,
+                 pass_fds, *, encoding, errors): ...
