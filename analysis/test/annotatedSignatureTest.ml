@@ -58,7 +58,6 @@ let test_select context =
                   unbounded_tuple: typing.Tuple[int, ...]
 
                   class ExtendsDictStrInt(typing.Dict[str, int]): pass
-                  optional: typing.Optional[int]
                   typing.Callable%s
                   call%s
                 |}
@@ -68,7 +67,12 @@ let test_select context =
         |> ScratchProject.build_environment
       in
       let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
-      let resolution = TypeCheck.resolution global_resolution () in
+      let resolution =
+        TypeCheck.resolution global_resolution ()
+        |> Resolution.set_local
+             ~reference:(Reference.create "optional")
+             ~annotation:(Annotation.create (Type.Optional Type.integer))
+      in
       let enforce_callable = function
         | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
             let undefined { Type.Callable.parameters; _ } =

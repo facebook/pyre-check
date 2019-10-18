@@ -3932,7 +3932,7 @@ module State (Context : Context) = struct
             { state with resolution }
         | Name name when Expression.is_simple_name name -> (
             let reference = Expression.name_to_reference_exn name in
-            match Resolution.get_local resolution ~reference with
+            match Resolution.get_local resolution ~global_fallback:false ~reference with
             | Some { Annotation.annotation = Type.Optional Type.Bottom; _ } ->
                 Error.create
                   ~location:(Node.location test)

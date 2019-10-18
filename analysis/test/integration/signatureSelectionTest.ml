@@ -357,8 +357,9 @@ let test_check_function_parameters context =
       import typing
       def foo(a: int) -> int:
         return a
-      x: typing.Optional[int]
-      foo(x if x else 1)
+      def bar() -> None:
+        x: typing.Optional[int]
+        foo(x if x else 1)
     |}
     [];
   assert_type_errors

@@ -651,11 +651,20 @@ let test_check_immutable_annotations context =
           return constant
         return 0
     |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        constant: typing.Optional[int]
+        if constant is not None:
+          return constant
+        return 0
+    |}
     [];
   assert_type_errors
     {|
-      constant: typing.Optional[str]
       def foo() -> int:
+        constant: typing.Optional[str]
         if constant is not None:
           return constant
         return 0
@@ -663,13 +672,13 @@ let test_check_immutable_annotations context =
     ["Incompatible return type [7]: Expected `int` but got `str`."];
   assert_type_errors
     {|
-      constant: typing.Optional[int]
       def foo() -> int:
+        constant: typing.Optional[int]
         if constant is not None:
           return 0
         return constant
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `None`."];
   assert_type_errors
     {|
       def foo() -> None:

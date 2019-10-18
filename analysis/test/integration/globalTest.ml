@@ -307,7 +307,16 @@ let test_check_globals context =
     {|
       MyType = typing.List[typing.Any]
     |}
-    ["Prohibited any [33]: `MyType` cannot alias to a type containing `Any`."]
+    ["Prohibited any [33]: `MyType` cannot alias to a type containing `Any`."];
+  assert_type_errors
+    {|
+      GLOBAL: typing.Optional[int]
+      def foo() -> int:
+        if GLOBAL:
+          return GLOBAL
+        return 0
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."]
 
 
 let test_check_builtin_globals context =

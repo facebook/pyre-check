@@ -120,11 +120,7 @@ let test_check_global_refinement context =
         if MY_GLOBAL:
           reveal_type(MY_GLOBAL)
     |}
-    (* TODO(T47870649): Refinement should not work. *)
-    [
-      "Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Optional[int]` (inferred: \
-       `int`).";
-    ];
+    ["Revealed type [-1]: Revealed type for `MY_GLOBAL` is `typing.Optional[int]`."];
 
   assert_type_errors
     {|
