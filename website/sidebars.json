@@ -11,8 +11,18 @@
       "lsp-integration",
       "watchman-integration",
       "querying-pyre",
-      "static-analysis",
-      "static-analysis-post-processor"
+      {
+        "type": "subcategory",
+        "label": "Pyre Static Analysis",
+        "ids": [
+          "pyre-static-analysis-basics",
+          "pyre-static-analysis-running",
+          "pyre-static-analysis-features",
+          "pyre-static-analysis-advanced",
+          "pyre-static-analysis-tips",
+          "static-analysis-post-processor"
+        ]
+      }
     ]
   }
 }

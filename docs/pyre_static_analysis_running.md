@@ -1,31 +1,31 @@
 ---
-id: static-analysis
-title: Pyre Static Analysis
-sidebar_label: Pyre Static Analysis
+id: pyre-static-analysis-running
+title: Running Pyre Static Analyzer
+sidebar_label: Running Pyre Static Analyzer
 ---
 
-Pyre has applications beyond typechecking python code. It can also run static
-analysis and identify potential security issues in python code.
+## Setup
 
-## Taint Analysis
+The setup requires the following 4 types of files.
 
-**Tainted data** is data that must be treated carefully. As general examples,
-sensitive data should not be logged and user-controlled data should be sanitized.
-
-Using stubs, we can define where in our code there exist taint sources
-(ex. user input) and sinks (ex. system call). Pyre uses these stubs to surface
-data flows from sources to sinks as potential security issues.
+1. **Source Code** (`*.py`): This is your application's code
+2. **Taint Config** (`taint.config`): This file declares sources, sinks,
+   features, and rules.
+3. **Taint Stubs** (`.pysa`): These files link together the information in your
+   source code and `taint.config`. They tell Pyre where in our code there
+   exist sources and sinks.
+4. **Pyre Configuration** (`.pyre_configuration`): Parts of this file are
+   critical to using the Static Analysis feature of Pyre. `source_directories` tells Pyre
+   the directory containing the source code you want to analyze.
+   `taint_models_path` tells Pyre where to find the config and stub files.
 
 ## Example
 
 Let's look at a simple taint analysis example. To follow along, create a
-directory `static_analysis_example` and navigate to it.
+directory `static_analysis_example` and navigate to it. Paste the code snippets
+into the appropriately named files.
 
-### Setup
-
-The setup requires the following 4 files.
-
-#### 1. Source Code
+### 1. Source Code
 
 ```python
 # static_analysis_example/source.py
@@ -51,7 +51,7 @@ Notice the following:
   the programmer's control.
 * This data flow should be identified as a potential security issue.
 
-#### 2. Taint Config
+### 2. Taint Config
 
 ```python
 # static_analysis_example/stubs/taint/taint.config
@@ -89,7 +89,7 @@ This declares the valid sources and sinks that Pyre should recognize. We
 also tell Pyre that data flowing from a `UserSpecified` source to a
 `RemoteCodeExecution` sink is a possible shell injection.
 
-#### 3. Taint Stubs
+### 3. Taint Stubs
 
 ```python
 # static_analysis_example/stubs/taint/general.pysa
@@ -104,7 +104,7 @@ def os.system(command: TaintSink[RemoteCodeExecution]): ...
 This file links together the information in `source.py` and `taint.config`. We
 use it to tell Pyre where in our code there exist sources and sinks.
 
-#### 4. Pyre Configuration
+### 4. Pyre Configuration
 
 ```python
 # static_analysis_example/.pyre_configuration

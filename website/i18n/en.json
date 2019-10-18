@@ -40,6 +40,26 @@
         "title": "Overview",
         "sidebar_label": "Overview"
       },
+      "pyre-static-analysis-advanced": {
+        "title": "Advanced Topics",
+        "sidebar_label": "Advanced Topics"
+      },
+      "pyre-static-analysis-basics": {
+        "title": "Basics",
+        "sidebar_label": "Basics"
+      },
+      "pyre-static-analysis-features": {
+        "title": "Feature Annotations",
+        "sidebar_label": "Feature Annotations"
+      },
+      "pyre-static-analysis-running": {
+        "title": "Running Pyre Static Analyzer",
+        "sidebar_label": "Running Pyre Static Analyzer"
+      },
+      "pyre-static-analysis-tips": {
+        "title": "Development Tips",
+        "sidebar_label": "Development Tips"
+      },
       "querying-pyre": {
         "title": "Querying Pyre",
         "sidebar_label": "Querying Pyre"
@@ -47,10 +67,6 @@
       "static-analysis-post-processor": {
         "title": "Static Analysis Post Processor",
         "sidebar_label": "Static Analysis Processor"
-      },
-      "static-analysis": {
-        "title": "Pyre Static Analysis",
-        "sidebar_label": "Pyre Static Analysis"
       },
       "watchman-integration": {
         "title": "Watchman Integration",
