@@ -1,0 +1,235 @@
+# Exceptions
+
+def BaseException.__init__(self, *args: TaintSink[Logging]): ...
+def Exception.__init__(self, *args: TaintSink[Logging]): ...
+
+# logging.Logger
+
+def logging.Logger.debug(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.Logger.info(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.Logger.warning(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.Logger.error(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.Logger.exception(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.Logger.critical(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.Logger.log(
+  self,
+  level,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+# logging
+
+def logging.critical(
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.error(
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.exception(
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.warning(
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.warn(
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.info(
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.debug(
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.log(
+  level,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+# logging.LoggerAdapter
+
+def logging.LoggerAdapter.debug(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.LoggerAdapter.info(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.LoggerAdapter.warning(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.LoggerAdapter.warn(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.LoggerAdapter.error(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.LoggerAdapter.exception(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.LoggerAdapter.critical(
+  self,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
+
+def logging.LoggerAdapter.log(
+  self,
+  level,
+  msg: TaintSink[Logging],
+  *args: TaintSink[Logging],
+  exc_info: TaintSink[Logging],
+  stack_info: TaintSink[Logging],
+  extra: TaintSink[Logging],
+  **kwargs: TaintSink[Logging]
+): ...
