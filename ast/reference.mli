@@ -57,4 +57,6 @@ val drop_prefix : prefix:t -> t -> t
 
 val prefix : t -> t option
 
+val head : t -> t option
+
 val last : t -> Identifier.t

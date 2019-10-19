@@ -516,11 +516,16 @@ let test_invalid_models context =
     ~expect:
       "Invalid model for `test.sink`: Unrecognized taint annotation `InvalidTaintDirection[Test]`"
     ();
+
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
     ~expect:
       "Invalid model for `not_in_the_environment`: Modeled entity is not part of the environment!"
     ();
+  assert_valid_model
+    ~model_source:"def not_in_the_environment.derp(parameter: InvalidTaintDirection[Test]): ..."
+    ();
+
   assert_invalid_model
     ~model_source:"def test.sink(): ..."
     ~expect:

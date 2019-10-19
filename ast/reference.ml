@@ -138,6 +138,8 @@ let prefix reference =
   | _ :: prefix_reversed -> Some (List.rev prefix_reversed)
 
 
+let head reference = List.hd reference >>| fun head -> [head]
+
 let last = function
   | [] -> ""
   | reference -> List.last_exn reference
