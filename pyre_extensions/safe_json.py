@@ -8,6 +8,7 @@
 import json
 from typing import Any, Dict, List, Type, TypeVar, cast
 
+from typing_extensions import _TypedDictMeta
 from typing_inspect import get_last_args, get_origin, is_optional_type
 
 
@@ -22,6 +23,10 @@ def _is_list(target_type: Type[object]) -> bool:
 
 def _is_dictionary(target_type: Type[object]) -> bool:
     return get_origin(target_type) == Dict
+
+
+def _is_typed_dictionary(target_type: Type[object]) -> bool:
+    return isinstance(target_type, _TypedDictMeta)  # pyre-ignore: private API.
 
 
 def _validate_list(value: object, target_type: Type[List[object]]) -> None:
@@ -45,6 +50,18 @@ def _validate_dictionary(
         _validate_value(value, value_type)
 
 
+def _validate_typed_dictionary(value: object, target_type: Type[object]) -> None:
+    if not isinstance(value, dict):
+        raise InvalidJson(f"`{value}` is not a dictionary")
+
+    for key, value_type in target_type.__annotations__.items():
+        if key not in value:
+            raise InvalidJson(
+                f"{value} of TypedDict {target_type} must contain key {key}"
+            )
+        _validate_value(value[key], value_type)
+
+
 def _validate_value(value: object, target_type: Type[object]) -> None:
     if target_type is Any:
         return
@@ -52,6 +69,8 @@ def _validate_value(value: object, target_type: Type[object]) -> None:
         _validate_list(value, cast(Type[List[object]], target_type))
     elif _is_dictionary(target_type):
         _validate_dictionary(value, cast(Type[Dict[object, object]], target_type))
+    elif _is_typed_dictionary(target_type):
+        _validate_typed_dictionary(value, target_type)
     elif is_optional_type(target_type):
         if value is None:
             return
@@ -68,6 +87,8 @@ def _validate_toplevel(value: object, target_type: Type[object]) -> None:
         _validate_list(value, cast(Type[List[object]], target_type))
     elif _is_dictionary(target_type):
         _validate_dictionary(value, cast(Type[Dict[object, object]], target_type))
+    elif _is_typed_dictionary(target_type):
+        _validate_typed_dictionary(value, target_type)
     else:
         raise NotImplementedError(f"Cannot safely parse {input}")
 

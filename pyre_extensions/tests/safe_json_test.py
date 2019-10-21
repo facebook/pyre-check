@@ -3,7 +3,14 @@
 import unittest
 from typing import Any, Dict, List, Optional
 
+from typing_extensions import TypedDict
+
 from .. import safe_json
+
+
+class ExampleTypedDict(TypedDict):
+    string: str
+    integer: int
 
 
 class BasicTestCase(unittest.TestCase):
@@ -33,6 +40,14 @@ class BasicTestCase(unittest.TestCase):
             safe_json.loads('{"1": {"2": 3}}', Dict[str, Dict[str, int]]),
             {"1": {"2": 3}},
         )
+
+        # Typed dictionaries.
+        self.assertEqual(
+            safe_json.loads('{"string": "", "integer": 1}', ExampleTypedDict),
+            {"string": "", "integer": 1},
+        )
+        with self.assertRaises(safe_json.InvalidJson):
+            safe_json.loads('{"string": "", "integer": ""}', ExampleTypedDict)
 
         # Any.
         self.assertEqual(safe_json.loads("[1]", List[Any]), [1])
