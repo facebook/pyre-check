@@ -1085,7 +1085,11 @@ let test_check_callable_protocols context =
         unittest.mock.patch()
         unittest.mock.patch()  # subequent calls should not modify annotation map
     |}
-    ["Illegal annotation target [35]: Target `unittest.mock.patch` cannot be annotated."];
+    [
+      "Illegal annotation target [35]: Target `unittest.mock.patch` cannot be annotated.";
+      "Undefined attribute [16]: Module `unittest.mock` has no attribute `patch`.";
+      "Undefined attribute [16]: Module `unittest.mock` has no attribute `patch`.";
+    ];
   assert_type_errors
     {|
       class Foo:

@@ -125,7 +125,7 @@ let test_check_attributes context =
     |}
     [
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|
@@ -215,7 +215,7 @@ let test_check_attributes context =
     |}
     [
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
     {|
@@ -332,7 +332,10 @@ let test_check_attributes context =
             self.baz = 5
           return self.baz
     |}
-    ["Undefined attribute [16]: `Foo` has no attribute `baz`."];
+    [
+      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
 
   (* Ensure synthetic attribute accesses don't mask errors on real ones. *)
   assert_strict_type_errors

@@ -3573,8 +3573,9 @@ module State (Context : Context) = struct
               in
               (* Propagate annotations. *)
               let state =
-                match Expression.name_to_reference name with
-                | Some reference ->
+                match name with
+                | Identifier identifier ->
+                    let reference = Reference.create identifier in
                     let annotation =
                       if explicit && is_valid_annotation then
                         let annotation =
@@ -3618,7 +3619,7 @@ module State (Context : Context) = struct
                     in
                     let resolution = Resolution.set_local resolution ~reference ~annotation in
                     { state with resolution }
-                | None -> state
+                | _ -> state
               in
               state
           | List elements
