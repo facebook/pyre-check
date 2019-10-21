@@ -9,12 +9,11 @@ type t = {
   full: int;
   partial: int;
   untyped: int;
-  ignore: int;
   crashes: int;
 }
 [@@deriving eq, show]
 
-val create : ?full:int -> ?partial:int -> ?untyped:int -> ?ignore:int -> ?crashes:int -> unit -> t
+val create : ?full:int -> ?partial:int -> ?untyped:int -> ?crashes:int -> unit -> t
 
 val full : t -> int
 
@@ -22,15 +21,13 @@ val partial : t -> int
 
 val untyped : t -> int
 
-val ignore : t -> int
-
 val crashes : t -> int
 
 val sum : t -> t -> t
 
-val aggregate : Annotation.t list -> t
+val aggregate_over_annotations : Annotation.t list -> t
 
-val aggregate_over_source : source:Source.t -> t list -> t
+val aggregate : t list -> t
 
 val log : t -> total_errors:int -> path:string -> unit
 

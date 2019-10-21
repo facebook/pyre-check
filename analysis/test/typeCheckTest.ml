@@ -1574,7 +1574,7 @@ let test_coverage context =
   in
   assert_coverage
     {| def foo(): pass |}
-    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 0 };
+    { Coverage.full = 0; partial = 0; untyped = 0; crashes = 0 };
   assert_coverage
     {|
       def foo(y: int):
@@ -1583,7 +1583,7 @@ let test_coverage context =
         else:
           x = z
     |}
-    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 };
+    { Coverage.full = 1; partial = 0; untyped = 1; crashes = 0 };
   assert_coverage
     {|
       def foo(y: asdf):
@@ -1592,7 +1592,7 @@ let test_coverage context =
         else:
           x = 1
     |}
-    { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 }
+    { Coverage.full = 0; partial = 0; untyped = 2; crashes = 0 }
 
 
 type method_call = {

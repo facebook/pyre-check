@@ -328,7 +328,7 @@ module State (Context : Context) = struct
   let error_map { errors; _ } = errors
 
   let coverage { resolution; _ } =
-    Resolution.annotations resolution |> Map.data |> Coverage.aggregate
+    Resolution.annotations resolution |> Map.data |> Coverage.aggregate_over_annotations
 
 
   let nested_defines { nested_defines; _ } =
@@ -5054,9 +5054,7 @@ let run
     |> Postprocessing.ignore source
     |> List.sort ~compare:Error.compare
   in
-  let coverage =
-    List.map results ~f:(fun { coverage; _ } -> coverage) |> Coverage.aggregate_over_source ~source
-  in
+  let coverage = List.map results ~f:(fun { coverage; _ } -> coverage) |> Coverage.aggregate in
   Coverage.log coverage ~total_errors:(List.length errors) ~path:relative;
   Coverage.add coverage ~qualifier;
   Statistics.performance

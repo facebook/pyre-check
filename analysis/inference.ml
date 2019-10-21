@@ -116,7 +116,7 @@ module State (Context : Context) = struct
 
 
   let coverage { resolution; _ } =
-    Resolution.annotations resolution |> Map.data |> Coverage.aggregate
+    Resolution.annotations resolution |> Map.data |> Coverage.aggregate_over_annotations
 
 
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
@@ -802,8 +802,6 @@ let run
       |> Error.join_at_source ~resolution:(Resolution.global_resolution resolution)
       |> format_errors
     in
-    let coverage =
-      List.map results ~f:SingleSourceResult.coverage |> Coverage.aggregate_over_source ~source
-    in
+    let coverage = List.map results ~f:SingleSourceResult.coverage |> Coverage.aggregate in
     Coverage.log coverage ~total_errors:(List.length errors) ~path:relative;
     errors

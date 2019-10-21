@@ -284,7 +284,7 @@ let check
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       qualifiers
   in
-  let { Coverage.full; partial; untyped; ignore; crashes } =
+  let { Coverage.full; partial; untyped; crashes } =
     let aggregate sofar qualifier =
       match Coverage.get ~qualifier with
       | Some coverage -> Coverage.sum sofar coverage
@@ -301,7 +301,6 @@ let check
         "declare_coverage", declare_coverage;
         "default_coverage", default_coverage;
         "full_type_coverage", full;
-        "ignore_coverage", ignore;
         "no_type_coverage", untyped;
         "partial_type_coverage", partial;
         "source_files", source_files;
