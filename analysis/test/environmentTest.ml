@@ -1219,9 +1219,9 @@ let test_deduplicate context =
           {|
        class One:
          pass
-       class Zero(One[int, int]):
-         pass
        class Zero(One[int]):
+         pass
+       class Zero(One[int, int]):
          pass
     |}
         );

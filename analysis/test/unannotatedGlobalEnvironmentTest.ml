@@ -298,7 +298,7 @@ let test_updates context =
     ~expected_triggers:[]
     ();
 
-  (* First class definition wins *)
+  (* Last class definition wins *)
   assert_updates
     ~original_source:
       {|
@@ -314,8 +314,8 @@ let test_updates context =
       class Foo:
         x: int
     |}
-    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
-    ~expected_triggers:[]
+    ~middle_actions:[`Get ("test.Foo", dependency, Some 2)]
+    ~expected_triggers:[dependency]
     ();
 
   (* class_exists *)
@@ -520,8 +520,7 @@ let test_updates context =
     ~expected_triggers:[dependency]
     ();
 
-  (* First global wins. Kind of weird behavior, but that's the current approach so sticking with it
-     for now *)
+  (* Last global wins. *)
   assert_updates
     ~original_source:{|
       X = int
@@ -540,7 +539,7 @@ let test_updates context =
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
                    explicit_annotation = None;
-                   value = parse_single_expression "int";
+                   value = parse_single_expression "str";
                    target_location = Location.Reference.any;
                  }) );
       ]
@@ -570,7 +569,7 @@ let test_updates context =
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
                    explicit_annotation = None;
-                   value = parse_single_expression "int";
+                   value = parse_single_expression "str";
                    target_location = Location.Reference.any;
                  }) );
       ]

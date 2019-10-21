@@ -321,7 +321,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
       | _ -> sofar
   end)
   in
-  let classes = source |> ClassCollector.visit [] |> List.rev in
+  let classes = ClassCollector.visit [] source in
   let classes =
     match Reference.as_list qualifier with
     | [] -> classes @ missing_builtin_classes
@@ -478,12 +478,7 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
     |> Reference.Map.to_alist
     |> List.append not_defines
   in
-  let globals =
-    List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
-    |> merge_defines
-    (* Preserve existing first alias wins semantics *)
-    |> List.rev
-  in
+  let globals = List.fold ~init:[] ~f:(visit_statement ~qualifier) statements |> merge_defines in
   let globals =
     match Reference.as_list qualifier with
     | [] -> globals @ missing_builtin_globals

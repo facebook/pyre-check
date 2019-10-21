@@ -75,10 +75,9 @@ let test_scheduling context =
         return variable
     |}
     [
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible variable type [9]: variable is declared to have type `int` "
-      ^ "but is used as type `str`.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible variable type [9]: variable is declared to have type `str` but is used as \
+       type `int`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
 
   assert_type_errors

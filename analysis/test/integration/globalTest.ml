@@ -175,9 +175,8 @@ let test_check_globals context =
         return constant
     |}
     [
-      "Incompatible variable type [9]: constant is declared to have type `int` "
-      ^ "but is used as type `str`.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible variable type [9]: constant is declared to have type `str` "
+      ^ "but is used as type `int`.";
     ];
   assert_type_errors
     {|
