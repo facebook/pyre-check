@@ -540,6 +540,50 @@ module State (Context : Context) = struct
       =
       Context.define
     in
+    (* Add type variables *)
+    let resolution =
+      let variables =
+        match Define.is_class_toplevel define with
+        | true ->
+            let class_name = Option.value_exn parent in
+            let unarize unaries =
+              let fix_invalid_parameters_in_bounds unary =
+                match
+                  GlobalResolution.check_invalid_type_parameters
+                    global_resolution
+                    (Type.Variable unary)
+                with
+                | _, Type.Variable unary -> unary
+                | _ -> failwith "did not transform"
+              in
+              List.map unaries ~f:fix_invalid_parameters_in_bounds
+              |> List.map ~f:(fun unary -> Type.Variable.Unary unary)
+            in
+            let extract = function
+              | ClassHierarchy.Unaries unaries -> unarize unaries
+              | ClassHierarchy.Concatenation concatenation ->
+                  unarize (Type.OrderedTypes.Concatenation.head concatenation)
+                  @ [
+                      Type.Variable.ListVariadic
+                        (Type.OrderedTypes.Concatenation.middle concatenation);
+                    ]
+                  @ unarize (Type.OrderedTypes.Concatenation.tail concatenation)
+            in
+            Reference.show class_name
+            |> GlobalResolution.variables global_resolution
+            >>| extract
+            |> Option.value ~default:[]
+        | false ->
+            let parser = GlobalResolution.annotation_parser global_resolution in
+            Node.create signature ~location
+            |> AnnotatedCallable.create_overload ~parser
+            |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
+            |> Type.Variable.all_free_variables
+            |> List.dedup_and_sort ~compare:Type.Variable.compare
+      in
+      List.fold variables ~init:resolution ~f:(fun resolution variable ->
+          Resolution.add_type_variable resolution ~variable)
+    in
     let instantiate location =
       let ast_environment = GlobalResolution.ast_environment global_resolution in
       Location.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment) location
@@ -4692,10 +4736,9 @@ module State (Context : Context) = struct
       else
         forward_statement ~state ~statement
     in
-    let global_resolution = Resolution.global_resolution resolution in
     let state =
       let nested_defines =
-        let schedule ~variables ~define =
+        let schedule define =
           let update = function
             | Some ({ initial = { nested_resolution; nested_bottom }; _ } as nested) ->
                 let resolution, bottom =
@@ -4724,12 +4767,7 @@ module State (Context : Context) = struct
                     in
                     Resolution.set_local initial_resolution ~reference:key ~annotation
                   in
-                  let add_variable resolution variable =
-                    Resolution.add_type_variable resolution ~variable
-                  in
-                  Resolution.annotations resolution
-                  |> Map.fold ~init:initial_resolution ~f:update
-                  |> fun resolution -> List.fold variables ~init:resolution ~f:add_variable
+                  Resolution.annotations resolution |> Map.fold ~init:initial_resolution ~f:update
                 in
                 Some { nested = define; initial = { nested_resolution; nested_bottom = false } }
           in
@@ -4737,49 +4775,8 @@ module State (Context : Context) = struct
         in
         match Node.value statement with
         | Class { Class.name; body; _ } ->
-            let variables =
-              let unarize unaries =
-                let fix_invalid_parameters_in_bounds unary =
-                  match
-                    GlobalResolution.check_invalid_type_parameters
-                      global_resolution
-                      (Type.Variable unary)
-                  with
-                  | _, Type.Variable unary -> unary
-                  | _ -> failwith "did not transform"
-                in
-                List.map unaries ~f:fix_invalid_parameters_in_bounds
-                |> List.map ~f:(fun unary -> Type.Variable.Unary unary)
-              in
-              let extract = function
-                | ClassHierarchy.Unaries unaries -> unarize unaries
-                | ClassHierarchy.Concatenation concatenation ->
-                    unarize (Type.OrderedTypes.Concatenation.head concatenation)
-                    @ [
-                        Type.Variable.ListVariadic
-                          (Type.OrderedTypes.Concatenation.middle concatenation);
-                      ]
-                    @ unarize (Type.OrderedTypes.Concatenation.tail concatenation)
-              in
-              Reference.show name
-              |> GlobalResolution.variables global_resolution
-              >>| extract
-              |> Option.value ~default:[]
-            in
-            schedule
-              ~variables
-              ~define:(Define.create_class_toplevel ~parent:name ~statements:body)
-        | Define ({ signature; _ } as define) ->
-            let variables =
-              let parser = GlobalResolution.annotation_parser global_resolution in
-              Node.create signature ~location
-              |> AnnotatedCallable.create_overload ~parser
-              |> (fun { parameters; _ } ->
-                   Type.Callable.create ~parameters ~annotation:Type.Top ())
-              |> Type.Variable.all_free_variables
-              |> List.dedup_and_sort ~compare:Type.Variable.compare
-            in
-            schedule ~variables ~define
+            schedule (Define.create_class_toplevel ~parent:name ~statements:body)
+        | Define define -> schedule define
         | _ -> nested_defines
       in
       { state with nested_defines }
