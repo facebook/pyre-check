@@ -6,10 +6,17 @@
 # pyre-strict
 
 import json
+import sys
 from typing import Any, Dict, List, Type, TypeVar, cast
 
 from typing_extensions import _TypedDictMeta
-from typing_inspect import get_last_args, get_origin, is_optional_type
+from typing_inspect import get_origin, is_optional_type
+
+
+if sys.version_info[:2] < (3, 7):
+    from typing_inspect import get_last_args as get_args
+else:
+    from typing_inspect import get_args as get_args
 
 
 class InvalidJson(json.JSONDecodeError):
@@ -18,11 +25,11 @@ class InvalidJson(json.JSONDecodeError):
 
 
 def _is_list(target_type: Type[object]) -> bool:
-    return get_origin(target_type) == List
+    return get_origin(target_type) in (List, list)
 
 
 def _is_dictionary(target_type: Type[object]) -> bool:
-    return get_origin(target_type) == Dict
+    return get_origin(target_type) in (Dict, dict)
 
 
 def _is_typed_dictionary(target_type: Type[object]) -> bool:
@@ -33,7 +40,7 @@ def _validate_list(value: object, target_type: Type[List[object]]) -> None:
     if not isinstance(value, list):
         raise InvalidJson(f"`{value}` is not a list")
 
-    element_type, = get_last_args(target_type)
+    element_type, = get_args(target_type)
     for element in value:
         _validate_value(element, element_type)
 
@@ -44,7 +51,7 @@ def _validate_dictionary(
     if not isinstance(value, dict):
         raise InvalidJson(f"`{value}` is not a dictionary")
 
-    key_type, value_type = get_last_args(target_type)
+    key_type, value_type = get_args(target_type)
     for key, value in value.items():
         _validate_value(key, key_type)
         _validate_value(value, value_type)
@@ -74,7 +81,7 @@ def _validate_value(value: object, target_type: Type[object]) -> None:
     elif is_optional_type(target_type):
         if value is None:
             return
-        _validate_value(value, get_last_args(target_type)[0])
+        _validate_value(value, get_args(target_type)[0])
     else:
         if target_type not in [int, float, str, bool]:
             raise InvalidJson(f"Invalid value type {target_type}")
@@ -90,15 +97,15 @@ def _validate_toplevel(value: object, target_type: Type[object]) -> None:
     elif _is_typed_dictionary(target_type):
         _validate_typed_dictionary(value, target_type)
     else:
-        raise NotImplementedError(f"Cannot safely parse {input}")
+        raise NotImplementedError(f"Cannot safely parse {value}")
 
 
 T = TypeVar("T")
 
 
-def loads(input: str, target: Type[T], *, validate: bool = True) -> T:
+def loads(input_: str, target: Type[T], *, validate: bool = True) -> T:
     try:
-        parsed = json.loads(input)
+        parsed = json.loads(input_)
         if validate:
             _validate_toplevel(parsed, target)
         return parsed
