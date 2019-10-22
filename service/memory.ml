@@ -208,7 +208,7 @@ let initialize log_level =
       Gc.set { (Gc.get ()) with Gc.minor_heap_size; space_overhead };
       let shared_mem_config =
         {
-          SharedMemory.global_size = initial_heap_size;
+          SharedMemory.global_size = 0;
           heap_size = initial_heap_size;
           dep_table_pow = 27;
           hash_table_pow = 23;
