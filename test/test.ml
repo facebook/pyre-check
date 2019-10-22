@@ -1450,6 +1450,7 @@ module ScratchProject = struct
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
         ~incremental_style
+        ~go_to_definition_enabled:true
         ()
     in
     let external_sources =

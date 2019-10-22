@@ -35,7 +35,8 @@ let instantiate_error ~configuration ~state:{ State.environment; _ } error =
 
 
 let parse_lsp
-    ~configuration:({ Configuration.Analysis.perform_autocompletion; _ } as configuration)
+    ~configuration:( { Configuration.Analysis.perform_autocompletion; go_to_definition_enabled; _ }
+                   as configuration )
     ~state:{ State.symlink_targets_to_sources; _ }
     ~request
   =
@@ -73,7 +74,8 @@ let parse_lsp
                 };
             id;
             _;
-          } ->
+          }
+        when go_to_definition_enabled ->
           uri_to_path ~uri
           >>| fun path ->
           GetDefinitionRequest { DefinitionRequest.id; path; position = to_pyre_position position }

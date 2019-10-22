@@ -41,6 +41,7 @@ module Analysis = struct
     incremental_style: incremental_style;
     include_hints: bool;
     perform_autocompletion: bool;
+    go_to_definition_enabled: bool;
   }
   [@@deriving show]
 
@@ -79,6 +80,7 @@ module Analysis = struct
       ?(incremental_style = Shallow)
       ?(include_hints = false)
       ?(perform_autocompletion = false)
+      ?(go_to_definition_enabled = false)
       ()
     =
     {
@@ -115,6 +117,7 @@ module Analysis = struct
       incremental_style;
       include_hints;
       perform_autocompletion;
+      go_to_definition_enabled;
     }
 
 

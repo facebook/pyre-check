@@ -40,6 +40,7 @@ module Analysis : sig
     incremental_style: incremental_style;
     include_hints: bool;
     perform_autocompletion: bool;
+    go_to_definition_enabled: bool;
   }
   [@@deriving show, eq]
 
@@ -71,6 +72,7 @@ module Analysis : sig
     ?incremental_style:incremental_style ->
     ?include_hints:bool ->
     ?perform_autocompletion:bool ->
+    ?go_to_definition_enabled:bool ->
     unit ->
     t
 
