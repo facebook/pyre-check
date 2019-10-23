@@ -253,11 +253,11 @@ end
 let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_classes =
   let make ?(bases = []) ?(metaclasses = []) ?(body = []) name =
     let create_base annotation =
-      { Expression.Call.Argument.name = None; value = Type.expression annotation }
+      { Call.Argument.name = None; value = Type.expression annotation }
     in
     let create_metaclass annotation =
       {
-        Expression.Call.Argument.name = Some (Node.create_with_default_location "metaclass");
+        Call.Argument.name = Some (Node.create_with_default_location "metaclass");
         value = Type.expression annotation;
       }
     in
@@ -294,7 +294,9 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
     ]
   in
   let builtin_classes =
-    let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
+    let t_self_expression =
+      Expression.Name (Name.Identifier "TSelf") |> Node.create_with_default_location
+    in
     [
       make
         ~bases:[Type.parametric "typing.Mapping" (Concrete [Type.string; Type.object_primitive])]
@@ -396,7 +398,7 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
   =
   let rec visit_statement ~qualifier globals { Node.value; location } =
     let qualified_name target =
-      let target = Expression.name_to_reference_exn target |> Reference.sanitize_qualified in
+      let target = name_to_reference_exn target |> Reference.sanitize_qualified in
       Option.some_if (Reference.length target = 1) (Reference.combine qualifier target)
     in
     match value with
@@ -407,7 +409,7 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
           value;
           _;
         }
-      when Expression.is_simple_name target ->
+      when is_simple_name target ->
         qualified_name target
         >>| (fun qualified ->
               (qualified, SimpleAssign { explicit_annotation = annotation; value; target_location })
@@ -417,8 +419,8 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
         let valid =
           let total_length = List.length elements in
           let is_simple_name index = function
-            | { Node.value = Name name; location = target_location }
-              when Expression.is_simple_name name ->
+            | { Node.value = Expression.Name name; location = target_location }
+              when is_simple_name name ->
                 qualified_name name
                 >>| fun name -> name, TupleAssign { value; target_location; index; total_length }
             | _ -> None

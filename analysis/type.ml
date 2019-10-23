@@ -8,6 +8,7 @@ open Ast
 open Expression
 open Pyre
 open PyreParser
+module ExpressionParameter = Parameter
 
 module Record = struct
   module Variable = struct
@@ -933,8 +934,8 @@ let parametric_substitution_map =
 
 let rec expression annotation =
   let location = Location.Reference.any in
-  let create_name name = Name (Expression.create_name ~location name) in
-  let get_item_call = Expression.get_item_call ~location in
+  let create_name name = Expression.Name (create_name ~location name) in
+  let get_item_call = get_item_call ~location in
   let convert_annotation annotation =
     match annotation with
     | Annotated annotation -> get_item_call "typing.Annotated" [expression annotation]
@@ -972,8 +973,11 @@ let rec expression annotation =
                       in
                       name @ annotation @ default
                     in
-                    Call
-                      { callee = Node.create ~location (Name (Name.Identifier kind)); arguments }
+                    Expression.Call
+                      {
+                        callee = Node.create ~location (Expression.Name (Name.Identifier kind));
+                        arguments;
+                      }
                     |> Node.create ~location
                   in
                   match parameter with
@@ -989,8 +993,8 @@ let rec expression annotation =
                   | Parameter.Variable (Concatenation concatenation) ->
                       call "Variable" (concatenation_expression concatenation)
                 in
-                List (List.map ~f:convert_parameter parameters) |> Node.create ~location
-            | Undefined -> Node.create ~location Ellipsis
+                Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
+            | Undefined -> Node.create ~location Expression.Ellipsis
             | ParameterVariadicTypeVariable { name; _ } -> Node.create ~location (create_name name)
           in
           {
@@ -999,7 +1003,7 @@ let rec expression annotation =
           }
         in
         let base_callable =
-          Call
+          Expression.Call
             {
               callee =
                 {
@@ -1020,7 +1024,7 @@ let rec expression annotation =
           let convert_overload sofar overload =
             match sofar with
             | None ->
-                Call
+                Expression.Call
                   {
                     callee = { Node.location; value = Name (Name.Identifier "__getitem__") };
                     arguments = [convert_signature overload];
@@ -1028,7 +1032,7 @@ let rec expression annotation =
                 |> Node.create ~location
                 |> Option.some
             | Some expression ->
-                Call
+                Expression.Call
                   {
                     callee =
                       {
@@ -1047,7 +1051,7 @@ let rec expression annotation =
         in
         match overloads with
         | Some overloads ->
-            Call
+            Expression.Call
               {
                 callee =
                   {
@@ -1061,7 +1065,7 @@ let rec expression annotation =
                              special = true;
                            });
                   };
-                arguments = [{ Expression.Call.Argument.name = None; value = overloads }];
+                arguments = [{ Call.Argument.name = None; value = overloads }];
               }
         | None -> base_callable )
     | Any -> create_name "typing.Any"
@@ -1133,7 +1137,7 @@ let rec expression annotation =
   in
   let value =
     match annotation with
-    | Primitive "..." -> Ellipsis
+    | Primitive "..." -> Expression.Ellipsis
     | _ -> convert_annotation annotation
   in
   Node.create_with_default_location value
@@ -1639,7 +1643,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
             snd (ResolveTransform.visit () annotation)
           in
           let rec is_typing_callable = function
-            | Name
+            | Expression.Name
                 (Name.Attribute
                   {
                     base = { Node.value = Name (Name.Identifier "typing"); _ };
@@ -1655,7 +1659,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
             let modifiers, implementation_signature, overload_signatures =
               let get_from_base base implementation_argument overloads_argument =
                 match Node.value base with
-                | Call { callee; arguments } when Expression.name_is ~name:"typing.Callable" callee
+                | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee
                   ->
                     Some arguments, implementation_argument, overloads_argument
                 | Name
@@ -1671,7 +1675,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                     None, None, None
               in
               match expression with
-              | Call
+              | Expression.Call
                   {
                     callee =
                       {
@@ -1742,7 +1746,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                     in
                     let extract_parameter index parameter =
                       match Node.value parameter with
-                      | Call
+                      | Expression.Call
                           { callee = { Node.value = Name (Name.Identifier name); _ }; arguments }
                         -> (
                           let arguments =
@@ -1835,7 +1839,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
             in
             let overloads =
               let rec parse_overloads = function
-                | List arguments -> [get_signature (Tuple arguments)]
+                | Expression.List arguments -> [get_signature (Tuple arguments)]
                 | Call
                     {
                       callee =
@@ -1865,7 +1869,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                   }
                   :: arguments;
               }
-            when Expression.name_is ~name:"typing.TypeVar" callee ->
+            when name_is ~name:"typing.TypeVar" callee ->
               let constraints =
                 let explicits =
                   let explicit = function
@@ -1921,7 +1925,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                     };
                   ];
               }
-            when Expression.name_is ~name:"typing_extensions.IntVar" callee ->
+            when name_is ~name:"typing_extensions.IntVar" callee ->
               variable value ~constraints:LiteralIntegers
           | Call
               {
@@ -1945,7 +1949,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                     };
                   ];
               }
-            when Expression.name_is ~name:"mypy_extensions.TypedDict.__getitem__" callee ->
+            when name_is ~name:"mypy_extensions.TypedDict.__getitem__" callee ->
               let total =
                 match true_or_false with
                 | Expression.True -> Some true
@@ -1976,7 +1980,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               in
               total >>| parse_typed_dictionary |> Option.value ~default:undefined_primitive
           | Call { callee; arguments }
-            when Expression.name_is ~name:"typing_extensions.Literal.__getitem__" callee ->
+            when name_is ~name:"typing_extensions.Literal.__getitem__" callee ->
               let arguments =
                 match arguments with
                 | [
@@ -2128,7 +2132,7 @@ module LiteralAnyVisitor = struct
     let node state = function
       | Visit.Expression { Node.value = Name name; _ } ->
           let is_any =
-            Expression.name_to_reference name
+            name_to_reference name
             >>| Reference.show
             >>| String.equal "typing.Any"
             |> Option.value ~default:false
@@ -2143,8 +2147,8 @@ module LiteralAnyVisitor = struct
     let state =
       (* We also want to take into account annotations like `list`, `dict`, etc. *)
       match Node.value expression with
-      | Name name when Expression.is_simple_name name ->
-          Expression.name_to_reference_exn name
+      | Expression.Name name when is_simple_name name ->
+          name_to_reference_exn name
           |> Reference.show
           |> Hashtbl.find primitive_substitution_map
           |> Option.value_map ~default:false ~f:contains_any
@@ -2479,7 +2483,8 @@ let class_name annotation =
   let strip_calls =
     let rec collect_identifiers identifiers = function
       | {
-          Node.value = Call { callee = { Node.value = Name (Name.Attribute { base; _ }); _ }; _ };
+          Node.value =
+            Expression.Call { callee = { Node.value = Name (Name.Attribute { base; _ }); _ }; _ };
           _;
         } ->
           collect_identifiers identifiers base
@@ -2923,7 +2928,7 @@ end = struct
         match value with
         | {
          Node.value =
-           Call
+           Expression.Call
              {
                callee =
                  {
@@ -2959,14 +2964,14 @@ end = struct
         match variable_parameter_annotation, keywords_parameter_annotation with
         | ( {
               Node.value =
-                Name
+                Expression.Name
                   (Attribute
                     { base = variable_parameter_base; attribute = variable_parameter_attribute; _ });
               _;
             },
             {
               Node.value =
-                Name
+                Expression.Name
                   (Attribute
                     { base = keywords_parameter_base; attribute = keywords_parameter_attribute; _ });
               _;
@@ -3133,7 +3138,7 @@ end = struct
         match value with
         | {
          Node.value =
-           Call
+           Expression.Call
              {
                callee =
                  {
@@ -3688,7 +3693,7 @@ module TypedDictionary = struct
               name = Reference.create_from_list [class_name; name];
               parameters =
                 [
-                  { Ast.Parameter.name = "self"; value = None; annotation = self_parameter }
+                  { ExpressionParameter.name = "self"; value = None; annotation = self_parameter }
                   |> Node.create_with_default_location;
                 ];
               decorators = [];

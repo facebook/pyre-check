@@ -9,8 +9,8 @@ type node =
   | Expression of Expression.t
   | Statement of Statement.t
   | Identifier of Identifier.t Node.t
-  | Parameter of Expression.t Parameter.t
-  | Substring of StringLiteral.Substring.t Node.t
+  | Parameter of Parameter.t
+  | Substring of Substring.t Node.t
 
 module type NodeVisitor = sig
   type t
@@ -101,9 +101,9 @@ end
 
 val collect_locations : Source.t -> Location.t list
 
-val collect_calls : Statement.t -> Expression.Call.t Node.t list
+val collect_calls : Statement.t -> Call.t Node.t list
 
-val collect_names : ?only_simple:bool -> Statement.t -> Expression.t Expression.Name.t Node.t list
+val collect_names : ?only_simple:bool -> Statement.t -> Name.t Node.t list
 
 val collect_calls_and_names : Statement.t -> Expression.t list
 

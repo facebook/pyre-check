@@ -277,11 +277,11 @@ module State (Context : Context) = struct
                 };
             _;
           }
-        when Expression.is_simple_name name && Type.is_dictionary (resolve base) ->
+        when is_simple_name name && Type.is_dictionary (resolve base) ->
           let resolution =
             Resolution.set_local
               resolution
-              ~reference:(Expression.name_to_reference_exn name)
+              ~reference:(name_to_reference_exn name)
               ~annotation:
                 (Annotation.create (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
           in
@@ -307,7 +307,7 @@ module State (Context : Context) = struct
                 };
             _;
           }
-        when Expression.is_simple_name name && Type.is_list (resolve base) ->
+        when is_simple_name name && Type.is_list (resolve base) ->
           let base_element =
             match resolve base with
             | Type.Parametric { name = "list"; parameters = Concrete [parameter] } -> parameter
@@ -322,10 +322,7 @@ module State (Context : Context) = struct
             |> Annotation.create
           in
           let resolution =
-            Resolution.set_local
-              resolution
-              ~reference:(Expression.name_to_reference_exn name)
-              ~annotation
+            Resolution.set_local resolution ~reference:(name_to_reference_exn name) ~annotation
           in
           { state with resolution }
       | Statement.Assign
@@ -334,21 +331,21 @@ module State (Context : Context) = struct
             target = { Node.value = Name name; _ };
             _;
           }
-        when Expression.is_simple_name name ->
+        when is_simple_name name ->
           let resolution =
             Resolution.set_local
               resolution
-              ~reference:(Expression.name_to_reference_exn name)
+              ~reference:(name_to_reference_exn name)
               ~annotation:(Annotation.create (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
           in
           { state with resolution }
       | Statement.Assign
           { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
-        when Expression.is_simple_name name ->
+        when is_simple_name name ->
           let resolution =
             Resolution.set_local
               resolution
-              ~reference:(Expression.name_to_reference_exn name)
+              ~reference:(name_to_reference_exn name)
               ~annotation:(Annotation.create (Type.list Type.Bottom))
           in
           { state with resolution }
@@ -525,8 +522,8 @@ module State (Context : Context) = struct
               let rec infer_annotation resolution parameter_annotation argument =
                 let state = { state with resolution } in
                 match Node.value argument with
-                | Name name when Expression.is_simple_name name ->
-                    let reference = Expression.name_to_reference_exn name in
+                | Expression.Name name when is_simple_name name ->
+                    let reference = name_to_reference_exn name in
                     let resolved = forward_expression ~state ~expression:argument in
                     resolve_assign parameter_annotation resolved
                     >>| (fun refined ->
@@ -568,7 +565,7 @@ module State (Context : Context) = struct
           let rec propagate_assign resolution target_annotation value =
             let state = { state with resolution } in
             match Node.value value with
-            | Name (Name.Identifier identifier) ->
+            | Expression.Name (Name.Identifier identifier) ->
                 let resolution =
                   let resolved = forward_expression ~state ~expression:value in
                   resolve_assign target_annotation resolved
@@ -597,7 +594,7 @@ module State (Context : Context) = struct
                   >>| (fun refined ->
                         Resolution.set_local
                           resolution
-                          ~reference:(Expression.name_to_reference_exn name)
+                          ~reference:(name_to_reference_exn name)
                           ~annotation:(Annotation.create refined))
                   |> Option.value ~default:resolution
                 in
@@ -636,13 +633,13 @@ module State (Context : Context) = struct
               in
               propagate_assign resolution resolved value )
       | Return { Return.expression = Some { Node.value = Name name; _ }; _ }
-        when Expression.is_simple_name name ->
+        when is_simple_name name ->
           let return_annotation =
             Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
           in
           Resolution.set_local
             resolution
-            ~reference:(Expression.name_to_reference_exn name)
+            ~reference:(name_to_reference_exn name)
             ~annotation:return_annotation
       | Return { Return.expression = Some { Node.value = Tuple expressions; _ }; _ } -> (
           let return_annotation =
@@ -658,10 +655,10 @@ module State (Context : Context) = struct
                 ~init:resolution
                 ~f:(fun resolution annotation expression ->
                   match Node.value expression with
-                  | Name name when Expression.is_simple_name name ->
+                  | Name name when is_simple_name name ->
                       Resolution.set_local
                         resolution
-                        ~reference:(Expression.name_to_reference_exn name)
+                        ~reference:(name_to_reference_exn name)
                         ~annotation:(Annotation.create annotation)
                   | _ -> resolution)
           | _ -> resolution )

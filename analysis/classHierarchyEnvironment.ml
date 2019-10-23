@@ -50,8 +50,8 @@ let get_parents ({ alias_environment } as environment) name ~track_dependencies 
   in
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.ClassConnect name) in
   (* Register normal annotations. *)
-  let extract_supertype { Expression.Call.Argument.value; _ } =
-    let value = Expression.delocalize value in
+  let extract_supertype { Call.Argument.value; _ } =
+    let value = delocalize value in
     match Node.value value with
     | Call _
     | Name _ -> (
@@ -118,7 +118,7 @@ let get_parents ({ alias_environment } as environment) name ~track_dependencies 
     name
   >>| bases
   (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-  >>| List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
+  >>| List.filter ~f:(fun { Call.Argument.name; _ } -> Option.is_none name)
   >>| List.filter_map ~f:extract_supertype
   >>| add_special_parents
   >>| List.filter ~f:is_not_primitive_cycle

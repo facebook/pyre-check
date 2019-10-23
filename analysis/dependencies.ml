@@ -386,7 +386,7 @@ module Callgraph = struct
         | Some annotation, Some [callable] -> method_callee annotation callable
         | Some (Type.Optional annotation), _ -> (
           match Node.value callee with
-          | Name (Name.Attribute { attribute; _ }) -> (
+          | Expression.Name (Name.Attribute { attribute; _ }) -> (
               GlobalResolution.attribute global_resolution ~parent:annotation ~name:attribute
               >>| AnnotatedAttribute.annotation
               >>| Annotation.annotation

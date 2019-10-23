@@ -160,6 +160,7 @@ let apply_decorators
       >>| handle
       |> Option.value ~default:overload
     in
+    let open Expression in
     match decorator with
     | Expression.Call { callee = { Node.value = Expression.Name name; _ }; arguments } ->
         resolve_decorators name ~arguments:(Some arguments)

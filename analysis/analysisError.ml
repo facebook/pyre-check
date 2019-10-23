@@ -1774,6 +1774,7 @@ let inference_information
     Format.asprintf "`%a`" Type.pp annotation |> String.strip ~drop:(Char.equal '`')
   in
   let parameters =
+    let open Expression in
     let to_json { Node.value = { Parameter.name; annotation; value }; _ } =
       let value_is_none =
         match value with
@@ -3093,11 +3094,12 @@ let dequalify
   in
   let signature =
     let dequalify_parameter ({ Node.value; _ } as parameter) =
-      value.Parameter.annotation
+      value.Expression.Parameter.annotation
       >>| GlobalResolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
       >>| Type.expression
-      |> fun annotation -> { parameter with Node.value = { value with Parameter.annotation } }
+      |> fun annotation ->
+      { parameter with Node.value = { value with Expression.Parameter.annotation } }
     in
     let parameters = List.map parameters ~f:dequalify_parameter in
     let return_annotation =

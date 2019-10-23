@@ -77,8 +77,7 @@ module UnresolvedAlias = struct
           | Primitive primitive ->
               let reference =
                 match Node.value (Type.expression (Type.Primitive primitive)) with
-                | Expression.Name name when Expression.is_simple_name name ->
-                    Expression.name_to_reference_exn name
+                | Expression.Name name when is_simple_name name -> name_to_reference_exn name
                 | _ -> Reference.create "typing.Any"
               in
               let ast_environment = ast_environment environment in
@@ -122,7 +121,7 @@ let extract_alias { unannotated_global_environment } name ~dependency =
           Type.create
             ~aliases:(fun _ -> None)
             ~use_cache:false
-            (Expression.from_reference ~location:Location.Reference.any name)
+            (from_reference ~location:Location.Reference.any name)
         in
         match Node.value value, explicit_annotation with
         | ( _,
@@ -204,7 +203,7 @@ let extract_alias { unannotated_global_environment } name ~dependency =
                 _;
               } ) ->
             if not (Type.is_top target_annotation) then
-              let value = Expression.delocalize value in
+              let value = delocalize value in
               Some (TypeAlias { target = name; value })
             else
               None
@@ -236,7 +235,7 @@ let extract_alias { unannotated_global_environment } name ~dependency =
               } )
         | Call _, None
         | Name _, None -> (
-            let value = Expression.delocalize value in
+            let value = delocalize value in
             let value_annotation = Type.create ~aliases:(fun _ -> None) ~use_cache:false value in
             match Type.Variable.parse_declaration value ~target:name with
             | Some variable -> Some (VariableAlias variable)
@@ -265,9 +264,7 @@ let extract_alias { unannotated_global_environment } name ~dependency =
               (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
               None
           | _ ->
-              let value =
-                Expression.from_reference ~location:Location.Reference.any original_name
-              in
+              let value = from_reference ~location:Location.Reference.any original_name in
               Some (TypeAlias { target = name; value }) )
     | TupleAssign _
     | Define _ ->
@@ -383,7 +380,7 @@ module ReadOnly = struct
     let use_type_create_cache = Option.is_none modify_aliases in
     let modify_aliases = Option.value modify_aliases ~default:Fn.id in
     let parsed =
-      let expression = Expression.delocalize expression in
+      let expression = delocalize expression in
       let aliases name = get_alias environment ?dependency name >>| modify_aliases in
       Type.create ~aliases ~use_cache:use_type_create_cache expression
     in
@@ -424,7 +421,7 @@ module ReadOnly = struct
 
 
   let parse_as_concatenation environment ?dependency expression =
-    Expression.delocalize expression
+    delocalize expression
     |> Type.OrderedTypes.Concatenation.parse ~aliases:(get_alias environment ?dependency)
 
 
@@ -435,8 +432,7 @@ module ReadOnly = struct
       ~keywords_parameter_annotation
     =
     let variable_parameter_annotation, keywords_parameter_annotation =
-      ( Expression.delocalize variable_parameter_annotation,
-        Expression.delocalize keywords_parameter_annotation )
+      delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
     in
     Type.Variable.Variadic.Parameters.parse_instance_annotation
       ~aliases:(get_alias environment ?dependency)

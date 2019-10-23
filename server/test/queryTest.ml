@@ -29,7 +29,8 @@ let test_parse_query context =
     | Query.InvalidQuery _ -> ()
   in
   let ( ! ) name =
-    Expression.Name (Expression.Name.Identifier name) |> Node.create_with_default_location
+    let open Expression in
+    Expression.Name (Name.Identifier name) |> Node.create_with_default_location
   in
   assert_parses "less_or_equal(int, bool)" (LessOrEqual (!"int", !"bool"));
   assert_parses "less_or_equal (int, bool)" (LessOrEqual (!"int", !"bool"));
@@ -64,7 +65,7 @@ let test_parse_query context =
          paths = [Path.create_relative ~root:local_root ~relative:"derp/fiddle.py"];
        });
   assert_parses "type(C)" (Type !"C");
-  assert_parses "type((C,B))" (Type (+Ast.Expression.Tuple [!"C"; !"B"]));
+  assert_parses "type((C,B))" (Type (+Expression.Expression.Tuple [!"C"; !"B"]));
   assert_fails_to_parse "type(a.b, c.d)";
   assert_fails_to_parse "typecheck(1+2)";
   assert_parses

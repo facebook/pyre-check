@@ -60,14 +60,14 @@ let test_apply_decorators context =
     (create_define
        ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
-       ~return_annotation:(Some (+String (StringLiteral.create "typing.Iterator[str]"))))
+       ~return_annotation:(Some (+Expression.String (StringLiteral.create "typing.Iterator[str]"))))
     (Type.parametric "contextlib._GeneratorContextManager" (Concrete [Type.string]));
   assert_apply_contextlib_decorators
     (create_define
        ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:
-         (Some (+String (StringLiteral.create "typing.Generator[str, None, None]"))))
+         (Some (+Expression.String (StringLiteral.create "typing.Generator[str, None, None]"))))
     (Type.parametric "contextlib._GeneratorContextManager" (Concrete [Type.string]));
 
   (* Click related tests *)

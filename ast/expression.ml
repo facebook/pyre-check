@@ -7,16 +7,48 @@ open Core
 open Sexplib.Std
 open Pyre
 
-module BooleanOperator = struct
+module Substring = struct
+  type kind =
+    | Literal
+    | Format
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = {
+    value: string;
+    kind: kind;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let is_all_literal =
+    List.for_all ~f:(fun { Node.value = { kind; _ }; _ } -> equal_kind kind Literal)
+end
+
+module rec BooleanOperator : sig
   type operator =
     | And
     | Or
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  type 'expression t = {
-    left: 'expression;
+  type t = {
+    left: Expression.t;
     operator: operator;
-    right: 'expression;
+    right: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val pp_boolean_operator : Format.formatter -> operator -> unit
+
+  val inverse : operator -> operator
+end = struct
+  type operator =
+    | And
+    | Or
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = {
+    left: Expression.t;
+    operator: operator;
+    right: Expression.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -34,196 +66,332 @@ module BooleanOperator = struct
     | Or -> And
 end
 
-module Record = struct
-  module ComparisonOperator = struct
-    type operator =
-      | Equals
-      | GreaterThan
-      | GreaterThanOrEquals
-      | In
-      | Is
-      | IsNot
-      | LessThan
-      | LessThanOrEquals
-      | NotEquals
-      | NotIn
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    type 'expression record = {
-      left: 'expression;
-      operator: operator;
-      right: 'expression;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    let inverse = function
-      | Equals -> NotEquals
-      | GreaterThan -> LessThanOrEquals
-      | GreaterThanOrEquals -> LessThan
-      | In -> NotIn
-      | Is -> IsNot
-      | IsNot -> Is
-      | LessThan -> GreaterThanOrEquals
-      | LessThanOrEquals -> GreaterThan
-      | NotEquals -> Equals
-      | NotIn -> In
-
-
-    let pp_comparison_operator formatter operator =
-      Format.fprintf
-        formatter
-        "%s"
-        ( match operator with
-        | Equals -> "="
-        | GreaterThan -> ">"
-        | GreaterThanOrEquals -> ">="
-        | In -> "in"
-        | Is -> "is"
-        | IsNot -> "is not"
-        | LessThan -> "<"
-        | LessThanOrEquals -> "<="
-        | NotEquals -> "!="
-        | NotIn -> "not in" )
-  end
-
-  module UnaryOperator = struct
-    type operator =
-      | Invert
-      | Negative
-      | Not
-      | Positive
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    type 'expression record = {
-      operator: operator;
-      operand: 'expression;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    let pp_unary_operator formatter operator =
-      Format.fprintf
-        formatter
-        "%s"
-        ( match operator with
-        | Invert -> "~"
-        | Negative -> "-"
-        | Not -> "not"
-        | Positive -> "+" )
-  end
-
-  module Call = struct
-    module RecordArgument = struct
-      type 'expression record = {
-        name: Identifier.t Node.t option;
-        value: 'expression;
-      }
-      [@@deriving compare, eq, sexp, show, hash, to_yojson]
-    end
-
-    type 'expression record = {
-      callee: 'expression;
-      arguments: 'expression RecordArgument.record list;
+and Call : sig
+  module Argument : sig
+    type t = {
+      name: Identifier.t Node.t option;
+      value: Expression.t;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
+
+  type t = {
+    callee: Expression.t;
+    arguments: Argument.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  module Argument = struct
+    type t = {
+      name: Identifier.t Node.t option;
+      value: Expression.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type t = {
+    callee: Expression.t;
+    arguments: Argument.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
-module Name = struct
-  module Attribute = struct
-    type 'expression t = {
-      base: 'expression;
+and ComparisonOperator : sig
+  type operator =
+    | Equals
+    | GreaterThan
+    | GreaterThanOrEquals
+    | In
+    | Is
+    | IsNot
+    | LessThan
+    | LessThanOrEquals
+    | NotEquals
+    | NotIn
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = {
+    left: Expression.t;
+    operator: operator;
+    right: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val inverse : operator -> operator
+
+  val pp_comparison_operator : Format.formatter -> operator -> unit
+
+  val override : t -> Expression.t option
+end = struct
+  type operator =
+    | Equals
+    | GreaterThan
+    | GreaterThanOrEquals
+    | In
+    | Is
+    | IsNot
+    | LessThan
+    | LessThanOrEquals
+    | NotEquals
+    | NotIn
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = {
+    left: Expression.t;
+    operator: operator;
+    right: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let inverse = function
+    | Equals -> NotEquals
+    | GreaterThan -> LessThanOrEquals
+    | GreaterThanOrEquals -> LessThan
+    | In -> NotIn
+    | Is -> IsNot
+    | IsNot -> Is
+    | LessThan -> GreaterThanOrEquals
+    | LessThanOrEquals -> GreaterThan
+    | NotEquals -> Equals
+    | NotIn -> In
+
+
+  let pp_comparison_operator formatter operator =
+    Format.fprintf
+      formatter
+      "%s"
+      ( match operator with
+      | Equals -> "="
+      | GreaterThan -> ">"
+      | GreaterThanOrEquals -> ">="
+      | In -> "in"
+      | Is -> "is"
+      | IsNot -> "is not"
+      | LessThan -> "<"
+      | LessThanOrEquals -> "<="
+      | NotEquals -> "!="
+      | NotIn -> "not in" )
+
+
+  let override { left = { Node.location; _ } as left; operator; right } =
+    let left, right =
+      match operator with
+      | In -> right, left
+      | _ -> left, right
+    in
+    let operator =
+      match operator with
+      | Equals -> Some "__eq__"
+      | GreaterThan -> Some "__gt__"
+      | GreaterThanOrEquals -> Some "__ge__"
+      | Is
+      | IsNot ->
+          None
+      | LessThan -> Some "__lt__"
+      | LessThanOrEquals -> Some "__le__"
+      | NotEquals -> Some "__ne__"
+      | In -> None
+      | NotIn -> None
+    in
+    operator
+    >>| fun name ->
+    let arguments = [{ Call.Argument.name = None; value = right }] in
+    Expression.Call
+      {
+        callee =
+          {
+            Node.location;
+            value = Name (Name.Attribute { base = left; attribute = name; special = true });
+          };
+        arguments;
+      }
+    |> Node.create ~location
+end
+
+and Comprehension : sig
+  module Generator : sig
+    type t = {
+      target: Expression.t;
+      iterator: Expression.t;
+      conditions: Expression.t list;
+      async: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type 'element t = {
+    element: 'element;
+    generators: Generator.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  module Generator = struct
+    type t = {
+      target: Expression.t;
+      iterator: Expression.t;
+      conditions: Expression.t list;
+      async: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type 'element t = {
+    element: 'element;
+    generators: Generator.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
+
+and Dictionary : sig
+  module Entry : sig
+    type t = {
+      key: Expression.t;
+      value: Expression.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type t = {
+    entries: Entry.t list;
+    keywords: Expression.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  module Entry = struct
+    type t = {
+      key: Expression.t;
+      value: Expression.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type t = {
+    entries: Entry.t list;
+    keywords: Expression.t list;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
+
+and Lambda : sig
+  type t = {
+    parameters: Parameter.t list;
+    body: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  type t = {
+    parameters: Parameter.t list;
+    body: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
+
+and Name : sig
+  module Attribute : sig
+    type t = {
+      base: Expression.t;
       attribute: Identifier.t;
       special: bool;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
-  type 'expression t =
-    | Attribute of 'expression Attribute.t
+  type t =
+    | Attribute of Attribute.t
+    | Identifier of Identifier.t
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  module Attribute = struct
+    type t = {
+      base: Expression.t;
+      attribute: Identifier.t;
+      special: bool;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
+  type t =
+    | Attribute of Attribute.t
     | Identifier of Identifier.t
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
-module Lambda = struct
-  type 'expression t = {
-    parameters: 'expression Parameter.t list;
-    body: 'expression;
+and Parameter : sig
+  type parameter = {
+    name: Identifier.t;
+    value: Expression.t option;
+    annotation: Expression.t option;
   }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = parameter Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val create
+    :  location:Location.t ->
+    ?value:Expression.t ->
+    ?annotation:Expression.t ->
+    name:Identifier.t ->
+    unit ->
+    t
+
+  val name : t -> Identifier.t
+end = struct
+  type parameter = {
+    name: Identifier.t;
+    value: Expression.t option;
+    annotation: Expression.t option;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = parameter Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let create ~location ?value ?annotation ~name () =
+    { Node.location; value = { name; value; annotation } }
+
+
+  let name { Node.value = { name; _ }; _ } = name
+end
+
+and Starred : sig
+  type t =
+    | Once of Expression.t
+    | Twice of Expression.t
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  type t =
+    | Once of Expression.t
+    | Twice of Expression.t
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
-module Ternary = struct
-  type 'expression t = {
-    target: 'expression;
-    test: 'expression;
-    alternative: 'expression;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
-
-module Dictionary = struct
-  type 'expression entry = {
-    key: 'expression;
-    value: 'expression;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  type 'expression t = {
-    entries: 'expression entry list;
-    keywords: 'expression list;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
-
-module Comprehension = struct
-  type 'expression generator = {
-    target: 'expression;
-    iterator: 'expression;
-    conditions: 'expression list;
-    async: bool;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  type ('element, 'expression) t = {
-    element: 'element;
-    generators: 'expression generator list;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
-
-module Starred = struct
-  type 'expression t =
-    | Once of 'expression
-    | Twice of 'expression
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-end
-
-module StringLiteral = struct
-  module Substring = struct
-    type kind =
-      | Literal
-      | Format
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    type t = {
-      value: string;
-      kind: kind;
-    }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    let is_all_literal =
-      List.for_all ~f:(fun { Node.value = { kind; _ }; _ } -> equal_kind kind Literal)
-  end
-
-  type 'expression kind =
+and StringLiteral : sig
+  type kind =
     | String
     | Bytes
-    | Format of 'expression list
+    | Format of Expression.t list
     | Mixed of Substring.t Node.t list
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  and 'expression t = {
+  type t = {
     value: string;
-    kind: 'expression kind;
+    kind: kind;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
+
+  val create_mixed : Substring.t Node.t list -> t
+end = struct
+  type kind =
+    | String
+    | Bytes
+    | Format of Expression.t list
+    | Mixed of Substring.t Node.t list
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  type t = {
+    value: string;
+    kind: kind;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -256,95 +424,63 @@ module StringLiteral = struct
           { value; kind = Mixed pieces }
 end
 
-type expression =
-  | Await of t
-  | BooleanOperator of t BooleanOperator.t
-  | Call of t Record.Call.record
-  | ComparisonOperator of t Record.ComparisonOperator.record
-  | Complex of float
-  | Dictionary of t Dictionary.t
-  | DictionaryComprehension of (t Dictionary.entry, t) Comprehension.t
-  | Ellipsis
-  | False
-  | Float of float
-  | Generator of (t, t) Comprehension.t
-  | Integer of int
-  | Lambda of t Lambda.t
-  | List of t list
-  | ListComprehension of (t, t) Comprehension.t
-  | Name of t Name.t
-  | Set of t list
-  | SetComprehension of (t, t) Comprehension.t
-  | Starred of t Starred.t
-  | String of t StringLiteral.t
-  | Ternary of t Ternary.t
-  | True
-  | Tuple of t list
-  | UnaryOperator of t Record.UnaryOperator.record
-  | Yield of t option
-
-and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-let _ = show (* shadowed below *)
-
-type expression_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-module Call = struct
-  module Argument = struct
-    include Record.Call.RecordArgument
-
-    type t = expression_t record [@@deriving compare, eq, sexp, show, hash, to_yojson]
-  end
-
-  include Record.Call
-
-  type t = expression_t record [@@deriving compare, eq, sexp, show, hash, to_yojson]
+and Ternary : sig
+  type t = {
+    target: Expression.t;
+    test: Expression.t;
+    alternative: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  type t = {
+    target: Expression.t;
+    test: Expression.t;
+    alternative: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
-module ComparisonOperator = struct
-  include Record.ComparisonOperator
+and UnaryOperator : sig
+  type operator =
+    | Invert
+    | Negative
+    | Not
+    | Positive
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  type t = expression_t Record.ComparisonOperator.record [@@deriving compare, eq, sexp, show, hash]
+  type t = {
+    operator: operator;
+    operand: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  let override { left = { Node.location; _ } as left; operator; right } =
-    let left, right =
-      match operator with
-      | In -> right, left
-      | _ -> left, right
-    in
-    let operator =
-      match operator with
-      | Equals -> Some "__eq__"
-      | GreaterThan -> Some "__gt__"
-      | GreaterThanOrEquals -> Some "__ge__"
-      | Is
-      | IsNot ->
-          None
-      | LessThan -> Some "__lt__"
-      | LessThanOrEquals -> Some "__le__"
-      | NotEquals -> Some "__ne__"
-      | In -> None
-      | NotIn -> None
-    in
-    operator
-    >>| fun name ->
-    let arguments = [{ Call.Argument.name = None; value = right }] in
-    Call
-      {
-        callee =
-          {
-            Node.location;
-            value = Name (Name.Attribute { base = left; attribute = name; special = true });
-          };
-        arguments;
-      }
-    |> Node.create ~location
-end
+  val pp_unary_operator : Format.formatter -> operator -> unit
 
-module UnaryOperator = struct
-  include Record.UnaryOperator
+  val override : t -> Expression.t option
+end = struct
+  type operator =
+    | Invert
+    | Negative
+    | Not
+    | Positive
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  type t = expression_t Record.UnaryOperator.record [@@deriving compare, eq, sexp, show, hash]
+  type t = {
+    operator: operator;
+    operand: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let pp_unary_operator formatter operator =
+    Format.fprintf
+      formatter
+      "%s"
+      ( match operator with
+      | Invert -> "~"
+      | Negative -> "-"
+      | Not -> "not"
+      | Positive -> "+" )
+
 
   let override { operator; operand = { Node.location; _ } as operand } =
     ( match operator with
@@ -353,7 +489,7 @@ module UnaryOperator = struct
     | Not -> None
     | Positive -> Some "__pos__" )
     >>| fun name ->
-    Call
+    Expression.Call
       {
         callee =
           {
@@ -364,6 +500,316 @@ module UnaryOperator = struct
       }
     |> Node.create ~location
 end
+
+and Expression : sig
+  type expression =
+    | Await of t
+    | BooleanOperator of BooleanOperator.t
+    | Call of Call.t
+    | ComparisonOperator of ComparisonOperator.t
+    | Complex of float
+    | Dictionary of Dictionary.t
+    | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
+    | Ellipsis
+    | False
+    | Float of float
+    | Generator of t Comprehension.t
+    | Integer of int
+    | Lambda of Lambda.t
+    | List of t list
+    | ListComprehension of t Comprehension.t
+    | Name of Name.t
+    | Set of t list
+    | SetComprehension of t Comprehension.t
+    | Starred of Starred.t
+    | String of StringLiteral.t
+    | Ternary of Ternary.t
+    | True
+    | Tuple of t list
+    | UnaryOperator of UnaryOperator.t
+    | Yield of t option
+
+  and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val pp_expression_list : Format.formatter -> t list -> unit
+
+  val pp_expression_argument_list : Format.formatter -> Call.Argument.t list -> unit
+
+  val pp_expression_parameter_list : Format.formatter -> Parameter.t list -> unit
+end = struct
+  type expression =
+    | Await of t
+    | BooleanOperator of BooleanOperator.t
+    | Call of Call.t
+    | ComparisonOperator of ComparisonOperator.t
+    | Complex of float
+    | Dictionary of Dictionary.t
+    | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
+    | Ellipsis
+    | False
+    | Float of float
+    | Generator of t Comprehension.t
+    | Integer of int
+    | Lambda of Lambda.t
+    | List of t list
+    | ListComprehension of t Comprehension.t
+    | Name of Name.t
+    | Set of t list
+    | SetComprehension of t Comprehension.t
+    | Starred of Starred.t
+    | String of StringLiteral.t
+    | Ternary of Ternary.t
+    | True
+    | Tuple of t list
+    | UnaryOperator of UnaryOperator.t
+    | Yield of t option
+
+  and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let _ = show (* shadowed below *)
+
+  module PrettyPrinter = struct
+    let rec pp_expression_t formatter expression_t =
+      match expression_t with
+      | { Node.value = expression; _ } -> Format.fprintf formatter "%a" pp_expression expression
+
+
+    and pp_argument formatter { Call.Argument.name; value } =
+      match name with
+      | Some name -> Format.fprintf formatter "%s = %a" (Node.value name) pp_expression_t value
+      | None -> Format.fprintf formatter "%a" pp_expression_t value
+
+
+    and pp_argument_list formatter argument_list =
+      match argument_list with
+      | [] -> ()
+      | [argument] -> Format.fprintf formatter "%a" pp_argument argument
+      | argument :: argument_list ->
+          Format.fprintf formatter "%a, %a" pp_argument argument pp_argument_list argument_list
+
+
+    and pp_dictionary_entry formatter { Dictionary.Entry.key; value } =
+      Format.fprintf formatter "%a:%a" pp_expression_t key pp_expression_t value
+
+
+    and pp_dictionary formatter dictionary =
+      match dictionary with
+      | [] -> ()
+      | [entry] -> pp_dictionary_entry formatter entry
+      | entry :: dictionary ->
+          Format.fprintf formatter "%a,%a" pp_dictionary_entry entry pp_dictionary dictionary
+
+
+    and pp_expression_list formatter expression_list =
+      match expression_list with
+      | [] -> ()
+      | [expression] -> Format.fprintf formatter "%a" pp_expression_t expression
+      | expression :: expression_list ->
+          Format.fprintf
+            formatter
+            "%a, %a"
+            pp_expression_t
+            expression
+            pp_expression_list
+            expression_list
+
+
+    and pp_generator formatter { Comprehension.Generator.target; iterator; conditions; async } =
+      Format.fprintf
+        formatter
+        "generator(%s%a in %a if %a)"
+        (if async then "async " else "")
+        pp_expression_t
+        target
+        pp_expression_t
+        iterator
+        pp_expression_list
+        conditions
+
+
+    and pp_generators formatter generators =
+      match generators with
+      | [] -> ()
+      | [generator] -> Format.fprintf formatter "generators(%a)" pp_generator generator
+      | generator :: xs ->
+          Format.fprintf formatter "generators(%a, %a)" pp_generator generator pp_generators xs
+
+
+    and pp_keywords formatter keywords =
+      match keywords with
+      | [] -> ()
+      | [keyword] -> Format.fprintf formatter ", %a" pp_expression_t keyword
+      | keyword :: keywords ->
+          Format.fprintf formatter ", %a%a" pp_expression_t keyword pp_keywords keywords
+
+
+    and pp_parameter formatter { Node.value = { Parameter.name; value; annotation }; _ } =
+      let identifier = name in
+      match value, annotation with
+      | Some expression, Some annotation ->
+          Format.fprintf
+            formatter
+            "%s: %a=%a"
+            identifier
+            pp_expression_t
+            annotation
+            pp_expression_t
+            expression
+      | None, Some annotation ->
+          Format.fprintf formatter "%s: %a" identifier pp_expression_t annotation
+      | Some expression, None ->
+          Format.fprintf formatter "%s=%a" identifier pp_expression_t expression
+      | None, None -> Format.fprintf formatter "%s" identifier
+
+
+    and pp_parameter_list formatter parameter_list =
+      match parameter_list with
+      | [] -> ()
+      | [parameter] -> Format.fprintf formatter "%a" pp_parameter parameter
+      | parameter :: parameter_list ->
+          Format.fprintf formatter "%a, %a" pp_parameter parameter pp_parameter_list parameter_list
+
+
+    and pp_basic_comprehension formatter { Comprehension.element; generators } =
+      (* shortcut for pretty printing (expression Node.t, expression Node.t) Comprehension.t *)
+      Format.fprintf
+        formatter
+        "comprehension(%a for %a)"
+        pp_expression_t
+        element
+        pp_generators
+        generators
+
+
+    and pp_starred formatter starred =
+      match starred with
+      | Starred.Once expression -> Format.fprintf formatter "*%a" pp_expression_t expression
+      | Starred.Twice expression -> Format.fprintf formatter "**%a" pp_expression_t expression
+
+
+    and pp_ternary formatter { Ternary.target; test; alternative } =
+      Format.fprintf
+        formatter
+        "%a if %a else %a"
+        pp_expression_t
+        target
+        pp_expression_t
+        test
+        pp_expression_t
+        alternative
+
+
+    and pp_expression formatter expression =
+      match expression with
+      | Await expression -> Format.fprintf formatter "await %a" pp_expression_t expression
+      | BooleanOperator { BooleanOperator.left; operator; right } ->
+          Format.fprintf
+            formatter
+            "%a %a %a"
+            pp_expression_t
+            left
+            BooleanOperator.pp_boolean_operator
+            operator
+            pp_expression_t
+            right
+      | Call { Call.callee; arguments } -> (
+        match Node.value callee with
+        | Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
+            Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
+        | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
+        )
+      | String { StringLiteral.value; kind } -> (
+          let bytes =
+            match kind with
+            | StringLiteral.Bytes -> "b"
+            | _ -> ""
+          in
+          match kind with
+          | StringLiteral.Format expressions ->
+              Format.fprintf formatter "%s\"%s\"(%a)" bytes value pp_expression_list expressions
+          | _ -> Format.fprintf formatter "%s\"%s\"" bytes value )
+      | ComparisonOperator { ComparisonOperator.left; operator; right } ->
+          Format.fprintf
+            formatter
+            "%a %a %a"
+            pp_expression_t
+            left
+            ComparisonOperator.pp_comparison_operator
+            operator
+            pp_expression_t
+            right
+      | Ellipsis -> Format.fprintf formatter "..."
+      | Float float_value
+      | Complex float_value ->
+          Format.fprintf formatter "%f" float_value
+      | Dictionary { Dictionary.entries; keywords } ->
+          Format.fprintf formatter "Dictionary { %a%a }" pp_dictionary entries pp_keywords keywords
+      | DictionaryComprehension { Comprehension.element; generators } ->
+          Format.fprintf
+            formatter
+            "Dictionary comprehension { %a: %a }"
+            pp_dictionary_entry
+            element
+            pp_generators
+            generators
+      | False -> Format.fprintf formatter "%s" "False"
+      | Generator generator -> Format.fprintf formatter "%a" pp_basic_comprehension generator
+      | Integer integer -> Format.fprintf formatter "%d" integer
+      | Lambda { Lambda.parameters; body } ->
+          Format.fprintf
+            formatter
+            "lambda (%a) (%a)"
+            pp_parameter_list
+            parameters
+            pp_expression_t
+            body
+      | List expression_list -> Format.fprintf formatter "[%a]" pp_expression_list expression_list
+      | ListComprehension list_comprehension ->
+          Format.fprintf formatter "%a" pp_basic_comprehension list_comprehension
+      | Name (Name.Identifier name) -> Format.fprintf formatter "%s" name
+      | Name (Name.Attribute { base; attribute; _ }) ->
+          Format.fprintf formatter "%a.%s" pp_expression (Node.value base) attribute
+      | Set set -> Format.fprintf formatter "set(%a)" pp_expression_list set
+      | SetComprehension set_comprehension ->
+          Format.fprintf formatter "set(%a)" pp_basic_comprehension set_comprehension
+      | Starred starred -> Format.fprintf formatter "%a" pp_starred starred
+      | Ternary ternary -> Format.fprintf formatter "%a" pp_ternary ternary
+      | True -> Format.fprintf formatter "%s" "True"
+      | Tuple tuple -> Format.fprintf formatter "(%a)" pp_expression_list tuple
+      | UnaryOperator { UnaryOperator.operator; operand } ->
+          Format.fprintf
+            formatter
+            "%a %a"
+            UnaryOperator.pp_unary_operator
+            operator
+            pp_expression_t
+            operand
+      | Yield yield -> (
+        match yield with
+        | Some yield -> Format.fprintf formatter "%a" pp_expression_t yield
+        | None -> Format.fprintf formatter "None" )
+
+
+    let pp = pp_expression_t
+  end
+
+  let pp formatter expression = Format.fprintf formatter "%a" PrettyPrinter.pp expression
+
+  let show expression = Format.asprintf "%a" pp expression
+
+  let pp_expression_list formatter expression_list =
+    Format.fprintf formatter "%a" PrettyPrinter.pp_expression_list expression_list
+
+
+  let pp_expression_argument_list formatter expression_argument_list =
+    Format.fprintf formatter "%a" PrettyPrinter.pp_argument_list expression_argument_list
+
+
+  let pp_expression_parameter_list formatter expression_parameter_list =
+    Format.fprintf formatter "%a" PrettyPrinter.pp_parameter_list expression_parameter_list
+end
+
+include Expression
 
 let negate ({ Node.location; value } as node) =
   match value with
@@ -492,7 +938,7 @@ let name_to_reference_exn name =
       failwith
         (Format.sprintf
            "Cannot convert expression %s with non-identifiers to reference."
-           (Name.show pp name))
+           (Name.show name))
 
 
 let is_simple_name name = Option.is_some (name_to_identifiers name)
@@ -666,243 +1112,3 @@ let get_item_call base arguments ~location =
 let is_private_attribute attribute_name =
   String.is_prefix ~prefix:"__" attribute_name
   && not (String.is_suffix ~suffix:"__" attribute_name)
-
-
-module PrettyPrinter = struct
-  let rec pp_expression_t formatter expression_t =
-    match expression_t with
-    | { Node.value = expression; _ } -> Format.fprintf formatter "%a" pp_expression expression
-
-
-  and pp_argument formatter { Call.Argument.name; value } =
-    match name with
-    | Some name -> Format.fprintf formatter "%s = %a" (Node.value name) pp_expression_t value
-    | None -> Format.fprintf formatter "%a" pp_expression_t value
-
-
-  and pp_argument_list formatter argument_list =
-    match argument_list with
-    | [] -> ()
-    | [argument] -> Format.fprintf formatter "%a" pp_argument argument
-    | argument :: argument_list ->
-        Format.fprintf formatter "%a, %a" pp_argument argument pp_argument_list argument_list
-
-
-  and pp_dictionary_entry formatter { Dictionary.key; value } =
-    Format.fprintf formatter "%a:%a" pp_expression_t key pp_expression_t value
-
-
-  and pp_dictionary formatter dictionary =
-    match dictionary with
-    | [] -> ()
-    | [entry] -> pp_dictionary_entry formatter entry
-    | entry :: dictionary ->
-        Format.fprintf formatter "%a,%a" pp_dictionary_entry entry pp_dictionary dictionary
-
-
-  and pp_expression_list formatter expression_list =
-    match expression_list with
-    | [] -> ()
-    | [expression] -> Format.fprintf formatter "%a" pp_expression_t expression
-    | expression :: expression_list ->
-        Format.fprintf
-          formatter
-          "%a, %a"
-          pp_expression_t
-          expression
-          pp_expression_list
-          expression_list
-
-
-  and pp_generator formatter { Comprehension.target; iterator; conditions; async } =
-    Format.fprintf
-      formatter
-      "generator(%s%a in %a if %a)"
-      (if async then "async " else "")
-      pp_expression_t
-      target
-      pp_expression_t
-      iterator
-      pp_expression_list
-      conditions
-
-
-  and pp_generators formatter generators =
-    match generators with
-    | [] -> ()
-    | [generator] -> Format.fprintf formatter "generators(%a)" pp_generator generator
-    | generator :: xs ->
-        Format.fprintf formatter "generators(%a, %a)" pp_generator generator pp_generators xs
-
-
-  and pp_keywords formatter keywords =
-    match keywords with
-    | [] -> ()
-    | [keyword] -> Format.fprintf formatter ", %a" pp_expression_t keyword
-    | keyword :: keywords ->
-        Format.fprintf formatter ", %a%a" pp_expression_t keyword pp_keywords keywords
-
-
-  and pp_parameter formatter { Node.value = { Parameter.name; value; annotation }; _ } =
-    let identifier = name in
-    match value, annotation with
-    | Some expression, Some annotation ->
-        Format.fprintf
-          formatter
-          "%s: %a=%a"
-          identifier
-          pp_expression_t
-          annotation
-          pp_expression_t
-          expression
-    | None, Some annotation ->
-        Format.fprintf formatter "%s: %a" identifier pp_expression_t annotation
-    | Some expression, None ->
-        Format.fprintf formatter "%s=%a" identifier pp_expression_t expression
-    | None, None -> Format.fprintf formatter "%s" identifier
-
-
-  and pp_parameter_list formatter parameter_list =
-    match parameter_list with
-    | [] -> ()
-    | [parameter] -> Format.fprintf formatter "%a" pp_parameter parameter
-    | parameter :: parameter_list ->
-        Format.fprintf formatter "%a, %a" pp_parameter parameter pp_parameter_list parameter_list
-
-
-  and pp_basic_comprehension formatter { Comprehension.element; generators } =
-    (* shortcut for pretty printing (expression Node.t, expression Node.t) Comprehension.t *)
-    Format.fprintf
-      formatter
-      "comprehension(%a for %a)"
-      pp_expression_t
-      element
-      pp_generators
-      generators
-
-
-  and pp_starred formatter starred =
-    match starred with
-    | Starred.Once expression -> Format.fprintf formatter "*%a" pp_expression_t expression
-    | Starred.Twice expression -> Format.fprintf formatter "**%a" pp_expression_t expression
-
-
-  and pp_ternary formatter { Ternary.target; test; alternative } =
-    Format.fprintf
-      formatter
-      "%a if %a else %a"
-      pp_expression_t
-      target
-      pp_expression_t
-      test
-      pp_expression_t
-      alternative
-
-
-  and pp_expression formatter expression =
-    match expression with
-    | Await expression -> Format.fprintf formatter "await %a" pp_expression_t expression
-    | BooleanOperator { BooleanOperator.left; operator; right } ->
-        Format.fprintf
-          formatter
-          "%a %a %a"
-          pp_expression_t
-          left
-          BooleanOperator.pp_boolean_operator
-          operator
-          pp_expression_t
-          right
-    | Call { Call.callee; arguments } -> (
-      match Node.value callee with
-      | Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
-          Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
-      | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments )
-    | String { StringLiteral.value; kind } -> (
-        let bytes =
-          match kind with
-          | StringLiteral.Bytes -> "b"
-          | _ -> ""
-        in
-        match kind with
-        | StringLiteral.Format expressions ->
-            Format.fprintf formatter "%s\"%s\"(%a)" bytes value pp_expression_list expressions
-        | _ -> Format.fprintf formatter "%s\"%s\"" bytes value )
-    | ComparisonOperator { ComparisonOperator.left; operator; right } ->
-        Format.fprintf
-          formatter
-          "%a %a %a"
-          pp_expression_t
-          left
-          ComparisonOperator.pp_comparison_operator
-          operator
-          pp_expression_t
-          right
-    | Ellipsis -> Format.fprintf formatter "..."
-    | Float float_value
-    | Complex float_value ->
-        Format.fprintf formatter "%f" float_value
-    | Dictionary { Dictionary.entries; keywords } ->
-        Format.fprintf formatter "Dictionary { %a%a }" pp_dictionary entries pp_keywords keywords
-    | DictionaryComprehension { Comprehension.element; generators } ->
-        Format.fprintf
-          formatter
-          "Dictionary comprehension { %a: %a }"
-          pp_dictionary_entry
-          element
-          pp_generators
-          generators
-    | False -> Format.fprintf formatter "%s" "False"
-    | Generator generator -> Format.fprintf formatter "%a" pp_basic_comprehension generator
-    | Integer integer -> Format.fprintf formatter "%d" integer
-    | Lambda { Lambda.parameters; body } ->
-        Format.fprintf
-          formatter
-          "lambda (%a) (%a)"
-          pp_parameter_list
-          parameters
-          pp_expression_t
-          body
-    | List expression_list -> Format.fprintf formatter "[%a]" pp_expression_list expression_list
-    | ListComprehension list_comprehension ->
-        Format.fprintf formatter "%a" pp_basic_comprehension list_comprehension
-    | Name (Name.Identifier name) -> Format.fprintf formatter "%s" name
-    | Name (Name.Attribute { base; attribute; _ }) ->
-        Format.fprintf formatter "%a.%s" pp_expression (Node.value base) attribute
-    | Set set -> Format.fprintf formatter "set(%a)" pp_expression_list set
-    | SetComprehension set_comprehension ->
-        Format.fprintf formatter "set(%a)" pp_basic_comprehension set_comprehension
-    | Starred starred -> Format.fprintf formatter "%a" pp_starred starred
-    | Ternary ternary -> Format.fprintf formatter "%a" pp_ternary ternary
-    | True -> Format.fprintf formatter "%s" "True"
-    | Tuple tuple -> Format.fprintf formatter "(%a)" pp_expression_list tuple
-    | UnaryOperator { UnaryOperator.operator; operand } ->
-        Format.fprintf
-          formatter
-          "%a %a"
-          UnaryOperator.pp_unary_operator
-          operator
-          pp_expression_t
-          operand
-    | Yield yield -> (
-      match yield with
-      | Some yield -> Format.fprintf formatter "%a" pp_expression_t yield
-      | None -> Format.fprintf formatter "None" )
-
-
-  let pp = pp_expression_t
-end
-
-let pp formatter expression = Format.fprintf formatter "%a" PrettyPrinter.pp expression
-
-let show expression = Format.asprintf "%a" pp expression
-
-let pp_expression_list formatter expression_list =
-  Format.fprintf formatter "%a" PrettyPrinter.pp_expression_list expression_list
-
-
-let pp_expression_argument_list formatter expression_argument_list =
-  Format.fprintf formatter "%a" PrettyPrinter.pp_argument_list expression_argument_list
-
-
-let pp_expression_parameter_list formatter expression_parameter_list =
-  Format.fprintf formatter "%a" PrettyPrinter.pp_parameter_list expression_parameter_list

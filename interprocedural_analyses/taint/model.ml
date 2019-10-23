@@ -153,28 +153,29 @@ let rec parse_annotations ~configuration ~parameters annotation =
   let rec extract_breadcrumbs expression =
     let open Configuration in
     match expression.Node.value with
-    | Name (Name.Identifier breadcrumb) ->
+    | Expression.Name (Name.Identifier breadcrumb) ->
         [Features.simple_via ~allowed:configuration.features breadcrumb]
     | Tuple expressions -> List.concat_map ~f:extract_breadcrumbs expressions
     | _ -> []
   in
   let rec extract_via_value_of expression =
     match expression.Node.value with
-    | Name (Name.Identifier name) ->
+    | Expression.Name (Name.Identifier name) ->
         [Features.Simple.ViaValueOf { position = get_parameter_position name }]
     | Tuple expressions -> List.concat_map ~f:extract_via_value_of expressions
     | _ -> []
   in
   let rec extract_names expression =
     match expression.Node.value with
-    | Name (Name.Identifier name) -> [name]
+    | Expression.Name (Name.Identifier name) -> [name]
     | Tuple expressions -> List.concat_map ~f:extract_names expressions
     | _ -> []
   in
   let base_matches expected = function
     | {
         Node.value =
-          Name (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ });
+          Expression.Name
+            (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ });
         _;
       } ->
         Identifier.equal expected identifier
@@ -182,7 +183,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
   in
   let rec extract_kinds expression =
     match expression.Node.value with
-    | Name (Name.Identifier taint_kind) -> [Leaf taint_kind]
+    | Expression.Name (Name.Identifier taint_kind) -> [Leaf taint_kind]
     | Name (Name.Attribute { base; _ }) -> extract_kinds base
     | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
       when base_matches "Via" callee ->
@@ -248,7 +249,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
   match annotation with
   | Some ({ Node.value; _ } as expression) ->
       let rec parse_annotation = function
-        | Call
+        | Expression.Call
             {
               callee;
               arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _;
@@ -601,9 +602,7 @@ let create ~resolution ?path ~configuration ~verify source =
       | { Node.value = Class { Class.name; bases; body; _ }; _ } ->
           begin
             match body with
-            | [
-             { Node.value = Statement.Expression { Node.value = Ast.Expression.Ellipsis; _ }; _ };
-            ] ->
+            | [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }] ->
                 ()
             | _ -> raise_invalid_model "Class models must have a body of `...`."
           end;
@@ -682,9 +681,9 @@ let create ~resolution ?path ~configuration ~verify source =
               { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
           location;
         }
-        when Expression.is_simple_name name
+        when is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
-          let name = Expression.name_to_reference_exn name in
+          let name = name_to_reference_exn name in
           let signature =
             {
               Define.Signature.name;
@@ -704,9 +703,9 @@ let create ~resolution ?path ~configuration ~verify source =
               { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
           location;
         }
-        when Expression.is_simple_name name
+        when is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
-          let name = Expression.name_to_reference_exn name in
+          let name = name_to_reference_exn name in
           let signature =
             {
               Define.Signature.name;
@@ -778,7 +777,7 @@ let create ~resolution ?path ~configuration ~verify source =
            them. *)
         let global_type () =
           name
-          |> Expression.from_reference ~location:Location.Reference.any
+          |> from_reference ~location:Location.Reference.any
           |> Resolution.resolve_to_annotation resolution
         in
         let parent =

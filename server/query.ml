@@ -70,7 +70,7 @@ let help () =
            to model path in configuration if no parameter is passed in."
   in
   let path = Path.current_working_directory () in
-  let empty = Name (Name.Identifier "") |> Node.create_with_default_location in
+  let empty = Expression.Name (Name.Identifier "") |> Node.create_with_default_location in
   List.filter_map
     ~f:help
     [
@@ -123,17 +123,20 @@ let parse_query
   ] -> (
       let expression { Call.Argument.value; _ } = value in
       let access = function
-        | { Call.Argument.value; _ } when Expression.has_identifier_base value -> value
+        | { Call.Argument.value; _ } when has_identifier_base value -> value
         | _ -> raise (InvalidQuery "expected access")
       in
       let reference = function
-        | { Call.Argument.value = { Node.value = Name name; _ }; _ }
-          when Expression.is_simple_name name ->
-            Expression.name_to_reference_exn name
+        | { Call.Argument.value = { Node.value = Name name; _ }; _ } when is_simple_name name ->
+            name_to_reference_exn name
         | _ -> raise (InvalidQuery "expected reference")
       in
       let string_of_expression = function
-        | { Node.value = String { StringLiteral.value; kind = StringLiteral.String }; _ } -> value
+        | {
+            Node.value = Expression.String { StringLiteral.value; kind = StringLiteral.String };
+            _;
+          } ->
+            value
         | _ -> raise (InvalidQuery "expected string")
       in
       let string argument = argument |> expression |> string_of_expression in

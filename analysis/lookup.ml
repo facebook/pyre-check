@@ -68,9 +68,10 @@ module NodeVisitor = struct
             if Location.equal location Location.Reference.any then None else Some location
           in
           match Node.value expression with
-          | Name (Name.Identifier identifier) -> find_definition (Reference.create identifier)
+          | Expression.Name (Name.Identifier identifier) ->
+              find_definition (Reference.create identifier)
           | Name (Name.Attribute { base; attribute; _ } as name) -> (
-              let definition = Expression.name_to_reference name >>= find_definition in
+              let definition = name_to_reference name >>= find_definition in
               match definition with
               | Some definition -> Some definition
               | None ->
@@ -155,7 +156,7 @@ module Visit = struct
           precondition_visit value
       | Define { Define.signature = { parameters; decorators; return_annotation; _ }; _ } ->
           let visit_parameter { Node.value = { Parameter.annotation; value; name }; location } =
-            Name (Name.Identifier name) |> Node.create ~location |> postcondition_visit;
+            Expression.Name (Name.Identifier name) |> Node.create ~location |> postcondition_visit;
             Option.iter ~f:postcondition_visit value;
             annotation >>| store_annotation |> ignore
           in

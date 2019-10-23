@@ -48,7 +48,7 @@ let create_overload
   =
   let open Type.Callable in
   let parameters =
-    let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
+    let parameter { Node.value = { Expression.Parameter.name; annotation; value }; _ } =
       let default = Option.is_some value in
       { Parameter.name; annotation; default }
     in

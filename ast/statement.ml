@@ -200,10 +200,8 @@ end = struct
   let name ~parent target =
     let open Expression in
     match Node.value target with
-    | Name (Name.Attribute { base; attribute; _ })
-      when Expression.equal
-             base
-             (Expression.from_reference ~location:Location.Reference.any parent) ->
+    | Expression.Name (Name.Attribute { base; attribute; _ })
+      when Expression.equal base (from_reference ~location:Location.Reference.any parent) ->
         Some attribute
     | _ -> None
 end
@@ -294,6 +292,7 @@ end = struct
 
 
   let is_frozen { decorators; _ } =
+    let open Expression in
     let is_frozen_dataclass decorator =
       match decorator with
       | {
@@ -316,7 +315,7 @@ end = struct
            };
        _;
       } ->
-          let has_frozen_argument Expression.Call.Argument.{ name; value } =
+          let has_frozen_argument Call.Argument.{ name; value } =
             match name, value with
             | Some { Node.value; _ }, { Node.value = Expression.True; _ } ->
                 String.equal "frozen" (Identifier.sanitized value)
@@ -359,7 +358,7 @@ end = struct
             |> function
             | Some name ->
                 let value =
-                  let index = Node.create ~location (Integer index) in
+                  let index = Node.create ~location (Expression.Integer index) in
                   match value with
                   | { Node.value = Call _; _ }
                   | { Node.value = Name _; _ } ->
@@ -367,7 +366,7 @@ end = struct
                         {
                           value with
                           Node.value =
-                            Call
+                            Expression.Call
                               {
                                 callee =
                                   {
@@ -458,7 +457,7 @@ end = struct
           getter ~is_class_property:true
         else
           match Define.is_property_setter define, parameters with
-          | true, _ :: { Node.value = { Parameter.annotation; _ }; _ } :: _ ->
+          | true, _ :: { Node.value = { Expression.Parameter.annotation; _ }; _ } :: _ ->
               Some (Setter { name; annotation; async; location })
           | _ -> None
       in
@@ -619,7 +618,7 @@ end = struct
                     {
                       Node.location;
                       value =
-                        Call
+                        Expression.Call
                           {
                             callee =
                               {
@@ -652,8 +651,7 @@ end = struct
                               [
                                 {
                                   Call.Argument.name = None;
-                                  value =
-                                    Expression.from_reference ~location:Location.Reference.any name;
+                                  value = from_reference ~location:Location.Reference.any name;
                                 };
                               ];
                           };
@@ -662,7 +660,7 @@ end = struct
                   {
                     Node.location;
                     value =
-                      Call
+                      Expression.Call
                         {
                           callee =
                             {
@@ -708,8 +706,8 @@ end = struct
           let slots_attributes map { Node.value; _ } =
             let open Expression in
             let is_slots = function
-              | Name (Name.Identifier "__slots__")
-              | Name (Name.Attribute { attribute = "__slots__"; _ }) ->
+              | Expression.Name (Name.Identifier "__slots__")
+              | Expression.Name (Name.Attribute { attribute = "__slots__"; _ }) ->
                   true
               | _ -> false
             in
@@ -723,7 +721,7 @@ end = struct
               when is_slots target_value ->
                 let add_attribute map { Node.value; _ } =
                   match value with
-                  | String { StringLiteral.value; _ } ->
+                  | Expression.String { StringLiteral.value; _ } ->
                       Attribute.create_simple ~location ~name:value ()
                       |> fun attribute ->
                       Identifier.SerializableMap.set map ~key:value ~data:attribute
@@ -799,7 +797,7 @@ and Define : sig
   module Signature : sig
     type t = {
       name: Reference.t;
-      parameters: Expression.t Parameter.t list;
+      parameters: Expression.Parameter.t list;
       decorators: Expression.t list;
       docstring: string option;
       return_annotation: Expression.t option;
@@ -919,7 +917,7 @@ end = struct
   module Signature = struct
     type t = {
       name: Reference.t;
-      parameters: Expression.t Parameter.t list;
+      parameters: Expression.Parameter.t list;
       decorators: Expression.t list;
       docstring: string option;
       return_annotation: Expression.t option;
@@ -959,7 +957,7 @@ end = struct
 
     let self_identifier { parameters; _ } =
       match parameters with
-      | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
+      | { Node.value = { Expression.Parameter.name; _ }; _ } :: _ -> name
       | _ -> "self"
 
 
@@ -1106,6 +1104,7 @@ end = struct
   let is_class_toplevel { signature; _ } = Signature.is_class_toplevel signature
 
   let contains_call { body; _ } name =
+    let open Expression in
     let matches = function
       | {
           Node.value =
@@ -1114,8 +1113,7 @@ end = struct
                 Node.value =
                   Expression.Call
                     {
-                      callee =
-                        { Node.value = Expression.Name (Expression.Name.Identifier identifier); _ };
+                      callee = { Node.value = Expression.Name (Name.Identifier identifier); _ };
                       _;
                     };
                 _;
@@ -1130,6 +1128,7 @@ end = struct
 
 
   let is_stub { body; _ } =
+    let open Expression in
     match List.rev body with
     | { Node.value = Expression { Node.value = Expression.Ellipsis; _ }; _ } :: _
     | _ :: { Node.value = Expression { Node.value = Expression.Ellipsis; _ }; _ } :: _ ->
@@ -1166,7 +1165,7 @@ end = struct
             match target with
             | {
              Node.value =
-               Name
+               Expression.Name
                  (Name.Attribute
                    { base = { Node.value = Name (Name.Identifier self); _ }; attribute = name; _ });
              _;
@@ -1240,7 +1239,7 @@ end = struct
             | [] -> None
             | ({ Node.location; _ } as annotation) :: annotations ->
                 let argument_value =
-                  Node.create_with_default_location (Tuple (annotation :: annotations))
+                  Node.create_with_default_location (Expression.Tuple (annotation :: annotations))
                 in
                 if List.for_all ~f:(Expression.equal annotation) annotations then
                   Some annotation
@@ -1378,7 +1377,7 @@ end = struct
     let value =
       let value =
         let create_call base iterator next =
-          Call
+          Expression.Call
             {
               callee =
                 {
@@ -1417,7 +1416,7 @@ end = struct
           create_call iterator "__iter__" "__next__"
       in
       if async then
-        { Node.location; value = Await (Node.create value ~location) }
+        { Node.location; value = Expression.Await (Node.create value ~location) }
       else
         { Node.location; value }
     in
@@ -1491,7 +1490,7 @@ end = struct
               {
                 Assign.target;
                 annotation = None;
-                value = Node.create ~location Ellipsis;
+                value = Node.create ~location Expression.Ellipsis;
                 parent = None;
               };
         };
@@ -1523,12 +1522,12 @@ end = struct
     match kind, name with
     | Some ({ Node.location; value = Name _; _ } as annotation), Some name ->
         assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
-    | Some { Node.location; value = Tuple values; _ }, Some name ->
+    | Some { Node.location; value = Expression.Tuple values; _ }, Some name ->
         let annotation =
           {
             Node.location;
             value =
-              Call
+              Expression.Call
                 {
                   callee =
                     {
@@ -1614,7 +1613,7 @@ end = struct
                 {
                   Node.location;
                   value =
-                    Call
+                    Expression.Call
                       {
                         callee =
                           {
@@ -1629,7 +1628,7 @@ end = struct
                 }
               in
               if async then
-                Node.create ~location (Await (create_call "__aenter__"))
+                Node.create ~location (Expression.Await (create_call "__aenter__"))
               else
                 create_call "__enter__"
             in
@@ -1671,7 +1670,7 @@ and Statement : sig
 
   val terminates : t list -> bool
 
-  val generator_assignment : Expression.t Expression.Comprehension.generator -> Assign.t
+  val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
 
   val extract_docstring : t list -> string option
 end = struct
@@ -1734,10 +1733,10 @@ end = struct
           let rest = List.map rest ~f:(fun s -> String.drop_prefix s difference) in
           String.concat ~sep:"\n" (first :: rest)
     in
+    let open Expression in
     match statements with
     | {
-        Node.value =
-          Expression { Node.value = Expression.String { Expression.StringLiteral.value; _ }; _ };
+        Node.value = Expression { Node.value = Expression.String { StringLiteral.value; _ }; _ };
         _;
       }
       :: _ ->
@@ -1746,8 +1745,14 @@ end = struct
 
 
   let generator_assignment
-      { Expression.Comprehension.target; iterator = { Node.location; _ } as iterator; async; _ }
+      {
+        Expression.Comprehension.Generator.target;
+        iterator = { Node.location; _ } as iterator;
+        async;
+        _;
+      }
     =
+    let open Expression in
     let value =
       if async then
         let aiter =

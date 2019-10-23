@@ -46,12 +46,13 @@ let rec coerce_special_methods { Node.location; value } =
   (* Turn all explicit dunder attribute accesses to be special methods accesses. *)
   let open Expression in
   match value with
-  | Name (Name.Attribute ({ base; attribute; _ } as name))
+  | Expression.Name (Name.Attribute ({ base; attribute; _ } as name))
     when String.is_prefix ~prefix:"__" attribute && String.is_suffix ~suffix:"__" attribute ->
       {
         Node.location;
         value =
-          Name (Name.Attribute { name with base = coerce_special_methods base; special = true });
+          Expression.Name
+            (Name.Attribute { name with base = coerce_special_methods base; special = true });
       }
   | Call { callee; arguments } ->
       { Node.location; value = Call { callee = coerce_special_methods callee; arguments } }
@@ -176,7 +177,7 @@ let parse_single_expression ?(preprocess = false) ?(coerce_special_methods = fal
 
 let parse_single_call ?(preprocess = false) source =
   match parse_single_expression ~preprocess source with
-  | { Node.value = Expression.Call call; _ } -> call
+  | { Node.value = Call call; _ } -> call
   | _ -> failwith "Could not parse single call"
 
 
@@ -221,10 +222,9 @@ let collect_nodes_as_strings source =
             (Transform.sanitize_expression expression |> Expression.show, Node.location expression)
       | Visit.Statement _ -> None
       | Visit.Identifier { Node.value; location } -> Some (Identifier.sanitized value, location)
-      | Visit.Parameter { Node.value = { Parameter.name; _ }; location } ->
+      | Visit.Parameter { Node.value = { Expression.Parameter.name; _ }; location } ->
           Some (Identifier.sanitized name, location)
-      | Visit.Substring { Node.value; location } ->
-          Some (Expression.StringLiteral.Substring.show value, location)
+      | Visit.Substring { Node.value; location } -> Some (Expression.Substring.show value, location)
   end)
   in
   Collector.collect source
@@ -371,11 +371,13 @@ let assert_type_equal = assert_equal ~printer:Type.show ~cmp:Type.equal
 (* Expression helpers. *)
 let ( ~+ ) value = Node.create_with_default_location value
 
-let ( ! ) name = +Expression.Name (Expression.create_name ~location:Location.Reference.any name)
+let ( ! ) name =
+  +Expression.Expression.Name (Expression.create_name ~location:Location.Reference.any name)
+
 
 let ( !! ) name =
   +Statement.Expression
-     (+Expression.Name (Expression.create_name ~location:Location.Reference.any name))
+     (+Expression.Expression.Name (Expression.create_name ~location:Location.Reference.any name))
 
 
 let ( !& ) name = Reference.create name

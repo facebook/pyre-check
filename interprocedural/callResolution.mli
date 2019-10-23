@@ -38,7 +38,7 @@ val normalize_global : resolution:Resolution.t -> Reference.t -> Reference.t * C
 (* Returns all call targets from Call expressions in the given access *)
 val resolve_call_targets
   :  resolution:Resolution.t ->
-  Expression.Call.t ->
+  Call.t ->
   (Callable.t * Type.Callable.implicit option) list
 
 val resolve_ignoring_optional : resolution:Resolution.t -> Expression.t -> Type.t

@@ -46,7 +46,7 @@ let parse_attributes ~parse_annotation ~class_name =
       parent = Type.Primitive class_name;
       property = None;
       static = false;
-      value = Ast.Node.create_with_default_location Ast.Expression.Ellipsis;
+      value = Ast.Node.create_with_default_location Expression.Expression.Ellipsis;
     }
     |> Ast.Node.create_with_default_location
   in

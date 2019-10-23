@@ -15,10 +15,7 @@ let normalize_global ~resolution reference =
   let global_type = Resolution.resolve_reference resolution reference in
   if Type.is_meta global_type then
     let dummy_self =
-      {
-        Expression.Call.Argument.name = None;
-        value = Node.create_with_default_location Expression.False;
-      }
+      { Call.Argument.name = None; value = Node.create_with_default_location Expression.False }
     in
     let full_reference = Reference.create ~prefix:reference "__init__" in
     full_reference, [dummy_self]
@@ -44,7 +41,7 @@ let strip_optional annotation = Type.optional_value annotation |> Option.value ~
 
 let rec resolve_ignoring_optional ~resolution expression =
   match Node.value expression with
-  | Name (Name.Attribute { base; attribute; _ }) -> (
+  | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
       let base_type = resolve_ignoring_optional ~resolution base |> strip_optional in
       match defining_attribute ~resolution base_type attribute with
       | Some attribute ->
@@ -70,10 +67,10 @@ let is_local identifier = String.is_prefix ~prefix:"$" identifier
 
 let extract_constant_name { Node.value = expression; _ } =
   match expression with
-  | String literal -> Some literal.value
+  | Expression.String literal -> Some literal.value
   | Integer i -> Some (string_of_int i)
   | Name name -> (
-      let name = Expression.name_to_reference name >>| Reference.delocalize >>| Reference.last in
+      let name = name_to_reference name >>| Reference.delocalize >>| Reference.last in
       match name with
       (* Heuristic: All uppercase names tend to be enums, so only taint the field in those cases. *)
       | Some name
@@ -141,7 +138,7 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
 
 
 let rec is_all_names = function
-  | Name (Name.Identifier identifier) when not (is_local identifier) -> true
+  | Expression.Name (Name.Identifier identifier) when not (is_local identifier) -> true
   | Name (Name.Attribute { base; attribute; _ }) when not (is_local attribute) ->
       is_all_names (Node.value base)
   | _ -> false
@@ -150,12 +147,12 @@ let rec is_all_names = function
 let resolve_target ~resolution ?receiver_type callee =
   let callable_type = Resolution.resolve resolution callee in
   let global =
-    match Expression.get_identifier_base callee, Node.value callee with
+    match get_identifier_base callee, Node.value callee with
     | Some "super", _
     | Some "type", _ ->
         None
-    | Some base, Name name when Expression.is_simple_name name && not (is_local base) ->
-        let reference = Expression.name_to_reference_exn name in
+    | Some base, Name name when is_simple_name name && not (is_local base) ->
+        let reference = name_to_reference_exn name in
         let global =
           reference
           |> GlobalResolution.global (Resolution.global_resolution resolution)
@@ -175,7 +172,7 @@ let resolve_target ~resolution ?receiver_type callee =
   let is_super_call =
     let rec is_super callee =
       match Node.value callee with
-      | Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
+      | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
       | Call { callee; _ } -> is_super callee
       | Name (Name.Attribute { base; _ }) -> is_super base
       | _ -> false
@@ -219,7 +216,7 @@ let resolve_target ~resolution ?receiver_type callee =
 let get_indirect_targets ~resolution ~receiver ~method_name =
   let receiver_type = Resolution.resolve resolution receiver in
   let callee =
-    Name (Name.Attribute { base = receiver; attribute = method_name; special = false })
+    Expression.Name (Name.Attribute { base = receiver; attribute = method_name; special = false })
     |> Node.create_with_default_location
   in
   let indirect_targets = resolve_target ~resolution ~receiver_type callee in
@@ -242,15 +239,13 @@ let resolve_property_targets ~resolution ~base ~attribute =
 
 
 let get_global_targets ~resolution ~global =
-  Name (Expression.create_name_from_reference ~location:Location.Reference.any global)
+  Expression.Name (create_name_from_reference ~location:Location.Reference.any global)
   |> Node.create_with_default_location
   |> resolve_target ~resolution
 
 
 let resolve_call_targets ~resolution call =
-  let { Expression.Call.callee; _ } =
-    Analysis.Annotated.Call.redirect_special_calls ~resolution call
-  in
+  let { Call.callee; _ } = Analysis.Annotated.Call.redirect_special_calls ~resolution call in
   match Node.value callee with
   | Name (Name.Attribute { base; _ }) ->
       let receiver_type = Resolution.resolve resolution base in
@@ -259,7 +254,8 @@ let resolve_call_targets ~resolution call =
       let receiver_type = Resolution.resolve resolution callee in
       if Type.is_meta receiver_type then
         let callee =
-          Name (Name.Attribute { base = callee; attribute = "__init__"; special = false })
+          Expression.Name
+            (Name.Attribute { base = callee; attribute = "__init__"; special = false })
           |> Node.create_with_default_location
         in
         resolve_target ~resolution ~receiver_type callee

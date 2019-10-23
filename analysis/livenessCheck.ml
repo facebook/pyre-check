@@ -134,7 +134,7 @@ module State (Context : Context) = struct
       match value with
       | Assign { target; _ } ->
           let rec update_target used = function
-            | { Node.value = Name (Name.Identifier identifier); _ } ->
+            | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
                 remove_from_used ~used ~location identifier
             | { Node.value = List elements; _ } -> List.fold ~init:used ~f:update_target elements
             | { Node.value = Starred (Starred.Once target); _ } -> update_target used target
@@ -150,9 +150,9 @@ module State (Context : Context) = struct
         let lookup_used_in_defines { Node.value; _ } =
           let name =
             match value with
-            | Call { callee = { Node.value = Name callee; _ }; _ }
-              when Expression.is_simple_name callee ->
-                Some (Expression.name_to_reference_exn callee)
+            | Expression.Call { callee = { Node.value = Name callee; _ }; _ }
+              when is_simple_name callee ->
+                Some (name_to_reference_exn callee)
             | _ -> None
           in
           match name >>= NestedDefineLookup.Table.find Context.nested_define_lookup with

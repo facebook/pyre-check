@@ -75,7 +75,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let is_super expression =
     match expression.Node.value with
-    | Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
+    | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
     | _ -> false
 
 
@@ -272,7 +272,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
 
 
-    and analyze_dictionary_entry ~resolution taint state { Dictionary.key; value } =
+    and analyze_dictionary_entry ~resolution taint state { Dictionary.Entry.key; value } =
       let state = analyze_expression ~resolution ~taint ~state ~expression:key in
       let field_name = AccessPath.get_index key in
       let value_taint = read_tree [field_name] taint in
@@ -296,7 +296,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_generators ~resolution ~state generators =
-      let handle_generator state { Comprehension.target; iterator; _ } =
+      let handle_generator state { Comprehension.Generator.target; iterator; _ } =
         let access_path = of_expression ~resolution target in
         let bound_variable_taint = get_taint access_path state in
         let iterator_taint =
@@ -457,7 +457,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           List.fold keywords ~f:analyze_dictionary_keywords ~init:state
       | DictionaryComprehension
-          { Comprehension.element = { Dictionary.key; value }; generators; _ } ->
+          { Comprehension.element = { Dictionary.Entry.key; value }; generators; _ } ->
           let resolution = generator_resolution ~resolution generators in
           let state = analyze_expression ~resolution ~taint ~state ~expression:key in
           let state =

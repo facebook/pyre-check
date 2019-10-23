@@ -69,7 +69,7 @@ let create
             value = { Node.value = Name value; _ };
             _;
           } -> (
-        match Expression.name_to_reference value with
+        match name_to_reference value with
         | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
             Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
         | _ -> aliases )

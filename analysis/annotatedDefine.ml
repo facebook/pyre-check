@@ -20,7 +20,7 @@ let parameter_annotations
     { Node.value = { Define.signature = { parameters; _ }; _ }; _ }
     ~resolution
   =
-  let element index { Node.value = { Parameter.annotation; _ }; _ } =
+  let element index { Node.value = { Expression.Parameter.annotation; _ }; _ } =
     let annotation =
       annotation
       >>| (fun annotation -> GlobalResolution.parse_annotation resolution annotation)
@@ -65,39 +65,39 @@ let decorate
               let placed_single_star, sofar =
                 match placed_single_star, parameter with
                 | false, Type.Callable.Parameter.KeywordOnly _ ->
-                    true, Ast.Parameter.create ~location ~name:"*" () :: sofar
+                    true, Expression.Parameter.create ~location ~name:"*" () :: sofar
                 | _ -> placed_single_star, sofar
               in
               let new_parameter =
                 match parameter with
                 | Type.Callable.Parameter.Anonymous { annotation; _ } ->
                     (* This means it will be read back in as an anonymous *)
-                    Ast.Parameter.create
+                    Expression.Parameter.create
                       ~location
                       ~annotation:(Type.expression annotation)
                       ~name:"__"
                       ()
                 | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
                 | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                    Ast.Parameter.create
+                    Expression.Parameter.create
                       ~location
                       ~annotation:(Type.expression annotation)
                       ~name
                       ()
                 | Type.Callable.Parameter.Variable (Concrete annotation) ->
-                    Ast.Parameter.create
+                    Expression.Parameter.create
                       ~location
                       ~annotation:(Type.expression annotation)
                       ~name:"*args"
                       ()
                 | Type.Callable.Parameter.Variable (Concatenation concatenation) ->
-                    Ast.Parameter.create
+                    Expression.Parameter.create
                       ~location
                       ~annotation:(Type.OrderedTypes.Concatenation.expression concatenation)
                       ~name:"*args"
                       ()
                 | Type.Callable.Parameter.Keywords annotation ->
-                    Ast.Parameter.create
+                    Expression.Parameter.create
                       ~location
                       ~annotation:(Type.expression annotation)
                       ~name:"**kwargs"

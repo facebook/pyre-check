@@ -323,7 +323,7 @@ let test_query context =
   in
   let parse_annotation serialized =
     serialized
-    |> (fun literal -> String (StringLiteral.create literal))
+    |> (fun literal -> Expression.String (StringLiteral.create literal))
     |> Node.create_with_default_location
     |> Type.create ~aliases:(fun _ -> None)
   in

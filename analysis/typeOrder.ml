@@ -1421,7 +1421,8 @@ module OrderImplementation = struct
                             property = None;
                             parent = callable;
                             static = false;
-                            value = Ast.Node.create_with_default_location Expression.Ellipsis;
+                            value =
+                              Ast.Node.create_with_default_location Expression.Expression.Ellipsis;
                           };
                       ]
                       |> Option.some

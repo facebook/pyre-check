@@ -16,7 +16,7 @@ type t = ClassSummary.t Node.t [@@deriving compare, eq, sexp, show, hash]
 
 type decorator = {
   name: string;
-  arguments: Expression.Call.Argument.t list option;
+  arguments: Call.Argument.t list option;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -78,7 +78,7 @@ let matches_decorator decorator ~target ~resolution =
     String.equal name target
   in
   match decorator with
-  | { Node.value = Call { callee; arguments }; _ }
+  | { Node.value = Expression.Call { callee; arguments }; _ }
     when name_resolves_to_target ~name:(Expression.show callee) ->
       Some { name = target; arguments = Some arguments }
   | { Node.value = Name _; _ } when name_resolves_to_target ~name:(Expression.show decorator) ->
@@ -149,7 +149,7 @@ let generics { Node.value = { ClassSummary.bases; _ }; _ } ~resolution =
   let parse_annotation =
     GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
   in
-  let generic { Expression.Call.Argument.value; _ } =
+  let generic { Call.Argument.value; _ } =
     match parse_annotation value with
     | Type.Parametric { name = "typing.Generic"; parameters } -> Some parameters
     | Type.Parametric { name = "typing.Protocol"; parameters } -> Some parameters
@@ -203,7 +203,7 @@ let rec metaclass ({ Node.value = { ClassSummary.bases; _ }; _ } as original) ~r
   let metaclass_candidates =
     let explicit_metaclass =
       let find_explicit_metaclass = function
-        | { Expression.Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
+        | { Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
             Some (GlobalResolution.parse_annotation resolution value)
         | _ -> None
       in
@@ -212,14 +212,11 @@ let rec metaclass ({ Node.value = { ClassSummary.bases; _ }; _ } as original) ~r
     let metaclass_of_bases =
       let explicit_bases =
         let base_to_class { Call.Argument.value; _ } =
-          Expression.delocalize value
-          |> GlobalResolution.parse_annotation resolution
-          |> Type.split
-          |> fst
+          delocalize value |> GlobalResolution.parse_annotation resolution |> Type.split |> fst
         in
         List.filter
           ~f:(function
-            | { Expression.Call.Argument.name = None; _ } -> true
+            | { Call.Argument.name = None; _ } -> true
             | _ -> false)
           bases
         |> List.map ~f:base_to_class
@@ -567,7 +564,7 @@ let create_attribute
           ( match kind with
           | Method { static; _ } -> static
           | _ -> false );
-        value = Option.value value ~default:(Node.create Ellipsis ~location);
+        value = Option.value value ~default:(Node.create Expression.Ellipsis ~location);
       };
   }
 
@@ -603,13 +600,13 @@ module ClassDecorators = struct
     let extract_options_from_arguments =
       let apply_arguments default argument =
         let recognize_value ~default = function
-          | False -> false
+          | Expression.False -> false
           | True -> true
           | _ -> default
         in
         match argument with
         | {
-         Expression.Call.Argument.name = Some { Node.value = argument_name; _ };
+         Call.Argument.name = Some { Node.value = argument_name; _ };
          value = { Node.value; _ };
         } ->
             let argument_name = Identifier.sanitized argument_name in
@@ -750,7 +747,7 @@ module ClassDecorators = struct
                       ( { Node.value = { AnnotatedAttribute.initialized; value; _ }; _ } as
                       attribute )
                     =
-                    let get_default_value { Call.Argument.name; value } : expression_t option =
+                    let get_default_value { Call.Argument.name; value } =
                       match name with
                       | Some { Node.value = parameter_name; _ } ->
                           if String.equal "default" (Identifier.sanitized parameter_name) then
@@ -968,7 +965,7 @@ let rec attribute_table
                    parent = Primitive (Reference.show name);
                    property = None;
                    static = true;
-                   value = Node.create_with_default_location Ellipsis;
+                   value = Node.create_with_default_location Expression.Ellipsis;
                  });
           if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__getattr__") then
             AnnotatedAttribute.Table.add
@@ -987,7 +984,7 @@ let rec attribute_table
                    parent = Primitive (Reference.show name);
                    property = None;
                    static = true;
-                   value = Node.create_with_default_location Ellipsis;
+                   value = Node.create_with_default_location Expression.Ellipsis;
                  })
         in
         add_actual ();
@@ -1193,7 +1190,7 @@ let rec fallback_attribute
           let location = AnnotatedAttribute.location fallback in
           let arguments =
             let self_argument =
-              { Call.Argument.name = None; value = Expression.from_reference ~location class_name }
+              { Call.Argument.name = None; value = from_reference ~location class_name }
             in
             let name_argument =
               {

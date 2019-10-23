@@ -101,8 +101,8 @@ let test_decorate context =
     in
     let expected = Test.parse_single_define expected in
     assert_equal
-      ~printer:(List.to_string ~f:(Parameter.show Expression.pp))
-      ~cmp:(List.equal (Parameter.equal Expression.equal))
+      ~printer:(List.to_string ~f:Expression.Parameter.show)
+      ~cmp:(List.equal Expression.Parameter.equal)
       define.signature.parameters
       expected.signature.parameters;
     assert_equal

@@ -436,7 +436,7 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
     |> Option.value ~default:false
   in
   match Node.value expression with
-  | Await expression ->
+  | Expression.Await expression ->
       resolve_literal resolution expression
       |> Type.awaitable_value
       |> Option.value ~default:Type.Top
@@ -445,8 +445,7 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
         join resolution (resolve_literal resolution left) (resolve_literal resolution right)
       in
       if Type.is_concrete annotation then annotation else Type.Any
-  | Call { callee = { Node.value = Name name; _ } as callee; _ }
-    when Expression.is_simple_name name ->
+  | Call { callee = { Node.value = Name name; _ } as callee; _ } when is_simple_name name ->
       let class_type = parse_annotation resolution callee in
       if is_concrete_constructable class_type then
         class_type
@@ -454,7 +453,7 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
         Type.Top
   | Call _
   | Name _
-    when Expression.has_identifier_base expression ->
+    when has_identifier_base expression ->
       let class_type = parse_annotation resolution expression in
       (* None is a special type that doesn't have a constructor. *)
       if Type.is_none class_type then
@@ -466,7 +465,7 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
   | Complex _ -> Type.complex
   | Dictionary { Dictionary.entries; keywords = [] } ->
       let key_annotation, value_annotation =
-        let join_entry (key_annotation, value_annotation) { Dictionary.key; value } =
+        let join_entry (key_annotation, value_annotation) { Dictionary.Entry.key; value } =
           ( join resolution key_annotation (resolve_literal resolution key),
             join resolution value_annotation (resolve_literal resolution value) )
         in

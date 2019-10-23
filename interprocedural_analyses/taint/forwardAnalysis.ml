@@ -19,7 +19,7 @@ module type FixpointState = sig
 
   val create
     :  existing_model:TaintResult.call_model ->
-    (Root.t * Identifier.t * 'a Parameter.t) list ->
+    (Root.t * Identifier.t * Parameter.t) list ->
     t
 end
 
@@ -341,7 +341,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                  ForwardState.Tree.join taint new_taint, join state new_state)
 
 
-    and analyze_dictionary_entry ~resolution (taint, state) { Dictionary.key; value } =
+    and analyze_dictionary_entry ~resolution (taint, state) { Dictionary.Entry.key; value } =
       let field_name =
         match key.Node.value with
         | String literal -> AbstractTreeDomain.Label.Field literal.value
@@ -372,7 +372,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_comprehension_generators ~resolution ~state generators =
-      let add_binding (state, resolution) ({ Comprehension.target; iterator; _ } as generator) =
+      let add_binding
+          (state, resolution)
+          ({ Comprehension.Generator.target; iterator; _ } as generator)
+        =
         let taint, state =
           analyze_expression ~resolution ~state ~expression:iterator
           |>> ForwardState.Tree.read [AbstractTreeDomain.Label.Any]
@@ -401,7 +404,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     and analyze_dictionary_comprehension
         ~resolution
         ~state
-        { Comprehension.element = { Expression.Dictionary.key; value }; generators; _ }
+        { Comprehension.element = { Dictionary.Entry.key; value }; generators; _ }
       =
       let state, resolution = analyze_comprehension_generators ~resolution ~state generators in
       let value_taint, state =
@@ -422,10 +425,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_call ~resolution ~location ~state callee arguments =
-      let call = { Expression.Call.callee; arguments } in
-      let { Expression.Call.callee; arguments } =
-        Annotated.Call.redirect_special_calls ~resolution call
-      in
+      let call = { Call.callee; arguments } in
+      let { Call.callee; arguments } = Annotated.Call.redirect_special_calls ~resolution call in
       match AccessPath.get_global ~resolution callee, Node.value callee with
       | Some global, _ ->
           let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in

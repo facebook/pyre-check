@@ -69,7 +69,7 @@ module State (Context : Context) = struct
     in
     let forward_parameter
         ({ unawaited; locals; need_to_await } as state)
-        { Node.value = { Parameter.name; annotation; _ }; location }
+        { Node.value = { Expression.Parameter.name; annotation; _ }; location }
       =
       let is_awaitable =
         match annotation with
@@ -212,7 +212,7 @@ module State (Context : Context) = struct
   let rec forward_generator
       ~resolution
       (awaitables, state)
-      { Expression.Comprehension.target = _; iterator; conditions; async = _ }
+      { Expression.Comprehension.Generator.target = _; iterator; conditions; async = _ }
     =
     let awaitables, state =
       List.fold
@@ -231,7 +231,7 @@ module State (Context : Context) = struct
     =
     let open Expression in
     match value with
-    | Await ({ Node.value = Name name; _ } as expression) when Expression.is_simple_name name ->
+    | Await ({ Node.value = Name name; _ } as expression) when is_simple_name name ->
         let awaitables, state = forward_expression ~resolution ~state ~expression in
         awaitables, mark_name_as_awaited state ~name
     | Await ({ Node.location; _ } as expression) ->
@@ -266,10 +266,9 @@ module State (Context : Context) = struct
                 forward_expression ~resolution ~state ~expression:value
               in
               match Node.value base with
-              | Name name when Expression.is_simple_name name && not (List.is_empty new_awaitables)
-                ->
+              | Name name when is_simple_name name && not (List.is_empty new_awaitables) ->
                   let { locals; _ } = state in
-                  let name = Expression.name_to_reference_exn name in
+                  let name = name_to_reference_exn name in
                   let awaitable_locations =
                     new_awaitables |> List.map ~f:Node.location |> Location.Reference.Set.of_list
                   in
@@ -310,8 +309,8 @@ module State (Context : Context) = struct
             Some (Location.Reference.Set.singleton location)
           else
             match value with
-            | Name name when Expression.is_simple_name name ->
-                Map.find locals (Reference (Expression.name_to_reference_exn name))
+            | Expression.Name name when is_simple_name name ->
+                Map.find locals (Reference (name_to_reference_exn name))
             | _ -> Map.find locals (Location location)
         in
         if need_to_await && is_awaitable then
@@ -359,7 +358,7 @@ module State (Context : Context) = struct
         let awaitables, state = forward_expression ~resolution ~state ~expression:left in
         forward_expression ~resolution ~state ~expression:right |>> awaitables
     | Dictionary { Dictionary.entries; keywords } ->
-        let forward_entry (awaitables, state) { Dictionary.key; value } =
+        let forward_entry (awaitables, state) { Dictionary.Entry.key; value } =
           let awaitables, state =
             forward_expression ~resolution ~state ~expression:key |>> awaitables
           in
@@ -389,15 +388,15 @@ module State (Context : Context) = struct
         forward_expression ~resolution ~state ~expression:operand
     | Yield (Some expression) -> forward_expression ~resolution ~state ~expression
     | Yield None -> [], state
-    | Generator { Expression.Comprehension.element; generators }
-    | ListComprehension { Expression.Comprehension.element; generators }
-    | SetComprehension { Expression.Comprehension.element; generators } ->
+    | Generator { Comprehension.element; generators }
+    | ListComprehension { Comprehension.element; generators }
+    | SetComprehension { Comprehension.element; generators } ->
         let awaitables, state =
           List.fold generators ~init:([], state) ~f:(forward_generator ~resolution)
         in
         forward_expression ~resolution ~state ~expression:element |>> awaitables
     | DictionaryComprehension
-        { Expression.Comprehension.element = { Expression.Dictionary.key; value }; generators } ->
+        { Comprehension.element = { Dictionary.Entry.key; value }; generators } ->
         let awaitables, state =
           List.fold generators ~init:([], state) ~f:(forward_generator ~resolution)
         in
@@ -406,9 +405,9 @@ module State (Context : Context) = struct
         in
         forward_expression ~resolution ~state ~expression:value |>> awaitables
     | Name (Name.Attribute { base; _ }) -> forward_expression ~resolution ~state ~expression:base
-    | Name name when Expression.is_simple_name name ->
+    | Name name when is_simple_name name ->
         let awaitables =
-          match Map.find state.locals (Reference (Expression.name_to_reference_exn name)) with
+          match Map.find state.locals (Reference (name_to_reference_exn name)) with
           | Some aliases ->
               let add_unawaited unawaited location =
                 match Map.find state.unawaited location with
@@ -453,17 +452,14 @@ module State (Context : Context) = struct
       | _ -> []
     in
     match Node.value target with
-    | Name target when Expression.is_simple_name target -> (
+    | Expression.Name target when is_simple_name target -> (
       match expression with
-      | { Node.value = Expression.Name value; _ } when Expression.is_simple_name value ->
+      | { Node.value = Expression.Name value; _ } when is_simple_name value ->
           (* Aliasing. *)
           let locals =
-            Map.find locals (Reference (Expression.name_to_reference_exn value))
+            Map.find locals (Reference (name_to_reference_exn value))
             >>| (fun locations ->
-                  Map.set
-                    locals
-                    ~key:(Reference (Expression.name_to_reference_exn target))
-                    ~data:locations)
+                  Map.set locals ~key:(Reference (name_to_reference_exn target)) ~data:locations)
             |> Option.value ~default:locals
           in
           { unawaited; locals; need_to_await }
@@ -472,7 +468,7 @@ module State (Context : Context) = struct
              unawaitables are introduced. *)
           let locals =
             let location = Node.location expression in
-            let key = Reference (Expression.name_to_reference_exn target) in
+            let key = Reference (name_to_reference_exn target) in
             if not (List.is_empty awaitables) then
               let awaitable_locations =
                 List.map awaitables ~f:Node.location |> Location.Reference.Set.of_list
@@ -490,7 +486,7 @@ module State (Context : Context) = struct
         let left, starred, right =
           let is_starred { Node.value; _ } =
             match value with
-            | Starred (Starred.Once _) -> true
+            | Expression.Starred (Starred.Once _) -> true
             | _ -> false
           in
           let left, tail =
@@ -520,7 +516,11 @@ module State (Context : Context) = struct
                         GlobalResolution.join resolution joined annotation)
                     |> Type.list
                   in
-                  [annotation, Node.create_with_default_location (List (List.map starred ~f:snd))]
+                  [
+                    ( annotation,
+                      Node.create_with_default_location (Expression.List (List.map starred ~f:snd))
+                    );
+                  ]
                 else
                   []
               in
@@ -570,11 +570,11 @@ module State (Context : Context) = struct
         let state = { state with need_to_await } in
         await_all_subexpressions ~state ~expression
     | Return { expression = None; _ } -> state
-    | Yield { Node.value = Expression.Yield (Some expression); _ } ->
+    | Yield { Node.value = Yield (Some expression); _ } ->
         let _, state = forward_expression ~resolution ~state ~expression in
         await_all_subexpressions ~state ~expression
     | Yield _ -> state
-    | YieldFrom { Node.value = Expression.Yield (Some expression); _ } ->
+    | YieldFrom { Node.value = Yield (Some expression); _ } ->
         forward_expression ~resolution ~state ~expression |> snd
     | YieldFrom _ -> state
     (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)

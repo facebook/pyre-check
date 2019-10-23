@@ -100,7 +100,7 @@ module ConstantPropagationState (Context : Context) = struct
 
           let expression _ expression =
             match Node.value expression with
-            | Name name when Expression.is_simple_name name ->
+            | Expression.Name name when is_simple_name name ->
                 let rec transform { Node.value; location } =
                   let get_constant location reference =
                     match Map.find constants reference with
@@ -108,19 +108,21 @@ module ConstantPropagationState (Context : Context) = struct
                     | _ ->
                         ( Node.create
                             ~location
-                            (Name (Expression.create_name_from_reference ~location reference)),
+                            (Expression.Name (create_name_from_reference ~location reference)),
                           false )
                   in
                   match value with
-                  | Name (Name.Identifier identifier) ->
+                  | Expression.Name (Name.Identifier identifier) ->
                       get_constant location (Reference.create identifier)
                   | Name (Name.Attribute { base; attribute; special } as name) ->
                       let base, transformed = transform base in
                       if transformed then
-                        ( Node.create ~location (Name (Name.Attribute { base; attribute; special })),
+                        ( Node.create
+                            ~location
+                            (Expression.Name (Name.Attribute { base; attribute; special })),
                           transformed )
                       else
-                        get_constant location (Expression.name_to_reference_exn name)
+                        get_constant location (name_to_reference_exn name)
                   | _ -> { Node.value; location }, false
                 in
                 transform expression |> fst
@@ -177,7 +179,7 @@ module ConstantPropagationState (Context : Context) = struct
     let constants =
       match Node.value transformed with
       | Assign { target = { Node.value = Name name; _ }; value = expression; _ }
-        when Expression.is_simple_name name ->
+        when is_simple_name name ->
           let propagate =
             let is_literal =
               match Node.value expression with
@@ -195,12 +197,12 @@ module ConstantPropagationState (Context : Context) = struct
             in
             let is_global_constant =
               match Node.value expression with
-              | Name name -> Expression.is_simple_name name
+              | Name name -> is_simple_name name
               | _ -> false
             in
             is_literal || is_callable || is_global_constant
           in
-          let reference = Expression.name_to_reference_exn name in
+          let reference = name_to_reference_exn name in
           if propagate then
             Map.set constants ~key:reference ~data:(Constant expression)
           else
@@ -419,7 +421,7 @@ let run
                     let expression _ expression =
                       let value =
                         match Node.value expression with
-                        | Name name when Expression.is_simple_name name ->
+                        | Expression.Name name when is_simple_name name ->
                             let rec convert name =
                               let convert_identifier identifier =
                                 if Hash_set.mem names identifier then
@@ -446,7 +448,7 @@ let run
                                   Name.Attribute
                                     { base; attribute = convert_identifier attribute; special }
                             in
-                            Name (convert name)
+                            Expression.Name (convert name)
                         | value -> value
                       in
                       { expression with Node.value }
@@ -477,8 +479,8 @@ let run
                 in
                 Statement.Define { signature; body }
             | For ({ For.target = { Node.value = Name name; _ } as target; _ } as block)
-              when Expression.is_simple_name name ->
-                let target = { target with Node.value = Name (sanitize_name name) } in
+              when is_simple_name name ->
+                let target = { target with Node.value = Expression.Name (sanitize_name name) } in
                 For { block with For.target }
             | Global globals -> Global (List.map globals ~f:sanitize_identifier)
             | value -> value
@@ -496,19 +498,19 @@ let run
       let expression _ expression =
         let rec sanitize { Node.location; value } =
           match value with
-          | Name (Name.Attribute { base; attribute; special }) ->
+          | Expression.Name (Name.Attribute { base; attribute; special }) ->
               let base = sanitize base in
               let value =
                 match Hashtbl.find replacements attribute with
                 | Some replacement ->
-                    Name (Name.Attribute { base; attribute = replacement; special })
+                    Expression.Name (Name.Attribute { base; attribute = replacement; special })
                 | None -> Name (Name.Attribute { base; attribute; special })
               in
               { Node.location; value }
           | Name (Name.Identifier identifier) ->
               let value =
                 match Hashtbl.find replacements identifier with
-                | Some replacement -> Name (Name.Identifier replacement)
+                | Some replacement -> Expression.Name (Name.Identifier replacement)
                 | None -> Name (Name.Identifier identifier)
               in
               { Node.location; value }
@@ -528,8 +530,8 @@ let run
             | Statement.Assign ({ target; _ } as assign) ->
                 let rec sanitize_target target =
                   match target with
-                  | { Node.value = Name name; _ } as target when Expression.is_simple_name name ->
-                      { target with Node.value = Name (sanitize_name name) }
+                  | { Node.value = Expression.Name name; _ } as target when is_simple_name name ->
+                      { target with Node.value = Expression.Name (sanitize_name name) }
                   | { Node.value = Tuple targets; _ } as tuple ->
                       { tuple with Node.value = Tuple (List.map targets ~f:sanitize_target) }
                   | _ -> target
@@ -564,18 +566,19 @@ let run
       let expression _ expression =
         let rec dequalify { Node.location; value } =
           match value with
-          | Name name when Expression.is_simple_name name ->
-              Expression.name_to_reference_exn name
+          | Expression.Name name when is_simple_name name ->
+              name_to_reference_exn name
               |> dequalify_reference
-              |> Expression.create_name_from_reference ~location
-              |> fun name -> Name name |> Node.create ~location
+              |> create_name_from_reference ~location
+              |> fun name -> Expression.Name name |> Node.create ~location
           | Name (Name.Attribute ({ base; _ } as name)) ->
-              Name (Name.Attribute { name with base = dequalify base }) |> Node.create ~location
+              Expression.Name (Name.Attribute { name with base = dequalify base })
+              |> Node.create ~location
           | Call { callee; arguments } ->
-              Call { callee = dequalify callee; arguments } |> Node.create ~location
+              Expression.Call { callee = dequalify callee; arguments } |> Node.create ~location
           | _ -> { Node.value; location }
         in
-        Expression.sanitized expression |> dequalify
+        sanitized expression |> dequalify
 
 
       let transform_children _ _ = true

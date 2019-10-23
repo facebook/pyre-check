@@ -26,6 +26,7 @@ let is_unit_test { name; _ } =
 
 let is_protocol { bases; _ } =
   let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
+    let open Expression in
     match name, value with
     | ( None,
         Expression.Call
@@ -74,6 +75,7 @@ let is_final definition = has_decorator definition "typing.final"
 
 let is_abstract { bases; _ } =
   let abstract_metaclass { Expression.Call.Argument.value; _ } =
+    let open Expression in
     match value with
     | {
      Node.value =

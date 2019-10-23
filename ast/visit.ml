@@ -12,8 +12,8 @@ type node =
   | Expression of Expression.t
   | Statement of Statement.t
   | Identifier of Identifier.t Node.t
-  | Parameter of Expression.t Parameter.t
-  | Substring of StringLiteral.Substring.t Node.t
+  | Parameter of Parameter.t
+  | Substring of Substring.t Node.t
 
 module type NodeVisitor = sig
   type t
@@ -24,9 +24,7 @@ end
 module MakeNodeVisitor (Visitor : NodeVisitor) = struct
   let visit_node ~state ~visitor node = state := visitor !state node
 
-  let visit_argument { Expression.Call.Argument.value; _ } ~visit_expression =
-    visit_expression value
-
+  let visit_argument { Call.Argument.value; _ } ~visit_expression = visit_expression value
 
   let visit_parameter
       ({ Node.value = { Parameter.value; annotation; _ }; _ } as parameter)
@@ -42,18 +40,21 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
   let rec visit_expression ~state ?visitor_override expression =
     let visitor = Option.value visitor_override ~default:Visitor.node in
     let visit_expression = visit_expression ~state ?visitor_override in
-    let visit_generator { Comprehension.target; iterator; conditions; _ } ~visit_expression =
+    let visit_generator
+        { Comprehension.Generator.target; iterator; conditions; _ }
+        ~visit_expression
+      =
       visit_expression target;
       visit_expression iterator;
       List.iter conditions ~f:visit_expression
     in
-    let visit_entry { Dictionary.key; value } ~visit_expression =
+    let visit_entry { Dictionary.Entry.key; value } ~visit_expression =
       visit_expression key;
       visit_expression value
     in
     let visit_children value =
       match value with
-      | Await expression -> visit_expression expression
+      | Expression.Await expression -> visit_expression expression
       | BooleanOperator { BooleanOperator.left; right; _ }
       | ComparisonOperator { ComparisonOperator.left; right; _ } ->
           visit_expression left;
@@ -407,12 +408,12 @@ let collect_calls statement =
 let collect_names ?(only_simple = false) statement =
   let open Expression in
   let module Collector = ExpressionCollector (struct
-    type t = Expression.t Name.t Node.t
+    type t = Name.t Node.t
 
     let predicate expression =
       match expression with
       | { Node.location; value = Name name } ->
-          if only_simple && not (Expression.is_simple_name name) then
+          if only_simple && not (is_simple_name name) then
             None
           else
             Some { Node.location; value = name }

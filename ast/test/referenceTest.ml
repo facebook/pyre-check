@@ -26,23 +26,22 @@ let test_create _ =
 
 
 let test_expression _ =
+  let open Expression in
   let assert_expression reference expression =
     let expected = Expression.Name expression |> Node.create_with_default_location in
-    let actual =
-      Reference.create reference |> Expression.from_reference ~location:Location.Reference.any
-    in
+    let actual = Reference.create reference |> from_reference ~location:Location.Reference.any in
     assert_equal ~printer:Expression.show expected actual
   in
-  assert_expression "a" (Expression.Name.Identifier "a");
+  assert_expression "a" (Name.Identifier "a");
   assert_expression
     "a.b.c"
-    (Expression.Name.Attribute
+    (Name.Attribute
        {
          base =
            Expression.Name
-             (Expression.Name.Attribute
+             (Name.Attribute
                 {
-                  base = Expression.Name (Expression.Name.Identifier "a") |> node;
+                  base = Expression.Name (Name.Identifier "a") |> node;
                   attribute = "b";
                   special = false;
                 })
@@ -53,31 +52,26 @@ let test_expression _ =
 
 
 let test_name _ =
+  let open Expression in
   let assert_create_name_expression reference expression =
     let expected = Expression.Name expression |> node in
-    let actual =
-      Reference.create reference |> Expression.from_reference ~location:Location.Reference.any
-    in
+    let actual = Reference.create reference |> from_reference ~location:Location.Reference.any in
     assert_equal ~printer:Expression.show expected actual
   in
-  assert_create_name_expression "a" (Expression.Name.Identifier "a");
+  assert_create_name_expression "a" (Name.Identifier "a");
   assert_create_name_expression
     "a.b"
-    (Expression.Name.Attribute
-       {
-         base = Expression.Name (Expression.Name.Identifier "a") |> node;
-         attribute = "b";
-         special = false;
-       });
+    (Name.Attribute
+       { base = Expression.Name (Name.Identifier "a") |> node; attribute = "b"; special = false });
   assert_create_name_expression
     "a.b.c"
-    (Expression.Name.Attribute
+    (Name.Attribute
        {
          base =
            Expression.Name
-             (Expression.Name.Attribute
+             (Name.Attribute
                 {
-                  base = Expression.Name (Expression.Name.Identifier "a") |> node;
+                  base = Expression.Name (Name.Identifier "a") |> node;
                   attribute = "b";
                   special = false;
                 })
@@ -90,25 +84,21 @@ let test_name _ =
       ~printer:Reference.show
       ~cmp:Reference.equal
       (Reference.create expected)
-      (Expression.name_to_reference_exn name)
+      (name_to_reference_exn name)
   in
-  assert_create_from_name (Expression.Name.Identifier "a") "a";
+  assert_create_from_name (Name.Identifier "a") "a";
   assert_create_from_name
-    (Expression.Name.Attribute
-       {
-         base = Expression.Name (Expression.Name.Identifier "a") |> node;
-         attribute = "b";
-         special = false;
-       })
+    (Name.Attribute
+       { base = Expression.Name (Name.Identifier "a") |> node; attribute = "b"; special = false })
     "a.b";
   assert_create_from_name
-    (Expression.Name.Attribute
+    (Name.Attribute
        {
          base =
            Expression.Name
-             (Expression.Name.Attribute
+             (Name.Attribute
                 {
-                  base = Expression.Name (Expression.Name.Identifier "a") |> node;
+                  base = Expression.Name (Name.Identifier "a") |> node;
                   attribute = "b";
                   special = false;
                 })

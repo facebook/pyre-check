@@ -56,71 +56,80 @@ let test_collect _ =
     assert_equal ~cmp:equal ~printer expected collect
   in
   assert_collect
-    [+Statement.Expression (+Float 1.0); +Statement.Expression (+Float 2.0)]
-    ( [+Float 2.0; +Float 1.0],
-      [+Statement.Expression (+Float 2.0); +Statement.Expression (+Float 1.0)] );
-  assert_collect
-    [
-      +Statement.If
-         {
-           If.test = +Float 2.0;
-           body = [+Statement.Expression (+Float 3.0)];
-           orelse = [+Statement.Expression (+Float 4.0)];
-         };
-    ]
-    ( [+Float 4.0; +Float 3.0; +Float 2.0],
+    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Float 2.0)]
+    ( [+Expression.Float 2.0; +Expression.Float 1.0],
       [
-        +Statement.If
-           {
-             If.test = +Float 2.0;
-             body = [+Statement.Expression (+Float 3.0)];
-             orelse = [+Statement.Expression (+Float 4.0)];
-           };
-        +Statement.Expression (+Float 4.0);
-        +Statement.Expression (+Float 3.0);
+        +Statement.Expression (+Expression.Float 2.0);
+        +Statement.Expression (+Expression.Float 1.0);
       ] );
   assert_collect
     [
       +Statement.If
          {
-           If.test = +Float 1.0;
+           If.test = +Expression.Float 2.0;
+           body = [+Statement.Expression (+Expression.Float 3.0)];
+           orelse = [+Statement.Expression (+Expression.Float 4.0)];
+         };
+    ]
+    ( [+Expression.Float 4.0; +Expression.Float 3.0; +Expression.Float 2.0],
+      [
+        +Statement.If
+           {
+             If.test = +Expression.Float 2.0;
+             body = [+Statement.Expression (+Expression.Float 3.0)];
+             orelse = [+Statement.Expression (+Expression.Float 4.0)];
+           };
+        +Statement.Expression (+Expression.Float 4.0);
+        +Statement.Expression (+Expression.Float 3.0);
+      ] );
+  assert_collect
+    [
+      +Statement.If
+         {
+           If.test = +Expression.Float 1.0;
            body =
              [
                +Statement.If
                   {
-                    If.test = +Float 2.0;
-                    body = [+Statement.Expression (+Float 3.0)];
-                    orelse = [+Statement.Expression (+Float 4.0)];
+                    If.test = +Expression.Float 2.0;
+                    body = [+Statement.Expression (+Expression.Float 3.0)];
+                    orelse = [+Statement.Expression (+Expression.Float 4.0)];
                   };
              ];
-           orelse = [+Statement.Expression (+Float 5.0)];
+           orelse = [+Statement.Expression (+Expression.Float 5.0)];
          };
     ]
-    ( [+Float 5.0; +Float 4.0; +Float 3.0; +Float 2.0; +Float 1.0],
+    ( [
+        +Expression.Float 5.0;
+        +Expression.Float 4.0;
+        +Expression.Float 3.0;
+        +Expression.Float 2.0;
+        +Expression.Float 1.0;
+      ],
       [
         +Statement.If
            {
-             If.test = +Float 1.0;
+             If.test = +Expression.Float 1.0;
              body =
                [
                  +Statement.If
                     {
-                      If.test = +Float 2.0;
-                      body = [+Statement.Expression (+Float 3.0)];
-                      orelse = [+Statement.Expression (+Float 4.0)];
+                      If.test = +Expression.Float 2.0;
+                      body = [+Statement.Expression (+Expression.Float 3.0)];
+                      orelse = [+Statement.Expression (+Expression.Float 4.0)];
                     };
                ];
-             orelse = [+Statement.Expression (+Float 5.0)];
+             orelse = [+Statement.Expression (+Expression.Float 5.0)];
            };
-        +Statement.Expression (+Float 5.0);
+        +Statement.Expression (+Expression.Float 5.0);
         +Statement.If
            {
-             If.test = +Float 2.0;
-             body = [+Statement.Expression (+Float 3.0)];
-             orelse = [+Statement.Expression (+Float 4.0)];
+             If.test = +Expression.Float 2.0;
+             body = [+Statement.Expression (+Expression.Float 3.0)];
+             orelse = [+Statement.Expression (+Expression.Float 4.0)];
            };
-        +Statement.Expression (+Float 4.0);
-        +Statement.Expression (+Float 3.0);
+        +Statement.Expression (+Expression.Float 4.0);
+        +Statement.Expression (+Expression.Float 3.0);
       ] )
 
 

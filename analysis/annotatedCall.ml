@@ -13,7 +13,7 @@ let redirect_special_calls
   let callee base method_name =
     {
       Node.location;
-      value = Name (Name.Attribute { base; attribute = method_name; special = true });
+      value = Expression.Name (Name.Attribute { base; attribute = method_name; special = true });
     }
   in
   match value, arguments with

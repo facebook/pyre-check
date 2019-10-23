@@ -7,7 +7,7 @@ open Ast
 
 val find_propagated_type_variables
   :  Expression.Call.Argument.t list ->
-  parse_annotation:(Expression.expression_t -> Type.t) ->
+  parse_annotation:(Expression.t -> Type.t) ->
   Type.t Type.OrderedTypes.record
 
 (* Find free variables in the parametric type. E.g. for generic class `class A(typing.Generic[_T],
@@ -15,7 +15,7 @@ val find_propagated_type_variables
 
 val inferred_generic_base
   :  ClassSummary.t Node.t ->
-  parse_annotation:(Expression.expression_t -> Type.t) ->
+  parse_annotation:(Expression.t -> Type.t) ->
   Expression.Call.Argument.t list
 
 val extends_placeholder_stub_class

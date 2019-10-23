@@ -159,7 +159,7 @@ let test_superclasses context =
 
 
 type constructor = {
-  parameters: Expression.t Parameter.t list;
+  parameters: Parameter.t list;
   annotation: Type.t option;
 }
 
@@ -238,8 +238,8 @@ let test_get_decorator context =
         arguments =
           Some
             [
-              { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
-              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") };
+              { Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") };
+              { Argument.name = Some ~+"c"; value = +Expression.Name (Name.Identifier "d") };
             ];
       };
     ];
@@ -254,15 +254,16 @@ let test_get_decorator context =
     [
       {
         name = "decorator";
-        arguments = Some [{ Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") }];
+        arguments =
+          Some [{ Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") }];
       };
       {
         name = "decorator";
         arguments =
           Some
             [
-              { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
-              { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") };
+              { Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") };
+              { Argument.name = Some ~+"c"; value = +Expression.Name (Name.Identifier "d") };
             ];
       };
     ];
@@ -559,7 +560,7 @@ let test_class_attributes context =
       Class.create_attribute
         ~resolution
         ~parent
-        (create_simple_attribute "third" ~value:(+Integer 1));
+        (create_simple_attribute "third" ~value:(+Expression.Integer 1));
     ];
 
   (* Test `Attribute`. *)
@@ -744,7 +745,7 @@ let test_class_attributes context =
       parent;
       property;
       static = false;
-      value = Node.create_with_default_location Ellipsis;
+      value = Node.create_with_default_location Expression.Ellipsis;
     }
   in
   assert_attribute

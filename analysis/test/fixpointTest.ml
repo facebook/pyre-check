@@ -87,6 +87,7 @@ let test_forward _ =
 
 
 let test_join _ =
+  let open Expression in
   assert_fixpoint
     [
       +Statement.If
@@ -126,6 +127,7 @@ let test_join _ =
 
 
 let test_widening _ =
+  let open Expression in
   assert_fixpoint
     [+Statement.While { While.test = +Expression.True; body = [+Statement.Pass]; orelse = [] }]
     (Int.Table.of_alist_exn

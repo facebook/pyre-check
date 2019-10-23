@@ -104,6 +104,7 @@ let resolve_assignment ({ resolve_assignment; _ } as resolution) assignment =
 
 
 let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparator =
+  let open Expression in
   match expression, expected with
   | Some { Node.value = Expression.List _; _ }, _
   | Some { Node.value = Expression.ListComprehension _; _ }, _ -> (
@@ -127,7 +128,7 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
         let matching_name { Type.name = expected_name; _ } = String.equal name expected_name in
         List.find ~f:matching_name
       in
-      let resolve_entry { Expression.Dictionary.key; value } =
+      let resolve_entry { Dictionary.Entry.key; value } =
         let key = resolve resolution key in
         match key with
         | Type.Literal (Type.String name) ->

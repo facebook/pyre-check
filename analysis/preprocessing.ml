@@ -54,8 +54,8 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
             | _ -> false
           in
           match value with
-          | Name (Name.Attribute ({ base; _ } as name)) ->
-              Name (Name.Attribute { name with base = transform_expression base })
+          | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
+              Expression.Name (Name.Attribute { name with base = transform_expression base })
           | Call
               {
                 callee =
@@ -143,7 +143,7 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
         { define with signature }
       in
       let transform_class ~class_statement:({ Class.bases; _ } as class_statement) =
-        let transform_base ({ Expression.Call.Argument.value; _ } as base) =
+        let transform_base ({ Call.Argument.value; _ } as base) =
           let value =
             match value with
             | { Node.value = Expression.String _; _ } -> value
@@ -179,12 +179,12 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
       in
       let value =
         match Node.value expression with
-        | Call { callee; arguments }
-          when Expression.name_is ~name:"pyre_extensions.safe_cast" callee
-               || Expression.name_is ~name:"typing.cast" callee
-               || Expression.name_is ~name:"cast" callee
-               || Expression.name_is ~name:"safe_cast" callee ->
-            Call { callee; arguments = transform_arguments arguments }
+        | Expression.Call { callee; arguments }
+          when name_is ~name:"pyre_extensions.safe_cast" callee
+               || name_is ~name:"typing.cast" callee
+               || name_is ~name:"cast" callee
+               || name_is ~name:"safe_cast" callee ->
+            Expression.Call { callee; arguments = transform_arguments arguments }
         | value -> value
       in
       { expression with Node.value }
@@ -207,13 +207,13 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
       match expression with
       | {
        Node.location;
-       value = String { StringLiteral.value; kind = StringLiteral.Mixed substrings; _ };
+       value = Expression.String { StringLiteral.value; kind = StringLiteral.Mixed substrings; _ };
       } ->
           let gather_fstring_expressions substrings =
             let gather_expressions_in_substring
                 expressions
                 {
-                  Node.value = { StringLiteral.Substring.kind; value };
+                  Node.value = { Substring.kind; value };
                   location = { Location.start = { Location.line; column; _ }; _ };
                 }
               =
@@ -256,8 +256,8 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
                   expressions @ next_expressions
               in
               match kind with
-              | StringLiteral.Substring.Literal -> expressions
-              | StringLiteral.Substring.Format ->
+              | Substring.Literal -> expressions
+              | Substring.Format ->
                   let fstring_expressions =
                     expand_fstring value ~line_offset:line ~column_offset:column ~index:0 Literal
                   in
@@ -282,7 +282,10 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
                 []
           in
           let expressions = substrings |> gather_fstring_expressions |> List.concat_map ~f:parse in
-          { Node.location; value = String { StringLiteral.kind = Format expressions; value } }
+          {
+            Node.location;
+            value = Expression.String { StringLiteral.kind = Format expressions; value };
+          }
       | _ -> expression
   end)
   in
@@ -352,7 +355,7 @@ let qualify
       | Statement.Assign
           { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
         when String.equal (Expression.show annotation) "_SpecialForm" ->
-          let name = Expression.name_to_reference_exn name in
+          let name = name_to_reference_exn name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
@@ -403,9 +406,7 @@ let qualify
         when (not (String.is_prefix simple_name ~prefix:"$"))
              && (not (Set.mem locals name))
              && not (Set.mem immutables name) ->
-          let alias =
-            qualify_local_identifier simple_name ~qualifier |> Expression.name_to_reference_exn
-          in
+          let alias = qualify_local_identifier simple_name ~qualifier |> name_to_reference_exn in
           ( {
               scope with
               aliases =
@@ -528,9 +529,9 @@ let qualify
                 in
                 let location = Node.location target in
                 match Node.value target with
-                | Tuple elements ->
+                | Expression.Tuple elements ->
                     let scope, elements = qualify_targets scope elements in
-                    scope, Tuple elements
+                    scope, Expression.Tuple elements
                 | List elements ->
                     let scope, elements = qualify_targets scope elements in
                     scope, List elements
@@ -540,7 +541,7 @@ let qualify
                       let qualifier =
                         Node.create
                           ~location
-                          (Name (Expression.create_name_from_reference ~location qualifier))
+                          (Expression.Name (create_name_from_reference ~location qualifier))
                       in
                       Name.Attribute { base = qualifier; attribute = sanitized; special = false }
                     in
@@ -548,10 +549,7 @@ let qualify
                       let aliases =
                         let update = function
                           | Some alias -> alias
-                          | None ->
-                              local_alias
-                                ~qualifier
-                                ~name:(Expression.name_to_reference_exn qualified)
+                          | None -> local_alias ~qualifier ~name:(name_to_reference_exn qualified)
                         in
                         Map.update aliases (Reference.create name) ~f:update
                       in
@@ -572,8 +570,7 @@ let qualify
                         && not (Set.mem immutables reference)
                       then
                         let alias =
-                          qualify_local_identifier name ~qualifier
-                          |> Expression.name_to_reference_exn
+                          qualify_local_identifier name ~qualifier |> name_to_reference_exn
                         in
                         {
                           scope with
@@ -592,19 +589,19 @@ let qualify
                         ~qualify_strings:false
                         ~location
                         ~scope
-                        (Name (Name.Identifier name)) )
+                        (Expression.Name (Name.Identifier name)) )
                 | Name name ->
                     let name =
                       let qualified =
                         match qualify_name ~qualify_strings:false ~location ~scope (Name name) with
                         | Name (Name.Identifier name) ->
-                            Name (Name.Identifier (Identifier.sanitized name))
+                            Expression.Name (Name.Identifier (Identifier.sanitized name))
                         | qualified -> qualified
                       in
                       if qualify_assign then
                         let rec combine qualifier = function
-                          | Name (Name.Identifier identifier) ->
-                              Name
+                          | Expression.Name (Name.Identifier identifier) ->
+                              Expression.Name
                                 (Name.Attribute
                                    {
                                      base = Node.create ~location:(Node.location target) qualifier;
@@ -620,9 +617,7 @@ let qualify
                               Name (Name.Attribute { name with base = qualified_base })
                           | _ -> failwith "Impossible."
                         in
-                        combine
-                          (Name (Expression.create_name_from_reference ~location qualifier))
-                          qualified
+                        combine (Name (create_name_from_reference ~location qualifier)) qualified
                       else
                         qualified
                     in
@@ -679,10 +674,10 @@ let qualify
       in
       let qualify_class ({ Class.name; bases; body; decorators; _ } as definition) =
         let scope = { scope with is_top_level = false } in
-        let qualify_base ({ Expression.Call.Argument.value; _ } as argument) =
+        let qualify_base ({ Call.Argument.value; _ } as argument) =
           {
             argument with
-            Expression.Call.Argument.value = qualify_expression ~qualify_strings:false ~scope value;
+            Call.Argument.value = qualify_expression ~qualify_strings:false ~scope value;
           }
         in
         let decorators =
@@ -707,7 +702,8 @@ let qualify
                   in
                   let qualify_decorator ({ Node.value; _ } as decorator) =
                     match value with
-                    | Name (Name.Identifier ("staticmethod" | "classmethod" | "property"))
+                    | Expression.Name
+                        (Name.Identifier ("staticmethod" | "classmethod" | "property"))
                     | Name (Name.Attribute { attribute = "getter" | "setter" | "deleter"; _ }) ->
                         decorator
                     | _ ->
@@ -911,7 +907,8 @@ let qualify
   and qualify_target ~scope target =
     let rec renamed_scope ({ locals; _ } as scope) target =
       match target with
-      | { Node.value = Tuple elements; _ } -> List.fold elements ~init:scope ~f:renamed_scope
+      | { Node.value = Expression.Tuple elements; _ } ->
+          List.fold elements ~init:scope ~f:renamed_scope
       | { Node.value = Name (Name.Identifier name); _ } ->
           if Set.mem locals (Reference.create name) then
             scope
@@ -952,34 +949,34 @@ let qualify
             Name
               (Name.Attribute
                  {
-                   base = Expression.from_reference ~location qualifier;
+                   base = from_reference ~location qualifier;
                    attribute = identifier;
                    special = false;
                  })
           else
-            Node.value (Expression.from_reference ~location name)
+            Node.value (from_reference ~location name)
       | _ -> Name (Name.Identifier identifier) )
     | Name (Name.Attribute ({ base; _ } as name)) ->
         Name (Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base })
     | expression -> expression
   and qualify_expression ~qualify_strings ~scope ({ Node.location; value } as expression) =
     let value =
-      let qualify_entry ~qualify_strings ~scope { Dictionary.key; value } =
+      let qualify_entry ~qualify_strings ~scope { Dictionary.Entry.key; value } =
         {
-          Dictionary.key = qualify_expression ~qualify_strings ~scope key;
+          Dictionary.Entry.key = qualify_expression ~qualify_strings ~scope key;
           value = qualify_expression ~qualify_strings ~scope value;
         }
       in
       let qualify_generators ~qualify_strings ~scope generators =
         let qualify_generator
             (scope, reversed_generators)
-            ({ Comprehension.target; iterator; conditions; _ } as generator)
+            ({ Comprehension.Generator.target; iterator; conditions; _ } as generator)
           =
           let renamed_scope, target = qualify_target ~scope target in
           ( renamed_scope,
             {
               generator with
-              Comprehension.target;
+              Comprehension.Generator.target;
               iterator = qualify_expression ~qualify_strings ~scope iterator;
               conditions =
                 List.map conditions ~f:(qualify_expression ~qualify_strings ~scope:renamed_scope);
@@ -992,7 +989,8 @@ let qualify
         scope, List.rev reversed_generators
       in
       match value with
-      | Await expression -> Await (qualify_expression ~qualify_strings ~scope expression)
+      | Expression.Await expression ->
+          Expression.Await (qualify_expression ~qualify_strings ~scope expression)
       | BooleanOperator { BooleanOperator.left; operator; right } ->
           BooleanOperator
             {
@@ -1004,9 +1002,9 @@ let qualify
           let callee = qualify_expression ~qualify_strings ~scope callee in
           let qualify_argument { Call.Argument.name; value } =
             let qualify_strings =
-              if Expression.name_is ~name:"typing.TypeVar" callee then
+              if name_is ~name:"typing.TypeVar" callee then
                 true
-              else if Expression.name_is ~name:"typing_extensions.Literal.__getitem__" callee then
+              else if name_is ~name:"typing_extensions.Literal.__getitem__" callee then
                 false
               else
                 qualify_strings
@@ -1086,7 +1084,7 @@ let qualify
               | [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~qualify_strings ~scope expression
                   |> Expression.show
-                  |> fun value -> String { StringLiteral.value; kind }
+                  |> fun value -> Expression.String { StringLiteral.value; kind }
               | _ -> failwith "Not an expression"
             with
             | Parser.Error _
@@ -1159,16 +1157,15 @@ let replace_version_specific_code source =
           (* Normalizes a comparison of a < b, a <= b, b >= a or b > a to Some (a, b). *)
           let extract_single_comparison { Node.value; _ } =
             match value with
-            | Expression.ComparisonOperator { Expression.ComparisonOperator.left; operator; right }
-              -> (
+            | Expression.ComparisonOperator { ComparisonOperator.left; operator; right } -> (
               match operator with
-              | Expression.ComparisonOperator.LessThan
-              | Expression.ComparisonOperator.LessThanOrEquals ->
+              | ComparisonOperator.LessThan
+              | ComparisonOperator.LessThanOrEquals ->
                   Comparison (left, right)
-              | Expression.ComparisonOperator.GreaterThan
-              | Expression.ComparisonOperator.GreaterThanOrEquals ->
+              | ComparisonOperator.GreaterThan
+              | ComparisonOperator.GreaterThanOrEquals ->
                   Comparison (right, left)
-              | Expression.ComparisonOperator.Equals -> Equality (left, right)
+              | ComparisonOperator.Equals -> Equality (left, right)
               | _ -> Neither )
             | _ -> Neither
           in
@@ -1267,7 +1264,7 @@ let expand_type_checking_imports source =
     let statement _ ({ Node.value; _ } as statement) =
       let is_type_checking { Node.value; _ } =
         match value with
-        | Name
+        | Expression.Name
             (Name.Attribute
               {
                 base = { Node.value = Name (Name.Identifier "typing"); _ };
@@ -1507,18 +1504,18 @@ let replace_mypy_extensions_stub
       let node value = Node.create ~location value in
       Statement.Assign
         {
-          target = node (Name (Name.Identifier "TypedDict"));
+          target = node (Expression.Name (Name.Identifier "TypedDict"));
           annotation =
             Some
               (node
-                 (Name
+                 (Expression.Name
                     (Name.Attribute
                        {
                          base = { Node.value = Name (Name.Identifier "typing"); location };
                          attribute = "_SpecialForm";
                          special = false;
                        })));
-          value = node Ellipsis;
+          value = node Expression.Ellipsis;
           parent = None;
         }
       |> node
@@ -1556,7 +1553,7 @@ let expand_typed_dictionary_declarations
           ]
         in
         let name =
-          Call
+          Expression.Call
             {
               callee =
                 {
@@ -1590,7 +1587,7 @@ let expand_typed_dictionary_declarations
           |> Node.create ~location
         in
         let annotation =
-          Call
+          Expression.Call
             {
               callee =
                 {
@@ -1630,13 +1627,13 @@ let expand_typed_dictionary_declarations
         let is_total ~total = String.equal (Identifier.sanitized total) "total" in
         List.find_map arguments ~f:(function
             | {
-                Expression.Call.Argument.name = Some { value = total; _ };
+                Call.Argument.name = Some { value = total; _ };
                 value = { Node.value = Expression.True; _ };
               }
               when is_total ~total ->
                 Some true
             | {
-                Expression.Call.Argument.name = Some { value = total; _ };
+                Call.Argument.name = Some { value = total; _ };
                 value = { Node.value = Expression.False; _ };
               }
               when is_total ~total ->
@@ -1682,7 +1679,7 @@ let expand_typed_dictionary_declarations
           } ->
           typed_dictionary_declaration_assignment
             ~name
-            ~fields:(List.map entries ~f:(fun { Dictionary.key; value } -> key, value))
+            ~fields:(List.map entries ~f:(fun { Dictionary.Entry.key; value } -> key, value))
             ~target
             ~parent
             ~total:(extract_totality argument_tail)
@@ -1691,7 +1688,7 @@ let expand_typed_dictionary_declarations
             name = class_name;
             bases =
               {
-                Expression.Call.Argument.name = None;
+                Call.Argument.name = None;
                 value =
                   {
                     Node.value =
@@ -1727,7 +1724,7 @@ let expand_typed_dictionary_declarations
                       };
                   _;
                 } ->
-                  Reference.drop_prefix ~prefix:class_name (Expression.name_to_reference_exn name)
+                  Reference.drop_prefix ~prefix:class_name (name_to_reference_exn name)
                   |> Reference.single
                   >>| fun name -> string_literal name, annotation
               | _ -> None
@@ -1741,7 +1738,7 @@ let expand_typed_dictionary_declarations
               in
               class_name
               |> Format.asprintf "$local_%s$%s" qualifier
-              |> fun identifier -> Name (Name.Identifier identifier)
+              |> fun identifier -> Expression.Name (Name.Identifier identifier)
             in
             typed_dictionary_declaration_assignment
               ~name:(string_literal class_name)
@@ -1768,7 +1765,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       | {
           Node.location;
           value =
-            Call
+            Expression.Call
               {
                 callee =
                   {
@@ -1806,7 +1803,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               };
         } ->
           let any_annotation =
-            Name (Expression.create_name ~location "typing.Any") |> Node.create ~location
+            Expression.Name (create_name ~location "typing.Any") |> Node.create ~location
           in
           let attributes =
             match arguments with
@@ -1823,7 +1820,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             | [_; { Call.Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
                 let get_name ({ Node.value; _ } as expression) =
                   match value with
-                  | String { StringLiteral.value = name; _ } -> name, any_annotation, None
+                  | Expression.String { StringLiteral.value = name; _ } ->
+                      name, any_annotation, None
                   | Tuple
                       [{ Node.value = String { StringLiteral.value = name; _ }; _ }; annotation] ->
                       name, annotation, None
@@ -1839,15 +1837,15 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       let node = Node.create ~location in
       let value =
         attributes
-        |> List.map ~f:(fun (name, _, _) -> String (StringLiteral.create name) |> node)
-        |> (fun parameters -> Tuple parameters)
+        |> List.map ~f:(fun (name, _, _) -> Expression.String (StringLiteral.create name) |> node)
+        |> (fun parameters -> Expression.Tuple parameters)
         |> node
       in
       let annotation =
         let create_name name =
-          Node.create ~location (Name (Expression.create_name ~location name))
+          Node.create ~location (Expression.Name (create_name ~location name))
         in
-        let p = Expression.get_item_call "typing.Tuple" ~location in
+        let p = get_item_call "typing.Tuple" ~location in
         let q =
           match List.length attributes with
           | 0 -> [Node.create ~location (Expression.Tuple [])]
@@ -1857,8 +1855,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       in
       Statement.Assign
         {
-          Assign.target =
-            Reference.create ~prefix:parent "_fields" |> Expression.from_reference ~location;
+          Assign.target = Reference.create ~prefix:parent "_fields" |> from_reference ~location;
           annotation = Some annotation;
           value;
           parent = Some parent;
@@ -1868,14 +1865,12 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
     let tuple_attributes ~parent ~location attributes =
       let attribute_statements =
         let attribute (name, annotation, value) =
-          let target =
-            Reference.create ~prefix:parent name |> Expression.from_reference ~location
-          in
+          let target = Reference.create ~prefix:parent name |> from_reference ~location in
           Statement.Assign
             {
               Assign.target;
               annotation = Some annotation;
-              value = Option.value value ~default:(Node.create Ellipsis ~location);
+              value = Option.value value ~default:(Node.create Expression.Ellipsis ~location);
               parent = Some parent;
             }
           |> Node.create ~location
@@ -1891,7 +1886,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
         let to_parameter (name, annotation, value) =
           let value =
             match value with
-            | Some { Node.value = Ellipsis; _ } -> None
+            | Some { Node.value = Expression.Ellipsis; _ } -> None
             | _ -> value
           in
           Parameter.create ?value ~location ~annotation ~name:("$parameter$" ^ name) ()
@@ -1910,7 +1905,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                 Some
                   (Node.create
                      ~location
-                     (Name
+                     (Expression.Name
                         (Name.Attribute
                            {
                              base = { Node.value = Name (Name.Identifier "typing"); location };
@@ -1932,16 +1927,15 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
     in
     let tuple_base ~location =
       {
-        Expression.Call.Argument.name = None;
-        value =
-          { Node.location; value = Name (Expression.create_name ~location "typing.NamedTuple") };
+        Call.Argument.name = None;
+        value = { Node.location; value = Name (create_name ~location "typing.NamedTuple") };
       }
     in
     let value =
       match value with
       | Statement.Assign { Assign.target = { Node.value = Name name; _ }; value = expression; _ }
         -> (
-          let name = Expression.name_to_reference name >>| Reference.delocalize in
+          let name = name_to_reference name >>| Reference.delocalize in
           match extract_attributes expression, name with
           | Some attributes, Some name
           (* TODO (T42893621): properly handle the excluded case *)
@@ -1960,7 +1954,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       | Class ({ Class.name; bases; body; _ } as original) ->
           let is_named_tuple_primitive = function
             | {
-                Expression.Call.Argument.value =
+                Call.Argument.value =
                   {
                     Node.value =
                       Name
@@ -1992,7 +1986,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                   in
                   let annotation =
                     let any =
-                      Name (Expression.create_name ~location "typing.Any") |> Node.create ~location
+                      Expression.Name (create_name ~location "typing.Any") |> Node.create ~location
                     in
                     Option.value annotation ~default:any
                   in
@@ -2004,9 +1998,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             let fields_attribute = fields_attribute ~parent:name ~location attributes in
             Class { original with Class.body = constructor :: fields_attribute :: body }
           else
-            let extract_named_tuples
-                (bases, attributes_sofar)
-                ({ Expression.Call.Argument.value; _ } as base)
+            let extract_named_tuples (bases, attributes_sofar) ({ Call.Argument.value; _ } as base)
               =
               match extract_attributes value with
               | Some attributes ->
@@ -2104,7 +2096,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                     decorators = [];
                     docstring = None;
                     return_annotation =
-                      Some (Node.create ~location (Name (Name.Identifier "None")));
+                      Some (Node.create ~location (Expression.Name (Name.Identifier "None")));
                     async = false;
                     generator = false;
                     parent = Some name;

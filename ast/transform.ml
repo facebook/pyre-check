@@ -58,8 +58,8 @@ module Make (Transformer : Transformer) = struct
       let accumulate list element = f element :: list in
       List.fold_left list ~f:accumulate ~init:[] |> List.rev
     in
-    let transform_argument { Expression.Call.Argument.name; value } ~transform_expression =
-      { Expression.Call.Argument.name; value = transform_expression value }
+    let transform_argument { Call.Argument.name; value } ~transform_expression =
+      { Call.Argument.name; value = transform_expression value }
     in
     let transform_parameter
         ({ Node.value = { Parameter.name; value; annotation }; _ } as node)
@@ -76,23 +76,23 @@ module Make (Transformer : Transformer) = struct
       }
     in
     let transform_generator
-        { Comprehension.target; iterator; conditions; async }
+        { Comprehension.Generator.target; iterator; conditions; async }
         ~transform_expression
       =
       {
-        Comprehension.target = transform_expression target;
+        Comprehension.Generator.target = transform_expression target;
         iterator = transform_expression iterator;
         conditions = transform_list conditions ~f:transform_expression;
         async;
       }
     in
-    let transform_entry { Dictionary.key; value } ~transform_expression =
-      { Dictionary.key = transform_expression key; value = transform_expression value }
+    let transform_entry { Dictionary.Entry.key; value } ~transform_expression =
+      { Dictionary.Entry.key = transform_expression key; value = transform_expression value }
     in
     let rec transform_expression expression =
       let transform_children value =
         match value with
-        | Await expression -> Await (transform_expression expression)
+        | Expression.Await expression -> Expression.Await (transform_expression expression)
         | BooleanOperator { BooleanOperator.left; operator; right } ->
             BooleanOperator
               {
@@ -412,8 +412,11 @@ module SanitizeExpressions = Make (struct
 
   let expression _ { Node.location; value } =
     match value with
-    | Name (Name.Identifier identifier) ->
-        { Node.location; value = Name (Name.Identifier (Identifier.sanitized identifier)) }
+    | Expression.Name (Name.Identifier identifier) ->
+        {
+          Node.location;
+          value = Expression.Name (Name.Identifier (Identifier.sanitized identifier));
+        }
     | Name (Name.Attribute ({ attribute; _ } as attribute_expression)) ->
         {
           Node.location;

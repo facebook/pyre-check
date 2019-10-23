@@ -170,32 +170,40 @@ let test_expand_format_string _ =
     assert_source_equal
       (Source.create
          ~relative:handle
-         [+Statement.Expression (+String (StringLiteral.create ~expressions value))])
+         [+Statement.Expression (+Expression.String (StringLiteral.create ~expressions value))])
       (Preprocessing.expand_format_string (parse_untrimmed ~handle source))
   in
   assert_format_string "f'foo'" "foo" [];
-  assert_format_string "f'{1}'" "{1}" [+Integer 1];
-  assert_format_string "f'foo{1}'" "foo{1}" [+Integer 1];
-  assert_format_string "f'foo{1}' 'foo{2}'" "foo{1}foo{2}" [+Integer 1];
-  assert_format_string "'foo{1}' f'foo{2}'" "foo{1}foo{2}" [+Integer 2];
-  assert_format_string "f'foo{1}' f'foo{2}'" "foo{1}foo{2}" [+Integer 1; +Integer 2];
-  assert_format_string "f'foo{1}{2}foo'" "foo{1}{2}foo" [+Integer 1; +Integer 2];
+  assert_format_string "f'{1}'" "{1}" [+Expression.Integer 1];
+  assert_format_string "f'foo{1}'" "foo{1}" [+Expression.Integer 1];
+  assert_format_string "f'foo{1}' 'foo{2}'" "foo{1}foo{2}" [+Expression.Integer 1];
+  assert_format_string "'foo{1}' f'foo{2}'" "foo{1}foo{2}" [+Expression.Integer 2];
+  assert_format_string
+    "f'foo{1}' f'foo{2}'"
+    "foo{1}foo{2}"
+    [+Expression.Integer 1; +Expression.Integer 2];
+  assert_format_string
+    "f'foo{1}{2}foo'"
+    "foo{1}{2}foo"
+    [+Expression.Integer 1; +Expression.Integer 2];
   assert_format_string "f'foo{{1}}'" "foo{{1}}" [];
-  assert_format_string "f'foo{{ {1} }}'" "foo{{ {1} }}" [+Integer 1];
-  assert_format_string "f'foo{{{1} }}'" "foo{{{1} }}" [+Integer 1];
-  assert_format_string "f'foo{{ {1}}}'" "foo{{ {1}}}" [+Integer 1];
-  assert_format_string "f'foo{{{1}}}'" "foo{{{1}}}" [+Integer 1];
+  assert_format_string "f'foo{{ {1} }}'" "foo{{ {1} }}" [+Expression.Integer 1];
+  assert_format_string "f'foo{{{1} }}'" "foo{{{1} }}" [+Expression.Integer 1];
+  assert_format_string "f'foo{{ {1}}}'" "foo{{ {1}}}" [+Expression.Integer 1];
+  assert_format_string "f'foo{{{1}}}'" "foo{{{1}}}" [+Expression.Integer 1];
   assert_format_string "f'foo{{'" "foo{{" [];
   assert_format_string "f'foo}}'" "foo}}" [];
   assert_format_string
     "f'foo{1+2}'"
     "foo{1+2}"
     [
-      +Call
+      +Expression.Call
          {
            callee =
-             +Name (Name.Attribute { base = +Integer 1; attribute = "__add__"; special = true });
-           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+             +Expression.Name
+                (Name.Attribute
+                   { base = +Expression.Integer 1; attribute = "__add__"; special = true });
+           arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
          };
     ];
 
@@ -212,10 +220,10 @@ let test_expand_format_string _ =
          (node
             ~start:(1, 0)
             ~stop:(1, 9)
-            (String
+            (Expression.String
                {
                  StringLiteral.kind =
-                   StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Integer 1)];
+                   StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Expression.Integer 1)];
                  value = "foo{1}";
                }));
     ];
@@ -226,13 +234,13 @@ let test_expand_format_string _ =
          (node
             ~start:(1, 0)
             ~stop:(1, 17)
-            (String
+            (Expression.String
                {
                  StringLiteral.kind =
                    StringLiteral.Format
                      [
-                       node ~start:(1, 6) ~stop:(1, 9) (Integer 123);
-                       node ~start:(1, 12) ~stop:(1, 15) (Integer 456);
+                       node ~start:(1, 6) ~stop:(1, 9) (Expression.Integer 123);
+                       node ~start:(1, 12) ~stop:(1, 15) (Expression.Integer 456);
                      ];
                  value = "foo{123}a{456}";
                }));
@@ -248,13 +256,13 @@ let test_expand_format_string _ =
                (node
                   ~start:(1, 7)
                   ~stop:(1, 24)
-                  (String
+                  (Expression.String
                      {
                        StringLiteral.kind =
                          StringLiteral.Format
                            [
-                             node ~start:(1, 13) ~stop:(1, 16) (Integer 123);
-                             node ~start:(1, 19) ~stop:(1, 22) (Integer 456);
+                             node ~start:(1, 13) ~stop:(1, 16) (Expression.Integer 123);
+                             node ~start:(1, 19) ~stop:(1, 22) (Expression.Integer 456);
                            ];
                        value = "foo{123}a{456}";
                      }));
@@ -272,14 +280,14 @@ let test_expand_format_string _ =
          (node
             ~start:(2, 0)
             ~stop:(5, 3)
-            (String
+            (Expression.String
                {
                  StringLiteral.kind =
                    StringLiteral.Format
                      [
-                       node ~start:(3, 4) ~stop:(3, 7) (Integer 123);
-                       node ~start:(3, 10) ~stop:(3, 13) (Integer 456);
-                       node ~start:(4, 2) ~stop:(4, 5) (Integer 789);
+                       node ~start:(3, 4) ~stop:(3, 7) (Expression.Integer 123);
+                       node ~start:(3, 10) ~stop:(3, 13) (Expression.Integer 456);
+                       node ~start:(4, 2) ~stop:(4, 5) (Expression.Integer 789);
                      ];
                  value = "\nfoo{123}a{456}\nb{789}\n";
                }));
@@ -1764,7 +1772,11 @@ let test_expand_implicit_returns _ =
     |}
     [
       +Statement.While
-         { While.test = +Name (Name.Identifier "derp"); body = [+Statement.Pass]; orelse = [] };
+         {
+           While.test = +Expression.Name (Name.Identifier "derp");
+           body = [+Statement.Pass];
+           orelse = [];
+         };
       +Statement.Return { Return.expression = None; is_implicit = true };
     ];
   assert_expand
@@ -1903,7 +1915,7 @@ let test_defines _ =
           generator = false;
           parent = None;
         };
-      body = [+Statement.Expression (+Float 1.0)];
+      body = [+Statement.Expression (+Expression.Float 1.0)];
     }
   in
   let create_toplevel body =
@@ -1953,7 +1965,7 @@ let test_defines _ =
           generator = false;
           parent = None;
         };
-      body = [+Statement.Expression (+Float 1.0)];
+      body = [+Statement.Expression (+Expression.Float 1.0)];
     }
   in
   let define =
@@ -1969,11 +1981,13 @@ let test_defines _ =
           generator = false;
           parent = None;
         };
-      body = [+Statement.Expression (+Float 1.0); +Statement.Define inner];
+      body = [+Statement.Expression (+Expression.Float 1.0); +Statement.Define inner];
     }
   in
   assert_defines [+Statement.Define define] [create_toplevel [+Statement.Define define]; define];
-  let if_define = { If.test = +Ellipsis; body = [+Statement.Define define]; orelse = [] } in
+  let if_define =
+    { If.test = +Expression.Ellipsis; body = [+Statement.Define define]; orelse = [] }
+  in
   assert_defines [+Statement.If if_define] [create_toplevel [+Statement.If if_define]];
 
   (* Note: Defines are returned in reverse order. *)

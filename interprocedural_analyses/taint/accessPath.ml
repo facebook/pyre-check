@@ -208,7 +208,7 @@ let get_global ~resolution name =
   let global_resolution = Resolution.global_resolution resolution in
   let global =
     match Node.value name with
-    | Name (Name.Identifier identifier)
+    | Expression.Name (Name.Identifier identifier)
       when not (Interprocedural.CallResolution.is_local identifier) ->
         Some (Reference.create identifier)
     | Name (Name.Identifier identifier) ->
@@ -218,8 +218,8 @@ let get_global ~resolution name =
         else
           None
     | Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name) ->
-        let name = Expression.name_to_reference name in
-        let base_name = Expression.name_to_reference base_name in
+        let name = name_to_reference name in
+        let base_name = name_to_reference base_name in
         let is_module name =
           name >>= GlobalResolution.module_definition global_resolution |> Option.is_some
         in
@@ -232,7 +232,7 @@ let get_global ~resolution name =
 let is_global ~resolution name = Option.is_some (get_global ~resolution name)
 
 let of_expression ~resolution = function
-  | { Node.value = Name _; _ } as expression ->
+  | { Node.value = Expression.Name _; _ } as expression ->
       let expression =
         if is_global ~resolution expression then
           Ast.Expression.delocalize expression
@@ -240,7 +240,7 @@ let of_expression ~resolution = function
           expression
       in
       let rec of_expression path = function
-        | { Node.value = Name (Name.Identifier identifier); _ } ->
+        | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
             Some { root = Root.Variable identifier; path }
         | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
             let path = AbstractTreeDomain.Label.Field attribute :: path in

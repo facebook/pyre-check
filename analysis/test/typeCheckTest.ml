@@ -97,7 +97,7 @@ let test_initial context =
     in
     let initial =
       let variables =
-        let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
+        let extract_variables { Node.value = { Expression.Parameter.annotation; _ }; _ } =
           match annotation with
           | None -> []
           | Some annotation ->

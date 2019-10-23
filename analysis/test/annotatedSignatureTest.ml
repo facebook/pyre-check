@@ -326,16 +326,16 @@ let test_select context =
   assert_select
     "[[int], int]"
     "(*a)"
-    (`NotFoundInvalidVariableArgument (+Name (Name.Identifier "a"), Type.Top));
+    (`NotFoundInvalidVariableArgument (+Expression.Name (Name.Identifier "a"), Type.Top));
   assert_select
     "[[int], int]"
     "(**a)"
-    (`NotFoundInvalidKeywordArgument (+Name (Name.Identifier "a"), Type.Top));
+    (`NotFoundInvalidKeywordArgument (+Expression.Name (Name.Identifier "a"), Type.Top));
   assert_select
     "[[int], int]"
     "(**int_to_int_dictionary)"
     (`NotFoundInvalidKeywordArgument
-      ( +Name (Name.Identifier "$local_test$int_to_int_dictionary"),
+      ( +Expression.Name (Name.Identifier "$local_test$int_to_int_dictionary"),
         Type.dictionary ~key:Type.integer ~value:Type.integer ));
   assert_select
     "[[int, Named(i, int)], int]"
@@ -673,7 +673,7 @@ let test_select context =
                        (Type.Variable.Variadic.List.create "test.Ts"))),
                NotDefiniteTuple
                  {
-                   expression = +Name (Name.Identifier "$local_test$unbounded_tuple");
+                   expression = +Expression.Name (Name.Identifier "$local_test$unbounded_tuple");
                    annotation = Type.Tuple (Unbounded Type.integer);
                  } )) ));
   assert_select
