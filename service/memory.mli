@@ -89,6 +89,8 @@ module WithCache : sig
   end
 end
 
+val initialize_for_tests : unit -> unit
+
 val get_heap_handle : Configuration.Analysis.t -> SharedMemory.handle
 
 val heap_size : unit -> int

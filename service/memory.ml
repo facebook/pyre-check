@@ -190,14 +190,12 @@ type configuration = {
 
 let configuration : configuration option ref = ref None
 
-let initial_heap_size = 4096 * 1024 * 1024 (* 4 GB *)
-
 let worker_garbage_control =
   { (Gc.get ()) with Gc.minor_heap_size = 256 * 1024; (* 256 KB *)
                                                       space_overhead = 100 }
 
 
-let initialize log_level =
+let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
   match !configuration with
   | None ->
       let minor_heap_size = 4 * 1024 * 1024 in
@@ -209,9 +207,9 @@ let initialize log_level =
       let shared_mem_config =
         {
           SharedMemory.global_size = 0;
-          heap_size = initial_heap_size;
-          dep_table_pow = 27;
-          hash_table_pow = 23;
+          heap_size;
+          dep_table_pow;
+          hash_table_pow;
           shm_dirs = ["/dev/shm"; "/pyre"];
           shm_min_avail = 1024 * 1024 * 512;
           (* 512 MB *)
@@ -224,6 +222,18 @@ let initialize log_level =
   | Some configuration -> configuration
 
 
+let initialize_for_tests () =
+  let heap_size =
+    (* 1 GB *)
+    1024 * 1024 * 1024
+  in
+  let dep_table_pow = 18 in
+  let hash_table_pow = 18 in
+  let log_level = 0 in
+  let _ = initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () in
+  ()
+
+
 let get_heap_handle { Configuration.Analysis.debug; _ } =
   let log_level =
     if debug then
@@ -231,7 +241,13 @@ let get_heap_handle { Configuration.Analysis.debug; _ } =
     else
       0
   in
-  let { heap_handle; _ } = initialize log_level in
+  let heap_size =
+    (* 4 GB *)
+    4096 * 1024 * 1024
+  in
+  let dep_table_pow = 27 in
+  let hash_table_pow = 23 in
+  let { heap_handle; _ } = initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () in
   heap_handle
 
 
