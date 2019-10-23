@@ -545,18 +545,17 @@ let test_arguments_location _ =
 let () =
   "expression"
   >::: [
-         (* "negate" >:: test_negate;
-          * "normalize" >:: test_normalize; *)
-           "pp" >:: test_pp;
-           (* "equality" >:: test_equality;
-            * "delocalize" >:: test_delocalize;
-            * "comparison_operator_override" >:: test_comparison_operator_override;
-            * "exists_in_list" >:: test_exists_in_list;
-            * "create_name" >:: test_create_name;
-            * "name_to_identifiers" >:: test_name_to_identifiers;
-            * "name_equals" >:: test_name_equals;
-            * "is_private_attribute" >:: test_is_private_attribute;
-            * "arguments_location" >:: test_arguments_location; *)
-         
+         "negate" >:: test_negate;
+         "normalize" >:: test_normalize;
+         "pp" >:: test_pp;
+         "equality" >:: test_equality;
+         "delocalize" >:: test_delocalize;
+         "comparison_operator_override" >:: test_comparison_operator_override;
+         "exists_in_list" >:: test_exists_in_list;
+         "create_name" >:: test_create_name;
+         "name_to_identifiers" >:: test_name_to_identifiers;
+         "name_equals" >:: test_name_equals;
+         "is_private_attribute" >:: test_is_private_attribute;
+         "arguments_location" >:: test_arguments_location;
        ]
   |> Test.run
