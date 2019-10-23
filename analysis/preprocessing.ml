@@ -1386,13 +1386,19 @@ let expand_implicit_returns source =
   ExpandingTransform.transform () source |> ExpandingTransform.source
 
 
-let defines ?(include_stubs = false) ?(include_nested = false) ?(include_toplevels = false) source =
+let defines
+    ?(include_stubs = false)
+    ?(include_nested = false)
+    ?(include_toplevels = false)
+    ?(include_methods = true)
+    source
+  =
   let module Collector = Visit.StatementCollector (struct
     type t = Define.t Node.t
 
     let visit_children = function
       | { Node.value = Statement.Define _; _ } -> include_nested
-      | { Node.value = Class _; _ } -> true
+      | { Node.value = Class _; _ } -> include_methods
       | _ -> false
 
 

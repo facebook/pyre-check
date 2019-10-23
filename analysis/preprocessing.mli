@@ -39,6 +39,7 @@ val defines
   :  ?include_stubs:bool ->
   ?include_nested:bool ->
   ?include_toplevels:bool ->
+  ?include_methods:bool ->
   Source.t ->
   Statement.Define.t Node.t list
 
