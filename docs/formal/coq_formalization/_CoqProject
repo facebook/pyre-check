@@ -1,7 +1,0 @@
--Q . STLC_Ref
-
-ty.v
-env.v
-term.v
-red.v
-sr.v
