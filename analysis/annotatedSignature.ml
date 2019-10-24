@@ -10,7 +10,6 @@ open Expression
 
 type mismatch = {
   actual: Type.t;
-  actual_expression: Expression.t;
   expected: Type.t;
   name: Identifier.t option;
   position: int;
@@ -421,7 +420,6 @@ let select
                 in
                 {
                   actual = argument_annotation;
-                  actual_expression = argument;
                   expected = parameter_annotation;
                   name = Option.map name ~f:Node.value;
                   position;

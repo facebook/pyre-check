@@ -62,13 +62,12 @@ let missing_return annotation =
 let incompatible_return_type
     ?(is_unimplemented = false)
     ?(due_to_invariance = false)
-    ?(actual_expressions = [])
     actual
     expected
   =
   Error.IncompatibleReturnType
     {
-      mismatch = { Error.actual; actual_expressions; expected; due_to_invariance };
+      mismatch = { Error.actual; expected; due_to_invariance };
       is_implicit = false;
       is_unimplemented;
       define_location = Node.location mock_define;
@@ -101,13 +100,7 @@ let test_due_to_analysis_limitations _ =
          incompatible_type =
            {
              Error.name = !&"";
-             mismatch =
-               {
-                 Error.actual = Type.Top;
-                 actual_expressions = [];
-                 expected = Type.Top;
-                 due_to_invariance = false;
-               };
+             mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
              declare_location = Location.Instantiated.any;
            };
        });
@@ -119,12 +112,7 @@ let test_due_to_analysis_limitations _ =
            {
              Error.name = !&"";
              mismatch =
-               {
-                 Error.actual = Type.Top;
-                 actual_expressions = [];
-                 expected = Type.string;
-                 due_to_invariance = false;
-               };
+               { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
              declare_location = Location.Instantiated.any;
            };
        });
@@ -136,12 +124,7 @@ let test_due_to_analysis_limitations _ =
            {
              Error.name = !&"";
              mismatch =
-               {
-                 Error.actual = Type.string;
-                 actual_expressions = [];
-                 expected = Type.Top;
-                 due_to_invariance = false;
-               };
+               { Error.actual = Type.string; expected = Type.Top; due_to_invariance = false };
              declare_location = Location.Instantiated.any;
            };
        });
@@ -155,7 +138,6 @@ let test_due_to_analysis_limitations _ =
          mismatch =
            {
              Error.actual = Type.Top;
-             actual_expressions = [];
              expected = Type.Optional Type.Top;
              due_to_invariance = false;
            };
@@ -169,7 +151,6 @@ let test_due_to_analysis_limitations _ =
          mismatch =
            {
              Error.actual = Type.string;
-             actual_expressions = [];
              expected = Type.Optional Type.string;
              due_to_invariance = false;
            };
@@ -295,13 +276,7 @@ let test_due_to_analysis_limitations _ =
          name = Some "";
          position = 1;
          callee = Some !&"callee";
-         mismatch =
-           {
-             Error.actual = Type.Top;
-             actual_expressions = [];
-             expected = Type.Top;
-             due_to_invariance = false;
-           };
+         mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
        });
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
@@ -309,13 +284,7 @@ let test_due_to_analysis_limitations _ =
          name = Some "";
          position = 1;
          callee = Some !&"callee";
-         mismatch =
-           {
-             Error.actual = Type.Top;
-             actual_expressions = [];
-             expected = Type.string;
-             due_to_invariance = false;
-           };
+         mismatch = { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
        });
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleParameterType
@@ -323,13 +292,7 @@ let test_due_to_analysis_limitations _ =
          name = Some "";
          position = 1;
          callee = Some !&"callee";
-         mismatch =
-           {
-             Error.actual = Type.string;
-             actual_expressions = [];
-             expected = Type.Top;
-             due_to_invariance = false;
-           };
+         mismatch = { Error.actual = Type.string; expected = Type.Top; due_to_invariance = false };
        });
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
@@ -340,7 +303,6 @@ let test_due_to_analysis_limitations _ =
          mismatch =
            {
              Error.actual = Type.Primitive "typing.TypeAlias";
-             actual_expressions = [];
              expected = Type.Top;
              due_to_invariance = false;
            };
@@ -350,13 +312,7 @@ let test_due_to_analysis_limitations _ =
   assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType
        {
-         mismatch =
-           {
-             Error.actual = Type.Top;
-             actual_expressions = [];
-             expected = Type.Top;
-             due_to_invariance = false;
-           };
+         mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
          is_implicit = false;
          is_unimplemented = false;
          define_location = Node.location mock_define;
@@ -364,13 +320,7 @@ let test_due_to_analysis_limitations _ =
   assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType
        {
-         mismatch =
-           {
-             Error.actual = Type.Top;
-             actual_expressions = [];
-             expected = Type.string;
-             due_to_invariance = false;
-           };
+         mismatch = { Error.actual = Type.Top; expected = Type.string; due_to_invariance = false };
          is_implicit = false;
          is_unimplemented = false;
          define_location = Node.location mock_define;
@@ -378,13 +328,7 @@ let test_due_to_analysis_limitations _ =
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleReturnType
        {
-         mismatch =
-           {
-             Error.actual = Type.string;
-             actual_expressions = [];
-             expected = Type.Top;
-             due_to_invariance = false;
-           };
+         mismatch = { Error.actual = Type.string; expected = Type.Top; due_to_invariance = false };
          is_implicit = false;
          is_unimplemented = false;
          define_location = Node.location mock_define;
@@ -421,12 +365,7 @@ let test_join context =
               {
                 Error.name = !&"";
                 mismatch =
-                  {
-                    Error.actual = Type.Top;
-                    actual_expressions = [];
-                    expected = Type.Top;
-                    due_to_invariance = false;
-                  };
+                  { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
                 declare_location = Location.Instantiated.any;
               };
           }))
@@ -434,13 +373,7 @@ let test_join context =
        (Error.IncompatibleVariableType
           {
             Error.name = !&"";
-            mismatch =
-              {
-                Error.actual = Type.Top;
-                actual_expressions = [];
-                expected = Type.Top;
-                due_to_invariance = false;
-              };
+            mismatch = { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
             declare_location = Location.Instantiated.any;
           }))
     (error Error.Top);
@@ -452,12 +385,7 @@ let test_join context =
             position = 1;
             callee = Some !&"callee";
             mismatch =
-              {
-                Error.actual = Type.integer;
-                actual_expressions = [];
-                expected = Type.string;
-                due_to_invariance = false;
-              };
+              { Error.actual = Type.integer; expected = Type.string; due_to_invariance = false };
           }))
     (error
        (Error.IncompatibleParameterType
@@ -466,12 +394,7 @@ let test_join context =
             position = 1;
             callee = Some !&"callee";
             mismatch =
-              {
-                Error.actual = Type.float;
-                actual_expressions = [];
-                expected = Type.string;
-                due_to_invariance = false;
-              };
+              { Error.actual = Type.float; expected = Type.string; due_to_invariance = false };
           }))
     (error
        (Error.IncompatibleParameterType
@@ -480,12 +403,7 @@ let test_join context =
             position = 1;
             callee = Some !&"callee";
             mismatch =
-              {
-                Error.actual = Type.float;
-                actual_expressions = [];
-                expected = Type.string;
-                due_to_invariance = false;
-              };
+              { Error.actual = Type.float; expected = Type.string; due_to_invariance = false };
           }));
   let create_mock_location path =
     {
@@ -833,23 +751,12 @@ let test_filter context =
     (inconsistent_override
        "__foo__"
        (WeakenedPostcondition
-          {
-            actual = Type.Top;
-            actual_expressions = [];
-            expected = Type.integer;
-            due_to_invariance = false;
-          }));
+          { actual = Type.Top; expected = Type.integer; due_to_invariance = false }));
   assert_unfiltered
     (inconsistent_override
        "__foo__"
        (StrengthenedPrecondition
-          (Found
-             {
-               actual = Type.none;
-               actual_expressions = [];
-               expected = Type.integer;
-               due_to_invariance = false;
-             })));
+          (Found { actual = Type.none; expected = Type.integer; due_to_invariance = false })));
   assert_filtered
     (inconsistent_override "__foo__" (StrengthenedPrecondition (NotFound (Keywords Type.integer))));
 

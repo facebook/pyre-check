@@ -701,7 +701,7 @@ module State (Context : Context) = struct
             (state, annotations)
             { Node.location; value = { Parameter.name; value; annotation } }
           =
-          let add_incompatible_variable_error ~state ~value annotation default =
+          let add_incompatible_variable_error ~state annotation default =
             if
               Type.is_any default
               || GlobalResolution.less_or_equal global_resolution ~left:default ~right:annotation
@@ -724,7 +724,6 @@ module State (Context : Context) = struct
                            ~resolution:global_resolution
                            ~expected:annotation
                            ~actual:default
-                           ~actual_expression:value
                            ~covariant:true;
                        declare_location = instantiate location;
                      })
@@ -894,7 +893,7 @@ module State (Context : Context) = struct
                         value
                         >>| (fun value -> forward_expression ~state ~expression:value)
                         >>| (fun { resolved; _ } -> resolved)
-                        >>| add_incompatible_variable_error ~state ~value annotation
+                        >>| add_incompatible_variable_error ~state annotation
                         |> Option.value ~default:state
                       in
                       state, Annotation.create_immutable ~global:false annotation
@@ -1195,7 +1194,6 @@ module State (Context : Context) = struct
                                          (Error.create_mismatch
                                             ~resolution:global_resolution
                                             ~actual
-                                            ~actual_expression:None
                                             ~expected
                                             ~covariant:false);
                                    })
@@ -1260,7 +1258,6 @@ module State (Context : Context) = struct
                                                     (Error.create_mismatch
                                                        ~resolution:global_resolution
                                                        ~actual
-                                                       ~actual_expression:None
                                                        ~expected
                                                        ~covariant:false));
                                            })
@@ -1762,14 +1759,13 @@ module State (Context : Context) = struct
                   in
                   Error.create ~location ~kind ~define:Context.define
               | Mismatch mismatch ->
-                  let { Annotated.Signature.actual; actual_expression; expected; name; position } =
+                  let { Annotated.Signature.actual; expected; name; position } =
                     Node.value mismatch
                   in
                   let mismatch, name, position, location =
                     ( Error.create_mismatch
                         ~resolution:global_resolution
                         ~actual
-                        ~actual_expression:(Some actual_expression)
                         ~expected
                         ~covariant:true,
                       name,
@@ -2088,7 +2084,6 @@ module State (Context : Context) = struct
                        mismatch =
                          {
                            Error.actual = non_meta;
-                           actual_expressions = [];
                            expected =
                              Type.union
                                [
@@ -2902,7 +2897,6 @@ module State (Context : Context) = struct
                      Error.create_mismatch
                        ~resolution:global_resolution
                        ~actual
-                       ~actual_expression:expression
                        ~expected:return_annotation
                        ~covariant:true;
                    is_implicit;
@@ -3319,7 +3313,6 @@ module State (Context : Context) = struct
                               Error.create_mismatch
                                 ~resolution:global_resolution
                                 ~actual:resolved
-                                ~actual_expression:expression
                                 ~expected
                                 ~covariant:true;
                             declare_location = instantiate (Attribute.location attribute);
@@ -3334,7 +3327,6 @@ module State (Context : Context) = struct
                           Error.create_mismatch
                             ~resolution:global_resolution
                             ~actual:resolved
-                            ~actual_expression:expression
                             ~expected
                             ~covariant:true;
                         declare_location = instantiate location;
@@ -3898,7 +3890,6 @@ module State (Context : Context) = struct
                                 {
                                   Error.expected = Type.meta (Type.variable "T");
                                   actual = resolved;
-                                  actual_expressions = [annotation_expression];
                                   due_to_invariance = false;
                                 };
                             })
@@ -4416,12 +4407,7 @@ module State (Context : Context) = struct
                                  name;
                                  parent = Annotated.Class.annotation definition;
                                  mismatch =
-                                   {
-                                     Error.expected;
-                                     actual = expected;
-                                     actual_expressions = [];
-                                     due_to_invariance = false;
-                                   };
+                                   { Error.expected; actual = expected; due_to_invariance = false };
                                  kind = error_kind;
                                })
                           ~define:Context.define))
@@ -4536,7 +4522,6 @@ module State (Context : Context) = struct
                                    (Error.create_mismatch
                                       ~resolution:global_resolution
                                       ~actual
-                                      ~actual_expression:None
                                       ~expected
                                       ~covariant:false);
                              }

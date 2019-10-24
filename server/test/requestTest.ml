@@ -577,12 +577,7 @@ let test_create_annotation_edit context =
     }
   in
   let mock_mismatch : Analysis.Error.mismatch =
-    {
-      actual = Type.integer;
-      actual_expressions = [];
-      expected = Type.string;
-      due_to_invariance = false;
-    }
+    { actual = Type.integer; expected = Type.string; due_to_invariance = false }
   in
   let location = { Location.Reference.any with start = { line = 0; column = 0 } } in
   let instantiated_location =

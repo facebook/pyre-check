@@ -48,7 +48,6 @@ type origin =
 
 and mismatch = {
   actual: Type.t;
-  actual_expressions: Expression.t list;
   expected: Type.t;
   due_to_invariance: bool;
 }
@@ -402,14 +401,14 @@ let name = function
 
 
 let weaken_literals kind =
-  let weaken_mismatch { actual; actual_expressions; expected; due_to_invariance } =
+  let weaken_mismatch { actual; expected; due_to_invariance } =
     let actual =
       if Type.contains_literal expected then
         actual
       else
         Type.weaken_literals actual
     in
-    { actual; actual_expressions; expected; due_to_invariance }
+    { actual; expected; due_to_invariance }
   in
   let weaken_missing_annotation = function
     | { given_annotation = Some given; _ } as missing when Type.contains_literal given -> missing
@@ -2211,16 +2210,11 @@ let less_or_equal ~resolution left right =
 
 let join ~resolution left right =
   let join_mismatch left right =
-    if List.equal Expression.equal left.actual_expressions right.actual_expressions then
-      Some
-        {
-          expected = GlobalResolution.join resolution left.expected right.expected;
-          actual = GlobalResolution.join resolution left.actual right.actual;
-          actual_expressions = left.actual_expressions;
-          due_to_invariance = left.due_to_invariance || right.due_to_invariance;
-        }
-    else
-      None
+    {
+      expected = GlobalResolution.join resolution left.expected right.expected;
+      actual = GlobalResolution.join resolution left.actual right.actual;
+      due_to_invariance = left.due_to_invariance || right.due_to_invariance;
+    }
   in
   let join_missing_annotation
       (left : missing_annotation) (* Ohcaml... *)
@@ -2334,53 +2328,44 @@ let join ~resolution left right =
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Identifier.equal_sanitized left.name right.name
            && left.position = right.position
-           && Option.equal Reference.equal_sanitized left.callee right.callee -> (
-      match join_mismatch left.mismatch right.mismatch with
-      | Some mismatch -> IncompatibleParameterType { left with mismatch }
-      | None -> Top )
+           && Option.equal Reference.equal_sanitized left.callee right.callee ->
+        let mismatch = join_mismatch left.mismatch right.mismatch in
+        IncompatibleParameterType { left with mismatch }
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         IncompatibleConstructorAnnotation (GlobalResolution.join resolution left right)
-    | IncompatibleReturnType left, IncompatibleReturnType right -> (
-      match join_mismatch left.mismatch right.mismatch with
-      | Some mismatch ->
-          IncompatibleReturnType
-            {
-              mismatch;
-              is_implicit = left.is_implicit && right.is_implicit;
-              is_unimplemented = left.is_unimplemented && right.is_unimplemented;
-              define_location = right.define_location;
-            }
-      | None -> Top )
+    | IncompatibleReturnType left, IncompatibleReturnType right ->
+        IncompatibleReturnType
+          {
+            mismatch = join_mismatch left.mismatch right.mismatch;
+            is_implicit = left.is_implicit && right.is_implicit;
+            is_unimplemented = left.is_unimplemented && right.is_unimplemented;
+            define_location = right.define_location;
+          }
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Type.equal left.parent right.parent
-           && Reference.equal left.incompatible_type.name right.incompatible_type.name -> (
-      match join_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch with
-      | Some mismatch ->
-          IncompatibleAttributeType
-            { parent = left.parent; incompatible_type = { left.incompatible_type with mismatch } }
-      | None -> Top )
+           && Reference.equal left.incompatible_type.name right.incompatible_type.name ->
+        let mismatch =
+          join_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch
+        in
+        IncompatibleAttributeType
+          { parent = left.parent; incompatible_type = { left.incompatible_type with mismatch } }
     | IncompatibleVariableType left, IncompatibleVariableType right
-      when Reference.equal left.name right.name -> (
-      match join_mismatch left.mismatch right.mismatch with
-      | Some mismatch -> IncompatibleVariableType { left with mismatch }
-      | None -> Top )
+      when Reference.equal left.name right.name ->
+        IncompatibleVariableType
+          { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | ( InconsistentOverride ({ override = StrengthenedPrecondition left_issue; _ } as left),
         InconsistentOverride ({ override = StrengthenedPrecondition right_issue; _ } as right) )
       -> (
       match left_issue, right_issue with
-      | Found left_mismatch, Found right_mismatch -> (
-        match join_mismatch left_mismatch right_mismatch with
-        | Some mismatch ->
-            InconsistentOverride { left with override = StrengthenedPrecondition (Found mismatch) }
-        | None -> Top )
+      | Found left_mismatch, Found right_mismatch ->
+          let mismatch = join_mismatch left_mismatch right_mismatch in
+          InconsistentOverride { left with override = StrengthenedPrecondition (Found mismatch) }
       | NotFound _, _ -> InconsistentOverride left
       | _, NotFound _ -> InconsistentOverride right )
     | ( InconsistentOverride ({ override = WeakenedPostcondition left_mismatch; _ } as left),
-        InconsistentOverride { override = WeakenedPostcondition right_mismatch; _ } ) -> (
-      match join_mismatch left_mismatch right_mismatch with
-      | Some mismatch ->
-          InconsistentOverride { left with override = WeakenedPostcondition mismatch }
-      | None -> Top )
+        InconsistentOverride { override = WeakenedPostcondition right_mismatch; _ } ) ->
+        let mismatch = join_mismatch left_mismatch right_mismatch in
+        InconsistentOverride { left with override = WeakenedPostcondition mismatch }
     | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
       when Expression.equal left.expression right.expression ->
         InvalidArgument
@@ -2431,10 +2416,8 @@ let join ~resolution left right =
            && left.provided = right.provided ->
         TooManyArguments left
     | UninitializedAttribute left, UninitializedAttribute right
-      when String.equal left.name right.name && Type.equal left.parent right.parent -> (
-      match join_mismatch left.mismatch right.mismatch with
-      | Some mismatch -> UninitializedAttribute { left with mismatch }
-      | None -> Top )
+      when String.equal left.name right.name && Type.equal left.parent right.parent ->
+        UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UnawaitedAwaitable left, UnawaitedAwaitable right when equal_unawaited_awaitable left right
       ->
         UnawaitedAwaitable left
@@ -3113,7 +3096,7 @@ let dequalify
   { error with kind; signature = { Node.location; value = signature } }
 
 
-let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant =
+let create_mismatch ~resolution ~actual ~expected ~covariant =
   let left, right =
     if covariant then
       actual, expected
@@ -3124,7 +3107,6 @@ let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant 
     expected;
     actual;
     due_to_invariance = GlobalResolution.is_invariance_mismatch resolution ~left ~right;
-    actual_expressions = Option.to_list actual_expression;
   }
 
 

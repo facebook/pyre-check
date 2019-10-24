@@ -8,7 +8,6 @@ open Expression
 
 type mismatch = {
   actual: Type.t;
-  actual_expression: Expression.t;
   expected: Type.t;
   name: Identifier.t option;
   position: int;
