@@ -9,7 +9,6 @@ import argparse
 import functools
 import logging
 import os
-import socket
 import subprocess
 import sys
 from typing import Any, BinaryIO, Dict, Iterable, List, Optional, Set  # noqa
@@ -17,6 +16,7 @@ from typing import Any, BinaryIO, Dict, Iterable, List, Optional, Set  # noqa
 from . import language_server_protocol
 from .configuration import Configuration
 from .filesystem import AnalysisDirectory, find_root
+from .socket_connection import SocketConnection
 from .watchman_subscriber import Subscription, WatchmanSubscriber
 
 
@@ -25,31 +25,6 @@ LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 class MonitorException(Exception):
     pass
-
-
-class SocketConnection(object):
-    def __init__(self, socket_path: str) -> None:
-        self.socket = socket.socket(
-            socket.AF_UNIX, socket.SOCK_STREAM
-        )  # type: socket.socket
-        self.socket.connect(socket_path)
-        self.input = self.socket.makefile(mode="rb")  # type: BinaryIO
-        self.output = self.socket.makefile(mode="wb")  # type: BinaryIO
-
-    def close(self) -> None:
-        try:
-            self.socket.close()
-        except OSError:
-            pass
-
-    def __del__(self) -> None:
-        """
-            Monitor is created and then runs in a forked process.
-            As a result, in the original process, this object gets garbage
-            collected without the socket being closed.
-            For this reason, we explicitly close the socket on destruction.
-        """
-        self.close()
 
 
 class ProjectFilesMonitor(WatchmanSubscriber):
@@ -79,24 +54,6 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         self._watchman_path = self._find_watchman_path(
             arguments.current_directory
         )  # type: str
-
-        socket_path = os.path.join(
-            self._analysis_directory.get_root(), ".pyre", "server", "json_server.sock"
-        )
-        self._socket_connection = self._connect_to_socket(
-            socket_path
-        )  # type: SocketConnection
-
-        try:
-            language_server_protocol.perform_handshake(
-                self._socket_connection.input,
-                self._socket_connection.output,
-                self._configuration.version_hash,
-            )
-        except (OSError, ValueError) as error:
-            raise MonitorException(
-                "Exception encountered during handshake: `{}`".format(error)
-            )
 
     @property
     def _name(self) -> str:
@@ -156,16 +113,24 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 return
 
             LOG.info("Notifying server of update to files %s.", updated_paths.updated)
-            message = language_server_protocol.LanguageServerProtocolMessage(
-                method="updateFiles",
-                parameters={"files": updated_paths.updated, "invalidated": []},
+            socket_path = os.path.join(
+                self._analysis_directory.get_root(),
+                ".pyre",
+                "server",
+                "json_server.sock",
             )
-            if not language_server_protocol.write_message(
-                self._socket_connection.output, message
-            ):
-                LOG.info("Failed to communicate with server. Shutting down.")
-                self._alive = False  # terminate daemon
-                self._socket_connection.close()
+            with SocketConnection(socket_path) as socket_connection:
+                socket_connection.perform_handshake(self._configuration.version_hash)
+                message = language_server_protocol.LanguageServerProtocolMessage(
+                    method="updateFiles",
+                    parameters={"files": updated_paths.updated, "invalidated": []},
+                )
+                if not language_server_protocol.write_message(
+                    socket_connection.output, message
+                ):
+                    LOG.info("Failed to communicate with server. Shutting down.")
+                    self._alive = False  # terminate daemon
+
         except KeyError:
             pass
 
@@ -178,14 +143,3 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 "the current directory `{}`".format(directory)
             )
         return watchman_path
-
-    @staticmethod
-    def _connect_to_socket(socket_path: str) -> SocketConnection:
-        try:
-            return SocketConnection(os.path.realpath(socket_path))
-        except (ConnectionRefusedError, FileNotFoundError, OSError) as error:
-            raise MonitorException(
-                "Failed to connect to server at `{}`. Reason: `{}`".format(
-                    socket_path, error
-                )
-            )

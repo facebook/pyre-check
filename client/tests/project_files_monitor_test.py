@@ -20,15 +20,15 @@ from ..language_server_protocol import (
     write_message,
 )
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
+from ..socket_connection import SocketConnection, SocketException
 
 
 class MonitorTest(unittest.TestCase):
+    @patch.object(SocketConnection, "_connect")
     @patch.object(language_server_protocol, "perform_handshake")
-    @patch.object(ProjectFilesMonitor, "_connect_to_socket")
     @patch.object(project_files_monitor, "find_root")
-    def test_subscriptions(self, find_root, _connect_to_socket, perform_handshake):
+    def test_subscriptions(self, find_root, perform_handshake, _socket_connection):
         find_root.return_value = "/ROOT"
-
         arguments = MagicMock()
         configuration = MagicMock()
         analysis_directory = MagicMock()
@@ -87,11 +87,8 @@ class MonitorTest(unittest.TestCase):
     def test_bad_socket(self):
         with tempfile.TemporaryDirectory() as root:
             bad_socket_path = os.path.join(root, "bad.sock")
-            self.assertRaises(
-                MonitorException,
-                ProjectFilesMonitor._connect_to_socket,
-                bad_socket_path,
-            )
+            socket_connection = SocketConnection(bad_socket_path)
+            self.assertRaises(SocketException, socket_connection._connect)
 
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
     def test_socket_communication(self, _find_watchman_path):
@@ -165,16 +162,16 @@ class MonitorTest(unittest.TestCase):
 
         self.assertEqual(errors, [])
 
+    @patch.object(SocketConnection, "_connect")
     @patch.object(language_server_protocol, "perform_handshake")
     @patch.object(ProjectFilesMonitor, "_watchman_client")
-    @patch.object(ProjectFilesMonitor, "_connect_to_socket")
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
     def test_files_cleaned_up(
         self,
         _find_watchman_path,
-        _connect_to_socket,
         _watchman_client,
         perform_handshake,
+        _socket_connection,
     ):
         with tempfile.TemporaryDirectory() as root:
             arguments = MagicMock()
@@ -225,5 +222,5 @@ class MonitorTest(unittest.TestCase):
             server_thread.start()
 
             with socket_created_lock:
-                ProjectFilesMonitor._connect_to_socket(socket_link)
+                SocketConnection(socket_link)._connect()
             server_thread.join()
