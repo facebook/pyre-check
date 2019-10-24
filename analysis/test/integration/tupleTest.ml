@@ -250,6 +250,27 @@ let test_check_tuple context =
     ];
   assert_type_errors
     {|
+      class TestNamedTupleUnpackingFieldsNotInAlphabeticalOrder(typing.NamedTuple):
+        foo: str
+        bar: int
+        baz: typing.List[str]
+        hello: typing.List[int]
+
+      def foo() -> None:
+        (a, b, c, d) = TestNamedTupleUnpackingFieldsNotInAlphabeticalOrder("foo", 1, ["bar"], [7])
+        reveal_type(a)
+        reveal_type(b)
+        reveal_type(c)
+        reveal_type(d)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `str`.";
+      "Revealed type [-1]: Revealed type for `b` is `int`.";
+      "Revealed type [-1]: Revealed type for `c` is `typing.List[str]`.";
+      "Revealed type [-1]: Revealed type for `d` is `typing.List[int]`.";
+    ];
+  assert_type_errors
+    {|
       def foo(input: int) -> None:
         x, y = input
     |}
