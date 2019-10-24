@@ -74,4 +74,5 @@ let base_command_line_arguments =
          "-extension"
          (listed string)
          ~doc:".EXT Consider the given extension as equivalent to `.py` for type checking."
+    +> flag "-log-directory" (optional string) ~doc:"Location to write logs and other data"
     +> anon (maybe_with_default "." ("source-root" %: string)))

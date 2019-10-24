@@ -30,6 +30,7 @@ let run_check
     _taint_models_directory
     excludes
     extensions
+    log_directory
     local_root
     ()
   =
@@ -66,6 +67,7 @@ let run_check
       ~search_path:(List.map search_path ~f:SearchPath.create)
       ~excludes
       ~extensions
+      ?log_directory
       ~local_root:(Path.create_absolute local_root)
       ()
   in

@@ -41,6 +41,7 @@ module Analysis : sig
     include_hints: bool;
     perform_autocompletion: bool;
     go_to_definition_enabled: bool;
+    log_directory: Path.t;
   }
   [@@deriving show, eq]
 
@@ -73,6 +74,7 @@ module Analysis : sig
     ?include_hints:bool ->
     ?perform_autocompletion:bool ->
     ?go_to_definition_enabled:bool ->
+    ?log_directory:string ->
     unit ->
     t
 

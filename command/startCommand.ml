@@ -473,6 +473,7 @@ let run_start_command
     taint_models_directories
     excludes
     extensions
+    log_directory
     local_root
     ()
   =
@@ -523,6 +524,7 @@ let run_start_command
       ~store_type_check_resolution
       ~incremental_style
       ~perform_autocompletion
+      ?log_directory
       ()
   in
   let log_path = log_path >>| Path.create_absolute in

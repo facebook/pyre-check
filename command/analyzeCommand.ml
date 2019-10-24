@@ -39,6 +39,7 @@ let run_analysis
     taint_models_directories
     excludes
     extensions
+    log_directory
     local_root
     ()
   =
@@ -76,6 +77,7 @@ let run_analysis
       ~taint_models_directories:(List.map taint_models_directories ~f:Path.create_absolute)
       ~excludes
       ~extensions
+      ?log_directory
       ~local_root:(Path.create_absolute local_root)
       ()
   in

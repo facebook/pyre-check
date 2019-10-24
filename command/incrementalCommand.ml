@@ -31,6 +31,7 @@ let run
     _taint_models_directory
     excludes
     extensions
+    log_directory
     local_root
     ()
   =
@@ -68,6 +69,7 @@ let run
         ~project_root:(Path.create_absolute project_root)
         ~excludes
         ~extensions
+        ?log_directory
         ~local_root:(Path.create_absolute local_root)
         ~incremental_style:(if transitive then Transitive else Shallow)
         ()

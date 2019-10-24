@@ -42,6 +42,7 @@ module Analysis = struct
     include_hints: bool;
     perform_autocompletion: bool;
     go_to_definition_enabled: bool;
+    log_directory: Path.t;
   }
   [@@deriving show]
 
@@ -81,6 +82,7 @@ module Analysis = struct
       ?(include_hints = false)
       ?(perform_autocompletion = false)
       ?(go_to_definition_enabled = false)
+      ?log_directory
       ()
     =
     {
@@ -118,6 +120,10 @@ module Analysis = struct
       include_hints;
       perform_autocompletion;
       go_to_definition_enabled;
+      log_directory =
+        ( match log_directory with
+        | Some directory -> Path.create_absolute directory
+        | None -> Path.append local_root ~element:".pyre" );
     }
 
 
