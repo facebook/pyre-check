@@ -2810,6 +2810,9 @@ module State (Context : Context) = struct
       | None ->
           let state = forward_expression ~state ~expression:operand in
           { state with resolved = Type.bool; resolved_annotation = None; base = None } )
+    | WalrusOperator { value; _ } ->
+        (* TODO(T53600647): Bind a type to the target. *)
+        forward_expression ~state ~expression:value
     | Expression.Yield (Some expression) ->
         let { state; resolved; _ } = forward_expression ~state ~expression in
         { state; resolved = Type.generator resolved; resolved_annotation = None; base = None }

@@ -130,6 +130,21 @@ let test_collect _ =
            };
         +Statement.Expression (+Expression.Float 4.0);
         +Statement.Expression (+Expression.Float 3.0);
+      ] );
+
+  assert_collect
+    [
+      +Statement.Expression
+         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+    ]
+    ( [
+        +Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 };
+        +Expression.Integer 1;
+        +Expression.Name (Identifier "a");
+      ],
+      [
+        +Statement.Expression
+           (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
       ] )
 
 

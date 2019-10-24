@@ -213,6 +213,14 @@ and UnaryOperator : sig
   val override : t -> Expression.t option
 end
 
+and WalrusOperator : sig
+  type t = {
+    target: Expression.t;
+    value: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
+
 and Expression : sig
   type expression =
     | Await of t
@@ -239,6 +247,7 @@ and Expression : sig
     | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
+    | WalrusOperator of WalrusOperator.t
     | Yield of t option
 
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]

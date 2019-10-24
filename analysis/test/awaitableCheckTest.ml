@@ -593,7 +593,61 @@ let test_forward context =
         def __init__(self) -> None:
           self.x = awaitable()
     |}
-    []
+    [];
+
+  (* Multiple assignment targets. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        x = y = await awaitable()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        x = y = awaitable()
+        a = b = c = awaitable()
+    |}
+    [
+      "Unawaited awaitable [1001]: Awaitable assigned to `y`, `x` is never awaited.";
+      "Unawaited awaitable [1001]: Awaitable assigned to `c`, `b`, `a` is never awaited.";
+    ];
+
+  (* Walrus operator. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        x = y := await awaitable()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        x = y := awaitable()
+    |}
+    (* TODO(T53600647): Mention y in the error message. *)
+    ["Unawaited awaitable [1001]: Awaitable assigned to `x` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        if y := await awaitable():
+          pass
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        if y := awaitable():
+          pass
+    |}
+    (* TODO(T53600647): Mention y in the error message. *)
+    ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."]
 
 
 let test_initial context =

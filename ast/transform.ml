@@ -187,6 +187,9 @@ module Make (Transformer : Transformer) = struct
         | Tuple elements -> Tuple (transform_list elements ~f:transform_expression)
         | UnaryOperator { UnaryOperator.operator; operand } ->
             UnaryOperator { UnaryOperator.operator; operand = transform_expression operand }
+        | WalrusOperator { target; value } ->
+            WalrusOperator
+              { target = transform_expression target; value = transform_expression value }
         | Expression.Yield expression -> Expression.Yield (expression >>| transform_expression)
       in
       let initial_state = !state in

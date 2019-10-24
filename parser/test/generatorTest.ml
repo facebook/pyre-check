@@ -5152,6 +5152,95 @@ let test_byte_order_mark _ =
     (fun () -> PyreParser.Parser.parse ["1"; byte_order_mark ^ "2"])
 
 
+let test_walrus_operator _ =
+  assert_parsed_equal
+    "(a := 1)"
+    [
+      +Statement.Expression
+         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+    ];
+  assert_parsed_equal
+    (* Binds more tightly than a comma. *)
+    "(a := 1, 2)"
+    [
+      +Statement.Expression
+         (+Expression.Tuple
+             [
+               +Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 };
+               +Expression.Integer 2;
+             ]);
+    ];
+  assert_parsed_equal
+    (* Binds less tightly than a binary operator. *)
+    "(a := 1 + 2)"
+    [
+      +Statement.Expression
+         (+Expression.WalrusOperator
+             {
+               target = !"a";
+               value =
+                 +Expression.Call
+                    {
+                      callee =
+                        +Expression.Name
+                           (Name.Attribute
+                              {
+                                base = +Expression.Integer 1;
+                                attribute = "__add__";
+                                special = true;
+                              });
+                      arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
+                    };
+             });
+    ];
+  assert_parsed_equal
+    (* Binds less tightly than `and`. *)
+    "(a := True and False)"
+    [
+      +Statement.Expression
+         (+Expression.WalrusOperator
+             {
+               target = !"a";
+               value =
+                 +Expression.BooleanOperator
+                    {
+                      BooleanOperator.left = +Expression.True;
+                      operator = BooleanOperator.And;
+                      right = +Expression.False;
+                    };
+             });
+    ];
+  assert_parsed_equal
+    (* Binds less tightly than a conditional expression. *)
+    "(a := 1 if True else 2)"
+    [
+      +Statement.Expression
+         (+Expression.WalrusOperator
+             {
+               target = !"a";
+               value =
+                 +Expression.Ternary
+                    {
+                      Ternary.target = +Expression.Integer 1;
+                      test = +Expression.True;
+                      alternative = +Expression.Integer 2;
+                    };
+             });
+    ];
+  assert_parsed_equal
+    "(a := (b := 1))"
+    [
+      +Statement.Expression
+         (+Expression.WalrusOperator
+             {
+               target = !"a";
+               value = +Expression.WalrusOperator { target = !"b"; value = +Expression.Integer 1 };
+             });
+    ];
+  assert_raises (Failure "Could not parse test") (fun () ->
+      parse_untrimmed ~silent:true "(a := 1) := 2")
+
+
 let () =
   "parsing"
   >::: [
@@ -5194,5 +5283,6 @@ let () =
          "ellipsis" >:: test_ellipsis;
          "setitem" >:: test_setitem;
          "byte_order_mark" >:: test_byte_order_mark;
+         "walrus_operator" >:: test_walrus_operator;
        ]
   |> Test.run

@@ -278,6 +278,9 @@ let test_pp _ =
              special = false;
            }))
     "a.b[1].c";
+  assert_pp_equal
+    (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 })
+    "a := 1";
   assert_pp_equal (parse_single_expression "'string {}'.format(1)") "\"string {}\".format(1)"
 
 

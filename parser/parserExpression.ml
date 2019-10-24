@@ -268,6 +268,18 @@ end = struct
   }
 end
 
+and WalrusOperator : sig
+  type t = {
+    target: Expression.t;
+    value: Expression.t;
+  }
+end = struct
+  type t = {
+    target: Expression.t;
+    value: Expression.t;
+  }
+end
+
 and Expression : sig
   type expression =
     | Await of t
@@ -295,6 +307,7 @@ and Expression : sig
     | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
+    | WalrusOperator of WalrusOperator.t
     | Yield of t option
 
   and t = expression Node.t
@@ -325,6 +338,7 @@ end = struct
     | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
+    | WalrusOperator of WalrusOperator.t
     | Yield of t option
 
   and t = expression Node.t
@@ -421,6 +435,9 @@ let rec convert { Node.location; value } =
       AstExpression.Expression.Tuple (List.map ~f:convert expression_list) |> Node.create ~location
   | UnaryOperator { UnaryOperator.operator; operand } ->
       AstExpression.Expression.UnaryOperator { operator; operand = convert operand }
+      |> Node.create ~location
+  | WalrusOperator { target; value } ->
+      AstExpression.Expression.WalrusOperator { target = convert target; value = convert value }
       |> Node.create ~location
   | Yield expression ->
       AstExpression.Expression.Yield (expression >>| convert) |> Node.create ~location

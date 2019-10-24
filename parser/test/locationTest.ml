@@ -2267,6 +2267,18 @@ let test_with_locations _ =
     ]
 
 
+let test_walrus_locations _ =
+  assert_source_locations
+    "a := 1"
+    [
+      node
+        ~start:(1, 0)
+        ~stop:(1, 6)
+        (Statement.Expression
+           (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 }));
+    ]
+
+
 let test_yield_locations _ =
   assert_source_locations
     "yield"
@@ -2351,6 +2363,7 @@ let () =
          "tuple_locations" >:: test_tuple_locations;
          "while_locations" >:: test_while_locations;
          "with_locations" >:: test_with_locations;
+         "walrus_locations" >:: test_walrus_locations;
          "yield_locations" >:: test_yield_locations;
        ]
   |> Test.run

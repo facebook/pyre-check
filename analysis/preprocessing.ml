@@ -1105,6 +1105,12 @@ let qualify
               alternative = qualify_expression ~qualify_strings ~scope alternative;
             }
       | Tuple elements -> Tuple (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
+      | WalrusOperator { target; value } ->
+          WalrusOperator
+            {
+              target = qualify_expression ~qualify_strings ~scope target;
+              value = qualify_expression ~qualify_strings ~scope value;
+            }
       | UnaryOperator { UnaryOperator.operator; operand } ->
           UnaryOperator
             {

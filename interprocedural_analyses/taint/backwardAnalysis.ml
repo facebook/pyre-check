@@ -542,6 +542,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           List.foldi list ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
       | UnaryOperator { operator = _; operand } ->
           analyze_expression ~resolution ~taint ~state ~expression:operand
+      | WalrusOperator { target; value } ->
+          analyze_expression ~resolution ~taint ~state ~expression:value
+          |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:target
       | Yield (Some expression) -> analyze_expression ~resolution ~taint ~state ~expression
       | Yield None -> state
 

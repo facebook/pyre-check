@@ -345,6 +345,7 @@ and read_without_indent state = parse
   | "+=" { PLUSEQUALS }
   | '+' { PLUS lexbuf.lex_start_p }
   | ',' { COMMA }
+  | ":=" { COLONEQUALS }
   | "-=" { MINUSEQUALS }
   | '-' { MINUS lexbuf.lex_start_p }
   | "//=" { SLASHSLASHEQUALS }

@@ -501,6 +501,20 @@ end = struct
     |> Node.create ~location
 end
 
+and WalrusOperator : sig
+  type t = {
+    target: Expression.t;
+    value: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end = struct
+  type t = {
+    target: Expression.t;
+    value: Expression.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
+
 and Expression : sig
   type expression =
     | Await of t
@@ -527,6 +541,7 @@ and Expression : sig
     | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
+    | WalrusOperator of WalrusOperator.t
     | Yield of t option
 
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -562,6 +577,7 @@ end = struct
     | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
+    | WalrusOperator of WalrusOperator.t
     | Yield of t option
 
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -784,6 +800,8 @@ end = struct
             operator
             pp_expression_t
             operand
+      | WalrusOperator { target; value } ->
+          Format.fprintf formatter "%a := %a" pp_expression_t target pp_expression_t value
       | Yield yield -> (
         match yield with
         | Some yield -> Format.fprintf formatter "%a" pp_expression_t yield

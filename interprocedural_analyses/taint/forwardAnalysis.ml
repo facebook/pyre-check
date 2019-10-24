@@ -632,6 +632,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~init:(ForwardState.Tree.empty, state)
       | UnaryOperator { operator = _; operand } ->
           analyze_expression ~resolution ~state ~expression:operand
+      | WalrusOperator { target; value } ->
+          let target_taint, state = analyze_expression ~resolution ~state ~expression:target in
+          let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
+          ForwardState.Tree.join target_taint value_taint, state
       | Yield (Some expression) -> analyze_expression ~resolution ~state ~expression
       | Yield None -> ForwardState.Tree.empty, state
 

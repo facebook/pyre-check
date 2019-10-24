@@ -409,6 +409,18 @@ let test_qualify _ =
       [*$local_qualifier$a, $local_qualifier$b] = [1]
     |};
 
+  (* Qualify walrus assignments. *)
+  (* TODO(T53600647): Qualify `a`. *)
+  assert_qualify
+    {|
+      from module import constant
+      a := constant
+    |}
+    {|
+      from module import constant
+      a := module.constant
+    |};
+
   (* Qualify classes. *)
   assert_qualify
     {|

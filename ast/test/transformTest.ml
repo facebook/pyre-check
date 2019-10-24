@@ -69,6 +69,16 @@ let test_transform _ =
     0;
   assert_modifying_source
     [
+      +Statement.Expression
+         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+    ]
+    [
+      +Statement.Expression
+         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 2 });
+    ]
+    0;
+  assert_modifying_source
+    [
       +Statement.If
          {
            If.test = +Expression.Integer 1;

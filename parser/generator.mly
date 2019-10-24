@@ -281,6 +281,7 @@ let is_generator body =
 %token BAR
 %token BAREQUALS
 %token COMMA
+%token COLONEQUALS
 %token DOUBLEEQUALS
 %token EOF
 %token EQUALS
@@ -1552,6 +1553,18 @@ test_with_generator:
 
 test:
   | or_test = or_test { or_test }
+
+  | target = identifier; COLONEQUALS; value = test {
+      {
+        Node.location = { (fst target) with Location.stop = Node.stop value };
+        value = Expression.WalrusOperator {
+          target =
+            Expression.Name (Name.Identifier (snd target))
+            |> Node.create ~location:(fst target);
+          value = value;
+        }
+      }
+    }
 
   | target = or_test;
     IF;

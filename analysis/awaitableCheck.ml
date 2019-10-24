@@ -386,6 +386,9 @@ module State (Context : Context) = struct
             forward_expression ~resolution ~state ~expression |>> awaitables)
     | UnaryOperator { UnaryOperator.operand; _ } ->
         forward_expression ~resolution ~state ~expression:operand
+    | WalrusOperator { target; value; _ } ->
+        let awaitables, state = forward_expression ~resolution ~state ~expression:target in
+        forward_expression ~resolution ~state ~expression:value |>> awaitables
     | Yield (Some expression) -> forward_expression ~resolution ~state ~expression
     | Yield None -> [], state
     | Generator { Comprehension.element; generators }

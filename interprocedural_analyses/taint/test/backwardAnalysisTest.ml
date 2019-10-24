@@ -959,6 +959,25 @@ let test_unary context =
     ]
 
 
+let test_walrus context =
+  assert_taint
+    ~context
+    {|
+      def sink_in_walrus(arg):
+          x := __test_sink(arg)
+
+      def tito_via_walrus(arg):
+          return (x := arg)
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        "qualifier.sink_in_walrus";
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_walrus";
+    ]
+
+
 let test_yield context =
   assert_taint
     ~context
@@ -1441,6 +1460,7 @@ let () =
     "test_ternary", test_ternary;
     "test_tuple", test_tuple;
     "test_unary", test_unary;
+    "test_walrus", test_walrus;
     "test_yield", test_yield;
     "test_named_arguments", test_named_arguments;
     "test_actual_parameter_matching", test_actual_parameter_matching;

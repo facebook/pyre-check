@@ -792,6 +792,16 @@ let test_unary context =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_unary"]
 
 
+let test_walrus context =
+  assert_taint
+    ~context
+    {|
+      def source_in_walrus():
+          return (x := __test_source())
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_walrus"]
+
+
 let test_yield context =
   assert_taint
     ~context
@@ -931,6 +941,7 @@ let () =
     "test_ternary", test_ternary;
     "test_tuple", test_tuple;
     "test_unary", test_unary;
+    "test_walrus", test_walrus;
     "test_yield", test_yield;
     "test_construction", test_construction;
     "test_composed_models", test_composed_models;
