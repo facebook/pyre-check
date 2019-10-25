@@ -28,16 +28,20 @@ let test_parse _ =
     in
     Node.create ~location mode
   in
-  assert_mode " # pyre-placeholder-stub" (Some (create_mode 1 0 23 Source.PlaceholderStub));
-  assert_mode "  # pyre-ignore-all-errors " (Some (create_mode 1 0 24 Source.Declare));
-  assert_mode "\t# pyre-ignore-all-errors" (Some (create_mode 1 0 24 Source.Declare));
-  assert_mode " # pyre-strict" (Some (create_mode 1 0 13 Source.Strict));
+  assert_mode " # pyre-placeholder-stub" (Some (create_mode 1 1 24 Source.PlaceholderStub));
+  assert_mode " # pyre-ignore-all-errors " (Some (create_mode 1 1 25 Source.Declare));
+  assert_mode "# pyre-ignore-all-errors " (Some (create_mode 1 0 24 Source.Declare));
+  assert_mode "  # pyre-ignore-all-errors" None;
+  assert_mode "\t# pyre-ignore-all-errors" None;
+  assert_mode " # pyre-strict" (Some (create_mode 1 1 14 Source.Strict));
   assert_mode " # pyre-stric" None;
+  assert_mode "  # pyre-strict" None;
+  assert_mode "\t# pyre-strict" None;
   assert_mode " # pyre-strict comment comment" None;
   assert_mode " # comment comment pyre-strict" None;
-  assert_mode " # pyre-unsafe" (Some (create_mode 1 0 13 Source.Unsafe));
+  assert_mode " # pyre-unsafe" (Some (create_mode 1 1 14 Source.Unsafe));
   assert_mode " # pyre-durp" None;
-  assert_mode " # pyre-debug" (Some (create_mode 1 0 12 Source.Debug));
+  assert_mode " # pyre-debug" (Some (create_mode 1 1 13 Source.Debug));
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " None;
 
   let assert_mode_errors lines expected_mode_errors =
