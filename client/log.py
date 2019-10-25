@@ -16,11 +16,11 @@ import threading
 import time
 from typing import List, Optional, Sequence  # noqa
 
+from . import find_log_directory
+from .logging_levels import PERFORMANCE, PROMPT, SUCCESS
+
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger
-PERFORMANCE = 15  # type: int
-PROMPT = 50  # type: int
-SUCCESS = 60  # type: int
 
 
 stdout = io.StringIO(newline="")  # type: io.StringIO
@@ -182,6 +182,8 @@ def initialize(arguments: argparse.Namespace) -> None:
     handlers = [stream_handler]  # type: List[logging.Handler]
 
     if not arguments.noninteractive:
+        if not arguments.log_directory:
+            find_log_directory(arguments)
         pyre_directory = arguments.log_directory
         file_handler = logging.FileHandler(os.path.join(pyre_directory, "pyre.stderr"))
         file_handler.setFormatter(SectionFormatter())

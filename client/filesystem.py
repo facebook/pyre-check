@@ -16,11 +16,11 @@ from contextlib import contextmanager
 from time import time
 from typing import Dict, Generator, Iterable, List, Optional, Set
 
-from . import buck, log
+from . import buck, logging_levels
 from .exceptions import EnvironmentException
 
 
-LOG = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class BuckBuilder:
@@ -153,7 +153,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         search_path: Optional[List[str]] = None,
         isolate: bool = False,
         buck_builder: Optional[BuckBuilder] = None,
-    ):
+    ) -> None:
         self._source_directories = set(source_directories)
         self._targets = set(targets)
         self._original_directory = original_directory
@@ -190,7 +190,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         return self._filter_paths or [os.getcwd()]
 
     # Exposed for testing.
-    def _resolve_source_directories(self):
+    def _resolve_source_directories(self) -> None:
         if self._targets:
             new_source_directories = self._buck_builder.build(self._targets)
             original_directory = self._original_directory
@@ -220,7 +220,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self._clear()
             self._merge()
             LOG.log(
-                log.PERFORMANCE, "Merged analysis directories in %fs", time() - start
+                logging_levels.PERFORMANCE,
+                "Merged analysis directories in %fs",
+                time() - start,
             )
         self._symbolic_links.update(self.compute_symbolic_links())
 
@@ -265,7 +267,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         except Exception:
             pass
 
-    def _clear(self):
+    def _clear(self) -> None:
         root = self.get_root()
         for path in os.listdir(root):
             if path.startswith(".pyre"):

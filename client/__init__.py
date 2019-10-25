@@ -15,7 +15,7 @@ import sys
 import time
 import traceback
 from argparse import Namespace
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 
 from . import buck
 from .exceptions import EnvironmentException
@@ -28,13 +28,13 @@ from .filesystem import (  # noqa
 )
 
 
-LOG = logging.getLogger(__name__)
+CONFIGURATION_FILE: str = ".pyre_configuration"
+BINARY_NAME: str = "pyre.bin"
+CLIENT_NAME: str = "pyre-client"
+LOG_DIRECTORY: str = ".pyre"
 
 
-CONFIGURATION_FILE = ".pyre_configuration"
-BINARY_NAME = "pyre.bin"
-CLIENT_NAME = "pyre-client"
-LOG_DIRECTORY = ".pyre"
+LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
 def assert_readable_directory(directory: str) -> None:
@@ -142,7 +142,7 @@ def find_log_directory(arguments) -> None:
     """Pyre outputs all logs to a .pyre directory that lives in the project root."""
     if not arguments.current_directory:
         switch_root(arguments)
-    log_directory = os.path.join(arguments.current_directory, ".pyre")
+    log_directory = os.path.join(arguments.current_directory, LOG_DIRECTORY)
     local_configuration: Optional[str] = arguments.local_configuration
     if local_configuration:
         # `log_directory` will never escape `.pyre/` because in `switch_root` we have
@@ -154,7 +154,7 @@ def find_log_directory(arguments) -> None:
     arguments.log_directory = log_directory
 
 
-def translate_arguments(commands, arguments):
+def translate_arguments(commands, arguments) -> None:
     root = arguments.original_directory
 
     if arguments.command in [commands.Analyze]:
@@ -167,14 +167,14 @@ def translate_arguments(commands, arguments):
         arguments.logger = translate_path(root, arguments.logger)
 
 
-def _buck_target_count(arguments, configuration):
+def _buck_target_count(arguments, configuration) -> int:
     if arguments.source_directories or arguments.targets:
         return len(set(arguments.targets or []))
     else:
         return len(set(configuration.targets or []))
 
 
-def _resolve_filter_paths(arguments, configuration):
+def _resolve_filter_paths(arguments, configuration) -> Set[str]:
     filter_paths = []
     if arguments.source_directories or arguments.targets:
         if arguments.source_directories:
