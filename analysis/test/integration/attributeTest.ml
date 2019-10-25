@@ -894,6 +894,48 @@ let test_check_attribute_initialization context =
           def x(self) -> int:
             return 1
     |}
+    [];
+
+  (* Test inheritance of both undefined attribute and definition. *)
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+        class Bar:
+          x = 1
+        class Baz(Foo, Bar):
+          pass
+    |}
+    [];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+        class Bar:
+          y = 1
+        class Baz(Foo, Bar):
+          pass
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `x` inherited from abstract class `Foo` in class \
+       `Baz` to have type `int` but is never initialized.";
+    ];
+
+  assert_type_errors
+    {|
+        import abc
+        class Foo(abc.ABC):
+          x: int
+        class Bar:
+          @property
+          def x(self) -> int:
+            return 1
+        class Baz(Foo, Bar):
+          pass
+    |}
     []
 
 

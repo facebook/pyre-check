@@ -4374,14 +4374,20 @@ module State (Context : Context) = struct
               if AnnotatedClass.has_abstract_base definition then
                 []
               else
-                AnnotatedClass.superclasses definition ~resolution:global_resolution
-                |> List.filter ~f:(fun superclass ->
-                       AnnotatedClass.is_protocol superclass
-                       || AnnotatedClass.has_abstract_base superclass)
-                |> List.cons definition
+                let abstract_superclasses, concrete_superclasses =
+                  List.partition_tf
+                    ~f:(fun superclass ->
+                      AnnotatedClass.is_protocol superclass
+                      || AnnotatedClass.has_abstract_base superclass)
+                    (AnnotatedClass.superclasses definition ~resolution:global_resolution)
+                in
+                List.cons definition abstract_superclasses
                 |> List.fold_right ~init:String.Map.empty ~f:add_uninitialized
                 |> (fun attribute_map ->
-                     List.fold_right ~init:attribute_map ~f:remove_initialized [definition])
+                     List.fold_right
+                       ~init:attribute_map
+                       ~f:remove_initialized
+                       (List.cons definition concrete_superclasses))
                 |> String.Map.to_alist
             in
             uninitialized_attributes
