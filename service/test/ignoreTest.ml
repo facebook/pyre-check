@@ -159,6 +159,15 @@ let ignore_lines_test context =
         def foo(x: typing.Any, y: typing.Any) -> typing.Any:
             return x
       |}
+    [];
+
+  (* Ignores on source modes. *)
+  assert_errors
+    {|
+        # pyre-strict
+        # pyre-fixme[51]
+        # pyre-ignore-all-errors
+      |}
     []
 
 
