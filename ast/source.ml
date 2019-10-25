@@ -77,7 +77,7 @@ module Metadata = struct
       String.is_prefix ~prefix:"#!" line && String.is_substring ~substring:"python2" line
     in
     let is_pyre_comment comment_substring line =
-      let comment_regex = Str.regexp ("^[ \t]*# *" ^ comment_substring ^ "*$") in
+      let comment_regex = Str.regexp ("^[ \t]*# *" ^ comment_substring ^ " *$") in
       Str.string_match comment_regex line 0
     in
     let is_debug = is_pyre_comment "pyre-debug" in

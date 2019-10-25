@@ -32,6 +32,7 @@ let test_parse _ =
   assert_mode "  # pyre-ignore-all-errors " (Some (create_mode 1 0 24 Source.Declare));
   assert_mode "\t# pyre-ignore-all-errors" (Some (create_mode 1 0 24 Source.Declare));
   assert_mode " # pyre-strict" (Some (create_mode 1 0 13 Source.Strict));
+  assert_mode " # pyre-stric" None;
   assert_mode " # pyre-strict comment comment" None;
   assert_mode " # comment comment pyre-strict" None;
   assert_mode " # pyre-unsafe" (Some (create_mode 1 0 13 Source.Unsafe));
