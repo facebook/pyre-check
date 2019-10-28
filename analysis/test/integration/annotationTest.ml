@@ -626,6 +626,9 @@ let test_check_immutable_annotations context =
         constant = "hi"
     |}
     [];
+
+  (* TODO (T56371223): Emit an invalid assignment error when trying to re-annotated a global like
+     this *)
   assert_type_errors
     {|
       constant: int
@@ -634,7 +637,10 @@ let test_check_immutable_annotations context =
         constant: str
         constant = "hi"
     |}
-    [];
+    [
+      "Incompatible variable type [9]: constant is declared to have type `int` but is used as \
+       type `str`.";
+    ];
   assert_type_errors
     {|
       constant: typing.Union[int, str]
@@ -702,7 +708,7 @@ let test_check_immutable_annotations context =
           constant: str
         return constant
     |}
-    ["Incompatible return type [7]: Expected `str` but got `typing.Union[int, str]`."];
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     {|
       def foo(x: int) -> None:

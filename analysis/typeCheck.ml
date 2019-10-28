@@ -3568,52 +3568,52 @@ module State (Context : Context) = struct
                 | Identifier identifier ->
                     let reference = Reference.create identifier in
                     let is_global = Resolution.is_global resolution ~reference in
-                    let refine_annotation annotation refined =
-                      if is_global && not (Define.is_toplevel Context.define.value) then
-                        annotation
-                      else
+                    if is_global && not (Define.is_toplevel Context.define.value) then
+                      state
+                    else
+                      let refine_annotation annotation refined =
                         Refinement.refine ~resolution:global_resolution annotation refined
-                    in
-                    let annotation =
-                      if explicit && is_valid_annotation then
-                        let annotation =
-                          Annotation.create_immutable ~global:is_global ~final:is_final guide
-                        in
-                        if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
-                          refine_annotation annotation resolved
+                      in
+                      let annotation =
+                        if explicit && is_valid_annotation then
+                          let annotation =
+                            Annotation.create_immutable ~global:is_global ~final:is_final guide
+                          in
+                          if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
+                            refine_annotation annotation resolved
+                          else
+                            annotation
+                        else if is_immutable then
+                          refine_annotation target_annotation guide
                         else
-                          annotation
-                      else if is_immutable then
-                        refine_annotation target_annotation guide
-                      else
-                        Annotation.create guide
-                    in
-                    let state, annotation =
-                      if
-                        (not explicit)
-                        && (not is_type_alias)
-                        && Type.Variable.contains_escaped_free_variable
-                             (Annotation.annotation annotation)
-                      then
-                        let kind =
-                          Error.IncompleteType
-                            {
-                              target = { Node.location; value = target_value };
-                              annotation = resolved;
-                              attempted_action = Naming;
-                            }
-                        in
-                        let converted =
-                          Type.Variable.convert_all_escaped_free_variables_to_anys
-                            (Annotation.annotation annotation)
-                        in
-                        ( emit_error ~state ~location ~kind,
-                          { annotation with annotation = converted } )
-                      else
-                        state, annotation
-                    in
-                    let resolution = Resolution.set_local resolution ~reference ~annotation in
-                    { state with resolution }
+                          Annotation.create guide
+                      in
+                      let state, annotation =
+                        if
+                          (not explicit)
+                          && (not is_type_alias)
+                          && Type.Variable.contains_escaped_free_variable
+                               (Annotation.annotation annotation)
+                        then
+                          let kind =
+                            Error.IncompleteType
+                              {
+                                target = { Node.location; value = target_value };
+                                annotation = resolved;
+                                attempted_action = Naming;
+                              }
+                          in
+                          let converted =
+                            Type.Variable.convert_all_escaped_free_variables_to_anys
+                              (Annotation.annotation annotation)
+                          in
+                          ( emit_error ~state ~location ~kind,
+                            { annotation with annotation = converted } )
+                        else
+                          state, annotation
+                      in
+                      let resolution = Resolution.set_local resolution ~reference ~annotation in
+                      { state with resolution }
                 | _ -> state
               in
               state
@@ -4140,24 +4140,6 @@ module State (Context : Context) = struct
           { state with bottom = true }
         else
           state
-    | Global identifiers ->
-        let resolution =
-          let expression =
-            List.map ~f:(Node.create ~location) identifiers
-            |> create_name_from_identifiers
-            |> (fun name -> Expression.Name name)
-            |> Node.create ~location
-          in
-          let annotation =
-            let { resolved; _ } = forward_expression ~state ~expression in
-            Annotation.create_immutable resolved ~global:true
-          in
-          Resolution.set_local
-            resolution
-            ~reference:(Reference.create_from_list identifiers)
-            ~annotation
-        in
-        { state with resolution }
     | Import { Import.from; imports } ->
         let check_import import =
           let rec check_lead lead = function
@@ -4306,6 +4288,7 @@ module State (Context : Context) = struct
         state
     | Break
     | Continue
+    | Global _
     | Nonlocal _
     | Pass ->
         state

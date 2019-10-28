@@ -1257,7 +1257,6 @@ let test_forward_statement context =
     ];
 
   (* Assignments with immutables. *)
-  assert_forward ~postcondition_immutables:["x", (true, Type.Top)] [] "global x" ["x", Type.Top];
   assert_forward
     ~postcondition_immutables:["y", (false, Type.integer)]
     []
