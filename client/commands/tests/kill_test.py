@@ -75,8 +75,8 @@ class KillTest(unittest.TestCase):
             )
             unlink.assert_has_calls(
                 [
-                    call("/test-binary/.pyre/server/server.sock"),
-                    call("/test-binary/.pyre/server/json_server.sock"),
+                    call(".pyre/server/server.sock"),
+                    call(".pyre/server/json_server.sock"),
                 ]
             )
         with patch(
@@ -101,10 +101,7 @@ class KillTest(unittest.TestCase):
             arguments.with_fire = True
             commands.Kill(arguments, configuration, analysis_directory).run()
             remove_tree.assert_has_calls(
-                [
-                    call("/root/.pyre/resource_cache"),
-                    call("/tmp/pyre/buck_builder_cache"),
-                ]
+                [call(".pyre/resource_cache"), call("/tmp/pyre/buck_builder_cache")]
             )
         # Ensure that we don't crash even if os.kill fails to find a process.
         with patch("os.getenv", return_value=None), patch(

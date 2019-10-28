@@ -87,6 +87,7 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.file_hash = file_hash
     configuration.local_configuration_root = None
     configuration.autocomplete = False
+    configuration.log_directory = ".pyre"
     return configuration
 
 
@@ -138,7 +139,15 @@ class CommandTest(unittest.TestCase):
 
         test_command = commands.Command(arguments, configuration, analysis_directory)
         self.assertEqual(
-            test_command._flags(), ["-logging-sections", "parser", "-project-root", "."]
+            test_command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-project-root",
+                ".",
+                "-log-directory",
+                ".pyre",
+            ],
         )
 
         configuration.logger = "/foo/bar"
@@ -152,6 +161,8 @@ class CommandTest(unittest.TestCase):
                 ".",
                 "-logger",
                 "/foo/bar",
+                "-log-directory",
+                ".pyre",
             ],
         )
 

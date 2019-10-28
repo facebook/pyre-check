@@ -20,6 +20,10 @@ from ...commands.infer import (
     dequalify,
 )
 from ...error import Error
+from .command_test import (
+    mock_arguments as general_mock_arguments,
+    mock_configuration as general_mock_configuration,
+)
 
 
 _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.infer.__name__)
@@ -546,7 +550,7 @@ class PyreTest(unittest.TestCase):
 
 
 def mock_arguments() -> MagicMock:
-    arguments = MagicMock()
+    arguments = general_mock_arguments()
 
     arguments.debug = False
     arguments.additional_check = []
@@ -567,7 +571,7 @@ def mock_arguments() -> MagicMock:
 
 
 def mock_configuration() -> MagicMock:
-    configuration = MagicMock()
+    configuration = general_mock_configuration()
     configuration.typeshed = "stub"
     configuration.search_path = ["path1", "path2"]
     configuration.get_typeshed = MagicMock()
@@ -596,6 +600,8 @@ class InferTest(unittest.TestCase):
                     "-show-error-traces",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-infer",
                     "-search-path",
                     "path1,path2,path3",
@@ -614,6 +620,8 @@ class InferTest(unittest.TestCase):
                     "-show-error-traces",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-infer",
                     "-search-path",
                     "path1,path2,path3",
@@ -632,6 +640,8 @@ class InferTest(unittest.TestCase):
                     "-show-error-traces",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-infer",
                     "-search-path",
                     "path1,path2,path3",

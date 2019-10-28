@@ -32,7 +32,7 @@ class ConfigurationMonitor(WatchmanSubscriber):
     def __init__(
         self, arguments, configuration, analysis_directory: AnalysisDirectory
     ) -> None:
-        super(ConfigurationMonitor, self).__init__(analysis_directory)
+        super(ConfigurationMonitor, self).__init__(configuration, analysis_directory)
         self.arguments = arguments
         self.configuration = configuration
         self.analysis_directory = analysis_directory

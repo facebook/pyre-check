@@ -188,8 +188,9 @@ def initialize(arguments: argparse.Namespace) -> None:
     if not arguments.noninteractive:
         if not arguments.log_directory:
             find_log_directory(arguments)
-        pyre_directory = arguments.log_directory
-        file_handler = logging.FileHandler(os.path.join(pyre_directory, "pyre.stderr"))
+        file_handler = logging.FileHandler(
+            os.path.join(arguments.log_directory, "pyre.stderr")
+        )
         file_handler.setFormatter(SectionFormatter())
         file_handler.setLevel(logging.DEBUG)
         handlers.append(file_handler)

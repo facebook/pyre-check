@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
 from .. import watchman_subscriber
+from ..commands.tests.command_test import mock_arguments
 from ..watchman_subscriber import WatchmanSubscriber
 
 
@@ -30,16 +31,13 @@ class WatchmanSubscriberTest(unittest.TestCase):
     def test_cleanup_on_sigint(
         self, makedirs, fork, close, exit, acquire_lock, remove_if_exists
     ):
+        arguments = mock_arguments()
         WatchmanSubscriber._name = "TEST"
         analysis_directory = MagicMock()
         analysis_directory.get_root.return_value = "/ROOT"
 
-        subscriber = WatchmanSubscriber(analysis_directory)
+        subscriber = WatchmanSubscriber(arguments, analysis_directory)
         subscriber.daemonize()
 
-        remove_if_exists.assert_any_call(
-            os.path.join("/ROOT", ".pyre", "TEST", "TEST.pid")
-        )
-        remove_if_exists.assert_any_call(
-            os.path.join("/ROOT", ".pyre", "TEST", "TEST.lock")
-        )
+        remove_if_exists.assert_any_call(os.path.join(".pyre", "TEST", "TEST.pid"))
+        remove_if_exists.assert_any_call(os.path.join(".pyre", "TEST", "TEST.lock"))

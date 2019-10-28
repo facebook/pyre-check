@@ -38,12 +38,7 @@ class Stop(Command):
             _kill()
         else:
             try:
-                with open(
-                    os.path.join(
-                        self._analysis_directory.get_pyre_server_directory(),
-                        "server.pid",
-                    )
-                ) as pid_file:
+                with open(os.path.join(self._log_directory, "server.pid")) as pid_file:
                     pid_to_poll = int(pid_file.read())
             except (OSError, ValueError):
                 pid_to_poll = None
@@ -74,7 +69,7 @@ class Stop(Command):
                 LOG.info("Stopped server at `%s`", self._analysis_directory.get_root())
 
         try:
-            pid_path = ProjectFilesMonitor.pid_path(self._analysis_directory.get_root())
+            pid_path = ProjectFilesMonitor.pid_path(self._configuration)
             with open(pid_path) as file:
                 pid = int(file.read())
                 os.kill(pid, 2)  # sigint

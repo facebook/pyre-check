@@ -70,10 +70,7 @@ class Start(Reporting):
                     # spawn in the interim which would cause a race.
                     try:
                         with filesystem.acquire_lock(
-                            os.path.join(
-                                self._analysis_directory.get_pyre_server_directory(),
-                                "server.lock",
-                            ),
+                            os.path.join(self._log_directory, "server.lock"),
                             blocking=False,
                         ):
                             pass

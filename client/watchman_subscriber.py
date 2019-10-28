@@ -14,6 +14,7 @@ from multiprocessing import Event
 from typing import Any, Dict, List, NamedTuple
 
 from .analysis_directory import AnalysisDirectory
+from .configuration import Configuration
 from .filesystem import acquire_lock, remove_if_exists
 
 
@@ -26,10 +27,11 @@ Subscription = NamedTuple(
 
 
 class WatchmanSubscriber(object):
-    def __init__(self, analysis_directory: AnalysisDirectory) -> None:
-        self._base_path = os.path.join(
-            analysis_directory.get_root(), ".pyre", self._name
-        )  # type: str
+    def __init__(
+        self, configuration: Configuration, analysis_directory: AnalysisDirectory
+    ) -> None:
+        self._log_directory: str = configuration.log_directory
+        self._base_path = os.path.join(self._log_directory, self._name)  # type: str
         self._alive = True  # type: bool
         self._ready = Event()  # type: multiprocessing.synchronize.Event
 

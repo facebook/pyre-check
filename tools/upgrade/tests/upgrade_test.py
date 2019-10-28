@@ -1247,6 +1247,7 @@ class DefaultStrictTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.sandcastle = None
         arguments.local_configuration = Path("local")
+        arguments.log_directory = ".pyre"
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):

@@ -35,7 +35,9 @@ class IncrementalTest(unittest.TestCase):
         commands_Command_state.return_value = state
         start_exit_code = MagicMock()
         start_exit_code.return_value = commands.ExitCode.SUCCESS
-        commands_Start().run().exit_code = start_exit_code
+        start_command = commands_Start()
+        start_command._configuration = mock_configuration()
+        start_command.run().exit_code = start_exit_code
         file_monitor_instance = MagicMock()
         Monitor.return_value = file_monitor_instance
         Monitor.is_alive.return_value = False
@@ -59,6 +61,8 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
@@ -68,7 +72,7 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            Monitor.is_alive.assert_called_once_with(".")
+            Monitor.is_alive.assert_called_once_with(configuration)
             Monitor.assert_called_once_with(
                 arguments, configuration, analysis_directory
             )
@@ -92,6 +96,8 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
@@ -102,7 +108,7 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            Monitor.is_alive.assert_called_once_with(".")
+            Monitor.is_alive.assert_called_once_with(configuration)
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
@@ -126,6 +132,8 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
@@ -136,7 +144,7 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            Monitor.is_alive.assert_called_once_with(".")
+            Monitor.is_alive.assert_called_once_with(configuration)
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
@@ -156,6 +164,8 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
@@ -186,6 +196,8 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
@@ -217,6 +229,8 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
+                    "-log-directory",
+                    ".pyre",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
@@ -268,6 +282,8 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     "/",
+                    "-log-directory",
+                    ".pyre",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
@@ -304,7 +320,7 @@ class IncrementalTest(unittest.TestCase):
             stream = MagicMock()
             test_command._read_stderr(stream)
             popen.assert_called_once_with(
-                ["tail", "--follow", "--lines=0", "/root/.pyre/server/server.stdout"],
+                ["tail", "--follow", "--lines=0", ".pyre/server/server.stdout"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
             )

@@ -178,6 +178,7 @@ class Configuration:
         self.taint_models_path = []  # type: List[str]
         self.file_hash = None  # type: Optional[str]
         self.extensions = []  # type: List[str]
+        self._log_directory = log_directory  # type: Optional[str]
 
         self._version_hash = None  # type: Optional[str]
         self._binary = None  # type: Optional[str]
@@ -376,6 +377,13 @@ class Configuration:
                 return local_configuration
             else:
                 return os.path.dirname(local_configuration)
+
+    @property
+    def log_directory(self) -> str:
+        log_directory = self._log_directory
+        if not log_directory:
+            raise InvalidConfiguration("Configuration was not validated")
+        return log_directory
 
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):
@@ -597,6 +605,13 @@ class Configuration:
                 LOG.warning("Could not find a suitable typeshed")
             else:
                 LOG.info("Found: `%s`", self._typeshed)
+
+        if not self._log_directory:
+            # TODO(T56191177): We should not start up a server at all if no configurations
+            # exist. Currently, we treat the cwd as the project root if no configurations
+            # exist. Instead, we should default logging to `tmp/.pyre` in the initial
+            # find_log_directory as well.
+            self._log_directory = "/tmp/.pyre"
 
     def _typeshed_has_obsolete_value(self) -> bool:
         (head, tail) = os.path.split(self.typeshed)

@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 
 from .. import language_server_protocol, project_files_monitor
 from ..analysis_directory import UpdatedPaths
+from ..commands.tests.command_test import mock_arguments, mock_configuration
 from ..language_server_protocol import (
     LanguageServerProtocolMessage,
     read_message,
@@ -29,8 +30,8 @@ class MonitorTest(unittest.TestCase):
     @patch.object(project_files_monitor, "find_root")
     def test_subscriptions(self, find_root, perform_handshake, _socket_connection):
         find_root.return_value = "/ROOT"
-        arguments = MagicMock()
-        configuration = MagicMock()
+        arguments = mock_arguments()
+        configuration = mock_configuration()
         analysis_directory = MagicMock()
         analysis_directory.get_root.return_value = "/ROOT"
 
@@ -136,12 +137,12 @@ class MonitorTest(unittest.TestCase):
             server_thread = threading.Thread(target=server)
             server_thread.start()
 
-            arguments = MagicMock()
-            configuration = MagicMock()
+            arguments = mock_arguments()
+            configuration = mock_configuration()
+            configuration.log_directory = root + "/.pyre"
             configuration.extensions = []
             configuration.version_hash = "123"
             analysis_directory = MagicMock()
-            analysis_directory.get_root.return_value = root
             analysis_directory.process_updated_files.side_effect = lambda files: UpdatedPaths(
                 updated=[file.replace("ROOT", "ANALYSIS") for file in files]
             )
@@ -174,8 +175,8 @@ class MonitorTest(unittest.TestCase):
         _socket_connection,
     ):
         with tempfile.TemporaryDirectory() as root:
-            arguments = MagicMock()
-            configuration = MagicMock()
+            arguments = mock_arguments()
+            configuration = mock_configuration()
             configuration.extensions = []
             analysis_directory = MagicMock()
             analysis_directory.get_root.return_value = root
@@ -184,7 +185,7 @@ class MonitorTest(unittest.TestCase):
             monitor._alive = False  # never enter watchman loop
             monitor._run()
 
-            monitor_folder = os.path.join(root, ".pyre", "file_monitor")
+            monitor_folder = os.path.join(".pyre", "file_monitor")
             self.assertFalse(
                 os.path.exists(os.path.join(monitor_folder, "file_monitor.lock"))
             )
@@ -204,7 +205,7 @@ class MonitorTest(unittest.TestCase):
             # Unix sockets have a limited length of ~100 characters, so the server uses
             # symbolic links as a workaround. We need to properly translate these.
             socket_link = os.path.join(
-                "long_name" * 15, ".pyre", "server", "json_server.sock"
+                ".pyre", "long_name" * 15, "server", "json_server.sock"
             )
 
             socket_path = os.path.join(root, "json_server.sock")

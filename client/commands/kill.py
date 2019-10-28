@@ -39,9 +39,7 @@ class Kill(Command):
         # in the configuration.
         binary_name = _get_process_name("PYRE_BINARY", BINARY_NAME)
         subprocess.run(["pkill", binary_name])
-        server_root = os.path.join(
-            os.path.realpath(self._analysis_directory.get_root()), ".pyre", "server"
-        )
+        server_root = os.path.join(self._log_directory, "server")
 
         def _delete_linked_path(link_path: str) -> None:
             try:
@@ -60,7 +58,7 @@ class Kill(Command):
         if self._arguments.with_fire is True:
             # If a resource cache exists, delete it to remove corrupted artifacts.
             try:
-                shutil.rmtree(os.path.join(os.getcwd(), ".pyre/resource_cache"))
+                shutil.rmtree(os.path.join(self._log_directory, "resource_cache"))
             except OSError:
                 pass
             # If a buck builder cache exists, also remove it.

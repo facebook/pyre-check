@@ -201,6 +201,8 @@ class Command:
             flags.extend(["-log-identifier", self._log_identifier])
         if self._logger:
             flags.extend(["-logger", self._logger])
+        if self._log_directory:
+            flags.extend(["-log-directory", self._log_directory])
         return flags
 
     def _read_stdout(self, stdout: Iterable[bytes]) -> None:
@@ -291,9 +293,7 @@ class Command:
         return os.path.relpath(path, self._original_directory)
 
     def _state(self) -> State:
-        pid_path = os.path.join(
-            self._analysis_directory.get_root(), ".pyre/server/server.pid"
-        )
+        pid_path = os.path.join(self._log_directory, "server/server.pid")
         try:
             with open(pid_path) as file:
                 pid = int(file.read())

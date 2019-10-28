@@ -9,7 +9,6 @@ import atexit
 import logging
 import os
 import subprocess
-import sys
 from typing import IO, List, cast
 
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
@@ -101,9 +100,7 @@ class Incremental(Reporting):
         return flags
 
     def _read_stderr(self, _stream) -> None:
-        stderr_file = os.path.join(
-            self._analysis_directory.get_root(), ".pyre/server/server.stdout"
-        )
+        stderr_file = os.path.join(self._log_directory, "server/server.stdout")
         with subprocess.Popen(
             ["tail", "--follow", "--lines=0", stderr_file],
             stdout=subprocess.PIPE,
@@ -113,7 +110,7 @@ class Incremental(Reporting):
             super(Incremental, self)._read_stderr(cast(IO[bytes], stderr_tail.stdout))
 
     def _refresh_file_monitor(self) -> None:
-        if not ProjectFilesMonitor.is_alive(self._analysis_directory.get_root()):
+        if not ProjectFilesMonitor.is_alive(self._configuration):
             LOG.info("File monitor is not running.")
             try:
                 ProjectFilesMonitor(

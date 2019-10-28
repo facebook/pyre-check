@@ -51,9 +51,6 @@ class AnalysisDirectory:
     def get_root(self) -> str:
         return self._path
 
-    def get_pyre_server_directory(self) -> str:
-        return os.path.join(self.get_root(), ".pyre/server")
-
     def get_filter_root(self) -> List[str]:
         return self._filter_paths or [self.get_root()]
 

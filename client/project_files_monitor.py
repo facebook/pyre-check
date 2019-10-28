@@ -41,7 +41,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         configuration: Configuration,
         analysis_directory: AnalysisDirectory,
     ) -> None:
-        super(ProjectFilesMonitor, self).__init__(analysis_directory)
+        super(ProjectFilesMonitor, self).__init__(configuration, analysis_directory)
         self._arguments = arguments
         self._configuration = configuration
         self._analysis_directory = analysis_directory
@@ -77,17 +77,16 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         ]
 
     @staticmethod
-    def pid_path(analysis_directory_root: str) -> str:
+    def pid_path(configuration: Configuration) -> str:
         return os.path.join(
-            analysis_directory_root,
-            ".pyre",
+            configuration.log_directory,
             ProjectFilesMonitor.NAME,
             "{}.pid".format(ProjectFilesMonitor.NAME),
         )
 
     @staticmethod
-    def is_alive(analysis_directory_root: str) -> bool:
-        pid_path = ProjectFilesMonitor.pid_path(analysis_directory_root)
+    def is_alive(configuration: Configuration) -> bool:
+        pid_path = ProjectFilesMonitor.pid_path(configuration)
         try:
             with open(pid_path) as file:
                 pid = int(file.read())
@@ -113,10 +112,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
 
             LOG.info("Notifying server of update to files %s.", updated_paths.updated)
             socket_path = os.path.join(
-                self._analysis_directory.get_root(),
-                ".pyre",
-                "server",
-                "json_server.sock",
+                self._configuration.log_directory, "server", "json_server.sock"
             )
             with SocketConnection(socket_path) as socket_connection:
                 socket_connection.perform_handshake(self._configuration.version_hash)
