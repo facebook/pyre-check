@@ -456,6 +456,16 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
     | If { If.body; orelse; _ } ->
         (* TODO(T28732125): Properly take an intersection here. *)
         List.fold ~init:globals ~f:(visit_statement ~qualifier) (body @ orelse)
+    | Try { Try.body; handlers; orelse; finally } ->
+        let globals = List.fold ~init:globals ~f:(visit_statement ~qualifier) body in
+        let globals =
+          let handlers_statements =
+            List.concat_map handlers ~f:(fun { Try.Handler.body; _ } -> body)
+          in
+          List.fold ~init:globals ~f:(visit_statement ~qualifier) handlers_statements
+        in
+        let globals = List.fold ~init:globals ~f:(visit_statement ~qualifier) orelse in
+        List.fold ~init:globals ~f:(visit_statement ~qualifier) finally
     | _ -> globals
   in
   let write (target, o) =

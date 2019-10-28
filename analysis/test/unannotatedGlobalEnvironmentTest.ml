@@ -66,10 +66,10 @@ let test_simple_global_registration context =
     assert_equal
       ~cmp:location_insensitive_compare
       ~printer
+      expected
       (UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
          read_only
          (Reference.create name))
-      expected
   in
   let target_location =
     {
@@ -101,6 +101,26 @@ let test_simple_global_registration context =
   assert_registers {|
     other.bar = 8
   |} "other.bar" None;
+  assert_registers
+    {|
+    try:
+      baz = 8
+    except:
+      pass
+  |}
+    "test.baz"
+    (Some
+       (SimpleAssign
+          {
+            explicit_annotation = None;
+            value = +Expression.Expression.Integer 8;
+            target_location =
+              {
+                Location.path = !&"test";
+                start = { line = 3; column = 2 };
+                stop = { line = 3; column = 5 };
+              };
+          }));
   let parse_define define =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
     | { Node.value = Statement.Statement.Define { signature; _ }; location } ->

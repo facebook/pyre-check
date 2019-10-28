@@ -687,11 +687,13 @@ let test_query context =
              };
            ]));
   assert_type_query_response_with_local_root
-    ~source:{|
-        try:
-          x = 1
-        except Exception:
-          y = 2
+    ~source:
+      {|
+        def foo() -> None:
+          try:
+            x = 1
+          except Exception:
+            y = 2
       |}
     ~query:"types(path='test.py')"
     (fun local_root ->
@@ -702,11 +704,12 @@ let test_query context =
                Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [
-                   4, 7, 4, 16, Type.parametric "type" (Concrete [Type.Primitive "Exception"]);
-                   3, 6, 3, 7, Type.literal_integer 1;
-                   5, 6, 5, 7, Type.literal_integer 2;
-                   5, 2, 5, 3, Type.literal_integer 2;
-                   3, 2, 3, 3, Type.literal_integer 1;
+                   6, 8, 6, 9, Type.literal_integer 2;
+                   6, 4, 6, 5, Type.literal_integer 2;
+                   4, 8, 4, 9, Type.literal_integer 1;
+                   5, 9, 5, 18, Type.parametric "type" (Concrete [Type.Primitive "Exception"]);
+                   2, 13, 2, 17, Type.none;
+                   4, 4, 4, 5, Type.literal_integer 1;
                  ]
                  |> create_types_at_locations;
              };
