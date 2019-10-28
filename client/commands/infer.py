@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 from collections import defaultdict
+from logging import Logger
 from pathlib import Path
 from typing import Any, List, Optional, Set, Union  # noqa
 
@@ -23,7 +24,7 @@ from .command import Command, Result, typeshed_search_path
 from .reporting import JSON, Reporting
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 def dequalify(annotation):
@@ -299,10 +300,9 @@ def generate_stub_files(arguments, errors) -> List[StubFile]:
         files[error.path].append(error)
 
     stubs = []
-    for path, errors in files.items():
+    for _path, errors in files.items():
         stub = StubFile(errors, full_only=arguments.full_only)
         if not stub.is_empty():
-            path = pyre_configuration_directory(arguments) / Path(path)
             stubs.append(stub)
     return stubs
 
@@ -337,7 +337,7 @@ def filter_paths(arguments, stubs, type_directory):
     ]
 
 
-def annotate_path(arguments, stub_path, file_path) -> None:
+def annotate_path(arguments, stub_path: str, file_path: str) -> None:
     try:
         annotated_content = apply_annotations.apply_stub_annotations(
             stub_path, file_path
@@ -355,10 +355,9 @@ def annotate_paths(arguments, formatter: Optional[str], stubs, type_directory) -
     if arguments.in_place != []:
         stubs = filter_paths(arguments, stubs, type_directory)
 
-    project_directory = pyre_configuration_directory(arguments)
     for stub in stubs:
         stub_path = stub.path(type_directory)
-        file_path = str(stub.path(project_directory)).rstrip("i")
+        file_path = str(stub.path(Path(""))).rstrip("i")
         annotate_path(arguments, stub_path, file_path)
     if formatter:
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -391,13 +390,6 @@ def file_exists(path):
     return path
 
 
-def pyre_configuration_directory(arguments) -> Path:
-    if arguments.local_configuration:
-        return Path(arguments.local_configuration)
-    else:
-        return Path(os.getcwd())
-
-
 class Infer(Reporting):
     NAME = "infer"
 
@@ -419,9 +411,7 @@ class Infer(Reporting):
                     "--no-recheck cannot be used without the --in-place argument"
                 )
 
-            type_directory = pyre_configuration_directory(self._arguments) / Path(
-                ".pyre/types"
-            )
+            type_directory = Path(os.path.join(self._log_directory, "types"))
             annotate_from_existing_stubs(
                 self._arguments, self._formatter, type_directory
             )
@@ -435,9 +425,7 @@ class Infer(Reporting):
         if self._print_errors:
             self._print(errors)
         else:
-            type_directory = pyre_configuration_directory(self._arguments) / Path(
-                ".pyre/types"
-            )
+            type_directory = Path(os.path.join(self._log_directory, "types"))
             stubs = generate_stub_files(self._arguments, errors)
             write_stubs_to_disk(self._arguments, stubs, type_directory)
             if self._arguments.in_place is not None:
