@@ -302,8 +302,5 @@ class Command:
         except Exception:
             return State.DEAD
 
-    def _analysis_directory_string(self) -> str:
-        return "`{}`".format(self._analysis_directory.get_root())
-
     def profiling_log_path(self) -> str:
         return os.path.join(self._log_directory, "profiling.log")
