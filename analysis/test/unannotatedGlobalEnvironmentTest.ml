@@ -520,7 +520,7 @@ let test_updates context =
     ~expected_triggers:[dependency]
     ();
 
-  (* Last global wins. *)
+  (* First global wins. *)
   assert_updates
     ~original_source:{|
       X = int
@@ -539,7 +539,7 @@ let test_updates context =
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
                    explicit_annotation = None;
-                   value = parse_single_expression "str";
+                   value = parse_single_expression "int";
                    target_location = Location.Reference.any;
                  }) );
       ]
@@ -569,7 +569,7 @@ let test_updates context =
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
                    explicit_annotation = None;
-                   value = parse_single_expression "str";
+                   value = parse_single_expression "int";
                    target_location = Location.Reference.any;
                  }) );
       ]

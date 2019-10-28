@@ -480,7 +480,9 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
     |> Reference.Map.to_alist
     |> List.append not_defines
   in
-  let globals = List.fold ~init:[] ~f:(visit_statement ~qualifier) statements |> merge_defines in
+  let globals =
+    List.fold ~init:[] ~f:(visit_statement ~qualifier) statements |> merge_defines |> List.rev
+  in
   let globals =
     match Reference.as_list qualifier with
     | [] -> globals @ missing_builtin_globals
