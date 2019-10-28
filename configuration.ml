@@ -133,7 +133,7 @@ module Analysis = struct
 
   let get_global () = !global
 
-  let pyre_root { local_root; _ } = Path.append local_root ~element:".pyre"
+  let log_directory { log_directory; _ } = log_directory
 
   let search_path { local_root; search_path; _ } =
     (* Have an ordering of search_path > local_root with the parser. search_path precedes

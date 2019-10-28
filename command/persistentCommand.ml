@@ -122,7 +122,7 @@ let run_command expected_version log_identifier perform_autocompletion local_roo
     (* Log stderr to file *)
     let log_path =
       let persistent_client_directory =
-        Configuration.Analysis.pyre_root configuration
+        Configuration.Analysis.log_directory configuration
         |> Path.append ~element:"persistent"
         |> Path.absolute
       in

@@ -82,7 +82,7 @@ module Analysis : sig
 
   val get_global : unit -> t option
 
-  val pyre_root : t -> Path.t
+  val log_directory : t -> Path.t
 
   val search_path : t -> SearchPath.t list
 end

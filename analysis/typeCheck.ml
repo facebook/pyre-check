@@ -4922,7 +4922,7 @@ let check_define
           | None -> name
         in
         Path.create_relative
-          ~root:(Configuration.Analysis.pyre_root configuration)
+          ~root:(Configuration.Analysis.log_directory configuration)
           ~relative:(Format.asprintf "cfgs%a.dot" Reference.pp name)
         |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
         |> File.write

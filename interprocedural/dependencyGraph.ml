@@ -176,7 +176,7 @@ let dump call_graph ~configuration =
 
   (* Write to file. *)
   Path.create_relative
-    ~root:(Configuration.Analysis.pyre_root configuration)
+    ~root:(Configuration.Analysis.log_directory configuration)
     ~relative:"call_graph.json"
   |> File.create ~content:(Buffer.contents buffer)
   |> File.write

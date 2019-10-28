@@ -9,12 +9,12 @@ open Path.AppendOperator
 
 module Persistent = struct
   let log_path configuration =
-    (Configuration.Analysis.pyre_root configuration ^| "persistent") ^| "client.log"
+    (Configuration.Analysis.log_directory configuration ^| "persistent") ^| "client.log"
 end
 
 module Server = struct
   let root configuration =
-    let server_root = Configuration.Analysis.pyre_root configuration ^| "server" in
+    let server_root = Configuration.Analysis.log_directory configuration ^| "server" in
     Unix.mkdir_p (Path.absolute server_root);
     server_root
 
@@ -31,5 +31,5 @@ end
 
 module Watchman = struct
   let log_path configuration =
-    Configuration.Analysis.pyre_root configuration ^| "file_monitor/file_monitor.log"
+    Configuration.Analysis.log_directory configuration ^| "file_monitor/file_monitor.log"
 end

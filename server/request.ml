@@ -784,7 +784,7 @@ let process_type_query_request
               in
               let legacy_dependency_tracker = Dependencies.create ast_environment in
               Path.create_relative
-                ~root:(Configuration.Analysis.pyre_root configuration)
+                ~root:(Configuration.Analysis.log_directory configuration)
                 ~relative:"dependencies.dot"
               |> File.create ~content:(Dependencies.to_dot legacy_dependency_tracker ~qualifier)
               |> File.write

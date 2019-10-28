@@ -245,7 +245,7 @@ let check
     if Log.is_enabled `Dotty then (
       let type_order_file =
         Path.create_relative
-          ~root:(Configuration.Analysis.pyre_root configuration)
+          ~root:(Configuration.Analysis.log_directory configuration)
           ~relative:"type_order.dot"
       in
       Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);

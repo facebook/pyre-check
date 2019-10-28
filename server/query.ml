@@ -221,7 +221,7 @@ let parse_query
                   Path.create_absolute ~follow_symbolic_links:false path
             | [] ->
                 Path.create_relative
-                  ~root:(Configuration.Analysis.pyre_root configuration)
+                  ~root:(Configuration.Analysis.log_directory configuration)
                   ~relative:"memory.sqlite"
             | _ -> raise (InvalidQuery "Too many arguments to `dump_memory_to_sqlite`")
           in
