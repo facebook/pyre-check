@@ -11,8 +11,8 @@ import unittest
 from unittest.mock import MagicMock, Mock, call, patch
 
 from ... import commands
+from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ...commands import command, incremental, stop  # noqa
-from ...filesystem import AnalysisDirectory, SharedAnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 

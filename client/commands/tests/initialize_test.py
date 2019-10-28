@@ -12,8 +12,8 @@ import unittest
 from unittest.mock import call, mock_open, patch
 
 from ... import EnvironmentException, commands, log
+from ...analysis_directory import AnalysisDirectory
 from ...commands import initialize
-from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 

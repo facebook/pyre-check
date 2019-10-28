@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from .. import language_server_protocol, project_files_monitor
-from ..filesystem import UpdatedPaths
+from ..analysis_directory import UpdatedPaths
 from ..language_server_protocol import (
     LanguageServerProtocolMessage,
     read_message,

@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import MagicMock, mock_open, patch
 
 from ... import commands  # noqa
-from ...filesystem import AnalysisDirectory
+from ...analysis_directory import AnalysisDirectory
 from ..color import CoverageLevel, TypeAnnotation
 from .command_test import mock_arguments, mock_configuration
 

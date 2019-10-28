@@ -18,9 +18,10 @@ from abc import abstractmethod
 from typing import Iterable, List, Optional, Set  # noqa
 
 from .. import log
+from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
-from ..filesystem import AnalysisDirectory, remove_if_exists
+from ..filesystem import remove_if_exists
 
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger

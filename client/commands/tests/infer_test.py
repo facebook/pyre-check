@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands
+from ...analysis_directory import AnalysisDirectory
 from ...commands.infer import (
     FieldStub,
     FunctionStub,
@@ -19,7 +20,6 @@ from ...commands.infer import (
     dequalify,
 )
 from ...error import Error
-from ...filesystem import AnalysisDirectory
 
 
 _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.infer.__name__)

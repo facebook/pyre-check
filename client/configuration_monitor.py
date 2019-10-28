@@ -9,9 +9,10 @@ import logging
 import os
 from typing import Any, Dict, List
 
+from .analysis_directory import AnalysisDirectory
 from .commands import stop
 from .configuration import CONFIGURATION_FILE
-from .filesystem import AnalysisDirectory, is_parent
+from .filesystem import is_parent
 from .watchman_subscriber import Subscription, WatchmanSubscriber
 
 

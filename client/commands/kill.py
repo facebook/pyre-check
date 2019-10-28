@@ -15,8 +15,8 @@ from typing import Iterable  # noqa
 import psutil
 
 from .. import BINARY_NAME, CLIENT_NAME
+from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..filesystem import AnalysisDirectory
 from .command import Command
 
 

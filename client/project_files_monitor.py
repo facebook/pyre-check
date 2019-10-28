@@ -9,13 +9,12 @@ import argparse
 import functools
 import logging
 import os
-import subprocess
-import sys
 from typing import Any, BinaryIO, Dict, Iterable, List, Optional, Set  # noqa
 
 from . import language_server_protocol
+from .analysis_directory import AnalysisDirectory
 from .configuration import Configuration
-from .filesystem import AnalysisDirectory, find_root
+from .filesystem import find_root
 from .socket_connection import SocketConnection
 from .watchman_subscriber import Subscription, WatchmanSubscriber
 

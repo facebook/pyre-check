@@ -9,8 +9,8 @@ import argparse
 from typing import List, Optional  # noqa
 
 from .. import log
+from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..filesystem import AnalysisDirectory
 from .check import Check
 
 

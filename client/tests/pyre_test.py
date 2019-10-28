@@ -14,10 +14,10 @@ from unittest.mock import MagicMock, call, patch
 
 from .. import (
     EnvironmentException,
+    analysis_directory,
     buck,
     commands,
     configuration,
-    filesystem,
     is_capable_terminal,
     pyre,
 )
@@ -70,7 +70,9 @@ class PyreTest(unittest.TestCase):
 
         with patch.object(
             commands.Check, "run", return_value=mock_success
-        ), patch.object(filesystem.SharedAnalysisDirectory, "cleanup") as cleanup:
+        ), patch.object(
+            analysis_directory.SharedAnalysisDirectory, "cleanup"
+        ) as cleanup:
             with patch.object(sys, "argv", ["pyre", "check"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_source_directories.assert_not_called()

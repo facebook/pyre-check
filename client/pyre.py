@@ -24,10 +24,10 @@ from . import (
     log,
     log_statistics,
     readable_directory,
-    resolve_analysis_directory,
     switch_root,
     translate_arguments,
 )
+from .analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from .commands import (  # noqa
     Command,
     ExitCode,
@@ -37,7 +37,6 @@ from .commands import (  # noqa
 )
 from .configuration import Configuration
 from .exceptions import EnvironmentException
-from .filesystem import AnalysisDirectory
 from .version import __version__
 
 

@@ -12,9 +12,9 @@ from contextlib import contextmanager
 from unittest.mock import call, patch
 
 from .. import configuration_monitor, watchman_subscriber
+from ..analysis_directory import AnalysisDirectory
 from ..commands import stop
 from ..commands.tests.command_test import mock_arguments, mock_configuration
-from ..filesystem import AnalysisDirectory
 
 
 class MonitorTest(unittest.TestCase):

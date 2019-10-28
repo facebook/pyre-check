@@ -188,7 +188,7 @@ class RunnerTest(unittest.TestCase):
             "--- a/client/pyre.py\n"
             "+++ b/client/pyre.py\n"
             "@@ -33,6 +33,8 @@\n"
-            " from .filesystem import AnalysisDirectory\n"
+            " from .analysis_directory import AnalysisDirectory\n"
             " from .version import __version__\n"
             "+FOO: int = 42\n"
             "+\n"

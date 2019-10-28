@@ -10,11 +10,11 @@ import json
 import os
 import subprocess
 import unittest
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 from ... import commands  # noqa
+from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ...error import Error  # noqa
-from ...filesystem import AnalysisDirectory, SharedAnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 

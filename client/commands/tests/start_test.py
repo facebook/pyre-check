@@ -12,8 +12,9 @@ import unittest
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import commands, configuration_monitor, project_files_monitor  # noqa
+from ...analysis_directory import AnalysisDirectory
 from ...commands import start  # noqa
-from ...filesystem import AnalysisDirectory, acquire_lock  # noqa
+from ...filesystem import acquire_lock  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 

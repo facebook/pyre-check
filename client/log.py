@@ -17,7 +17,11 @@ import time
 from typing import List, Optional, Sequence  # noqa
 
 from . import find_log_directory
-from .logging_levels import PERFORMANCE, PROMPT, SUCCESS
+
+
+PERFORMANCE: int = 15
+PROMPT: int = 50
+SUCCESS: int = 60
 
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger

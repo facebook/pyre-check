@@ -12,8 +12,8 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
+from ...analysis_directory import AnalysisDirectory
 from ...commands import command  # noqa
-from ...filesystem import AnalysisDirectory
 
 
 def mock_arguments(  # noqa

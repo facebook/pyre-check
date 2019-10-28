@@ -13,9 +13,10 @@ import os
 from typing import Any, Dict, Iterable, List, Sequence, Set  # noqa
 
 from .. import log
+from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import Error
-from ..filesystem import AnalysisDirectory, translate_path
+from ..filesystem import translate_path
 from .command import ClientException, Command, Result
 
 

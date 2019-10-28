@@ -13,7 +13,8 @@ import sys
 from multiprocessing import Event
 from typing import Any, Dict, List, NamedTuple
 
-from .filesystem import AnalysisDirectory, acquire_lock, remove_if_exists
+from .analysis_directory import AnalysisDirectory
+from .filesystem import acquire_lock, remove_if_exists
 
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger

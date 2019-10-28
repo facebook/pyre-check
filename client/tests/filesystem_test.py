@@ -15,13 +15,12 @@ from contextlib import contextmanager
 from typing import Dict  # noqa
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import buck, commands, filesystem, resolve_analysis_directory
+from .. import buck, commands, filesystem
+from ..analysis_directory import SharedAnalysisDirectory, resolve_analysis_directory
 from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
-    AnalysisDirectory,
     Filesystem,
     MercurialBackedFilesystem,
-    SharedAnalysisDirectory,
     __name__ as filesystem_name,
     _compute_symbolic_link_mapping,
     _delete_symbolic_link,

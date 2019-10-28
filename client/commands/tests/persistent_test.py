@@ -15,7 +15,7 @@ from ... import (  # noqa
     configuration_monitor,
     project_files_monitor,
 )
-from ...filesystem import AnalysisDirectory
+from ...analysis_directory import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 

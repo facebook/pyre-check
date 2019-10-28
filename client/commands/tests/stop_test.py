@@ -11,8 +11,8 @@ from io import StringIO
 from unittest.mock import Mock, call, patch
 
 from ... import commands  # noqa
+from ...analysis_directory import AnalysisDirectory
 from ...commands import command, stop  # noqa
-from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 

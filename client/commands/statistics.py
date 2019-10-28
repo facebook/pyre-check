@@ -15,8 +15,8 @@ from typing import Dict, List, Pattern, Sequence
 import libcst as cst
 
 from .. import log, log_statistics
+from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
-from ..filesystem import AnalysisDirectory
 from .command import Command
 
 
