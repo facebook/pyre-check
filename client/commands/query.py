@@ -8,13 +8,14 @@
 import logging
 import os
 import re
+from logging import Logger
 from typing import Dict, List, Optional
 
 from .. import log
 from .command import Command
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class Query(Command):

@@ -8,6 +8,7 @@
 import logging
 import os
 import time
+from logging import Logger
 from typing import List
 
 from ..project_files_monitor import ProjectFilesMonitor
@@ -15,7 +16,7 @@ from .command import ClientException, Command, State
 from .kill import Kill
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class Stop(Command):

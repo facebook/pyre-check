@@ -6,13 +6,14 @@
 # pyre-unsafe
 
 import logging
+from logging import Logger
 from typing import List
 
 from .command import ExitCode, typeshed_search_path
 from .reporting import Reporting
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class Check(Reporting):

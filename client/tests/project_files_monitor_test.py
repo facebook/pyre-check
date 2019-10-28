@@ -28,7 +28,9 @@ class MonitorTest(unittest.TestCase):
     @patch.object(SocketConnection, "_connect")
     @patch.object(language_server_protocol, "perform_handshake")
     @patch.object(project_files_monitor, "find_root")
-    def test_subscriptions(self, find_root, perform_handshake, _socket_connection):
+    def test_subscriptions(
+        self, find_root, perform_handshake, _socket_connection
+    ) -> None:
         find_root.return_value = "/ROOT"
         arguments = mock_arguments()
         configuration = mock_configuration()
@@ -85,14 +87,14 @@ class MonitorTest(unittest.TestCase):
             analysis_directory,
         )
 
-    def test_bad_socket(self):
+    def test_bad_socket(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             bad_socket_path = os.path.join(root, "bad.sock")
             socket_connection = SocketConnection(bad_socket_path)
             self.assertRaises(SocketException, socket_connection._connect)
 
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
-    def test_socket_communication(self, _find_watchman_path):
+    def test_socket_communication(self, _find_watchman_path) -> None:
         # Create a "server" thread to complete the handshake
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         errors = []
@@ -173,7 +175,7 @@ class MonitorTest(unittest.TestCase):
         _watchman_client,
         perform_handshake,
         _socket_connection,
-    ):
+    ) -> None:
         with tempfile.TemporaryDirectory() as root:
             arguments = mock_arguments()
             configuration = mock_configuration()
@@ -194,7 +196,7 @@ class MonitorTest(unittest.TestCase):
             )
 
     @patch.object(os.path, "realpath")
-    def test_socket_connection(self, realpath):
+    def test_socket_connection(self, realpath) -> None:
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
         with tempfile.TemporaryDirectory() as root:

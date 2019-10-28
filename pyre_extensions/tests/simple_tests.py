@@ -4,7 +4,7 @@ from typing import Callable, Iterable, Iterator, List, TypeVar
 
 
 class BasicTestCase(unittest.TestCase):
-    def test_parameter_specification(self):
+    def test_parameter_specification(self) -> None:
         try:
             from .. import ParameterSpecification
 
@@ -27,7 +27,7 @@ class BasicTestCase(unittest.TestCase):
         except Exception:
             self.fail("ParameterSpecification missing or broken")
 
-    def test_list_variadics(self):
+    def test_list_variadics(self) -> None:
         try:
             from .. import ListVariadic
             from ..type_variable_operators import Map
@@ -43,7 +43,7 @@ class BasicTestCase(unittest.TestCase):
         except Exception:
             self.fail("ListVariadics missing or broken")
 
-    def test_none_throws(self):
+    def test_none_throws(self) -> None:
         try:
             from .. import none_throws
 
@@ -52,7 +52,7 @@ class BasicTestCase(unittest.TestCase):
         except Exception:
             self.fail("none_throws missing or broken")
 
-    def test_generic(self):
+    def test_generic(self) -> None:
         try:
             from typing import TypeVar
             from .. import Generic, ListVariadic

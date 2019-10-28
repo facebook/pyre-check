@@ -43,7 +43,7 @@ class GetGraphQLSourcesTest(unittest.TestCase):
         functions = GraphQLSourceGenerator().gather_functions_to_model()
         self.assertSetEqual(set(functions), {function_1, function_2})
 
-    def test_compute_models(self):
+    def test_compute_models(self) -> None:
         source = "TaintSource[UserControlled]"
         sink = "TaintSink[ReturnedToUser]"
         self.assertEqual(
@@ -62,11 +62,11 @@ class GetGraphQLSourcesTest(unittest.TestCase):
 
 # Defined for testing purposes (see 'test_gather_functions_to_model')
 # These functions are not used otherwise.
-def function_1():
+def function_1() -> None:
     pass
 
 
-def function_2():
+def function_2() -> None:
     pass
 
 

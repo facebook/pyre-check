@@ -169,7 +169,7 @@ class BuckTest(unittest.TestCase):
                 mock_build.assert_has_calls([call(["normalized"], ["target"])])
 
     @patch.object(buck, "find_buck_root", return_value="/BUCK_ROOT")
-    def test_resolve_relative_paths(self, find_buck_root):
+    def test_resolve_relative_paths(self, find_buck_root) -> None:
         with patch.object(subprocess, "check_output") as buck_query:
             buck_query.return_value = json.dumps(
                 {

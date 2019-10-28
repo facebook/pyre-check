@@ -7,6 +7,7 @@
 
 import textwrap
 import unittest
+from typing import Dict, Union
 from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands
@@ -29,7 +30,7 @@ from .command_test import (
 _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.infer.__name__)
 
 
-def build_json(inference):
+def build_json(inference) -> Dict[str, Union[int, str]]:
     return {
         "line": 0,
         "column": 0,

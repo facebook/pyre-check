@@ -9,6 +9,7 @@ import argparse
 import ast
 import logging
 import pathlib
+from logging import Logger
 from typing import Callable
 
 from pyre_extensions import ListVariadic
@@ -17,7 +18,7 @@ from pyre_extensions import ListVariadic
 Ts = ListVariadic("Ts")
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], None]:

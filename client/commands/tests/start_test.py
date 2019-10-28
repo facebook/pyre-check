@@ -18,7 +18,7 @@ from ...filesystem import acquire_lock  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
-_typeshed_search_path = "{}.typeshed_search_path".format(commands.start.__name__)
+_typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__name__)
 
 
 class StartTest(unittest.TestCase):
@@ -215,7 +215,7 @@ class StartTest(unittest.TestCase):
 
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_start_flags(self, get_directories_to_analyze):
+    def test_start_flags(self, get_directories_to_analyze) -> None:
         # Check start with watchman.
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")

@@ -7,6 +7,7 @@
 
 import logging
 import os
+from logging import Logger
 from typing import Any, Dict, List
 
 from .analysis_directory import AnalysisDirectory
@@ -16,7 +17,7 @@ from .filesystem import is_parent
 from .watchman_subscriber import Subscription, WatchmanSubscriber
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class ConfigurationMonitor(WatchmanSubscriber):

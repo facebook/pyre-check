@@ -16,7 +16,9 @@ from ...commands import command, incremental, stop  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
-_typeshed_search_path = "{}.typeshed_search_path".format(commands.incremental.__name__)
+_typeshed_search_path: str = "{}.typeshed_search_path".format(
+    commands.incremental.__name__
+)
 
 
 class IncrementalTest(unittest.TestCase):

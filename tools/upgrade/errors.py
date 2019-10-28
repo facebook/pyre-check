@@ -37,7 +37,7 @@ def sort_errors(errors: List[Dict[str, Any]]) -> List[Tuple[str, List[Any]]]:
     return itertools.groupby(sorted(errors, key=error_path), error_path)
 
 
-def filter_errors(arguments, errors) -> List[Dict[str, Any]]:
+def filter_errors(arguments, errors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     def matches_error_code(error) -> bool:
         return error["code"] == arguments.only_fix_error_code
 

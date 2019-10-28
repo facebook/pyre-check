@@ -11,6 +11,7 @@ import os
 import shutil
 import subprocess
 import sys
+from logging import Logger
 from typing import Any, Dict
 
 from .. import BINARY_NAME, CONFIGURATION_FILE, find_typeshed, log
@@ -18,7 +19,7 @@ from ..exceptions import EnvironmentException
 from .command import Command
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class Initialize(Command):

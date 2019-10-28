@@ -706,7 +706,7 @@ class ConfigurationTest(unittest.TestCase):
     @patch.object(Configuration, "_validate")
     def test_find_binary(
         self, _validate, _resolve_versioned_paths, _override_version_hash, _read
-    ):
+    ) -> None:
         # The PYRE_BINARY environment variable may change the result of this test,
         # as the configuration lets it override the actual search.
         if "PYRE_BINARY" in os.environ:

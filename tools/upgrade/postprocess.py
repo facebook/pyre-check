@@ -7,9 +7,10 @@
 
 import logging
 import subprocess
+from logging import Logger
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 def get_lint_status() -> int:

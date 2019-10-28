@@ -9,11 +9,12 @@ import argparse
 import logging
 import pathlib
 import re
+from logging import Logger
 
 from .errors import errors_from_stdin, sort_errors
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 def run_missing_overridden_return_annotations(arguments: argparse.Namespace) -> None:

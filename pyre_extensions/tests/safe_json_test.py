@@ -14,7 +14,7 @@ class ExampleTypedDict(TypedDict):
 
 
 class BasicTestCase(unittest.TestCase):
-    def test_loads(self):
+    def test_loads(self) -> None:
         # Lists.
         self.assertEqual(safe_json.loads("[]", List[int]), [])
         self.assertEqual(safe_json.loads("[1]", List[int]), [1])

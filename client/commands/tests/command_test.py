@@ -28,7 +28,7 @@ def mock_arguments(  # noqa
     output=None,
     save_initial_state_to=None,
     saved_state_project=None,
-    show_parse_errors=False,
+    show_parse_errors: bool = False,
     source_directories=None,
     store_type_check_resolution=False,
     targets=None,

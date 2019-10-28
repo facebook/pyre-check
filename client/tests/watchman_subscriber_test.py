@@ -17,7 +17,7 @@ from ..watchman_subscriber import WatchmanSubscriber
 
 
 @contextmanager
-def send_sigint_to_self(*args, **kwargs):
+def send_sigint_to_self(*args, **kwargs) -> None:
     os.kill(os.getpid(), signal.SIGINT)
 
 
@@ -30,8 +30,9 @@ class WatchmanSubscriberTest(unittest.TestCase):
     @patch.object(os, "makedirs")
     def test_cleanup_on_sigint(
         self, makedirs, fork, close, exit, acquire_lock, remove_if_exists
-    ):
+    ) -> None:
         arguments = mock_arguments()
+        # pyre-fixme[41]: `_name` cannot be reassigned. It is a read-only property.
         WatchmanSubscriber._name = "TEST"
         analysis_directory = MagicMock()
         analysis_directory.get_root.return_value = "/ROOT"

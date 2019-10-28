@@ -13,12 +13,13 @@ import tempfile
 import threading
 from collections import namedtuple
 from json.decoder import JSONDecodeError
+from logging import Logger
 from typing import Dict, Iterable, List, Optional, Set, Tuple, cast  # noqa
 
 from .filesystem import BuckBuilder, find_root
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
 
 
@@ -33,7 +34,7 @@ class FastBuckBuilder(BuckBuilder):
         output_directory: Optional[str] = None,
         buck_builder_binary: Optional[str] = None,
         buck_builder_target: Optional[str] = None,
-        debug_mode=False,
+        debug_mode: bool = False,
     ) -> None:
         self._buck_root = buck_root
         self._output_directory = output_directory or tempfile.mkdtemp(

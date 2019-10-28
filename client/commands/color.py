@@ -21,14 +21,14 @@ class TypeAnnotation:
         stop_line: int,
         start_column: int,
         stop_column: int,
-    ):
+    ) -> None:
         self.coverage = coverage
         self.start_line = start_line
         self.stop_line = stop_line
         self.start_column = start_column
         self.stop_column = stop_column
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (self.start_line, self.stop_line, self.start_column, self.stop_column)
         )
@@ -44,7 +44,7 @@ class TypeAnnotation:
         )
 
     @staticmethod
-    def create_from_json(data):
+    def create_from_json(data) -> "TypeAnnotation":
         start = data["location"]["start"]
         stop = data["location"]["stop"]
         type = data["coverage"][0]
@@ -57,7 +57,12 @@ class TypeAnnotation:
             coverage = CoverageLevel.UNTYPED
 
         return TypeAnnotation(
-            coverage, start["line"], stop["line"], start["column"], stop["column"]
+            # pyre-fixme[6]: Expected `str` for 1st param but got `CoverageLevel`.
+            coverage,
+            start["line"],
+            stop["line"],
+            start["column"],
+            stop["column"],
         )
 
 
@@ -68,11 +73,11 @@ class CoverageLevel(Enum):
 
 
 class PrintColor:
-    def __init__(self, type_annotations, path):
+    def __init__(self, type_annotations, path) -> None:
         self.type_annotations = type_annotations  # List[TypeAnnotation]
         self.path = path
 
-    def _add_color(self, line: str, type) -> str:
+    def _add_color(self, line: str, type: CoverageLevel) -> str:
         coverage_to_color = {
             CoverageLevel.TYPED: log.Color.GREEN,
             CoverageLevel.PARTIAL: log.Color.YELLOW,

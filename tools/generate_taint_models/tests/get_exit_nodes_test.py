@@ -14,7 +14,7 @@ from .test_functions import __name__ as qualifier, all_functions
 
 
 class GetExitNodesTest(unittest.TestCase):
-    def test_compute_models(self):
+    def test_compute_models(self) -> None:
         sink = "TaintSink[ReturnedToUser]"
         self.assertEqual(
             list(ExitNodeGenerator().compute_models(all_functions)),

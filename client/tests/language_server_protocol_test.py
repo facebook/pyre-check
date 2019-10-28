@@ -17,7 +17,7 @@ from ..language_server_protocol import (
 
 
 class LanguageServerProtocolTest(unittest.TestCase):
-    def test_json(self):
+    def test_json(self) -> None:
         self.assertDictEqual(
             json.loads(
                 LanguageServerProtocolMessage(
@@ -69,7 +69,7 @@ class LanguageServerProtocolTest(unittest.TestCase):
             },
         )
 
-    def test_read_message(self):
+    def test_read_message(self) -> None:
         # well-formed message
         file = BytesIO()
         file.write(
@@ -84,8 +84,11 @@ class LanguageServerProtocolTest(unittest.TestCase):
         result = read_message(file)
 
         self.assertNotEqual(result, None)
+        # pyre-fixme[16]: Optional type has no attribute `id`.
         self.assertEqual(result.id, "123abc")
+        # pyre-fixme[16]: Optional type has no attribute `method`.
         self.assertEqual(result.method, "textDocument/didSave")
+        # pyre-fixme[16]: Optional type has no attribute `parameters`.
         self.assertDictEqual(result.parameters, {"a": 123, "b": ["c", "d"]})
 
         # end of file
@@ -119,7 +122,7 @@ class LanguageServerProtocolTest(unittest.TestCase):
 
         self.assertEqual(result, None)
 
-    def test_write_message(self):
+    def test_write_message(self) -> None:
         file = BytesIO()
         message = LanguageServerProtocolMessage(
             method="textDocument/hover", id="123abc", parameters={"a": "b"}
@@ -141,7 +144,7 @@ class LanguageServerProtocolTest(unittest.TestCase):
         file.close()
         self.assertFalse(write_message(file, message))
 
-    def test_read_write(self):
+    def test_read_write(self) -> None:
         file = BytesIO()
         message = LanguageServerProtocolMessage(
             method="textDocument/definition",
@@ -154,6 +157,11 @@ class LanguageServerProtocolTest(unittest.TestCase):
         parsed_message = read_message(file)
 
         self.assertNotEqual(parsed_message, None)
+        # pyre-fixme[16]: Optional type has no attribute `id`.
         self.assertEqual(message.id, parsed_message.id)
+        # pyre-fixme[16]: Optional type has no attribute `method`.
         self.assertEqual(message.method, parsed_message.method)
+        # pyre-fixme[6]: Expected `Dict[Any, Any]` for 1st param but got
+        #  `Optional[Dict[str, Any]]`.
+        # pyre-fixme[16]: Optional type has no attribute `parameters`.
         self.assertDictEqual(message.parameters, parsed_message.parameters)

@@ -15,6 +15,7 @@ import subprocess
 import sys
 import traceback
 from collections import defaultdict
+from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -29,11 +30,11 @@ from .errors import errors_from_stdin, filter_errors, json_to_errors, sort_error
 from .postprocess import apply_lint, get_lint_status
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class Configuration:
-    def __init__(self, path: Path, json_contents: Dict[str, Any]):
+    def __init__(self, path: Path, json_contents: Dict[str, Any]) -> None:
         self._path = path
         if path.name == ".pyre_configuration.local":
             self.is_local = True
@@ -277,7 +278,7 @@ def fix_file(
     path.write_text(new_text)
 
 
-def _commit_message(directory, summary_override: Optional[str] = None):
+def _commit_message(directory, summary_override: Optional[str] = None) -> str:
     summary = (
         summary_override
         or "Automatic upgrade to remove `version` override and silence errors."
@@ -306,7 +307,7 @@ def _commit_message(directory, summary_override: Optional[str] = None):
     return commit_message
 
 
-def _submit_changes(arguments, message):
+def _submit_changes(arguments, message) -> None:
     LOG.info("Committing changes.")
     subprocess.call(["hg", "commit", "--message", message])
     submit_command = ["jf", "submit", "--update-fields"]
@@ -560,7 +561,7 @@ def path_exists(filename: str) -> Path:
     return path
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
@@ -676,7 +677,9 @@ def main():
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):
+        # pyre-fixme[16]: `Namespace` has no attribute `run`.
         arguments.run = False
+        # pyre-fixme[16]: `Namespace` has no attribute `function`.
         arguments.function = run_fixme
 
     logging.basicConfig(

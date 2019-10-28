@@ -5,6 +5,7 @@ import enum
 import json
 import logging
 import sys
+from argparse import Namespace
 from pathlib import Path
 from typing import List, Optional
 
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         default=0,
         help="Logging verbosity: 0 = only warnings, 1 = info, 2 = debug",
     )
-    arguments = parser.parse_args()
+    arguments: Namespace = parser.parse_args()
     _setup_logging(arguments.verbose)
 
     sys.exit(main(arguments))

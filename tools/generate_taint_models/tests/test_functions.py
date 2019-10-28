@@ -6,23 +6,23 @@
 # pyre-unsafe
 
 
-def testA():
+def testA() -> None:
     pass
 
 
-def testB(x):
+def testB(x) -> None:
     pass
 
 
-def testC(x: int):
+def testC(x: int) -> None:
     pass
 
 
-def testD(x: int, *args: int):
+def testD(x: int, *args: int) -> None:
     pass
 
 
-def testE(x: int, **kwargs: str):
+def testE(x: int, **kwargs: str) -> None:
     pass
 
 

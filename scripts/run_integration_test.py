@@ -13,11 +13,14 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from argparse import Namespace
 from contextlib import contextmanager
+from logging import Logger
+from typing import Generator
 from zipfile import ZipFile
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 def is_readable_directory(directory: str) -> bool:
@@ -31,7 +34,7 @@ def assert_readable_directory(directory: str) -> None:
         raise Exception("{} is not a readable directory.".format(directory))
 
 
-def extract_typeshed(typeshed_zip_path: str, base_directory: str):
+def extract_typeshed(typeshed_zip_path: str, base_directory: str) -> str:
     typeshed = os.path.join(base_directory, "typeshed-master")
     os.mkdir(typeshed)
     with ZipFile(typeshed_zip_path, "r") as typeshed_zip:
@@ -49,7 +52,9 @@ def extract_typeshed(typeshed_zip_path: str, base_directory: str):
     return typeshed
 
 
-def poor_mans_rsync(source_directory, destination_directory, ignored_files=None):
+def poor_mans_rsync(
+    source_directory: str, destination_directory: str, ignored_files=None
+) -> None:
     ignored_files = ignored_files or []
     ignored_directories = [".pyre"]
     # Do not delete the server directory while copying!
@@ -158,7 +163,7 @@ class Repository:
         self._resolve_typeshed_location(".pyre_configuration")
         return self._current_commit
 
-    def _copy_commit(self, original_path, destination_path):
+    def _copy_commit(self, original_path, destination_path) -> None:
         """
             Copies the next commit at original_path to destination path. Can be
             overridden by child classes to change copying logic.
@@ -168,7 +173,7 @@ class Repository:
         # generate the right notifications. Hence, this.
         poor_mans_rsync(original_path, destination_path)
 
-    def _resolve_typeshed_location(self, filename):
+    def _resolve_typeshed_location(self, filename) -> None:
         with fileinput.input(filename, inplace=True) as f:
             for line in f:
                 print(
@@ -277,7 +282,7 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str) -> int:
 
 
 @contextmanager
-def _watch_directory(source_directory):
+def _watch_directory(source_directory) -> Generator[None, None, None]:
     subprocess.check_call(
         ["watchman", "watch", source_directory],
         stdout=subprocess.DEVNULL,
@@ -305,12 +310,12 @@ if __name__ == "__main__":
         type=os.path.abspath,
     )
     parser.add_argument("--debug", action="store_true", default=False)
-    arguments = parser.parse_args()
+    arguments: Namespace = parser.parse_args()
     retries = 3
     typeshed_zip_path = arguments.typeshed_zip_path or str(
         pathlib.Path.cwd() / "stubs/typeshed/typeshed.zip"
     )
-    original_directory = os.getcwd()
+    original_directory: str = os.getcwd()
     while retries > 0:
         try:
             os.chdir(original_directory)

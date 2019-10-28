@@ -14,7 +14,7 @@ from ...commands import check
 from .command_test import mock_arguments, mock_configuration
 
 
-_typeshed_search_path = "{}.typeshed_search_path".format(check.__name__)
+_typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
 
 
 class CheckTest(unittest.TestCase):

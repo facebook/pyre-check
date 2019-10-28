@@ -13,7 +13,7 @@ from .test_functions import __name__ as qualifier, all_functions
 
 
 class GetRequestSpecificDataTest(unittest.TestCase):
-    def test_compute_models(self):
+    def test_compute_models(self) -> None:
         source = "TaintSource[RequestSpecificData]"
         self.assertEqual(
             list(RequestSpecificDataGenerator().compute_models(all_functions)),

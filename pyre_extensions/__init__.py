@@ -78,5 +78,5 @@ class ParameterSpecification(list):
         pass
 
 
-def ListVariadic(name):
+def ListVariadic(name) -> object:
     return Any

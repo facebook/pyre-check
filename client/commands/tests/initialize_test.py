@@ -26,7 +26,7 @@ class InitializeTest(unittest.TestCase):
     @patch("builtins.open")
     def test_initialize(
         self, open, subprocess_call, isfile, which, _get_input, get_yes_no_input
-    ):
+    ) -> None:
         get_yes_no_input.return_value = True
         arguments = mock_arguments()
         # pyre.py does not provide a Configuration instance to
@@ -94,7 +94,7 @@ class InitializeTest(unittest.TestCase):
                 [call("watchman"), call("pyre.bin"), call("/tmp/pyre/bin/pyre.bin")]
             )
 
-    def test_get_local_configuration(self):
+    def test_get_local_configuration(self) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         command = initialize.Initialize(

@@ -12,6 +12,7 @@ import os
 import shutil
 import site
 import sys
+from logging import Logger
 from typing import Dict, List, Optional, Union
 
 from . import (
@@ -25,7 +26,7 @@ from . import (
 from .exceptions import EnvironmentException
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class InvalidConfiguration(Exception):
@@ -51,7 +52,7 @@ class SearchPathElement:
         else:
             return self.root
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: str) -> bool:
         # We support this for testing.
         if isinstance(other, str):
             return self.path() == other
@@ -88,7 +89,7 @@ def expand_search_path(path: Union[Dict[str, str], str]) -> SearchPathElement:
 
 
 class _ConfigurationFile:
-    def __init__(self, file):
+    def __init__(self, file) -> None:
         self._deprecated = {"do_not_check": "ignore_all_errors"}
         contents = file.read()
         self.file_hash = hashlib.sha1(contents.encode("utf-8")).hexdigest()
@@ -162,7 +163,7 @@ class Configuration:
         search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
-        preserve_pythonpath=False,
+        preserve_pythonpath: bool = False,
         excludes: Optional[List[str]] = None,
         formatter: Optional[List[str]] = None,
         logger: Optional[str] = None,

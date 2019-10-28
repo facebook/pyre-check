@@ -11,16 +11,19 @@ import os
 import subprocess
 import sys
 import time
+from argparse import Namespace
+from logging import Logger
+from typing import Iterable
 
 from . import FAILURE, SUCCESS, log, switch_root
 from .configuration import Configuration
 from .exceptions import EnvironmentException
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
-def _parallel_check(command, process_count) -> float:
+def _parallel_check(command: Iterable[str], process_count) -> float:
     LOG.info(
         "Running %d process%s of `%s`",
         process_count,
@@ -92,9 +95,9 @@ if __name__ == "__main__":
         default=10,
         help="Maximum number of concurrent processes to measure.",
     )
-    arguments = parser.parse_args()
-    # pyre-fixme[16]: `Namespace` has no attribute `noninteractive`.
-    arguments.noninteractive = True
+    arguments: Namespace = parser.parse_args()
+    # pyre-fixme[9]: arguments has type `Namespace`; used as `bool`.
+    arguments: Namespace = True
     log.initialize(arguments)
 
     try:

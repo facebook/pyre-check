@@ -15,7 +15,7 @@ import sys
 import time
 import traceback
 from argparse import Namespace
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Optional, Set, TextIO
 
 from . import buck
 from .exceptions import EnvironmentException
@@ -50,7 +50,7 @@ def readable_directory(directory: str) -> str:
     return directory
 
 
-def is_capable_terminal(file=sys.stderr) -> bool:
+def is_capable_terminal(file: TextIO = sys.stderr) -> bool:
     """
     Determine whether we are connected to a capable terminal.
     """

@@ -8,6 +8,7 @@
 import errno
 import logging
 import os
+from logging import Logger
 from typing import List, Optional
 
 from .. import configuration_monitor, filesystem, project_files_monitor
@@ -15,7 +16,7 @@ from .command import ExitCode, IncrementalStyle, typeshed_search_path
 from .reporting import Reporting
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class Start(Reporting):

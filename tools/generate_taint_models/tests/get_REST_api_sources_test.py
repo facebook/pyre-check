@@ -14,7 +14,7 @@ from .test_functions import __name__ as qualifier, all_functions
 
 
 class GetRESTApiSourcesTest(unittest.TestCase):
-    def test_compute_models(self):
+    def test_compute_models(self) -> None:
         source = "TaintSource[UserControlled]"
         self.assertEqual(
             list(RESTApiSourceGenerator().compute_models(all_functions)),

@@ -9,6 +9,7 @@ import atexit
 import logging
 import os
 import subprocess
+from logging import Logger
 from typing import IO, List, cast
 
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
@@ -23,7 +24,7 @@ from .reporting import Reporting
 from .start import Start
 
 
-LOG = logging.getLogger(__name__)
+LOG: Logger = logging.getLogger(__name__)
 
 
 class Incremental(Reporting):
