@@ -430,23 +430,6 @@ let default_to_bottom map keys =
 module Set = Set.Make (T)
 include Hashable.Make (T)
 
-module Cache = struct
-  include Hashable.Make (struct
-    type t = Expression.expression [@@deriving hash, compare, sexp]
-  end)
-
-  let cache = Table.create ~size:1023 ()
-
-  let find element = Hashtbl.find cache element
-
-  let set ~key ~data = Hashtbl.set ~key ~data cache
-
-  let clear ~scheduler ~configuration =
-    (* We need to clear the cache in each of the workers :( *)
-    Scheduler.once_per_worker scheduler ~configuration ~f:(fun () -> Hashtbl.clear cache);
-    Hashtbl.clear cache
-end
-
 let is_any = function
   | Any -> true
   | _ -> false
@@ -1590,520 +1573,481 @@ type alias =
   | VariableAlias of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
-let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value = expression; _ } =
-  match Cache.find expression with
-  | Some result when use_cache -> result
-  | _ ->
-      let result =
-        let result =
-          let create_logic = create_logic ~use_cache ~aliases ~variable_aliases in
-          let resolve_aliases annotation =
-            let visited = Hash_set.create () in
-            let module ResolveTransform = Transform.Make (struct
-              type state = unit
+let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
+  let result =
+    let create_logic = create_logic ~aliases ~variable_aliases in
+    let resolve_aliases annotation =
+      let visited = Hash_set.create () in
+      let module ResolveTransform = Transform.Make (struct
+        type state = unit
 
-              let visit_children_before _ _ = false
+        let visit_children_before _ _ = false
 
-              let visit_children_after = true
+        let visit_children_after = true
 
-              let rec visit _ annotation =
-                let rec resolve annotation =
-                  if Core.Hash_set.mem visited annotation then
-                    annotation
-                  else (
-                    Core.Hash_set.add visited annotation;
-                    match aliases annotation, annotation with
-                    | Some aliased, _ ->
-                        (* We need to fully resolve aliases to aliases before we go on to resolve
-                           the aliases those may contain *)
-                        resolve aliased
-                    | None, Parametric { name; parameters } -> (
-                        let annotation = resolve (Primitive name) in
-                        match annotation with
-                        | Primitive name -> parametric name parameters
-                        | Parametric { name; _ } ->
-                            (* TODO(T44787675): Implement actual generic aliases *)
-                            parametric name parameters
-                        | Union elements ->
-                            (* TODO(T44787675): Implement actual generic aliases *)
-                            let replace_parameters = function
-                              | Parametric { name; _ } -> parametric name parameters
-                              | annotation -> annotation
-                            in
-                            Union (List.map elements ~f:replace_parameters)
-                        | _ ->
-                            (* This should probably error or something *)
-                            parametric name parameters )
-                    | _ -> annotation )
-                in
-                let transformed_annotation = resolve annotation in
-                { Transform.transformed_annotation; new_state = () }
-            end)
-            in
-            snd (ResolveTransform.visit () annotation)
+        let rec visit _ annotation =
+          let rec resolve annotation =
+            if Core.Hash_set.mem visited annotation then
+              annotation
+            else (
+              Core.Hash_set.add visited annotation;
+              match aliases annotation, annotation with
+              | Some aliased, _ ->
+                  (* We need to fully resolve aliases to aliases before we go on to resolve the
+                     aliases those may contain *)
+                  resolve aliased
+              | None, Parametric { name; parameters } -> (
+                  let annotation = resolve (Primitive name) in
+                  match annotation with
+                  | Primitive name -> parametric name parameters
+                  | Parametric { name; _ } ->
+                      (* TODO(T44787675): Implement actual generic aliases *)
+                      parametric name parameters
+                  | Union elements ->
+                      (* TODO(T44787675): Implement actual generic aliases *)
+                      let replace_parameters = function
+                        | Parametric { name; _ } -> parametric name parameters
+                        | annotation -> annotation
+                      in
+                      Union (List.map elements ~f:replace_parameters)
+                  | _ ->
+                      (* This should probably error or something *)
+                      parametric name parameters )
+              | _ -> annotation )
           in
-          let rec is_typing_callable = function
-            | Expression.Name
-                (Name.Attribute
-                  {
-                    base = { Node.value = Name (Name.Identifier "typing"); _ };
-                    attribute = "Callable";
-                    _;
-                  }) ->
-                true
-            | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
-            | Call { callee; _ } -> is_typing_callable (Node.value callee)
-            | _ -> false
-          in
-          let parse_callable expression =
-            let modifiers, implementation_signature, overload_signatures =
-              let get_from_base base implementation_argument overloads_argument =
-                match Node.value base with
-                | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee
-                  ->
-                    Some arguments, implementation_argument, overloads_argument
-                | Name
-                    (Name.Attribute
-                      {
-                        base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "Callable";
-                        _;
-                      }) ->
-                    None, implementation_argument, overloads_argument
-                | _ ->
-                    (* Invalid base. *)
-                    None, None, None
-              in
-              match expression with
-              | Expression.Call
-                  {
-                    callee =
-                      {
-                        Node.value =
-                          Name
-                            (Name.Attribute
-                              {
-                                base =
+          let transformed_annotation = resolve annotation in
+          { Transform.transformed_annotation; new_state = () }
+      end)
+      in
+      snd (ResolveTransform.visit () annotation)
+    in
+    let rec is_typing_callable = function
+      | Expression.Name
+          (Name.Attribute
+            {
+              base = { Node.value = Name (Name.Identifier "typing"); _ };
+              attribute = "Callable";
+              _;
+            }) ->
+          true
+      | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
+      | Call { callee; _ } -> is_typing_callable (Node.value callee)
+      | _ -> false
+    in
+    let parse_callable expression =
+      let modifiers, implementation_signature, overload_signatures =
+        let get_from_base base implementation_argument overloads_argument =
+          match Node.value base with
+          | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee ->
+              Some arguments, implementation_argument, overloads_argument
+          | Name
+              (Name.Attribute
+                {
+                  base = { Node.value = Name (Name.Identifier "typing"); _ };
+                  attribute = "Callable";
+                  _;
+                }) ->
+              None, implementation_argument, overloads_argument
+          | _ ->
+              (* Invalid base. *)
+              None, None, None
+        in
+        match expression with
+        | Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base =
+                            {
+                              Node.value =
+                                Call
                                   {
-                                    Node.value =
-                                      Call
-                                        {
-                                          callee =
-                                            {
-                                              Node.value =
-                                                Name
-                                                  (Name.Attribute
-                                                    { base; attribute = "__getitem__"; _ });
-                                              _;
-                                            };
-                                          arguments = [{ Call.Argument.value = argument; _ }];
-                                        };
-                                    _;
+                                    callee =
+                                      {
+                                        Node.value =
+                                          Name
+                                            (Name.Attribute { base; attribute = "__getitem__"; _ });
+                                        _;
+                                      };
+                                    arguments = [{ Call.Argument.value = argument; _ }];
                                   };
-                                attribute = "__getitem__";
-                                _;
-                              });
-                        _;
-                      };
-                    arguments = [{ Call.Argument.value = overloads_argument; _ }];
-                  } ->
-                  (* Overloads are provided *)
-                  get_from_base base (Some argument) (Some overloads_argument)
-              | Call
-                  {
-                    callee =
-                      {
-                        Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
-                        _;
-                      };
-                    arguments = [{ Call.Argument.value = argument; _ }];
-                  } ->
-                  (* No overloads provided *)
-                  get_from_base base (Some argument) None
-              | _ -> None, None, None
-            in
-            let kind =
-              match modifiers with
-              | Some
-                  ({
-                     Call.Argument.value =
-                       { Node.value = Expression.String { StringLiteral.value; _ }; _ };
-                     _;
-                   }
-                  :: _) ->
-                  Named (Reference.create value)
-              | _ -> Anonymous
-            in
-            let undefined = { annotation = Top; parameters = Undefined; define_location = None } in
-            let get_signature = function
-              | Expression.Tuple [parameters; annotation] ->
-                  let parameters =
-                    let parse_as_variadic parsed_parameter =
-                      create_concatenation_operator_from_annotation
-                        parsed_parameter
-                        ~variable_aliases
-                      >>| fun concatenation -> Parameter.Concatenation concatenation
-                    in
-                    let extract_parameter index parameter =
-                      match Node.value parameter with
-                      | Expression.Call
-                          { callee = { Node.value = Name (Name.Identifier name); _ }; arguments }
-                        -> (
-                          let arguments =
-                            List.map arguments ~f:(fun { Call.Argument.value; _ } ->
-                                Node.value value)
-                          in
-                          match name, arguments with
-                          | "Anonymous", annotation :: tail ->
-                              let default =
-                                match tail with
-                                | [Name (Name.Identifier "default")] -> true
-                                | _ -> false
-                              in
-                              Parameter.Anonymous
-                                {
-                                  index;
-                                  annotation =
-                                    create_logic (Node.create_with_default_location annotation);
-                                  default;
-                                }
-                          | "Named", Name (Name.Identifier name) :: annotation :: tail ->
-                              let default =
-                                match tail with
-                                | [Name (Name.Identifier "default")] -> true
-                                | _ -> false
-                              in
-                              Parameter.Named
-                                {
-                                  name;
-                                  annotation =
-                                    create_logic (Node.create_with_default_location annotation);
-                                  default;
-                                }
-                          | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
-                              let default =
-                                match tail with
-                                | [Name (Name.Identifier "default")] -> true
-                                | _ -> false
-                              in
-                              Parameter.KeywordOnly
-                                {
-                                  name;
-                                  annotation =
-                                    create_logic (Node.create_with_default_location annotation);
-                                  default;
-                                }
-                          | "Variable", tail ->
-                              let annotation =
-                                match tail with
-                                | annotation :: _ ->
-                                    create_logic (Node.create_with_default_location annotation)
-                                | _ -> Top
-                              in
-                              parse_as_variadic annotation
-                              |> Option.value ~default:(Parameter.Concrete annotation)
-                              |> fun variable -> Parameter.Variable variable
-                          | "Keywords", tail ->
-                              let annotation =
-                                match tail with
-                                | annotation :: _ ->
-                                    create_logic (Node.create_with_default_location annotation)
-                                | _ -> Top
-                              in
-                              Parameter.Keywords annotation
-                          | _ -> Parameter.Anonymous { index; annotation = Top; default = false } )
-                      | _ ->
-                          Parameter.Anonymous
-                            { index; annotation = create_logic parameter; default = false }
-                    in
-                    match Node.value parameters with
-                    | List [parameter] -> (
-                        let normal () = Defined [extract_parameter 0 parameter] in
-                        match parse_as_variadic (create_logic parameter) with
-                        | Some variadic -> Defined [Parameter.Variable variadic]
-                        | None -> normal () )
-                    | List parameters -> Defined (List.mapi ~f:extract_parameter parameters)
-                    | _ -> (
-                      match variable_aliases (Expression.show parameters) with
-                      | Some (Record.Variable.ParameterVariadic variable) ->
-                          ParameterVariadicTypeVariable variable
-                      | _ -> Undefined )
-                  in
-                  { annotation = create_logic annotation; parameters; define_location = None }
-              | _ -> undefined
-            in
-            let implementation =
-              match implementation_signature with
-              | Some signature -> get_signature (Node.value signature)
-              | None -> undefined
-            in
-            let overloads =
-              let rec parse_overloads = function
-                | Expression.List arguments -> [get_signature (Tuple arguments)]
-                | Call
-                    {
-                      callee =
-                        {
-                          Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
+                              _;
+                            };
+                          attribute = "__getitem__";
                           _;
-                        };
-                      arguments = [{ Call.Argument.value = argument; _ }];
-                    } ->
-                    get_signature (Node.value argument) :: parse_overloads (Node.value base)
-                | _ -> [undefined]
+                        });
+                  _;
+                };
+              arguments = [{ Call.Argument.value = overloads_argument; _ }];
+            } ->
+            (* Overloads are provided *)
+            get_from_base base (Some argument) (Some overloads_argument)
+        | Call
+            {
+              callee =
+                { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+              arguments = [{ Call.Argument.value = argument; _ }];
+            } ->
+            (* No overloads provided *)
+            get_from_base base (Some argument) None
+        | _ -> None, None, None
+      in
+      let kind =
+        match modifiers with
+        | Some
+            ({
+               Call.Argument.value =
+                 { Node.value = Expression.String { StringLiteral.value; _ }; _ };
+               _;
+             }
+            :: _) ->
+            Named (Reference.create value)
+        | _ -> Anonymous
+      in
+      let undefined = { annotation = Top; parameters = Undefined; define_location = None } in
+      let get_signature = function
+        | Expression.Tuple [parameters; annotation] ->
+            let parameters =
+              let parse_as_variadic parsed_parameter =
+                create_concatenation_operator_from_annotation parsed_parameter ~variable_aliases
+                >>| fun concatenation -> Parameter.Concatenation concatenation
               in
-              match overload_signatures with
-              | Some signatures -> List.rev (parse_overloads (Node.value signatures))
-              | None -> []
+              let extract_parameter index parameter =
+                match Node.value parameter with
+                | Expression.Call
+                    { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
+                    let arguments =
+                      List.map arguments ~f:(fun { Call.Argument.value; _ } -> Node.value value)
+                    in
+                    match name, arguments with
+                    | "Anonymous", annotation :: tail ->
+                        let default =
+                          match tail with
+                          | [Name (Name.Identifier "default")] -> true
+                          | _ -> false
+                        in
+                        Parameter.Anonymous
+                          {
+                            index;
+                            annotation =
+                              create_logic (Node.create_with_default_location annotation);
+                            default;
+                          }
+                    | "Named", Name (Name.Identifier name) :: annotation :: tail ->
+                        let default =
+                          match tail with
+                          | [Name (Name.Identifier "default")] -> true
+                          | _ -> false
+                        in
+                        Parameter.Named
+                          {
+                            name;
+                            annotation =
+                              create_logic (Node.create_with_default_location annotation);
+                            default;
+                          }
+                    | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
+                        let default =
+                          match tail with
+                          | [Name (Name.Identifier "default")] -> true
+                          | _ -> false
+                        in
+                        Parameter.KeywordOnly
+                          {
+                            name;
+                            annotation =
+                              create_logic (Node.create_with_default_location annotation);
+                            default;
+                          }
+                    | "Variable", tail ->
+                        let annotation =
+                          match tail with
+                          | annotation :: _ ->
+                              create_logic (Node.create_with_default_location annotation)
+                          | _ -> Top
+                        in
+                        parse_as_variadic annotation
+                        |> Option.value ~default:(Parameter.Concrete annotation)
+                        |> fun variable -> Parameter.Variable variable
+                    | "Keywords", tail ->
+                        let annotation =
+                          match tail with
+                          | annotation :: _ ->
+                              create_logic (Node.create_with_default_location annotation)
+                          | _ -> Top
+                        in
+                        Parameter.Keywords annotation
+                    | _ -> Parameter.Anonymous { index; annotation = Top; default = false } )
+                | _ ->
+                    Parameter.Anonymous
+                      { index; annotation = create_logic parameter; default = false }
+              in
+              match Node.value parameters with
+              | List [parameter] -> (
+                  let normal () = Defined [extract_parameter 0 parameter] in
+                  match parse_as_variadic (create_logic parameter) with
+                  | Some variadic -> Defined [Parameter.Variable variadic]
+                  | None -> normal () )
+              | List parameters -> Defined (List.mapi ~f:extract_parameter parameters)
+              | _ -> (
+                match variable_aliases (Expression.show parameters) with
+                | Some (Record.Variable.ParameterVariadic variable) ->
+                    ParameterVariadicTypeVariable variable
+                | _ -> Undefined )
             in
-            Callable { kind; implementation; overloads; implicit = None }
-          in
-          match expression with
-          | Call
-              {
-                callee;
-                arguments =
-                  {
-                    Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                    _;
-                  }
-                  :: arguments;
-              }
-            when name_is ~name:"typing.TypeVar" callee ->
-              let constraints =
-                let explicits =
-                  let explicit = function
-                    | { Call.Argument.name = None; value } -> Some (create_logic value)
-                    | _ -> None
-                  in
-                  List.filter_map ~f:explicit arguments
-                in
-                let bound =
-                  let bound = function
-                    | { Call.Argument.value; name = Some { Node.value = bound; _ } }
-                      when String.equal (Identifier.sanitized bound) "bound" ->
-                        Some (create_logic value)
-                    | _ -> None
-                  in
-                  List.find_map ~f:bound arguments
-                in
-                if not (List.is_empty explicits) then
-                  Record.Variable.Explicit explicits
-                else if Option.is_some bound then
-                  Bound (Option.value_exn bound)
-                else
-                  Unconstrained
-              in
-              let variance =
-                let variance_definition = function
-                  | {
-                      Call.Argument.name = Some { Node.value = name; _ };
-                      value = { Node.value = True; _ };
-                    }
-                    when String.equal (Identifier.sanitized name) "covariant" ->
-                      Some Record.Variable.Covariant
-                  | {
-                      Call.Argument.name = Some { Node.value = name; _ };
-                      value = { Node.value = True; _ };
-                    }
-                    when String.equal (Identifier.sanitized name) "contravariant" ->
-                      Some Contravariant
-                  | _ -> None
-                in
-                List.find_map arguments ~f:variance_definition
-                |> Option.value ~default:Record.Variable.Invariant
-              in
-              variable value ~constraints ~variance
-          | Call
-              {
-                callee;
-                arguments =
-                  [
-                    {
-                      Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                      _;
-                    };
-                  ];
-              }
-            when name_is ~name:"typing_extensions.IntVar" callee ->
-              variable value ~constraints:LiteralIntegers
-          | Call
-              {
-                callee;
-                arguments =
-                  [
-                    {
-                      Call.Argument.name = None;
-                      value =
-                        {
-                          Node.value =
-                            Expression.Tuple
-                              ({
-                                 Node.value =
-                                   Expression.String { value = typed_dictionary_name; _ };
-                                 _;
-                               }
-                              :: { Node.value = true_or_false; _ } :: fields);
-                          _;
-                        };
-                    };
-                  ];
-              }
-            when name_is ~name:"mypy_extensions.TypedDict.__getitem__" callee ->
-              let total =
-                match true_or_false with
-                | Expression.True -> Some true
-                | Expression.False -> Some false
-                | _ -> None
-              in
-              let parse_typed_dictionary total =
-                let fields =
-                  let tuple_to_field = function
-                    | {
-                        Node.value =
-                          Expression.Tuple
-                            [
-                              { Node.value = Expression.String { value = field_name; _ }; _ };
-                              field_annotation;
-                            ];
-                        _;
-                      } ->
-                        Some { name = field_name; annotation = create_logic field_annotation }
-                    | _ -> None
-                  in
-                  fields |> List.filter_map ~f:tuple_to_field
-                in
-                TypedDictionary { name = typed_dictionary_name; fields; total }
-              in
-              let undefined_primitive =
-                Primitive (Expression.show (Node.create_with_default_location expression))
-              in
-              total >>| parse_typed_dictionary |> Option.value ~default:undefined_primitive
-          | Call { callee; arguments }
-            when name_is ~name:"typing_extensions.Literal.__getitem__" callee ->
-              let arguments =
-                match arguments with
-                | [
-                 {
-                   Call.Argument.name = None;
-                   value = { Node.value = Expression.Tuple arguments; _ };
-                 };
-                ] ->
-                    Some (List.map arguments ~f:Node.value)
-                | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] ->
-                    Some [argument]
-                | _ -> None
-              in
-              let parse = function
-                | Expression.True -> Some (Literal (Boolean true))
-                | Expression.False -> Some (Literal (Boolean false))
-                | Expression.Integer literal -> Some (literal_integer literal)
-                | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
-                    Some (literal_string value)
-                | _ -> None
-              in
-              arguments >>| List.map ~f:parse >>= Option.all >>| union |> Option.value ~default:Top
-          | Call { callee = { Node.value = callee; _ }; _ } when is_typing_callable callee ->
-              parse_callable expression
+            { annotation = create_logic annotation; parameters; define_location = None }
+        | _ -> undefined
+      in
+      let implementation =
+        match implementation_signature with
+        | Some signature -> get_signature (Node.value signature)
+        | None -> undefined
+      in
+      let overloads =
+        let rec parse_overloads = function
+          | Expression.List arguments -> [get_signature (Tuple arguments)]
           | Call
               {
                 callee =
                   { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
                 arguments = [{ Call.Argument.value = argument; _ }];
-              } -> (
-              let parametric name =
-                let parameters =
-                  let parameters =
-                    match Node.value argument with
-                    | Expression.Tuple elements -> elements
-                    | _ -> [argument]
-                  in
-                  List.map parameters ~f:create_logic
-                in
-                Parametric { name; parameters = Concrete parameters } |> resolve_aliases
-              in
-              match create_logic base, Node.value base with
-              | Primitive name, _ -> parametric name
-              | _, Name _ -> parametric (Expression.show base)
-              | _ -> Top )
-          | Name (Name.Identifier identifier) ->
-              let sanitized = Identifier.sanitized identifier in
-              if String.equal sanitized "None" then
-                none
-              else
-                Primitive sanitized |> resolve_aliases
-          | Name (Name.Attribute { base; attribute; _ }) -> (
-              let attribute = Identifier.sanitized attribute in
-              match create_logic base with
-              | Primitive primitive -> Primitive (primitive ^ "." ^ attribute) |> resolve_aliases
-              | _ -> Primitive (Expression.show base ^ "." ^ attribute) )
-          | Ellipsis -> Primitive "..."
-          | String { StringLiteral.value; _ } ->
-              let expression =
-                try
-                  let parsed =
-                    Parser.parse [value]
-                    |> Source.create
-                    |> Preprocessing.preprocess
-                    |> Source.statements
-                  in
-                  match parsed with
-                  | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
-                  | _ -> None
-                with
-                | _ -> None
-              in
-              expression
-              >>| Node.create_with_default_location
-              >>| create_logic
-              |> Option.value ~default:(Primitive value)
-          | _ -> Top
+              } ->
+              get_signature (Node.value argument) :: parse_overloads (Node.value base)
+          | _ -> [undefined]
         in
-        let substitute_ordered_types = function
-          | [Primitive "..."] -> Record.OrderedTypes.Any
-          | [parameter] ->
-              create_concatenation_operator_from_annotation parameter ~variable_aliases
-              >>| (fun concatenation -> Record.OrderedTypes.Concatenation concatenation)
-              |> Option.value ~default:(Record.OrderedTypes.Concrete [parameter])
-          | parameters -> Concrete parameters
-        in
-        (* Substitutions. *)
-        match result with
-        | Primitive name -> (
-          match Identifier.Table.find primitive_substitution_map name with
-          | Some substitute -> substitute
-          | None -> result )
-        | Parametric { name; parameters = Concrete parameters } -> (
-          match Identifier.Table.find parametric_substitution_map name with
-          | Some name -> Parametric { name; parameters = substitute_ordered_types parameters }
-          | None -> (
-            match name with
-            | "typing_extensions.Annotated"
-            | "typing.Annotated"
-              when List.length parameters > 0 ->
-                annotated (List.hd_exn parameters)
-            | "typing.Optional" when List.length parameters = 1 ->
-                optional (List.hd_exn parameters)
-            | "tuple"
-            | "typing.Tuple" ->
-                let tuple : tuple =
-                  match parameters with
-                  | [parameter; Primitive "..."] -> Unbounded parameter
-                  | parameters ->
-                      substitute_ordered_types parameters |> fun bounded -> Bounded bounded
-                in
-                Tuple tuple
-            | "typing.Union" -> union parameters
-            | _ -> Parametric { name; parameters = substitute_ordered_types parameters } ) )
-        | Union elements -> union elements
-        | _ -> result
+        match overload_signatures with
+        | Some signatures -> List.rev (parse_overloads (Node.value signatures))
+        | None -> []
       in
-      if use_cache then
-        Cache.set ~key:expression ~data:result;
-      result
+      Callable { kind; implementation; overloads; implicit = None }
+    in
+    match expression with
+    | Call
+        {
+          callee;
+          arguments =
+            { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }; _ }
+            :: arguments;
+        }
+      when name_is ~name:"typing.TypeVar" callee ->
+        let constraints =
+          let explicits =
+            let explicit = function
+              | { Call.Argument.name = None; value } -> Some (create_logic value)
+              | _ -> None
+            in
+            List.filter_map ~f:explicit arguments
+          in
+          let bound =
+            let bound = function
+              | { Call.Argument.value; name = Some { Node.value = bound; _ } }
+                when String.equal (Identifier.sanitized bound) "bound" ->
+                  Some (create_logic value)
+              | _ -> None
+            in
+            List.find_map ~f:bound arguments
+          in
+          if not (List.is_empty explicits) then
+            Record.Variable.Explicit explicits
+          else if Option.is_some bound then
+            Bound (Option.value_exn bound)
+          else
+            Unconstrained
+        in
+        let variance =
+          let variance_definition = function
+            | {
+                Call.Argument.name = Some { Node.value = name; _ };
+                value = { Node.value = True; _ };
+              }
+              when String.equal (Identifier.sanitized name) "covariant" ->
+                Some Record.Variable.Covariant
+            | {
+                Call.Argument.name = Some { Node.value = name; _ };
+                value = { Node.value = True; _ };
+              }
+              when String.equal (Identifier.sanitized name) "contravariant" ->
+                Some Contravariant
+            | _ -> None
+          in
+          List.find_map arguments ~f:variance_definition
+          |> Option.value ~default:Record.Variable.Invariant
+        in
+        variable value ~constraints ~variance
+    | Call
+        {
+          callee;
+          arguments =
+            [{ Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }; _ }];
+        }
+      when name_is ~name:"typing_extensions.IntVar" callee ->
+        variable value ~constraints:LiteralIntegers
+    | Call
+        {
+          callee;
+          arguments =
+            [
+              {
+                Call.Argument.name = None;
+                value =
+                  {
+                    Node.value =
+                      Expression.Tuple
+                        ({ Node.value = Expression.String { value = typed_dictionary_name; _ }; _ }
+                        :: { Node.value = true_or_false; _ } :: fields);
+                    _;
+                  };
+              };
+            ];
+        }
+      when name_is ~name:"mypy_extensions.TypedDict.__getitem__" callee ->
+        let total =
+          match true_or_false with
+          | Expression.True -> Some true
+          | Expression.False -> Some false
+          | _ -> None
+        in
+        let parse_typed_dictionary total =
+          let fields =
+            let tuple_to_field = function
+              | {
+                  Node.value =
+                    Expression.Tuple
+                      [
+                        { Node.value = Expression.String { value = field_name; _ }; _ };
+                        field_annotation;
+                      ];
+                  _;
+                } ->
+                  Some { name = field_name; annotation = create_logic field_annotation }
+              | _ -> None
+            in
+            fields |> List.filter_map ~f:tuple_to_field
+          in
+          TypedDictionary { name = typed_dictionary_name; fields; total }
+        in
+        let undefined_primitive =
+          Primitive (Expression.show (Node.create_with_default_location expression))
+        in
+        total >>| parse_typed_dictionary |> Option.value ~default:undefined_primitive
+    | Call { callee; arguments } when name_is ~name:"typing_extensions.Literal.__getitem__" callee
+      ->
+        let arguments =
+          match arguments with
+          | [{ Call.Argument.name = None; value = { Node.value = Expression.Tuple arguments; _ } }]
+            ->
+              Some (List.map arguments ~f:Node.value)
+          | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] ->
+              Some [argument]
+          | _ -> None
+        in
+        let parse = function
+          | Expression.True -> Some (Literal (Boolean true))
+          | Expression.False -> Some (Literal (Boolean false))
+          | Expression.Integer literal -> Some (literal_integer literal)
+          | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
+              Some (literal_string value)
+          | _ -> None
+        in
+        arguments >>| List.map ~f:parse >>= Option.all >>| union |> Option.value ~default:Top
+    | Call { callee = { Node.value = callee; _ }; _ } when is_typing_callable callee ->
+        parse_callable expression
+    | Call
+        {
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+          arguments = [{ Call.Argument.value = argument; _ }];
+        } -> (
+        let parametric name =
+          let parameters =
+            let parameters =
+              match Node.value argument with
+              | Expression.Tuple elements -> elements
+              | _ -> [argument]
+            in
+            List.map parameters ~f:create_logic
+          in
+          Parametric { name; parameters = Concrete parameters } |> resolve_aliases
+        in
+        match create_logic base, Node.value base with
+        | Primitive name, _ -> parametric name
+        | _, Name _ -> parametric (Expression.show base)
+        | _ -> Top )
+    | Name (Name.Identifier identifier) ->
+        let sanitized = Identifier.sanitized identifier in
+        if String.equal sanitized "None" then
+          none
+        else
+          Primitive sanitized |> resolve_aliases
+    | Name (Name.Attribute { base; attribute; _ }) -> (
+        let attribute = Identifier.sanitized attribute in
+        match create_logic base with
+        | Primitive primitive -> Primitive (primitive ^ "." ^ attribute) |> resolve_aliases
+        | _ -> Primitive (Expression.show base ^ "." ^ attribute) )
+    | Ellipsis -> Primitive "..."
+    | String { StringLiteral.value; _ } ->
+        let expression =
+          try
+            let parsed =
+              Parser.parse [value]
+              |> Source.create
+              |> Preprocessing.preprocess
+              |> Source.statements
+            in
+            match parsed with
+            | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
+            | _ -> None
+          with
+          | _ -> None
+        in
+        expression
+        >>| Node.create_with_default_location
+        >>| create_logic
+        |> Option.value ~default:(Primitive value)
+    | _ -> Top
+  in
+  let substitute_ordered_types = function
+    | [Primitive "..."] -> Record.OrderedTypes.Any
+    | [parameter] ->
+        create_concatenation_operator_from_annotation parameter ~variable_aliases
+        >>| (fun concatenation -> Record.OrderedTypes.Concatenation concatenation)
+        |> Option.value ~default:(Record.OrderedTypes.Concrete [parameter])
+    | parameters -> Concrete parameters
+  in
+  (* Substitutions. *)
+  match result with
+  | Primitive name -> (
+    match Identifier.Table.find primitive_substitution_map name with
+    | Some substitute -> substitute
+    | None -> result )
+  | Parametric { name; parameters = Concrete parameters } -> (
+    match Identifier.Table.find parametric_substitution_map name with
+    | Some name -> Parametric { name; parameters = substitute_ordered_types parameters }
+    | None -> (
+      match name with
+      | "typing_extensions.Annotated"
+      | "typing.Annotated"
+        when List.length parameters > 0 ->
+          annotated (List.hd_exn parameters)
+      | "typing.Optional" when List.length parameters = 1 -> optional (List.hd_exn parameters)
+      | "tuple"
+      | "typing.Tuple" ->
+          let tuple : tuple =
+            match parameters with
+            | [parameter; Primitive "..."] -> Unbounded parameter
+            | parameters -> substitute_ordered_types parameters |> fun bounded -> Bounded bounded
+          in
+          Tuple tuple
+      | "typing.Union" -> union parameters
+      | _ -> Parametric { name; parameters = substitute_ordered_types parameters } ) )
+  | Union elements -> union elements
+  | _ -> result
 
 
-let create ?use_cache ~aliases =
+let create ~aliases =
   let variable_aliases name =
     match aliases name with
     | Some (VariableAlias variable) -> Some variable
@@ -2116,7 +2060,7 @@ let create ?use_cache ~aliases =
       | _ -> None )
     | _ -> None
   in
-  create_logic ?use_cache ~aliases ~variable_aliases
+  create_logic ~aliases ~variable_aliases
 
 
 let contains_callable annotation = exists annotation ~predicate:is_callable

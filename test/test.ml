@@ -14,8 +14,7 @@ open Statement
 let initialize () =
   Memory.initialize_for_tests ();
   Log.initialize_for_tests ();
-  Statistics.disable ();
-  Type.Cache.clear ~scheduler:(Scheduler.mock ()) ~configuration:(Configuration.Analysis.create ())
+  Statistics.disable ()
 
 
 let () = initialize ()

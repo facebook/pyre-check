@@ -36,7 +36,7 @@ module UnresolvedAlias = struct
   }
 
   let unchecked_resolve ~unparsed ~target map =
-    match Type.create ~aliases:(Map.find map) ~use_cache:false unparsed with
+    match Type.create ~aliases:(Map.find map) unparsed with
     | Type.Variable variable ->
         if Type.Variable.Unary.contains_subvariable variable then
           Type.Any
@@ -120,7 +120,6 @@ let extract_alias { unannotated_global_environment } name ~dependency =
         let target_annotation =
           Type.create
             ~aliases:(fun _ -> None)
-            ~use_cache:false
             (from_reference ~location:Location.Reference.any name)
         in
         match Node.value value, explicit_annotation with
@@ -236,7 +235,7 @@ let extract_alias { unannotated_global_environment } name ~dependency =
         | Call _, None
         | Name _, None -> (
             let value = delocalize value in
-            let value_annotation = Type.create ~aliases:(fun _ -> None) ~use_cache:false value in
+            let value_annotation = Type.create ~aliases:(fun _ -> None) value in
             match Type.Variable.parse_declaration value ~target:name with
             | Some variable -> Some (VariableAlias variable)
             | _ ->
@@ -354,11 +353,7 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
   let equal_value = Type.equal_alias
 end)
 
-let update environment ~scheduler ~configuration upstream =
-  let result = Aliases.update environment ~scheduler ~configuration upstream in
-  Type.Cache.clear ~scheduler ~configuration;
-  result
-
+let update = Aliases.update
 
 let read_only { unannotated_global_environment } = Aliases.read_only unannotated_global_environment
 
@@ -377,12 +372,11 @@ module ReadOnly = struct
       ?(allow_primitives_from_empty_stubs = false)
       expression
     =
-    let use_type_create_cache = Option.is_none modify_aliases in
     let modify_aliases = Option.value modify_aliases ~default:Fn.id in
     let parsed =
       let expression = delocalize expression in
       let aliases name = get_alias environment ?dependency name >>| modify_aliases in
-      Type.create ~aliases ~use_cache:use_type_create_cache expression
+      Type.create ~aliases expression
     in
     let annotation =
       if allow_primitives_from_empty_stubs then
