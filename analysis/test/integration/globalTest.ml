@@ -286,9 +286,10 @@ let test_check_globals context =
        is specified.";
       "Missing global annotation [5]: Globally accessible variable `x` has type `None` but no \
        type is specified.";
-      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, "
-      ^ "add an explicit annotation.";
+      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, add \
+       an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
+      "Incompatible return type [7]: Expected `str` but got `unknown`.";
       "Incompatible return type [7]: Expected `typing.List[int]` but got `unknown`.";
     ];
   assert_type_errors {|

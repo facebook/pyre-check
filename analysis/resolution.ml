@@ -43,11 +43,8 @@ let pp format { annotations; type_variables; _ } =
 
 let show resolution = Format.asprintf "%a" pp resolution
 
-let is_global { annotations; global_resolution; _ } ~reference =
-  let global = GlobalResolution.global global_resolution in
-  match Map.find annotations reference with
-  | Some annotation -> Annotation.is_global annotation
-  | _ -> Reference.delocalize reference |> global |> Option.is_some
+let is_global { global_resolution; _ } ~reference =
+  Reference.delocalize reference |> GlobalResolution.global global_resolution |> Option.is_some
 
 
 let set_local ({ annotations; _ } as resolution) ~reference ~annotation =

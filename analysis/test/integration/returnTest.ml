@@ -84,8 +84,8 @@ let test_check_return context =
     [
       "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
        `typing.Type` to avoid runtime subscripting errors.";
-      "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type that does not contain \
+       `Any`.";
     ];
   assert_type_errors
     {|

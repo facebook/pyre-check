@@ -176,27 +176,13 @@ let test_show_error_traces context =
   assert_type_errors
     {|
       def foo() -> None:
-        global x
-        x = 5
-      def bar() -> None:
-        global x
-        x = "str"
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `x` has type `int` but no type \
-       is specified. Global variable `x` declared on line 4, type `int` deduced from test.py:4:2.";
-      "Missing global annotation [5]: Globally accessible variable `x` has type `str` but no type \
-       is specified. Global variable `x` declared on line 7, type `str` deduced from test.py:7:2.";
-    ];
-  assert_type_errors
-    {|
-      a: typing.List[float] = [1]
-      b: typing.List[int] = [2]
-      a = b
+        a: typing.List[float] = [1]
+        b: typing.List[int] = [2]
+        a = b
     |}
     [
       "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is \
-       used as type `typing.List[int]`. Redeclare `a` on line 4 if you wish to override the \
+       used as type `typing.List[int]`. Redeclare `a` on line 5 if you wish to override the \
        previously declared type. See \
        https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches-with-subclassing \
        for mutable container errors.";

@@ -132,11 +132,7 @@ let test_check_global_refinement context =
         if x is not None:
           reveal_type(x)
     |}
-    (* TODO(T47870649): Refinement should not work. *)
-    [
-      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: \
-       `typing_extensions.Literal[1]`).";
-    ]
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]`."]
 
 
 let test_check_local_refinement context =

@@ -679,16 +679,6 @@ let test_check_immutable_annotations context =
         return constant
     |}
     ["Incompatible return type [7]: Expected `int` but got `None`."];
-  assert_type_errors
-    {|
-      def foo() -> None:
-        global constant
-        constant = 1
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
-      ^ "no type is specified.";
-    ];
 
   assert_type_errors
     {|
@@ -702,17 +692,6 @@ let test_check_immutable_annotations context =
        as type other than `Any`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
        type `Any` is specified.";
-    ];
-  assert_type_errors
-    {|
-      def foo() -> int:
-        global constant
-        constant = 1
-        return constant
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
-      ^ "no type is specified.";
     ];
   assert_type_errors
     {|
@@ -825,81 +804,16 @@ let test_check_immutable_annotations context =
     [];
   assert_type_errors
     {|
-      def foo() -> None:
-        global constant
-        constant = 1
-      def bar() -> None:
-        global constant
-        constant = "hi"
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
-       no type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but \
-       no type is specified.";
-    ];
-  assert_type_errors
-    {|
-      def foo() -> None:
-        global constant
-        constant = 1
-      def bar() -> None:
-        global constant
-        constant = None
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
-       no type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `None` but \
-       no type is specified.";
-    ];
-  assert_type_errors
-    {|
-      def foo() -> None:
-        global constant
-        constant = 1
-      def bar() -> None:
-        global constant
-        constant = 1.0
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
-       no type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `float` \
-       but no type is specified.";
-    ];
-  assert_type_errors
-    {|
-      def foo() -> None:
-        global constant
-        constant = A()
-      def bar() -> None:
-        global constant
-        constant = B()
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but no \
-       type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `B` but no \
-       type is specified.";
-    ];
-  assert_type_errors
-    {|
       class Foo():
         constant = ...
       def foo() -> None:
         foo = Foo()
         foo.constant = 1
-      def bar() -> None:
-        global constant
-        constant = "hi"
     |}
     [
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified.";
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but \
        no type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but "
-      ^ "no type is specified.";
     ];
   assert_type_errors
     {|

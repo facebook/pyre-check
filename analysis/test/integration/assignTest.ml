@@ -103,6 +103,15 @@ let test_check_assign context =
     ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
   assert_type_errors
     {|
+      import typing
+      from typing import Final
+      def foo() -> None:
+        x: Final[int] = 3
+        x = 200
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+  assert_type_errors
+    {|
       from typing import Final
       i = 0
       while i < 10:

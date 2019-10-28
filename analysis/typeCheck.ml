@@ -3567,20 +3567,24 @@ module State (Context : Context) = struct
                 match name with
                 | Identifier identifier ->
                     let reference = Reference.create identifier in
+                    let is_global = Resolution.is_global resolution ~reference in
+                    let refine_annotation annotation refined =
+                      if is_global && not (Define.is_toplevel Context.define.value) then
+                        annotation
+                      else
+                        Refinement.refine ~resolution:global_resolution annotation refined
+                    in
                     let annotation =
                       if explicit && is_valid_annotation then
                         let annotation =
-                          Annotation.create_immutable
-                            ~global:(Resolution.is_global ~reference resolution)
-                            ~final:is_final
-                            guide
+                          Annotation.create_immutable ~global:is_global ~final:is_final guide
                         in
                         if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
-                          Refinement.refine ~resolution:global_resolution annotation resolved
+                          refine_annotation annotation resolved
                         else
                           annotation
                       else if is_immutable then
-                        Refinement.refine ~resolution:global_resolution target_annotation guide
+                        refine_annotation target_annotation guide
                       else
                         Annotation.create guide
                     in

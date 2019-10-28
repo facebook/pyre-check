@@ -170,14 +170,18 @@ let test_lookup_class_attributes context =
 
 
 let test_lookup_comprehensions context =
-  let source = {|a = [x for x in [1.0]]|} in
+  let source = {|
+       def foo() -> None:
+         a = [x for x in [1.0]]
+    |} in
   assert_annotation_list
     ~lookup:(generate_lookup ~context source)
     [
-      "1:0-1:1/typing.List[float]";
-      "1:16-1:21/typing.List[float]";
-      "1:17-1:20/float";
-      "1:4-1:22/typing.List[float]";
+      "2:13-2:17/None";
+      "3:18-3:23/typing.List[float]";
+      "3:19-3:22/float";
+      "3:2-3:3/typing.List[float]";
+      "3:6-3:24/typing.List[float]";
     ]
 
 
