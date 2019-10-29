@@ -1,5 +1,4 @@
 Require Import List ZArith String.
-Require Import Pyre.Prelude.
 
 (** Types *)
 Inductive t: Set :=
@@ -14,7 +13,7 @@ with tlist: Set :=
  | Cons: t -> tlist -> tlist
 .
 
-Hint Constructors t tlist : yre.
+Hint Constructors t tlist : core.
 
 Scheme typ_ind' := Induction for t Sort Prop
   with typ_list_ind' := Induction for tlist Sort Prop.

@@ -1,5 +1,4 @@
 Require Import String Bool ZArith List.
-Require Import Pyre.Prelude.
 
 (** * Values *)
 Inductive t : Set :=
@@ -12,7 +11,7 @@ with tlist  : Set :=
   | Cons: t -> tlist -> tlist
 .
 
-Hint Constructors t tlist : Pyre.
+Hint Constructors t tlist : core.
 
 Scheme value_ind' := Induction for t Sort Prop
   with value_list_ind' := Induction for tlist Sort Prop.

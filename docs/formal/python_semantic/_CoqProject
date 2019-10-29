@@ -1,6 +1,5 @@
 -Q . Pyre
 
-Prelude.v
 Map.v
 Value.v
 Lvalue.v

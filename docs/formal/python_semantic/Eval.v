@@ -1,5 +1,4 @@
 Require Import String Bool ZArith List.
-Require Import Pyre.Prelude.
 Require Pyre.Value.
 Require Pyre.Lvalue.
 Require Pyre.Typ.
@@ -273,7 +272,7 @@ Inductive sssn: State -> Statement.t -> Cont ->
          sssn s st k s'' st'' k''
 .
 
-Hint Constructors sss sssn : Pyre.
+Hint Constructors sss sssn : core.
 
 Lemma sssn_step: forall s st k s' st' k', sss s st k s' st' k' ->
     sssn s st k s' st' k'.

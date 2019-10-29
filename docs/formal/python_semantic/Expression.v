@@ -1,5 +1,4 @@
 Require Import ZArith List String.
-Require Import Pyre.Prelude.
 
 (** * Operators *)
 (** Boolean operators *)
@@ -54,7 +53,7 @@ with tlist: Set :=
 .
 
 (* begin hide *)
-Hint Constructors t tlist : Pyre.
+Hint Constructors t tlist : core.
 
 Scheme expr_ind' := Induction for t Sort Prop
     with expr_list_ind' := Induction for tlist Sort Prop.
