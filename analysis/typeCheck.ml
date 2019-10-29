@@ -910,14 +910,25 @@ module State (Context : Context) = struct
                       ( add_missing_parameter_annotation_error ~state ~given_annotation:None None,
                         Annotation.create Type.Any ) )
             in
-            let annotation =
-              let annotation = Type.Variable.mark_all_variables_as_bound annotation in
+            let apply_starred_annotations annotation =
               if String.is_prefix ~prefix:"**" name then
                 Type.dictionary ~key:Type.string ~value:annotation
               else if String.is_prefix ~prefix:"*" name then
                 Type.Tuple (Type.Unbounded annotation)
               else
                 annotation
+            in
+            let annotation =
+              Type.Variable.mark_all_variables_as_bound annotation |> apply_starred_annotations
+            in
+            let mutability =
+              match mutability with
+              | Annotation.Immutable { Annotation.original; scope; final } ->
+                  let original =
+                    Type.Variable.mark_all_variables_as_bound original |> apply_starred_annotations
+                  in
+                  Annotation.Immutable { Annotation.original; scope; final }
+              | _ -> mutability
             in
             state, { Annotation.annotation; mutability }
           in
@@ -941,13 +952,6 @@ module State (Context : Context) = struct
               | None -> parse_as_unary ()
             else
               parse_as_unary ()
-          in
-          let mutability =
-            match mutability with
-            | Immutable { original; scope; final } ->
-                Annotation.Immutable
-                  { original = Type.Variable.mark_all_variables_as_bound original; scope; final }
-            | _ -> mutability
           in
           ( state,
             Map.set

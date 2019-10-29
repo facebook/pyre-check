@@ -213,7 +213,42 @@ let test_check_assign context =
          y: Type[Exception] = x
          return y()
     |}
-    []
+    [];
+  assert_type_errors {|
+      def foo( *args: str) -> None:
+       args = args[1:]
+    |} [];
+  assert_type_errors
+    {|
+      def foo( *args: str) -> None:
+       args = [1, 2, 3]
+    |}
+    ["Incompatible variable type [9]: Unable to unpack `typing.List[int]`, expected a tuple."];
+  assert_type_errors
+    {|
+      def foo( *args: str) -> None:
+       args = (1, 2, 3)
+    |}
+    [
+      "Incompatible variable type [9]: args is declared to have type `typing.Tuple[str, ...]` but \
+       is used as type `typing.Tuple[int, int, int]`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo( **kwargs: str) -> None:
+       kwargs = {"foo": "bar"}
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo( **kwargs: str) -> None:
+       kwargs = {"foo": 1}
+    |}
+    [
+      "Incompatible variable type [9]: kwargs is declared to have type `typing.Dict[str, str]` \
+       but is used as type `typing.Dict[str, int]`.";
+    ]
 
 
 let () = "assign" >::: ["check_assign" >:: test_check_assign] |> Test.run
