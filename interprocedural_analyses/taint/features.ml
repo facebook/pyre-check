@@ -109,14 +109,23 @@ let add_type_breadcrumb ~resolution annotation =
     | Some Type.Any -> false
     | Some return_type ->
         GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.number
-        || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.bool
         || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.enumeration
   in
+  let is_boolean =
+    match annotation with
+    | None -> false
+    | Some Type.Any -> false
+    | Some return_type ->
+        GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.bool
+  in
   let add feature_set =
-    if not is_scalar then
-      feature_set
-    else
-      SimpleSet.element (Simple.Breadcrumb (Breadcrumb.Type "scalar")) :: feature_set
+    let add_if cond type_name feature_set =
+      if cond then
+        SimpleSet.element (Simple.Breadcrumb (Breadcrumb.Type type_name)) :: feature_set
+      else
+        feature_set
+    in
+    feature_set |> add_if (is_scalar || is_boolean) "scalar" |> add_if is_boolean "bool"
   in
   add
 

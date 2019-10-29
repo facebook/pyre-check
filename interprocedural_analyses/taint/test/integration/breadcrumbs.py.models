@@ -20,6 +20,7 @@
             ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "bool" },
               { "always-via": "special_sink" }
             ]
           }
@@ -53,6 +54,7 @@
             ],
             "features": [
               { "always-type": "scalar" },
+              { "always-type": "bool" },
               { "always-via": "special_source" }
             ]
           }
