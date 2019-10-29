@@ -204,6 +204,8 @@ module TypeQuery : sig
   [@@deriving eq, show, to_yojson]
 
   val create_type_at_location : Location.Instantiated.t * Type.t -> type_at_location
+
+  val json_socket_response : response -> Yojson.Safe.t
 end
 
 module Request : sig

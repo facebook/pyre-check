@@ -132,6 +132,13 @@ let computation_thread
                 Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore
               with
               | _ -> Log.error "Socket error" )
+            | Some (TypeQueryResponse response) ->
+                let out_channel = Unix.out_channel_of_descr socket in
+                response
+                |> TypeQuery.json_socket_response
+                |> LanguageServer.Protocol.write_message out_channel;
+                Out_channel.flush out_channel;
+                Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore
             | _ -> () );
             state
         | Protocol.Request.FileNotifier
@@ -206,8 +213,11 @@ let computation_thread
 
 
 let request_handler_thread
-    ( ( { Configuration.Server.configuration = { expected_version; local_root; _ }; _ } as
-      server_configuration ),
+    ( ( {
+          Configuration.Server.configuration =
+            { expected_version; local_root; _ } as analysis_configuration;
+          _;
+        } as server_configuration ),
       ({ Server.State.lock; connections = raw_connections } as connections),
       request_queue )
   =
@@ -246,15 +256,30 @@ let request_handler_thread
     try
       let origin request =
         match Yojson.Safe.Util.member "method" request |> Yojson.Safe.Util.to_string with
-        | "displayTypeErrors" -> Protocol.Request.JSONSocket socket
+        | "displayTypeErrors"
+        | "typeQuery" ->
+            Protocol.Request.JSONSocket socket
         | _ -> Protocol.Request.FileNotifier
+      in
+      let request_type request =
+        match Yojson.Safe.Util.member "method" request |> Yojson.Safe.Util.to_string with
+        | "typeQuery" ->
+            request
+            |> Yojson.Safe.Util.member "params"
+            |> Yojson.Safe.Util.member "query"
+            |> Yojson.Safe.to_string
+            |> String.strip ~drop:(Char.equal '\"')
+            |> Query.parse_query ~configuration:analysis_configuration
+        | _ ->
+            request
+            |> Yojson.Safe.to_string
+            |> fun request -> Protocol.Request.LanguageServerProtocolRequest request
       in
       Log.log ~section:`Server "A file notifier is readable.";
       let request = socket |> Unix.in_channel_of_descr |> LanguageServer.Protocol.read_message in
       let origin = request >>| origin |> Option.value ~default:Protocol.Request.FileNotifier in
       request
-      >>| Yojson.Safe.to_string
-      >>| (fun request -> Protocol.Request.LanguageServerProtocolRequest request)
+      >>| request_type
       |> function
       | Some request -> queue_request ~origin request
       | None -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket."

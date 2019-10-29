@@ -310,6 +310,9 @@ module TypeQuery = struct
 
 
   let create_type_at_location (location, annotation) = { location; annotation }
+
+  let json_socket_response response =
+    `Assoc ["jsonrpc", `String "2.0"; "error", `Null; "result", response_to_yojson response]
 end
 
 module Request = struct
