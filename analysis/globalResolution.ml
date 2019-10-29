@@ -514,8 +514,11 @@ let aliases { aliases; _ } = aliases
 
 let module_definition { module_definition; _ } = module_definition
 
-module FunctionDefinitionsCache = struct
-  let cache = Reference.Table.create ()
+module DefinitionsCache (Type : sig
+  type t
+end) =
+struct
+  let cache : Type.t Reference.Table.t = Reference.Table.create ()
 
   let enabled =
     (* Only enable this in nonincremental mode for now. *)
@@ -535,6 +538,14 @@ module FunctionDefinitionsCache = struct
 
   let invalidate () = Hashtbl.clear cache
 end
+
+module FunctionDefinitionsCache = DefinitionsCache (struct
+  type t = Define.t Node.t list option
+end)
+
+module ClassDefinitionsCache = DefinitionsCache (struct
+  type t = Class.t Node.t list option
+end)
 
 let containing_source resolution reference =
   let ast_environment = ast_environment resolution in
@@ -567,9 +578,17 @@ let function_definitions resolution reference =
 
 
 let class_definitions resolution reference =
-  containing_source resolution reference
-  >>| Preprocessing.classes
-  >>| List.filter ~f:(fun { Node.value = { Class.name; _ }; _ } -> Reference.equal reference name)
+  match ClassDefinitionsCache.get reference with
+  | Some result -> result
+  | None ->
+      let result =
+        containing_source resolution reference
+        >>| Preprocessing.classes
+        >>| List.filter ~f:(fun { Node.value = { Class.name; _ }; _ } ->
+                Reference.equal reference name)
+      in
+      ClassDefinitionsCache.set reference result;
+      result
 
 
 let is_suppressed_module resolution reference =

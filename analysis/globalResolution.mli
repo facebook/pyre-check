@@ -167,6 +167,12 @@ module FunctionDefinitionsCache : sig
   val invalidate : unit -> unit
 end
 
+module ClassDefinitionsCache : sig
+  val enable : unit -> unit
+
+  val invalidate : unit -> unit
+end
+
 val function_definitions : t -> Reference.t -> Define.t Node.t list option
 
 val is_suppressed_module : t -> Reference.t -> bool
