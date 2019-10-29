@@ -140,7 +140,7 @@ let get_definition ~resolution = function
   | `Function name ->
       Reference.create name
       |> GlobalResolution.function_definitions resolution
-      >>= List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_method value))
+      >>= List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value))
   | `Method { class_name; method_name } when String.equal method_name "$class_toplevel" -> (
       Reference.create class_name
       |> GlobalResolution.class_definitions resolution

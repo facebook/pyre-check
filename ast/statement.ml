@@ -821,7 +821,7 @@ and Define : sig
 
     val is_abstract_method : t -> bool
 
-    val is_overloaded_method : t -> bool
+    val is_overloaded_function : t -> bool
 
     val is_static_method : t -> bool
 
@@ -870,7 +870,7 @@ and Define : sig
 
   val is_abstract_method : t -> bool
 
-  val is_overloaded_method : t -> bool
+  val is_overloaded_function : t -> bool
 
   val is_static_method : t -> bool
 
@@ -978,7 +978,7 @@ end = struct
       || has_decorator signature "abc.abstractproperty"
 
 
-    let is_overloaded_method signature =
+    let is_overloaded_function signature =
       has_decorator signature "overload" || has_decorator signature "typing.overload"
 
 
@@ -1073,7 +1073,7 @@ end = struct
 
   let is_abstract_method { signature; _ } = Signature.is_abstract_method signature
 
-  let is_overloaded_method { signature; _ } = Signature.is_overloaded_method signature
+  let is_overloaded_function { signature; _ } = Signature.is_overloaded_function signature
 
   let is_static_method { signature; _ } = Signature.is_static_method signature
 

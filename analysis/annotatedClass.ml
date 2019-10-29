@@ -367,7 +367,7 @@ let create_attribute
                   Some instantiated
               in
               let apply_decorators define =
-                ( Define.Signature.is_overloaded_method define,
+                ( Define.Signature.is_overloaded_function define,
                   ResolvedCallable.apply_decorators ~resolution (Node.create define ~location) )
               in
               List.map defines ~f:apply_decorators

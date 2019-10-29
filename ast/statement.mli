@@ -175,7 +175,7 @@ and Define : sig
 
     val is_abstract_method : t -> bool
 
-    val is_overloaded_method : t -> bool
+    val is_overloaded_function : t -> bool
 
     val is_static_method : t -> bool
 
@@ -224,7 +224,7 @@ and Define : sig
 
   val is_abstract_method : t -> bool
 
-  val is_overloaded_method : t -> bool
+  val is_overloaded_function : t -> bool
 
   val is_static_method : t -> bool
 

@@ -110,8 +110,8 @@ let test_decorator _ =
   assert_true (Define.is_abstract_method (define [!"abc.abstractmethod"]));
   assert_true (Define.is_abstract_method (define [!"abstractproperty"]));
   assert_true (Define.is_abstract_method (define [!"abc.abstractproperty"]));
-  assert_true (Define.is_overloaded_method (define [!"overload"]));
-  assert_true (Define.is_overloaded_method (define [!"typing.overload"]));
+  assert_true (Define.is_overloaded_function (define [!"overload"]));
+  assert_true (Define.is_overloaded_function (define [!"typing.overload"]));
   assert_true (Define.is_property_setter (define [!"foo.setter"]));
   assert_false (Define.is_property_setter (define [!"setter"]));
   assert_false (Define.is_property_setter (define [!"bar.setter"]))

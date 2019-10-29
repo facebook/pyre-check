@@ -165,7 +165,7 @@ let test_create context =
       let { Define.signature = { name; _ }; _ } = List.hd_exn defines |> Node.value in
       let to_overload define =
         let parser = GlobalResolution.annotation_parser resolution in
-        ( Define.Signature.is_overloaded_method define,
+        ( Define.Signature.is_overloaded_function define,
           Callable.create_overload ~parser (Node.create_with_default_location define) )
       in
       defines

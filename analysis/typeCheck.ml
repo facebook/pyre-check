@@ -2876,7 +2876,7 @@ module State (Context : Context) = struct
                    ~left:actual
                    ~right:return_annotation))
           && (not (Define.is_abstract_method define))
-          && (not (Define.is_overloaded_method define))
+          && (not (Define.is_overloaded_function define))
           && (not (Type.is_none actual && generator))
           && not (Type.is_none actual && Type.is_noreturn return_annotation)
         then
@@ -4578,7 +4578,7 @@ module State (Context : Context) = struct
       let check_implementation_exists errors =
         match annotation with
         | Some { annotation = Type.Callable { implementation; _ }; _ }
-          when Define.is_overloaded_method define
+          when Define.is_overloaded_function define
                && Type.Callable.Overload.is_undefined implementation ->
             let error =
               Error.create
@@ -4603,7 +4603,7 @@ module State (Context : Context) = struct
                   };
               _;
             }
-          when not (Define.is_overloaded_method define) ->
+          when not (Define.is_overloaded_function define) ->
             overloads
             |> List.fold
                  ~init:errors
@@ -4662,7 +4662,7 @@ module State (Context : Context) = struct
       let check_unmatched_overloads errors =
         match annotation with
         | Some { annotation = Type.Callable { overloads; _ }; _ }
-          when not (Define.is_overloaded_method define) ->
+          when not (Define.is_overloaded_function define) ->
             let rec compare_parameters errors_sofar overloads =
               match overloads with
               | left :: overloads ->

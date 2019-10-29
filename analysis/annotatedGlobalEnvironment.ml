@@ -84,7 +84,7 @@ let produce_global_annotation environment name ~track_dependencies =
           in
           Node.create ~location signature
           |> ResolvedCallable.apply_decorators ~resolution
-          |> (fun overload -> [Define.Signature.is_overloaded_method signature, overload])
+          |> (fun overload -> [Define.Signature.is_overloaded_function signature, overload])
           |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)
         in
         List.map defines ~f:create_overload

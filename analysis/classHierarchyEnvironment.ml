@@ -166,7 +166,7 @@ let produce_undecorated_function ({ alias_environment } as environment) name ~tr
           Node.create signature ~location |> AnnotatedCallable.create_overload ~parser
         in
         List.find signatures ~f:(fun signature ->
-            not (Define.Signature.is_overloaded_method (Node.value signature)))
+            not (Define.Signature.is_overloaded_function (Node.value signature)))
         >>| handle
     | _ -> None
   in
