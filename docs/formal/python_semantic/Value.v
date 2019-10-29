@@ -6,6 +6,7 @@ Inductive t : Set :=
   | Integer: Z -> t 
   | String: string -> t 
   | Sequence: tlist -> t 
+  | None: t
 with tlist  : Set :=
   | Nil: tlist
   | Cons: t -> tlist -> tlist
@@ -25,6 +26,7 @@ Fixpoint eqb (l r: t) { struct l } : bool :=
     | Integer z0, Integer z1 => Z.eqb z0 z1
     | String s0, String s1 => String.eqb s0 s1
     | Sequence l1, Sequence l2 => eqb_list l1 l2
+    | None, None => true
     | _ ,_ => false
     end
 with eqb_list (l1 l2: tlist) : bool :=
@@ -45,8 +47,9 @@ apply value_ind.
   now apply Z.eqb_eq in h; subst.
 - intros str [] h; simpl in *; try discriminate.
   now apply String.eqb_eq in h; subst.
-- intros l0 hi [ | | | l1 ] h; simpl in *; try discriminate.
+- intros l0 hi [ | | | l1 | ] h; simpl in *; try discriminate.
    now apply hi in h; subst.
+- now intros [ ]; try discriminate.
 - now intros [ ]; try discriminate.
 - intros v hiv l0 hi [ | hd tl ] h; simpl in *; try discriminate.
   apply andb_prop in h as [h0 h1].

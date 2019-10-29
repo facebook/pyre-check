@@ -41,6 +41,7 @@ Inductive t: Set :=
   | Integer: Z -> t
   | List: tlist -> t
   | Id: string -> t
+  | None: t
   | Set_: tlist -> t
   | String: string -> t
   | Ternary: forall (target: t) (test: t) (alternative: t), t

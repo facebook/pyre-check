@@ -8,6 +8,7 @@ Inductive t: Set :=
  | List: t -> t
  | Tuple: tlist -> t
  | Set_: t -> t
+ | None: t
 with tlist: Set :=
  | Nil: tlist
  | Cons: t -> tlist -> tlist
