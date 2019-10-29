@@ -117,6 +117,12 @@ module RageResponse : sig
   val create : items:Types.RageResponse.RageResult.rageItem list -> id:Types.RequestId.t -> t
 end
 
+module JSONRPCResponse : sig
+  module TypeErrors : sig
+    val to_json : Analysis.Error.Instantiated.t list -> Yojson.Safe.json
+  end
+end
+
 val to_message : Yojson.Safe.json -> string
 (** Convert json to string content and set the content length headers. cf.
     https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#base-protocol *)

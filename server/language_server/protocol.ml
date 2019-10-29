@@ -273,6 +273,22 @@ module RageResponse = struct
   let create ~items ~id = { jsonrpc = "2.0"; id; result = Some items; error = None }
 end
 
+module JSONRPCResponse = struct
+  module TypeErrors = struct
+    let to_json errors =
+      let errors =
+        `Assoc
+          [
+            ( "errors",
+              `List
+                (List.map errors ~f:(Analysis.Error.Instantiated.to_json ~show_error_traces:false))
+            );
+          ]
+      in
+      `Assoc ["jsonrpc", `String "2.0"; "error", `Null; "result", errors]
+  end
+end
+
 let to_message json =
   let json_string = Yojson.Safe.to_string json in
   let length = String.length json_string in

@@ -246,6 +246,7 @@ module Request : sig
     | NewConnectionSocket of Unix.File_descr.t
     | FileNotifier
     | Background
+    | JSONSocket of Unix.File_descr.t
 
   val origin_name : origin -> string
 

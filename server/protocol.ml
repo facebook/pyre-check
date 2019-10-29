@@ -352,12 +352,14 @@ module Request = struct
     | NewConnectionSocket of Unix.File_descr.t
     | FileNotifier
     | Background
+    | JSONSocket of Unix.File_descr.t
 
   let origin_name = function
     | PersistentSocket _ -> "Persistent client"
     | NewConnectionSocket _ -> "New connection"
     | FileNotifier -> "File notifier"
     | Background -> "Background"
+    | JSONSocket _ -> "JSONSocket"
 
 
   let name = function

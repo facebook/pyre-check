@@ -268,7 +268,7 @@ let parse_lsp
       | Ok { LanguageServer.Types.DisplayTypeErrors.parameters = Some { files }; _ } ->
           let files = List.map files ~f:string_to_path in
           Some (DisplayTypeErrors files)
-      | Ok _ -> None
+      | Ok _ -> Some (DisplayTypeErrors [])
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
           None )

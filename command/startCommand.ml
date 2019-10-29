@@ -120,6 +120,20 @@ let computation_thread
             | Some _ -> Log.error "Unexpected response for persistent client request"
             | None -> () );
             state
+        | Protocol.Request.JSONSocket socket ->
+            let { Request.state; response } = process_request ~state ~request in
+            ( match response with
+            | Some (TypeCheckResponse response) -> (
+              try
+                let out_channel = Unix.out_channel_of_descr socket in
+                LanguageServer.Protocol.JSONRPCResponse.TypeErrors.to_json response
+                |> LanguageServer.Protocol.write_message out_channel;
+                Out_channel.flush out_channel;
+                Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore
+              with
+              | _ -> Log.error "Socket error" )
+            | _ -> () );
+            state
         | Protocol.Request.FileNotifier
         | Protocol.Request.Background ->
             let { Request.state; response } = process_request ~state ~request in
@@ -228,16 +242,21 @@ let request_handler_thread
         Log.log ~section:`Server "Persistent client disconnected";
         Connections.remove_persistent_client ~connections ~socket
   in
-  let handle_readable_file_notifier socket =
+  let handle_readable_json_request socket =
     try
+      let origin request =
+        match Yojson.Safe.Util.member "method" request |> Yojson.Safe.Util.to_string with
+        | "displayTypeErrors" -> Protocol.Request.JSONSocket socket
+        | _ -> Protocol.Request.FileNotifier
+      in
       Log.log ~section:`Server "A file notifier is readable.";
-      socket
-      |> Unix.in_channel_of_descr
-      |> LanguageServer.Protocol.read_message
+      let request = socket |> Unix.in_channel_of_descr |> LanguageServer.Protocol.read_message in
+      let origin = request >>| origin |> Option.value ~default:Protocol.Request.FileNotifier in
+      request
       >>| Yojson.Safe.to_string
       >>| (fun request -> Protocol.Request.LanguageServerProtocolRequest request)
       |> function
-      | Some request -> queue_request ~origin:Protocol.Request.FileNotifier request
+      | Some request -> queue_request ~origin request
       | None -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket."
     with
     | End_of_file
@@ -309,7 +328,7 @@ let request_handler_thread
       else if Mutex.critical_section lock ~f:(fun () -> Map.mem persistent_clients socket) then
         handle_readable_persistent socket
       else
-        handle_readable_file_notifier socket
+        handle_readable_json_request socket
     in
     List.iter ~f:handle_socket readable;
 
