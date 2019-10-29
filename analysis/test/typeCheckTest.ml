@@ -474,7 +474,6 @@ let test_object_callables context =
 
             call: Call[int, str] = ...
             meta: typing.Type[Call[int, str]] = ...
-            callable: typing.Callable[..., unknown][[..., int][..., str]] = ...
             submodule: Submodule[int] = ...
           |}
         );
@@ -486,7 +485,6 @@ let test_object_callables context =
   assert_resolved "module.call.attribute" "int";
   assert_resolved "module.call.generic_callable" "typing.Callable[[int], str]";
   assert_resolved "module.call()" "str";
-  assert_resolved "module.callable()" "int";
   assert_resolved "module.meta" "typing.Type[module.Call[int, str]]";
   assert_resolved "module.meta()" "module.Call[int, str]";
   assert_resolved "module.submodule.generic_callable" "typing.Callable[[int], int]"

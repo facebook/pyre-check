@@ -95,9 +95,7 @@ let produce_global_annotation environment name ~track_dependencies =
     | SimpleAssign { explicit_annotation; value; target_location } ->
         let explicit_annotation =
           explicit_annotation
-          >>| Expression.delocalize
-          >>| Type.create
-                ~aliases:(AliasEnvironment.ReadOnly.get_alias (alias_environment environment))
+          >>| GlobalResolution.parse_annotation resolution
           >>= fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation
         in
         let annotation =

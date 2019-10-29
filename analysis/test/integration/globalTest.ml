@@ -145,6 +145,7 @@ let test_check_with_qualification context =
 
 let test_check_globals context =
   let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
       constant: int = 1
@@ -230,6 +231,20 @@ let test_check_globals context =
       x: typing.List[int]
       def foo() -> typing.List[int]:
         return x[0:1]
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      x: typing.List = [1,2,3]
+      def foo() -> typing.List[typing.Any]:
+        return x
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      x: typing.Dict = { "derp": 42 }
+      def foo() -> typing.Dict[typing.Any, typing.Any]:
+        return x
     |}
     [];
   assert_type_errors

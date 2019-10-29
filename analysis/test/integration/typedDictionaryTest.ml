@@ -881,6 +881,29 @@ let test_check_typed_dictionaries context =
   assert_test_typed_dictionary
     {|
       import mypy_extensions
+      Movie = mypy_extensions.TypedDict('Movie', {'scores': dict})
+      def f() -> Movie:
+        return Movie(scores = { "imdb": 8.1 })
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
+       `typing.Dict` to avoid runtime subscripting errors.";
+    ];
+  assert_test_typed_dictionary
+    {|
+      from typing import Dict
+      import mypy_extensions
+      Movie = mypy_extensions.TypedDict('Movie', {'scores': Dict})
+      def f() -> Movie:
+        return Movie(scores = { "imdb": 8.1 })
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
+       `typing.Dict` to avoid runtime subscripting errors.";
+    ];
+  assert_test_typed_dictionary
+    {|
+      import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> Movie:
         return {'name' : "Blade Runner", 'year' : '1982'}
