@@ -586,6 +586,8 @@ let class_definitions resolution reference =
         >>| Preprocessing.classes
         >>| List.filter ~f:(fun { Node.value = { Class.name; _ }; _ } ->
                 Reference.equal reference name)
+        (* Prefer earlier definitions. *)
+        >>| List.rev
       in
       ClassDefinitionsCache.set reference result;
       result

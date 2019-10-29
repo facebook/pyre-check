@@ -335,6 +335,65 @@ let test_function_definitions context =
   ()
 
 
+let test_class_definitions context =
+  let assert_classes sources class_name expected =
+    let project = ScratchProject.setup ~context sources in
+    let resolution = ScratchProject.build_resolution project in
+    let resolution = Resolution.global_resolution resolution in
+    let classes =
+      GlobalResolution.class_definitions resolution !&class_name
+      >>| List.map ~f:(fun { Node.value = { Class.name; body; _ }; _ } ->
+              Reference.show name, List.length body)
+      |> Option.value ~default:[]
+    in
+    let show_element (name, number_of_statements) =
+      Format.sprintf "%s: %d" name number_of_statements
+    in
+    assert_equal
+      ~printer:(fun elements -> List.map elements ~f:show_element |> String.concat ~sep:", ")
+      expected
+      classes
+  in
+  assert_classes ["foo.py", {|
+    class Foo:
+      pass
+  |}] "foo.Foo" ["foo.Foo", 1];
+  assert_classes
+    ["foo.py", {|
+    class Foo:
+      class Bar:
+        pass
+  |}]
+    "foo.Foo.Bar"
+    ["foo.Foo.Bar", 1];
+  assert_classes
+    ["foo.py", {|
+    if sun_is_out():
+      class Foo:
+        pass
+  |}]
+    "foo.Foo"
+    ["foo.Foo", 1];
+  assert_classes
+    [
+      ( "foo.py",
+        {|
+    if sun_is_out():
+      class Foo:
+        pass
+    else:
+      class Foo:
+        a = 1
+        b = 2
+    |}
+      );
+    ]
+    "foo.Foo"
+    ["foo.Foo", 1; "foo.Foo", 2]
+
+
+(* We don't reverse order when returning the classes. *)
+
 let test_resolution_shared_memory _ =
   ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
   ResolutionSharedMemory.add
@@ -390,6 +449,7 @@ let () =
          "resolve_literal" >:: test_resolve_literal;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;
          "function_definitions" >:: test_function_definitions;
+         "class_definitions" >:: test_class_definitions;
          "resolve_shared_memory" >:: test_resolution_shared_memory;
          "source_is_unit_test" >:: test_source_is_unit_test;
        ]
