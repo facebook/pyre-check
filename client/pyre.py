@@ -248,7 +248,7 @@ def main() -> int:
     # Subcommands.
     parsed_commands = parser.add_subparsers(
         metavar="{analyze, check, color, kill, incremental, initialize (init), "
-        "query, rage, restart, start, stop}",
+        "query, rage, restart, statistics, start, stop}",
         help="""
         The pyre command to run; defaults to `incremental`.
         Run `pyre command --help` for documentation on a specific command.
