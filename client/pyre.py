@@ -131,6 +131,9 @@ def main() -> int:
         help=argparse.SUPPRESS,  # Add given identifier to logged samples.
     )
     parser.add_argument(
+        "--log-directory", help=argparse.SUPPRESS  # Override default location for logs
+    )
+    parser.add_argument(
         "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
     )
     parser.add_argument("--formatter", help=argparse.SUPPRESS)

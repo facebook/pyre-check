@@ -66,14 +66,20 @@ class InitTest(unittest.TestCase):
         arguments.local_configuration = None
         arguments.original_directory = "project/subdirectory"
         arguments.current_directory = "project"
+        arguments.log_directory = None
         find_log_directory(arguments)
         self.assertEqual(arguments.log_directory, "project/.pyre")
 
         arguments.local_configuration = "/project/subdirectory"
         arguments.original_directory = "/project"
         arguments.current_directory = "/project"
+        arguments.log_directory = None
         find_log_directory(arguments)
         self.assertEqual(arguments.log_directory, "/project/.pyre/subdirectory")
+
+        arguments.log_directory = "something"
+        find_log_directory(arguments)
+        self.assertEqual(arguments.log_directory, "something")
 
     def test_resolve_filter_paths(self) -> None:
         arguments = MagicMock()
