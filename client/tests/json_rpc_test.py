@@ -9,29 +9,19 @@ import json
 import unittest
 from io import BytesIO
 
-from ..language_server_protocol import (
-    LanguageServerProtocolMessage,
-    read_message,
-    write_message,
-)
+from ..json_rpc import Request, read_request
 
 
-class LanguageServerProtocolTest(unittest.TestCase):
+class JsonRPCTest(unittest.TestCase):
     def test_json(self) -> None:
         self.assertDictEqual(
-            json.loads(
-                LanguageServerProtocolMessage(
-                    method="textDocument/publishDiagnostics"
-                ).json()
-            ),
+            json.loads(Request(method="textDocument/publishDiagnostics").json()),
             {"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics"},
         )
 
         self.assertDictEqual(
             json.loads(
-                LanguageServerProtocolMessage(
-                    method="textDocument/publishDiagnostics", id="123abc"
-                ).json()
+                Request(method="textDocument/publishDiagnostics", id="123abc").json()
             ),
             {
                 "jsonrpc": "2.0",
@@ -42,7 +32,7 @@ class LanguageServerProtocolTest(unittest.TestCase):
 
         self.assertDictEqual(
             json.loads(
-                LanguageServerProtocolMessage(
+                Request(
                     method="textDocument/publishDiagnostics", parameters={"a": "b"}
                 ).json()
             ),
@@ -55,7 +45,7 @@ class LanguageServerProtocolTest(unittest.TestCase):
 
         self.assertDictEqual(
             json.loads(
-                LanguageServerProtocolMessage(
+                Request(
                     method="textDocument/publishDiagnostics",
                     id="123abc",
                     parameters={"a": "b"},
@@ -81,7 +71,7 @@ class LanguageServerProtocolTest(unittest.TestCase):
         )
         file.seek(0)
 
-        result = read_message(file)
+        result = read_request(file)
 
         self.assertNotEqual(result, None)
         # pyre-fixme[16]: Optional type has no attribute `id`.
@@ -95,7 +85,7 @@ class LanguageServerProtocolTest(unittest.TestCase):
         file = BytesIO()
         file.close()
 
-        result = read_message(file)
+        result = read_request(file)
 
         self.assertEqual(result, None)
 
@@ -104,7 +94,7 @@ class LanguageServerProtocolTest(unittest.TestCase):
         file.write(b"Content-Length: 123abc\r\n\r\n{}")
         file.seek(0)
 
-        result = read_message(file)
+        result = read_request(file)
 
         self.assertEqual(result, None)
 
@@ -118,16 +108,16 @@ class LanguageServerProtocolTest(unittest.TestCase):
         )
         file.seek(0)
 
-        result = read_message(file)
+        result = read_request(file)
 
         self.assertEqual(result, None)
 
     def test_write_message(self) -> None:
         file = BytesIO()
-        message = LanguageServerProtocolMessage(
+        message = Request(
             method="textDocument/hover", id="123abc", parameters={"a": "b"}
         )
-        self.assertTrue(write_message(file, message))
+        self.assertTrue(message.write(file))
         file.seek(0)
         self.assertEqual(file.readline(), b"Content-Length: 88\r\n")
         self.assertEqual(file.readline(), b"\r\n")
@@ -142,19 +132,19 @@ class LanguageServerProtocolTest(unittest.TestCase):
         )
 
         file.close()
-        self.assertFalse(write_message(file, message))
+        self.assertFalse(message.write(file))
 
     def test_read_write(self) -> None:
         file = BytesIO()
-        message = LanguageServerProtocolMessage(
+        message = Request(
             method="textDocument/definition",
             id="123abc",
             parameters={"a": "b", "c": "d"},
         )
 
-        write_message(file, message)
+        message.write(file)
         file.seek(0)
-        parsed_message = read_message(file)
+        parsed_message = read_request(file)
 
         self.assertNotEqual(parsed_message, None)
         # pyre-fixme[16]: Optional type has no attribute `id`.

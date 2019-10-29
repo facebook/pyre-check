@@ -11,7 +11,7 @@ import logging
 import os
 from typing import Any, BinaryIO, Dict, Iterable, List, Optional, Set  # noqa
 
-from . import language_server_protocol
+from . import json_rpc
 from .analysis_directory import AnalysisDirectory
 from .configuration import Configuration
 from .filesystem import find_root
@@ -111,18 +111,15 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 return
 
             LOG.info("Notifying server of update to files %s.", updated_paths.updated)
-            socket_path = os.path.join(
-                self._configuration.log_directory, "server", "json_server.sock"
-            )
-            with SocketConnection(socket_path) as socket_connection:
+            with SocketConnection(
+                self._configuration.log_directory
+            ) as socket_connection:
                 socket_connection.perform_handshake(self._configuration.version_hash)
-                message = language_server_protocol.LanguageServerProtocolMessage(
+                message = json_rpc.Request(
                     method="updateFiles",
                     parameters={"files": updated_paths.updated, "invalidated": []},
                 )
-                if not language_server_protocol.write_message(
-                    socket_connection.output, message
-                ):
+                if not message.write(socket_connection.output):
                     LOG.info("Failed to communicate with server. Shutting down.")
                     self._alive = False  # terminate daemon
 

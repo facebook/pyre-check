@@ -12,21 +12,17 @@ import threading
 import unittest
 from unittest.mock import MagicMock, patch
 
-from .. import language_server_protocol, project_files_monitor
+from .. import json_rpc, project_files_monitor
 from ..analysis_directory import UpdatedPaths
 from ..commands.tests.command_test import mock_arguments, mock_configuration
-from ..language_server_protocol import (
-    LanguageServerProtocolMessage,
-    read_message,
-    write_message,
-)
+from ..json_rpc import Request, read_request
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
 from ..socket_connection import SocketConnection, SocketException
 
 
 class MonitorTest(unittest.TestCase):
     @patch.object(SocketConnection, "_connect")
-    @patch.object(language_server_protocol, "perform_handshake")
+    @patch.object(json_rpc, "perform_handshake")
     @patch.object(project_files_monitor, "find_root")
     def test_subscriptions(
         self, find_root, perform_handshake, _socket_connection
@@ -114,19 +110,17 @@ class MonitorTest(unittest.TestCase):
 
                 outfile = connection.makefile(mode="wb")
                 infile = connection.makefile(mode="rb")
-                write_message(
-                    outfile,
-                    LanguageServerProtocolMessage(
-                        method="handshake/server", parameters={"version": "123"}
-                    ),
+                request = Request(
+                    method="handshake/server", parameters={"version": "123"}
                 )
+                request.write(outfile)
 
-                response = read_message(infile)
+                response = read_request(infile)
                 if not response or response.method != "handshake/client":
                     errors.append("Client handshake malformed")
                     return
 
-                updated_message = read_message(infile)
+                updated_message = read_request(infile)
                 if (
                     not updated_message
                     or updated_message.method != "updateFiles"
@@ -166,7 +160,7 @@ class MonitorTest(unittest.TestCase):
         self.assertEqual(errors, [])
 
     @patch.object(SocketConnection, "_connect")
-    @patch.object(language_server_protocol, "perform_handshake")
+    @patch.object(json_rpc, "perform_handshake")
     @patch.object(ProjectFilesMonitor, "_watchman_client")
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
     def test_files_cleaned_up(
