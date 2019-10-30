@@ -113,13 +113,13 @@ module Make (Key : KEY) (Element : AbstractDomain.S) = struct
   let transform (type a) (part : a part) ~(f : a -> a) (map : t) : t =
     match part with
     | Key ->
-        Map.fold map ~f:(fun ~key ~data result -> set ~key:(f key) ~data result) ~init:Map.empty
+        Map.fold map ~f:(fun ~key ~data result -> update ~key:(f key) ~data result) ~init:Map.empty
     | KeyValue ->
         Map.fold
           map
           ~f:(fun ~key ~data result ->
             let key, data = f (key, data) in
-            set ~key ~data result)
+            update ~key ~data result)
           ~init:Map.empty
     | _ ->
         if Key.absence_implicitly_maps_to_bottom then

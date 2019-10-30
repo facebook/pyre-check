@@ -345,7 +345,13 @@ module IntToStringSet = struct
       ~by:Map.KeyValue
       ~f:(fun (key, set) -> key + 1, StringSet.add set "new")
       ~to_result:(fun (key, set) -> Format.sprintf "%d: %s" key (StringSet.show set))
-      ~expected:["3: (set(c d new))"; "2: (set(b c new))"; "1: (set(a b new))"]
+      ~expected:["3: (set(c d new))"; "2: (set(b c new))"; "1: (set(a b new))"];
+    test
+      ~initial:[0, ["a"]; 1, ["b"]; 2, ["c"]; 3, ["d"]]
+      ~by:Map.KeyValue
+      ~f:(fun (_key, set) -> 1, set)
+      ~to_result:(fun (key, set) -> Format.sprintf "%d: %s" key (StringSet.show set))
+      ~expected:["1: (set(a b c d))"]
 
 
   let test_partition _ =
