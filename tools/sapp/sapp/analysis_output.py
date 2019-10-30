@@ -8,7 +8,7 @@
 import json
 import os
 from glob import glob
-from typing import IO, Iterable, NamedTuple, Optional
+from typing import IO, Any, Dict, Iterable, NamedTuple, Optional
 
 from .sharded_files import ShardedFile
 
@@ -16,6 +16,7 @@ from .sharded_files import ShardedFile
 METADATA_GLOB = "*metadata.json"
 
 
+# pyre-ignore: we don't have a shape for rules yet.
 class Metadata(NamedTuple):
     analysis_root: str
     repo_root: Optional[str] = None
@@ -25,6 +26,9 @@ class Metadata(NamedTuple):
     commit_hash: Optional[str] = None
     job_instance: Optional[int] = None
     project: Optional[str] = None
+    # Mapping from code to rule metadata.
+    # pyre-ignore: we don't have a shape for rules yet.
+    rules: Dict[int, Any] = {}
 
     @property
     def root(self) -> str:
@@ -110,6 +114,7 @@ class AnalysisOutput(object):
                 tool=metadata.get("tool"),
                 repository_name=metadata.get("repository_name"),
                 project=metadata.get("project"),
+                rules=metadata.get("rules", {}),
             ),
         )
 
