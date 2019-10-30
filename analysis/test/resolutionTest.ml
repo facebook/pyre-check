@@ -181,7 +181,7 @@ let test_resolve_exports context =
     assert_equal ~printer:Reference.show ~cmp:Reference.equal (Reference.create expected) reference
   in
   assert_resolve ~sources:[] "a.b" "a.b";
-  assert_resolve ~sources:["a", "from b import foo"; "b", "foo = 1"] "a.foo" "b.foo";
+  assert_resolve ~sources:["a.py", "from b import foo"; "b.py", "foo = 1"] "a.foo" "b.foo";
   assert_resolve
     ~sources:
       [
@@ -194,11 +194,7 @@ let test_resolve_exports context =
     "d.cow";
   assert_resolve
     ~sources:
-      [
-        "qualifier.py", "from qualifier.foo import foo";
-        (* __init__.py module. *)
-          "qualifier/foo/__init__.py", "foo = 1";
-      ]
+      ["qualifier.py", "from qualifier.foo import foo"; "qualifier/foo/__init__.py", "foo = 1"]
     "qualifier.foo.foo"
     "qualifier.foo.foo";
   assert_resolve
@@ -447,6 +443,7 @@ let () =
          "parse_annotation" >:: test_parse_annotation;
          "parse_reference" >:: test_parse_reference;
          "resolve_literal" >:: test_resolve_literal;
+         "resolve_exports" >:: test_resolve_exports;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;
          "function_definitions" >:: test_function_definitions;
          "class_definitions" >:: test_class_definitions;
