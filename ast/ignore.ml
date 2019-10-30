@@ -17,19 +17,26 @@ type t = {
   location: Location.t;
   kind: kind;
 }
-[@@deriving compare, eq, show, sexp]
+[@@deriving show, sexp]
 
-let hash { ignored_line; codes; location; _ } =
+let compare left right =
+  let { Location.path = left_path; start = left_start; _ } = left.location in
+  let { Location.path = right_path; start = right_start; _ } = right.location in
+  [%compare: int * int list * Reference.t * Location.position * kind]
+    (left.ignored_line, left.codes, left_path, left_start, left.kind)
+    (right.ignored_line, right.codes, right_path, right_start, right.kind)
+
+
+let equal = [%compare.equal: t]
+
+let hash_fold_t state { ignored_line; codes; location; kind; _ } =
   let { Location.path; start; _ } = location in
-  [%hash: int * int list * Reference.t * Location.position] (ignored_line, codes, path, start)
-
-
-let hash_fold_t state { ignored_line; codes; location; _ } =
-  let { Location.path; start; _ } = location in
-  [%hash_fold: int * int list * Reference.t * Location.position]
+  [%hash_fold: int * int list * Reference.t * Location.position * kind]
     state
-    (ignored_line, codes, path, start)
+    (ignored_line, codes, path, start, kind)
 
+
+let hash = Hash.run hash_fold_t
 
 let create ~ignored_line ~codes ~location ~kind = { ignored_line; codes; location; kind }
 

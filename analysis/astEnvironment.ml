@@ -25,7 +25,7 @@ module RawSourceValue = struct
 
   let description = "Unprocessed source"
 
-  let compare left right = Int.compare (Source.hash left) (Source.hash right)
+  let compare = Source.location_sensitive_compare
 
   let unmarshall value = Marshal.from_string value 0
 end
@@ -61,7 +61,7 @@ module SourceValue = struct
 
   let description = "AST"
 
-  let compare left right = Int.compare (Source.hash left) (Source.hash right)
+  let compare = Source.location_sensitive_compare
 
   let unmarshall value = Marshal.from_string value 0
 end

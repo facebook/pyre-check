@@ -73,6 +73,10 @@ val create
   Statement.t list ->
   t
 
+val location_sensitive_hash_fold : t Core.Hash.folder
+
+val location_sensitive_compare : t -> t -> int
+
 val mode : configuration:Configuration.Analysis.t -> local_mode:local_mode Node.t option -> mode
 
 val ignore_lines : t -> Ignore.t list

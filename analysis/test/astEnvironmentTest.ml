@@ -270,54 +270,68 @@ let test_parse_sources context =
   | None -> assert_unreached ()
 
 
-let test_ast_hash _ =
-  let assert_hash_changed ~old_source ~new_source ~expected =
+let test_ast_change _ =
+  let assert_ast_changed ~old_source ~new_source ~expected =
     let handle = "test.py" in
     let old_source = Test.parse ~handle old_source in
     let new_source = Test.parse ~handle new_source in
-    let actual = not (Int.equal (Source.hash old_source) (Source.hash new_source)) in
-    assert_bool "Test if source hash change is expected" (Bool.equal expected actual)
+    let compare_changed =
+      not (Int.equal 0 (Source.location_sensitive_compare old_source new_source))
+    in
+    let hash_changed =
+      let hash_source source = Hash.run Source.location_sensitive_hash_fold source in
+      not (Int.equal (hash_source old_source) (hash_source new_source))
+    in
+    assert_equal
+      ~cmp:Bool.equal
+      ~printer:(Format.sprintf "compare_changed = %b")
+      expected
+      compare_changed;
+
+    (* This is not guaranteed to be the case in theory, but collisions should be rare in practice *)
+    assert_equal
+      ~cmp:Bool.equal
+      ~printer:(Format.sprintf "hash changed = %b")
+      expected
+      hash_changed
   in
   (* Metadata *)
-  assert_hash_changed ~old_source:"# pyre-strict" ~new_source:"# pyre-strict" ~expected:false;
-  assert_hash_changed ~old_source:"# pyre-strict" ~new_source:"" ~expected:true;
-  assert_hash_changed
+  assert_ast_changed ~old_source:"# pyre-strict" ~new_source:"# pyre-strict" ~expected:false;
+  assert_ast_changed ~old_source:"# pyre-strict" ~new_source:"" ~expected:true;
+  assert_ast_changed
     ~old_source:"# pyre-strict"
     ~new_source:"# pyre-ignore-all-errors"
     ~expected:true;
 
   (* Assignments. *)
-  assert_hash_changed ~old_source:"a = 1" ~new_source:"a = 1" ~expected:false;
-  assert_hash_changed ~old_source:"a: int = 1" ~new_source:"a: int = 1" ~expected:false;
-  assert_hash_changed ~old_source:"a: str = 1" ~new_source:"a: int = 1" ~expected:true;
-  assert_hash_changed ~old_source:"a = 2" ~new_source:"a = 1" ~expected:true;
+  assert_ast_changed ~old_source:"a = 1" ~new_source:"a = 1" ~expected:false;
+  assert_ast_changed ~old_source:"a: int = 1" ~new_source:"a: int = 1" ~expected:false;
+  assert_ast_changed ~old_source:"a: str = 1" ~new_source:"a: int = 1" ~expected:true;
+  assert_ast_changed ~old_source:"a = 2" ~new_source:"a = 1" ~expected:true;
 
   (* Defines *)
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:"def foo() -> int: ..."
     ~new_source:"def foo() -> int: ..."
     ~expected:false;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:"def foo() -> int: ..."
     ~new_source:"def bar() -> int: ..."
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:"def foo(a: int): ..."
     ~new_source:"def foo(a: str): ..."
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:"def foo(a: int = 1): ..."
     ~new_source:"def foo(a: int = 2): ..."
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:"def foo() -> int: ..."
     ~new_source:"def foo() -> str: ..."
     ~expected:true;
-  assert_hash_changed
-    ~old_source:"def foo(): ..."
-    ~new_source:"async def foo(): ..."
-    ~expected:true;
-  assert_hash_changed
+  assert_ast_changed ~old_source:"def foo(): ..." ~new_source:"async def foo(): ..." ~expected:true;
+  assert_ast_changed
     ~old_source:{|
         @decorator
         def foo(): ...
@@ -327,17 +341,7 @@ let test_ast_hash _ =
         def foo(): ...
       |}
     ~expected:true;
-  assert_hash_changed
-    ~old_source:{|
-    def foo() -> int:
-      return 42
-    |}
-    ~new_source:{|
-    def foo() -> int:
-        return 42
-    |}
-    ~expected:false;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
     def foo() -> int:
       return 42
@@ -347,17 +351,7 @@ let test_ast_hash _ =
       return 42
     |}
     ~expected:false;
-  assert_hash_changed
-    ~old_source:{|
-    def foo(a: int, b: int) -> int:
-      return a + b
-    |}
-    ~new_source:{|
-    def foo(a: int,  b:    int) ->    int:
-        return a   +   b
-    |}
-    ~expected:false;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
     def foo() -> int:
       return 42
@@ -368,7 +362,7 @@ let test_ast_hash _ =
       return 42
     |}
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
     def foo() -> int:
       return 42
@@ -379,7 +373,7 @@ let test_ast_hash _ =
       return 42
     |}
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
     # pyre-ignore
     def foo() -> int:
@@ -390,7 +384,7 @@ let test_ast_hash _ =
       return 42
     |}
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
     # pyre-ignore[42]
     def foo() -> int:
@@ -402,7 +396,7 @@ let test_ast_hash _ =
       return 42
     |}
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
     # pyre-fixme
     def foo() -> int:
@@ -413,10 +407,10 @@ let test_ast_hash _ =
     def foo() -> int:
       return 42
     |}
-    ~expected:false;
+    ~expected:true;
 
   (* Classes *)
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
        @decorator
        class B(A):
@@ -428,9 +422,9 @@ let test_ast_hash _ =
          attribute: int = 1
      |}
     ~expected:false;
-  assert_hash_changed ~old_source:"class A: ..." ~new_source:"class B: ..." ~expected:true;
-  assert_hash_changed ~old_source:"class A(B): ..." ~new_source:"class A(C): ..." ~expected:true;
-  assert_hash_changed
+  assert_ast_changed ~old_source:"class A: ..." ~new_source:"class B: ..." ~expected:true;
+  assert_ast_changed ~old_source:"class A(B): ..." ~new_source:"class A(C): ..." ~expected:true;
+  assert_ast_changed
     ~old_source:{|
        class A:
          attribute: int = 1
@@ -440,7 +434,7 @@ let test_ast_hash _ =
          attribute: str = 1
      |}
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
        @decorator
        class A: ...
@@ -452,7 +446,7 @@ let test_ast_hash _ =
     ~expected:true;
 
   (* If *)
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:
       {|
         if test:
@@ -468,7 +462,7 @@ let test_ast_hash _ =
           attribute = 2
       |}
     ~expected:false;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
         if test:
           attribute = 1
@@ -478,7 +472,7 @@ let test_ast_hash _ =
           attribute = 1
       |}
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
         if test:
           attribute = 1
@@ -488,7 +482,7 @@ let test_ast_hash _ =
           attribute = 2
       |}
     ~expected:true;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:
       {|
         if test:
@@ -506,13 +500,13 @@ let test_ast_hash _ =
     ~expected:true;
 
   (* Imports *)
-  assert_hash_changed ~old_source:"from a import b" ~new_source:"from a import b" ~expected:false;
-  assert_hash_changed ~old_source:"import a" ~new_source:"import a" ~expected:false;
-  assert_hash_changed ~old_source:"from a import b" ~new_source:"from a import c" ~expected:true;
-  assert_hash_changed ~old_source:"import a" ~new_source:"import b" ~expected:true;
+  assert_ast_changed ~old_source:"from a import b" ~new_source:"from a import b" ~expected:false;
+  assert_ast_changed ~old_source:"import a" ~new_source:"import a" ~expected:false;
+  assert_ast_changed ~old_source:"from a import b" ~new_source:"from a import c" ~expected:true;
+  assert_ast_changed ~old_source:"import a" ~new_source:"import b" ~expected:true;
 
   (* With *)
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
         with resource:
           attribute = 1
@@ -522,7 +516,7 @@ let test_ast_hash _ =
           attribute = 1
       |}
     ~expected:false;
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:{|
         with resource:
           attribute = 1
@@ -533,9 +527,78 @@ let test_ast_hash _ =
       |}
     ~expected:true;
 
+  (* Location-only change *)
+  assert_ast_changed
+    ~old_source:{|
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    def foo() -> int:
+        return 42
+    |}
+    ~expected:true;
+  assert_ast_changed
+    ~old_source:{|
+    def foo(a: int, b: int) -> int:
+      return a + b
+    |}
+    ~new_source:{|
+    def foo(a: int,  b:    int) ->    int:
+        return a   +   b
+    |}
+    ~expected:true;
+  assert_ast_changed
+    ~old_source:{|
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    def foo() -> int:
+
+      return 42
+    |}
+    ~expected:true;
+  assert_ast_changed
+    ~old_source:{|
+      class Foo:
+        x: int = 1
+    |}
+    ~new_source:{|
+
+      class Foo:
+        x: int = 1
+    |}
+    ~expected:true;
+
+  (* Trailing comment/spaces/empty lines shouldn't matter as they don't affect any AST locations. *)
+  (* They may affect line counts and raw hashes, but they are ignored by the
+     Source.Metadata.compare/hash *)
+  assert_ast_changed
+    ~old_source:{|
+    def foo() -> int:
+      return 42
+    |}
+    ~new_source:{|
+    def foo() -> int:
+      return 42  # some comment
+    |}
+    ~expected:false;
+  assert_ast_changed
+    ~old_source:{|
+      class Foo:
+        x: int = 1
+    |}
+    ~new_source:{|
+      class Foo:
+        x: int = 1
+
+    |}
+    ~expected:false;
+
   (* TODO: This should be false. It seems that docstrings are still counted as part of the function
      body *)
-  assert_hash_changed
+  assert_ast_changed
     ~old_source:
       {|
     def foo() -> int:
@@ -1052,7 +1115,7 @@ let () =
          "parse_stubs_modules_list" >:: test_parse_stubs_modules_list;
          "parse_source" >:: test_parse_source;
          "parse_sources" >:: test_parse_sources;
-         "ast_hash" >:: test_ast_hash;
+         "ast_change" >:: test_ast_change;
          "register_modules" >:: test_register_modules;
          "parse_repository" >:: test_parse_repository;
          "parser_update" >:: test_parser_update;
