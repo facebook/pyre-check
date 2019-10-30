@@ -17,6 +17,16 @@ module Assign = struct
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   let is_static_attribute_initialization { parent; _ } = Option.is_some parent
+
+  let location_sensitive_hash_fold state { target; annotation; value; parent } =
+    let state = Expression.location_sensitive_hash_fold state target in
+    let state =
+      match annotation with
+      | None -> state
+      | Some annotation -> Expression.location_sensitive_hash_fold state annotation
+    in
+    let state = Expression.location_sensitive_hash_fold state value in
+    [%hash_fold: Reference.t option] state parent
 end
 
 module Import = struct
@@ -39,6 +49,16 @@ module Raise = struct
     from: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_sensitive_hash_fold state { expression; from } =
+    let state =
+      match expression with
+      | None -> state
+      | Some expression -> Expression.location_sensitive_hash_fold state expression
+    in
+    match from with
+    | None -> state
+    | Some expression -> Expression.location_sensitive_hash_fold state expression
 end
 
 module Return = struct
@@ -47,6 +67,12 @@ module Return = struct
     expression: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_sensitive_hash_fold state { is_implicit; expression } =
+    let state = [%hash_fold: bool] state is_implicit in
+    match expression with
+    | None -> state
+    | Some expression -> Expression.location_sensitive_hash_fold state expression
 end
 
 module rec Assert : sig
@@ -59,6 +85,8 @@ module rec Assert : sig
         }
       | While
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
   end
 
   type t = {
@@ -67,6 +95,8 @@ module rec Assert : sig
     origin: Origin.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end = struct
   module Origin = struct
     type t =
@@ -77,6 +107,14 @@ end = struct
         }
       | While
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    let location_sensitive_hash_fold state = function
+      | Assertion -> [%hash_fold: int] state 0
+      | If { statement; true_branch } ->
+          let state = [%hash_fold: int] state 1 in
+          let state = Statement.location_sensitive_hash_fold state statement in
+          [%hash_fold: bool] state true_branch
+      | While -> [%hash_fold: int] state 2
   end
 
   type t = {
@@ -85,6 +123,15 @@ end = struct
     origin: Origin.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_sensitive_hash_fold state { test; message; origin } =
+    let state = Expression.location_sensitive_hash_fold state test in
+    let state =
+      match message with
+      | None -> state
+      | Some message -> Expression.location_sensitive_hash_fold state message
+    in
+    Origin.location_sensitive_hash_fold state origin
 end
 
 and Attribute : sig
@@ -216,6 +263,8 @@ and Class : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+  val location_sensitive_hash_fold : t Hash.folder
+
   val constructors : ?in_test:bool -> t -> Define.t list
 
   val defines : t -> Define.t list
@@ -255,6 +304,16 @@ end = struct
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_sensitive_hash_fold state { name; bases; body; decorators; docstring } =
+    let state = [%hash_fold: Reference.t] state name in
+    let state =
+      List.fold bases ~init:state ~f:Expression.Call.Argument.location_sensitive_hash_fold
+    in
+    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
+    let state = List.fold decorators ~init:state ~f:Expression.location_sensitive_hash_fold in
+    [%hash_fold: string option] state docstring
+
 
   let constructors ?(in_test = false) { body; _ } =
     let constructor = function
@@ -807,6 +866,8 @@ and Define : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+    val location_sensitive_hash_fold : t Hash.folder
+
     val create_toplevel : qualifier:Reference.t option -> t
 
     val create_class_toplevel : parent:Reference.t -> t
@@ -855,6 +916,8 @@ and Define : sig
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 
   val create_toplevel : qualifier:Reference.t option -> statements:Statement.t list -> t
 
@@ -926,6 +989,26 @@ end = struct
       parent: Reference.t option; (* The class owning the method. *)
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    let location_sensitive_hash_fold
+        state
+        { name; parameters; decorators; docstring; return_annotation; async; generator; parent }
+      =
+      let state = [%hash_fold: Reference.t] state name in
+      let state =
+        List.fold parameters ~init:state ~f:Expression.Parameter.location_sensitive_hash_fold
+      in
+      let state = List.fold decorators ~init:state ~f:Expression.location_sensitive_hash_fold in
+      let state = [%hash_fold: string option] state docstring in
+      let state =
+        match return_annotation with
+        | None -> state
+        | Some return_annotation -> Expression.location_sensitive_hash_fold state return_annotation
+      in
+      let state = [%hash_fold: bool] state async in
+      let state = [%hash_fold: bool] state generator in
+      [%hash_fold: Reference.t option] state parent
+
 
     let create_toplevel ~qualifier =
       {
@@ -1048,6 +1131,11 @@ end = struct
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_sensitive_hash_fold state { signature; body } =
+    let state = Signature.location_sensitive_hash_fold state signature in
+    List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold
+
 
   let create_toplevel ~qualifier ~statements =
     { signature = Signature.create_toplevel ~qualifier; body = statements }
@@ -1362,6 +1450,8 @@ and For : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t
+
+  val location_sensitive_hash_fold : t Hash.folder
 end = struct
   type t = {
     target: Expression.t;
@@ -1424,6 +1514,14 @@ end = struct
       Node.location;
       value = Statement.Assign { Assign.target; annotation = None; value; parent = None };
     }
+
+
+  let location_sensitive_hash_fold state { target; iterator; body; orelse; async } =
+    let state = Expression.location_sensitive_hash_fold state target in
+    let state = Expression.location_sensitive_hash_fold state iterator in
+    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
+    let state = List.fold orelse ~init:state ~f:Statement.location_sensitive_hash_fold in
+    [%hash_fold: bool] state async
 end
 
 and If : sig
@@ -1433,6 +1531,8 @@ and If : sig
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end = struct
   type t = {
     test: Expression.t;
@@ -1440,6 +1540,11 @@ end = struct
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_sensitive_hash_fold state { test; body; orelse } =
+    let state = Expression.location_sensitive_hash_fold state test in
+    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
+    List.fold orelse ~init:state ~f:Statement.location_sensitive_hash_fold
 end
 
 and Try : sig
@@ -1450,6 +1555,8 @@ and Try : sig
       body: Statement.t list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
   end
 
   type t = {
@@ -1461,6 +1568,8 @@ and Try : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val preamble : Handler.t -> Statement.t list
+
+  val location_sensitive_hash_fold : t Hash.folder
 end = struct
   module Handler = struct
     type t = {
@@ -1469,6 +1578,15 @@ end = struct
       body: Statement.t list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    let location_sensitive_hash_fold state { kind; name; body } =
+      let state =
+        match kind with
+        | None -> state
+        | Some kind -> Expression.location_sensitive_hash_fold state kind
+      in
+      let state = [%hash_fold: Identifier.t option] state name in
+      List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold
   end
 
   type t = {
@@ -1568,6 +1686,13 @@ end = struct
         (* Insert raw `kind` so that we type check the expression. *)
         [Node.create ~location (Statement.Expression expression)]
     | _ -> []
+
+
+  let location_sensitive_hash_fold state { body; handlers; orelse; finally } =
+    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
+    let state = List.fold handlers ~init:state ~f:Handler.location_sensitive_hash_fold in
+    let state = List.fold orelse ~init:state ~f:Statement.location_sensitive_hash_fold in
+    List.fold finally ~init:state ~f:Statement.location_sensitive_hash_fold
 end
 
 and While : sig
@@ -1577,6 +1702,8 @@ and While : sig
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end = struct
   type t = {
     test: Expression.t;
@@ -1584,6 +1711,11 @@ end = struct
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_sensitive_hash_fold state { test; body; orelse } =
+    let state = Expression.location_sensitive_hash_fold state test in
+    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
+    List.fold orelse ~init:state ~f:Statement.location_sensitive_hash_fold
 end
 
 and With : sig
@@ -1595,6 +1727,8 @@ and With : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t list
+
+  val location_sensitive_hash_fold : t Hash.folder
 end = struct
   type t = {
     items: (Expression.t * Expression.t option) list;
@@ -1602,6 +1736,19 @@ end = struct
     async: bool;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let location_sensitive_hash_fold_item state (value, target) =
+    let state = Expression.location_sensitive_hash_fold state value in
+    match target with
+    | None -> state
+    | Some target -> Expression.location_sensitive_hash_fold state target
+
+
+  let location_sensitive_hash_fold state { items; body; async } =
+    let state = List.fold items ~init:state ~f:location_sensitive_hash_fold_item in
+    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
+    [%hash_fold: bool] state async
+
 
   let preamble { items; async; _ } =
     let preamble (({ Node.location; _ } as expression), target) =
@@ -1673,6 +1820,8 @@ and Statement : sig
   val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
 
   val extract_docstring : t list -> string option
+
+  val location_sensitive_hash_fold : t Hash.folder
 end = struct
   type statement =
     | Assign of Assign.t
@@ -1699,6 +1848,71 @@ end = struct
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  let rec location_sensitive_hash_fold_statement state statement =
+    match statement with
+    | Assign assign ->
+        let state = [%hash_fold: int] state 0 in
+        Assign.location_sensitive_hash_fold state assign
+    | Assert assert_ ->
+        let state = [%hash_fold: int] state 1 in
+        Assert.location_sensitive_hash_fold state assert_
+    | Break -> [%hash_fold: int] state 2
+    | Class class_ ->
+        let state = [%hash_fold: int] state 3 in
+        Class.location_sensitive_hash_fold state class_
+    | Continue -> [%hash_fold: int] state 4
+    | Define define ->
+        let state = [%hash_fold: int] state 5 in
+        Define.location_sensitive_hash_fold state define
+    | Delete expression ->
+        let state = [%hash_fold: int] state 6 in
+        Expression.location_sensitive_hash_fold state expression
+    | Expression expression ->
+        let state = [%hash_fold: int] state 7 in
+        Expression.location_sensitive_hash_fold state expression
+    | For for_ ->
+        let state = [%hash_fold: int] state 8 in
+        For.location_sensitive_hash_fold state for_
+    | Global identifiers ->
+        let state = [%hash_fold: int] state 9 in
+        List.fold identifiers ~init:state ~f:[%hash_fold: Identifier.t]
+    | If if_ ->
+        let state = [%hash_fold: int] state 10 in
+        If.location_sensitive_hash_fold state if_
+    | Import import ->
+        let state = [%hash_fold: int] state 11 in
+        [%hash_fold: Import.t] state import
+    | Nonlocal identifiers ->
+        let state = [%hash_fold: int] state 12 in
+        List.fold identifiers ~init:state ~f:[%hash_fold: Identifier.t]
+    | Pass -> [%hash_fold: int] state 13
+    | Raise raise_ ->
+        let state = [%hash_fold: int] state 14 in
+        Raise.location_sensitive_hash_fold state raise_
+    | Return return ->
+        let state = [%hash_fold: int] state 15 in
+        Return.location_sensitive_hash_fold state return
+    | Try try_ ->
+        let state = [%hash_fold: int] state 16 in
+        Try.location_sensitive_hash_fold state try_
+    | With with_ ->
+        let state = [%hash_fold: int] state 17 in
+        With.location_sensitive_hash_fold state with_
+    | While while_ ->
+        let state = [%hash_fold: int] state 18 in
+        While.location_sensitive_hash_fold state while_
+    | Yield yield ->
+        let state = [%hash_fold: int] state 19 in
+        Expression.location_sensitive_hash_fold state yield
+    | YieldFrom yield_from ->
+        let state = [%hash_fold: int] state 20 in
+        Expression.location_sensitive_hash_fold state yield_from
+
+
+  and location_sensitive_hash_fold state statement =
+    Node.location_sensitive_hash_fold location_sensitive_hash_fold_statement state statement
+
 
   let assume ?(origin = Assert.Origin.Assertion) ({ Node.location; _ } as test) =
     { Node.location; value = Assert { Assert.test; message = None; origin } }

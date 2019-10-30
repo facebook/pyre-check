@@ -2,6 +2,7 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
+open Core
 
 module Assign : sig
   type t = {
@@ -13,6 +14,8 @@ module Assign : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   val is_static_attribute_initialization : t -> bool
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 module Import : sig
@@ -35,6 +38,8 @@ module Raise : sig
     from: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 module Return : sig
@@ -43,6 +48,8 @@ module Return : sig
     expression: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 module rec Assert : sig
@@ -55,6 +62,8 @@ module rec Assert : sig
         }
       | While
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
   end
 
   type t = {
@@ -63,6 +72,8 @@ module rec Assert : sig
     origin: Origin.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Attribute : sig
@@ -117,6 +128,8 @@ and Class : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+  val location_sensitive_hash_fold : t Hash.folder
+
   val constructors : ?in_test:bool -> t -> Define.t list
 
   val defines : t -> Define.t list
@@ -160,6 +173,8 @@ and Define : sig
       parent: Reference.t option; (* The class owning the method. *)
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
 
     val create_toplevel : qualifier:Reference.t option -> t
 
@@ -209,6 +224,8 @@ and Define : sig
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 
   val create_toplevel : qualifier:Reference.t option -> statements:Statement.t list -> t
 
@@ -276,6 +293,8 @@ and For : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and If : sig
@@ -285,6 +304,8 @@ and If : sig
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Try : sig
@@ -295,6 +316,8 @@ and Try : sig
       body: Statement.t list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
   end
 
   type t = {
@@ -306,6 +329,8 @@ and Try : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val preamble : Handler.t -> Statement.t list
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and While : sig
@@ -315,6 +340,8 @@ and While : sig
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and With : sig
@@ -326,6 +353,8 @@ and With : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t list
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Statement : sig
@@ -355,6 +384,8 @@ and Statement : sig
 
   type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+  val location_sensitive_hash_fold : t Hash.folder
+
   val assume : ?origin:Assert.Origin.t -> Expression.t -> t
 
   val terminates : t list -> bool
@@ -367,3 +398,5 @@ end
 type statement = Statement.statement [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 type t = Statement.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+val location_sensitive_hash_fold : t Hash.folder

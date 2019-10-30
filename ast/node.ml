@@ -3,6 +3,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
+
 type 'node_type t = {
   location: Location.t; [@hash.ignore]
   value: 'node_type;
@@ -18,6 +20,11 @@ let pp print_node format { value; _ } = print_node format value
 let compare compare_value left right = compare_value left.value right.value
 
 let equal equal_value left right = equal_value left.value right.value
+
+let location_sensitive_hash_fold hash_fold_value state { location; value } =
+  let state = [%hash_fold: Location.t] state location in
+  hash_fold_value state value
+
 
 let start { location; _ } = location.Location.start
 

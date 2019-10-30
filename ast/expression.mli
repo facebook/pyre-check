@@ -2,6 +2,7 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
+open Core
 
 module Substring : sig
   type kind =
@@ -34,6 +35,8 @@ module rec BooleanOperator : sig
   val pp_boolean_operator : Format.formatter -> operator -> unit
 
   val inverse : operator -> operator
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Call : sig
@@ -43,6 +46,8 @@ and Call : sig
       value: Expression.t;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
   end
 
   type t = {
@@ -50,6 +55,8 @@ and Call : sig
     arguments: Argument.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and ComparisonOperator : sig
@@ -78,6 +85,8 @@ and ComparisonOperator : sig
   val pp_comparison_operator : Format.formatter -> operator -> unit
 
   val override : t -> Expression.t option
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Comprehension : sig
@@ -89,6 +98,8 @@ and Comprehension : sig
       async: bool;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
   end
 
   type 'element t = {
@@ -96,6 +107,8 @@ and Comprehension : sig
     generators: Generator.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : 'element Hash.folder -> 'element t Hash.folder
 end
 
 and Dictionary : sig
@@ -105,6 +118,8 @@ and Dictionary : sig
       value: Expression.t;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
   end
 
   type t = {
@@ -112,6 +127,8 @@ and Dictionary : sig
     keywords: Expression.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Lambda : sig
@@ -120,6 +137,8 @@ and Lambda : sig
     body: Expression.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Name : sig
@@ -130,12 +149,16 @@ and Name : sig
       special: bool;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    val location_sensitive_hash_fold : t Hash.folder
   end
 
   type t =
     | Attribute of Attribute.t
     | Identifier of Identifier.t
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Parameter : sig
@@ -157,6 +180,8 @@ and Parameter : sig
     t
 
   val name : t -> Identifier.t
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Starred : sig
@@ -164,6 +189,8 @@ and Starred : sig
     | Once of Expression.t
     | Twice of Expression.t
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and StringLiteral : sig
@@ -180,6 +207,8 @@ and StringLiteral : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+  val location_sensitive_hash_fold : t Hash.folder
+
   val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
 
   val create_mixed : Substring.t Node.t list -> t
@@ -192,6 +221,8 @@ and Ternary : sig
     alternative: Expression.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and UnaryOperator : sig
@@ -208,6 +239,8 @@ and UnaryOperator : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
+  val location_sensitive_hash_fold : t Hash.folder
+
   val pp_unary_operator : Format.formatter -> operator -> unit
 
   val override : t -> Expression.t option
@@ -219,6 +252,8 @@ and WalrusOperator : sig
     value: Expression.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 and Expression : sig
@@ -251,11 +286,15 @@ and Expression : sig
     | Yield of t option
 
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+  val location_sensitive_hash_fold : t Hash.folder
 end
 
 type t = Expression.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 type expression = Expression.expression [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+val location_sensitive_hash_fold : t Hash.folder
 
 val negate : t -> t
 
