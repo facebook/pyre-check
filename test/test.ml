@@ -253,24 +253,11 @@ let assert_source_equal left right =
 
 
 let assert_source_equal_with_locations expected actual =
-  let compare_sources left_source right_source =
-    let equal_locations =
-      let location_equal left right =
-        Location.equal Location.Reference.any left
-        || Location.equal Location.Reference.any right
-        || Location.equal left right
-      in
-      List.for_all2_exn
-        ~f:location_equal
-        (Visit.collect_locations left_source)
-        (Visit.collect_locations right_source)
-    in
-    let equal_statements =
-      let { Source.statements = left; _ } = expected in
-      let { Source.statements = right; _ } = actual in
-      List.for_all2_exn ~f:Statement.equal left right
-    in
-    equal_statements && equal_locations
+  let equal_statement left right = Int.equal 0 (Statement.location_sensitive_compare left right) in
+  let compare_sources expected actual =
+    let { Source.statements = left; _ } = expected in
+    let { Source.statements = right; _ } = actual in
+    List.equal equal_statement left right
   in
   let pp_with_locations format { Source.statements; _ } =
     let rec print_statement ~prefix statement =

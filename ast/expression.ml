@@ -41,6 +41,8 @@ module rec BooleanOperator : sig
   val inverse : operator -> operator
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type operator =
     | And
@@ -72,6 +74,15 @@ end = struct
     let state = Expression.location_sensitive_hash_fold state left in
     let state = [%hash_fold: operator] state operator in
     Expression.location_sensitive_hash_fold state right
+
+
+  let location_sensitive_compare left right =
+    match Expression.location_sensitive_compare left.left right.left with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+      match [%compare: operator] left.operator right.operator with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Expression.location_sensitive_compare left.right right.right )
 end
 
 and Call : sig
@@ -83,6 +94,8 @@ and Call : sig
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     val location_sensitive_hash_fold : t Hash.folder
+
+    val location_sensitive_compare : t -> t -> int
   end
 
   type t = {
@@ -92,6 +105,8 @@ and Call : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   module Argument = struct
     type t = {
@@ -107,6 +122,17 @@ end = struct
         | Some name -> Node.location_sensitive_hash_fold [%hash_fold: Identifier.t] state name
       in
       Expression.location_sensitive_hash_fold state value
+
+
+    let location_sensitive_compare left right =
+      match
+        Option.compare
+          (Node.location_sensitive_compare [%compare: Identifier.t])
+          left.name
+          right.name
+      with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Expression.location_sensitive_compare left.value right.value
   end
 
   type t = {
@@ -118,6 +144,12 @@ end = struct
   let location_sensitive_hash_fold state { callee; arguments } =
     let state = Expression.location_sensitive_hash_fold state callee in
     [%hash_fold: Argument.t list] state arguments
+
+
+  let location_sensitive_compare left right =
+    match Expression.location_sensitive_compare left.callee right.callee with
+    | x when not (Int.equal x 0) -> x
+    | _ -> List.compare Argument.compare left.arguments right.arguments
 end
 
 and ComparisonOperator : sig
@@ -148,6 +180,8 @@ and ComparisonOperator : sig
   val override : t -> Expression.t option
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type operator =
     | Equals
@@ -238,6 +272,15 @@ end = struct
     let state = Expression.location_sensitive_hash_fold state left in
     let state = [%hash_fold: operator] state operator in
     Expression.location_sensitive_hash_fold state right
+
+
+  let location_sensitive_compare left right =
+    match Expression.location_sensitive_compare left.left right.left with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+      match [%compare: operator] left.operator right.operator with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Expression.location_sensitive_compare left.right right.right )
 end
 
 and Comprehension : sig
@@ -251,6 +294,8 @@ and Comprehension : sig
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     val location_sensitive_hash_fold : t Hash.folder
+
+    val location_sensitive_compare : t -> t -> int
   end
 
   type 'element t = {
@@ -260,6 +305,8 @@ and Comprehension : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : 'element Hash.folder -> 'element t Hash.folder
+
+  val location_sensitive_compare : ('element -> 'element -> int) -> 'element t -> 'element t -> int
 end = struct
   module Generator = struct
     type t = {
@@ -275,6 +322,20 @@ end = struct
       let state = Expression.location_sensitive_hash_fold state iterator in
       let state = List.fold conditions ~init:state ~f:Expression.location_sensitive_hash_fold in
       [%hash_fold: bool] state async
+
+
+    let location_sensitive_compare left right =
+      match Expression.location_sensitive_compare left.target right.target with
+      | x when not (Int.equal x 0) -> x
+      | _ -> (
+        match Expression.location_sensitive_compare left.iterator right.iterator with
+        | x when not (Int.equal x 0) -> x
+        | _ -> (
+          match
+            List.compare Expression.location_sensitive_compare left.conditions right.conditions
+          with
+          | x when not (Int.equal x 0) -> x
+          | _ -> Bool.compare left.async right.async ) )
   end
 
   type 'element t = {
@@ -286,6 +347,12 @@ end = struct
   let location_sensitive_hash_fold hash_fold_element state { element; generators } =
     let state = hash_fold_element state element in
     List.fold generators ~init:state ~f:Generator.location_sensitive_hash_fold
+
+
+  let location_sensitive_compare compare_element left right =
+    match compare_element left.element right.element with
+    | x when not (Int.equal x 0) -> x
+    | _ -> List.compare Generator.location_sensitive_compare left.generators right.generators
 end
 
 and Dictionary : sig
@@ -297,6 +364,8 @@ and Dictionary : sig
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     val location_sensitive_hash_fold : t Hash.folder
+
+    val location_sensitive_compare : t -> t -> int
   end
 
   type t = {
@@ -306,6 +375,8 @@ and Dictionary : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   module Entry = struct
     type t = {
@@ -317,6 +388,12 @@ end = struct
     let location_sensitive_hash_fold state { key; value } =
       let state = Expression.location_sensitive_hash_fold state key in
       Expression.location_sensitive_hash_fold state value
+
+
+    let location_sensitive_compare left right =
+      match Expression.location_sensitive_compare left.key right.key with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Expression.location_sensitive_compare left.value right.value
   end
 
   type t = {
@@ -328,6 +405,12 @@ end = struct
   let location_sensitive_hash_fold state { entries; keywords } =
     let state = List.fold entries ~init:state ~f:Entry.location_sensitive_hash_fold in
     List.fold keywords ~init:state ~f:Expression.location_sensitive_hash_fold
+
+
+  let location_sensitive_compare left right =
+    match List.compare Entry.location_sensitive_compare left.entries right.entries with
+    | x when not (Int.equal x 0) -> x
+    | _ -> List.compare Expression.location_sensitive_compare left.keywords right.keywords
 end
 
 and Lambda : sig
@@ -338,6 +421,8 @@ and Lambda : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type t = {
     parameters: Parameter.t list;
@@ -348,6 +433,12 @@ end = struct
   let location_sensitive_hash_fold state { parameters; body } =
     let state = List.fold parameters ~init:state ~f:Parameter.location_sensitive_hash_fold in
     Expression.location_sensitive_hash_fold state body
+
+
+  let location_sensitive_compare left right =
+    match List.compare Parameter.location_sensitive_compare left.parameters right.parameters with
+    | x when not (Int.equal x 0) -> x
+    | _ -> Expression.location_sensitive_compare left.body right.body
 end
 
 and Name : sig
@@ -360,6 +451,8 @@ and Name : sig
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     val location_sensitive_hash_fold : t Hash.folder
+
+    val location_sensitive_compare : t -> t -> int
   end
 
   type t =
@@ -368,6 +461,8 @@ and Name : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   module Attribute = struct
     type t = {
@@ -381,6 +476,15 @@ end = struct
       let state = Expression.location_sensitive_hash_fold state base in
       let state = [%hash_fold: Identifier.t] state attribute in
       [%hash_fold: bool] state special
+
+
+    let location_sensitive_compare left right =
+      match Expression.location_sensitive_compare left.base right.base with
+      | x when not (Int.equal x 0) -> x
+      | _ -> (
+        match [%compare: Identifier.t] left.attribute right.attribute with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Bool.compare left.special right.special )
   end
 
   type t =
@@ -388,13 +492,22 @@ end = struct
     | Identifier of Identifier.t
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  let location_sensitive_hash_fold state = function
+  let location_sensitive_hash_fold state name =
+    match name with
     | Attribute attribute ->
         let state = [%hash_fold: int] state 0 in
         Attribute.location_sensitive_hash_fold state attribute
     | Identifier identifier ->
         let state = [%hash_fold: int] state 1 in
         [%hash_fold: Identifier.t] state identifier
+
+
+  let location_sensitive_compare left right =
+    match left, right with
+    | Attribute left, Attribute right -> Attribute.location_sensitive_compare left right
+    | Identifier left, Identifier right -> [%compare: Identifier.t] left right
+    | Attribute _, Identifier _ -> -1
+    | Identifier _, Attribute _ -> 1
 end
 
 and Parameter : sig
@@ -418,6 +531,8 @@ and Parameter : sig
   val name : t -> Identifier.t
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type parameter = {
     name: Identifier.t;
@@ -446,8 +561,22 @@ end = struct
     | Some annotation -> Expression.location_sensitive_hash_fold state annotation
 
 
+  let location_sensitive_compare_parameter left right =
+    match [%compare: Identifier.t] left.name right.name with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+      match Option.compare Expression.location_sensitive_compare left.value right.value with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Option.compare Expression.location_sensitive_compare left.annotation right.annotation
+      )
+
+
   let location_sensitive_hash_fold =
     Node.location_sensitive_hash_fold location_sensitive_hash_fold_parameter
+
+
+  let location_sensitive_compare =
+    Node.location_sensitive_compare location_sensitive_compare_parameter
 end
 
 and Starred : sig
@@ -457,6 +586,8 @@ and Starred : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type t =
     | Once of Expression.t
@@ -470,6 +601,15 @@ end = struct
     | Twice expression ->
         let state = [%hash_fold: int] state 1 in
         Expression.location_sensitive_hash_fold state expression
+
+
+  let location_sensitive_compare left right =
+    match left, right with
+    | Once left, Once right
+    | Twice left, Twice right ->
+        Expression.location_sensitive_compare left right
+    | Once _, Twice _ -> -1
+    | Twice _, Once _ -> 1
 end
 
 and StringLiteral : sig
@@ -491,6 +631,8 @@ and StringLiteral : sig
   val create_mixed : Substring.t Node.t list -> t
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type kind =
     | String
@@ -548,9 +690,29 @@ end = struct
           ~f:(Node.location_sensitive_hash_fold [%hash_fold: Substring.t])
 
 
+  let location_sensitive_compare_kind left right =
+    match left, right with
+    | String, String
+    | Bytes, Bytes ->
+        0
+    | Format left, Format right -> List.compare Expression.location_sensitive_compare left right
+    | Mixed left, Mixed right ->
+        List.compare (Node.location_sensitive_compare Substring.compare) left right
+    | String, _ -> -1
+    | Bytes, _ -> -1
+    | Format _, _ -> -1
+    | Mixed _, _ -> 1
+
+
   let location_sensitive_hash_fold state { value; kind } =
     let state = [%hash_fold: string] state value in
     location_sensitive_hash_fold_kind state kind
+
+
+  let location_sensitive_compare left right =
+    match String.compare left.value right.value with
+    | x when not (Int.equal x 0) -> x
+    | _ -> location_sensitive_compare_kind left.kind right.kind
 end
 
 and Ternary : sig
@@ -562,6 +724,8 @@ and Ternary : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type t = {
     target: Expression.t;
@@ -574,6 +738,15 @@ end = struct
     let state = Expression.location_sensitive_hash_fold state target in
     let state = Expression.location_sensitive_hash_fold state test in
     Expression.location_sensitive_hash_fold state alternative
+
+
+  let location_sensitive_compare left right =
+    match Expression.location_sensitive_compare left.target right.target with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+      match Expression.location_sensitive_compare left.test right.test with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Expression.location_sensitive_compare left.alternative right.alternative )
 end
 
 and UnaryOperator : sig
@@ -595,6 +768,8 @@ and UnaryOperator : sig
   val override : t -> Expression.t option
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type operator =
     | Invert
@@ -642,6 +817,12 @@ end = struct
   let location_sensitive_hash_fold state { operator; operand } =
     let state = [%hash_fold: operator] state operator in
     Expression.location_sensitive_hash_fold state operand
+
+
+  let location_sensitive_compare left right =
+    match [%compare: operator] left.operator right.operator with
+    | x when not (Int.equal x 0) -> x
+    | _ -> Expression.location_sensitive_compare left.operand right.operand
 end
 
 and WalrusOperator : sig
@@ -652,6 +833,8 @@ and WalrusOperator : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 end = struct
   type t = {
     target: Expression.t;
@@ -662,6 +845,12 @@ end = struct
   let location_sensitive_hash_fold state { target; value } =
     let state = Expression.location_sensitive_hash_fold state target in
     Expression.location_sensitive_hash_fold state value
+
+
+  let location_sensitive_compare left right =
+    match Expression.location_sensitive_compare left.target right.target with
+    | x when not (Int.equal x 0) -> x
+    | _ -> Expression.location_sensitive_compare left.value right.value
 end
 
 and Expression : sig
@@ -696,6 +885,8 @@ and Expression : sig
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val location_sensitive_hash_fold : t Hash.folder
+
+  val location_sensitive_compare : t -> t -> int
 
   val pp_expression_list : Format.formatter -> t list -> unit
 
@@ -824,6 +1015,77 @@ end = struct
 
   and location_sensitive_hash_fold state expression =
     Node.location_sensitive_hash_fold location_sensitive_hash_fold_expression state expression
+
+
+  let rec location_sensitive_compare_expression left right =
+    match left, right with
+    | Await left, Await right -> location_sensitive_compare left right
+    | BooleanOperator left, BooleanOperator right ->
+        BooleanOperator.location_sensitive_compare left right
+    | Call left, Call right -> Call.location_sensitive_compare left right
+    | ComparisonOperator left, ComparisonOperator right ->
+        ComparisonOperator.location_sensitive_compare left right
+    | Complex left, Complex right -> Float.compare left right
+    | Dictionary left, Dictionary right -> Dictionary.location_sensitive_compare left right
+    | DictionaryComprehension left, DictionaryComprehension right ->
+        Comprehension.location_sensitive_compare
+          Dictionary.Entry.location_sensitive_compare
+          left
+          right
+    | Ellipsis, Ellipsis -> 0
+    | False, False -> 0
+    | Float left, Float right -> Float.compare left right
+    | Generator left, Generator right ->
+        Comprehension.location_sensitive_compare location_sensitive_compare left right
+    | Integer left, Integer right -> Int.compare left right
+    | Lambda left, Lambda right -> Lambda.location_sensitive_compare left right
+    | List left, List right -> List.compare location_sensitive_compare left right
+    | ListComprehension left, ListComprehension right ->
+        Comprehension.location_sensitive_compare location_sensitive_compare left right
+    | Name left, Name right -> Name.location_sensitive_compare left right
+    | Set left, Set right -> List.compare location_sensitive_compare left right
+    | SetComprehension left, SetComprehension right ->
+        Comprehension.location_sensitive_compare location_sensitive_compare left right
+    | Starred left, Starred right -> Starred.location_sensitive_compare left right
+    | String left, String right -> StringLiteral.location_sensitive_compare left right
+    | Ternary left, Ternary right -> Ternary.location_sensitive_compare left right
+    | True, True -> 0
+    | Tuple left, Tuple right -> List.compare location_sensitive_compare left right
+    | UnaryOperator left, UnaryOperator right ->
+        UnaryOperator.location_sensitive_compare left right
+    | WalrusOperator left, WalrusOperator right ->
+        WalrusOperator.location_sensitive_compare left right
+    | Yield left, Yield right -> Option.compare location_sensitive_compare left right
+    | Await _, _ -> -1
+    | BooleanOperator _, _ -> -1
+    | Call _, _ -> -1
+    | ComparisonOperator _, _ -> -1
+    | Complex _, _ -> -1
+    | Dictionary _, _ -> -1
+    | DictionaryComprehension _, _ -> -1
+    | Ellipsis, _ -> -1
+    | False, _ -> -1
+    | Float _, _ -> -1
+    | Generator _, _ -> -1
+    | Integer _, _ -> -1
+    | Lambda _, _ -> -1
+    | List _, _ -> -1
+    | ListComprehension _, _ -> -1
+    | Name _, _ -> -1
+    | Set _, _ -> -1
+    | SetComprehension _, _ -> -1
+    | Starred _, _ -> -1
+    | String _, _ -> -1
+    | Ternary _, _ -> -1
+    | True, _ -> -1
+    | Tuple _, _ -> -1
+    | UnaryOperator _, _ -> -1
+    | WalrusOperator _, _ -> -1
+    | Yield _, _ -> 1
+
+
+  and location_sensitive_compare left right =
+    Node.location_sensitive_compare location_sensitive_compare_expression left right
 
 
   module PrettyPrinter = struct

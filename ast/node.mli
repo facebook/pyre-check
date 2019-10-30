@@ -24,3 +24,9 @@ val stop : 'node_type t -> Location.position
 val map : 'node_type t -> f:('node_type -> 'new_node_type) -> 'new_node_type t
 
 val location_sensitive_hash_fold : 'node_type Core.Hash.folder -> 'node_type t Core.Hash.folder
+
+val location_sensitive_compare
+  :  ('node_type -> 'node_type -> int) ->
+  'node_type t ->
+  'node_type t ->
+  int

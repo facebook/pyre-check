@@ -216,57 +216,66 @@ let test_expand_format_string _ =
   assert_locations
     "f'foo{1}'"
     [
-      +Statement.Expression
-         (node
-            ~start:(1, 0)
-            ~stop:(1, 9)
-            (Expression.String
-               {
-                 StringLiteral.kind =
-                   StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Expression.Integer 1)];
-                 value = "foo{1}";
-               }));
+      node
+        ~start:(1, 0)
+        ~stop:(1, 9)
+        (Statement.Expression
+           (node
+              ~start:(1, 0)
+              ~stop:(1, 9)
+              (Expression.String
+                 {
+                   StringLiteral.kind =
+                     StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Expression.Integer 1)];
+                   value = "foo{1}";
+                 })));
     ];
   assert_locations
     "f'foo{123}a{456}'"
     [
-      +Statement.Expression
-         (node
-            ~start:(1, 0)
-            ~stop:(1, 17)
-            (Expression.String
-               {
-                 StringLiteral.kind =
-                   StringLiteral.Format
-                     [
-                       node ~start:(1, 6) ~stop:(1, 9) (Expression.Integer 123);
-                       node ~start:(1, 12) ~stop:(1, 15) (Expression.Integer 456);
-                     ];
-                 value = "foo{123}a{456}";
-               }));
+      node
+        ~start:(1, 0)
+        ~stop:(1, 17)
+        (Statement.Expression
+           (node
+              ~start:(1, 0)
+              ~stop:(1, 17)
+              (Expression.String
+                 {
+                   StringLiteral.kind =
+                     StringLiteral.Format
+                       [
+                         node ~start:(1, 6) ~stop:(1, 9) (Expression.Integer 123);
+                         node ~start:(1, 12) ~stop:(1, 15) (Expression.Integer 456);
+                       ];
+                   value = "foo{123}a{456}";
+                 })));
     ];
   assert_locations
     "return f'foo{123}a{456}'"
     [
-      +Statement.Return
-         {
-           is_implicit = false;
-           expression =
-             Some
-               (node
-                  ~start:(1, 7)
-                  ~stop:(1, 24)
-                  (Expression.String
-                     {
-                       StringLiteral.kind =
-                         StringLiteral.Format
-                           [
-                             node ~start:(1, 13) ~stop:(1, 16) (Expression.Integer 123);
-                             node ~start:(1, 19) ~stop:(1, 22) (Expression.Integer 456);
-                           ];
-                       value = "foo{123}a{456}";
-                     }));
-         };
+      node
+        ~start:(1, 0)
+        ~stop:(1, 24)
+        (Statement.Return
+           {
+             is_implicit = false;
+             expression =
+               Some
+                 (node
+                    ~start:(1, 7)
+                    ~stop:(1, 24)
+                    (Expression.String
+                       {
+                         StringLiteral.kind =
+                           StringLiteral.Format
+                             [
+                               node ~start:(1, 13) ~stop:(1, 16) (Expression.Integer 123);
+                               node ~start:(1, 19) ~stop:(1, 22) (Expression.Integer 456);
+                             ];
+                         value = "foo{123}a{456}";
+                       }));
+           });
     ];
   assert_locations
     {|
@@ -276,21 +285,24 @@ let test_expand_format_string _ =
        '''
      |}
     [
-      +Statement.Expression
-         (node
-            ~start:(2, 0)
-            ~stop:(5, 3)
-            (Expression.String
-               {
-                 StringLiteral.kind =
-                   StringLiteral.Format
-                     [
-                       node ~start:(3, 4) ~stop:(3, 7) (Expression.Integer 123);
-                       node ~start:(3, 10) ~stop:(3, 13) (Expression.Integer 456);
-                       node ~start:(4, 2) ~stop:(4, 5) (Expression.Integer 789);
-                     ];
-                 value = "\nfoo{123}a{456}\nb{789}\n";
-               }));
+      node
+        ~start:(2, 0)
+        ~stop:(5, 3)
+        (Statement.Expression
+           (node
+              ~start:(2, 0)
+              ~stop:(5, 3)
+              (Expression.String
+                 {
+                   StringLiteral.kind =
+                     StringLiteral.Format
+                       [
+                         node ~start:(3, 4) ~stop:(3, 7) (Expression.Integer 123);
+                         node ~start:(3, 10) ~stop:(3, 13) (Expression.Integer 456);
+                         node ~start:(4, 2) ~stop:(4, 5) (Expression.Integer 789);
+                       ];
+                   value = "\nfoo{123}a{456}\nb{789}\n";
+                 })));
     ]
 
 

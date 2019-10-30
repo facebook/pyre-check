@@ -26,6 +26,12 @@ let location_sensitive_hash_fold hash_fold_value state { location; value } =
   hash_fold_value state value
 
 
+let location_sensitive_compare compare_value left right =
+  match [%compare: Location.t] left.location right.location with
+  | 0 -> compare_value left.value right.value
+  | _ as result -> result
+
+
 let start { location; _ } = location.Location.start
 
 let stop { location; _ } = location.Location.stop
