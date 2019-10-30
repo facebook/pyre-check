@@ -203,13 +203,6 @@ setup(
 )
 HEREDOC
 
-# Test descriptions before building:
-# https://github.com/pypa/readme_renderer
-if [[ "${HAS_PIP_GREATER_THAN_1_5}" == 'yes' ]]; then
-  python3 setup.py check -r -s
-fi
-
-
 python3 setup.py sdist
 mkdir -p "${SCRIPTS_DIRECTORY}/dist"
 
@@ -217,6 +210,11 @@ source_distribution_file="$(find "${BUILD_ROOT}/dist/" -type f | grep pyre-check
 source_distribution_destination="$(basename "${source_distribution_file}")"
 source_distribution_destination="${source_distribution_destination/%.tar.gz/.tar.gz}"
 
+# Test descriptions before building:
+# https://github.com/pypa/readme_renderer
+if [[ "${HAS_PIP_GREATER_THAN_1_5}" == 'yes' ]]; then
+  twine check "${BUILD_ROOT}/dist/*"
+fi
 
 # Create setup.cfg file.
 cat > "${BUILD_ROOT}/setup.cfg" <<HEREDOC
