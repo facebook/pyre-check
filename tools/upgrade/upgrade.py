@@ -9,7 +9,6 @@
 import argparse
 import json
 import logging
-import pathlib
 import re
 import subprocess
 import sys
@@ -554,6 +553,107 @@ def run_fixme_all(arguments: argparse.Namespace) -> None:
         _upgrade_project(arguments, configuration, project_configuration.parent)
 
 
+def run_fixme_targets_file(
+    arguments: argparse.Namespace,
+    project_directory: Path,
+    path: str,
+    target_names: List[str],
+) -> None:
+    LOG.info("Processing %s/TARGETS...", path)
+    targets = [path + ":" + name + "-typecheck" for name in target_names]
+    buck_test_command = ["buck", "test", "--show-full-json-output"] + targets
+    buck_test = subprocess.run(
+        buck_test_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    if buck_test.returncode == 0:
+        # Successful run with no type errors
+        LOG.info("No errors in %s/TARGETS...", path)
+    elif buck_test.returncode == 32:
+        buck_test_output = buck_test.stdout.decode().split("\n")
+        pyre_error_pattern = re.compile(r"\W*(.*\.pyi?):(\d*):(\d*) (.* \[(\d*)\]: .*)")
+        errors = {}
+        for output_line in buck_test_output:
+            matched = pyre_error_pattern.match(output_line)
+            if matched:
+                path = matched.group(1)
+                line = int(matched.group(2))
+                column = int(matched.group(3))
+                description = matched.group(4)
+                code = matched.group(5)
+                error = {
+                    "line": line,
+                    "column": column,
+                    "path": project_directory / path,
+                    "code": code,
+                    "description": description,
+                    "concise_description": description,
+                }
+                errors[(line, column, path, code)] = error
+        errors = list(errors.values())
+        LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
+        if len(errors) > 0:
+            # Note: We are not linting here yet.
+            fix(arguments, sort_errors(errors))
+            try:
+                _submit_changes(arguments, _commit_message(path + "/TARGETS"))
+            except subprocess.CalledProcessError:
+                LOG.info("Error while running hg.")
+    else:
+        LOG.error(
+            "Failed to run buck test command:\n\t%s\n\n%s",
+            " ".join(buck_test_command),
+            buck_test.stderr.decode(),
+        )
+
+
+def run_fixme_targets(arguments: argparse.Namespace) -> None:
+    # Currently does not support sandcastle integration, or setting the global hash
+    # at the same time. As-is, run this locally after the global hash is updated.
+    project_configuration = Configuration.find_project_configuration()
+    # TODO(T36700977): Allow to pass in a toplevel directory to filter by
+    if project_configuration is None:
+        LOG.info("No project configuration found for the given directory.")
+        return
+    project_directory = project_configuration.parent
+    LOG.info("Finding typecheck targets in %s", project_directory)
+    # TODO(T36700977): Ensure targets with 'name' in name aren't skipped.
+    find_targets_command = [
+        "grep",
+        "-RPzo",
+        "--include=*TARGETS",
+        "(?s)name = .((?!name).)*check_types = True",
+        project_directory,
+    ]
+    # TODO(T36700977): verify that tests are running pyre, not mypy
+    find_targets = subprocess.run(
+        find_targets_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    if find_targets.returncode != 0:
+        LOG.error("Failed to search for targets: %s", find_targets.stderr.decode())
+        return
+    targets = find_targets.stdout.decode().split("check_types = True")
+    target_pattern = re.compile(r"(.*)\/TARGETS:.*name = \"([^\"]*)\".*")
+    target_names = {}
+    total_targets = 0
+    for target in targets:
+        matched = target_pattern.match(target.replace("\n", " ").strip())
+        if matched:
+            total_targets += 1
+            path = matched.group(1)
+            target_name = matched.group(2)
+            if path in target_names:
+                target_names[path].append(target_name)
+            else:
+                target_names[path] = [target_name]
+    LOG.info(
+        "Found %d typecheck targets in %d TARGETS files to analyze",
+        total_targets,
+        len(target_names),
+    )
+    for path, target_names in target_names.items():
+        run_fixme_targets_file(arguments, project_directory, path, target_names)
+
+
 def path_exists(filename: str) -> Path:
     path = Path(filename)
     if not path.exists():
@@ -672,6 +772,18 @@ def main() -> None:
     )
     fixme_all.add_argument(
         "hash", nargs="?", default=None, help="Hash of new Pyre version"
+    )
+
+    # Subcommand: Fixme all errors in targets running type checking
+    fixme_targets = commands.add_parser("fixme-targets")
+    fixme_targets.set_defaults(function=run_fixme_targets)
+    fixme_targets.add_argument(
+        "-c", "--comment", help="Custom comment after fixme comments"
+    )
+    fixme_targets.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
+    fixme_targets.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
+    fixme_targets.add_argument(
+        "--subdirectory", help="Only upgrade TARGETS files within this directory."
     )
 
     # Initialize default values.

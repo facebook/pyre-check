@@ -1006,6 +1006,124 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with("# pyre-fixme[1]: Concise.\n1\n2")
 
 
+class FixmeTargetsTest(unittest.TestCase):
+    @patch("subprocess.run")
+    @patch.object(
+        upgrade.Configuration,
+        "find_project_configuration",
+        return_value=Path(".pyre_configuration"),
+    )
+    @patch("%s.run_fixme_targets_file" % upgrade.__name__)
+    def test_run_fixme_targets(self, fix_file, find_configuration, subprocess) -> None:
+        arguments = MagicMock()
+        grep_return = MagicMock()
+        grep_return.returncode = 1
+        grep_return.stderr = b"stderr"
+        subprocess.return_value = grep_return
+        upgrade.run_fixme_targets(arguments)
+        fix_file.assert_not_called()
+
+        grep_return.returncode = 0
+        grep_return.stdout = b"""
+        a/b/TARGETS:name = "derp",
+            srcs = ["derp.py"],
+            check_types = True
+        a/b/TARGETS:name = "herp",
+            srcs = [],
+            check_types = True
+        a/b/TARGETS:name = "merp",
+            srcs = [],
+            check_types = True
+        """
+        subprocess.return_value = grep_return
+        upgrade.run_fixme_targets(arguments)
+        fix_file.assert_called_once_with(
+            arguments, Path("."), "a/b", ["derp", "herp", "merp"]
+        )
+
+    @patch("subprocess.run")
+    @patch("%s.fix" % upgrade.__name__)
+    @patch("%s._submit_changes" % upgrade.__name__)
+    def test_run_fixme_targets_file(self, submit_changes, fix, subprocess) -> None:
+        arguments = MagicMock()
+        buck_return = MagicMock()
+        buck_return.returncode = 1
+        buck_return.stderr = b"stderr"
+        subprocess.return_value = buck_return
+        upgrade.run_fixme_targets_file(arguments, Path("."), "a/b", ["derp", "herp"])
+        fix.assert_not_called()
+        submit_changes.assert_not_called()
+
+        buck_return.returncode = 0
+        subprocess.return_value = buck_return
+        upgrade.run_fixme_targets_file(arguments, Path("."), "a/b", ["derp", "herp"])
+        fix.assert_not_called()
+        submit_changes.assert_not_called()
+
+        buck_return.returncode = 32
+        buck_return.stdout = b"""
+        Discovering tests
+        Running 1 tests
+        Started new test run: https://url
+              a/b:c-typecheck - a.b.c (c.TypeCheck) 57.547 1/1 (failed)
+        Test output:
+        > All OK.
+        >         WARNING: Invoking pyre through buck TARGETS may...
+        >         See `https://wiki/configuration/` to set up Pyre for your project.
+        >
+        > 	a/b/x.py:278:28 Undefined attribute [16]: `Optional` has no attribute `derp`.
+        > 	a/b/x.py:325:41 Undefined attribute [16]: `Optional` has no attribute `herp`.
+        > 	a/b/y.py:86:26 Incompatible parameter type [6]: Expected `str` for 1st \
+anonymous parameter to call `merp` but got `Optional[str]`.
+               a/b:c-typecheck - main 0.000 (passed)
+        Finished test run: https://url
+        Summary (total time 58.75s):
+          PASS: 1
+          FAIL: 1
+            a/b:c-typecheck - a.b.c (c.TypeCheck)
+          SKIP: 0
+          FATAL: 0
+          TIMEOUT: 0
+          OMIT: 0
+        """
+        subprocess.return_value = buck_return
+        expected_errors = [
+            {
+                "line": 278,
+                "column": 28,
+                "path": "a/b/x.py",
+                "code": 16,
+                "concise_description": "Undefined attribute [16]: `Optional` has "
+                + "no attribute `derp`.",
+                "description": "Undefined attribute [16]: `Optional` has no "
+                + "attribute `derp`.",
+            },
+            {
+                "line": 325,
+                "column": 41,
+                "path": "a/b/x.py",
+                "code": 16,
+                "concise_description": "Undefined attribute [16]: `Optional` has "
+                + "no attribute `herp`.",
+                "description": "Undefined attribute [16]: `Optional` has no "
+                + "attribute `herp`.",
+            },
+            {
+                "line": 86,
+                "column": 26,
+                "path": "a/b/y.py",
+                "code": 6,
+                "concise_description": "Expected `str` for 1st anonymous parameter "
+                + "to call `merp` but got `Optional[str]`.",
+                "description": "Expected `str` for 1st anonymous parameter to "
+                + "call `merp` but got `Optional[str]`.",
+            },
+        ]
+        upgrade.run_fixme_targets_file(arguments, Path("."), "a/b", ["derp", "herp"])
+        fix.called_once_with(arguments, errors.sort_errors(expected_errors))
+        submit_changes.called_once_with(arguments, upgrade._commit_message("./TARGETS"))
+
+
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:
         with patch.object(postprocess.LOG, "error") as mock_error:
