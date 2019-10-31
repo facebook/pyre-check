@@ -276,6 +276,9 @@ class Command:
 
             # Wait for the process to finish and clean up.
             process.wait()
+            # In the exceptional case, make sure that we print the error messages.
+            if process.returncode != 0:
+                stderr_reader.join()
             self._call_client_terminated = True
             if capture_output:
                 # pyre-fixme: stdout_reader is not always declared!
