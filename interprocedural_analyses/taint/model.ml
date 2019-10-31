@@ -1068,3 +1068,22 @@ let parse ~resolution ?path ?(verify = true) ?rule_filter ~source ~configuration
        | `Left model
        | `Right model ->
            Some model)
+
+
+let get_model_sources ~directories =
+  let path_and_content file =
+    match File.content file with
+    | Some content -> Some (File.path file, content)
+    | None -> None
+  in
+  List.iter directories ~f:(fun directory ->
+      if not (Path.is_directory directory) then
+        raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory)));
+  Log.info
+    "Finding taint models in `%s`."
+    (directories |> List.map ~f:Path.show |> String.concat ~sep:", ");
+  directories
+  |> List.concat_map ~f:(fun root ->
+         Pyre.Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root ())
+  |> List.map ~f:File.create
+  |> List.filter_map ~f:path_and_content

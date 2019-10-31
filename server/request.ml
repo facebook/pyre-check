@@ -992,17 +992,7 @@ let process_type_query_request
           in
           List.iter sources ~f:create_model
         in
-        let path_and_content file =
-          match File.content file with
-          | Some content -> Some (File.path file, content)
-          | None -> None
-        in
-        directories
-        |> List.concat_map ~f:(fun root ->
-               Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root ())
-        |> List.map ~f:File.create
-        |> List.filter_map ~f:path_and_content
-        |> create_models;
+        Taint.Model.get_model_sources ~directories |> create_models;
         TypeQuery.Response
           (TypeQuery.Success
              (Format.asprintf

@@ -52,26 +52,9 @@ include TaintResult.Register (struct
     | _ -> (
       try
         let directories = List.map model_directories ~f:Path.create_absolute in
-        List.iter directories ~f:(fun directory ->
-            if not (Path.is_directory directory) then
-              raise
-                (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory)));
         let configuration = Configuration.create ~rule_filter ~directories in
         Configuration.register configuration;
-        let path_and_content file =
-          match File.content file with
-          | Some content -> Some (File.path file, content)
-          | None -> None
-        in
-        Log.info
-          "Finding taint models in `%s`."
-          (directories |> List.map ~f:Path.show |> String.concat ~sep:", ");
-        directories
-        |> List.concat_map ~f:(fun root ->
-               Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root ())
-        |> List.map ~f:File.create
-        |> List.filter_map ~f:path_and_content
-        |> create_models ~configuration
+        Model.get_model_sources ~directories |> create_models ~configuration
       with
       | exn ->
           Log.error "Error getting taint models: %s" (Exn.to_string exn);
