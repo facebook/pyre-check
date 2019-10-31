@@ -5076,12 +5076,6 @@ let run
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%s`..." relative;
   let { errors; coverage } = check_source_with_local_changes ~configuration ~environment source in
-  let errors =
-    let toplevel = Source.top_level_define_node source in
-    Postprocessing.add_local_mode_errors ~define:toplevel source errors
-    |> Postprocessing.ignore source
-    |> List.sort ~compare:Error.compare
-  in
   Coverage.add coverage ~qualifier;
   Statistics.performance
     ~flush:false

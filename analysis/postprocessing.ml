@@ -97,3 +97,10 @@ let add_local_mode_errors
         errors
   in
   List.fold ~f:add_error ~init:errors unused_local_modes
+
+
+let run ~source errors =
+  let toplevel = Source.top_level_define_node source in
+  add_local_mode_errors ~define:toplevel source errors
+  |> ignore source
+  |> List.sort ~compare:Error.compare

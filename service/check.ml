@@ -15,7 +15,7 @@ type result = {
 }
 
 type analyze_source_results = {
-  errors: Analysis.Error.t list;
+  errors: (Source.t * Analysis.Error.t list) list;
   number_files: int;
 }
 (** Internal result type; not exposed. *)
@@ -55,7 +55,7 @@ let run_check
         | _ -> configuration
       in
       let new_errors = Check.run ~configuration ~environment ~source in
-      { errors = List.append new_errors errors; number_files = number_files + 1 }
+      { errors = (source, new_errors) :: errors; number_files = number_files + 1 }
     in
     let ast_environment = ast_environment environment in
     List.filter_map qualifiers ~f:(Analysis.AstEnvironment.ReadOnly.get_source ast_environment)
@@ -75,6 +75,23 @@ let run_check
       ~map
       ~reduce
       ~inputs:checked_sources
+      ()
+  in
+  Log.log ~section:`Progress "Postprocessing...";
+  let map _ source_errors =
+    List.concat_map source_errors ~f:(fun (source, error) ->
+        Analysis.Postprocessing.run ~source error)
+  in
+  let reduce = List.append in
+  let errors =
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~bucket_size:200
+      ~initial:[]
+      ~map
+      ~reduce
+      ~inputs:errors
       ()
   in
   Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();

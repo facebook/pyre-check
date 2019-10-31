@@ -5,10 +5,4 @@
 open Ast
 module Error = AnalysisError
 
-val ignore : Source.t -> Error.t list -> Error.t list
-
-val add_local_mode_errors
-  :  define:Statement.Define.t Node.t ->
-  Source.t ->
-  Error.t list ->
-  Error.t list
+val run : source:Source.t -> Error.t list -> Error.t list
