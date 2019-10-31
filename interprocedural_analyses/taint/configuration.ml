@@ -172,7 +172,7 @@ let get () =
   | Some configuration -> configuration
 
 
-let create ~directories =
+let create ~rule_filter ~directories =
   let create_rule directory =
     if not (Path.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
@@ -198,4 +198,15 @@ let create ~directories =
   let rules = directories |> List.filter_map ~f:create_rule in
   if List.is_empty rules then
     raise (Invalid_argument "No `taint.config` was found in the taint directories.");
-  List.fold_left rules ~f:merge_rules ~init:{ sources = []; sinks = []; features = []; rules = [] }
+  let ({ rules; _ } as configuration) =
+    List.fold_left
+      rules
+      ~f:merge_rules
+      ~init:{ sources = []; sinks = []; features = []; rules = [] }
+  in
+  match rule_filter with
+  | None -> configuration
+  | Some rule_filter ->
+      let codes_to_keep = Int.Set.of_list rule_filter in
+      let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
+      { configuration with rules }

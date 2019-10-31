@@ -19,6 +19,15 @@ include TaintResult.Register (struct
       |> Yojson.Safe.Util.to_bool_option
       |> Option.value ~default:true
     in
+    let rule_filter =
+      if List.mem ~equal:String.equal (Yojson.Safe.Util.keys taint) "rule_filter" then
+        Some
+          ( Yojson.Safe.Util.member "rule_filter" taint
+          |> Yojson.Safe.Util.to_list
+          |> List.map ~f:Yojson.Safe.Util.to_int )
+      else
+        None
+    in
     let create_models ~configuration sources =
       let global_resolution =
         Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution environment
@@ -30,6 +39,7 @@ include TaintResult.Register (struct
             ~source
             ~configuration
             ~verify
+            ?rule_filter
             models)
     in
     let model_directories =
@@ -46,7 +56,7 @@ include TaintResult.Register (struct
             if not (Path.is_directory directory) then
               raise
                 (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory)));
-        let configuration = Configuration.create ~directories in
+        let configuration = Configuration.create ~rule_filter ~directories in
         Configuration.register configuration;
         let path_and_content file =
           match File.content file with

@@ -137,5 +137,6 @@ module StaticAnalysis : sig
     verify_models: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
+    rule_filter: int list option;
   }
 end

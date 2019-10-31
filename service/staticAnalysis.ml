@@ -72,6 +72,7 @@ let analyze
                        Configuration.StaticAnalysis.configuration;
                        dump_call_graph;
                        verify_models;
+                       rule_filter;
                        _;
                      } as analysis_configuration )
     ~filename_lookup
@@ -194,14 +195,21 @@ let analyze
       |> List.map ~f:Path.absolute
       |> List.map ~f:(fun directory -> `String directory)
     in
+    let rule_settings =
+      match rule_filter with
+      | Some rule_filter ->
+          ["rule_filter", `List (List.map rule_filter ~f:(fun rule -> `Int rule))]
+      | None -> []
+    in
     `Assoc
       [
         ( "taint",
           `Assoc
-            [
-              "model_directories", `List taint_models_directories;
-              "verify_models", `Bool verify_models;
-            ] );
+            ( [
+                "model_directories", `List taint_models_directories;
+                "verify_models", `Bool verify_models;
+              ]
+            @ rule_settings ) );
       ]
   in
   let analyses = [analysis_kind] in

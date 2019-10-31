@@ -72,6 +72,7 @@ def mock_arguments(  # noqa
     arguments.terminal = terminal
     arguments.verbose = False
     arguments.repository_root = None
+    arguments.rule = None
     return arguments
 
 

@@ -5,21 +5,25 @@
 
 open Core
 
-type t =
-  | Demo
-  | FileSystem
-  | GetAttr
-  | Attach
-  | LocalReturn (* Special marker to describe function in-out behavior *)
-  | Logging
-  | NamedSink of string
-  | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
-  | RemoteCodeExecution
-  | SQL
-  | Test
-  | XMLParser
-  | XSS
-[@@deriving compare, eq, sexp, show, hash]
+module T = struct
+  type t =
+    | Demo
+    | FileSystem
+    | GetAttr
+    | Attach
+    | LocalReturn (* Special marker to describe function in-out behavior *)
+    | Logging
+    | NamedSink of string
+    | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
+    | RemoteCodeExecution
+    | SQL
+    | Test
+    | XMLParser
+    | XSS
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+include T
 
 let _ = show (* unused but derived *)
 
@@ -66,3 +70,8 @@ let parse ~allowed name =
 let ignore_leaf_at_call = function
   | Attach -> true
   | _ -> false
+
+
+module Set = Set.Make (struct
+  include T
+end)

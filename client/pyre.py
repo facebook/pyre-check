@@ -333,6 +333,7 @@ def main() -> int:
     )
     analyze.add_argument("--dump-call-graph", action="store_true")
     analyze.add_argument("--repository-root", type=os.path.abspath)
+    analyze.add_argument("--rule", action="append", type=int)
 
     persistent = parsed_commands.add_parser(
         commands.Persistent.NAME,

@@ -3,6 +3,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
+
 type t =
   | Demo
   | FileSystem
@@ -22,3 +24,5 @@ type t =
 val parse : allowed:string list -> string -> t
 
 val ignore_leaf_at_call : t -> bool
+
+module Set : Set.S with type Elt.t = t

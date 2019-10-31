@@ -34,6 +34,7 @@ val parse
   :  resolution:Resolution.t ->
   ?path:PyrePath.t ->
   ?verify:bool ->
+  ?rule_filter:int list ->
   source:string ->
   configuration:Configuration.t ->
   TaintResult.call_model Callable.Map.t ->

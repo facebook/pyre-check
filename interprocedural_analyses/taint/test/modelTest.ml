@@ -10,7 +10,7 @@ open Test
 open TestHelper
 module Callable = Interprocedural.Callable
 
-let assert_model ?source ~context ~model_source ~expect () =
+let assert_model ?source ?rules ~context ~model_source ~expect () =
   let source =
     match source with
     | None -> model_source
@@ -20,8 +20,13 @@ let assert_model ?source ~context ~model_source ~expect () =
     ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
   in
   let configuration =
+    let rules =
+      match rules with
+      | Some rules -> rules
+      | None -> []
+    in
     Taint.TaintConfiguration.
-      { sources = ["TestTest"]; sinks = ["TestSink"]; features = ["special"]; rules = [] }
+      { sources = ["TestTest"]; sinks = ["TestSink"]; features = ["special"]; rules }
   in
   let models =
     let source = Test.trim_extra_indentation model_source in
@@ -31,7 +36,12 @@ let assert_model ?source ~context ~model_source ~expect () =
       in
       TypeCheck.resolution global_resolution ()
     in
-    Taint.Model.parse ~resolution ~source ~configuration Callable.Map.empty
+    let rule_filter =
+      match rules with
+      | Some rules -> Some (List.map rules ~f:(fun { Taint.TaintConfiguration.code; _ } -> code))
+      | None -> None
+    in
+    Taint.Model.parse ~resolution ?rule_filter ~source ~configuration Callable.Map.empty
   in
   let get_model callable =
     let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
@@ -785,6 +795,72 @@ let test_demangle_class_attributes _ =
   assert_demangle ~expected:"a.__class__.B.C" "a.__class__.B.C"
 
 
+let test_filter_by_rules context =
+  let assert_model = assert_model ~context in
+  assert_model
+    ~rules:
+      [
+        {
+          Taint.TaintConfiguration.sources = [Sources.NamedSource "TestTest"];
+          sinks = [Sinks.NamedSink "TestSink"];
+          code = 5021;
+          message_format = "";
+          name = "test rule";
+        };
+      ]
+    ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "test.taint"]
+    ();
+  assert_model
+    ~rules:
+      [
+        {
+          Taint.TaintConfiguration.sources = [Sources.Test];
+          sinks = [Sinks.NamedSink "TestSink"];
+          code = 5021;
+          message_format = "";
+          name = "test rule";
+        };
+      ]
+    ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[] "test.taint"]
+    ();
+  assert_model
+    ~rules:
+      [
+        {
+          Taint.TaintConfiguration.sources = [Sources.NamedSource "TestTest"];
+          sinks = [Sinks.NamedSink "TestSink"];
+          code = 5021;
+          message_format = "";
+          name = "test rule";
+        };
+      ]
+    ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "TestSink"] }]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~rules:
+      [
+        {
+          Taint.TaintConfiguration.sources = [Sources.NamedSource "TestTest"];
+          sinks = [Sinks.Test];
+          code = 5021;
+          message_format = "";
+          name = "test rule";
+        };
+      ]
+    ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
+    ~expect:[outcome ~kind:`Function ~sink_parameters:[] "test.taint"]
+    ()
+
+
 let () =
   "taint_model"
   >::: [
@@ -801,5 +877,6 @@ let () =
          "test_tito_breadcrumbs" >:: test_tito_breadcrumbs;
          "invalid_models" >:: test_invalid_models;
          "demangle_class_attributes" >:: test_demangle_class_attributes;
+         "filter_by_rules" >:: test_filter_by_rules;
        ]
   |> Test.run

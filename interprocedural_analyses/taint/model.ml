@@ -50,28 +50,37 @@ let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 
 let introduce_sink_taint
     ~root
+    ~sinks_to_keep
     ({ TaintResult.backward = { sink_taint; _ }; _ } as taint)
     taint_sink_kind
     breadcrumbs
   =
-  let backward =
-    let assign_backward_taint environment taint =
-      BackwardState.assign ~weak:true ~root ~path:[] taint environment
-    in
-    match taint_sink_kind with
-    | Sinks.LocalReturn -> raise_invalid_model "Invalid TaintSink annotation `LocalReturn`"
-    | _ ->
-        let leaf_taint =
-          BackwardTaint.singleton taint_sink_kind
-          |> BackwardTaint.transform
-               BackwardTaint.simple_feature_set
-               ~f:(add_breadcrumbs breadcrumbs)
-          |> BackwardState.Tree.create_leaf
-        in
-        let sink_taint = assign_backward_taint sink_taint leaf_taint in
-        { taint.backward with sink_taint }
+  let should_keep_taint =
+    match sinks_to_keep with
+    | None -> true
+    | Some sinks_to_keep -> Core.Set.mem sinks_to_keep taint_sink_kind
   in
-  { taint with backward }
+  if should_keep_taint then
+    let backward =
+      let assign_backward_taint environment taint =
+        BackwardState.assign ~weak:true ~root ~path:[] taint environment
+      in
+      match taint_sink_kind with
+      | Sinks.LocalReturn -> raise_invalid_model "Invalid TaintSink annotation `LocalReturn`"
+      | _ ->
+          let leaf_taint =
+            BackwardTaint.singleton taint_sink_kind
+            |> BackwardTaint.transform
+                 BackwardTaint.simple_feature_set
+                 ~f:(add_breadcrumbs breadcrumbs)
+            |> BackwardState.Tree.create_leaf
+          in
+          let sink_taint = assign_backward_taint sink_taint leaf_taint in
+          { taint.backward with sink_taint }
+    in
+    { taint with backward }
+  else
+    taint
 
 
 let introduce_taint_in_taint_out
@@ -117,21 +126,30 @@ let introduce_taint_in_taint_out
 
 let introduce_source_taint
     ~root
+    ~sources_to_keep
     ({ TaintResult.forward = { source_taint }; _ } as taint)
     taint_source_kind
     breadcrumbs
   =
+  let should_keep_taint =
+    match sources_to_keep with
+    | None -> true
+    | Some sources_to_keep -> Core.Set.mem sources_to_keep taint_source_kind
+  in
   if Sources.equal taint_source_kind Sources.Attach && List.is_empty breadcrumbs then
     raise_invalid_model "`Attach` must be accompanied by a list of features to attach.";
-  let source_taint =
-    let leaf_taint =
-      ForwardTaint.singleton taint_source_kind
-      |> ForwardTaint.transform ForwardTaint.simple_feature_set ~f:(add_breadcrumbs breadcrumbs)
-      |> ForwardState.Tree.create_leaf
+  if should_keep_taint then
+    let source_taint =
+      let leaf_taint =
+        ForwardTaint.singleton taint_source_kind
+        |> ForwardTaint.transform ForwardTaint.simple_feature_set ~f:(add_breadcrumbs breadcrumbs)
+        |> ForwardState.Tree.create_leaf
+      in
+      ForwardState.assign ~weak:true ~root ~path:[] leaf_taint source_taint
     in
-    ForwardState.assign ~weak:true ~root ~path:[] leaf_taint source_taint
-  in
-  { taint with forward = { source_taint } }
+    { taint with forward = { source_taint } }
+  else
+    taint
 
 
 type leaf_kind =
@@ -354,17 +372,19 @@ let taint_parameter
     model
     (root, _name, parameter)
     ~callable_annotation
+    ~sources_to_keep
+    ~sinks_to_keep
   =
   let add_to_model model annotation =
     match annotation with
     | Sink { sink; breadcrumbs } ->
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root model sink
+        |> introduce_sink_taint ~root ~sinks_to_keep model sink
     | Source { source; breadcrumbs } ->
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_source_taint ~root model source
+        |> introduce_source_taint ~root ~sources_to_keep model source
     | Tito { tito; breadcrumbs } ->
         (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
         List.map ~f:Features.SimpleSet.element breadcrumbs
@@ -381,18 +401,27 @@ let taint_parameter
   parse_annotations ~configuration ~parameters annotation |> List.fold ~init:model ~f:add_to_model
 
 
-let taint_return ~configuration ~resolution ~parameters model expression ~callable_annotation =
+let taint_return
+    ~configuration
+    ~resolution
+    ~parameters
+    model
+    expression
+    ~callable_annotation
+    ~sources_to_keep
+    ~sinks_to_keep
+  =
   let add_to_model model annotation =
     let root = AccessPath.Root.LocalResult in
     match annotation with
     | Sink { sink; breadcrumbs } ->
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root model sink
+        |> introduce_sink_taint ~root ~sinks_to_keep model sink
     | Source { source; breadcrumbs } ->
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_source_taint ~root model source
+        |> introduce_source_taint ~root ~sources_to_keep model source
     | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
     | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
     | Sanitize -> { model with mode = TaintResult.Sanitize }
@@ -583,7 +612,27 @@ let demangle_class_attribute name =
     name
 
 
-let create ~resolution ?path ~configuration ~verify source =
+let create ~resolution ?path ~configuration ~verify ~rule_filter source =
+  let sources_to_keep, sinks_to_keep =
+    match rule_filter with
+    | None -> None, None
+    | Some rule_filter ->
+        let rule_filter = Int.Set.of_list rule_filter in
+        let sources_to_keep, sinks_to_keep =
+          let { Configuration.rules; _ } = configuration in
+          let rules =
+            List.filter_map rules ~f:(fun { Configuration.code; sources; sinks; _ } ->
+                if Core.Set.mem rule_filter code then Some (sources, sinks) else None)
+          in
+          List.fold
+            rules
+            ~init:(Sources.Set.singleton Sources.Attach, Sinks.Set.singleton Sinks.Attach)
+            ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
+              ( Core.Set.union sources (Sources.Set.of_list rule_sources),
+                Core.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
+        in
+        Some sources_to_keep, Some sinks_to_keep
+  in
   let global_resolution = Resolution.global_resolution resolution in
   let signatures =
     let filter_define_signature = function
@@ -852,7 +901,9 @@ let create ~resolution ?path ~configuration ~verify source =
                 ~configuration
                 ~resolution:global_resolution
                 ~parameters
-                ~callable_annotation)
+                ~callable_annotation
+                ~sources_to_keep
+                ~sinks_to_keep)
       |> (fun model ->
            taint_return
              ~configuration
@@ -860,7 +911,9 @@ let create ~resolution ?path ~configuration ~verify source =
              ~parameters
              model
              return_annotation
-             ~callable_annotation)
+             ~callable_annotation
+             ~sources_to_keep
+             ~sinks_to_keep)
       |> fun model -> Some { model; call_target; is_obscure = false }
     with
     | Failure message
@@ -1005,8 +1058,8 @@ let get_global_sink_model ~resolution ~location ~expression =
   get_global_model ~resolution ~expression >>| to_sink
 
 
-let parse ~resolution ?path ?(verify = true) ~source ~configuration models =
-  create ~resolution ?path ~verify ~configuration source
+let parse ~resolution ?path ?(verify = true) ?rule_filter ~source ~configuration models =
+  create ~resolution ?path ~verify ~rule_filter ~configuration source
   |> List.map ~f:(fun model -> model.call_target, model.model)
   |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
   |> Callable.Map.merge models ~f:(fun ~key:_ ->

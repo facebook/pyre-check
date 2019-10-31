@@ -978,7 +978,7 @@ let process_type_query_request
           | Some path -> [path]
           | None -> configuration.Configuration.Analysis.taint_models_directories
         in
-        let configuration = Taint.TaintConfiguration.create ~directories in
+        let configuration = Taint.TaintConfiguration.create ~rule_filter:None ~directories in
         let create_models sources =
           let create_model (path, source) =
             Taint.Model.parse

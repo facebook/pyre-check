@@ -32,6 +32,7 @@ class Analyze(Check):
         self._save_results_to = arguments.save_results_to  # type: Optional[str]
         self._dump_call_graph = arguments.dump_call_graph  # type: bool
         self._repository_root = arguments.repository_root  # type: Optional[str]
+        self._rules = arguments.rule  # type: Optional[List[int]]
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
@@ -49,6 +50,9 @@ class Analyze(Check):
         repository_root = self._repository_root
         if repository_root:
             flags.extend(["-repository-root", repository_root])
+        rules = self._rules
+        if rules is not None:
+            flags.extend(["-rules", ",".join(str(rule) for rule in rules)])
         return flags
 
     def _run(self, retries: int = 1) -> None:

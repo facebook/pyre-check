@@ -18,3 +18,5 @@ type t =
 val parse : allowed:string list -> string -> t
 
 val ignore_leaf_at_call : t -> bool
+
+module Set : Core.Set.S with type Elt.t = t

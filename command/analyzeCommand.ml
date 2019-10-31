@@ -20,6 +20,7 @@ let run_analysis
     no_verify
     dump_call_graph
     repository_root
+    rule_filter
     verbose
     expected_version
     sections
@@ -155,6 +156,7 @@ let run_analysis
             result_json_path;
             dump_call_graph;
             verify_models = not no_verify;
+            rule_filter;
           }
         ~filename_lookup
         ~environment
@@ -203,5 +205,9 @@ let command =
            (optional string)
            ~doc:
              "The repository root to use for path relativization (set to local root if missing)."
+      +> flag
+           "-rules"
+           (optional (Arg_type.comma_separated int))
+           ~doc:"If set, filter the analysis to only consider the provided rule numbers."
       ++ Specification.base_command_line_arguments)
     run_analysis

@@ -5,17 +5,21 @@
 
 open Core
 
-type t =
-  | Cookies
-  | Demo
-  | Attach
-  | NamedSource of string
-  | PII
-  | Secrets (* Such as passwords, tokens *)
-  | Test
-  | Thrift
-  | UserControlled
-[@@deriving compare, eq, sexp, show, hash]
+module T = struct
+  type t =
+    | Cookies
+    | Demo
+    | Attach
+    | NamedSource of string
+    | PII
+    | Secrets (* Such as passwords, tokens *)
+    | Test
+    | Thrift
+    | UserControlled
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+include T
 
 let _ = show (* unused *)
 
@@ -52,3 +56,8 @@ let parse ~allowed name =
     NamedSource name
   else
     create name
+
+
+module Set = Set.Make (struct
+  include T
+end)
