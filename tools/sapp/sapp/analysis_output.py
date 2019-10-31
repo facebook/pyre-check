@@ -102,6 +102,9 @@ class AnalysisOutput(object):
 
         repo_root = metadata.get("repo_root")
         analysis_root = metadata["root"]
+
+        rules = {rule["code"]: rule for rule in metadata.get("rules", [])}
+
         return cls(
             directory=directory,
             filename_spec=filename_spec,
@@ -114,7 +117,7 @@ class AnalysisOutput(object):
                 tool=metadata.get("tool"),
                 repository_name=metadata.get("repository_name"),
                 project=metadata.get("project"),
-                rules=metadata.get("rules", {}),
+                rules=rules,
             ),
         )
 
