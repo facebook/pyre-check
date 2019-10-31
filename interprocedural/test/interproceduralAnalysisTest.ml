@@ -35,7 +35,7 @@ module ResultA = Interprocedural.Result.Make (struct
 
   let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
 
-  let externalize ~environment:_ callable result_option model =
+  let externalize ~filename_lookup:_ callable result_option model =
     let result_json =
       match result_option with
       | None -> `Null
@@ -82,7 +82,7 @@ module ResultB = Interprocedural.Result.Make (struct
 
   let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
 
-  let externalize ~environment:_ callable result_option model =
+  let externalize ~filename_lookup:_ callable result_option model =
     let result_json =
       match result_option with
       | None -> `Null
@@ -135,10 +135,14 @@ let test_unknown_function_analysis context =
         assert_equal (Result.get_model ResultB.kind models) (Some ResultB.obscure_model)
   in
   let externalized_A =
-    List.concat_map ~f:(Analysis.externalize ~environment AnalysisA.abstract_kind) targets
+    List.concat_map
+      ~f:(Analysis.externalize ~filename_lookup:(fun _ -> None) AnalysisA.abstract_kind)
+      targets
   in
   let externalized_B =
-    List.concat_map ~f:(Analysis.externalize ~environment AnalysisB.abstract_kind) targets
+    List.concat_map
+      ~f:(Analysis.externalize ~filename_lookup:(fun _ -> None) AnalysisB.abstract_kind)
+      targets
   in
   List.iter ~f:check_obscure_model targets;
   assert_summaries

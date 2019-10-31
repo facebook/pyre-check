@@ -240,6 +240,40 @@ class AnalyzeTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Analyze.NAME)
 
         arguments = mock_arguments()
+        arguments.save_results_to = "/tmp/results.json"
+        arguments.repository_root = "/home/username/root"
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "parser",
+                    "-project-root",
+                    ".",
+                    "-log-directory",
+                    ".pyre",
+                    "-workers",
+                    "5",
+                    "-search-path",
+                    "path1,path2,path3",
+                    "-analysis",
+                    "taint",
+                    "-taint-models",
+                    "taint_models",
+                    "-save-results-to",
+                    "/tmp/results.json",
+                    "-dump-call-graph",
+                    "-repository-root",
+                    "/home/username/root",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
+        arguments = mock_arguments()
         arguments.analysis = "liveness"
         with patch.object(
             commands.Command, "_call_client", return_value=result

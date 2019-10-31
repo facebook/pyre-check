@@ -419,7 +419,7 @@ let get_errors results =
   |> List.concat_no_order
 
 
-let externalize_analysis ~environment kind callable models results =
+let externalize_analysis ~filename_lookup kind callable models results =
   let open Result in
   let merge kind_candidate model_opt result_opt =
     if kind_candidate = kind then
@@ -438,27 +438,27 @@ let externalize_analysis ~environment kind callable models results =
     match result_option with
     | None ->
         let module Analysis = (val Result.get_analysis kind1) in
-        Analysis.externalize ~environment callable None model
+        Analysis.externalize ~filename_lookup callable None model
     | Some (Pkg { kind = ResultPart kind2; value = result }) -> (
       match Result.Kind.are_equal kind1 kind2 with
       | Kind.Equal ->
           let module Analysis = (val Result.get_analysis kind1) in
-          Analysis.externalize ~environment callable (Some result) model
+          Analysis.externalize ~filename_lookup callable (Some result) model
       | Kind.Distinct -> failwith "kind mismatch" )
   in
   Kind.Map.bindings merged |> List.concat_map ~f:get_summaries
 
 
-let externalize ~environment kind callable =
+let externalize ~filename_lookup kind callable =
   match Fixpoint.get_model callable with
   | Some model ->
       let results = Fixpoint.get_result callable in
-      externalize_analysis ~environment kind callable model.models results
+      externalize_analysis ~filename_lookup kind callable model.models results
   | None -> []
 
 
-let emit_externalization ~environment kind emitter callable =
-  externalize ~environment kind callable |> List.iter ~f:emitter
+let emit_externalization ~filename_lookup kind emitter callable =
+  externalize ~filename_lookup kind callable |> List.iter ~f:emitter
 
 
 type result = {
@@ -717,7 +717,7 @@ let extract_errors scheduler ~configuration all_callables =
   |> List.concat_no_order
 
 
-let save_results ~configuration ~environment ~analyses all_callables =
+let save_results ~configuration ~filename_lookup ~analyses all_callables =
   let emit_json_array_elements out_buffer =
     let seen_element = ref false in
     fun json ->
@@ -748,7 +748,7 @@ let save_results ~configuration ~environment ~analyses all_callables =
         in
         Json.to_outbuf out_buffer header_with_version;
         Bi_outbuf.add_string out_buffer "\n";
-        List.iter ~f:(emit_externalization ~environment kind array_emitter) all_callables;
+        List.iter ~f:(emit_externalization ~filename_lookup kind array_emitter) all_callables;
         Bi_outbuf.flush_output_writer out_buffer;
         close_out out_channel
       in

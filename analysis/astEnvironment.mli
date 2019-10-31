@@ -35,6 +35,12 @@ module ReadOnly : sig
 
   val get_relative : t -> Reference.t -> string option
 
+  val get_real_path
+    :  configuration:Configuration.Analysis.t ->
+    t ->
+    Reference.t ->
+    Pyre.Path.t option
+
   val get_real_path_relative
     :  configuration:Configuration.Analysis.t ->
     t ->

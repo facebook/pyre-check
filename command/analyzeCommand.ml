@@ -19,6 +19,7 @@ let run_analysis
     result_json_path
     no_verify
     dump_call_graph
+    repository_root
     verbose
     expected_version
     sections
@@ -55,6 +56,7 @@ let run_analysis
     >>| List.map ~f:String.strip
     >>| List.map ~f:Path.create_absolute
   in
+  let repository_root = repository_root >>| Path.create_absolute in
   let configuration =
     Configuration.Analysis.create
       ~verbose
@@ -98,7 +100,7 @@ let run_analysis
       | _ -> 10
     in
     let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
-    let errors, ast_environment =
+    let environment, ast_environment, qualifiers =
       Service.Check.check
         ~scheduler:(Some scheduler)
         ~configuration
@@ -124,22 +126,40 @@ let run_analysis
         ~environment
         external_sources
       |> ignore;
-      let errors =
-        Service.StaticAnalysis.analyze
-          ~scheduler
-          ~analysis_kind:(get_analysis_kind analysis)
-          ~configuration:
-            {
-              Configuration.StaticAnalysis.configuration;
-              result_json_path;
-              dump_call_graph;
-              verify_models = not no_verify;
-            }
-          ~environment
-          ~qualifiers
-          ()
-      in
-      errors, Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment
+      ( environment,
+        Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment,
+        qualifiers )
+    in
+    let filename_lookup path_reference =
+      match repository_root with
+      | Some root ->
+          Analysis.AstEnvironment.ReadOnly.get_real_path
+            ~configuration
+            ast_environment
+            path_reference
+          >>= Pyre.Path.follow_symbolic_link
+          >>= fun path -> Pyre.Path.get_relative_to_root ~root ~path
+      | None ->
+          Analysis.AstEnvironment.ReadOnly.get_real_path_relative
+            ~configuration
+            ast_environment
+            path_reference
+    in
+    let errors =
+      Service.StaticAnalysis.analyze
+        ~scheduler
+        ~analysis_kind:(get_analysis_kind analysis)
+        ~configuration:
+          {
+            Configuration.StaticAnalysis.configuration;
+            result_json_path;
+            dump_call_graph;
+            verify_models = not no_verify;
+          }
+        ~filename_lookup
+        ~environment
+        ~qualifiers
+        ()
     in
     let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
     Statistics.performance
@@ -155,10 +175,7 @@ let run_analysis
 
     (* Print results. *)
     List.map errors ~f:(fun error ->
-        Interprocedural.Error.instantiate
-          ~lookup:
-            (Analysis.AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
-          error
+        Interprocedural.Error.instantiate ~lookup:filename_lookup error
         |> Interprocedural.Error.Instantiated.to_json ~show_error_traces)
     |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
     |> Log.print "%s";
@@ -181,5 +198,10 @@ let command =
            no_arg
            ~doc:"Do not verify that all models passed into the analysis are valid."
       +> flag "-dump-call-graph" no_arg ~doc:"Store call graph in .pyre/call_graph.json"
+      +> flag
+           "-repository-root"
+           (optional string)
+           ~doc:
+             "The repository root to use for path relativization (set to local root if missing)."
       ++ Specification.base_command_line_arguments)
     run_analysis

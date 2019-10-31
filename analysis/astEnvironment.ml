@@ -631,6 +631,10 @@ module ReadOnly = struct
     get_source_path read_only qualifier >>| fun { SourcePath.relative; _ } -> relative
 
 
+  let get_real_path ~configuration read_only qualifier =
+    get_source_path read_only qualifier >>| SourcePath.full_path ~configuration
+
+
   let get_real_path_relative
       ~configuration:({ Configuration.Analysis.local_root; _ } as configuration)
       read_only
@@ -638,9 +642,7 @@ module ReadOnly = struct
     =
     (* SourcePath.relative refers to the renamed path when search paths are provided with a root
        and subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
-    let open Option in
-    get_source_path read_only qualifier
-    >>| SourcePath.full_path ~configuration
+    get_real_path ~configuration read_only qualifier
     >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path
 
 

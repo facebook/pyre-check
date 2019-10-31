@@ -332,6 +332,7 @@ def main() -> int:
         help="Directory to write analysis results to.",
     )
     analyze.add_argument("--dump-call-graph", action="store_true")
+    analyze.add_argument("--repository-root", type=os.path.abspath)
 
     persistent = parsed_commands.add_parser(
         commands.Persistent.NAME,

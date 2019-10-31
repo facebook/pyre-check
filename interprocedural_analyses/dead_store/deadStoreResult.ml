@@ -25,7 +25,7 @@ module ResultArgument = struct
 
   let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
 
-  let externalize ~environment:_ callable result_option model =
+  let externalize ~filename_lookup:_ callable result_option model =
     let result_json =
       match result_option with
       | None -> `Null

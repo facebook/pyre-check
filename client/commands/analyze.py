@@ -31,6 +31,7 @@ class Analyze(Check):
         )  # type: List[str]
         self._save_results_to = arguments.save_results_to  # type: Optional[str]
         self._dump_call_graph = arguments.dump_call_graph  # type: bool
+        self._repository_root = arguments.repository_root  # type: Optional[str]
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
@@ -45,6 +46,9 @@ class Analyze(Check):
             flags.append("-dump-call-graph")
         if self._no_verify:
             flags.append("-no-verify")
+        repository_root = self._repository_root
+        if repository_root:
+            flags.extend(["-repository-root", repository_root])
         return flags
 
     def _run(self, retries: int = 1) -> None:

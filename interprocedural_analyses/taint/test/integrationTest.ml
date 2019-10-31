@@ -6,6 +6,7 @@
 open Core
 open OUnit2
 open Pyre
+open Analysis
 open Interprocedural
 open TestHelper
 
@@ -96,8 +97,9 @@ let test_integration context =
       in
       check_call_graph_expectation callgraph;
       check_overrides_expectation overrides;
+      let configuration = Configuration.Analysis.create () in
       Analysis.compute_fixpoint
-        ~configuration:(Configuration.Analysis.create ())
+        ~configuration
         ~scheduler:(Test.mock_scheduler ())
         ~environment
         ~analyses:[Taint.Analysis.abstract_kind]
@@ -108,7 +110,14 @@ let test_integration context =
       |> ignore;
       let serialized_model callable : string =
         let externalization =
-          Interprocedural.Analysis.externalize ~environment Taint.Analysis.abstract_kind callable
+          let filename_lookup =
+            AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment
+            |> AstEnvironment.ReadOnly.get_relative
+          in
+          Interprocedural.Analysis.externalize
+            ~filename_lookup
+            Taint.Analysis.abstract_kind
+            callable
           |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
           |> String.concat ~sep:""
         in

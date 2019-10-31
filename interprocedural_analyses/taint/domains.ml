@@ -156,11 +156,8 @@ module TraceInfo = struct
   (* Returns the (dictionary key * json) to emit *)
   let to_json = create_json ~location_to_json
 
-  let to_external_json ~environment =
-    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
-    create_json
-      ~location_to_json:
-        (location_to_json ~filename_lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+  let to_external_json ~filename_lookup =
+    create_json ~location_to_json:(location_to_json ~filename_lookup)
 
 
   let less_or_equal ~left ~right =
@@ -282,10 +279,7 @@ module type TAINT_DOMAIN = sig
 
   val to_json : t -> Yojson.Safe.json
 
-  val to_external_json
-    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
-    t ->
-    Yojson.Safe.json
+  val to_external_json : filename_lookup:(Reference.t -> string option) -> t -> Yojson.Safe.json
 end
 
 module MakeTaint (Leaf : SET_ARG) : sig
@@ -407,8 +401,8 @@ end = struct
 
   let to_json = create_json ~trace_info_to_json:TraceInfo.to_json
 
-  let to_external_json ~environment =
-    create_json ~trace_info_to_json:(TraceInfo.to_external_json ~environment)
+  let to_external_json ~filename_lookup =
+    create_json ~trace_info_to_json:(TraceInfo.to_external_json ~filename_lookup)
 
 
   let apply_call location ~callees ~port ~path ~element:taint =
@@ -538,8 +532,8 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
   let to_json = create_json ~taint_to_json:Taint.to_json
 
-  let to_external_json ~environment =
-    create_json ~taint_to_json:(Taint.to_external_json ~environment)
+  let to_external_json ~filename_lookup =
+    create_json ~taint_to_json:(Taint.to_external_json ~filename_lookup)
 
 
   let assign ?(weak = false) ~root ~path subtree environment =

@@ -30,7 +30,7 @@ val compute_fixpoint
   int
 
 val externalize
-  :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+  :  filename_lookup:(Ast.Reference.t -> string option) ->
   AnalysisKind.abstract ->
   Callable.t ->
   Yojson.Safe.json list
@@ -43,7 +43,7 @@ val extract_errors
 
 val save_results
   :  configuration:Configuration.StaticAnalysis.t ->
-  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+  filename_lookup:(Ast.Reference.t -> string option) ->
   analyses:AnalysisKind.abstract list ->
   Callable.t list ->
   unit

@@ -32,7 +32,7 @@ module type ANALYSIS_PROVIDED = sig
   val get_errors : result -> InterproceduralError.t list
 
   val externalize
-    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+    :  filename_lookup:(Reference.t -> string option) ->
     Callable.t ->
     result option ->
     call_model ->

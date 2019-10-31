@@ -51,7 +51,7 @@ val generate_source_sink_matches
 val generate_issues : define:Define.t Node.t -> candidate -> issue list
 
 val to_json
-  :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+  :  filename_lookup:(Reference.t -> string option) ->
   Interprocedural.Callable.t ->
   issue ->
   Yojson.Safe.json
