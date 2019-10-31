@@ -18,4 +18,4 @@ end
 
 val get_check_to_run : check_name:string -> (module Signature) option
 
-val checks : configuration:Configuration.Analysis.t -> (module Signature) list
+val create_check : configuration:Configuration.Analysis.t -> (module Signature)

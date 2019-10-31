@@ -112,8 +112,10 @@ let analyze_sources
   Log.info "Checking %d sources..." number_of_sources;
   Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
   let timer = Timer.start () in
-  let run = run_check ?open_documents ~scheduler ~configuration ~environment checked_sources in
-  let errors = List.map (Analysis.Check.checks ~configuration) ~f:run |> List.concat in
+  let errors =
+    let check = Analysis.Check.create_check ~configuration in
+    run_check ?open_documents ~scheduler ~configuration ~environment checked_sources check
+  in
   Statistics.performance ~name:"analyzed sources" ~phase_name:"Type check" ~timer ();
   Profiling.track_shared_memory_usage ~name:"After analyze_sources" ();
   errors

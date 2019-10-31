@@ -33,8 +33,8 @@ let checks : (module Signature) String.Map.t =
 
 let get_check_to_run ~check_name = Map.find checks check_name
 
-let checks ~configuration:{ Configuration.Analysis.infer; additional_checks; _ }
-    : (module Signature) list
+let create_check ~configuration:{ Configuration.Analysis.infer; additional_checks; _ }
+    : (module Signature)
   =
   let checks_to_run = if infer then ["inference"] else "typeCheck" :: additional_checks in
   let find name =
@@ -44,4 +44,15 @@ let checks ~configuration:{ Configuration.Analysis.infer; additional_checks; _ }
         Log.warning "Could not find check `%s`." name;
         None
   in
-  List.filter_map checks_to_run ~f:find
+  let filtered_checks = List.filter_map checks_to_run ~f:find in
+  let module AggregatedCheck : Signature = struct
+    let name = String.concat checks_to_run ~sep:", "
+
+    let run ~configuration ~environment ~source =
+      let run_one_check (module Check : Signature) =
+        Check.run ~configuration ~environment ~source
+      in
+      List.concat_map filtered_checks ~f:run_one_check
+  end
+  in
+  (module AggregatedCheck)
