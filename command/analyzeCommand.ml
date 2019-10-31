@@ -101,6 +101,11 @@ let run_analysis
       | _ -> 10
     in
     let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
+    (* In order to save time, sanity check models before starting the analysis. *)
+    Log.info "Verifying model syntax.";
+    Taint.Model.get_model_sources
+      ~directories:configuration.Configuration.Analysis.taint_models_directories
+    |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
     let environment, ast_environment, qualifiers =
       Service.Check.check
         ~scheduler:(Some scheduler)

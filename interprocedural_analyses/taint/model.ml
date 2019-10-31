@@ -1087,3 +1087,11 @@ let get_model_sources ~directories =
          Pyre.Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root ())
   |> List.map ~f:File.create
   |> List.filter_map ~f:path_and_content
+
+
+let verify_model_syntax ~path ~source =
+  try String.split ~on:'\n' source |> Parser.parse |> ignore with
+  | exn ->
+      raise
+        (InvalidModel
+           (Format.sprintf "Invalid model at `%s`: %s" (Path.show path) (Exn.to_string exn)))
