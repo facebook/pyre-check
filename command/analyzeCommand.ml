@@ -125,7 +125,7 @@ let run_analysis
         List.filter qualifiers ~f:is_external
       in
       Log.info "Analyzing %d external sources..." (List.length external_sources);
-      Service.Check.analyze_sources
+      Analysis.Check.analyze_sources
         ~filter_external_sources:false
         ~scheduler
         ~configuration

@@ -24,7 +24,7 @@ let ignore_lines_test context =
         List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
             qualifier)
       in
-      Service.Check.analyze_sources ~scheduler ~configuration ~environment qualifiers
+      Analysis.Check.analyze_sources ~scheduler ~configuration ~environment qualifiers
       |> List.map ~f:(fun error ->
              Error.instantiate
                ~lookup:

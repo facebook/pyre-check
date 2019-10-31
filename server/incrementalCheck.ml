@@ -177,7 +177,7 @@ let recheck
   (* Clean up all lookup data related to updated files. *)
   List.iter recheck_modules ~f:(LookupCache.evict ~state);
   let new_errors =
-    Service.Check.analyze_sources
+    Analysis.Check.analyze_sources
       ~open_documents:(Reference.Table.mem open_documents)
       ~scheduler
       ~configuration

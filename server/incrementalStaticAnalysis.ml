@@ -16,7 +16,7 @@ let compute_type_check_resolution ~configuration ~scheduler ~environment ~source
     List.filter source_paths ~f:(fun source_path -> not (has_resolution_shared_memory source_path))
   in
   List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-  |> Service.Check.analyze_sources
+  |> Analysis.Check.analyze_sources
        ~scheduler
        ~configuration:{ configuration with store_type_check_resolution = true }
        ~environment
@@ -35,7 +35,7 @@ let run_additional_check ~configuration ~scheduler ~environment ~source_paths ~c
         |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
       in
       let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
-      Service.Check.run_check ~configuration ~scheduler ~environment qualifiers (module Check)
+      Analysis.Check.run_check ~configuration ~scheduler ~environment qualifiers (module Check)
       |> List.map
            ~f:
              (Analysis.Error.instantiate

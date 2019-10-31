@@ -50,7 +50,7 @@ let initialize_server ?incremental_style ~context ~initial_sources =
       List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
           qualifier)
     in
-    Service.Check.analyze_sources
+    Analysis.Check.analyze_sources
       ~scheduler:(mock_scheduler ())
       ~configuration
       ~environment

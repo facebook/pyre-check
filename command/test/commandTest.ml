@@ -173,7 +173,7 @@ module ScratchServer = struct
           qualifier)
     in
     let new_errors =
-      Service.Check.analyze_sources
+      Analysis.Check.analyze_sources
         ~scheduler:(mock_scheduler ())
         ~configuration
         ~environment
