@@ -121,6 +121,24 @@ let test_forward context =
     |}
     [];
 
+  (* Any is not an awaitable. *)
+  assert_awaitable_errors
+    {|
+    from typing import Any
+    def returns_any() -> Any: ...
+    async def foo() -> None:
+      x = returns_any()
+      return
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+    from typing import Any
+    async def foo(param: Any) -> None:
+      return
+    |}
+    [];
+
   (* Boolean operators. *)
   assert_awaitable_errors
     {|

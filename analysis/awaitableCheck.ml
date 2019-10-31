@@ -61,6 +61,14 @@ module State (Context : Context) = struct
       need_to_await
 
 
+  let is_awaitable global_resolution annotation =
+    (not (Type.equal annotation Type.Any))
+    && GlobalResolution.less_or_equal
+         global_resolution
+         ~left:annotation
+         ~right:(Type.awaitable Type.Top)
+
+
   let pp format state = Format.fprintf format "%s" (show state)
 
   let initial ~global_resolution { Define.signature = { Define.Signature.parameters; _ }; _ } =
@@ -74,10 +82,8 @@ module State (Context : Context) = struct
       let is_awaitable =
         match annotation with
         | Some annotation ->
-            GlobalResolution.less_or_equal
-              global_resolution
-              ~left:(GlobalResolution.parse_annotation global_resolution annotation)
-              ~right:(Type.awaitable Type.Top)
+            let annotation = GlobalResolution.parse_annotation global_resolution annotation in
+            is_awaitable global_resolution annotation
         | None -> false
       in
       if is_awaitable then
@@ -297,12 +303,6 @@ module State (Context : Context) = struct
               awaitables, state
         in
         let annotation = Resolution.resolve resolution expression in
-        let is_awaitable =
-          GlobalResolution.less_or_equal
-            (Resolution.global_resolution resolution)
-            ~left:annotation
-            ~right:(Type.awaitable Type.Top)
-        in
         let { unawaited; locals; need_to_await } = state in
         let find_aliases { Node.value; location } =
           if Map.mem unawaited location then
@@ -313,7 +313,7 @@ module State (Context : Context) = struct
                 Map.find locals (Reference (name_to_reference_exn name))
             | _ -> Map.find locals (Location location)
         in
-        if need_to_await && is_awaitable then
+        if need_to_await && is_awaitable (Resolution.global_resolution resolution) annotation then
           (* If the callee is a method on an awaitable, make the assumption that the returned value
              is the same awaitable. *)
           let awaitables = expression :: awaitables in
@@ -618,12 +618,7 @@ let run ~configuration:_ ~environment ~source =
     let should_run_analysis =
       define.Node.value.Define.signature.Define.Signature.parent
       >>| (fun parent -> Type.Primitive (Reference.show parent))
-      >>| (fun parent_type ->
-            not
-              (GlobalResolution.less_or_equal
-                 global_resolution
-                 ~left:parent_type
-                 ~right:(Type.awaitable Type.Top)))
+      >>| (fun parent_type -> not (State.is_awaitable global_resolution parent_type))
       |> Option.value ~default:true
     in
     if should_run_analysis then
