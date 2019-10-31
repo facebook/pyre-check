@@ -94,6 +94,7 @@ class Start(Reporting):
                                 self._configuration,
                                 self._analysis_directory,
                             )
+                            # pyre-fixme[16]: `Optional` has no attribute `daemonize`.
                             self._file_monitor.daemonize()
                             LOG.info("Initialized file monitor.")
                         except project_files_monitor.MonitorException as error:
