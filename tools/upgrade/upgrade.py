@@ -46,8 +46,8 @@ class Configuration:
         self.version = json_contents.get("version")
 
     @staticmethod
-    def find_project_configuration() -> Optional[Path]:
-        directory = Path.cwd()
+    def find_project_configuration(directory: Optional[Path] = None) -> Optional[Path]:
+        directory = directory or Path.cwd()
         root = directory.root
         while directory != root:
             configuration_path = directory / ".pyre_configuration"
@@ -609,10 +609,11 @@ def run_fixme_targets_file(
 def run_fixme_targets(arguments: argparse.Namespace) -> None:
     # Currently does not support sandcastle integration, or setting the global hash
     # at the same time. As-is, run this locally after the global hash is updated.
-    project_configuration = Configuration.find_project_configuration()
-    # TODO(T36700977): Allow to pass in a toplevel directory to filter by
+    subdirectory = arguments.subdirectory
+    subdirectory = Path(subdirectory) if subdirectory else None
+    project_configuration = Configuration.find_project_configuration(subdirectory)
     if project_configuration is None:
-        LOG.info("No project configuration found for the given directory.")
+        LOG.error("No project configuration found for the given directory.")
         return
     project_directory = project_configuration.parent
     LOG.info("Finding typecheck targets in %s", project_directory)
@@ -622,7 +623,7 @@ def run_fixme_targets(arguments: argparse.Namespace) -> None:
         "-RPzo",
         "--include=*TARGETS",
         "(?s)name = .((?!name).)*check_types = True",
-        project_directory,
+        subdirectory if subdirectory else project_directory,
     ]
     # TODO(T36700977): verify that tests are running pyre, not mypy
     find_targets = subprocess.run(

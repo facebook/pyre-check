@@ -1016,6 +1016,7 @@ class FixmeTargetsTest(unittest.TestCase):
     @patch("%s.run_fixme_targets_file" % upgrade.__name__)
     def test_run_fixme_targets(self, fix_file, find_configuration, subprocess) -> None:
         arguments = MagicMock()
+        arguments.subdirectory = None
         grep_return = MagicMock()
         grep_return.returncode = 1
         grep_return.stderr = b"stderr"
@@ -1041,11 +1042,32 @@ class FixmeTargetsTest(unittest.TestCase):
             arguments, Path("."), "a/b", ["derp", "herp", "merp"]
         )
 
+        # Test subdirectory
+        subprocess.reset_mock()
+        fix_file.reset_mock()
+        arguments.subdirectory = "derp"
+        upgrade.run_fixme_targets(arguments)
+        subprocess.assert_called_once_with(
+            [
+                "grep",
+                "-RPzo",
+                "--include=*TARGETS",
+                "(?s)name = .((?!name).)*check_types = True",
+                Path("derp"),
+            ],
+            stderr=-1,
+            stdout=-1,
+        )
+        fix_file.assert_called_once_with(
+            arguments, Path("."), "a/b", ["derp", "herp", "merp"]
+        )
+
     @patch("subprocess.run")
     @patch("%s.fix" % upgrade.__name__)
     @patch("%s._submit_changes" % upgrade.__name__)
     def test_run_fixme_targets_file(self, submit_changes, fix, subprocess) -> None:
         arguments = MagicMock()
+        arguments.subdirectory = None
         buck_return = MagicMock()
         buck_return.returncode = 1
         buck_return.stderr = b"stderr"
