@@ -617,12 +617,11 @@ def run_fixme_targets(arguments: argparse.Namespace) -> None:
         return
     project_directory = project_configuration.parent
     LOG.info("Finding typecheck targets in %s", project_directory)
-    # TODO(T36700977): Ensure targets with 'name' in name aren't skipped.
     find_targets_command = [
         "grep",
         "-RPzo",
         "--include=*TARGETS",
-        "(?s)name = .((?!name).)*check_types = True",
+        "(?s)name = .((?!\n\s*name).)*check_types = True",
         subdirectory if subdirectory else project_directory,
     ]
     # TODO(T36700977): verify that tests are running pyre, not mypy

@@ -1052,7 +1052,7 @@ class FixmeTargetsTest(unittest.TestCase):
                 "grep",
                 "-RPzo",
                 "--include=*TARGETS",
-                "(?s)name = .((?!name).)*check_types = True",
+                "(?s)name = .((?!\n\s*name).)*check_types = True",
                 Path("derp"),
             ],
             stderr=-1,
