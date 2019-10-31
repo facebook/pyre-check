@@ -29,8 +29,6 @@ val aggregate_over_annotations : Annotation.t list -> t
 
 val aggregate : t list -> t
 
-val log : t -> total_errors:int -> path:string -> unit
-
 module CoverageValue : sig
   type nonrec t = t
 

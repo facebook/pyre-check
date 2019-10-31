@@ -50,21 +50,6 @@ let aggregate_over_annotations annotations =
 
 let aggregate coverages = List.fold ~init:(create ()) ~f:sum coverages
 
-let log { full; partial; untyped; crashes } ~total_errors ~path =
-  Statistics.coverage
-    ~randomly_log_every:50
-    ~path
-    ~coverage:
-      [
-        "full_type_coverage", full;
-        "partial_type_coverage", partial;
-        "no_type_coverage", untyped;
-        "total_errors", total_errors;
-        "crashes", crashes;
-      ]
-    ()
-
-
 module CoverageValue = struct
   type nonrec t = t
 

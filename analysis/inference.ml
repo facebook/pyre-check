@@ -115,10 +115,6 @@ module State (Context : Context) = struct
     TypeCheckState.errors (TypeCheckState.create ~bottom ~errors ~resolution ())
 
 
-  let coverage { resolution; _ } =
-    Resolution.annotations resolution |> Map.data |> Coverage.aggregate_over_annotations
-
-
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
     if left.bottom then
       true
@@ -667,17 +663,6 @@ module State (Context : Context) = struct
     { state with resolution }
 end
 
-module SingleSourceResult = struct
-  type t = {
-    errors: Error.t list;
-    coverage: Coverage.t;
-  }
-
-  let errors { errors; _ } = errors
-
-  let coverage { coverage; _ } = coverage
-end
-
 let name = "Inference"
 
 let run
@@ -757,8 +742,7 @@ let run
           in
           List.filter ~f:keep_error errors
       in
-      let coverage = exit >>| State.coverage |> Option.value ~default:(Coverage.create ()) in
-      { SingleSourceResult.errors; coverage }
+      errors
     with
     | ClassHierarchy.Untracked annotation ->
         Statistics.event
@@ -767,19 +751,10 @@ let run
           ~normals:
             ["handle", relative; "define", Reference.show name; "type", Type.show annotation]
           ();
-        {
-          SingleSourceResult.errors =
-            ( if configuration.debug then
-                [
-                  Error.create
-                    ~location
-                    ~kind:(Error.AnalysisFailure annotation)
-                    ~define:define_node;
-                ]
-            else
-              [] );
-          coverage = Coverage.create ~crashes:1 ();
-        }
+        if configuration.debug then
+          [Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node]
+        else
+          []
   in
   let format_errors errors =
     errors
@@ -794,11 +769,8 @@ let run
   else
     let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
     let errors =
-      List.map results ~f:SingleSourceResult.errors
-      |> List.concat
+      List.concat results
       |> Error.join_at_source ~resolution:(Resolution.global_resolution resolution)
       |> format_errors
     in
-    let coverage = List.map results ~f:SingleSourceResult.coverage |> Coverage.aggregate in
-    Coverage.log coverage ~total_errors:(List.length errors) ~path:relative;
     errors

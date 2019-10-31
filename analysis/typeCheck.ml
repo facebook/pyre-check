@@ -5082,7 +5082,6 @@ let run
     |> Postprocessing.ignore source
     |> List.sort ~compare:Error.compare
   in
-  Coverage.log coverage ~total_errors:(List.length errors) ~path:relative;
   Coverage.add coverage ~qualifier;
   Statistics.performance
     ~flush:false
