@@ -204,7 +204,15 @@ let test_resolve_exports context =
         "a.py", "from placeholder.nonexistent import foo";
       ]
     "a.foo"
-    "placeholder.nonexistent.foo"
+    "placeholder.nonexistent.foo";
+  assert_resolve
+    ~sources:
+      [
+        "qualifier/__init__.py", "from qualifier.a import bar as a";
+        "qualifier/a.py", "foo = 1\nbar = 1";
+      ]
+    "qualifier.a.foo"
+    "qualifier.a.foo"
 
 
 let test_resolve_mutable_literals context =

@@ -689,12 +689,19 @@ let resolve_exports resolution ~reference =
       let rec resolve_exports ~lead ~tail =
         match tail with
         | head :: tail ->
-            module_definition resolution (Reference.create_from_list lead)
-            >>| (fun definition ->
-                  match Module.aliased_export definition (Reference.create head) with
-                  | Some export -> Reference.combine export (Reference.create_from_list tail)
-                  | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
-            |> Option.value ~default:reference
+            let incremented_lead = lead @ [head] in
+            if
+              Option.is_some
+                (module_definition resolution (Reference.create_from_list incremented_lead))
+            then
+              resolve_exports ~lead:incremented_lead ~tail
+            else
+              module_definition resolution (Reference.create_from_list lead)
+              >>| (fun definition ->
+                    match Module.aliased_export definition (Reference.create head) with
+                    | Some export -> Reference.combine export (Reference.create_from_list tail)
+                    | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
+              |> Option.value ~default:reference
         | _ -> reference
       in
       match Reference.as_list reference with
