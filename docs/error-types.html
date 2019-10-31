@@ -76,7 +76,7 @@ incompatible type later on in the same function.</p>
 <a href="https://en.wikipedia.org/wiki/Liskov_substitution_principle">Liskov's substitution principle</a>.
 In short, parameter types can't be more restrictive and return types
 can't be more permissive in overridden methods. To see why, consider the following example:</p>
-<pre><code class="hljs">  def <span class="hljs-built_in">width</span>(<span class="hljs-built_in">image</span>: Image) -&gt; <span class="hljs-keyword">float</span>:
+<pre><code class="hljs">  def <span class="hljs-built_in">width</span>(<span class="hljs-built_in">image</span>: Image) -&gt; <span class="hljs-built_in">float</span>:
     <span class="hljs-built_in">return</span> <span class="hljs-built_in">image</span>.<span class="hljs-built_in">width</span>()
 </code></pre>
 <p>Say we now have different implementations of our <code>Image</code> class, one of which
