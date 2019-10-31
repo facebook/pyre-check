@@ -427,6 +427,20 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution ~location ~state callee arguments =
       let call = { Call.callee; arguments } in
       let { Call.callee; arguments } = Annotated.Call.redirect_special_calls ~resolution call in
+      (* reveal_taint(). *)
+      begin
+        match Node.value callee, arguments with
+        | ( Expression.Name (Name.Identifier "reveal_taint"),
+            [{ Call.Argument.value = expression; _ }] ) ->
+            let taint, _ = analyze_expression ~resolution ~state ~expression in
+            Log.dump
+              "%a: Revealed taint for %s: %s"
+              Location.pp
+              (Node.location callee)
+              (Ast.Transform.sanitize_expression expression |> Expression.show)
+              (ForwardState.Tree.show taint)
+        | _ -> ()
+      end;
       match AccessPath.get_global ~resolution callee, Node.value callee with
       | Some global, _ ->
           let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
