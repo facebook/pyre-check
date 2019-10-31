@@ -16,7 +16,6 @@ from .sharded_files import ShardedFile
 METADATA_GLOB = "*metadata.json"
 
 
-# pyre-ignore: we don't have a shape for rules yet.
 class Metadata(NamedTuple):
     analysis_root: str
     repo_root: Optional[str] = None
