@@ -4791,6 +4791,14 @@ type result = {
   coverage: Coverage.t;
 }
 
+let aggregate_results results =
+  let errors, coverages =
+    List.fold results ~init:([], []) ~f:(fun (errors_sofar, coverage_sofar) { errors; coverage } ->
+        List.append errors errors_sofar, coverage :: coverage_sofar)
+  in
+  { errors; coverage = Coverage.aggregate coverages }
+
+
 let resolution global_resolution ?(annotations = Reference.Map.empty) () =
   let define =
     Define.create_toplevel ~qualifier:None ~statements:[] |> Node.create_with_default_location
@@ -4849,18 +4857,18 @@ let resolution_with_key ~global_resolution ~parent ~name ~key =
 
 let name = "TypeCheck"
 
-let check_define
+let check_define_collect_nested
     ~configuration:({ Configuration.Analysis.include_hints; _ } as configuration)
-    ~global_resolution
+    ~resolution
     ~source:( {
                 Source.source_path = { SourcePath.qualifier; relative; _ };
                 metadata = { local_mode; ignore_codes; _ };
                 _;
               } as source )
     ~call_graph_builder:(module Builder : Dependencies.Callgraph.Builder)
-    ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
-      resolution )
+    ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
+  let global_resolution = Resolution.global_resolution resolution in
   let module Context = struct
     let configuration = configuration
 
@@ -4975,41 +4983,85 @@ let check_define
       { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }, []
 
 
-let check_defines ~configuration ~global_resolution ~source defines =
-  let resolution = resolution global_resolution () in
-  ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
-  let results =
-    let queue =
-      let queue = Queue.create () in
-      let enqueue_define define = Queue.enqueue queue (define, resolution) in
-      List.iter defines ~f:enqueue_define;
-      queue
+let check_define ~check_nested ~configuration ~resolution ~source define =
+  (* TODO: Remove the check_nested distinction once defines can be typecheck units *)
+  match check_nested with
+  | false ->
+      let result, _ =
+        check_define_collect_nested
+          ~configuration
+          ~resolution
+          ~call_graph_builder:(module Dependencies.Callgraph.DefaultBuilder)
+          ~source
+          define
+      in
+      result
+  | true ->
+      let queue = Queue.singleton (define, resolution) in
+      let results = ref [] in
+      let rec compute_results () =
+        match Queue.dequeue queue with
+        | None -> ()
+        | Some (define, resolution) ->
+            let result, nested_defines =
+              check_define_collect_nested
+                ~configuration
+                ~resolution
+                ~call_graph_builder:(module Dependencies.Callgraph.DefaultBuilder)
+                ~source
+                define
+            in
+            results := result :: !results;
+            Queue.enqueue_all queue nested_defines;
+            compute_results ()
+      in
+      compute_results ();
+      aggregate_results !results
+
+
+let check_typecheck_unit
+    ~configuration
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+    ({ Node.value; _ } as define)
+  =
+  let resolution =
+    let global_resolution =
+      match configuration with
+      | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
+          (* TODO (T53810748): Refine the dependency to define's name *)
+          AnnotatedGlobalEnvironment.ReadOnly.dependency_tracked_resolution
+            environment
+            ~dependency:(TypeCheckSource qualifier)
+      | _ -> AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     in
-    let results = ref [] in
-    let rec compute_results () =
-      match Queue.dequeue queue with
-      | None -> ()
-      | Some define ->
-          let result, nested_defines =
-            check_define
-              ~configuration
-              ~global_resolution
-              ~call_graph_builder:(module Dependencies.Callgraph.DefaultBuilder)
-              ~source
-              define
-          in
-          results := result :: !results;
-          Queue.enqueue_all queue nested_defines;
-          compute_results ()
-    in
-    compute_results ();
-    !results
+    resolution global_resolution ()
   in
+  let check_nested = not (Define.is_toplevel value) in
+  check_define ~check_nested ~configuration ~resolution ~source define
+
+
+let check_source ~configuration ~environment source =
+  Preprocessing.defines
+    ~include_stubs:true
+    ~include_nested:false
+    ~include_toplevels:true
+    ~include_methods:false
+    source
+  |> List.map ~f:(check_typecheck_unit ~configuration ~environment ~source)
+  |> aggregate_results
+
+
+(* TODO (T53810748): Elimintate the use of LocalChanges *)
+let check_source_with_local_changes ~configuration ~environment source =
+  ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
+
+  let result = check_source ~configuration ~environment source in
   (* These local changes allow us to add keys incrementally in a worker process without worrying
      about removing (which can only be done by a master. *)
   ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
   ResolutionSharedMemory.Keys.LocalChanges.pop_stack ();
-  results
+  result
 
 
 let run
@@ -5023,25 +5075,13 @@ let run
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%s`..." relative;
-  let toplevel = Source.top_level_define_node source in
-  let results =
-    let global_resolution =
-      match configuration with
-      | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-          AnnotatedGlobalEnvironment.ReadOnly.dependency_tracked_resolution
-            environment
-            ~dependency:(TypeCheckSource qualifier)
-      | _ -> AnnotatedGlobalEnvironment.ReadOnly.resolution environment
-    in
-    check_defines ~configuration ~global_resolution ~source [toplevel]
-  in
+  let { errors; coverage } = check_source_with_local_changes ~configuration ~environment source in
   let errors =
-    List.concat_map results ~f:(fun { errors; _ } -> errors)
-    |> Postprocessing.add_local_mode_errors ~define:toplevel source
+    let toplevel = Source.top_level_define_node source in
+    Postprocessing.add_local_mode_errors ~define:toplevel source errors
     |> Postprocessing.ignore source
     |> List.sort ~compare:Error.compare
   in
-  let coverage = List.map results ~f:(fun { coverage; _ } -> coverage) |> Coverage.aggregate in
   Coverage.log coverage ~total_errors:(List.length errors) ~path:relative;
   Coverage.add coverage ~qualifier;
   Statistics.performance
