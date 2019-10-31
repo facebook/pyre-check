@@ -1,7 +1,6 @@
 package com.facebook.buck_project_builder.targets;
 
 import com.facebook.buck_project_builder.SimpleLogger;
-import com.facebook.buck_project_builder.cache.BuilderCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
@@ -92,26 +91,7 @@ public final class ThriftLibraryTarget {
     return sources;
   }
 
-  private boolean canUseCachedBuild(String buckRoot, BuilderCache cache) {
-    if (!cache.getThriftCaches().contains(this)) {
-      return false;
-    }
-    return sources.stream()
-        .allMatch(
-            source -> {
-              File sourceFile = new File(source);
-              if (!sourceFile.isAbsolute()) {
-                sourceFile = Paths.get(buckRoot, source).toFile();
-              }
-              long lastModifiedTime = sourceFile.lastModified();
-              return lastModifiedTime < cache.getLastBuiltTime();
-            });
-  }
-
-  public boolean build(String buckRoot, BuilderCache cache) {
-    if (canUseCachedBuild(buckRoot, cache)) {
-      return true;
-    }
+  public boolean build(String buckRoot) {
     try {
       return GeneratedBuildRuleRunner.runBuilderCommand(this.command, buckRoot);
     } catch (IOException exception) {

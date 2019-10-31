@@ -28,7 +28,6 @@ public final class BuildTargetsBuilder {
   private final String buckRoot;
   private final String outputDirectory;
   private final ImmutableList<String> targets;
-  private final BuilderCache cache;
   /** key: output path, value: source path */
   private final ImmutableMap<Path, Path> sources;
 
@@ -56,7 +55,6 @@ public final class BuildTargetsBuilder {
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
     this.targets = targets;
-    this.cache = BuilderCache.readFromCache(targets);
     this.sources = sources;
     this.unsupportedGeneratedSources = unsupportedGeneratedSources;
     this.pythonWheelUrls = pythonWheelUrls;
@@ -86,6 +84,11 @@ public final class BuildTargetsBuilder {
     SimpleLogger.info("Building " + this.pythonWheelUrls.size() + " python wheels...");
     long start = System.currentTimeMillis();
     new File(BuilderCache.WHEEL_CACHE_PATH).mkdirs();
+    try {
+      FileUtils.cleanDirectory(new File(BuilderCache.WHEEL_CACHE_PATH));
+    } catch (IOException exception) {
+      // Silently fail if the cache wasn't found.
+    }
     File outputDirectoryFile = new File(outputDirectory);
     this.pythonWheelUrls
         .parallelStream()
@@ -145,6 +148,11 @@ public final class BuildTargetsBuilder {
       return;
     }
     new File(BuilderCache.THRIFT_CACHE_PATH).mkdirs();
+    try {
+      FileUtils.cleanDirectory(new File(BuilderCache.THRIFT_CACHE_PATH));
+    } catch (IOException exception) {
+      // Silently fail if there was nothing to clean.
+    }
     int totalNumberOfThriftLibraries = this.thriftLibraryTargets.size();
     SimpleLogger.info("Building " + totalNumberOfThriftLibraries + " thrift libraries...");
     AtomicInteger numberOfBuiltThriftLibraries = new AtomicInteger(0);
@@ -154,7 +162,7 @@ public final class BuildTargetsBuilder {
         this.thriftLibraryTargets,
         "thrift_library",
         target -> {
-          boolean successfullyBuilt = target.build(this.buckRoot, this.cache);
+          boolean successfullyBuilt = target.build(this.buckRoot);
           if (successfullyBuilt) {
             int builtThriftLibrariesSoFar = numberOfBuiltThriftLibraries.addAndGet(1);
             if (builtThriftLibrariesSoFar % 100 == 0) {
@@ -276,7 +284,6 @@ public final class BuildTargetsBuilder {
     this.buildPythonSources();
     this.buildPythonWheels();
     this.generateEmptyStubs();
-    new BuilderCache(startTime, thriftLibraryTargets).writeToCache(this.targets);
     return new DebugOutput(this.conflictingFiles, this.unsupportedFiles);
   }
 
