@@ -192,8 +192,6 @@ let test_check_tuple context =
     [
       "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
        `Any`.";
-      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
-      "Undefined error [1]: Problem with analysis.";
       "Undefined error [1]: Problem with analysis.";
       "Undefined attribute [16]: `T` has no attribute `d`.";
     ];
@@ -216,8 +214,6 @@ let test_check_tuple context =
     [
       "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
        `Any`.";
-      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
-      "Undefined error [1]: Problem with analysis.";
       "Undefined error [1]: Problem with analysis.";
       "Unable to unpack [23]: Unable to unpack 3 values, 2 were expected.";
       "Unable to unpack [23]: Unable to unpack 3 values, 4 were expected.";
@@ -232,7 +228,6 @@ let test_check_tuple context =
     [
       "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
        `Any`.";
-      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
     ];
   assert_type_errors
     {|
@@ -279,6 +274,51 @@ let test_check_tuple context =
       def foo() -> bool:
         return (52,) < (1, 2, 3)
     |} [];
+  assert_type_errors
+    {|
+      class FooNotNamedTuple:
+        bar: typing.Optional[str] = None
+        baz: typing.Dict[int, typing.Any] = {}
+        hello: typing.Dict[str, typing.Any] = {}
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `baz` of class `FooNotNamedTuple` must have a \
+       type that does not contain `Any`.";
+    ];
+  assert_type_errors
+    (* The parameter `baz` in the __new__ method for NamedTuple will not throw a duplicate error
+       for Any. *)
+    {|
+      class Foo(typing.NamedTuple):
+        bar: typing.Optional[str] = None
+        baz: typing.Dict[int, typing.Any] = {}
+        hello: typing.Dict[str, typing.Any] = {}
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` must have a type that \
+       does not contain `Any`.";
+    ];
+  assert_type_errors
+    (* A __new__ method for a non-NamedTuple will throw error on Any. *)
+    {|
+      class Foo:
+        def __new__(cls, foo: typing.Dict[int, typing.Any] = {}) -> Foo:
+            return super(Foo, cls).__new__()
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `foo` must have a type that does not contain \
+       `Any`.";
+    ];
+  assert_type_errors
+    (* If __new__ is not a method of some class, it will throw the Any error. *)
+    {|
+      def __new__(foo: typing.Dict[int, typing.Any] = {}) -> None:
+        pass
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `foo` must have a type that does not contain \
+       `Any`.";
+    ];
   ()
 
 

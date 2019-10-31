@@ -730,11 +730,20 @@ module State (Context : Context) = struct
           in
           let add_missing_parameter_annotation_error ~state ~given_annotation annotation =
             let name = name |> Identifier.sanitized in
+            let is_dunder_new_method_for_named_tuple =
+              Define.is_method define
+              && Reference.is_suffix ~suffix:(Reference.create ".__new__") define.signature.name
+              && Option.value_map
+                   ~default:false
+                   ~f:(name_is ~name:"typing.NamedTuple")
+                   return_annotation
+            in
             if
               String.equal name "*"
               || String.is_prefix ~prefix:"_" name
               || Option.is_some given_annotation
                  && (String.is_prefix ~prefix:"**" name || String.is_prefix ~prefix:"*" name)
+              || is_dunder_new_method_for_named_tuple
             then
               state
             else

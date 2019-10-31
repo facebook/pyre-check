@@ -361,8 +361,6 @@ let test_check_nested context =
     [
       "Missing attribute annotation [4]: Attribute `verb` of class `Derp.Word` must have a type \
        other than `Any`.";
-      "Missing parameter annotation [2]: Parameter `verb` must have a type other than `Any`.";
-      "Undefined error [1]: Problem with analysis.";
       "Undefined error [1]: Problem with analysis.";
       "Incompatible return type [7]: Expected `Derp.Word` but got "
       ^ "implicit return value of `None`.";
