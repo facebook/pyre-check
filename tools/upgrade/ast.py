@@ -34,16 +34,17 @@ def verify_stable_ast(file_modifier: Callable[[Ts], None]) -> Callable[[Ts], Non
             new_text = path.read_text()
             try:
                 ast_after = ast.parse(new_text)
+
+                # Undo changes if AST does not match
+                if not ast.dump(ast_before) == ast.dump(ast_after):
+                    LOG.warning(
+                        "Attempted file changes modified the AST in %s. Undoing.",
+                        filename,
+                    )
+                    path.write_text(text)
             except Exception as e:
                 LOG.warning("Could not parse file %s. Undoing.", filename)
                 LOG.warning(e)
-                path.write_text(text)
-
-            # Undo changes if AST does not match
-            if not ast.dump(ast_before) == ast.dump(ast_after):
-                LOG.warning(
-                    "Attempted file changes modified the AST in %s. Undoing.", filename
-                )
                 path.write_text(text)
         except FileNotFoundError:
             LOG.warning("File %s cannot be found, skipping.", filename)
