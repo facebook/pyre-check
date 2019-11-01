@@ -1463,6 +1463,7 @@ module State (Context : Context) = struct
         | Expression.Starred (Starred.Once expression) ->
             let { state; resolved = new_resolved; _ } = forward_expression ~state ~expression in
             let parameter =
+              (* TODO (T56720048): Stop joining with iterable bottom *)
               match
                 GlobalResolution.join global_resolution new_resolved (Type.iterable Type.Bottom)
               with
@@ -3110,6 +3111,7 @@ module State (Context : Context) = struct
             match annotation with
             | Type.Tuple (Type.Unbounded parameter) -> parameter
             | _ -> (
+                (* TODO (T56720048): Stop joining with iterable bottom *)
                 GlobalResolution.join global_resolution annotation (Type.iterable Type.Bottom)
                 |> function
                 | Type.Parametric { parameters = Concrete [parameter]; _ } -> parameter
@@ -4076,26 +4078,33 @@ module State (Context : Context) = struct
           when is_simple_name name ->
             let reference = name_to_reference_exn name in
             let { resolved; _ } = forward_expression ~state ~expression:right in
+            (* TODO (T56720048): Stop joining with iterable bottom *)
             let iterable =
               GlobalResolution.join global_resolution resolved (Type.iterable Type.Bottom)
             in
             if Type.is_iterable iterable then
-              let refined = Annotation.create (Type.single_parameter iterable) in
-              match Resolution.get_local ~global_fallback:false resolution ~reference with
-              | Some previous when not (Annotation.is_immutable previous) ->
-                  if Refinement.less_or_equal ~resolution:global_resolution refined previous then
-                    let resolution =
-                      Resolution.set_local resolution ~reference ~annotation:refined
-                    in
-                    { state with resolution }
-                  else (* Keeping previous state, since it is more refined. *)
-                    state
-              | None when not (Resolution.is_global resolution ~reference) ->
-                  let resolution =
-                    Resolution.set_local resolution ~reference ~annotation:refined
-                  in
-                  { state with resolution }
-              | _ -> state
+              match Type.single_parameter iterable with
+              | Type.Any
+              | Type.Bottom ->
+                  state
+              | element_type -> (
+                  let refined = Annotation.create element_type in
+                  match Resolution.get_local ~global_fallback:false resolution ~reference with
+                  | Some previous when not (Annotation.is_immutable previous) ->
+                      if Refinement.less_or_equal ~resolution:global_resolution refined previous
+                      then
+                        let resolution =
+                          Resolution.set_local resolution ~reference ~annotation:refined
+                        in
+                        { state with resolution }
+                      else (* Keeping previous state, since it is more refined. *)
+                        state
+                  | None when not (Resolution.is_global resolution ~reference) ->
+                      let resolution =
+                        Resolution.set_local resolution ~reference ~annotation:refined
+                      in
+                      { state with resolution }
+                  | _ -> state )
             else
               state
         | ComparisonOperator
