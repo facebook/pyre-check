@@ -43,9 +43,9 @@ class ParseType(Enum):
 
 
 def log_trace_keyerror(func):
-    def wrapper(self, json):
+    def wrapper(self, json, *args):
         try:
-            return func(self, json)
+            return func(self, json, *args)
         except KeyError:
             # The most common problem with parsing json is not finding
             # a field you expect, so we'll catch those and log them, but move
@@ -59,9 +59,9 @@ def log_trace_keyerror(func):
 
 
 def log_trace_keyerror_in_generator(func):
-    def wrapper(self, json):
+    def wrapper(self, json, *args):
         try:
-            yield from func(self, json)
+            yield from func(self, json, *args)
         except KeyError:
             # The most common problem with parsing json is not finding
             # a field you expect, so we'll catch those and log them, but move
@@ -91,7 +91,7 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
     def parse(self, input: AnalysisOutput) -> Iterable[Dict[str, Any]]:
         """Must return objects with a 'type': ParseType field.
         """
-        assert False, "Abstract method called!"
+        raise NotImplementedError("Abstract method called!")
         return
         yield
 
@@ -99,7 +99,7 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
     def parse_handle(self, handle: TextIO) -> Iterable[Dict[str, Any]]:
         """Must return objects with a 'type': ParseType field.
         """
-        assert False, "Abstract method called!"
+        raise NotImplementedError("Abstract method called!")
         return
         yield
 
