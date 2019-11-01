@@ -29,7 +29,7 @@
   lookupTest
   moduleTrackerTest
   newTypeTest
-  namedTuplesTest
+  namedTupleTest
   preprocessingTest
   refinementTest
   resolutionTest

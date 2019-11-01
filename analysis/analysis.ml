@@ -36,6 +36,7 @@ module LivenessCheck = LivenessCheck
 module LocalAnnotationMap = LocalAnnotationMap
 module Lookup = Lookup
 module ModuleTracker = ModuleTracker
+module NamedTuple = NamedTuple
 module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
 module Refinement = Refinement

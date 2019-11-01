@@ -3057,51 +3057,13 @@ module State (Context : Context) = struct
             ~resolved
             ~expression
           =
-          let is_named_tuple annotation =
-            GlobalResolution.less_or_equal
-              global_resolution
-              ~left:annotation
-              ~right:Type.named_tuple
-          in
-          let get_named_tuple_parameters annotation =
-            let field_annotations attributes =
-              let open Annotated.Class.Attribute in
-              let fields =
-                let is_fields = function
-                  | { Node.value = { name = "_fields"; _ }; _ } -> true
-                  | _ -> false
-                in
-                match List.find ~f:is_fields attributes >>| Node.value with
-                | Some { value = { Node.value = Tuple fields; _ }; _ } -> fields
-                | _ -> []
-              in
-              let matching_annotation field =
-                let name_equals field { Node.value = { name; _ }; _ } =
-                  match Node.value field with
-                  | Expression.String { StringLiteral.value; _ } -> String.equal name value
-                  | _ -> false
-                in
-                match List.find ~f:(name_equals field) attributes with
-                | Some { Node.value = { annotation; _ }; _ } ->
-                    Some (Annotation.annotation annotation)
-                | None -> None
-              in
-              List.filter_map ~f:matching_annotation fields
-            in
-            annotation
-            |> Option.some_if (is_named_tuple annotation)
-            >>= GlobalResolution.class_definition global_resolution
-            >>| Annotated.Class.create
-            >>| Annotated.Class.attributes ~resolution:global_resolution
-            >>| field_annotations
-          in
           let is_uniform_sequence annotation =
             match annotation with
             | Type.Tuple (Type.Unbounded _) -> true
             (* Bounded tuples subclass iterable, but should be handled in the nonuniform case. *)
             | Type.Tuple (Type.Bounded _) -> false
             | _ ->
-                (not (is_named_tuple annotation))
+                (not (NamedTuple.is_named_tuple ~global_resolution ~annotation))
                 && GlobalResolution.less_or_equal
                      global_resolution
                      ~left:annotation
@@ -3120,7 +3082,8 @@ module State (Context : Context) = struct
           let nonuniform_sequence_parameters annotation =
             match annotation with
             | Type.Tuple (Type.Bounded (Concrete parameters)) -> Some parameters
-            | annotation when is_named_tuple annotation -> get_named_tuple_parameters annotation
+            | annotation when NamedTuple.is_named_tuple ~global_resolution ~annotation ->
+                NamedTuple.field_annotations ~global_resolution annotation
             | _ -> None
           in
           match target_value with
