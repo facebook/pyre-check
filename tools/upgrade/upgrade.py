@@ -794,6 +794,15 @@ def main() -> None:
         # pyre-fixme[16]: `Namespace` has no attribute `function`.
         arguments.function = run_fixme
 
+    # Initialize values that may be null-checked, but do not exist as a flag
+    # for all subcommands
+    if not hasattr(arguments, "paths"):
+        # pyre-fixme[16]: `Namespace` has no attribute `paths`.
+        arguments.paths = None
+    if not hasattr(arguments, "from_stdin"):
+        # pyre-fixme[16]: `Namespace` has no attribute `from_stdin`.
+        arguments.from_stdin = None
+
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
