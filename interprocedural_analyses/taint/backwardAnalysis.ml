@@ -445,6 +445,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let index = AccessPath.get_index argument_value in
           let taint = BackwardState.Tree.prepend [index] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
+      (* Special case x.__next__() as being a random index access (this pattern is the desugaring
+         of `for element in x`). *)
+      | Call
+          {
+            callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
+            arguments = [];
+          } ->
+          let taint = BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] taint in
+          analyze_expression ~resolution ~taint ~state ~expression:base
       | Call { callee; arguments } ->
           analyze_call ~resolution location ~taint ~state callee arguments
       | Complex _ -> state

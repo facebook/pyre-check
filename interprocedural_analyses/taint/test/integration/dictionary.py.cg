@@ -16,6 +16,7 @@ dictionary.forward_comprehension_key_source (fun) -> [__test_source (fun) typing
 dictionary.forward_comprehension_value_sink (fun) -> [__test_sink (fun) typing.Iterator::__next__ (method)]
 dictionary.forward_comprehension_value_source (fun) -> [__test_source (fun) typing.Iterator::__next__ (method)]
 dictionary.indirect_flow_from_source_to_global_dictionary (fun) -> [__test_source (fun) dictionary.update_dictionary_indirectly (fun)]
+dictionary.lists_of_dictionary_iteration_is_precise (fun) -> [__test_sink (fun) __test_source (fun) dict::__getitem__ (method) typing.Iterator::__next__ (method) typing.Iterator::__next__ (method)]
 dictionary.tainted_setitem (fun) -> [__test_source (fun) dictionary.SpecialSetitemDict::__setitem__ (method)]
 dictionary.update_dictionary_indirectly (fun) -> [dict::update (method)]
 dictionary.update_parameter (fun) -> []

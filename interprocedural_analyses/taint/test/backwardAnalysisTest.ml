@@ -1438,6 +1438,22 @@ let test_access_paths context =
     ]
 
 
+let test_for_loops context =
+  assert_taint
+    ~context
+    {|
+      def sink_through_for(arg):
+        for element in arg:
+          __test_sink(element)
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+        "qualifier.sink_through_for";
+    ]
+
+
 let () =
   [
     "plus_taint_in_taint_out", test_plus_taint_in_taint_out;
@@ -1468,5 +1484,6 @@ let () =
     "decorator", test_decorator;
     "assignment", test_assignment;
     "access_paths", test_access_paths;
+    "for_loops", test_for_loops;
   ]
   |> TestHelper.run_with_taint_models ~name:"backwardsTaint"

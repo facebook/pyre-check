@@ -548,6 +548,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |>> ForwardState.Tree.transform
                 ForwardTaint.simple_feature_set
                 ~f:(add_first_index index)
+      (* Special case x.__next__() as being a random index access (this pattern is the desugaring
+         of `for element in x`). *)
+      | Call
+          {
+            callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
+            arguments = [];
+          } ->
+          analyze_expression ~resolution ~state ~expression:base
+          |>> ForwardState.Tree.read [AbstractTreeDomain.Label.Any]
       (* x[0] = value is converted to x.__setitem__(0, value). in parsing. *)
       | Call
           {
