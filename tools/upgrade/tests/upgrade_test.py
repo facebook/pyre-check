@@ -1052,7 +1052,8 @@ class FixmeTargetsTest(unittest.TestCase):
                 "grep",
                 "-RPzo",
                 "--include=*TARGETS",
-                "(?s)name = .((?!\n\s*name).)*check_types = True",
+                "(?s)name = ((?!\\n\\s*name).)*check_types ?= ?True"
+                + '((?!\\n\\s*name).)*check_types_options ?= ?"[^"]*pyre[^"]*"',
                 Path("derp"),
             ],
             stderr=-1,

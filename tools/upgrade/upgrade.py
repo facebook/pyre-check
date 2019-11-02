@@ -616,18 +616,27 @@ def run_fixme_targets(arguments: argparse.Namespace) -> None:
         LOG.error("No project configuration found for the given directory.")
         return
     project_directory = project_configuration.parent
-    LOG.info("Finding typecheck targets in %s", project_directory)
+    search_root = subdirectory if subdirectory else project_directory
+    LOG.info("Finding typecheck targets in %s", search_root)
+    # TODO(T56778370): Clean up code by parsing the TARGETS file rather than using grep.
+    typing_field = "check_types ?= ?True"
+    typing_options_field = 'check_types_options ?= ?"[^"]*pyre[^"]*"'
+    targets_regex = r"(?s)name = ((?!\n\s*name).)*{}((?!\n\s*name).)*{}".format(
+        typing_field, typing_options_field
+    )
     find_targets_command = [
         "grep",
         "-RPzo",
         "--include=*TARGETS",
-        "(?s)name = .((?!\n\s*name).)*check_types = True",
-        subdirectory if subdirectory else project_directory,
+        targets_regex,
+        search_root,
     ]
-    # TODO(T36700977): verify that tests are running pyre, not mypy
     find_targets = subprocess.run(
         find_targets_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
+    if find_targets.returncode == 1:
+        LOG.info("Did not find any targets to upgrade.")
+        return
     if find_targets.returncode != 0:
         LOG.error("Failed to search for targets: %s", find_targets.stderr.decode())
         return
