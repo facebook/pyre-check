@@ -149,9 +149,8 @@ class Profile(Command):
             if not profiling_output.is_file():
                 raise RuntimeError(
                     "Cannot find profiling output at `{}`. "
-                    "Please run Pyre with `--enable-profiling` option first.".format(
-                        profiling_output
-                    )
+                    "Please run Pyre with `--enable-profiling` or "
+                    "`--enable-memory-profiling` option first.".format(profiling_output)
                 )
             events = parse_events(profiling_output.read_text())
             output = self._arguments.output

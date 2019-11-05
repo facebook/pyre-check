@@ -591,3 +591,75 @@ class StartTest(unittest.TestCase):
                 "-autocomplete",
             ],
         )
+        arguments = mock_arguments()
+        arguments.enable_profiling = True
+        configuration = mock_configuration(version_hash="hash")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-profiling-output",
+                ".pyre/profiling.log",
+                "-project-root",
+                ".",
+                "-log-directory",
+                ".pyre",
+                "-workers",
+                "5",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2,path3",
+            ],
+        )
+        arguments = mock_arguments()
+        arguments.enable_memory_profiling = True
+        configuration = mock_configuration(version_hash="hash")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-memory-profiling-output",
+                ".pyre/profiling.log",
+                "-project-root",
+                ".",
+                "-log-directory",
+                ".pyre",
+                "-workers",
+                "5",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2,path3",
+            ],
+        )
+        arguments = mock_arguments()
+        arguments.enable_profiling = True
+        arguments.enable_memory_profiling = True
+        configuration = mock_configuration(version_hash="hash")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-profiling-output",
+                ".pyre/profiling.log",
+                "-memory-profiling-output",
+                ".pyre/profiling.log",
+                "-project-root",
+                ".",
+                "-log-directory",
+                ".pyre",
+                "-workers",
+                "5",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2,path3",
+            ],
+        )

@@ -122,6 +122,7 @@ class Command:
         self._analysis_directory = analysis_directory
         self._debug = arguments.debug  # type: bool
         self._enable_profiling = arguments.enable_profiling  # type: bool
+        self._enable_memory_profiling = arguments.enable_memory_profiling  # type: bool
         self._sequential = arguments.sequential  # type: bool
         self._strict = arguments.strict or (
             configuration and configuration.strict
@@ -191,10 +192,12 @@ class Command:
         if self._logging_sections:
             flags.extend(["-logging-sections", self._logging_sections])
         if self._enable_profiling:
-            profiling_output = self.profiling_log_path()
+            flags.extend(["-profiling-output", self.profiling_log_path()])
+        if self._enable_memory_profiling:
+            flags.extend(["-memory-profiling-output", self.profiling_log_path()])
+        if self._enable_profiling or self._enable_memory_profiling:
             # Clear the profiling log first since in pyre binary it's append-only
-            remove_if_exists(profiling_output)
-            flags.extend(["-profiling-output", profiling_output])
+            remove_if_exists(self.profiling_log_path())
         if self._current_directory:
             flags.extend(["-project-root", self._current_directory])
         if self._log_identifier:

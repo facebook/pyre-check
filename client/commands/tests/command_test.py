@@ -13,7 +13,6 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
 from ...analysis_directory import AnalysisDirectory
-from ...commands import command  # noqa
 
 
 def mock_arguments(  # noqa
@@ -42,7 +41,8 @@ def mock_arguments(  # noqa
     arguments.command = command
     arguments.current_directory = "."
     arguments.debug = False
-    arguments.enable_profiling = None
+    arguments.enable_profiling = False
+    arguments.enable_memory_profiling = False
     arguments.filter_directory = ["."]
     arguments.hide_parse_errors = False
     arguments.incremental_style = commands.IncrementalStyle.SHALLOW
@@ -170,7 +170,7 @@ class CommandTest(unittest.TestCase):
 
     @patch("os.path.isdir", Mock(return_value=True))
     @patch("os.listdir")
-    def test_profiling(self, os_listdir) -> None:
+    def test_grofiling(self, os_listdir) -> None:
         # Mock typeshed file hierarchy
         def mock_listdir(path: str) -> List[str]:
             if path == "root/stdlib":

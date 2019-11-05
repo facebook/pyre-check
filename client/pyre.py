@@ -107,6 +107,9 @@ def main() -> int:
         "--enable-profiling", action="store_true", help=argparse.SUPPRESS
     )
     parser.add_argument(
+        "--enable-memory-profiling", action="store_true", help=argparse.SUPPRESS
+    )
+    parser.add_argument(
         "-n",
         "--noninteractive",
         action="store_true",
