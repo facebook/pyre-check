@@ -159,7 +159,7 @@ let test_check_assign context =
       a = A()
       a.foo = 2
     |}
-    ["Invalid assignment [41]: `a.foo` cannot be reassigned. It is a read-only property."];
+    ["Invalid assignment [41]: Cannot reassign final attribute `a.foo`."];
   assert_type_errors
     {|
       class A:

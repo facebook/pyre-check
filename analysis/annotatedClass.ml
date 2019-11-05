@@ -557,9 +557,7 @@ let create_attribute
           | _ -> false );
         property =
           ( match kind with
-          | Simple { frozen = true; _ }
-          | Property _ ->
-              true
+          | Property _ -> true
           | _ -> false );
         value = Option.value value ~default:(Node.create Expression.Ellipsis ~location);
       };
