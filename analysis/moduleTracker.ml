@@ -392,6 +392,7 @@ let update_submodules ~events submodule_refcounts =
 
 
 let update ~configuration ~paths { module_to_files; submodule_refcounts } =
+  let timer = Timer.start () in
   let explicit_updates = update_explicit_modules module_to_files ~configuration ~paths in
   let implicit_updates = update_submodules submodule_refcounts ~events:explicit_updates in
   (* Explicit updates should shadow implicit updates *)
@@ -433,7 +434,9 @@ let update ~configuration ~paths { module_to_files; submodule_refcounts } =
     "Implicit Module Update: %a"
     Sexp.pp
     [%message (implicit_updates : IncrementalImplicitUpdate.t list)];
-  merge_updates explicit_updates implicit_updates
+  let result = merge_updates explicit_updates implicit_updates in
+  Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
+  result
 
 
 module SharedMemory = Memory.Serializer (struct
