@@ -54,22 +54,24 @@ let less_or_equal ~resolution left right =
 let join ~resolution left right =
   let mutability =
     match left.mutability, right.mutability with
-    | Immutable ({ scope = Global; _ } as left), Immutable ({ scope = Global; _ } as right) ->
+    | ( Immutable ({ scope = Global; final = left_final; _ } as left),
+        Immutable ({ scope = Global; final = right_final; _ } as right) ) ->
         Immutable
           {
             scope = Global;
             original = GlobalResolution.join resolution left.original right.original;
-            final = false;
+            final = left_final || right_final;
           }
     | (Immutable { scope = Global; _ } as immutable), _
     | _, (Immutable { scope = Global; _ } as immutable) ->
         immutable
-    | Immutable ({ scope = Local; _ } as left), Immutable ({ scope = Local; _ } as right) ->
+    | ( Immutable ({ scope = Local; final = left_final; _ } as left),
+        Immutable ({ scope = Local; final = right_final; _ } as right) ) ->
         Immutable
           {
             scope = Local;
             original = GlobalResolution.join resolution left.original right.original;
-            final = false;
+            final = left_final || right_final;
           }
     | (Immutable { scope = Local; _ } as immutable), _
     | _, (Immutable { scope = Local; _ } as immutable) ->
@@ -85,22 +87,24 @@ let meet ~resolution left right =
     | Mutable, _
     | _, Mutable ->
         Mutable
-    | Immutable ({ scope = Local; _ } as left), Immutable ({ scope = Local; _ } as right) ->
+    | ( Immutable ({ scope = Local; final = left_final; _ } as left),
+        Immutable ({ scope = Local; final = right_final; _ } as right) ) ->
         Immutable
           {
             scope = Local;
             original = GlobalResolution.meet resolution left.original right.original;
-            final = false;
+            final = left_final || right_final;
           }
     | (Immutable { scope = Local; _ } as immutable), _
     | _, (Immutable { scope = Local; _ } as immutable) ->
         immutable
-    | Immutable ({ scope = Global; _ } as left), Immutable ({ scope = Global; _ } as right) ->
+    | ( Immutable ({ scope = Global; final = left_final; _ } as left),
+        Immutable ({ scope = Global; final = right_final; _ } as right) ) ->
         Immutable
           {
             scope = Global;
             original = GlobalResolution.meet resolution left.original right.original;
-            final = false;
+            final = left_final || right_final;
           }
   in
   { annotation = GlobalResolution.meet resolution left.annotation right.annotation; mutability }

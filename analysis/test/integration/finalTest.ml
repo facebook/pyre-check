@@ -181,6 +181,17 @@ let test_final_attributes context =
        `typing_extensions.Literal[1]`).";
       "Invalid assignment [41]: Cannot reassign final attribute `x`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Final
+      def foo(b : bool) -> None:
+        if b:
+          x: Final[int] = 7
+        else:
+          x: Final[int] = 8
+        x = 9
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
   ()
 
 

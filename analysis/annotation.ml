@@ -92,8 +92,8 @@ let instantiate { annotation; mutability } ~constraints =
   let mutability =
     match mutability with
     | Mutable -> Mutable
-    | Immutable { scope; original; _ } ->
-        Immutable { scope; original = instantiate original; final = false }
+    | Immutable { scope; original; final } ->
+        Immutable { scope; original = instantiate original; final }
   in
   { annotation = instantiate annotation; mutability }
 
@@ -102,7 +102,7 @@ let dequalify dequalify_map { annotation; mutability } =
   let mutability =
     match mutability with
     | Mutable -> Mutable
-    | Immutable { scope; original; _ } ->
-        Immutable { scope; original = Type.dequalify dequalify_map original; final = false }
+    | Immutable { scope; original; final } ->
+        Immutable { scope; original = Type.dequalify dequalify_map original; final }
   in
   { annotation = Type.dequalify dequalify_map annotation; mutability }

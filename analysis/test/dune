@@ -9,6 +9,7 @@
   annotatedDefineTest
   annotatedGlobalEnvironmentTest
   annotatedSignatureTest
+  annotationTest
   astEnvironmentTest
   attrsTest
   awaitableCheckTest

@@ -90,7 +90,14 @@ let test_join context =
        ~resolution
        (create_immutable ~global:true Type.float)
        (create_immutable ~global:true Type.integer))
-    (create_immutable ~global:true Type.float)
+    (create_immutable ~global:true Type.float);
+  assert_equal
+    (join
+       ~resolution
+       (create_immutable ~global:true ~final:true Type.float)
+       (create_immutable ~global:true Type.integer))
+    (create_immutable ~global:true ~final:true Type.float);
+  ()
 
 
 let test_meet context =
@@ -117,7 +124,20 @@ let test_meet context =
        ~resolution
        (create_immutable ~global:true Type.float)
        (create_immutable ~global:false Type.integer))
-    (create_immutable ~global:false Type.integer)
+    (create_immutable ~global:false Type.integer);
+  assert_equal
+    (meet
+       ~resolution
+       (create_immutable ~global:true ~final:true Type.float)
+       (create_immutable ~global:false Type.integer))
+    (create_immutable ~global:false Type.integer);
+  assert_equal
+    (meet
+       ~resolution
+       (create_immutable ~global:true ~final:true Type.float)
+       (create_immutable ~global:false ~final:true Type.integer))
+    (create_immutable ~global:false ~final:true Type.integer);
+  ()
 
 
 let () =
