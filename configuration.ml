@@ -35,6 +35,7 @@ module Analysis = struct
     log_identifier: string;
     logger: string option;
     profiling_output: string option;
+    memory_profiling_output: string option;
     excludes: Str.regexp list; [@opaque]
     extensions: string list;
     store_type_check_resolution: bool;
@@ -75,6 +76,7 @@ module Analysis = struct
       ?(log_identifier = "")
       ?logger
       ?profiling_output
+      ?memory_profiling_output
       ?(excludes = [])
       ?(extensions = [])
       ?(store_type_check_resolution = true)
@@ -107,6 +109,7 @@ module Analysis = struct
       log_identifier;
       logger;
       profiling_output;
+      memory_profiling_output;
       excludes =
         List.map excludes ~f:(fun exclude_regex ->
             Str.global_substitute

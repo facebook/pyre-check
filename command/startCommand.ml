@@ -512,6 +512,7 @@ let run_start_command
     log_identifier
     logger
     profiling_output
+    memory_profiling_output
     project_root
     search_path
     taint_models_directories
@@ -555,6 +556,7 @@ let run_start_command
       ~log_identifier
       ?logger
       ?profiling_output
+      ?memory_profiling_output
       ~parallel:(not sequential)
       ?filter_directories
       ?ignore_all_errors

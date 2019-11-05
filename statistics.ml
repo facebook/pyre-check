@@ -143,7 +143,7 @@ let performance
     | None -> randomly_log_every
   in
   Log.log ~section "%s: %fs" (String.capitalize name) (Int.to_float milliseconds /. 1000.0);
-  Profiling.log_event (fun () ->
+  Profiling.log_performance_event (fun () ->
       let tags =
         match phase_name with
         | None -> normals

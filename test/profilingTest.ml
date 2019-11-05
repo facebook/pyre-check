@@ -49,7 +49,7 @@ let test_event_format _ =
   set_profiling_output output_name;
   let assert_event ~name ~event_type ~timestamp ~tags event =
     Sys.remove output_name;
-    Profiling.log_event event;
+    Profiling.log_performance_event event;
     assert_event ~name ~event_type ~timestamp ~tags output_name
   in
   assert_event
@@ -87,7 +87,33 @@ let test_event_track _ =
   assert_event output_name ~name:"foo" ~tags:["hello", "world"]
 
 
+let test_memory_profiling _ =
+  let output_name = Filename.temp_file "event_track" "test" in
+  let configuration = Configuration.Analysis.create () in
+  let configuration =
+    { configuration with Configuration.Analysis.memory_profiling_output = Some output_name }
+  in
+  Configuration.Analysis.set_global configuration;
+  Profiling.track_shared_memory_usage ~name:"foo" ();
+  assert_event
+    output_name
+    ~name:"Shared Memory Usage"
+    ~tags:
+      [
+        "used_heap_size", "0";
+        "wasted_heap_size", "0";
+        "nonempty_hash_slots", "0";
+        "used_hash_slots", "0";
+        "used_dependency_slots", "0";
+      ];
+  ()
+
+
 let () =
   "profiling"
-  >::: ["event_format" >:: test_event_format; "event_track" >:: test_event_track]
+  >::: [
+         "event_format" >:: test_event_format;
+         "event_track" >:: test_event_track;
+         "memory_profiling" >:: test_memory_profiling;
+       ]
   |> Test.run

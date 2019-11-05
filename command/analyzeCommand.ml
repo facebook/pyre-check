@@ -36,6 +36,7 @@ let run_analysis
     log_identifier
     logger
     profiling_output
+    memory_profiling_output
     project_root
     search_path
     taint_models_directories
@@ -69,6 +70,7 @@ let run_analysis
       ~log_identifier
       ?logger
       ?profiling_output
+      ?memory_profiling_output
       ~infer
       ~additional_checks
       ~project_root:(Path.create_absolute project_root)

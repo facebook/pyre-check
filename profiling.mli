@@ -26,7 +26,7 @@ module Event : sig
     t
 end
 
-val log_event : (unit -> Event.t) -> unit
+val log_performance_event : (unit -> Event.t) -> unit
 
 val track_duration_event : ?tags:(string * string) list -> f:(unit -> 'a) -> string -> 'a
 

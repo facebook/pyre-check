@@ -34,6 +34,7 @@ module Analysis : sig
     log_identifier: string;
     logger: string option;
     profiling_output: string option;
+    memory_profiling_output: string option;
     excludes: Str.regexp list;
     extensions: string list;
     store_type_check_resolution: bool;
@@ -67,6 +68,7 @@ module Analysis : sig
     ?log_identifier:string ->
     ?logger:string ->
     ?profiling_output:string ->
+    ?memory_profiling_output:string ->
     ?excludes:string list ->
     ?extensions:string list ->
     ?store_type_check_resolution:bool ->

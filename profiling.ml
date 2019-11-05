@@ -35,16 +35,23 @@ module Event = struct
     { name; pid; event_type; timestamp; tags }
 end
 
+let log_to_path path ~event_creator =
+  let path = Path.create_absolute ~follow_symbolic_links:false path in
+  let line = event_creator () |> Event.to_yojson |> Yojson.Safe.to_string in
+  File.append ~lines:[line] path
+
+
 (* Taking a constructor instead of an event here so that events can be created lazily *)
-let log_event event_creator =
-  let log_to_path path =
-    let path = Path.create_absolute ~follow_symbolic_links:false path in
-    let line = event_creator () |> Event.to_yojson |> Yojson.Safe.to_string in
-    File.append ~lines:[line] path
-  in
+let log_performance_event event_creator =
   Configuration.Analysis.get_global ()
   >>= (fun { Configuration.Analysis.profiling_output; _ } -> profiling_output)
-  |> Option.iter ~f:log_to_path
+  |> Option.iter ~f:(log_to_path ~event_creator)
+
+
+let log_memory_event event_creator =
+  Configuration.Analysis.get_global ()
+  >>= (fun { Configuration.Analysis.memory_profiling_output; _ } -> memory_profiling_output)
+  |> Option.iter ~f:(log_to_path ~event_creator)
 
 
 let track_duration_event ?(tags = []) ~f name =
@@ -52,7 +59,7 @@ let track_duration_event ?(tags = []) ~f name =
   let result = f () in
   let duration = Timer.stop_in_ms timer in
   let create_event () = Event.create name ~tags ~event_type:(Duration duration) in
-  log_event create_event;
+  log_performance_event create_event;
   result
 
 
@@ -77,7 +84,7 @@ let track_shared_memory_usage ?name () =
           create_tag "used_dependency_slots" used_dependency_slots;
         ]
   in
-  log_event create_event
+  log_memory_event create_event
 
 
 let track_duration_and_shared_memory ?tags ~f name =

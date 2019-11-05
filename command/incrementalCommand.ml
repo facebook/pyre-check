@@ -26,6 +26,7 @@ let run
     log_identifier
     logger
     profiling_output
+    memory_profiling_output
     project_root
     search_path
     _taint_models_directory
@@ -59,6 +60,7 @@ let run
         ~log_identifier
         ?logger
         ?profiling_output
+        ?memory_profiling_output
         ~infer
         ~additional_checks
         ~parallel:(not sequential)
