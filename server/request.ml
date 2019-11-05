@@ -525,7 +525,6 @@ let process_type_query_request
           Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
         in
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
-        let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
         (* Environments *)
         let map =
           List.fold
@@ -554,23 +553,7 @@ let process_type_query_request
         let map =
           extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:qualifiers)
         in
-        (* Calls *)
-        let map =
-          let keys =
-            let open Statement.Define in
-            List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-            |> List.concat_map
-                 ~f:
-                   (Preprocessing.defines
-                      ~include_stubs:true
-                      ~include_nested:true
-                      ~include_toplevels:true)
-            |> List.map ~f:(fun { Node.value = { signature = { name; _ }; _ }; _ } -> name)
-          in
-          extend_map
-            map
-            ~new_map:(Analysis.Dependencies.Callgraph.SharedMemory.compute_hashes_to_keys ~keys)
-        in
+        (* TODO (T56904923): Track the CallGraph table consistency *)
         map
         |> Map.to_alist
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
