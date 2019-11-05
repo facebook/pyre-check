@@ -3755,6 +3755,34 @@ module State (Context : Context) = struct
           let consistent_with_boundary = Type.union consistent_with_boundary in
           { consistent_with_boundary; not_consistent_with_boundary }
         in
+        let rec refinable_annotation name =
+          name_to_reference name
+          >>= fun reference ->
+          match Resolution.get_local resolution ~global_fallback:false ~reference, name with
+          | Some local_annotation, _ -> Some (reference, local_annotation)
+          | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
+              let attribute =
+                refinable_annotation base
+                >>| snd
+                >>= (fun annotation -> Option.some_if (Annotation.is_final annotation) annotation)
+                >>| Annotation.annotation
+                >>= fun parent ->
+                GlobalResolution.class_definition global_resolution parent
+                >>| Annotated.Class.create
+                >>| Annotated.Class.attribute
+                      ~resolution:global_resolution
+                      ~name:attribute
+                      ~instantiated:parent
+                      ~transitive:true
+              in
+              match attribute with
+              | Some
+                  ( { Node.value = { visibility = ReadOnly (Refinable _); defined = true; _ }; _ }
+                  as attribute ) ->
+                  Some (reference, Annotation.make_local (AnnotatedAttribute.annotation attribute))
+              | _ -> None )
+          | _ -> None
+        in
         match Node.value test with
         | False ->
             (* Explicit bottom. *)
@@ -3785,7 +3813,6 @@ module State (Context : Context) = struct
                 ];
             }
           when is_simple_name name ->
-            let reference = name_to_reference_exn name in
             let annotation = parse_refinement_annotation annotation in
             let resolution =
               let refinement_unnecessary existing_annotation =
@@ -3796,25 +3823,29 @@ module State (Context : Context) = struct
                 && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
                 && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
               in
-              let set_local annotation = Resolution.set_local resolution ~reference ~annotation in
-              match Resolution.get_local resolution ~global_fallback:false ~reference with
+              let set_local reference annotation =
+                Resolution.set_local resolution ~reference ~annotation
+              in
+              match refinable_annotation name with
               (* Allow Anys [especially from placeholder stubs] to clobber *)
-              | _ when Type.is_any annotation -> Annotation.create annotation |> set_local
-              | Some existing_annotation when refinement_unnecessary existing_annotation ->
-                  existing_annotation |> set_local
+              | Some (reference, _) when Type.is_any annotation ->
+                  Annotation.create annotation |> set_local reference
+              | Some (reference, existing_annotation)
+                when refinement_unnecessary existing_annotation ->
+                  set_local reference existing_annotation
               (* Clarify Anys if possible *)
-              | Some existing_annotation
+              | Some (reference, existing_annotation)
                 when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
-                  Annotation.create annotation |> set_local
+                  Annotation.create annotation |> set_local reference
               | None -> resolution
-              | Some existing_annotation ->
+              | Some (reference, existing_annotation) ->
                   let { consistent_with_boundary; _ } =
                     partition (Annotation.annotation existing_annotation) ~boundary:annotation
                   in
                   if Type.equal consistent_with_boundary Type.Bottom then
-                    Annotation.create annotation |> set_local
+                    Annotation.create annotation |> set_local reference
                   else
-                    Annotation.create consistent_with_boundary |> set_local
+                    Annotation.create consistent_with_boundary |> set_local reference
             in
             { state with resolution }
         | ComparisonOperator
@@ -3920,25 +3951,25 @@ module State (Context : Context) = struct
             in
             { state with resolution }
         | Name name when is_simple_name name -> (
-            let reference = name_to_reference_exn name in
-            match Resolution.get_local resolution ~global_fallback:false ~reference with
-            | Some { Annotation.annotation = Type.Optional Type.Bottom; _ } ->
-                Error.create
-                  ~location:(Node.location test)
-                  ~kind:
-                    (Error.ImpossibleAssertion
-                       { statement; expression = test; annotation = Type.Optional Type.Bottom })
-                  ~define:Context.define
-                |> emit_raw_error ~state:{ state with bottom = true }
-            | Some ({ Annotation.annotation = Type.Optional parameter; _ } as annotation) ->
-                let resolution =
-                  Resolution.set_local
-                    resolution
-                    ~reference
-                    ~annotation:{ annotation with Annotation.annotation = parameter }
-                in
-                { state with resolution }
-            | _ -> state )
+          match refinable_annotation name with
+          | Some (_, { Annotation.annotation = Type.Optional Type.Bottom; _ }) ->
+              Error.create
+                ~location:(Node.location test)
+                ~kind:
+                  (Error.ImpossibleAssertion
+                     { statement; expression = test; annotation = Type.Optional Type.Bottom })
+                ~define:Context.define
+              |> emit_raw_error ~state:{ state with bottom = true }
+          | Some (reference, ({ Annotation.annotation = Type.Optional parameter; _ } as annotation))
+            ->
+              let resolution =
+                Resolution.set_local
+                  resolution
+                  ~reference
+                  ~annotation:{ annotation with Annotation.annotation = parameter }
+              in
+              { state with resolution }
+          | _ -> state )
         | BooleanOperator { BooleanOperator.left; operator; right } -> (
             let update state expression =
               forward_statement ~state ~statement:(Statement.assume expression)
@@ -3991,10 +4022,9 @@ module State (Context : Context) = struct
               right = { Node.value = Name (Name.Identifier "None"); _ };
             }
           when is_simple_name name -> (
-            let reference = name_to_reference_exn name in
             let refined = Annotation.create (Type.Optional Type.Bottom) in
-            match Resolution.get_local ~global_fallback:false resolution ~reference with
-            | Some previous ->
+            match refinable_annotation name with
+            | Some (reference, previous) ->
                 if Refinement.less_or_equal ~resolution:global_resolution refined previous then
                   let resolution =
                     Resolution.set_local resolution ~reference ~annotation:refined

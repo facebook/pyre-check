@@ -23,7 +23,18 @@ let test_dequalify _ =
   ()
 
 
+let test_make_local _ =
+  assert_equal
+    (make_local (create_immutable ~final:true ~global:true Type.integer))
+    (create_immutable ~final:true ~global:false Type.integer);
+  ()
+
+
 let () =
   "annotation"
-  >::: ["instantiate" >:: test_instantiate; "dequalify" >:: test_dequalify]
+  >::: [
+         "instantiate" >:: test_instantiate;
+         "dequalify" >:: test_dequalify;
+         "make_local" >:: test_make_local;
+       ]
   |> Test.run

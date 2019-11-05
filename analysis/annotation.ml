@@ -106,3 +106,9 @@ let dequalify dequalify_map { annotation; mutability } =
         Immutable { scope; original = Type.dequalify dequalify_map original; final }
   in
   { annotation = Type.dequalify dequalify_map annotation; mutability }
+
+
+let make_local = function
+  | { mutability = Immutable immutable; annotation } ->
+      { annotation; mutability = Immutable { immutable with scope = Local } }
+  | annotation -> annotation

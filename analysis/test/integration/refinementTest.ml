@@ -82,7 +82,180 @@ let test_assert_is_none context =
           self.assertFalse(x is None)
           reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `int`."]
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      from dataclasses import dataclass
+      from typing import Optional, Final
+      class NormalClass():
+        x: Optional[int] = None
+      class ClassWithFinalAttribute():
+        def __init__(self, x: Optional[int]) -> None:
+          self.x: Final[Optional[int]] = x
+      @dataclass
+      class UnfrozenDataClass():
+        x: Optional[int]
+      @dataclass(frozen=True)
+      class FrozenDataClass():
+        x: Optional[int]
+      class ReadOnlyPropertyClass():
+        state: bool = True
+        @property
+        def x(self) -> Optional[int]:
+          self.state = not self.state
+          if self.state:
+            return None
+          else:
+            return 8
+      def foo() -> None:
+        normal_class: Final[NormalClass]
+        class_with_final_attribute: Final[ClassWithFinalAttribute]
+        unfrozen_dataclass: Final[UnfrozenDataClass]
+        frozen_dataclass: Final[FrozenDataClass]
+        read_only_property_class: Final[ReadOnlyPropertyClass]
+        if normal_class.x is not None:
+          reveal_type(normal_class.x)
+        if class_with_final_attribute.x is not None:
+          reveal_type(class_with_final_attribute.x)
+        if unfrozen_dataclass.x is not None:
+          reveal_type(unfrozen_dataclass.x)
+        if frozen_dataclass.x is not None:
+          reveal_type(frozen_dataclass.x)
+        if read_only_property_class.x is not None:
+          reveal_type(read_only_property_class.x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `normal_class.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `class_with_final_attribute.x` is `Optional[int]` \
+       (inferred: `int`).";
+      "Revealed type [-1]: Revealed type for `unfrozen_dataclass.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `frozen_dataclass.x` is `Optional[int]` (inferred: \
+       `int`).";
+      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from dataclasses import dataclass
+      from typing import Optional, Final
+      class NormalClass():
+        x: Optional[int] = None
+      class ClassWithFinalAttribute():
+        def __init__(self, x: Optional[int]) -> None:
+          self.x: Final[Optional[int]] = x
+      @dataclass
+      class UnfrozenDataClass():
+        x: Optional[int]
+      @dataclass(frozen=True)
+      class FrozenDataClass():
+        x: Optional[int]
+      class ReadOnlyPropertyClass():
+        state: bool = True
+        @property
+        def x(self) -> Optional[int]:
+          self.state = not self.state
+          if self.state:
+            return None
+          else:
+            return 8
+      def foo() -> None:
+        normal_class: Final[NormalClass] = ...
+        class_with_final_attribute: Final[ClassWithFinalAttribute] = ...
+        unfrozen_dataclass: Final[UnfrozenDataClass] = ...
+        frozen_dataclass: Final[FrozenDataClass] = ...
+        read_only_property_class: Final[ReadOnlyPropertyClass] = ...
+        if normal_class.x is None:
+          reveal_type(normal_class.x)
+        if class_with_final_attribute.x is None:
+          reveal_type(class_with_final_attribute.x)
+        if unfrozen_dataclass.x is None:
+          reveal_type(unfrozen_dataclass.x)
+        if frozen_dataclass.x is None:
+          reveal_type(frozen_dataclass.x)
+        if read_only_property_class.x is None:
+          reveal_type(read_only_property_class.x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `normal_class.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `class_with_final_attribute.x` is `None`.";
+      "Revealed type [-1]: Revealed type for `unfrozen_dataclass.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `frozen_dataclass.x` is `None`.";
+      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `Optional[int]`.";
+    ];
+  assert_type_errors
+    {|
+      from dataclasses import dataclass
+      from typing import Optional, Final
+      class NormalClass():
+        x: float = 3.14
+      class ClassWithFinalAttribute():
+        def __init__(self, x: float) -> None:
+          self.x: Final[float] = x
+      @dataclass
+      class UnfrozenDataClass():
+        x: float
+      @dataclass(frozen=True)
+      class FrozenDataClass():
+        x: float
+      class ReadOnlyPropertyClass():
+        state: bool = True
+        @property
+        def x(self) -> float:
+          self.state = not self.state
+          if self.state:
+            return 8.2
+          else:
+            return 8
+      def foo() -> None:
+        normal_class: Final[NormalClass] = ...
+        class_with_final_attribute: Final[ClassWithFinalAttribute] = ...
+        unfrozen_dataclass: Final[UnfrozenDataClass] = ...
+        frozen_dataclass: Final[FrozenDataClass] = ...
+        read_only_property_class: Final[ReadOnlyPropertyClass] = ...
+        if isinstance(normal_class.x, int):
+          reveal_type(normal_class.x)
+        if isinstance(class_with_final_attribute.x, int):
+          reveal_type(class_with_final_attribute.x)
+        if isinstance(unfrozen_dataclass.x, int):
+          reveal_type(unfrozen_dataclass.x)
+        if isinstance(frozen_dataclass.x, int):
+          reveal_type(frozen_dataclass.x)
+        if isinstance(read_only_property_class.x, int):
+          reveal_type(read_only_property_class.x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `normal_class.x` is `float`.";
+      "Revealed type [-1]: Revealed type for `class_with_final_attribute.x` is `int`.";
+      "Revealed type [-1]: Revealed type for `unfrozen_dataclass.x` is `float`.";
+      "Revealed type [-1]: Revealed type for `frozen_dataclass.x` is `int`.";
+      "Revealed type [-1]: Revealed type for `read_only_property_class.x` is `float`.";
+    ];
+  assert_type_errors
+    {|
+      from dataclasses import dataclass
+      from typing import Optional, Final
+      @dataclass(frozen=True)
+      class InnerFrozenDataClass():
+        x: Optional[int]
+      @dataclass(frozen=True)
+      class FrozenDataClass():
+        inner: InnerFrozenDataClass
+      @dataclass
+      class UnfrozenDataClass():
+        inner: InnerFrozenDataClass
+      def foo() -> None:
+        unfrozen_dataclass: Final[UnfrozenDataClass] = ...
+        frozen_dataclass: Final[FrozenDataClass] = ...
+        if unfrozen_dataclass.inner.x is not None:
+          reveal_type(unfrozen_dataclass.inner.x)
+        if frozen_dataclass.inner.x is not None:
+          reveal_type(frozen_dataclass.inner.x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `unfrozen_dataclass.inner.x` is `Optional[int]`.";
+      "Revealed type [-1]: Revealed type for `frozen_dataclass.inner.x` is `Optional[int]` \
+       (inferred: `int`).";
+    ];
+  ()
 
 
 let test_check_global_refinement context =
