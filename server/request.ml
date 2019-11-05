@@ -826,16 +826,12 @@ let process_type_query_request
               Node.value =
                 {
                   Annotated.Attribute.annotation =
-                    {
-                      annotation =
-                        Callable
-                          {
-                            implementation = { annotation; parameters = Defined parameters; _ };
-                            kind = Named name;
-                            _;
-                          };
-                      _;
-                    };
+                    Callable
+                      {
+                        implementation = { annotation; parameters = Defined parameters; _ };
+                        kind = Named name;
+                        _;
+                      };
                   _;
                 };
               _;
