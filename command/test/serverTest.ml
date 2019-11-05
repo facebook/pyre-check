@@ -479,6 +479,32 @@ let test_query context =
     ~query:"normalize_type(test.A)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
   assert_type_query_response
+    ~source:
+      {|
+      class C:
+        def C.foo(self) -> int: ...
+        def C.bar(self, x: int) -> str: ...
+    |}
+    ~query:"methods(test.C)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundMethods
+          [
+            {
+              Protocol.TypeQuery.name = "bar";
+              parameters = [Type.Primitive "self"; Type.integer];
+              return_annotation = Type.string;
+            };
+            {
+              Protocol.TypeQuery.name = "foo";
+              parameters = [Type.Primitive "self"];
+              return_annotation = Type.integer;
+            };
+          ]));
+  assert_type_query_response
+    ~source:""
+    ~query:"methods(Unknown)"
+    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
+  assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_position('test.py', 1, 4)"
     (Protocol.TypeQuery.Response

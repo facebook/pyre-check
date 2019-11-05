@@ -820,6 +820,45 @@ let process_type_query_request
         let right = parse_and_validate right in
         GlobalResolution.meet global_resolution left right
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
+    | TypeQuery.Methods annotation ->
+        let to_method = function
+          | {
+              Node.value =
+                {
+                  Annotated.Attribute.annotation =
+                    {
+                      annotation =
+                        Callable
+                          {
+                            implementation = { annotation; parameters = Defined parameters; _ };
+                            kind = Named name;
+                            _;
+                          };
+                      _;
+                    };
+                  _;
+                };
+              _;
+            } ->
+              let parameters =
+                parameters
+                |> List.filter_map ~f:Type.Callable.Parameter.annotation
+                |> fun parameters -> Type.Primitive "self" :: parameters
+              in
+              let return_annotation = annotation in
+              Some { TypeQuery.name = Reference.last name; parameters; return_annotation }
+          | _ -> None
+        in
+        parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)
+        |> GlobalResolution.class_definition global_resolution
+        >>| Annotated.Class.create
+        >>| Annotated.Class.attributes ~resolution:global_resolution
+        >>| List.filter_map ~f:to_method
+        >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
+        |> Option.value
+             ~default:
+               (TypeQuery.Error
+                  (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
