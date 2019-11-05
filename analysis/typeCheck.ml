@@ -2961,12 +2961,9 @@ module State (Context : Context) = struct
         let is_final = original_annotation >>| Type.is_final |> Option.value ~default:false in
         let original_annotation =
           original_annotation
+          >>| (fun annotation -> Type.final_value annotation |> Option.value ~default:annotation)
           >>| fun annotation ->
-          ( if Type.is_final annotation then
-              Type.final_value annotation
-          else
-            Type.class_variable_value annotation )
-          |> Option.value ~default:annotation
+          Type.class_variable_value annotation |> Option.value ~default:annotation
         in
         let parsed =
           GlobalResolution.parse_annotation

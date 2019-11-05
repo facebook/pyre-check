@@ -131,10 +131,7 @@ let test_final_attributes context =
           def foo(self) -> None:
               self.x = 100
     |}
-    [
-      "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
-      "Undefined error [1]: Problem with analysis.";
-    ];
+    ["Invalid assignment [41]: Cannot reassign final attribute `self.x`."];
   assert_type_errors
     {|
       from typing import Final
@@ -144,7 +141,23 @@ let test_final_attributes context =
 
       C.x = 100
     |}
-    ["Invalid assignment [41]: Cannot reassign final attribute `C.x`."]
+    ["Invalid assignment [41]: Cannot reassign final attribute `C.x`."];
+  assert_type_errors
+    {|
+      from typing import ClassVar
+      from typing_extensions import Final
+      class z:
+          def __init__(self) -> None:
+              self.a = "asdf"
+      class x:
+          y: Final[ClassVar[z]] = z()
+      reveal_type(x.y.a)
+      x.y = z()
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `test.x.y.a` is `str`.";
+      "Invalid assignment [41]: Cannot reassign final attribute `x.y`.";
+    ]
 
 
 let () =

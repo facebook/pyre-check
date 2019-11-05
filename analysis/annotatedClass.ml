@@ -271,19 +271,21 @@ let create_attribute
     | Simple { annotation; value; frozen = _; toplevel; implicit; primitive } ->
         let parsed_annotation = annotation >>| GlobalResolution.parse_annotation resolution in
         (* Account for class attributes. *)
-        let annotation, class_attribute =
+        let annotation, final, class_attribute =
           parsed_annotation
           >>| (fun annotation ->
-                let annotation_value =
-                  if Type.is_final annotation then
-                    Type.final_value annotation
-                  else
-                    Type.class_variable_value annotation
+                let is_final, annotation =
+                  match Type.final_value annotation with
+                  | Some annotation -> true, annotation
+                  | None -> false, annotation
                 in
-                match annotation_value with
-                | Some annotation -> Some annotation, true
-                | _ -> Some annotation, false)
-          |> Option.value ~default:(None, default_class_attribute)
+                let is_class_variable, annotation =
+                  match Type.class_variable_value annotation with
+                  | Some annotation -> true, annotation
+                  | None -> false, annotation
+                in
+                Some annotation, is_final, is_class_variable)
+          |> Option.value ~default:(None, false, default_class_attribute)
         in
         (* Handle enumeration attributes. *)
         let annotation, value, class_attribute =
@@ -304,7 +306,6 @@ let create_attribute
           else
             annotation, value, class_attribute
         in
-        let final = parsed_annotation >>| Type.is_final |> Option.value ~default:false in
         let annotation =
           match annotation, value with
           | Some annotation, Some _ ->
