@@ -3824,12 +3824,7 @@ module State (Context : Context) = struct
                   Node.value =
                     Call
                       {
-                        callee =
-                          {
-                            Node.value =
-                              Name (Name.Identifier ("type" as type_refinement_function_name));
-                            _;
-                          };
+                        callee = { Node.value = Name (Name.Identifier "type"); _ };
                         arguments = [{ Call.Argument.name = None; value }];
                       };
                   _;
@@ -3845,13 +3840,7 @@ module State (Context : Context) = struct
                   Node.value =
                     Call
                       {
-                        callee =
-                          {
-                            Node.value =
-                              Name
-                                (Name.Identifier ("isinstance" as type_refinement_function_name));
-                            _;
-                          };
+                        callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
                         arguments =
                           [
                             { Call.Argument.name = None; value };
@@ -3861,57 +3850,34 @@ module State (Context : Context) = struct
                   _;
                 };
             } -> (
-            let annotation = parse_refinement_annotation annotation_expression in
+            let expected = parse_refinement_annotation annotation_expression in
             let contradiction_error =
-              match annotation with
-              | Type.Top ->
-                  let { resolved; _ } =
-                    forward_expression ~state ~expression:annotation_expression
-                  in
-                  Some
-                    (Error.create
-                       ~location:(Node.location test)
-                       ~kind:
-                         (Error.IncompatibleParameterType
-                            {
-                              name = None;
-                              position = 1;
-                              callee = Some (Reference.create type_refinement_function_name);
-                              mismatch =
-                                {
-                                  Error.expected = Type.meta (Type.variable "T");
-                                  actual = resolved;
-                                  due_to_invariance = false;
-                                };
-                            })
-                       ~define:Context.define)
-              | expected ->
-                  let { resolved; _ } = forward_expression ~state ~expression:value in
-                  if
-                    Type.is_unbound resolved
-                    || Type.is_unknown resolved
-                    || Type.is_any resolved
-                    || not
-                         (GlobalResolution.less_or_equal
-                            global_resolution
-                            ~left:resolved
-                            ~right:expected)
-                  then
-                    None
-                  else
-                    Some
-                      (Error.create
-                         ~location:(Node.location test)
-                         ~kind:
-                           (Error.ImpossibleAssertion
-                              { statement; expression = value; annotation = resolved })
-                         ~define:Context.define)
+              let { resolved; _ } = forward_expression ~state ~expression:value in
+              if
+                Type.is_unbound resolved
+                || Type.is_unknown resolved
+                || Type.is_any resolved
+                || not
+                     (GlobalResolution.less_or_equal
+                        global_resolution
+                        ~left:resolved
+                        ~right:expected)
+              then
+                None
+              else
+                Some
+                  (Error.create
+                     ~location:(Node.location test)
+                     ~kind:
+                       (Error.ImpossibleAssertion
+                          { statement; expression = value; annotation = resolved })
+                     ~define:Context.define)
             in
             let resolve ~reference =
               match Resolution.get_local resolution ~reference with
               | Some { annotation = previous_annotation; _ } ->
                   let { not_consistent_with_boundary; _ } =
-                    partition previous_annotation ~boundary:annotation
+                    partition previous_annotation ~boundary:expected
                   in
                   not_consistent_with_boundary
                   >>| Annotation.create

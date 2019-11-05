@@ -159,7 +159,17 @@ let test_check_isinstance context =
       def foo(x: object, types: Union[Tuple[Type[int], ...], Type[object]]) -> None:
         isinstance(x, types)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      def foo(x: int, y: int) -> None:
+        isinstance(x, y)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
+       typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd anonymous parameter to call \
+       `isinstance` but got `int`.";
+    ]
 
 
 let () = "isinstance" >::: ["check_isinstance" >:: test_check_isinstance] |> Test.run
