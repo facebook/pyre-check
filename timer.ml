@@ -20,3 +20,5 @@ let span start_time =
 let stop start_time = start_time |> span
 
 let stop_in_ms start_time = stop start_time |> Time.Span.to_ms |> Int.of_float
+
+let stop_in_us start_time = stop start_time |> Time.Span.to_us |> Int.of_float

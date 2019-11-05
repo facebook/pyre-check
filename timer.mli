@@ -14,3 +14,5 @@ val start : unit -> t
 val stop : t -> Time.Span.t
 
 val stop_in_ms : t -> int
+
+val stop_in_us : t -> int

@@ -134,24 +134,24 @@ let performance
     ?(normals = [])
     ()
   =
-  let milliseconds = Timer.stop_in_ms timer in
+  let microseconds = Timer.stop_in_us timer in
   let randomly_log_every =
     match always_log_time_threshold with
     | Some threshold ->
-        let threshold_milliseconds = Int.of_float (threshold *. 1000.0) in
-        if milliseconds > threshold_milliseconds then None else randomly_log_every
+        let threshold_microseconds = Int.of_float (threshold *. 1000000.0) in
+        if microseconds > threshold_microseconds then None else randomly_log_every
     | None -> randomly_log_every
   in
-  Log.log ~section "%s: %fs" (String.capitalize name) (Int.to_float milliseconds /. 1000.0);
+  Log.log ~section "%s: %fs" (String.capitalize name) (Int.to_float microseconds /. 1000000.0);
   Profiling.log_performance_event (fun () ->
       let tags =
         match phase_name with
         | None -> normals
         | Some name -> ("phase_name", name) :: normals
       in
-      Profiling.Event.create name ~event_type:(Duration milliseconds) ~tags);
+      Profiling.Event.create name ~event_type:(Duration microseconds) ~tags);
   sample
-    ~integers:(("elapsed_time", milliseconds) :: integers)
+    ~integers:(("elapsed_time", microseconds) :: integers)
     ~normals:(("name", name) :: normals)
     ()
   |> log ~flush ?randomly_log_every category

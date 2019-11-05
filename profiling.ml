@@ -57,7 +57,7 @@ let log_memory_event event_creator =
 let track_duration_event ?(tags = []) ~f name =
   let timer = Timer.start () in
   let result = f () in
-  let duration = Timer.stop_in_ms timer in
+  let duration = Timer.stop_in_us timer in
   let create_event () = Event.create name ~tags ~event_type:(Duration duration) in
   log_performance_event create_event;
   result
