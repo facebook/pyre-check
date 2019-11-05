@@ -106,7 +106,7 @@ module OrderImplementation = struct
             Node.value =
               {
                 AnnotatedAttribute.name = "__call__";
-                annotation = { annotation = Type.Callable _ as annotation; _ };
+                annotation = Type.Callable _ as annotation;
                 _;
               };
             _;
@@ -1410,17 +1410,18 @@ module OrderImplementation = struct
                       [
                         Ast.Node.create_with_default_location
                           {
-                            AnnotatedAttribute.annotation = Annotation.create callable;
+                            AnnotatedAttribute.annotation = callable;
+                            original_annotation = callable;
                             abstract = false;
                             async = false;
                             class_attribute = false;
                             defined = true;
-                            final = false;
                             initialized = true;
                             name = "__call__";
-                            property = None;
                             parent = callable;
                             static = false;
+                            visibility = ReadWrite;
+                            property = false;
                             value =
                               Ast.Node.create_with_default_location Expression.Expression.Ellipsis;
                           };

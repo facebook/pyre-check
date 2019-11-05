@@ -157,7 +157,31 @@ let test_final_attributes context =
     [
       "Revealed type [-1]: Revealed type for `test.x.y.a` is `str`.";
       "Invalid assignment [41]: Cannot reassign final attribute `x.y`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+      def foo() -> None:
+        x: Final[int] = 1
+        x = 2
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+  assert_type_errors
+    {|
+      from typing import Final
+      def foo() -> None:
+        x: Final = 1
+        reveal_type(x)
+        x = 2
+    |}
+    (* TODO(T56724271) Support this form *)
+    [
+      "Invalid type parameters [24]: Generic type `Final` expects 1 type parameter.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Any` (inferred: \
+       `typing_extensions.Literal[1]`).";
+      "Invalid assignment [41]: Cannot reassign final attribute `x`.";
+    ];
+  ()
 
 
 let () =

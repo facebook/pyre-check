@@ -1694,10 +1694,12 @@ let assert_equivalent_attributes ~context source expected =
     let ignore_value_location ({ Annotated.Attribute.value; _ } as attribute) =
       { attribute with value = Node.create_with_default_location value.value }
     in
-    let ignore_callable_define_location ({ Annotated.Attribute.annotation; _ } as attribute) =
-      let annotation =
+    let ignore_callable_define_location
+        ({ Annotated.Attribute.annotation; original_annotation; _ } as attribute)
+      =
+      let annotation, original_annotation =
         match annotation with
-        | { Annotation.annotation = Callable ({ implementation; overloads; _ } as callable); _ } ->
+        | Callable ({ implementation; overloads; _ } as callable) ->
             let callable =
               let remove callable = { callable with Type.Callable.define_location = None } in
               {
@@ -1706,10 +1708,10 @@ let assert_equivalent_attributes ~context source expected =
                 overloads = List.map overloads ~f:remove;
               }
             in
-            { annotation with annotation = Callable callable; mutability = Mutable }
-        | _ -> annotation
+            Type.Callable callable, Type.Callable callable
+        | _ -> annotation, original_annotation
       in
-      { attribute with annotation }
+      { attribute with annotation; original_annotation }
     in
     Option.value_exn (GlobalResolution.class_definition global_resolution class_type)
     |> Annotated.Class.create
@@ -1742,7 +1744,7 @@ let assert_equivalent_attributes ~context source expected =
     in
     let simple_print l =
       let simple { Annotated.Attribute.annotation; name; _ } =
-        Printf.sprintf "%s, %s" name (Annotation.show annotation)
+        Printf.sprintf "%s, %s" name (Type.show annotation)
       in
       List.map l ~f:simple |> String.concat ~sep:"\n"
     in

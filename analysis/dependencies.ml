@@ -420,7 +420,7 @@ module Callgraph = struct
         | None -> ()
       in
       let register (attribute, instantiated) =
-        if Option.is_some (Annotated.Attribute.property attribute) then
+        if Annotated.Attribute.property attribute then
           register_attribute_callable instantiated attribute
         (* As the callgraph is an overapproximation, we also have to consider property calls from
            optional attributes.*)
@@ -440,7 +440,7 @@ module Callgraph = struct
                       ~name
                       ~instantiated
                   in
-                  if Option.is_some (Annotated.Attribute.property attribute) then
+                  if Annotated.Attribute.property attribute then
                     register_attribute_callable
                       ~is_optional_class_attribute:true
                       instantiated

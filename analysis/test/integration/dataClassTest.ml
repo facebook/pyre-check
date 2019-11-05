@@ -109,6 +109,19 @@ let test_check_data_class context =
             }
     |}
     [];
+  assert_type_errors
+    {|
+      from dataclasses import dataclass
+      from typing import Dict, Any
+      @dataclass(frozen=True)
+      class Base:
+        x: float
+      @dataclass(frozen=True)
+      class Child(Base):
+        x: int = 1
+        y: str
+    |}
+    [];
   ()
 
 

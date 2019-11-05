@@ -1129,17 +1129,20 @@ module State (Context : Context) = struct
                     ~name:(StatementDefine.unqualified_name define)
                   >>| fun overridden_attribute ->
                   let errors =
-                    if Attribute.final overridden_attribute then
-                      let parent = overridden_attribute |> Attribute.parent |> Type.show in
-                      let error =
-                        Error.create
-                          ~location
-                          ~kind:(Error.InvalidOverride { parent; decorator = Final })
-                          ~define:Context.define
-                      in
-                      ErrorMap.add ~errors error
-                    else
-                      errors
+                    match overridden_attribute with
+                    | {
+                     Node.value = { visibility = ReadOnly (Refinable { overridable = false }); _ };
+                     _;
+                    } ->
+                        let parent = overridden_attribute |> Attribute.parent |> Type.show in
+                        let error =
+                          Error.create
+                            ~location
+                            ~kind:(Error.InvalidOverride { parent; decorator = Final })
+                            ~define:Context.define
+                        in
+                        ErrorMap.add ~errors error
+                    | _ -> errors
                   in
                   let errors =
                     if
@@ -3125,22 +3128,28 @@ module State (Context : Context) = struct
               let state =
                 match reference with
                 | Some reference ->
-                    let check_global_final_reassignment state =
-                      if Annotation.is_final target_annotation then
-                        let kind = Error.InvalidAssignment (FinalAttribute reference) in
-                        emit_error ~state ~location ~kind
+                    let check_final_reassignment state =
+                      let error () =
+                        emit_error
+                          ~state
+                          ~location
+                          ~kind:(Error.InvalidAssignment (FinalAttribute reference))
+                      in
+                      let read_only_non_property_attribute =
+                        match attribute >>| fst >>| Node.value with
+                        | Some { AnnotatedAttribute.visibility = ReadOnly _; property = false; _ }
+                          ->
+                            true
+                        | _ -> false
+                      in
+                      if read_only_non_property_attribute && Option.is_none original_annotation
+                      then
+                        error ()
+                      else if Option.is_none attribute && Annotation.is_final target_annotation
+                      then
+                        error ()
                       else
                         state
-                    in
-                    let check_class_final_reassignment state =
-                      match attribute with
-                      | Some ({ Node.value = { Annotated.Attribute.final = true; _ }; _ }, _)
-                        when Option.is_none original_annotation ->
-                          emit_error
-                            ~state
-                            ~location
-                            ~kind:(Error.InvalidAssignment (FinalAttribute reference))
-                      | _ -> state
                     in
                     let check_assign_class_variable_on_instance state =
                       match resolved_base, attribute with
@@ -3180,7 +3189,11 @@ module State (Context : Context) = struct
                     let check_is_readonly_property state =
                       match attribute with
                       | Some
-                          ( { Node.value = { Annotated.Attribute.property = Some ReadOnly; _ }; _ },
+                          ( {
+                              Node.value =
+                                { Annotated.Attribute.visibility = ReadOnly _; property = true; _ };
+                              _;
+                            },
                             _ )
                         when Option.is_none original_annotation ->
                           emit_error
@@ -3209,8 +3222,7 @@ module State (Context : Context) = struct
                                  })
                       | _ -> state
                     in
-                    check_global_final_reassignment state
-                    |> check_class_final_reassignment
+                    check_final_reassignment state
                     |> check_assign_class_variable_on_instance
                     |> check_final_is_outermost_qualifier
                     |> check_is_readonly_property
@@ -4334,7 +4346,7 @@ module State (Context : Context) = struct
                   (* TODO(T54083014): Don't error on properties overriding attributes, even if they
                      are read-only and therefore not marked as initialized on the attribute object.
                      We should error in the future that this is an inconsistent override. *)
-                  initialized || Option.is_some property
+                  initialized || property
                 in
                 List.filter attributes ~f:is_initialized
                 |> List.map ~f:AnnotatedAttribute.name
@@ -4361,7 +4373,7 @@ module State (Context : Context) = struct
             in
             uninitialized_attributes
             |> List.filter_map ~f:(fun (name, (annotation, original_definition)) ->
-                   let expected = Annotation.annotation annotation in
+                   let expected = annotation in
                    if Type.is_top expected then
                      None
                    else
@@ -4463,12 +4475,17 @@ module State (Context : Context) = struct
               definition
             |> List.filter_map
                  ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; location } ->
-                   let actual = Annotation.annotation annotation in
+                   let actual = annotation in
                    let check_override
-                       ( { Node.value = { Attribute.annotation; name; final; _ }; _ } as
+                       ( { Node.value = { Attribute.annotation; name; visibility; _ }; _ } as
                        overridden_attribute )
                      =
-                     let expected = Annotation.annotation annotation in
+                     let expected = annotation in
+                     let overridable =
+                       match visibility with
+                       | ReadOnly (Refinable { overridable }) -> overridable
+                       | _ -> true
+                     in
                      if
                        ( GlobalResolution.less_or_equal
                            global_resolution
@@ -4476,12 +4493,12 @@ module State (Context : Context) = struct
                            ~right:expected
                        || Type.is_top actual
                        || Type.contains_variable actual )
-                       && not final
+                       && overridable
                      then (* TODO(T53997072): Support type variable instantiation for overrides. *)
                        None
                      else
                        let kind =
-                         if final then
+                         if not overridable then
                            Error.InvalidAssignment (FinalAttribute (Reference.create name))
                          else
                            Error.InconsistentOverride

@@ -726,24 +726,26 @@ let test_class_attributes context =
       actual_attribute
   in
   let create_expected_attribute
-      ?(property = None)
+      ?(property = false)
+      ?(visibility = Attribute.ReadWrite)
       ?(parent = Type.Primitive "test.Attributes")
       ?(initialized = true)
       name
       callable
     =
+    let annotation = parse_callable callable in
     {
-      Class.Attribute.annotation =
-        Annotation.create_immutable ~global:true (parse_callable callable);
+      Class.Attribute.annotation;
+      original_annotation = annotation;
       abstract = false;
       async = false;
       class_attribute = false;
       defined = true;
-      final = false;
       initialized;
       name;
       parent;
       property;
+      visibility;
       static = false;
       value = Node.create_with_default_location Expression.Ellipsis;
     }
@@ -776,7 +778,12 @@ let test_class_attributes context =
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
     ~attribute_name:"property"
     ~expected_attribute:
-      (create_expected_attribute ~initialized:true ~property:(Some ReadOnly) "property" "str");
+      (create_expected_attribute
+         ~initialized:true
+         ~property:true
+         ~visibility:(ReadOnly Unrefinable)
+         "property"
+         "str");
   ()
 
 

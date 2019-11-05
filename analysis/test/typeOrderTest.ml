@@ -34,17 +34,19 @@ let concrete_connect ?parameters =
 
 let parse_attributes ~parse_annotation ~class_name =
   let parse_attribute (name, annotation) =
+    let annotation = parse_annotation annotation in
     {
-      Attribute.annotation = Annotation.create (parse_annotation annotation);
+      Attribute.annotation;
+      original_annotation = annotation;
+      visibility = ReadWrite;
       abstract = false;
       async = false;
       class_attribute = false;
       defined = true;
-      final = false;
       initialized = true;
       name;
       parent = Type.Primitive class_name;
-      property = None;
+      property = false;
       static = false;
       value = Ast.Node.create_with_default_location Expression.Expression.Ellipsis;
     }

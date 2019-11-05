@@ -266,9 +266,9 @@ let create_attribute
     { Node.location; value = { StatementAttribute.name = attribute_name; kind } }
   =
   let class_annotation = annotation parent in
-  let annotation, value, class_attribute, final =
+  let annotation, original_annotation, value, class_attribute, visibility =
     match kind with
-    | Simple { annotation; value; frozen = _; toplevel; implicit; primitive } ->
+    | Simple { annotation; value; frozen; toplevel; implicit; primitive } ->
         let parsed_annotation = annotation >>| GlobalResolution.parse_annotation resolution in
         (* Account for class attributes. *)
         let annotation, final, class_attribute =
@@ -306,15 +306,10 @@ let create_attribute
           else
             annotation, value, class_attribute
         in
-        let annotation =
+        let annotation, original =
           match annotation, value with
-          | Some annotation, Some _ ->
-              Annotation.create_immutable
-                ~global:true
-                ~final
-                ~original:(Some annotation)
-                annotation
-          | Some annotation, None -> Annotation.create_immutable ~global:true ~final annotation
+          | Some annotation, Some _ -> annotation, annotation
+          | Some annotation, None -> annotation, annotation
           | None, Some value ->
               let literal_value_annotation = GlobalResolution.resolve_literal resolution value in
               let is_dataclass_attribute =
@@ -329,17 +324,21 @@ let create_attribute
                 && (not is_dataclass_attribute)
                 && toplevel
               then (* Treat literal attributes as having been explicitly annotated. *)
-                Annotation.create_immutable ~global:true ~final literal_value_annotation
+                literal_value_annotation, literal_value_annotation
               else
-                Annotation.create_immutable
-                  ~global:true
-                  ~final
-                  ~original:(Some Type.Top)
-                  (GlobalResolution.parse_annotation resolution value)
-          | _ -> Annotation.create_immutable ~global:true ~final Type.Top
+                GlobalResolution.parse_annotation resolution value, Type.Top
+          | _ -> Type.Top, Type.Top
         in
-        annotation, value, class_attribute, final
-    | Method { signatures; static = _; final } ->
+        let visibility =
+          if final then
+            Attribute.ReadOnly (Refinable { overridable = false })
+          else if frozen then
+            Attribute.ReadOnly (Refinable { overridable = true })
+          else
+            Attribute.ReadWrite
+        in
+        annotation, original, value, class_attribute, visibility
+    | Method { signatures; final; _ } ->
         (* Handle Callables *)
         let annotation =
           let instantiated =
@@ -457,14 +456,16 @@ let create_attribute
               Some (Type.Callable { callable with implementation; overloads = [] })
           | _ -> annotation
         in
-        let annotation =
-          match annotation with
-          | Some annotation -> Annotation.create_immutable ~global:true ~final annotation
-          | None -> Annotation.create_immutable ~global:true ~final Type.Top
+        let annotation = Option.value annotation ~default:Type.Top in
+        let visibility =
+          if final then
+            Attribute.ReadOnly (Refinable { overridable = false })
+          else
+            ReadWrite
         in
-        annotation, None, default_class_attribute, final
+        annotation, annotation, None, default_class_attribute, visibility
     | Property { kind; class_property; _ } ->
-        let annotation =
+        let annotation, original, visibility =
           match kind with
           | ReadWrite { setter_annotation; getter_annotation } ->
               let current =
@@ -476,21 +477,22 @@ let create_attribute
                 setter_annotation
                 >>| GlobalResolution.parse_annotation resolution
                 |> Option.value ~default:Type.Top
-                |> Option.some
               in
-              Annotation.create_immutable ~global:true ~final:false ~original current
+              current, original, Attribute.ReadWrite
           | ReadOnly { getter_annotation } ->
-              getter_annotation
-              >>| GlobalResolution.parse_annotation resolution
-              |> Option.value ~default:Type.Top
-              |> Annotation.create_immutable ~global:true ~final:false
+              let annotation =
+                getter_annotation
+                >>| GlobalResolution.parse_annotation resolution
+                |> Option.value ~default:Type.Top
+              in
+              annotation, annotation, Attribute.ReadOnly Unrefinable
         in
         (* Special case properties with type variables. *)
         (* TODO(T44676629): handle this correctly *)
-        let annotation =
+        let annotation, original =
           let free_variables =
             let variables =
-              Annotation.annotation annotation
+              annotation
               |> Type.Variable.all_free_variables
               |> List.filter_map ~f:(function
                      | Type.Variable.Unary variable -> Some (Type.Variable variable)
@@ -513,25 +515,20 @@ let create_attribute
                   Map.set map ~key:variable ~data:instantiated)
               |> Map.find
             in
-            Annotation.annotation annotation
-            |> Type.instantiate ~constraints
-            |> Annotation.create_immutable ~global:true ~final:false
+            let annotation = Type.instantiate ~constraints annotation in
+            annotation, annotation
           else
-            annotation
+            annotation, original
         in
-        annotation, None, class_property, false
+        annotation, original, None, class_property, visibility
   in
   {
     Node.location;
     value =
       {
-        (* We need to distinguish between unannotated attributes and non-existent ones - ensure
-           that the annotation is viewed as mutable to distinguish from user-defined globals. *)
-        AnnotatedAttribute.annotation =
-          ( if not defined then
-              { annotation with Annotation.mutability = Annotation.Mutable }
-          else
-            annotation );
+        AnnotatedAttribute.annotation;
+        original_annotation;
+        visibility;
         abstract =
           ( match kind with
           | Method { signatures; _ } ->
@@ -552,18 +549,17 @@ let create_attribute
           | Method _
           | Property _ ->
               true );
-        final;
         name = attribute_name;
         parent = class_annotation;
-        property =
-          ( match kind with
-          | Property { kind = ReadWrite _; _ } -> Some AnnotatedAttribute.ReadWrite
-          | Property { kind = ReadOnly _; _ } -> Some AnnotatedAttribute.ReadOnly
-          | Simple { frozen; _ } when frozen -> Some AnnotatedAttribute.ReadOnly
-          | _ -> None );
         static =
           ( match kind with
           | Method { static; _ } -> static
+          | _ -> false );
+        property =
+          ( match kind with
+          | Simple { frozen = true; _ }
+          | Property _ ->
+              true
           | _ -> false );
         value = Option.value value ~default:(Node.create Expression.Ellipsis ~location);
       };
@@ -873,17 +869,18 @@ module ClassDecorators = struct
           let make_attribute (attribute_name, annotation) =
             Node.create_with_default_location
               {
-                AnnotatedAttribute.annotation = Annotation.create_immutable ~global:true annotation;
+                AnnotatedAttribute.annotation;
+                original_annotation = annotation;
                 abstract = false;
                 async = false;
                 class_attribute = false;
                 defined = true;
-                final = false;
                 initialized = true;
                 name = attribute_name;
                 parent = Type.Primitive (Reference.show name);
-                property = None;
+                visibility = ReadWrite;
                 static = false;
+                property = false;
                 value = Node.create_with_default_location Expression.Ellipsis;
               }
           in
@@ -949,44 +946,46 @@ let rec attribute_table
           Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in
         let add_placeholder_stub_inheritances () =
-          if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__init__") then
+          if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__init__") then (
+            let annotation = Type.Callable.create ~annotation:Type.none () in
             AnnotatedAttribute.Table.add
               table
               (Node.create_with_default_location
                  {
-                   AnnotatedAttribute.annotation =
-                     Annotation.create (Type.Callable.create ~annotation:Type.none ());
+                   Attribute.annotation;
+                   original_annotation = annotation;
                    abstract = false;
                    async = false;
                    class_attribute = false;
                    defined = true;
-                   final = false;
                    initialized = true;
                    name = "__init__";
                    parent = Primitive (Reference.show name);
-                   property = None;
+                   visibility = ReadWrite;
                    static = true;
+                   property = false;
                    value = Node.create_with_default_location Expression.Ellipsis;
                  });
-          if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__getattr__") then
-            AnnotatedAttribute.Table.add
-              table
-              (Node.create_with_default_location
-                 {
-                   AnnotatedAttribute.annotation =
-                     Annotation.create (Type.Callable.create ~annotation:Type.Any ());
-                   abstract = false;
-                   async = false;
-                   class_attribute = false;
-                   defined = true;
-                   final = false;
-                   initialized = true;
-                   name = "__getattr__";
-                   parent = Primitive (Reference.show name);
-                   property = None;
-                   static = true;
-                   value = Node.create_with_default_location Expression.Ellipsis;
-                 })
+            if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__getattr__") then
+              let annotation = Type.Callable.create ~annotation:Type.Any () in
+              AnnotatedAttribute.Table.add
+                table
+                (Node.create_with_default_location
+                   {
+                     AnnotatedAttribute.annotation;
+                     original_annotation = annotation;
+                     abstract = false;
+                     async = false;
+                     class_attribute = false;
+                     defined = true;
+                     initialized = true;
+                     name = "__getattr__";
+                     parent = Primitive (Reference.show name);
+                     visibility = ReadWrite;
+                     static = true;
+                     property = false;
+                     value = Node.create_with_default_location Expression.Ellipsis;
+                   }) )
         in
         add_actual ();
         if

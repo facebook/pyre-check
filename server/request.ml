@@ -486,7 +486,6 @@ let process_type_query_request
         TypeQuery.Response (TypeQuery.Errors errors)
     | TypeQuery.Attributes annotation ->
         let to_attribute { Node.value = { Annotated.Class.Attribute.name; annotation; _ }; _ } =
-          let annotation = Annotation.annotation annotation in
           { TypeQuery.name; annotation }
         in
         parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)

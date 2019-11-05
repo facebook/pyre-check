@@ -6,22 +6,28 @@
 open Core
 open Ast
 
-type property =
-  | ReadOnly
+type read_only =
+  | Refinable of { overridable: bool }
+  | Unrefinable
+[@@deriving eq, show, compare, sexp]
+
+type visibility =
+  | ReadOnly of read_only
   | ReadWrite
 [@@deriving eq, show, compare, sexp]
 
 type attribute = {
   abstract: bool;
-  annotation: Annotation.t;
+  annotation: Type.t;
+  original_annotation: Type.t;
   async: bool;
   class_attribute: bool;
   defined: bool;
-  final: bool;
   initialized: bool;
   name: Identifier.t;
   parent: Type.t;
-  property: property option;
+  visibility: visibility;
+  property: bool;
   static: bool;
   value: Expression.t;
 }
@@ -31,11 +37,29 @@ type t = attribute Node.t [@@deriving eq, show]
 
 let name { Node.value = { name; _ }; _ } = name
 
-let annotation { Node.value = { annotation; async; _ }; _ } =
-  if async then
-    Annotation.annotation annotation |> Type.awaitable |> Annotation.create
-  else
-    annotation
+let annotation
+    { Node.value = { annotation; original_annotation; async; defined; visibility; _ }; _ }
+  =
+  let annotation, original =
+    if async then
+      Type.awaitable annotation, Type.awaitable original_annotation
+    else
+      annotation, original_annotation
+  in
+  let mutability =
+    if defined then
+      let final =
+        match visibility with
+        | ReadOnly _ -> true
+        | ReadWrite -> false
+      in
+      Annotation.Immutable { scope = Global; original; final }
+    else
+      (* We need to distinguish between unannotated attributes and non-existent ones - ensure that
+         the annotation is viewed as mutable to distinguish from user-defined globals. *)
+      Annotation.Mutable
+  in
+  { Annotation.annotation; mutability }
 
 
 let parent { Node.value = { parent; _ }; _ } = parent
@@ -54,17 +78,23 @@ let abstract { Node.value = { abstract; _ }; _ } = abstract
 
 let async { Node.value = { async; _ }; _ } = async
 
-let final { Node.value = { final; _ }; _ } = final
-
 let static { Node.value = { static; _ }; _ } = static
 
 let property { Node.value = { property; _ }; _ } = property
 
-let instantiate ({ Node.value = { annotation; _ } as attribute; _ } as attribute_node) ~constraints
+let instantiate
+    ({ Node.value = { annotation; original_annotation; _ } as attribute; _ } as attribute_node)
+    ~constraints
   =
+  let instantiate = Type.instantiate ~constraints in
   {
     attribute_node with
-    Node.value = { attribute with annotation = Annotation.instantiate annotation ~constraints };
+    Node.value =
+      {
+        attribute with
+        annotation = instantiate annotation;
+        original_annotation = instantiate original_annotation;
+      };
   }
 
 

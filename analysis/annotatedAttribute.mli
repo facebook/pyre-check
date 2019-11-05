@@ -5,22 +5,28 @@
 
 open Ast
 
-type property =
-  | ReadOnly
+type read_only =
+  | Refinable of { overridable: bool }
+  | Unrefinable
+[@@deriving eq, show, compare, sexp]
+
+type visibility =
+  | ReadOnly of read_only
   | ReadWrite
-[@@deriving eq, show, compare]
+[@@deriving eq, show, compare, sexp]
 
 type attribute = {
   abstract: bool;
-  annotation: Annotation.t;
+  annotation: Type.t;
+  original_annotation: Type.t;
   async: bool;
   class_attribute: bool;
   defined: bool;
-  final: bool;
   initialized: bool;
   name: Identifier.t;
   parent: Type.t;
-  property: property option;
+  visibility: visibility;
+  property: bool;
   static: bool;
   value: Expression.t;
 }
@@ -48,11 +54,9 @@ val defined : t -> bool
 
 val class_attribute : t -> bool
 
-val final : t -> bool
-
 val static : t -> bool
 
-val property : t -> property option
+val property : t -> bool
 
 val instantiate : t -> constraints:(Type.t -> Type.t option) -> t
 
