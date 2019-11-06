@@ -16,8 +16,8 @@ Import Pyre.Expression.ListHelpers.
 (** Typing context (Map from identifiers to types) *)
 Definition TContext := RawState0 Typ.t.
 
-Definition get_context_type (ctx: TContext) (k: string) : option Typ.t :=
-    get0 _ ctx k.
+Definition get_context_type (context: TContext) (id: string) : option Typ.t :=
+    get0 _ context id.
 
 Section TypingExpression.
 
@@ -25,54 +25,54 @@ Import Pyre.Expression.
 
 (** Typing judgement for expressions *)
 Inductive ok : TContext -> Expression.t -> Typ.t -> Prop :=
-  | typFalse: forall ctx, ok ctx False_ Typ.Boolean
-  | typTrue: forall ctx, ok ctx True_ Typ.Boolean
-  | typInteger: forall ctx z, ok ctx (Integer z) Typ.Integer
-  | typString: forall ctx str, ok ctx (String str) Typ.String
-  | typNone: forall  ctx,  ok ctx None Typ.None
-  | tyBop: forall ctx b0 b1 op,
-          ok ctx b0 Typ.Boolean ->
-          ok ctx b1 Typ.Boolean ->
-          ok ctx (BooleanOperator b0 op b1) Typ.Boolean
-  | tyCmp: forall ctx e0 e1 op,
-          ok ctx e0 Typ.Integer ->
-          ok ctx e1 Typ.Integer ->
-          ok ctx (ComparisonOperator e0 op e1) Typ.Boolean
-  | TyList: forall ctx (l: Expression.tlist) ty,
-          ok_list ctx l ty -> 
-          ok ctx (List l) (Typ.List ty)
-  | TyTuple: forall ctx (l: Expression.tlist) lty,
-          ok_tuple ctx l lty ->
-          ok ctx (Tuple l) (Typ.Tuple lty)
-  | TyNot: forall ctx expr,
-          ok ctx expr Typ.Boolean ->
-          ok ctx (UnaryOperator Not expr) Typ.Boolean
-  | TyUnary: forall ctx expr op,
+  | typFalse: forall context, ok context False_ Typ.Boolean
+  | typTrue: forall context, ok context True_ Typ.Boolean
+  | typInteger: forall context z, ok context (Integer z) Typ.Integer
+  | typString: forall context str, ok context (String str) Typ.String
+  | typNone: forall  context,  ok context None Typ.None
+  | tyBop: forall context b0 b1 op,
+          ok context b0 Typ.Boolean ->
+          ok context b1 Typ.Boolean ->
+          ok context (BooleanOperator b0 op b1) Typ.Boolean
+  | tyCmp: forall context e0 e1 op,
+          ok context e0 Typ.Integer ->
+          ok context e1 Typ.Integer ->
+          ok context (ComparisonOperator e0 op e1) Typ.Boolean
+  | TyList: forall context (l: Expression.tlist) ty,
+          ok_list context l ty -> 
+          ok context (List l) (Typ.List ty)
+  | TyTuple: forall context (l: Expression.tlist) lty,
+          ok_tuple context l lty ->
+          ok context (Tuple l) (Typ.Tuple lty)
+  | TyNot: forall context expr,
+          ok context expr Typ.Boolean ->
+          ok context (UnaryOperator Not expr) Typ.Boolean
+  | TyUnary: forall context expr op,
          op <> Not -> 
-         ok ctx expr Typ.Integer ->
-         ok ctx (UnaryOperator op expr) Typ.Integer
-  | TyTernary : forall ctx target test alternative typ,
-          ok ctx target typ ->
-          ok ctx alternative typ ->
-          ok ctx test Typ.Boolean ->
-          ok ctx (Ternary target test alternative) typ
-  | TyId: forall ctx id T,
-          get_context_type ctx id = Some T ->
-          ok  ctx (Id id) T
+         ok context expr Typ.Integer ->
+         ok context (UnaryOperator op expr) Typ.Integer
+  | TyTernary : forall context target test alternative typ,
+          ok context target typ ->
+          ok context alternative typ ->
+          ok context test Typ.Boolean ->
+          ok context (Ternary target test alternative) typ
+  | TyId: forall context id T,
+          get_context_type context id = Some T ->
+          ok  context (Id id) T
 with ok_list: TContext -> Expression.tlist -> Typ.t -> Prop :=
-  | tyListNil : forall ctx typ, ok_list ctx Nil typ
-  | tyListCons : forall ctx hd tl typ,
-          ok ctx hd typ ->
-          ok_list ctx tl typ ->
-          ok_list ctx (Cons hd tl) typ
+  | tyListNil : forall context typ, ok_list context Nil typ
+  | tyListCons : forall context hd tl typ,
+          ok context hd typ ->
+          ok_list context tl typ ->
+          ok_list context (Cons hd tl) typ
 with ok_tuple : TContext -> Expression.tlist -> Typ.tlist -> Prop :=
-  | tyTupleSingl : forall ctx expr typ,
-          ok ctx expr typ ->
-          ok_tuple ctx (Cons expr Nil) (Typ.Cons typ Typ.Nil)
-  | tyTupleCons : forall ctx expr le typ lt,
-          ok ctx expr typ ->
-          ok_tuple ctx le lt ->
-          ok_tuple ctx (Cons expr le) (Typ.Cons typ lt)
+  | tyTupleSingl : forall context expr typ,
+          ok context expr typ ->
+          ok_tuple context (Cons expr Nil) (Typ.Cons typ Typ.Nil)
+  | tyTupleCons : forall context expr le typ lt,
+          ok context expr typ ->
+          ok_tuple context le lt ->
+          ok_tuple context (Cons expr le) (Typ.Cons typ lt)
 .
 
 (* begin hide *)
@@ -82,54 +82,54 @@ Scheme ok_ind' := Induction for ok Sort Prop
 
 Combined Scheme ok_induc from ok_ind', ok_list_ind', ok_tuple_ind'.
 
-Lemma ok_tuple_len: forall ctx le lt,
-    ok_tuple ctx le lt -> List.length le = List.length lt.
+Lemma ok_tuple_len: forall context le lt,
+    ok_tuple context le lt -> List.length le = List.length lt.
 Proof.
-intro ctx.
+intro context.
 induction 1; simpl in *; now intuition.
 Qed.
 
-Lemma ok_tuple_len_pos : forall ctx le lt,
-    ok_tuple ctx le lt -> List.length le > 0.
+Lemma ok_tuple_len_pos : forall context le lt,
+    ok_tuple context le lt -> List.length le > 0.
 Proof.
-intro ctx.
+intro context.
 induction 1; simpl in *; now intuition.
 Qed.
 
-Lemma ok_list_spec: forall ctx l typ,
-    ok_list ctx l typ -> Forall (fun expr => ok ctx expr typ) l.
+Lemma ok_list_spec: forall context l typ,
+    ok_list context l typ -> Forall (fun expr => ok context expr typ) l.
 Proof.
-induction 1 as [ ctx typ | ctx hd tl typ h0 h1 hi ];
+induction 1 as [ context typ | context hd tl typ h0 h1 hi ];
     [ now apply Forall_nil | ].
 now apply Forall_cons.
 Qed.
 
-Lemma ok_list_forall: forall ctx (l: Expression.tlist) typ,
-    Forall (fun expr => ok ctx expr typ) l -> ok_list ctx l typ.
+Lemma ok_list_forall: forall context (l: Expression.tlist) typ,
+    Forall (fun expr => ok context expr typ) l -> ok_list context l typ.
 Proof.
-intro ctx.
+intro context.
 induction l as [ | hd tl hi]; intros typ h; inversion h; subst; clear h.
 - now constructor.
 - apply hi in H2.
   now constructor.
 Qed.
 
-Lemma ok_tuple_spec: forall ctx l lt, ok_tuple ctx l lt ->
+Lemma ok_tuple_spec: forall context l lt, ok_tuple context l lt ->
     List.length l > 0 /\
     List.length l = List.length lt /\
-    Forall (fun et => ok ctx (fst et) (snd et)) (List.combine l lt).
+    Forall (fun et => ok context (fst et) (snd et)) (List.combine l lt).
 Proof.
-induction 1 as [ctx expr typ h | ctx expr typ es et h hs hi ].
+induction 1 as [context expr typ h | context expr typ es et h hs hi ].
 - intuition.
   now apply Forall_cons.
 - now simpl; intuition.
 Qed.
 
-Lemma ok_tuple_forall: forall ctx (l: Expression.tlist) (lt: Typ.tlist),
+Lemma ok_tuple_forall: forall context (l: Expression.tlist) (lt: Typ.tlist),
     List.length l > 0 ->
     List.length l = List.length lt ->
-    Forall (fun et => ok ctx (fst et) (snd et)) (List.combine l lt) ->
-    ok_tuple ctx l lt.
+    Forall (fun et => ok context (fst et) (snd et)) (List.combine l lt) ->
+    ok_tuple context l lt.
 Proof.
 induction l as [ | hd tl hi];
        intros lt hp hl h; inversion h; subst; clear h; simpl in *.
@@ -152,13 +152,13 @@ induction l as [ | hd tl hi];
     now apply hi; simpl; intuition.
 Qed.
 
-Lemma ok_tuple_forall2: forall ctx (l: Expression.tlist) (lt: Typ.tlist),
+Lemma ok_tuple_forall2: forall context (l: Expression.tlist) (lt: Typ.tlist),
     List.length lt > 0 ->
     List.length l = List.length lt ->
-    Forall (fun et => ok ctx (fst et) (snd et)) (List.combine l lt) ->
-    ok_tuple ctx l lt. 
+    Forall (fun et => ok context (fst et) (snd et)) (List.combine l lt) ->
+    ok_tuple context l lt. 
 Proof.
-intros ctx l lt h heq hf.
+intros context l lt h heq hf.
 now apply ok_tuple_forall; intuition.
 Qed.
 (* end hide *)
@@ -272,70 +272,71 @@ Hint Constructors okv okv_list okv_tuple : core.
 (** Well-formed <<EState>> w.r.t. some <<TContext>>:
     for any typed variable in the context, there must be a value of the
     right type associated to in the the state. *)
-Definition well_formed_estate (s : EState) (ctx: TContext) : Prop :=
-    (forall k T, get0 _ ctx k = Some T ->
-     exists v, get0 _ s k = Some v /\ okv v T)
+Definition well_formed_estate (state : EState) (context: TContext) : Prop :=
+    (forall k T, get0 _ context k = Some T ->
+     exists v, get0 _ state k = Some v /\ okv v T)
 .
 
 (* begin hide *)
-Lemma well_formed_estate_get: forall s ctx, well_formed_estate s ctx ->
-    forall k T, get_context_type ctx k = Some T -> exists v,
-    get_state_value s k = Some v /\ okv v T.
+Lemma well_formed_estate_get: forall state context,
+  well_formed_estate state context ->
+  forall id T, get_context_type context id = Some T ->
+  exists v, get_state_value state id = Some v /\ okv v T.
 Proof.
-intros s ctx hwf k T.
+intros s context hwf k T.
 now apply hwf.
 Qed.
 
-Lemma ty_bool_int : forall ctx expr typ, ok ctx expr typ ->
-    forall s, well_formed_estate s ctx ->
-    (typ = Typ.Boolean -> exists b, eval s expr = Some (Value.Boolean b)) /\
-    (typ = Typ.Integer -> exists z, eval s expr = Some (Value.Integer z)).
+Lemma ty_bool_int : forall context expr typ, ok context expr typ ->
+    forall state, well_formed_estate state context ->
+    (typ = Typ.Boolean -> exists b, eval state expr = Some (Value.Boolean b)) /\
+    (typ = Typ.Integer -> exists z, eval state expr = Some (Value.Integer z)).
 Proof.
 induction 1 as [
-    | ctx
-    | ctx z
-    | ctx str
-    | ctx
-    | ctx left right op hl hil hr hir
-    | ctx left right op hl hil hr hir
-    | ctx l typ hl
-    | ctx l typs hl
-    | ctx expr he hie
-    | ctx expr op hop he hie
-    | ctx target test alterntaive typ htarget hitarget
+    | context
+    | context z
+    | context str
+    | context
+    | context left right op hl hil hr hir
+    | context left right op hl hil hr hir
+    | context l typ hl
+    | context l typs hl
+    | context expr he hie
+    | context expr op hop he hie
+    | context target test alterntaive typ htarget hitarget
             halt hialt htest hitest
-    | ctx id T h
-]; intros s hwf; subst; split; intro heq; subst;
+    | context id T h
+]; intros state hwf; subst; split; intro heq; subst;
    try discriminate; simpl in *.
 + now exists false.
 + now exists true.
 + now exists z.
-+ destruct (hil s hwf) as [h0 _].
-  destruct (hir s hwf) as [h1 _].
++ destruct (hil state hwf) as [h0 _].
+  destruct (hir state hwf) as [h1 _].
   destruct (h0 refl_equal) as [x0 hx0].
   destruct (h1 refl_equal) as [x1 hx1].
   rewrite hx0, hx1.
   now exists (evaluate_boolean_operator x0 op x1).
-+ destruct (hil s hwf) as [_ h0].
-  destruct (hir s hwf) as [_ h1].
++ destruct (hil state hwf) as [_ h0].
+  destruct (hir state hwf) as [_ h1].
   destruct (h0 refl_equal) as [x0 hx0].
   destruct (h1 refl_equal) as [x1 hx1].
   rewrite hx0, hx1.
   now exists (evaluate_comparison_operator (Value.Integer x0) op (Value.Integer x1)).
-+ destruct (hie s hwf) as [h0 _]. 
++ destruct (hie state hwf) as [h0 _]. 
   destruct (h0 refl_equal) as [ x0 hx0 ].
   rewrite hx0.
   now exists (negb x0).
-+ destruct (hie s hwf) as [_ h0].
++ destruct (hie state hwf) as [_ h0].
   destruct (h0 refl_equal) as [ x0 hx0 ].
   rewrite hx0; simpl.
   rewrite evaluate_unary_int_operator; destruct op; try (now elim hop).
   * now exists (-x0 -1)%Z.
   * now exists ( - x0 )%Z.
   * now exists x0.
-+ destruct (hitarget s hwf) as [h0 _].
-  destruct (hialt s hwf) as [h1 _].
-  destruct (hitest s hwf) as [h2 _].
++ destruct (hitarget state hwf) as [h0 _].
+  destruct (hialt state hwf) as [h1 _].
+  destruct (hitest state hwf) as [h2 _].
   destruct (h0 refl_equal) as [x0 hx0].
   destruct (h1 refl_equal) as [x1 hx1].
   destruct (h2 refl_equal) as [x2 hx2].
@@ -344,9 +345,9 @@ induction 1 as [
     now exists x0.
   * rewrite hx1.
     now exists x1.
-+ destruct (hitarget s hwf) as [_ h0].
-  destruct (hialt s hwf) as [_ h1].
-  destruct (hitest s hwf) as [h2 _].
++ destruct (hitarget state hwf) as [_ h0].
+  destruct (hialt state hwf) as [_ h1].
+  destruct (hitest state hwf) as [h2 _].
   destruct (h0 refl_equal) as [x0 hx0].
   destruct (h1 refl_equal) as [x1 hx1].
   destruct (h2 refl_equal) as [x2 hx2].
@@ -355,11 +356,11 @@ induction 1 as [
     now exists x0.
   * rewrite hx1.
     now exists x1.
-+ apply well_formed_estate_get with (s := s) in h; [ | now idtac ].
++ apply well_formed_estate_get with (state := state) in h; [ | now idtac ].
   destruct h as [ v [-> hv]].
   inversion hv; subst; clear hv.
   now exists b.
-+ apply well_formed_estate_get with (s := s) in h; [ | now idtac ].
++ apply well_formed_estate_get with (state := state) in h; [ | now idtac ].
   destruct h as [ v [-> hv]].
   inversion hv; subst; clear hv.
   now exists i.
@@ -367,55 +368,56 @@ Qed.
 (* end hide *)
 
 (** Every expression typed as <<Typ.Boolean>> must  be an actual <<bool>> *)
-Lemma ty_bool : forall ctx expr, ok ctx expr Typ.Boolean ->
-    forall s, well_formed_estate s ctx ->
-    exists b, eval s expr = Some (Value.Boolean b).
+Lemma ty_bool : forall context expr, ok context expr Typ.Boolean ->
+    forall state, well_formed_estate state context ->
+    exists b, eval state expr = Some (Value.Boolean b).
 Proof.
-intros ctx expr h s hwf; eapply ty_bool_int in h as [ h0 _].
+intros context expr h s hwf; eapply ty_bool_int in h as [ h0 _].
 - now apply h0.
 - now apply hwf.
 Qed.
 
 (** Every expression typed as <<Typ.Integer>> must  be an actual <<Z>> *)
-Lemma ty_int : forall ctx expr, ok ctx expr Typ.Integer ->
-    forall s, well_formed_estate s ctx ->
-    exists z, eval s expr = Some (Value.Integer z).
+Lemma ty_int : forall context expr, ok context expr Typ.Integer ->
+    forall state, well_formed_estate state context ->
+    exists z, eval state expr = Some (Value.Integer z).
 Proof.
-intros ctx expr h s hwf; eapply ty_bool_int in h as [ _ h0].
+intros context expr h s hwf; eapply ty_bool_int in h as [ _ h0].
 - now apply h0.
 - now apply hwf.
 Qed.
 
 (* begin hide *)
-Lemma ty_string_ : forall ctx expr typ, ok ctx expr typ -> 
-    typ = Typ.String -> forall s, well_formed_estate s ctx ->
-    exists str, eval s expr = Some (Value.String str).
+Lemma ty_string_ : forall context expr typ, ok context expr typ -> 
+    typ = Typ.String ->
+    forall state, well_formed_estate state context ->
+    exists str, eval state expr = Some (Value.String str).
 Proof.
 induction 1 as [
-    | ctx
-    | ctx z
-    | ctx str
-    | ctx
-    | ctx left right op hl hil hr hir
-    | ctx left right op hl hil hr hir
-    | ctx l typ hl
-    | ctx l typs hl
-    | ctx expr he hie
-    | ctx expr op hop he hie
-    | ctx target test alterntaive typ htarget hitarget
+    | context
+    | context z
+    | context str
+    | context
+    | context left right op hl hil hr hir
+    | context left right op hl hil hr hir
+    | context l typ hl
+    | context l typs hl
+    | context expr he hie
+    | context expr op hop he hie
+    | context target test alterntaive typ htarget hitarget
             halt hialt htest hitest
-    | ctx id T h
-] ; intros heq s hwf; subst; try discriminate; simpl in *.
+    | context id T h
+] ; intros heq state hwf; subst; try discriminate; simpl in *.
 - now exists str.
-- apply ty_bool with (s := s) in htest as [ b hb ];[ | now idtac ].
+- apply ty_bool with (state := state) in htest as [ b hb ];[ | now idtac ].
   rewrite hb.
-  destruct (hitarget refl_equal s hwf) as [s1 hs1].
-  destruct (hialt refl_equal s hwf) as [s2 hs2].
+  destruct (hitarget refl_equal state hwf) as [s1 hs1].
+  destruct (hialt refl_equal state hwf) as [s2 hs2].
   rewrite hs1, hs2.
   destruct b.
   + now exists s1.
   + now exists s2.
-- apply well_formed_estate_get with (s := s) in h; [ | now idtac].
+- apply well_formed_estate_get with (state := state) in h; [ | now idtac].
   destruct h as [v [-> hv]].
   inversion hv; subst; clear hv.
   now exists str.
@@ -423,41 +425,41 @@ Qed.
 (* end hide *)
 
 (** Every expression typed as <<Typ.String>> must  be an actual <<string>> *)
-Lemma ty_string : forall ctx expr, ok ctx expr Typ.String ->
-    forall s, well_formed_estate s ctx ->
-    exists str, eval s expr = Some (Value.String str).
+Lemma ty_string : forall context expr, ok context expr Typ.String ->
+    forall state, well_formed_estate state context ->
+    exists str, eval state expr = Some (Value.String str).
 Proof.
-intros ctx expr h s hwf.
-now apply ty_string_ with (ctx := ctx) (s := s) in h.
+intros context expr h state hwf.
+now apply ty_string_ with (context := context) (state := state) in h.
 Qed.
 
 (* begin hide *)
-Lemma ty_none_: forall ctx expr typ, ok ctx expr typ ->
-    typ = Typ.None -> forall s, well_formed_estate s ctx ->
-    eval s expr = Some Value.None.
+Lemma ty_none_: forall context expr typ, ok context expr typ ->
+    typ = Typ.None -> forall state, well_formed_estate state context ->
+    eval state expr = Some Value.None.
 Proof.
 induction 1 as [
-    | ctx
-    | ctx z
-    | ctx str
-    | ctx
-    | ctx left right op hl hil hr hir
-    | ctx left right op hl hil hr hir
-    | ctx l typ hl
-    | ctx l typs hl
-    | ctx expr he hie
-    | ctx expr op hop he hie
-    | ctx target test alterntaive typ htarget hitarget
+    | context
+    | context z
+    | context str
+    | context
+    | context left right op hl hil hr hir
+    | context left right op hl hil hr hir
+    | context l typ hl
+    | context l typs hl
+    | context expr he hie
+    | context expr op hop he hie
+    | context target test alterntaive typ htarget hitarget
             halt hialt htest hitest
-    | ctx id T h
-] ; intros heq s hwf; subst; try discriminate; simpl in *.
+    | context id T h
+] ; intros heq state hwf; subst; try discriminate; simpl in *.
 - reflexivity.
-- apply ty_bool with (s := s) in htest as [ b hb ];[ | now idtac ].
+- apply ty_bool with (state := state) in htest as [ b hb ];[ | now idtac ].
   rewrite hb.
-  rewrite (hitarget refl_equal s hwf).
-  rewrite (hialt refl_equal s hwf).
+  rewrite (hitarget refl_equal state hwf).
+  rewrite (hialt refl_equal state hwf).
   now destruct b.
-- apply well_formed_estate_get with (s := s) in h; [ | now idtac].
+- apply well_formed_estate_get with (state := state) in h; [ | now idtac].
   destruct h as [v [-> hv]].
   inversion hv; subst; clear hv.
   reflexivity.
@@ -465,11 +467,12 @@ Qed.
 (* end hide *)
 
 (** Every expression typed as <<Typ.None>>  must be <<None>> *)
-Lemma ty_none: forall ctx expr, ok ctx expr Typ.None ->
-    forall s, well_formed_estate s ctx -> eval s expr = Some Value.None.
+Lemma ty_none: forall context expr, ok context expr Typ.None ->
+    forall state, well_formed_estate state context ->
+    eval state expr = Some Value.None.
 Proof.
-intros  ctx expr h s hwf.
-now apply ty_none_ with (ctx := ctx) (s := s) in h.
+intros  context expr h state hwf.
+now apply ty_none_ with (context := context) (state := state) in h.
 Qed.
 
 Definition is_sequence (typ : Typ.t) : option Typ.t :=
@@ -484,6 +487,228 @@ Definition is_tuple (typ : Typ.t) : list Typ.t :=
     | _ => nil
 end.
 
+Section TypingStatement.
+
+Import Pyre.Statement.
+
+(* TODO(T53097965):
+   use the strings in a correct way. For the moment they are totally
+   discarded and I consider that the order of arguments matches the
+   the order of parameters: we only consider positional arguments.
+ *)
+
+(** Takes a list of arguments and a list of function parameter definitions 
+    and (pairwise) checks that expressions are typed with the corresponding type, 
+    in context <<context>>. *)
+Fixpoint check_arguments context (arguments: list (option string * Expression.t))
+    (parameters: list (string * Typ.t)) : Prop :=
+    match (arguments, parameters) with
+    | ((_, arg) :: arguments, (_, ty) :: parameters) =>
+            ok context arg ty /\ check_arguments context arguments parameters
+    | (nil, nil) => True
+    | _ => False
+    end.
+
+Lemma check_arguments_length: forall context arguments parameters,
+  check_arguments context arguments parameters ->
+  List.length arguments = List.length parameters.
+Proof.
+intro context; induction arguments as [| [ ? arg] arguments hi];
+    intros [| [name ?] parameters] h; simpl in *; try now elim h.
+destruct h as [hok hc].
+now rewrite (hi _ hc).
+Qed.
+
+(** Helper to prepare the typing context of sub-routine/function calls *)
+Fixpoint prepare_call_context (now: TContext)
+    (parameters: list (string * Typ.t)) : TContext :=
+    match parameters with
+    | nil => now
+    | (name, ty) :: parameters =>
+        prepare_call_context (set0 _ now name ty) parameters
+end.
+
+(** General context for type checking statements: it is made of an expression
+    typing context and some information about declared function *)
+Definition Context := RawState Typ.t Eval.func.
+
+Definition mkContext context info : Context := mkRawState _ _ context info.
+
+(** Typing judgement for statements
+
+    <<typ C0 T st C1 >> means that in the typing context <<C0>>, evaluating the
+    statement <<st>> will generate the context <<C1>>.
+    <<T>> is the current expected return type (or None in case of procedure /
+    global statement).
+*)
+Inductive typ : Context -> Typ.t -> Statement.t -> Context -> Prop :=
+  | typAssignIdNone: forall (context: Context) return_type id value T,
+      ok context value T ->
+      typ context return_type
+      (Assign (Lvalue.Id id) None value) (set _ _ context id T)
+  | typAssignIdAnnot: forall (context: Context) return_type id value T,
+      ok context value T ->
+      typ context return_type
+      (Assign (Lvalue.Id id) (Some T) value) (set _ _ context id T)
+  | typExpression: forall (context: Context) return_type expr T,
+      ok context expr T ->
+      typ context return_type (Expression expr) context
+  | typIf: forall (context context': Context) return_type test body orelse,
+      ok context test Typ.Boolean ->
+      typ context return_type body context' ->
+      typ context return_type orelse context' ->
+      typ context return_type (If test body orelse) context'
+  | tyPass: forall (context: Context) return_type,
+      typ context return_type Pass context
+  | tySeq: forall (context context' context'': Context) return_type st next,
+      typ context return_type st context' ->
+      typ context' return_type next context'' ->
+      typ context return_type (Seq st next) context''
+  | typWhile: forall (context context': Context) return_type test body orelse,
+      ok context test Typ.Boolean ->
+      typ context return_type body context ->
+      typ context return_type orelse context' ->
+      typ context return_type (While test body orelse) context'
+  | typCallFun: forall (context: Context) return_type target annotation
+      function_name arguments function_def return_context,
+      get_info _ _ context function_name = Some function_def ->
+      return_annotation function_def = annotation ->
+      check_arguments context arguments (parameters function_def) ->
+      typ
+        (mkContext (prepare_call_context (Empty0 _) (parameters function_def)) (info _ _ context))
+        annotation
+        (body function_def)
+        return_context ->
+      typ
+        context
+        return_type
+        (Call (Some (Lvalue.Id target, annotation)) (Expression.Id function_name) arguments)
+        (set _ _ context target (return_annotation function_def))
+  | typCallProc: forall (context: Context) return_type function_name arguments
+      function_def return_context,
+      get_info _ _ context function_name = Some function_def ->
+      return_annotation function_def = Typ.None ->
+      check_arguments context arguments (parameters function_def) ->
+      typ
+        (mkContext (prepare_call_context (Empty0 _) (parameters function_def)) (info _ _ context))
+        Typ.None
+        (body function_def)
+        return_context ->
+      typ context return_type (Call None (Expression.Id function_name) arguments) context
+  | typReturn: forall (context context': Context) ret T,
+          ok context ret T ->
+          typ context T (Return ret) context'
+.
+
+(** Well-formed conditions for function definition: <<function_info>> is a
+    set of defined functions. In this context, a function <<f>> is
+    well-formed if its body is correctly typed w.r.t.  its arguments types
+    and return annotation. *)
+Definition well_formed_function function_info (f: func) : Prop :=
+  (exists return_context,
+    typ (mkContext (prepare_call_context (Empty0 _) (parameters f)) function_info)
+        (return_annotation f)
+        (body f) return_context)
+.
+
+(** General well-formed statement for State/Context:
+    - The underlying evaluation state / typing context must be well-formed.
+    - They must store the same information about function definitions.
+    - Every function definition recorded so far must be well-formed.
+*)
+Definition well_formed (state: State) (context: Context) : Prop :=
+    (* underlying states are coherent *)
+    well_formed_estate state context /\
+    (* same function definitions in both context *)
+    (info _ _ state = info _ _ context) /\
+    (* functions are correctly typed *)
+    (forall function_name function_def,
+      get_info _ _ context function_name = Some function_def ->
+      well_formed_function (info _ _ context) function_def)
+.
+
+(* begin hide *)
+Lemma well_formed_get: forall state context, well_formed state context ->
+    forall id T, get_context_type context id = Some T ->
+    exists v, get_state_value state id = Some v /\ okv v T.
+Proof.
+intros [s ?] [context ?] [hwf ?] k T h; simpl in *.
+now apply hwf.
+Qed.
+
+Lemma well_formed_info_eq: forall state context, well_formed state context ->
+  info _ _ state = info _ _ context.
+Proof.
+intros s context h; now apply h.
+Qed.
+
+Lemma well_formed_function_get: forall state context,
+  well_formed state context ->
+  forall function_name function_def,
+  get_info _ _ context function_name = Some function_def ->
+  well_formed_function (info _ _ context) function_def.
+Proof.
+intros s context h f func hg; now apply h in hg.
+Qed.
+
+Lemma well_formed_get_info: forall state context,
+  well_formed state context ->
+  forall function_name,
+  get_info _ _ context function_name = get_info _ _ state function_name.
+Proof.
+intros s context [? [h ?]] f; unfold get_info.
+now rewrite h.
+Qed.
+
+Lemma well_formed_function_get_alt: forall state context,
+  well_formed state context ->
+  forall function_name function_def,
+  get_info _ _ state function_name = Some function_def ->
+  well_formed_function (info _ _ state) function_def.
+Proof.
+intros s context h f  func hg.
+rewrite (well_formed_info_eq _ _ h).
+apply well_formed_function_get with s f; intuition.
+now rewrite well_formed_get_info with (state := s).
+Qed.
+(* end hide *)
+
+(** Typing judgement for continuations
+
+    <<ktyp C0 T k>> encodes the fact that continuation <<k>> will correctly
+    execute under the context <<C0>>. The type <<T>> is the current return
+    type, or Typ.None if a procedure or a global statement is involved.
+*)
+Inductive ktyp : Context -> Typ.t -> Cont -> Prop :=
+    | ktypKStop : forall context return_type,
+        ktyp context return_type KStop
+    | ktypSeq: forall context context' return_type st k,
+        typ context return_type st context' ->
+        ktyp context' return_type k -> 
+        ktyp context return_type (KSeq st k)
+    | ktypKWhile: forall (context context': Context) return_type test
+        body orelse k,
+        ok context test Typ.Boolean ->
+        typ context return_type body context ->
+        typ context return_type orelse context' ->
+        ktyp context' return_type k ->
+        ktyp context return_type (KWhile test body orelse k)
+    | ktypKCallProc: forall context call_context return_type saved_state k,
+        well_formed saved_state call_context ->
+        ktyp call_context return_type k ->
+        ktyp context Typ.None (KCall saved_state None k)
+    | ktypKCallFun: forall context call_context return_type saved_state target
+        annotation k,
+        well_formed saved_state (unset _ _ call_context target) ->
+        get _ _ call_context target = Some annotation ->
+        ktyp call_context return_type k ->
+        ktyp context annotation (KCall saved_state (Some (Lvalue.Id target, annotation)) k)
+.
+
+End TypingStatement.
+
+Hint Constructors typ ktyp : core.
+
 (** * Type soundness
 
     Proof that a correctly typed expression always evaluate to a value,
@@ -491,136 +716,136 @@ end.
 *)
 
 Lemma eval_ok_ :
-    (forall ctx expr typ, ok ctx expr typ ->
-        forall s, well_formed_estate s ctx ->
-        exists v, eval s expr = Some v /\  okv v typ) /\
-    (forall ctx le typ, ok_list ctx le typ ->
-        forall s, well_formed_estate s ctx ->
-        exists lv, eval_list s le = Some lv /\
+    (forall context expr typ, ok context expr typ ->
+        forall state, well_formed_estate state context ->
+        exists v, eval state expr = Some v /\  okv v typ) /\
+    (forall context le typ, ok_list context le typ ->
+        forall state, well_formed_estate state context ->
+        exists lv, eval_list state le = Some lv /\
         okv_list lv typ) /\
-    (forall ctx le lt, ok_tuple ctx le lt ->
-        forall s, well_formed_estate s ctx ->
-        exists lv, eval_list s le = Some lv /\ okv_tuple lv lt).
+    (forall context le lt, ok_tuple context le lt ->
+        forall state, well_formed_estate state context ->
+        exists lv, eval_list state le = Some lv /\ okv_tuple lv lt).
 Proof.
 apply ok_induc.
 (* ok *)
-- intros ctx s hwf; subst; exists (Value.Boolean false); now split.
-- intros ctx s hwf; subst; exists (Value.Boolean true); now split.
-- intros ctx z s hwf; subst; exists (Value.Integer z); now split.
-- intros ctx str s hwf; subst; exists (Value.String str); now split.
-- intros ctx s hwf; subst; exists Value.None; now split.
-- intros ctx b0 b1 op h0 ? h1 ? s hwf; simpl; subst.
-  apply ty_bool with (s := s) in h0; [ | now idtac].
+- intros context state hwf; subst; exists (Value.Boolean false); now split.
+- intros context state hwf; subst; exists (Value.Boolean true); now split.
+- intros context z state hwf; subst; exists (Value.Integer z); now split.
+- intros context str state hwf; subst; exists (Value.String str); now split.
+- intros context state hwf; subst; exists Value.None; now split.
+- intros context b0 b1 op h0 ? h1 ? state hwf; simpl; subst.
+  apply ty_bool with (state := state) in h0; [ | now idtac].
   destruct h0 as [vb0 ->].
-  apply ty_bool with (s := s) in h1; [ | now idtac ].
+  apply ty_bool with (state := state) in h1; [ | now idtac ].
   destruct h1 as [vb1 ->].
   now eexists; split; [ reflexivity | idtac].
-- intros ctx e0 e1 op h0 ? h1 ? s hwf; simpl; subst.
-  apply ty_int with (s := s) in h0; [ | now idtac ].
+- intros context e0 e1 op h0 ? h1 ? state hwf; simpl; subst.
+  apply ty_int with (state := state) in h0; [ | now idtac ].
   destruct h0 as [v0 ->].
-  apply ty_int with (s := s) in h1; [ | now idtac ].
+  apply ty_int with (state := state) in h1; [ | now idtac ].
   destruct h1 as [v1 ->].
   now eexists; split; [ reflexivity | idtac].
-- intros ctx l ty h hi s hwf; simpl.
+- intros context l ty h hi state hwf; simpl.
   destruct (hi _ hwf) as  [vl [-> h0]].
   now eexists; split; [reflexivity  | constructor ].
-- intros ctx l ty h hi s hwf; simpl.
+- intros context l ty h hi state hwf; simpl.
   destruct (hi _ hwf) as  [vl [-> h0]].
   now eexists; split; [reflexivity  | constructor ].
-- intros ctx expr h hi s hwf; simpl.
-  apply ty_bool with (s := s) in h as [v ->]; [ | now idtac ].
+- intros context expr h hi state hwf; simpl.
+  apply ty_bool with (state := state) in h as [v ->]; [ | now idtac ].
   now eexists; split; [reflexivity | ].
-- intros ctx expr op hop h hi s hwf; simpl.
-  apply ty_int with (s := s) in h as [v ->]; [ | now idtac ].
+- intros context expr op hop h hi state hwf; simpl.
+  apply ty_int with (state := state) in h as [v ->]; [ | now idtac ].
   rewrite evaluate_unary_int_operator.
   destruct op; try (now elim hop); now eexists; split; [reflexivity | ].
-- intros ctx target test alt typ htarget hitarget halt hialt htest hitest
-    s hwf; simpl.
-  apply ty_bool with (s := s) in htest as [b ->]; [ | now idtac ].
+- intros context target test alt typ htarget hitarget halt hialt htest hitest
+    state hwf; simpl.
+  apply ty_bool with (state := state) in htest as [b ->]; [ | now idtac ].
   destruct (hitarget _ hwf) as [vt [-> hvt]].
   destruct (hialt _ hwf) as [va [-> hva]].
   now destruct b; eexists; split; [ reflexivity | | reflexivity | ].
-- intros ctx id typ hg s hwf; simpl.
-  now apply well_formed_estate_get with (ctx := ctx); [ now apply hwf | ].
+- intros context id typ hg state hwf; simpl.
+  now apply well_formed_estate_get with (context := context); [ now apply hwf | ].
 (* ok_list *)
-- intros ctx typ s hwf; simpl.
+- intros context typ state hwf; simpl.
   now exists Value.Nil; intuition.
-- intros ctx hd tl typ h0 hi0 h1 hi1 s hwf; simpl.
+- intros context hd tl typ h0 hi0 h1 hi1 state hwf; simpl.
   destruct (hi0 _ hwf) as [vhd [-> hv]].
   destruct (hi1 _ hwf) as [vtl [-> ht]].
   now exists (Value.Cons vhd vtl); intuition.
 (* ok_tuple *)
-- intros ctx expr typ h hi s hwf; simpl.
+- intros context expr typ h hi state hwf; simpl.
   destruct (hi _ hwf) as [v [-> ?]].
   now  exists (Value.Cons v Value.Nil); intuition.
-- intros ctx expr el typ tl h0 hi0 h1 hi1 s hwf; simpl.
+- intros context expr el typ tl h0 hi0 h1 hi1 state hwf; simpl.
   destruct (hi0 _ hwf) as [vhd [-> ?]].
   destruct (hi1 _ hwf) as [vtl [-> ?]].
   now exists (Value.Cons vhd vtl); intuition.
 Qed.
 
-Lemma eval_ok: forall ctx expr typ, ok ctx expr typ ->
-    forall s, well_formed_estate s ctx ->
-    exists v, eval s expr = Some v /\ okv v typ.
+Lemma eval_ok: forall context expr typ, ok context expr typ ->
+    forall state, well_formed_estate state context ->
+    exists v, eval state expr = Some v /\ okv v typ.
 Proof.
 intros.
 now eapply eval_ok_; eauto.
 Qed.
 
-Lemma eval_list_ok: forall ctx le typ, ok_list ctx le typ ->
-    forall s, well_formed_estate s ctx ->
-    exists lv, eval_list s le = Some lv /\ okv_list lv typ.
+Lemma eval_list_ok: forall context le typ, ok_list context le typ ->
+    forall state, well_formed_estate state context ->
+    exists lv, eval_list state le = Some lv /\ okv_list lv typ.
 Proof.
 intros.
 now eapply eval_ok_; eauto.
 Qed.
 
-Lemma eval_tuple_ok: forall ctx le lt, ok_tuple ctx le lt ->
-    forall s, well_formed_estate s ctx ->
-    exists lv, eval_list s le = Some lv /\ okv_tuple lv lt.
+Lemma eval_tuple_ok: forall context le lt, ok_tuple context le lt ->
+    forall state, well_formed_estate state context ->
+    exists lv, eval_list state le = Some lv /\ okv_tuple lv lt.
 Proof.
 intros.
 now eapply eval_ok_; eauto.
 Qed.
 
-Lemma ok_sequence : forall ctx expr T, ok ctx expr T ->
+Lemma ok_sequence : forall context expr T, ok context expr T ->
     forall T', is_sequence T = Some T' ->
-    forall s, well_formed_estate s ctx ->
-    exists lv, eval s expr = Some (Value.Sequence lv).
+    forall state, well_formed_estate state context ->
+    exists lv, eval state expr = Some (Value.Sequence lv).
 Proof.
 induction 1 as [
-    | ctx
-    | ctx z
-    | ctx str
-    | ctx
-    | ctx left right op hl hr
-    | ctx left right op hl hr
-    | ctx l typ hl
-    | ctx l typs hl
-    | ctx expr he
-    | ctx expr op hop he
-    | ctx target test alterntaive typ htarget hit halt hia htest hitest
-    | ctx id T h
-]; intros T' hT s hwf; simpl; subst;
+    | context
+    | context z
+    | context str
+    | context
+    | context left right op hl hr
+    | context left right op hl hr
+    | context l typ hl
+    | context l typs hl
+    | context expr he
+    | context expr op hop he
+    | context target test alterntaive typ htarget hit halt hia htest hitest
+    | context id T h
+]; intros T' hT state hwf; simpl; subst;
   try (unfold is_sequence in hT; simpl in hT; discriminate).
-- apply eval_list_ok with (s := s) in hl as [lv [-> ?]]; [ | now idtac ].
+- apply eval_list_ok with (state := state) in hl as [lv [-> ?]]; [ | now idtac ].
   now exists lv.
-- destruct (hit T' hT s hwf) as [l1 ->].
-  destruct (hia T' hT s hwf) as [l2 ->].
-  apply ty_bool with (s := s) in htest as [b ->]; [ | now idtac ].
+- destruct (hit T' hT state hwf) as [l1 ->].
+  destruct (hia T' hT state hwf) as [l2 ->].
+  apply ty_bool with (state := state) in htest as [b ->]; [ | now idtac ].
   now destruct b; eexists; reflexivity.
-- apply well_formed_estate_get with (s := s) in h as [v [-> h1]];
+- apply well_formed_estate_get with (state := state) in h as [v [-> h1]];
     [ | now idtac ].
   inversion h1; subst; clear h1; try discriminate; now eexists; reflexivity.
 Qed.
 
-Lemma ty_list: forall ctx expr T, ok ctx expr (Typ.List T) ->
-    forall s, well_formed_estate s ctx ->
-    exists lv, eval s expr = Some (Value.Sequence lv) /\
+Lemma ty_list: forall context expr T, ok context expr (Typ.List T) ->
+    forall state, well_formed_estate state context ->
+    exists lv, eval state expr = Some (Value.Sequence lv) /\
                okv (Value.Sequence lv) (Typ.List T).
 Proof.
-intros ctx expr T hok s hwf.
-apply eval_ok with (s := s) in hok; [ | now idtac].
+intros context expr T hok state hwf.
+apply eval_ok with (state := state) in hok; [ | now idtac].
 destruct hok as [v [-> hv]].
 inversion hv; subst; clear hv.
 exists l; split; [ now idtac | ].
@@ -628,16 +853,386 @@ now constructor.
 Qed.
 
 (* begin hide *)
-Lemma well_formed_estate_set: forall s ctx,
-  well_formed_estate s ctx ->
+Lemma well_formed_estate_set: forall state context,
+  well_formed_estate state context ->
   forall id v T, okv v T ->
-  well_formed_estate (set0 _ s id v) (set0 _ ctx id T).
+  well_formed_estate (set0 _ state id v) (set0 _ context id T).
 Proof.
-intros s ctx hwf id v T hok.
+intros state context hwf id v T hok.
 intros k S; unfold set, set0, get0; simpl.
 rewrite !get_set_map.
 destruct String.eqb.
 - intro h; injection h; clear h; intro; subst.
   now exists v.
 - now apply hwf.
+Qed.
+
+Lemma well_formed_set: forall state context,
+  well_formed state context ->
+  forall id v T, okv v T ->
+  well_formed (set _ _ state id v) (set _ _ context id T).
+Proof.
+intros state context hwf id v T hok; split; [| split].
+- now destruct hwf; apply well_formed_estate_set.
+- now apply hwf.
+- intros f func; simpl.
+  now apply hwf.
+Qed.
+
+(* Helper lemma to build valid context and state for prepare_call_*:
+   In a well_formed global context/state, if some arguments are correctly
+   typed, then calling prepare_call_* on a well formed context/state pair leads
+   to a new well formed context/state pair.
+
+   We'll then use this function with the trival "empty" pair to build 
+   the context/state we need for function calls *)
+Lemma well_formed_estate_prepare_:
+  (* current context/state is well formed *)
+  forall current_context current_state,
+  well_formed_estate current_state current_context ->
+  (* arguments are typed by parameters *)
+  forall arguments parameters,
+  check_arguments current_context arguments parameters ->
+  forall value_arguments,
+  eval_list current_state (from_list (map snd arguments)) = Some value_arguments ->
+  (* updating a well formed pair leads to a new well formed pair *)
+  forall state context new_state,
+  well_formed_estate state context ->
+  prepare_call_state state value_arguments parameters = Some new_state ->
+  well_formed_estate new_state (prepare_call_context context parameters).
+Proof.
+intros current_context current_state hwf_current.
+induction arguments as [ | [? expr] arguments hi];
+    intros parameters hcheck value_arguments heval state context new_state hwf hprep;
+    simpl in *.
+- destruct parameters as []; [ | now elim hcheck ]; simpl.
+  injection heval; intro; subst; clear heval; simpl in hprep.
+  now injection hprep; intro; subst; clear hprep.
+- destruct parameters as [ | [ ? ty] parameters ]; [now elim hcheck | ]; simpl.
+  case_eq (eval current_state expr);
+    [intros v hv | intro hn; rewrite hn in heval; discriminate heval ].
+  rewrite hv in heval.
+  case_eq (eval_list current_state (from_list (map snd arguments)));
+    [intros vargs hvs | intro hn; rewrite hn in heval; discriminate heval ].
+  rewrite  hvs in heval; injection heval; clear heval; intro hvargs;
+    subst; simpl.
+  destruct hcheck as [hok hcheck].
+  simpl in hprep.
+  apply (hi _ hcheck _ hvs (set0 _ state s v) _); [ | assumption ].
+  apply well_formed_estate_set; [ now idtac | ].
+  apply eval_ok with (state := current_state) in hok; [ | now idtac ].
+  destruct hok as [w [h1 h2]].
+  now rewrite hv in h1; injection h1; clear h1; intro h1; subst.
+Qed.
+
+Lemma well_formed_estate_prepare:
+  forall context state arguments parameters value_arguments,
+  well_formed_estate state context ->
+  check_arguments context arguments parameters ->
+  eval_list state (from_list (map snd arguments)) = Some value_arguments ->
+  forall new_state,
+  prepare_call_state (Empty0 _) value_arguments parameters =  Some new_state ->
+  well_formed_estate new_state (prepare_call_context (Empty0 _) parameters).
+Proof.
+intros context state arguments parameters value_arguments hwf hcheck heval 
+  new_state hprep.
+eapply well_formed_estate_prepare_.
+- now apply hwf.
+- now apply hcheck.
+- now apply heval.
+- intros k T h; discriminate h.
+- now apply hprep.
+Qed.
+
+Lemma well_formed_estate_set_unset: forall state context,
+  well_formed_estate state context ->
+  forall id T,
+  well_formed_estate state (unset0 _ (set0 _ context id T) id).
+Proof.
+intros s ctx hwf id T id' T'; simpl.
+rewrite get0_unset0.
+case_eq (id' =? id)%string; intros heq; [ intro; discriminate | ].
+rewrite get0_set0, heq; intro hg.
+now apply hwf in hg.
+Qed.
+(* end hide *)
+
+(** * Type Preservation
+
+    Under a well-formed context/state, if a statement and a continuation
+    are correctly typed, then any operational step leads to new correctly
+    typed statement and resolution, and the resulting states are still
+    well-formed.
+*)
+Lemma sss_preservation: forall context context' state state' stmt stmt'
+  k k' return_type,
+  typ context return_type stmt context' ->
+  ktyp context' return_type k ->
+  well_formed state context ->
+  sss state stmt k state' stmt' k' ->
+  exists ocontext ocontext' return_type',
+  typ ocontext return_type' stmt' ocontext' /\
+  ktyp ocontext' return_type' k' /\
+  well_formed state' ocontext.
+Proof.
+intros context context' state state' stmt stmt' k k' return_type h;
+  revert state state' stmt' k k';
+destruct h as [
+    context return_type id expr T okvalue
+  | context return_type id expr T okvalue
+  | context return_type expr T h
+  | context context' return_type test body orelse oktest hbody horlese
+  | context return_type
+  | context context' context'' return_type stmt next hst hnext
+  | context context' return_type test body orlelse hok hbody horelse
+  | context return_type target annotation f arguments func return_context hg hT hcheck
+  | context return_type f arguments func return_context hg hret hcheck
+  | context context' ret T hok
+]; intros s s' stmt' k k' hk hwf hs.
+(* Assign *)
+- destruct (eval_ok _ _ _ okvalue s (proj1 hwf)) as [v [hv0 hv1]].
+  inversion hs; subst; clear hs.
+  exists (set _ _ context id T); exists (set _ _ context id T); exists return_type; intuition.
+  rewrite hv0 in H7; injection H7; clear H7; intros ?; subst.
+  now apply well_formed_set.
+- destruct (eval_ok _ _ _ okvalue s (proj1 hwf)) as [v [hv0 hv1]].
+  inversion hs; subst; clear hs.
+  exists (set _ _ context id T); exists (set _ _ context id T); exists return_type; intuition.
+  rewrite hv0 in H7; injection H7; clear H7; intros ?; subst.
+  now apply well_formed_set.
+(* Expression *)
+- inversion hs; subst; clear hs.
+  exists context; exists context; exists return_type; now split.
+(* If *)
+- inversion hs; subst; clear hs.
+  + exists context; exists context'; exists return_type; now split.
+  + exists context; exists context'; exists return_type; now split.
+(* Pass *)
+- inversion hs; subst; clear hs.
+  + inversion hk; subst; clear hk. 
+    exists call_context; exists call_context; exists return_type0; now split.
+  + inversion hk; subst; clear hk. 
+    exists context; exists context'; exists return_type; now split.
+  + inversion hk; subst; clear hk.
+    exists context; exists context; exists return_type; intuition.
+    now apply ktypKWhile with (context' := context') (return_type := return_type).
+  + inversion hk; subst; clear hk.
+    exists context; exists context'; exists return_type; now split.
+(* Seq *)
+- inversion hs; subst; clear hs.
+  exists context; exists context'; exists return_type; intuition.
+  now apply ktypSeq with (context' := context'') (return_type := return_type).
+(* While *)
+- inversion hs; subst; clear hs.
+  + exists context; exists context; exists return_type; intuition.
+    now apply ktypKWhile with (context' := context') (return_type := return_type).
+  + exists context; exists context'; exists return_type; now split.
+(* Call *)
+- inversion hs; subst; clear hs.
+  unfold get_info in H8; unfold get_info in hg.
+  rewrite (well_formed_info_eq _ _ hwf), hg in H8; injection H8; intros;
+    subst; clear H8.
+  apply well_formed_function_get with (state := s) in hg as [fctx hf]; [| now idtac].
+  exists (mkContext (prepare_call_context (Empty0 _) (parameters func0)) (info _ _ context)).
+  exists fctx; exists (return_annotation func0); split; [ assumption | split ].
+  + apply ktypKCallFun with 
+      (call_context := set _ _ context target (return_annotation func0)) (return_type := return_type); intuition.
+      * split; [ now apply well_formed_estate_set_unset; apply hwf | ].
+        split; [ now apply hwf | ].
+        intros f' func'; simpl.
+        now apply hwf.
+      * now rewrite get_set, String.eqb_refl.
+  + split; [ | split ].
+    * eapply well_formed_estate_prepare;
+      [now apply hwf | now apply hcheck | now apply H9| assumption].
+    * now apply hwf.
+    * intros f' func'; simpl.
+      now apply hwf.
+- inversion hs; subst; clear hs.
+  unfold get_info in H1; unfold get_info in hg.
+  rewrite (well_formed_info_eq  _ _ hwf), hg in H1; injection H1; intros; subst; clear H1.
+  apply well_formed_function_get with (state := s) in hg as [ fctx hf ]; [ | now idtac ].
+  exists (mkContext (prepare_call_context (Empty0 _) (parameters func0)) (info _ _ context)).
+  rewrite hret in hf.
+  exists fctx; exists Typ.None; split; [ assumption | split ].
+  + now apply ktypKCallProc with (call_context := context) (return_type := return_type).
+  + split; [ | split ].
+    * eapply well_formed_estate_prepare;
+      [now apply hwf | now apply hcheck | now apply H3|  assumption ].
+    * now apply hwf.
+    * intros f' func'; simpl.
+      now apply hwf.
+(* Return *)
+- inversion hs; subst; clear hs.
+  + inversion hk; subst; clear hk.
+    exists call_context; exists call_context; exists return_type; split; [now constructor | ].
+    split; [assumption | ].
+    destruct H5 as [hewf h].
+    split; [ | now apply h].
+    intros x Tx hx.
+    unfold get in H7.
+    generalize (hewf x Tx).
+    unfold unset; simpl.
+    rewrite get0_unset0, get0_set0.
+    case_eq (x =? id)%string; intro heq.
+    * intros _.
+      apply String.eqb_eq in heq; subst.
+      rewrite hx in H7; injection H7; clear H7; intro; subst.
+      apply eval_ok with (state := state _ _ s) in hok; [ | now apply hwf ].
+      destruct hok as [w [hw ?]].
+      rewrite hw in H1; injection H1; clear H1; intro; subst.
+      now exists vret.
+    * intro hg; apply hg in hx as [v [hv hv2]].
+      now exists v.
+  + inversion hk; subst; clear hk.
+    exists call_context; exists call_context; exists return_type;
+      split; [now constructor | now split ].
+  + inversion hk; subst; clear hk.
+    exists context; exists context'0; exists T;
+      split; [ now constructor | now split ].
+  + inversion hk; subst; clear hk.
+    exists context; exists context'0; exists T;
+      split; [ now constructor | now split ].
+Qed.
+
+(** If some <<arguments>> are correctly typed by some <<parameters>> then
+    evaluating the <<parameters>> leads to a list of values. *)
+Lemma check_arguments_eval: forall (arguments : list (option string * Expression.t))
+  state context parameters,
+  well_formed_estate state context ->
+  check_arguments context arguments parameters ->
+  exists value_arguments,
+  eval_list state (from_list (map snd arguments)) = Some value_arguments.
+Proof.
+induction arguments as [ | [? arg] arguments hi];
+    intros state context parameters hwf hcheck; simpl in *.
+- destruct parameters; [| now elim hcheck].
+  now exists Value.Nil.
+- destruct parameters as [ | [? ty] parameters]; [ now elim hcheck |  ]; simpl in *.
+  destruct hcheck as [ha has].
+  apply eval_ok with (state := state) in ha as [ v [-> hv]]; [ | now idtac].
+  destruct (hi _ _ _ hwf has) as [vs ->].
+  now exists (Value.Cons v vs).
+Qed.
+
+(** A <<done>> pair of statement and continuation is a situation where
+    there is no further possible reduction, and is considered a normal
+    final situation.
+    For the moment, we consider:
+    - statement == Pass and continuation == KStop: the "genuine" final state.
+    - statement == Pass and continuation == KCall: this one can only happen
+        when a return statement is missing. We can't rule it out using
+        typing only. We should make sure that all programs we check
+        have the relevant 'return' invocation in all functions.
+    - statement == Return and continuation == KStop: a top level 'return'
+        statement. We can't rule it out either with typing only without
+        cluttering the system, so we need to make some kind of dead-code
+        elimination if that happens.
+*)
+Definition done st k :=
+  match st with 
+  | Statement.Pass =>
+    match k with
+    | KStop 
+    | KCall _ _ _ => True
+    | _ => False
+  end
+  | Statement.Return _ => k = KStop
+  | _ => False
+end.
+
+(** In this system, a correctly typed triple <<s, st, k>> is either a
+    final (<<done>>) configuration, or can be reduced at least one step 
+    using the operational semantic.
+
+    With preservation and determinism, we have the main correctness tools
+    for our system. *)
+Lemma progress: forall context context' return_type stmt k,
+    typ context return_type stmt context' ->
+    ktyp context' return_type k ->
+    forall state, well_formed state context ->
+    (done stmt k) \/ (exists state' stmt' k', sss state stmt k state' stmt' k').
+Proof.
+destruct 1 as [
+    context return_type id expr T okvalue
+  | context return_type id expr T okvalue
+  | context return_type expr T h
+  | context context' return_type test body orelse oktest hbody horlese
+  | context return_type
+  | context context' context'' return_type st next hst hnext
+  | context context' return_type test body orlelse hok hbody horelse
+  | context return_type target annotation function_name arguments function_def
+      return_context hg hret hcheck htyp
+  | context return_type function_name arguments function_def return_context
+      hg hret hcheck htyp
+  | context context' ret T hok
+]; intros hk state hwf.
+- apply eval_ok with (state := state) in okvalue; [ | now apply hwf ].
+  destruct okvalue as [v hv].
+  now right; repeat eexists; econstructor; apply hv.
+- apply eval_ok with (state := state) in okvalue; [ | now apply hwf ].
+  destruct okvalue as [v hv].
+  now right; repeat eexists; econstructor; apply hv.
+- apply eval_ok with (state := state) in h; [ | now apply hwf ].
+  destruct h as [v hv].
+  now right; repeat eexists; econstructor; apply hv.
+- right.
+  apply ty_bool with (state := state) in oktest; [ | now apply hwf].
+  destruct oktest as [[] hb];
+    repeat eexists; econstructor; exact hb.
+- inversion hk; subst; clear hk.
+  + now left; split; firstorder.
+  + now right; repeat eexists; econstructor.
+  + right.
+    apply ty_bool with (state := state) in H; [ | now apply hwf ].
+    destruct H as [[] hb];
+      repeat eexists; econstructor; exact hb.
+  + now right; repeat eexists; econstructor.
+  + now left; split; firstorder.
+- now right; repeat eexists; econstructor.
+- right.
+  apply ty_bool with (state := state) in hok; [ | now apply hwf ].
+  destruct hok as [[] hb]; now repeat eexists; econstructor.
+- right.
+  assert (hlen: List.length arguments = List.length (parameters function_def))
+    by now apply check_arguments_length in hcheck. 
+  apply check_arguments_eval with (state := state) in hcheck; [ | now apply hwf].
+  destruct hcheck as [vs hvs].
+  assert (hlen2: List.length arguments = List.length vs) by
+    now apply eval_list_length in hvs;
+        rewrite <- hvs, Expression.ListHelpers.from_list_cancel, map_length.
+  destruct (prepare_call_state_same_length (Empty0 _) vs (parameters function_def))
+    as [ after hafter ]; [ now rewrite hlen2 in hlen | now destruct function_def | ].
+  repeat eexists.
+  econstructor; [| now apply hvs| now apply hafter].
+  apply well_formed_get_info with (function_name := function_name) in hwf;
+    rewrite <- hwf.
+  now apply hg.
+- right.
+  assert (hlen: List.length arguments = List.length (parameters function_def))
+    by now apply check_arguments_length in hcheck. 
+  apply check_arguments_eval with (state := state) in hcheck; [ | now apply hwf].
+  destruct hcheck as [vs hvs].
+  assert (hlen2: List.length arguments = List.length vs) by
+    now apply eval_list_length in hvs;
+        rewrite <- hvs, Expression.ListHelpers.from_list_cancel, map_length.
+  destruct (prepare_call_state_same_length (Empty0 _) vs (parameters function_def))
+    as [ after hafter ]; [ now rewrite hlen2 in hlen | now destruct function_def | ].
+  repeat eexists.
+  econstructor; [| now apply hvs| now apply hafter].
+  apply well_formed_get_info with (function_name := function_name) in hwf;
+    rewrite <- hwf.
+  now apply hg.
+- inversion hk; subst; clear hk.
+  + now left; firstorder.
+  + right; repeat eexists.
+    now econstructor.
+  + right; repeat eexists.
+    now econstructor.
+  + right; repeat eexists.
+    now econstructor.
+  + apply eval_ok with (state := state) in hok as [v [hv1 hv2]];
+     [ | now apply hwf ].
+    right; exists (set _ _ saved_state target v); exists Statement.Pass; exists k0.
+    now constructor.
 Qed.

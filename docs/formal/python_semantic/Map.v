@@ -391,6 +391,32 @@ case_eq (String.eqb x k); intro hk; simpl.
       now apply hi.
 Qed.
 
+Lemma get_unset_map:
+  forall map x z,
+  get_map (unset_map map x) z =
+  if (z =? x)%string then None else get_map map z.
+Proof.
+unfold unset_map, get_map; simpl.
+intros [l hs] x z.
+induction l as [ | [k v] l hi]; simpl in *; [ now destruct String.eqb | ].
+apply andb_prop in hs as [hs hhd].
+case_eq (z =? x)%string; intro hzx; rewrite hzx in hi.
+- case_eq (x =? k)%string; intro hxk; simpl.
+  + apply String.eqb_eq in hzx.
+    apply String.eqb_eq in hxk; subst.
+    apply get_lt_none with (value := v).
+    apply HdRel_Forall; [ now apply pair_lt_trans | now apply reflect_Sorted in hs |].
+    now apply reflect_HdRel in hhd.
+  + apply String.eqb_eq in hzx; subst.
+    rewrite hxk.
+    now apply hi.
+- case_eq (x =? k)%string; intro hxk; simpl.
+  + apply String.eqb_eq in hxk; subst.
+    now rewrite hzx.
+  + case_eq (z =? k)%string; intro hzk; simpl; [ reflexivity | ].
+    now apply hi.
+Qed.
+
 (* Sorted insertion in a sorted list commutes if both keys are different *)
 Lemma set_set_diff_: forall map x y a b z,
   (x =? y)%string = false ->
@@ -488,6 +514,15 @@ intros s x y a; unfold set0, get0; simpl.
 now rewrite get_set_map.
 Qed.
 
+Lemma get0_unset0:
+  forall s x z,
+  get0 (unset0 s x) z =
+  if (z =? x)%string then None else get0 s z.
+Proof.
+intros s x z; unfold unset0, get0; simpl.
+now rewrite get_unset_map.
+Qed.
+
 Lemma set0_set0_diff: forall s x y a b,
   (x =? y)%string = false ->
   set0 (set0 s x a) y b =
@@ -508,9 +543,10 @@ Hypothesis Aeqb_eq: forall x y, Aeqb x y = true -> x = y.
 Hypothesis Aeqb_refl: forall x, Aeqb x x = true.
 
 (** Main "state", which stores a <<RawState0>> plus additional information
-(like a list of the already checked/defined functions *)
+  (like a list of the already checked/defined functions.
+  We implicitely coerce <<RawState>> to their underlying <<RawState0>>. *)
 Record RawState : Set := mkRawState {
-    state : RawState0 A;
+    state :> RawState0 A;
     info : Map B;
 }.
 
@@ -531,6 +567,15 @@ Proof.
 intros [s ?] x y a; simpl.
 unfold set, get; simpl state.
 now rewrite get0_set0.
+Qed.
+
+Lemma get_unset:
+  forall s x z,
+  get (unset s x) z =
+  if (z =? x)%string then None else get s z.
+Proof.
+intros s x z; unfold unset, get; simpl.
+now rewrite get0_unset0.
 Qed.
 
 Lemma set_set_diff: forall s x y a b,

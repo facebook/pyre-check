@@ -57,14 +57,31 @@ apply value_ind.
   now apply hi in h1 as ->.
 Qed.
 
-Lemma eqb_prop: forall v0 v1, eqb v0 v1 = true -> v0 = v1.
+Lemma eqb_eq: forall v0 v1, eqb v0 v1 = true -> v0 = v1.
 Proof.
     now apply eqb_true_.
 Qed.
 
-Lemma eqb_list_prop:  forall l0 l1, eqb_list l0 l1 = true -> l0 = l1.
+Lemma eqb_list_eq:  forall l0 l1, eqb_list l0 l1 = true -> l0 = l1.
 Proof.
     now apply eqb_true_.
+Qed.
+
+Lemma eqb_refl_: (forall v, eqb v v = true) /\ (forall lv, eqb_list lv lv = true).
+Proof.
+apply value_ind; try (now intros).
+- now intros [].
+- intro z; simpl.
+  now rewrite Z.eqb_refl.
+- intro s; simpl.
+  now rewrite String.eqb_refl.
+- intros v hv lv hlv; simpl.
+  now rewrite hv, hlv.
+Qed.
+
+Lemma eqb_refl: forall v, eqb v v = true.
+Proof.
+now apply eqb_refl_.
 Qed.
 
 Require Import List.

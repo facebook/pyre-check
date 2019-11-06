@@ -165,6 +165,8 @@ Record func : Set := mkFun {
     name: string;
     (* TODO(T53097965): support more parameter kinds *)
     parameters: list (string * Typ.t);
+    (* All parameters names are distinct from each other *)
+    unique_parameters: NoDup (map fst parameters);
     (* decorators: Expression.t list; *)
     return_annotation: Typ.t; (* no option, set to TNone if need be *)
     (* async: bool; *)
@@ -200,6 +202,44 @@ induction arguments as [ | arg arguments hi];
     intros now [ | [? name] parameters]
     after h; simpl in *; try discriminate; [ reflexivity | ].
 now rewrite (hi _ _ _ h).
+Qed.
+
+Lemma prepare_call_state_set: forall now arguments parameters after,
+  prepare_call_state now arguments parameters = Some after ->
+  forall id v,
+  ~ List.In id (List.map fst parameters) ->
+  prepare_call_state (set0 _ now id v) arguments parameters = Some (set0 _ after id v).
+Proof.
+intros now arguments; revert now.
+induction arguments as [ | arg argumentss hi]; intros now [ | [name ?] parameters]
+    after h id v hnotin; simpl in *; try discriminate.
+- now injection h; intros; subst.
+- apply hi with (id := id) (v := v) in h.
+  + replace (set0 _ (set0 _ now id v) name arg) with
+            (set0 _ (set0 _ now name arg) id v); [ assumption | ].
+    apply set0_set0_diff with (Aeqb := Value.eqb); [ now apply Value.eqb_eq |
+        now apply Value.eqb_refl | ].
+    case_eq (String.eqb name id); intro heq; [ | reflexivity ].
+    apply String.eqb_eq in heq.
+    rewrite heq in hnotin.
+    now elim hnotin; left.
+  + intro hin; apply hnotin; now right.
+Qed.
+
+Lemma prepare_call_state_same_length: forall now arguments parameters,
+  List.length arguments = List.length parameters ->
+  NoDup (map fst parameters) ->
+  exists after, prepare_call_state now arguments parameters = Some after.
+Proof.
+intros now arguments; revert now.
+induction arguments as [ | arg arguments hi]; intros now [ | [name ?] params]
+    hlen hnodup; simpl in *; try discriminate.
+- now exists now.
+- injection hlen; clear hlen; intro hlen.
+  inversion hnodup; subst; clear hnodup.
+  apply hi with (now := now) in hlen as [after hafter]; [ | assumption ].
+  exists (set0 _ after name arg); simpl.
+  now rewrite prepare_call_state_set with (after := after).
 Qed.
 
 Definition mkState state info : State := mkRawState _ _ state info.
@@ -348,10 +388,20 @@ Definition YID : Lvalue.t  := Lvalue.Id "y"%string.
 Definition X : Expression.t := Expression.Id "x"%string.
 Definition Ret x := Statement.Return x.
 (* Identity function, named "int_id", from int to int *)
+
+Definition int_id_parameters := ((("x"%string), Typ.Integer) :: nil).
+
+Remark int_id_no_dup: NoDup (map fst int_id_parameters).
+Proof.
+now constructor; [| now constructor].
+Qed.
+
 Definition int_id : func := mkFun "int_id"%string 
-    ((("x"%string), Typ.Integer) :: nil)
-    Typ.Integer
-    (Ret X).
+  int_id_parameters
+  int_id_no_dup
+  Typ.Integer
+  (Ret X).
+
 Definition Int z : Expression.t := Expression.Integer z.
 
 (* Empty value state, with a single function defined: int_id *)
@@ -391,7 +441,8 @@ Qed.
 
 (* Function "expect_int" : int -> void *)
 Definition expect_int : func := mkFun "expect_int"%string 
-  ((("x"%string), Typ.Integer) :: nil)
+  int_id_parameters (* we use the same list of parameters *)
+  int_id_no_dup
   Typ.None
   Statement.Pass.
 
@@ -439,7 +490,8 @@ Qed.
 
 (** Single Step Semantic is a deterministic relation *)
 Lemma sss_determinist: forall s0 st0 k0 s1 st1 k1 s2 st2 k2,
-    sss s0 st0 k0 s1 st1 k1 -> sss s0 st0 k0 s2 st2 k2 ->
+    sss s0 st0 k0 s1 st1 k1 ->
+    sss s0 st0 k0 s2 st2 k2 ->
     (s1 = s2 /\ st1 = st2 /\ k1 = k2).
 Proof.
 intros s0 st0 k0 s1 st1 k1 s2 st2 k2 h; revert s2 st2 k2.
