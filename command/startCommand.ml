@@ -9,21 +9,13 @@ open Network
 open Scheduler
 open Server
 open State
+open Socket
 open Protocol
 module Time = Core_kernel.Time_ns.Span
 module Request = Server.Request
 module Connections = Server.Connections.Unix
 
 exception AlreadyRunning
-
-let handshake_message version =
-  let open LanguageServer.Types in
-  {
-    HandshakeServer.jsonrpc = "2.0";
-    method_ = "handshake/server";
-    parameters = Some { HandshakeServerParameters.version };
-  }
-
 
 let computation_thread
     request_queue
@@ -121,24 +113,26 @@ let computation_thread
             | None -> () );
             state
         | Protocol.Request.JSONSocket socket ->
-            let { Request.state; response } = process_request ~state ~request in
-            ( match response with
-            | Some (TypeCheckResponse response) -> (
+            let write_to_json_socket response =
               try
                 let out_channel = Unix.out_channel_of_descr socket in
-                LanguageServer.Protocol.JSONRPCResponse.TypeErrors.to_json response
-                |> LanguageServer.Protocol.write_message out_channel;
+                LanguageServer.Protocol.write_message out_channel response;
                 Out_channel.flush out_channel;
                 Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore
               with
-              | _ -> Log.error "Socket error" )
+              | Unix.Unix_error (name, kind, parameters) ->
+                  Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore;
+                  Log.log_unix_error (name, kind, parameters)
+              | _ ->
+                  Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore;
+                  Log.error "Socket error"
+            in
+            let { Request.state; response } = process_request ~state ~request in
+            ( match response with
+            | Some (TypeCheckResponse response) ->
+                write_to_json_socket (Jsonrpc.Response.TypeErrors.to_json response)
             | Some (TypeQueryResponse response) ->
-                let out_channel = Unix.out_channel_of_descr socket in
-                response
-                |> TypeQuery.json_socket_response
-                |> LanguageServer.Protocol.write_message out_channel;
-                Out_channel.flush out_channel;
-                Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore
+                write_to_json_socket (TypeQuery.json_socket_response response)
             | _ -> () );
             state
         | Protocol.Request.FileNotifier
@@ -254,35 +248,16 @@ let request_handler_thread
   in
   let handle_readable_json_request socket =
     try
-      let origin request =
-        match Yojson.Safe.Util.member "method" request |> Yojson.Safe.Util.to_string with
-        | "displayTypeErrors"
-        | "typeQuery" ->
-            Protocol.Request.JSONSocket socket
-        | _ -> Protocol.Request.FileNotifier
-      in
-      let request_type request =
-        match Yojson.Safe.Util.member "method" request |> Yojson.Safe.Util.to_string with
-        | "typeQuery" ->
-            request
-            |> Yojson.Safe.Util.member "params"
-            |> Yojson.Safe.Util.member "query"
-            |> Yojson.Safe.to_string
-            |> String.strip ~drop:(Char.equal '\"')
-            |> Query.parse_query ~configuration:analysis_configuration
-        | _ ->
-            request
-            |> Yojson.Safe.to_string
-            |> fun request -> Protocol.Request.LanguageServerProtocolRequest request
-      in
       Log.log ~section:`Server "A file notifier is readable.";
       let request = socket |> Unix.in_channel_of_descr |> LanguageServer.Protocol.read_message in
-      let origin = request >>| origin |> Option.value ~default:Protocol.Request.FileNotifier in
+      let origin = request >>| Jsonrpc.Request.origin ~socket |> Option.value ~default:None in
       request
-      >>| request_type
+      >>| Jsonrpc.Request.format_request ~configuration:analysis_configuration
       |> function
-      | Some request -> queue_request ~origin request
-      | None -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket."
+      | request -> (
+        match request, origin with
+        | Some request, Some origin -> queue_request ~origin request
+        | _, _ -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket." )
     with
     | End_of_file
     | Yojson.Json_error _
@@ -333,7 +308,7 @@ let request_handler_thread
             Unix.accept json_socket
           in
           let out_channel = Unix.out_channel_of_descr new_socket in
-          handshake_message (Option.value ~default:"-1" expected_version)
+          Jsonrpc.handshake_message (Option.value ~default:"-1" expected_version)
           |> LanguageServer.Types.HandshakeServer.to_yojson
           |> LanguageServer.Protocol.write_message out_channel;
           Out_channel.flush out_channel;
