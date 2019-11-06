@@ -187,13 +187,13 @@ let slave_main ic oc =
       in
       Exit_status.exit exit_code
   | e ->
-      let e_str = Printexc.to_string e in
-      Printf.printf "Exception: %s\n" e_str;
+      let error_backtrace = Printexc.get_backtrace () in
+      let error_str = Printexc.to_string e in
+      Printf.printf "Exception: %s\n" error_str;
       EventLogger.log_if_initialized (fun () ->
-          EventLogger.worker_exception e_str
+          EventLogger.worker_exception error_str
         );
-      print_endline "Potential backtrace:";
-      Printexc.print_backtrace stdout;
+      Printf.printf "Potential backtrace:\n%s" error_backtrace;
       exit 2
 
 let win32_worker_main restore state (ic, oc) =
