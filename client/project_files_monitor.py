@@ -54,6 +54,10 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             arguments.current_directory
         )  # type: str
 
+        self.socket_connection = SocketConnection(self._configuration.log_directory)
+        self.socket_connection.connect()
+        self.socket_connection.perform_handshake(self._configuration.version_hash)
+
     @property
     def _name(self) -> str:
         return self.NAME
@@ -111,17 +115,14 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 return
 
             LOG.info("Notifying server of update to files %s.", updated_paths.updated)
-            with SocketConnection(
-                self._configuration.log_directory
-            ) as socket_connection:
-                socket_connection.perform_handshake(self._configuration.version_hash)
-                message = json_rpc.Request(
-                    method="updateFiles",
-                    parameters={"files": updated_paths.updated, "invalidated": []},
-                )
-                if not message.write(socket_connection.output):
-                    LOG.info("Failed to communicate with server. Shutting down.")
-                    self._alive = False  # terminate daemon
+            message = json_rpc.Request(
+                method="updateFiles",
+                parameters={"files": updated_paths.updated, "invalidated": []},
+            )
+            if not message.write(self.socket_connection.output):
+                LOG.info("Failed to communicate with server. Shutting down.")
+                self._alive = False  # terminate daemon
+                self.socket_connection.close()
 
         except KeyError:
             pass

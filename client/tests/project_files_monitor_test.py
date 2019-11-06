@@ -21,7 +21,7 @@ from ..socket_connection import SocketConnection, SocketException
 
 
 class MonitorTest(unittest.TestCase):
-    @patch.object(SocketConnection, "_connect")
+    @patch.object(SocketConnection, "connect")
     @patch.object(json_rpc, "perform_handshake")
     @patch.object(project_files_monitor, "find_root")
     def test_subscriptions(
@@ -87,7 +87,7 @@ class MonitorTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             bad_socket_path = os.path.join(root, "bad.sock")
             socket_connection = SocketConnection(bad_socket_path)
-            self.assertRaises(SocketException, socket_connection._connect)
+            self.assertRaises(SocketException, socket_connection.connect)
 
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
     def test_socket_communication(self, _find_watchman_path) -> None:
@@ -159,7 +159,7 @@ class MonitorTest(unittest.TestCase):
 
         self.assertEqual(errors, [])
 
-    @patch.object(SocketConnection, "_connect")
+    @patch.object(SocketConnection, "connect")
     @patch.object(json_rpc, "perform_handshake")
     @patch.object(ProjectFilesMonitor, "_watchman_client")
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
@@ -219,5 +219,5 @@ class MonitorTest(unittest.TestCase):
             server_thread.start()
 
             with socket_created_lock:
-                SocketConnection(socket_link)._connect()
+                SocketConnection(socket_link).connect()
             server_thread.join()

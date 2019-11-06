@@ -26,7 +26,7 @@ class SocketConnection(object):
         self.input: BinaryIO = self.socket.makefile(mode="rb")
         self.output: BinaryIO = self.socket.makefile(mode="wb")
 
-    def _connect(self) -> "SocketConnection":
+    def connect(self) -> "SocketConnection":
         socket_path = self._socket_path()
         try:
             self.socket.connect(os.path.realpath(socket_path))
@@ -50,7 +50,7 @@ class SocketConnection(object):
         return os.path.join(self.root, "server", "json_server.sock")
 
     def __enter__(self) -> "SocketConnection":
-        self._connect()
+        self.connect()
         return self
 
     def __exit__(
@@ -59,6 +59,12 @@ class SocketConnection(object):
         _value: Optional[BaseException],
         _traceback: Optional[TracebackType],
     ) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        self.close()
+
+    def close(self) -> None:
         try:
             self.socket.close()
         except OSError:
