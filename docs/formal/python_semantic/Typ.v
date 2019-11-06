@@ -7,7 +7,6 @@ Inductive t: Set :=
  | String: t
  | List: t -> t
  | Tuple: tlist -> t
- | Set_: t -> t
  | None: t
 with tlist: Set :=
  | Nil: tlist

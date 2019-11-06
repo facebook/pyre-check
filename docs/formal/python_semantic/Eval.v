@@ -107,11 +107,6 @@ Fixpoint eval (now: EState) (expr : Expression.t) : option Value.t :=
             end
     | Expression.Id id => get_state_value now id
     | Expression.None => Some Value.None
-    | Expression.Set_ el =>
-            match eval_list now el with
-            | Some vl => Some (Value.Sequence vl)
-            | None => None
-            end
     | Expression.String s => Some (Value.String s)
     | Expression.Ternary target test alternative =>
             match eval now test with
