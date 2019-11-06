@@ -90,7 +90,7 @@ let help () =
       Join (empty, empty);
       LessOrEqual (empty, empty);
       Meet (empty, empty);
-      Methods (Reference.create "");
+      Methods empty;
       NormalizeType empty;
       PathOfModule (Reference.create "");
       SaveServerState path;
@@ -234,7 +234,7 @@ let parse_query
       | "less_or_equal", [left; right] ->
           Request.TypeQueryRequest (LessOrEqual (access left, access right))
       | "meet", [left; right] -> Request.TypeQueryRequest (Meet (access left, access right))
-      | "methods", [name] -> Request.TypeQueryRequest (Methods (reference name))
+      | "methods", [name] -> Request.TypeQueryRequest (Methods (expression name))
       | "normalize_type", [name] -> Request.TypeQueryRequest (NormalizeType (access name))
       | "path_of_module", [module_access] ->
           Request.TypeQueryRequest (PathOfModule (reference module_access))
