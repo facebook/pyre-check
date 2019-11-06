@@ -1028,13 +1028,16 @@ class FixmeTargetsTest(unittest.TestCase):
         grep_return.stdout = b"""
         a/b/TARGETS:name = "derp",
             srcs = ["derp.py"],
-            check_types = True
+            check_types = True,
+            check_types_options = "pyre",
         a/b/TARGETS:name = "herp",
             srcs = [],
-            check_types = True
+            check_types = True,
+            check_types_options = "pyre",
         a/b/TARGETS:name = "merp",
             srcs = [],
-            check_types = True
+            check_types = True,
+            check_types_options = "pyre",
         """
         subprocess.return_value = grep_return
         upgrade.run_fixme_targets(arguments)
@@ -1053,7 +1056,7 @@ class FixmeTargetsTest(unittest.TestCase):
                 "-RPzo",
                 "--include=*TARGETS",
                 "(?s)name = ((?!\\n\\s*name).)*check_types ?= ?True"
-                + '((?!\\n\\s*name).)*check_types_options ?= ?"[^"]*pyre[^"]*"',
+                + '((?!\\n\\s*name).)*check_types_options ?= ?"[^"]*pyre[^"]*",?',
                 Path("derp"),
             ],
             stderr=-1,

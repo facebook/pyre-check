@@ -595,7 +595,8 @@ def run_fixme_targets_file(
             # Note: We are not linting here yet.
             fix(arguments, sort_errors(errors))
             try:
-                _submit_changes(arguments, _commit_message(path + "/TARGETS"))
+                if not arguments.no_commit:
+                    _submit_changes(arguments, _commit_message(path + "/TARGETS"))
             except subprocess.CalledProcessError:
                 LOG.info("Error while running hg.")
     else:
@@ -620,7 +621,7 @@ def run_fixme_targets(arguments: argparse.Namespace) -> None:
     LOG.info("Finding typecheck targets in %s", search_root)
     # TODO(T56778370): Clean up code by parsing the TARGETS file rather than using grep.
     typing_field = "check_types ?= ?True"
-    typing_options_field = 'check_types_options ?= ?"[^"]*pyre[^"]*"'
+    typing_options_field = 'check_types_options ?= ?"[^"]*pyre[^"]*",?'
     targets_regex = r"(?s)name = ((?!\n\s*name).)*{}((?!\n\s*name).)*{}".format(
         typing_field, typing_options_field
     )
@@ -640,7 +641,8 @@ def run_fixme_targets(arguments: argparse.Namespace) -> None:
     if find_targets.returncode != 0:
         LOG.error("Failed to search for targets: %s", find_targets.stderr.decode())
         return
-    targets = find_targets.stdout.decode().split("check_types = True")
+    output = find_targets.stdout.decode()
+    targets = re.split(typing_options_field, output)
     target_pattern = re.compile(r"(.*)\/TARGETS:.*name = \"([^\"]*)\".*")
     target_names = {}
     total_targets = 0
@@ -648,7 +650,7 @@ def run_fixme_targets(arguments: argparse.Namespace) -> None:
         matched = target_pattern.match(target.replace("\n", " ").strip())
         if matched:
             total_targets += 1
-            path = matched.group(1)
+            path = matched.group(1).strip()
             target_name = matched.group(2)
             if path in target_names:
                 target_names[path].append(target_name)
@@ -793,6 +795,9 @@ def main() -> None:
     fixme_targets.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
     fixme_targets.add_argument(
         "--subdirectory", help="Only upgrade TARGETS files within this directory."
+    )
+    fixme_targets.add_argument(
+        "--no-commit", action="store_true", help="Keep changes in working state."
     )
 
     # Initialize default values.
