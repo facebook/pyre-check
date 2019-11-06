@@ -13,8 +13,7 @@ Inductive t : Set :=
                    (annotation: option Typ.t)
                    (value: Expression.t),
                    t
-  | Call: forall (target: option Lvalue.t)
-                 (annotation: option Typ.t)
+  | Call: forall (target: option (Lvalue.t * Typ.t))
                  (callee: Expression.t)
                  (arguments: list ((option string) * Expression.t)),
                  t
@@ -27,5 +26,5 @@ Inductive t : Set :=
   | Pass: t
   | While: forall (test: Expression.t) (body orelse: t), t
   | Seq : forall (st next : t), t 
-  | Return: forall (ret: option Expression.t), t
+  | Return: forall (ret: Expression.t), t
 .

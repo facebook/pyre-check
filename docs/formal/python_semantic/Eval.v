@@ -61,7 +61,8 @@ Definition evaluate_unary_operator op expr : option Value.t :=
     | _, _ => None
     end.
 
-Lemma evaluate_int_operator : forall op z, evaluate_unary_operator op (Value.Integer z) =
+Lemma evaluate_unary_int_operator : forall op z,
+  evaluate_unary_operator op (Value.Integer z) =
     match op with 
     | Expression.Negative => Some (Value.Integer (-z)%Z)
     | Expression.Positive => Some (Value.Integer z)
@@ -76,7 +77,8 @@ Qed.
 (** Map from identifiers to values. Used during <<Expression.t>> evaluation *)
 Definition EState := RawState0 Value.t.
 
-Definition get_st_value (st: EState) k := get0 _ st k.
+Definition get_state_value (state: EState) k : option Value.t :=
+  get0 _ state k.
 
 (** * Evaluation of expressions
   Evaluates the expression <<expr>> using the state <<now>>. Returns some
@@ -92,7 +94,8 @@ Fixpoint eval (now: EState) (expr : Expression.t) : option Value.t :=
             end
     | Expression.ComparisonOperator lexpr op rexpr =>
             match (eval now lexpr, eval now rexpr) with
-            | (Some vl, Some vr) => Some (Value.Boolean (evaluate_comparison_operator vl op vr))
+            | (Some vl, Some vr) =>
+               Some (Value.Boolean (evaluate_comparison_operator vl op vr))
             | (_, _) => None
             end
     | Expression.False_ => Some (Value.Boolean false)
@@ -102,7 +105,7 @@ Fixpoint eval (now: EState) (expr : Expression.t) : option Value.t :=
             | Some vl => Some (Value.Sequence vl)
             | None => None
             end
-    | Expression.Id id => get_st_value now id
+    | Expression.Id id => get_state_value now id
     | Expression.None => Some Value.None
     | Expression.Set_ el =>
             match eval_list now el with
@@ -129,7 +132,8 @@ Fixpoint eval (now: EState) (expr : Expression.t) : option Value.t :=
             | None => None
             end
     end
-with eval_list (now: EState) (elist : Expression.tlist) : option Value.tlist :=
+with eval_list (now: EState) (elist : Expression.tlist) :
+  option Value.tlist :=
   match elist with
   | Expression.Nil => Some (Value.Nil)
   | Expression.Cons hd tl =>
@@ -140,6 +144,20 @@ with eval_list (now: EState) (elist : Expression.tlist) : option Value.tlist :=
   end
 .
 
+Lemma eval_list_length: forall (state: EState)
+  (l: Expression.tlist) (vl: Value.tlist),
+  eval_list state l = Some vl -> List.length l = List.length vl.
+Proof.
+intro now; induction l as [ | e es hi]; intros vs' h; simpl in *.
+- now injection h; clear h; intro h; subst.
+- case_eq (eval now e); [ intros v | ]; intros hv; rewrite hv in h.
+  + case_eq (eval_list now es); [ intros vs | ]; intros hvs; rewrite hvs in h.
+    * injection h; clear h; intro h; subst; simpl.
+      now rewrite (hi _ hvs).
+    * discriminate h.
+  + discriminate h.
+Qed.
+
 (** * Information about function definitions
 
 We store in here all relevant information about known functions:
@@ -148,8 +166,10 @@ We store in here all relevant information about known functions:
 - the actual <<body>> statement of the function.
 *)
 Record func : Set := mkFun {
-    name: string; (* TODO(T53097965): support dotted access for methods *)
-    parameters: list (string * Typ.t); (* TODO(T53097965): support more parameter kinds *)
+    (* TODO(T53097965): support dotted access for methods *)
+    name: string;
+    (* TODO(T53097965): support more parameter kinds *)
+    parameters: list (string * Typ.t);
     (* decorators: Expression.t list; *)
     return_annotation: Typ.t; (* no option, set to TNone if need be *)
     (* async: bool; *)
@@ -166,46 +186,54 @@ Definition State := RawState Value.t func.
 used to create the initial state for a sub-function call. *)
 Definition reset_local (now: State) : State := Empty _ _ (info _ _ now).
 
-Fixpoint prepare_call (now: State)
+Fixpoint prepare_call_state (now: EState)
     (arguments: list Value.t)
-    (parameters: list (string * Typ.t)) : State :=
+    (parameters: list (string * Typ.t)) : option EState :=
     match (arguments, parameters) with
-    | (nil, nil) => now 
+    | (nil, nil) => Some now 
     | (v :: arguments, ((name, _) :: parameters)) =>
-            prepare_call (set _ _ now name v) arguments parameters
-    | (_, _) => now (* maybe option state ? So far we don't need it *)
+        prepare_call_state (set0 _ now name v) arguments parameters
+    | (_, _) => None
 end.
+
+Lemma prepare_call_state_length: forall now arguments parameters after,
+  prepare_call_state now arguments parameters = Some after ->
+  List.length arguments = List.length parameters.
+Proof.
+intros now arguments; revert now.
+induction arguments as [ | arg arguments hi];
+    intros now [ | [? name] parameters]
+    after h; simpl in *; try discriminate; [ reflexivity | ].
+now rewrite (hi _ _ _ h).
+Qed.
+
+Definition mkState state info : State := mkRawState _ _ state info.
 
 (** * Continuations
 
 Type of continuation, to deal with the execution flow.
 - <<KStop>> means that there is nothing left to execute.
-- <<KSeq st k>> is the sequence operator. When the current statement is
-  evaluated, continue the evaluation with <<st>> and then with <<k>>.
+- <<KSeq statement k>> is the sequence operator. When the current statement is
+  evaluated, continue the evaluation with <<statement>> and then with <<k>>.
 - <<KWhile test body orelse k>> means that we are currently evaluating
   a while loop. The payload will drive what happens when we reach the end
   of the loop or a control operator. Once the loop is done, continue with
     <<k>>.
-- <<KCallFun state target annotation k>> means that we are executing a
+- <<KCall state target k>> means that we are executing a
   sub-routine/function. Before the call, the current state was <<state>>.
   Once the call returns, the output value (if any) will be stored in
-  the <<target>> identifier (which should be of type <<annotation>>. The
+  the <<target>> identifier (if any).
   execution then resumes using the <<k>> continuation.
--  <<KCallProc state k>> is the same as the <<KCallFun>> continuation for
-  "procedure", which are functions that don't return anything, so there is
-  no need to keep track of the target.
 *)
 Inductive Cont : Set :=
   | KStop: Cont
   | KSeq: Statement.t -> Cont -> Cont
   | KWhile: forall (test: Expression.t) (body orelse: Statement.t) (k: Cont),
           Cont
-  | KCallFun: forall (call_state: State)
-                     (target: Lvalue.t)
-                     (annotation: option Typ.t)
-                     (k: Cont),
-                     Cont
-  | KCallProc: forall (call_state: State) (k: Cont), Cont
+  | KCall: forall (call_state: State)
+                  (target: option (Lvalue.t * Typ.t))
+                  (k: Cont),
+                  Cont
 .
 
 (** *  Single Step Semantic
@@ -218,25 +246,50 @@ Inductive Cont : Set :=
 Inductive sss: State -> Statement.t -> Cont ->
                State -> Statement.t -> Cont -> Prop  :=
     | sssAssign: forall s id annotation value k v,
-            eval (state _ _ s) value = Some v ->
-            sss s (Statement.Assign (Lvalue.Id id) annotation value) k
-                (set _ _ s id v) Statement.Pass k
+        eval (state _ _ s) value = Some v ->
+        sss s (Statement.Assign (Lvalue.Id id) annotation value) k
+            (set _ _ s id v) Statement.Pass k
+    (* executing a function call yield a fresh new state (and the current
+       one is stored in the <<KCall>> continuation *)
     | sssCallFun: forall s id annotation callee arguments func k
-            (vargs: Value.tlist),
-            get_info _ _ s callee = Some func ->
-            eval_list (state _ _ s) (from_list (List.map snd arguments)) = Some vargs ->
-            sss s (Statement.Call (Some id) annotation (Expression.Id callee) arguments) k
-               (prepare_call (reset_local s) vargs (parameters func)) (body func) (KCallFun s id annotation k)
-    | sssCallProc: forall s callee arguments func k (vargs: Value.tlist),
-            get_info _ _  s callee = Some func ->
-            eval_list (state _ _ s) (from_list (List.map snd arguments)) = Some vargs ->
-            sss s (Statement.Call None None (Expression.Id callee) arguments) k
-               (prepare_call (reset_local s) vargs (parameters func)) (body func) (KCallProc s k)
+        (vargs: Value.tlist) call_state,
+        get_info _ _ s callee = Some func ->
+        eval_list (state _ _ s) (from_list (List.map snd arguments)) = Some vargs ->
+        prepare_call_state (Empty0 _) vargs (parameters func) = Some call_state ->
+        sss
+          s
+          (Statement.Call (Some (id, annotation)) (Expression.Id callee) arguments)
+          k
+          (mkState call_state (info _ _ s))
+          (body func)
+          (KCall s (Some (id, return_annotation func)) k)
+    (* executing a procedure call yield a fresh new state (and the current
+       one is stored in the <<KCall>> continuation *)
+    | sssCallProc: forall s callee arguments func k (vargs: Value.tlist) call_state,
+        get_info _ _  s callee = Some func ->
+        eval_list (state _ _ s) (from_list (List.map snd arguments)) = Some vargs ->
+        prepare_call_state (Empty0 _) vargs (parameters func) = Some call_state ->
+        sss
+          s
+          (Statement.Call None (Expression.Id callee) arguments)
+          k
+          (mkState call_state (info _ _ s))
+          (body func)
+          (KCall s None k)
     | sssReturnFun: forall s s' ret id annotation k vret,
-            eval (state _ _ s) ret = Some vret ->
-            sss s (Statement.Return (Some ret)) (KCallFun s' (Lvalue.Id id) annotation k)
-                (set _ _ s' id vret) Statement.Pass k
-    | sssReturnProc: forall s s' k, sss s (Statement.Return None) (KCallProc s' k) s' Statement.Pass k
+        eval (state _ _ s) ret = Some vret ->
+        sss s (Statement.Return ret) (KCall s' (Some (Lvalue.Id id, annotation)) k)
+          (set _ _ s' id vret) Statement.Pass k
+    | sssReturnProc: forall s s' ret k,
+        sss s (Statement.Return ret) (KCall s' None k) s' Statement.Pass k
+    | sssReturnWhile: forall s test body orelse k ret,
+        sss s (Statement.Return ret) (KWhile test body orelse k)
+            s (Statement.Return ret) k
+    | sssReturnSeq: forall s st k ret,
+        sss s (Statement.Return ret) (KSeq st k)
+            s (Statement.Return ret) k
+    | sssPassProc: forall s s' k,
+        sss s Statement.Pass (KCall s' None k) s' Statement.Pass k
     | sssExpression : forall s expr v k, 
             eval (state _ _ s) expr = Some v ->
             sss s (Statement.Expression expr) k s Statement.Pass k
@@ -298,32 +351,78 @@ Module Test.
 (* Toy examples to convince myself that everything is correct *)
 Definition YID : Lvalue.t  := Lvalue.Id "y"%string.
 Definition X : Expression.t := Expression.Id "x"%string.
-Definition Ret x := Statement.Return (Some x).
+Definition Ret x := Statement.Return x.
+(* Identity function, named "int_id", from int to int *)
 Definition int_id : func := mkFun "int_id"%string 
     ((("x"%string), Typ.Integer) :: nil)
     Typ.Integer
     (Ret X).
 Definition Int z : Expression.t := Expression.Integer z.
 
+(* Empty value state, with a single function defined: int_id *)
 Definition test_state : State := Empty _ _ 
                    (set_map _ (@empty _) "int_id"%string int_id).
+(* Value state has a single binding: y |-> 42. Function information
+   is the same as test_state *)
 Definition final_state : State :=
     set _ _ test_state "y"%string (Value.Integer 42).
 
+(* Function call `y := int_id(42)` *)
 Definition Prog :=
-    Statement.Call (Some YID) None (Expression.Id "int_id"%string) ((None, Int 42) :: nil).
+    Statement.Call (Some (YID, Typ.None))
+      (Expression.Id "int_id"%string)
+      ((None, Int 42) :: nil).
 
-(* initial state: value = Empty / func = int_id(x:int) : int { return x }
-   program = y := int_id(42)
-   final state: value = {y := 42 } / func = int_id(x:int) : int { return x}
-*)
-Lemma sss_int_id_42: sssn test_state Prog KStop final_state Statement.Pass KStop.
+(* Proof that the program `Prog` executes correctly and updates the 
+   initial environment `test_state` into `final_state`. *)
+Lemma sss_int_id_42:
+  sssn test_state Prog KStop final_state Statement.Pass KStop.
 Proof.
 unfold Prog.
 eapply sss_trans.
-  apply sssCallFun.
+  apply sssCallFun with (vargs := (Value.Cons (Value.Integer 42) Value.Nil)). 
   simpl; unfold set_map; simpl.
   now reflexivity.
+
+  simpl; now reflexivity.
+
+  simpl; now reflexivity.
+
+simpl.
+eapply sss_trans.
+  now constructor.
+now apply sss_refl.
+Qed.
+
+(* Function "expect_int" : int -> void *)
+Definition expect_int : func := mkFun "expect_int"%string 
+  ((("x"%string), Typ.Integer) :: nil)
+  Typ.None
+  Statement.Pass.
+
+(* New test state: Empty value state and a single function definition:
+ expect_int *)
+Definition test_state2 : State := Empty _ _ 
+                   (set_map _ (@empty _) "expect_int"%string expect_int).
+
+(* Function call `expect_int(1664)` *)
+Definition Prog2 :=
+    Statement.Call None
+      (Expression.Id "expect_int"%string)
+      ((None, Int 1664) :: nil).
+
+(* Proof that the program `Prog2` executes correctly and do not modify its
+   initial environment `test_state2`. *)
+Lemma sss_expect_int:
+  sssn test_state2 Prog2 KStop test_state2 Statement.Pass KStop.
+Proof.
+unfold Prog2.
+eapply sss_trans.
+  apply sssCallProc with (vargs := Value.Cons (Value.Integer 1664) Value.Nil).
+  simpl; unfold set_map; simpl.
+  now reflexivity.
+
+  simpl; now reflexivity.
 
   simpl; now reflexivity.
 simpl.
@@ -351,9 +450,12 @@ Proof.
 intros s0 st0 k0 s1 st1 k1 s2 st2 k2 h; revert s2 st2 k2.
 destruct h as [
       s id annotation value k v hvalue
-    | s id annotation callee arguments func k vargs hf heval
-    | s callee arguments func k vargs hf heval
+    | s id annotation callee arguments func k vargs cstate hf heval hstate
+    | s callee arguments func k vargs cstate hf heval hstate
     | s s' ret id annotation k vret heval
+    | s s' ret k
+    | s test body orelse k ret
+    | s st k ret
     | s s' k
     | s expr v k heval
     | s st0 st1 k 
@@ -369,11 +471,13 @@ destruct h as [
   rewrite hvalue in H7; injection H7; intros; subst.
   now split.
 - inversion h; subst; clear h. 
-  rewrite hf in H8; injection H8; intros; subst.
-  now rewrite heval in H9; injection H9; intros; subst.
+  rewrite hf in H8; injection H8; clear H8; intros; subst.
+  rewrite heval in H9; injection H9; clear H9; intros; subst.
+  now rewrite hstate in H10; injection H10; clear H10; intros; subst.
 - inversion h; subst; clear h. 
-  rewrite hf in H2; injection H2; intros; subst.
-  now rewrite heval in H7; injection H7; intros; subst.
+  rewrite hf in H1; injection H1; clear H1; intros; subst.
+  rewrite heval in H3; injection H3; clear H3; intros; subst.
+  now rewrite hstate in H8; injection H8; clear H8; intros; subst.
 - inversion h; subst; clear h. 
   now rewrite heval in H8; injection H8; intros; subst.
 - inversion h; subst; clear h; [now idtac | ].
