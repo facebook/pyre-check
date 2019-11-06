@@ -23,6 +23,10 @@ class EnvironmentException(Exception):
 
 
 class Environment(ABC):
+    pyre_binary_override: Optional[str] = None
+    typeshed_override: Optional[str] = None
+    pyre_client_override: Optional[str] = None
+
     @abstractmethod
     def run(
         self, working_directory: Path, command: str, stdin: Optional[str]

@@ -23,8 +23,14 @@ class RunnerTest(unittest.TestCase):
         specification: Specification,
         expected_commands: List[CommandInput],
         expected_discrepancy: Optional[InconsistentOutput],
+        pyre_binary_override: Optional[str] = None,
+        typeshed_override: Optional[str] = None,
+        pyre_client_override: Optional[str] = None,
     ) -> None:
         environment = TestEnvironment(mock_execute)
+        environment.pyre_binary_override = pyre_binary_override
+        environment.typeshed_override = typeshed_override
+        environment.pyre_client_override = pyre_client_override
         actual_result = compare_server_to_full(environment, specification)
         self.assertEqual(actual_result.discrepancy, expected_discrepancy)
         actual_commands = environment.command_history
@@ -180,6 +186,40 @@ class RunnerTest(unittest.TestCase):
                     ),
                 ],
             ),
+        )
+        expected_commands = [
+            CommandInput(Path("old_root"), "hg whereami"),
+            CommandInput(Path("old_root"), "hg update old_hash"),
+            CommandInput(
+                Path("old_root"),
+                "client --binary bin --typeshed bikeshed --option2 "
+                "--no-saved-state restart",
+            ),
+            CommandInput(Path("old_root"), "hg update --clean new_hash"),
+            CommandInput(
+                Path("old_root"),
+                "client --binary bin --typeshed bikeshed --option3 "
+                "--output=json --noninteractive incremental",
+            ),
+            CommandInput(
+                Path("old_root"), "client --binary bin --typeshed bikeshed stop"
+            ),
+            CommandInput(
+                Path("old_root"),
+                "client --binary bin --typeshed bikeshed --option1 "
+                "--output=json --noninteractive check",
+            ),
+            CommandInput(Path("old_root"), f"hg update --clean {initial_hash}"),
+        ]
+
+        self.assert_run(
+            mock_execute=always_clean_execute,
+            specification=specification,
+            expected_commands=expected_commands,
+            expected_discrepancy=None,
+            pyre_binary_override="bin",
+            typeshed_override="bikeshed",
+            pyre_client_override="client",
         )
 
     def test_patch(self) -> None:

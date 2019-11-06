@@ -51,13 +51,21 @@ class PyreRunner:
         self._environment = environment
         self._specification = specification
         self._working_directory = working_directory
+        invocation = self._environment.pyre_client_override or "pyre"
+        binary_override = self._environment.pyre_binary_override
+        if binary_override:
+            invocation += f" --binary {binary_override}"
+        typeshed_override = self._environment.typeshed_override
+        if typeshed_override:
+            invocation += f" --typeshed {typeshed_override}"
+        self._pyre_invocation: str = invocation
 
     def update(self) -> None:
         self._specification.new_state.update(self._environment, self._working_directory)
 
     def run_check(self) -> List[PyreError]:
         pyre_check_command = (
-            f"pyre {self._specification.pyre_check_pyre_options} "
+            f"{self._pyre_invocation} {self._specification.pyre_check_pyre_options} "
             "--output=json "
             "--noninteractive "
             f"check {self._specification.pyre_check_options}"
@@ -77,7 +85,7 @@ class PyreRunner:
             # Use `pyre restart` instead of `pyre start` as the we want to:
             # - Kill existing servers
             # - Force the initial check to finish
-            f"pyre {self._specification.pyre_start_pyre_options} "
+            f"{self._pyre_invocation} {self._specification.pyre_start_pyre_options} "
             "--no-saved-state "
             f"restart {self._specification.pyre_start_options}"
         ).rstrip()
@@ -87,12 +95,14 @@ class PyreRunner:
 
     def run_stop(self) -> None:
         self._environment.checked_run(
-            working_directory=self._working_directory, command="pyre stop"
+            working_directory=self._working_directory,
+            command=f"{self._pyre_invocation} stop",
         )
 
     def run_incremental(self) -> List[PyreError]:
         pyre_incremental_command = (
-            f"pyre {self._specification.pyre_incremental_pyre_options} "
+            f"{self._pyre_invocation} "
+            f"{self._specification.pyre_incremental_pyre_options} "
             "--output=json "
             "--noninteractive "
             f"incremental {self._specification.pyre_incremental_options}"
