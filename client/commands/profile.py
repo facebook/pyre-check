@@ -9,7 +9,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .command import Command, ProfileOutput
 
@@ -38,6 +38,12 @@ class Event:
 @dataclass(frozen=True)
 class DurationEvent(Event):
     duration: int
+
+    def add_phase_duration_to_result(self, result: Dict[str, int]) -> None:
+        tags = self.metadata.tags
+        if PHASE_NAME in tags:
+            phase_name = tags[PHASE_NAME]
+            result[phase_name] = self.duration
 
 
 @dataclass(frozen=True)
@@ -124,20 +130,46 @@ def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
     ]
 
 
-def to_cold_start_phases(events: Sequence[Event]) -> Dict[str, Any]:
-    result: Dict[str, Any] = {}
-    for event in events:
-        if event.metadata.name == "initialization":
-            # Cold start ends with server initialization message
-            break
+def split_pre_and_post_initialization(
+    events: Sequence[Event]
+) -> Tuple[Sequence[Event], Sequence[Event]]:
+    initialization_point = next(
+        (
+            index
+            for index, event in enumerate(events)
+            if event.metadata.name == "initialization"
+        ),
+        len(events) - 1,
+    )
+    return events[:initialization_point], events[initialization_point:]
+
+
+def to_cold_start_phases(events: Sequence[Event]) -> Dict[str, int]:
+    result: Dict[str, int] = {}
+    pre_initialization_events, _ = split_pre_and_post_initialization(events)
+    for event in pre_initialization_events:
+        if not isinstance(event, DurationEvent):
+            continue
+        event.add_phase_duration_to_result(result)
+
+    return result
+
+
+def to_incremental_updates(events: Sequence[Event]) -> List[Dict[str, int]]:
+    results: List[Dict[str, int]] = []
+    current: Dict[str, int] = {}
+    _, post_initialization_events = split_pre_and_post_initialization(events)
+    for event in post_initialization_events:
         if not isinstance(event, DurationEvent):
             continue
 
-        tags = event.metadata.tags
-        if PHASE_NAME in tags:
-            phase_name = tags[PHASE_NAME]
-            result[phase_name] = event.duration
-    return result
+        event.add_phase_duration_to_result(current)
+
+        if event.metadata.name == "incremental check":
+            current["total"] = event.duration
+            results.append(current)
+            current = {}
+    return results
 
 
 class Profile(Command):
@@ -158,6 +190,8 @@ class Profile(Command):
                 print(json.dumps(to_traceevents(events)))
             elif output == ProfileOutput.COLD_START_PHASES:
                 print(json.dumps(to_cold_start_phases(events), indent=2))
+            elif output == ProfileOutput.INCREMENTAL_UPDATES:
+                print(json.dumps(to_incremental_updates(events), indent=2))
             else:
                 raise RuntimeError("Unrecognized output format: {}".format(output))
 
