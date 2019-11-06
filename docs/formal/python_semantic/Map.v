@@ -61,7 +61,7 @@ track of types / values in the rest of the developlment. *)
 Section Map.
 
 (* Generic type of values *)
-Variable A: Set.
+Context {A: Set}.
 
 (** Generic definition of partial maps from identifiers to some type A
     encoded as sorted lists of pairs *)
@@ -535,8 +535,7 @@ Qed.
 End Map.
 
 Section RawState.
-Variable A: Set.
-Variable B: Set.
+Context {A B: Set}.
 
 Variable Aeqb : A -> A -> bool.
 Hypothesis Aeqb_eq: forall x y, Aeqb x y = true -> x = y.
@@ -546,19 +545,19 @@ Hypothesis Aeqb_refl: forall x, Aeqb x x = true.
   (like a list of the already checked/defined functions.
   We implicitely coerce <<RawState>> to their underlying <<RawState0>>. *)
 Record RawState : Set := mkRawState {
-    state :> RawState0 A;
-    info : Map B;
+    state :> @RawState0 A;
+    info : @Map B;
 }.
 
-Definition Empty (info: Map B) : RawState := mkRawState (Empty0 _) info.
+Definition Empty (info: @Map B) : RawState := mkRawState Empty0 info.
 
-Definition get (s: RawState) id := get0 _ (state s) id.
+Definition get (s: RawState) id := get0 (state s) id.
 Definition set (s: RawState) id v :=
-    mkRawState (set0 _ (state s) id v) (info s).
+    mkRawState (set0 s id v) (info s).
 Definition unset (s: RawState) id :=
-    mkRawState (unset0 _ (state s) id) (info s).
+    mkRawState (unset0 s id) (info s).
 
-Definition get_info (s: RawState) f := get_map _ (info s) f.
+Definition get_info (s: RawState) f := get_map (info s) f.
 
 Lemma get_set: forall s x y a,
   get (set s x a) y =
@@ -586,7 +585,7 @@ Proof.
 intros [s ?] x y a b h; simpl.
 unfold set, get.
 simpl state.
-now rewrite (set0_set0_diff _ _ Aeqb_eq Aeqb_refl).
+now rewrite (set0_set0_diff _ Aeqb_eq Aeqb_refl).
 Qed.
 
 End RawState.

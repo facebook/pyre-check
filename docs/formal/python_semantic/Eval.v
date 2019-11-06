@@ -75,10 +75,10 @@ Qed.
 (* end hide *)
 
 (** Map from identifiers to values. Used during <<Expression.t>> evaluation *)
-Definition EState := RawState0 Value.t.
+Definition EState := @RawState0 Value.t.
 
 Definition get_state_value (state: EState) k : option Value.t :=
-  get0 _ state k.
+  get0 state k.
 
 (** * Evaluation of expressions
   Evaluates the expression <<expr>> using the state <<now>>. Returns some
@@ -177,11 +177,11 @@ Record func : Set := mkFun {
 (** Global state for the statement operational semantic. It is made of
 the state for expression evaluation, along with information about know
 functions. *)
-Definition State := RawState Value.t func.
+Definition State := @RawState Value.t func.
 
 (* Creates an empty state, keeping the function information around. It is
 used to create the initial state for a sub-function call. *)
-Definition reset_local (now: State) : State := Empty _ _ (info _ _ now).
+Definition reset_local (now: State) : State := Empty (info now).
 
 Fixpoint prepare_call_state (now: EState)
     (arguments: list Value.t)
@@ -189,7 +189,7 @@ Fixpoint prepare_call_state (now: EState)
     match (arguments, parameters) with
     | (nil, nil) => Some now 
     | (v :: arguments, ((name, _) :: parameters)) =>
-        prepare_call_state (set0 _ now name v) arguments parameters
+        prepare_call_state (set0 now name v) arguments parameters
     | (_, _) => None
 end.
 
@@ -208,15 +208,15 @@ Lemma prepare_call_state_set: forall now arguments parameters after,
   prepare_call_state now arguments parameters = Some after ->
   forall id v,
   ~ List.In id (List.map fst parameters) ->
-  prepare_call_state (set0 _ now id v) arguments parameters = Some (set0 _ after id v).
+  prepare_call_state (set0 now id v) arguments parameters = Some (set0 after id v).
 Proof.
 intros now arguments; revert now.
 induction arguments as [ | arg argumentss hi]; intros now [ | [name ?] parameters]
     after h id v hnotin; simpl in *; try discriminate.
 - now injection h; intros; subst.
 - apply hi with (id := id) (v := v) in h.
-  + replace (set0 _ (set0 _ now id v) name arg) with
-            (set0 _ (set0 _ now name arg) id v); [ assumption | ].
+  + replace (set0 (set0 now id v) name arg) with
+            (set0 (set0 now name arg) id v); [ assumption | ].
     apply set0_set0_diff with (Aeqb := Value.eqb); [ now apply Value.eqb_eq |
         now apply Value.eqb_refl | ].
     case_eq (String.eqb name id); intro heq; [ | reflexivity ].
@@ -238,11 +238,11 @@ induction arguments as [ | arg arguments hi]; intros now [ | [name ?] params]
 - injection hlen; clear hlen; intro hlen.
   inversion hnodup; subst; clear hnodup.
   apply hi with (now := now) in hlen as [after hafter]; [ | assumption ].
-  exists (set0 _ after name arg); simpl.
+  exists (set0 after name arg); simpl.
   now rewrite prepare_call_state_set with (after := after).
 Qed.
 
-Definition mkState state info : State := mkRawState _ _ state info.
+Definition mkState state info : State := mkRawState state info.
 
 (** * Continuations
 
@@ -280,99 +280,110 @@ Inductive Cont : Set :=
 *)
 Inductive sss: State -> Statement.t -> Cont ->
                State -> Statement.t -> Cont -> Prop  :=
-    | sssAssign: forall s id annotation value k v,
-        eval (state _ _ s) value = Some v ->
-        sss s (Statement.Assign (Lvalue.Id id) annotation value) k
-            (set _ _ s id v) Statement.Pass k
+    | sssAssign: forall (state: State) id annotation value k v,
+        eval state value = Some v ->
+        sss state (Statement.Assign (Lvalue.Id id) annotation value) k
+            (set state id v) Statement.Pass k
     (* executing a function call yield a fresh new state (and the current
        one is stored in the <<KCall>> continuation *)
-    | sssCallFun: forall s id annotation callee arguments func k
+    | sssCallFun: forall state id annotation callee arguments func k
         (vargs: Value.tlist) call_state,
-        get_info _ _ s callee = Some func ->
-        eval_list (state _ _ s) (from_list (List.map snd arguments)) = Some vargs ->
-        prepare_call_state (Empty0 _) vargs (parameters func) = Some call_state ->
+        get_info state callee = Some func ->
+        eval_list state (from_list (List.map snd arguments)) = Some vargs ->
+        prepare_call_state Empty0 vargs (parameters func) = Some call_state ->
         sss
-          s
+          state
           (Statement.Call (Some (id, annotation)) (Expression.Id callee) arguments)
           k
-          (mkState call_state (info _ _ s))
+          (mkState call_state (info state))
           (body func)
-          (KCall s (Some (id, return_annotation func)) k)
+          (KCall state (Some (id, return_annotation func)) k)
     (* executing a procedure call yield a fresh new state (and the current
        one is stored in the <<KCall>> continuation *)
-    | sssCallProc: forall s callee arguments func k (vargs: Value.tlist) call_state,
-        get_info _ _  s callee = Some func ->
-        eval_list (state _ _ s) (from_list (List.map snd arguments)) = Some vargs ->
-        prepare_call_state (Empty0 _) vargs (parameters func) = Some call_state ->
+    | sssCallProc: forall state callee arguments func k (vargs: Value.tlist) call_state,
+        get_info state callee = Some func ->
+        eval_list state (from_list (List.map snd arguments)) = Some vargs ->
+        prepare_call_state Empty0 vargs (parameters func) = Some call_state ->
         sss
-          s
+          state
           (Statement.Call None (Expression.Id callee) arguments)
           k
-          (mkState call_state (info _ _ s))
+          (mkState call_state (info state))
           (body func)
-          (KCall s None k)
-    | sssReturnFun: forall s s' ret id annotation k vret,
-        eval (state _ _ s) ret = Some vret ->
-        sss s (Statement.Return ret) (KCall s' (Some (Lvalue.Id id, annotation)) k)
-          (set _ _ s' id vret) Statement.Pass k
-    | sssReturnProc: forall s s' ret k,
-        sss s (Statement.Return ret) (KCall s' None k) s' Statement.Pass k
-    | sssReturnWhile: forall s test body orelse k ret,
-        sss s (Statement.Return ret) (KWhile test body orelse k)
-            s (Statement.Return ret) k
-    | sssReturnSeq: forall s st k ret,
-        sss s (Statement.Return ret) (KSeq st k)
-            s (Statement.Return ret) k
-    | sssPassProc: forall s s' k,
-        sss s Statement.Pass (KCall s' None k) s' Statement.Pass k
-    | sssExpression : forall s expr v k, 
-            eval (state _ _ s) expr = Some v ->
-            sss s (Statement.Expression expr) k s Statement.Pass k
-    | sssSeq: forall s st0 st1 k,
-            sss s (Statement.Seq st0 st1) k s st0 (KSeq st1 k)
-    | sssPassSeq: forall s st k,
-            sss s Statement.Pass (KSeq st k) s st k
-    | sssWhileTrue:  forall s test body orelse k,
-            eval (state _ _ s) test = Some (Value.Boolean true) ->
-            sss s (Statement.While test body orelse) k s body (KWhile test body orelse k)
-    | sssWhileFalse: forall s test body orelse k,
-            eval (state _ _ s) test = Some (Value.Boolean false) ->
-            sss s (Statement.While test body orelse) k s orelse k
-    | sssPassWhileTrue: forall s test body orelse k,
-            eval (state _ _ s) test = Some (Value.Boolean true) ->
-            sss s Statement.Pass (KWhile test body orelse k) s body (KWhile test body orelse k)
-    | sssPassWhileFalse: forall s test body orelse k,
-            eval (state _ _ s) test = Some (Value.Boolean false) ->
-            sss s Statement.Pass (KWhile test body orelse k) s orelse k
-    | sssIfTrue: forall test body orelse s k,
-            eval (state _ _ s) test = Some (Value.Boolean true) ->
-            sss s (Statement.If test body orelse) k s body k
-    | sssIfFalse: forall test body orelse s k,
-            eval (state _ _ s) test = Some (Value.Boolean false) ->
-            sss s (Statement.If test body orelse) k s orelse k
+          (KCall state None k)
+    | sssReturnFun: forall (state call_state: State) ret id annotation k vret,
+        eval state ret = Some vret ->
+        sss state (Statement.Return ret) (KCall call_state (Some (Lvalue.Id id, annotation)) k)
+          (set call_state id vret) Statement.Pass k
+    | sssReturnProc: forall (state call_state: State)ret k,
+        sss state (Statement.Return ret) (KCall call_state None k)
+            call_state Statement.Pass k
+    | sssReturnWhile: forall state test body orelse k ret,
+        sss state (Statement.Return ret) (KWhile test body orelse k)
+            state (Statement.Return ret) k
+    | sssReturnSeq: forall state st k ret,
+        sss state (Statement.Return ret) (KSeq st k)
+            state (Statement.Return ret) k
+    | sssPassProc: forall (state call_state: State) k,
+        sss state Statement.Pass (KCall call_state None k)
+            call_state Statement.Pass k
+    | sssExpression : forall (state: State) expr v k, 
+            eval state expr = Some v ->
+            sss state (Statement.Expression expr) k state Statement.Pass k
+    | sssSeq: forall state st0 st1 k,
+            sss state (Statement.Seq st0 st1) k state st0 (KSeq st1 k)
+    | sssPassSeq: forall state st k,
+            sss state Statement.Pass (KSeq st k) state st k
+    | sssWhileTrue: forall (state: State) test body orelse k,
+            eval state test = Some (Value.Boolean true) ->
+            sss state (Statement.While test body orelse) k
+                state body (KWhile test body orelse k)
+    | sssWhileFalse: forall (state: State) test body orelse k,
+            eval state test = Some (Value.Boolean false) ->
+            sss state (Statement.While test body orelse) k
+                state orelse k
+    | sssPassWhileTrue: forall (state: State) test body orelse k,
+            eval state test = Some (Value.Boolean true) ->
+            sss state Statement.Pass (KWhile test body orelse k)
+                state body (KWhile test body orelse k)
+    | sssPassWhileFalse: forall (state: State) test body orelse k,
+            eval state test = Some (Value.Boolean false) ->
+            sss state Statement.Pass (KWhile test body orelse k)
+                state orelse k
+    | sssIfTrue: forall test body orelse (state: State) k,
+            eval state test = Some (Value.Boolean true) ->
+            sss state (Statement.If test body orelse) k
+                state body k
+    | sssIfFalse: forall test body orelse (state: State) k,
+            eval state test = Some (Value.Boolean false) ->
+            sss state (Statement.If test body orelse) k
+                state orelse k
 .
 
 (** Multi step version of sss *)
 Inductive sssn: State -> Statement.t -> Cont ->
                State -> Statement.t -> Cont -> Prop  :=
- | sss_refl : forall s st k, sssn s st k s st k
- | sss_trans:  forall s st k s' st' k' s'' st'' k'',
-         sss s st k s' st' k' -> sssn s' st' k' s'' st'' k'' ->
-         sssn s st k s'' st'' k''
+ | sss_refl : forall state st k, sssn state st k state st k
+ | sss_trans:  forall state st k state' st' k' state'' st'' k'',
+         sss state st k state' st' k' ->
+         sssn state' st' k' state'' st'' k'' ->
+         sssn state st k state'' st'' k''
 .
 
 Hint Constructors sss sssn : core.
 
-Lemma sssn_step: forall s st k s' st' k', sss s st k s' st' k' ->
-    sssn s st k s' st' k'.
+Lemma sssn_step: forall state st k state' st' k',
+  sss state st k state' st' k' ->
+  sssn state st k state' st' k'.
 Proof.
 intros ? ? ? ? ? ?  h.
 eapply sss_trans; [now apply h | now apply sss_refl ].
 Qed.
 
-Lemma sssn_trans: forall s st k s' st' k' s'' st'' k'',
-         sssn s st k s' st' k' -> sssn s' st' k' s'' st'' k'' ->
-         sssn s st k s'' st'' k''.
+Lemma sssn_trans: forall state st k state' st' k' state'' st'' k'',
+         sssn state st k state' st' k' ->
+         sssn state' st' k' state'' st'' k'' ->
+         sssn state st k state'' st'' k''.
 Proof.
 intros  s st k s' st' k' s'' st'' k'' h; revert s'' st'' k''.
 induction h as [ s st k | s st k s' st' k' s'' st'' k'' h hs hi];
@@ -405,12 +416,10 @@ Definition int_id : func := mkFun "int_id"%string
 Definition Int z : Expression.t := Expression.Integer z.
 
 (* Empty value state, with a single function defined: int_id *)
-Definition test_state : State := Empty _ _ 
-                   (set_map _ (@empty _) "int_id"%string int_id).
+Definition test_state : State := Empty (set_map empty "int_id"%string int_id).
 (* Value state has a single binding: y |-> 42. Function information
    is the same as test_state *)
-Definition final_state : State :=
-    set _ _ test_state "y"%string (Value.Integer 42).
+Definition final_state : State := set test_state "y"%string (Value.Integer 42).
 
 (* Function call `y := int_id(42)` *)
 Definition Prog :=
@@ -448,8 +457,7 @@ Definition expect_int : func := mkFun "expect_int"%string
 
 (* New test state: Empty value state and a single function definition:
  expect_int *)
-Definition test_state2 : State := Empty _ _ 
-                   (set_map _ (@empty _) "expect_int"%string expect_int).
+Definition test_state2 : State := Empty (set_map empty "expect_int"%string expect_int).
 
 (* Function call `expect_int(1664)` *)
 Definition Prog2 :=
