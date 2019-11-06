@@ -8,7 +8,7 @@
 import ast
 import inspect
 import types
-from typing import Callable, Iterable, List, NamedTuple, Optional, Union
+from typing import Callable, Iterable, List, NamedTuple, Optional, Set, Union
 
 import _ast
 
@@ -25,6 +25,7 @@ class CallableModel(NamedTuple):
     kwarg: Optional[str] = None
     returns: Optional[str] = None
     whitelisted_parameters: Optional[Iterable[str]] = None
+    parameter_name_whitelist: Optional[Set[str]] = None
 
     def generate(self) -> Optional[str]:
         modeled_object = self.callable
@@ -41,11 +42,17 @@ class CallableModel(NamedTuple):
             view_parameters = inspect.signature(modeled_object.__func__).parameters
         else:
             return
+        name_whitelist = self.parameter_name_whitelist
         for parameter_name in view_parameters:
             parameter = view_parameters[parameter_name]
             annotation = ""
             whitelist = self.whitelisted_parameters
-            if whitelist is None or extract_annotation(parameter) not in whitelist:
+            should_annotate = True
+            if name_whitelist is not None and parameter_name not in name_whitelist:
+                should_annotate = False
+            if whitelist is not None and extract_annotation(parameter) in whitelist:
+                should_annotate = False
+            if should_annotate:
                 if parameter.kind == inspect.Parameter.VAR_KEYWORD:
                     keywords = self.kwarg
                     if keywords is not None:
