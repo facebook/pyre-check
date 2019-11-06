@@ -163,3 +163,4 @@ class Profile(Command):
 
         except Exception as e:
             LOG.error("Failed to inspect profiling log: {}".format(e))
+            raise e
