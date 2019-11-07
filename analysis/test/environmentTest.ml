@@ -32,7 +32,7 @@ let create_environments_and_project
       ~include_helper_builtins:include_helpers
       additional_sources
   in
-  let _, ast_environment, environment = project |> ScratchProject.build_environment in
+  let _, ast_environment, environment = project |> ScratchProject.build_global_environment in
   (* TODO (T47159596): This can be done in a more elegant way *)
   let () =
     let set_up_shared_memory _ = () in

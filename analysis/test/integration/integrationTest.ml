@@ -4,8 +4,12 @@
  * LICENSE file in the root directory of this source tree. *)
 
 let type_check ~configuration ~environment ~source =
-  let errors = Analysis.TypeCheck.run ~configuration ~environment ~source in
-  Analysis.Postprocessing.run ~source errors
+  Analysis.TypeCheck.run ~configuration ~environment ~source;
+  let errors =
+    let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
+    Analysis.TypeEnvironment.get_errors environment qualifier
+  in
+  Analysis.Postprocessing.run_on_source ~source errors
 
 
 let assert_type_errors = Test.assert_errors ~check:type_check ~debug:true

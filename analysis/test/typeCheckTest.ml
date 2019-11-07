@@ -1559,7 +1559,7 @@ let test_coverage context =
   let assert_coverage source expected =
     let coverage =
       let project = ScratchProject.setup ~context ["coverage_test.py", source] in
-      let _, ast_environment, environment = ScratchProject.build_environment project in
+      let _, ast_environment, environment = ScratchProject.build_type_environment project in
       let source =
         AstEnvironment.ReadOnly.get_source
           (AstEnvironment.read_only ast_environment)
@@ -1605,7 +1605,7 @@ type method_call = {
 let test_calls context =
   let assert_calls source calls =
     let project = ScratchProject.setup ~context ["qualifier.py", source] in
-    let _, ast_environment, environment = ScratchProject.build_environment project in
+    let _, ast_environment, global_environment = ScratchProject.build_global_environment project in
     let source =
       AstEnvironment.ReadOnly.get_source
         (AstEnvironment.read_only ast_environment)
@@ -1624,7 +1624,9 @@ let test_calls context =
     in
     Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
     |> List.iter ~f:clear_calls;
-    TypeCheck.run ~configuration ~environment ~source |> ignore;
+
+    let environment = TypeEnvironment.create global_environment in
+    TypeCheck.run ~configuration ~environment ~source;
 
     (* Check calls. *)
     let assert_calls (caller, callees) =

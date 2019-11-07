@@ -99,8 +99,23 @@ let add_local_mode_errors
   List.fold ~f:add_error ~init:errors unused_local_modes
 
 
-let run ~source errors =
+let run_on_source ~source errors =
   let toplevel = Source.top_level_define_node source in
   add_local_mode_errors ~define:toplevel source errors
   |> ignore source
   |> List.sort ~compare:Error.compare
+
+
+let run ~modules environment =
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+  let run_on_module module_name =
+    match AstEnvironment.ReadOnly.get_source ast_environment module_name with
+    | None -> []
+    | Some ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source) ->
+        if is_external then
+          []
+        else
+          let errors = TypeEnvironment.ReadOnly.get_errors environment module_name in
+          run_on_source ~source errors
+  in
+  List.concat_map modules ~f:run_on_module

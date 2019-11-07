@@ -171,7 +171,7 @@ let test_resolve_exports context =
   let assert_resolve ~sources name expected =
     let resolution =
       let _, _, environment =
-        ScratchProject.setup ~context sources |> ScratchProject.build_environment
+        ScratchProject.setup ~context sources |> ScratchProject.build_global_environment
       in
       AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     in
@@ -419,7 +419,7 @@ let test_resolution_shared_memory _ =
 let test_source_is_unit_test context =
   let assert_is_unit_test ?(expected = true) source =
     let _, ast_environment, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let source =

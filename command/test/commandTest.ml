@@ -36,6 +36,7 @@ let start_server ~local_root ?expected_version () =
   Commands.Start.run (mock_server_configuration ~local_root ?expected_version ())
 
 
+(* NOTE: This function runs a standalone type-check pass and therefore needs to nuke shared memory. *)
 let make_errors ~context ?(handle = "test.py") source =
   let project =
     let builtins_source =
@@ -58,18 +59,27 @@ let make_errors ~context ?(handle = "test.py") source =
       ~external_sources:["builtins.pyi", builtins_source; "typing.pyi", typing_source]
       [handle, source]
   in
-  let sources, _, environment = ScratchProject.build_environment project in
+  let sources, ast_environment, environment = ScratchProject.build_type_environment project in
   let source =
     List.find_exn sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.relative; _ }; _ } ->
         String.equal relative handle)
   in
   let configuration = ScratchProject.configuration_of project in
-  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
-  TypeCheck.run ~configuration ~environment ~source
-  |> List.map
-       ~f:
-         (Error.instantiate
-            ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
+  let ast_environment = AstEnvironment.read_only ast_environment in
+  let errors =
+    let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
+    TypeEnvironment.get_errors environment qualifier
+  in
+  let errors =
+    Postprocessing.run_on_source ~source errors
+    |> List.map
+         ~f:
+           (Error.instantiate
+              ~lookup:
+                (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
+  in
+  Memory.reset_shared_memory ();
+  errors
 
 
 let run_command_tests test_category tests =
@@ -158,11 +168,13 @@ module ScratchServer = struct
       let ({ ScratchProject.module_tracker; configuration; _ } as project) =
         ScratchProject.setup ~context ~external_sources ~include_helper_builtins:false sources
       in
-      let sources, ast_environment, environment = ScratchProject.build_environment project in
+      let sources, ast_environment, global_environment =
+        ScratchProject.build_global_environment project
+      in
       ( { configuration with incremental_style },
         module_tracker,
         ast_environment,
-        environment,
+        TypeEnvironment.create global_environment,
         sources )
     in
     Dependencies.register_all_dependencies
@@ -173,7 +185,7 @@ module ScratchServer = struct
           qualifier)
     in
     let new_errors =
-      Analysis.Check.analyze_sources
+      Analysis.Check.analyze_and_postprocess
         ~scheduler:(mock_scheduler ())
         ~configuration
         ~environment

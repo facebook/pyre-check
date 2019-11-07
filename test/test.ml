@@ -1524,7 +1524,7 @@ module ScratchProject = struct
     ast_environment, ast_environment_update_result
 
 
-  let build_environment ({ configuration; _ } as project) =
+  let build_global_environment ({ configuration; _ } as project) =
     let ast_environment, ast_environment_update_result = parse_sources project in
     let sources =
       let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
@@ -1581,14 +1581,22 @@ module ScratchProject = struct
     sources, ast_environment, AnnotatedGlobalEnvironment.read_only environment
 
 
+  let build_type_environment project =
+    let sources, ast_environment, global_environment = build_global_environment project in
+    let environment = TypeEnvironment.create global_environment in
+    let configuration = configuration_of project in
+    List.iter sources ~f:(fun source -> TypeCheck.run ~configuration ~environment ~source);
+    sources, ast_environment, environment
+
+
   let build_resolution project =
-    let _, _, environment = build_environment project in
+    let _, _, environment = build_global_environment project in
     let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     TypeCheck.resolution global_resolution ()
 
 
   let build_global_resolution project =
-    let _, _, environment = build_environment project in
+    let _, _, environment = build_global_environment project in
     AnnotatedGlobalEnvironment.ReadOnly.resolution environment
 end
 
@@ -1622,24 +1630,21 @@ let assert_errors
 
   let descriptions =
     let errors =
-      let configuration, sources, environment =
+      let configuration, sources, ast_environment, environment =
         let project =
           let external_sources =
             List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
           in
           ScratchProject.setup ~context ~external_sources [handle, source]
         in
-        let sources, _, environment = ScratchProject.build_environment project in
+        let sources, ast_environment, global_environment =
+          ScratchProject.build_global_environment project
+        in
         let configuration = ScratchProject.configuration_of project in
-        configuration, sources, environment
-      in
-      let ast_environment =
-        environment
-        |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
-        |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-        |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-        |> AliasEnvironment.ReadOnly.unannotated_global_environment
-        |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+        ( configuration,
+          sources,
+          AstEnvironment.read_only ast_environment,
+          TypeEnvironment.create global_environment )
       in
       let configuration = { configuration with debug; strict; infer } in
       let source =
@@ -1672,6 +1677,7 @@ let assert_errors
       ~f:(fun error -> Error.Instantiated.description error ~show_error_traces ~concise)
       errors
   in
+  Memory.reset_shared_memory ();
   assert_equal
     ~cmp:(List.equal String.equal)
     ~printer:(String.concat ~sep:"\n")
@@ -1685,7 +1691,7 @@ let assert_equivalent_attributes ~context source expected =
     Memory.reset_shared_memory ();
     Annotated.Class.AttributeCache.clear ();
     let _, _, environment =
-      ScratchProject.setup ~context [handle, source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
     in
     let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let compare_by_name left right =

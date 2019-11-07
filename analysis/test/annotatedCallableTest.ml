@@ -21,7 +21,7 @@ let test_return_annotation context =
           class foo():
             def bar(): pass
         |}]
-        |> ScratchProject.build_environment
+        |> ScratchProject.build_global_environment
       in
       let parser =
         AnnotatedGlobalEnvironment.ReadOnly.resolution environment

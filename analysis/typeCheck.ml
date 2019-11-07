@@ -5009,6 +5009,7 @@ let check_typecheck_unit
   =
   let resolution =
     let global_resolution =
+      let environment = TypeEnvironment.global_environment environment in
       match configuration with
       | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
           (* TODO (T53810748): Refine the dependency to define's name *)
@@ -5068,4 +5069,4 @@ let run
     ~normals:["handle", relative; "request kind", "SingleFileTypeCheck"]
     ~integers:["number of lines", number_of_lines]
     ();
-  errors
+  TypeEnvironment.set_errors environment qualifier errors

@@ -171,13 +171,14 @@ let recheck
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
+  TypeEnvironment.invalidate environment recheck_modules;
   ResolutionSharedMemory.remove recheck_modules;
   Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list recheck_modules);
 
   (* Clean up all lookup data related to updated files. *)
   List.iter recheck_modules ~f:(LookupCache.evict ~state);
   let new_errors =
-    Analysis.Check.analyze_sources
+    Analysis.Check.analyze_and_postprocess
       ~open_documents:(Reference.Table.mem open_documents)
       ~scheduler
       ~configuration

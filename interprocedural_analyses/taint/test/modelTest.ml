@@ -16,8 +16,8 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
     | None -> model_source
     | Some source -> source
   in
-  let _, _, environment =
-    ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+  let _, _, global_environment =
+    ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
   in
   let configuration =
     let rules =
@@ -32,7 +32,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
     let source = Test.trim_extra_indentation model_source in
     let resolution =
       let global_resolution =
-        Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+        Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution global_environment
       in
       TypeCheck.resolution global_resolution ()
     in
@@ -47,6 +47,9 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
     let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
     Callable.Map.find models callable |> Option.value_exn ?here:None ?error:None ~message, false
     (* obscure *)
+  in
+  let environment =
+    Analysis.TypeEnvironment.create global_environment |> Analysis.TypeEnvironment.read_only
   in
   List.iter ~f:(check_expectation ~environment ~get_model) expect
 

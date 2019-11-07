@@ -6,12 +6,13 @@
 open Core
 open OUnit2
 open Ast
+module TypeAnalysis = Analysis
 open Interprocedural
 open Test
 
 let setup_environment ~context ?(sources = []) () =
   let _, _, environment =
-    ScratchProject.setup ~context sources |> ScratchProject.build_environment
+    ScratchProject.setup ~context sources |> ScratchProject.build_global_environment
   in
   environment
 
@@ -124,7 +125,11 @@ let test_unknown_function_analysis context =
     |> List.map ~f:(fun name -> Callable.create_function name)
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0 } in
-  let environment = setup_environment ~context () in
+  let environment =
+    setup_environment ~context ()
+    |> TypeAnalysis.TypeEnvironment.create
+    |> TypeAnalysis.TypeEnvironment.read_only
+  in
   let _ = Analysis.one_analysis_pass ~step ~analyses ~environment ~callables:targets in
   let check_obscure_model target =
     match Fixpoint.get_model target with
@@ -187,7 +192,11 @@ let test_meta_data context =
     |> List.map ~f:Callable.create_function
   in
   let step1 = Fixpoint.{ epoch = 1; iteration = 0 } in
-  let environment = setup_environment ~context () in
+  let environment =
+    setup_environment ~context ()
+    |> TypeAnalysis.TypeEnvironment.create
+    |> TypeAnalysis.TypeEnvironment.read_only
+  in
   let _ = Analysis.one_analysis_pass ~step:step1 ~analyses ~environment ~callables:targets in
   (* All obscure functions should reach fixpoint in 1st step *)
   let () = List.iter ~f:(check_meta_data ~step:step1 ~is_partial:false) targets in

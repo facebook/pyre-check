@@ -222,9 +222,13 @@ let load
     Analysis.ClassMetadataEnvironment.create
       (Analysis.ClassHierarchyEnvironment.read_only class_hierarchy_environment)
   in
-  let environment =
+  let global_environment =
     Analysis.AnnotatedGlobalEnvironment.create
       (Analysis.ClassMetadataEnvironment.read_only class_metadata_environment)
+  in
+  let environment =
+    Analysis.TypeEnvironment.create
+      (Analysis.AnnotatedGlobalEnvironment.read_only global_environment)
   in
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then
@@ -247,7 +251,7 @@ let load
     {
       State.module_tracker;
       ast_environment;
-      environment = Analysis.AnnotatedGlobalEnvironment.read_only environment;
+      environment;
       errors;
       symlink_targets_to_sources;
       scheduler;

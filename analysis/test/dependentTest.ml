@@ -9,7 +9,9 @@ open Ast
 open Test
 
 let default_environment context =
-  let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
+  let _, _, environment =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
+  in
   environment
 
 

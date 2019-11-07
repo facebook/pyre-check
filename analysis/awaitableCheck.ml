@@ -604,8 +604,12 @@ end
 
 let name = "Awaitable"
 
-let run ~configuration:_ ~environment ~source =
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+let run
+    ~configuration:_
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
+  let global_resolution = TypeEnvironment.global_resolution environment in
   let check define =
     let module Context = struct
       let define = define
@@ -631,4 +635,7 @@ let run ~configuration:_ ~environment ~source =
     else
       []
   in
-  source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check |> List.concat
+  let errors =
+    source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check |> List.concat
+  in
+  TypeEnvironment.set_errors environment qualifier errors

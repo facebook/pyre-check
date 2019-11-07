@@ -22,7 +22,7 @@ let empty_callgraph = Callable.RealMap.empty
 let empty_overrides = Reference.Map.empty
 
 let create_callgraph ~environment ~source =
-  let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let fold_defines
       dependencies
       ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
@@ -202,7 +202,7 @@ let from_overrides overrides =
 
 
 let create_overrides ~environment ~source =
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let resolution = TypeCheck.resolution global_resolution () in
   let resolution = Resolution.global_resolution resolution in
   if GlobalResolution.source_is_unit_test resolution ~source then

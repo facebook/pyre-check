@@ -47,7 +47,8 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
     |> List.concat
     |> List.map ~f:description
   in
-  assert_equal ~printer:(String.concat ~sep:"\n") expected errors
+  assert_equal ~printer:(String.concat ~sep:"\n") expected errors;
+  Memory.reset_shared_memory ()
 
 
 let test_incremental_check context =
@@ -104,6 +105,7 @@ let test_incremental_check context =
         );
       ]
     ~expected:[];
+
   assert_incremental_check_errors
     ~context
     ~initial_sources:

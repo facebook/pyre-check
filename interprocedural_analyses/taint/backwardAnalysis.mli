@@ -8,7 +8,7 @@ open Analysis
 open Statement
 
 val run
-  :  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+  :  environment:TypeEnvironment.ReadOnly.t ->
   define:Define.t Node.t ->
   existing_model:TaintResult.call_model ->
   TaintResult.Backward.model

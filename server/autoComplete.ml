@@ -189,7 +189,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
         let get_items file state =
           (* This is the position of the item before DOT *)
           let item_position = { cursor_position with column = cursor_position.column - 2 } in
-          let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+          let global_resolution = TypeEnvironment.global_resolution environment in
           let resolution = TypeCheck.resolution global_resolution () in
           let global_resolution = Resolution.global_resolution resolution in
           let class_attributes_list =

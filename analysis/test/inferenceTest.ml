@@ -131,7 +131,15 @@ let fixpoint_parse source =
 
 let test_check_missing_parameter context =
   let assert_inference_errors =
-    assert_errors ~context ~debug:false ~infer:true ~check:Inference.run
+    let check ~configuration ~environment ~source =
+      Inference.run ~configuration ~environment ~source;
+      let errors =
+        let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
+        Analysis.TypeEnvironment.get_errors environment qualifier
+      in
+      Analysis.Postprocessing.run_on_source ~source errors
+    in
+    assert_errors ~context ~debug:false ~infer:true ~check
   in
   assert_inference_errors
     {|
@@ -162,14 +170,19 @@ let assert_infer
     source
     errors
   =
-  let check_errors configuration environment source =
-    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
-    Inference.run ~configuration ~environment ~source
-    |> List.map
-         ~f:
-           (Error.instantiate
-              ~lookup:
-                (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
+  let check_errors configuration global_environment source =
+    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment in
+    let environment = TypeEnvironment.create global_environment in
+    Inference.run ~configuration ~environment ~source;
+    let errors =
+      let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
+      Analysis.TypeEnvironment.get_errors environment qualifier
+    in
+    List.map
+      errors
+      ~f:
+        (Error.instantiate
+           ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
   in
   let fields_of_error error =
     let field_of_error field =
@@ -188,7 +201,7 @@ let assert_infer
   in
   let configuration, source, environment =
     let project = ScratchProject.setup ~context ["test.py", source] in
-    let _, ast_environment, environment = ScratchProject.build_environment project in
+    let _, ast_environment, environment = ScratchProject.build_global_environment project in
     let configuration = ScratchProject.configuration_of project in
     let source =
       AstEnvironment.ReadOnly.get_source
@@ -208,7 +221,8 @@ let assert_infer
     (List.map ~f:(fun string -> Yojson.Safe.from_string string |> to_string) errors)
     ( List.map ~f:fields_of_error (check_errors configuration environment source)
     |> List.concat
-    |> List.map ~f:to_string )
+    |> List.map ~f:to_string );
+  Memory.reset_shared_memory ()
 
 
 let test_infer context =

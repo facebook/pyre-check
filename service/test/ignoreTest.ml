@@ -11,20 +11,24 @@ open TypeCheck
 
 let ignore_lines_test context =
   let assert_errors ?(show_error_traces = false) input_source expected_errors =
-    let configuration, sources, environment =
+    let configuration, sources, ast_environment, environment =
       let project = ScratchProject.setup ~context ["test.py", input_source] in
-      let sources, _, environment = ScratchProject.build_environment project in
+      let sources, ast_environment, global_environment =
+        ScratchProject.build_global_environment project
+      in
       let configuration = ScratchProject.configuration_of project in
-      configuration, sources, environment
+      ( configuration,
+        sources,
+        AstEnvironment.read_only ast_environment,
+        TypeEnvironment.create global_environment )
     in
     let scheduler = Test.mock_scheduler () in
     let descriptions =
-      let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
             qualifier)
       in
-      Analysis.Check.analyze_sources ~scheduler ~configuration ~environment qualifiers
+      Analysis.Check.analyze_and_postprocess ~scheduler ~configuration ~environment qualifiers
       |> List.map ~f:(fun error ->
              Error.instantiate
                ~lookup:
@@ -42,7 +46,8 @@ let ignore_lines_test context =
         (diff ~print:(fun format expected_errors ->
              Format.fprintf format "%s" (description_list_to_string expected_errors)))
       expected_errors
-      descriptions
+      descriptions;
+    Memory.reset_shared_memory ()
   in
   assert_errors {|
         def foo() -> int:

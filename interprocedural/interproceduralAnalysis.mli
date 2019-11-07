@@ -13,7 +13,7 @@ type result = {
 val one_analysis_pass
   :  analyses:Kind.abstract list ->
   step:Fixpoint.step ->
-  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   callables:Callable.t list ->
   result
 
@@ -21,7 +21,7 @@ val one_analysis_pass
 val compute_fixpoint
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   analyses:Kind.abstract list ->
   dependencies:DependencyGraph.t ->
   filtered_callables:Callable.Set.t ->
@@ -52,7 +52,7 @@ val save_results
 val initialize
   :  Kind.abstract list ->
   configuration:Yojson.Safe.json ->
-  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   functions:Callable.t list ->
   InterproceduralResult.model_t Callable.Map.t
 

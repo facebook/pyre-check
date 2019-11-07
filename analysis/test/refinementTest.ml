@@ -11,7 +11,9 @@ open Refinement
 open Test
 
 let resolution context =
-  let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
+  let _, _, environment =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
+  in
   AnnotatedGlobalEnvironment.ReadOnly.resolution environment
 
 

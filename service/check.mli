@@ -8,7 +8,7 @@ open Analysis
 type result = {
   module_tracker: ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
-  environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+  environment: TypeEnvironment.t;
   errors: Error.t list;
 }
 

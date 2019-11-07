@@ -6,12 +6,19 @@
 open Core
 open OUnit2
 open Analysis
+open Ast
 open Test
 
 let assert_awaitable_errors ~context =
-  let check ~configuration ~environment ~source =
-    TypeCheck.run ~configuration ~environment ~source |> ignore;
-    AwaitableCheck.run ~configuration ~environment ~source
+  let check
+      ~configuration
+      ~environment
+      ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+    =
+    TypeCheck.run ~configuration ~environment ~source;
+    TypeEnvironment.invalidate environment [qualifier];
+    AwaitableCheck.run ~configuration ~environment ~source;
+    Analysis.TypeEnvironment.get_errors environment qualifier
   in
   assert_errors ~context ~check
 

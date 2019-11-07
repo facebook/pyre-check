@@ -20,7 +20,7 @@ let assert_static_analysis_errors ~context ~source ~check ~expected ~include_typ
             ~include_typeshed_stubs
             ["test.py", source]
         in
-        let _, _, environment = ScratchProject.build_environment project in
+        let _, _, environment = ScratchProject.build_type_environment project in
         let configuration = ScratchProject.configuration_of project in
         let source_paths = ScratchProject.source_paths_of project in
         configuration, source_paths, environment

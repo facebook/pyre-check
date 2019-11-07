@@ -27,8 +27,8 @@ let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } pat
   |> Option.value ~default:[]
 
 
-let instantiate_error ~configuration ~state:{ State.environment; _ } error =
-  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
+  let ast_environment = AstEnvironment.read_only ast_environment in
   Error.instantiate
     ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
     error
@@ -423,7 +423,7 @@ let process_type_query_request
     ~request
   =
   let process_request () =
-    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let global_resolution = TypeEnvironment.global_resolution environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
     let resolution = TypeCheck.resolution global_resolution () in
     let parse_and_validate ?(unknown_is_top = false) expression =
@@ -456,8 +456,9 @@ let process_type_query_request
       else
         raise (ClassHierarchy.Untracked annotation)
     in
+    let global_environment = TypeEnvironment.global_environment environment in
     let class_metadata_environment =
-      AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment environment
+      AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment global_environment
     in
     let class_hierarchy_environment =
       ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
@@ -534,7 +535,7 @@ let process_type_query_request
               UnannotatedGlobalEnvironment.ReadOnly.hash_to_key_map unannotated_global_environment;
             ]
             ~f:(fun sofar new_map -> extend_map sofar ~new_map)
-            ~init:(AnnotatedGlobalEnvironment.ReadOnly.hash_to_key_map environment)
+            ~init:(AnnotatedGlobalEnvironment.ReadOnly.hash_to_key_map global_environment)
         in
         (* AST shared memory. *)
         let map =
@@ -615,7 +616,7 @@ let process_type_query_request
           | _ ->
               List.find_map
                 [
-                  AnnotatedGlobalEnvironment.ReadOnly.serialize_decoded environment;
+                  AnnotatedGlobalEnvironment.ReadOnly.serialize_decoded global_environment;
                   ClassMetadataEnvironment.ReadOnly.serialize_decoded class_metadata_environment;
                   ClassHierarchyEnvironment.ReadOnly.serialize_decoded class_hierarchy_environment;
                   AliasEnvironment.ReadOnly.serialize_decoded alias_environment;
@@ -654,7 +655,7 @@ let process_type_query_request
                     | _ ->
                         List.find_map
                           [
-                            AnnotatedGlobalEnvironment.ReadOnly.decoded_equal environment;
+                            AnnotatedGlobalEnvironment.ReadOnly.decoded_equal global_environment;
                             ClassMetadataEnvironment.ReadOnly.decoded_equal
                               class_metadata_environment;
                             ClassHierarchyEnvironment.ReadOnly.decoded_equal
@@ -698,7 +699,7 @@ let process_type_query_request
           List.filter_map paths ~f:(ModuleTracker.lookup_path ~configuration module_tracker)
           |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
         in
-        let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+        let ast_environment = TypeEnvironment.ast_environment environment in
         let legacy_dependency_tracker = Dependencies.create ast_environment in
         let dependency_set = Dependencies.transitive_of_list legacy_dependency_tracker ~modules in
         let dependencies =
@@ -744,10 +745,12 @@ let process_type_query_request
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         TypeQuery.Response (TypeQuery.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | TypeQuery.DumpClassHierarchy ->
-        let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+        let global_environment = TypeEnvironment.global_environment environment in
+        let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution global_environment in
         let class_hierarchy_json =
           let indices =
-            Analysis.AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment environment
+            Analysis.AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
+              global_environment
             |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
             |> ClassHierarchyEnvironment.ReadOnly.alias_environment
             |> AliasEnvironment.ReadOnly.unannotated_global_environment
@@ -762,7 +765,8 @@ let process_type_query_request
           | None -> ()
           | Some { SourcePath.qualifier; _ } ->
               let ast_environment =
-                AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment
+                TypeEnvironment.global_environment environment
+                |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
               in
               let legacy_dependency_tracker = Dependencies.create ast_environment in
               Path.create_relative
@@ -781,7 +785,7 @@ let process_type_query_request
         let timer = Timer.start () in
         (* Normalize the environment for comparison. *)
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
-        let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+        let ast_environment = TypeEnvironment.ast_environment environment in
         let legacy_dependency_tracker = Dependencies.create ast_environment in
         Dependencies.normalize legacy_dependency_tracker qualifiers;
         Memory.SharedMemory.save_table_sqlite path |> ignore;
@@ -945,7 +949,8 @@ let process_type_query_request
             let descriptions =
               let lookup reference =
                 let ast_environment =
-                  AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment
+                  TypeEnvironment.global_environment environment
+                  |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
                 in
                 AstEnvironment.ReadOnly.get_real_path_relative
                   ~configuration
@@ -1059,7 +1064,7 @@ let process_get_definition_request
     ~request:{ DefinitionRequest.id; path; position }
   =
   let response =
-    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+    let ast_environment = TypeEnvironment.ast_environment environment in
     let open LanguageServer.Protocol in
     let response =
       match LookupCache.find_definition ~state ~configuration path position with

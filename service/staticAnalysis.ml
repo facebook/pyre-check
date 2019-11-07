@@ -80,15 +80,9 @@ let analyze
     ~qualifiers
     ()
   =
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let resolution = TypeCheck.resolution global_resolution () in
-  let ast_environment =
-    AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment environment
-    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-    |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-    |> AliasEnvironment.ReadOnly.unannotated_global_environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-  in
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let overrides =

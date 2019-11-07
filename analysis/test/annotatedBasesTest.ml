@@ -24,7 +24,7 @@ let value option = Option.value_exn option
 let test_inferred_generic_base context =
   let assert_inferred_generic ~target source expected =
     let _, ast_environment, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
       AstEnvironment.ReadOnly.get_source

@@ -9,7 +9,7 @@ open Pyre
 type result = {
   module_tracker: Analysis.ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
-  environment: Analysis.AnnotatedGlobalEnvironment.ReadOnly.t;
+  environment: Analysis.TypeEnvironment.t;
   errors: Analysis.Error.t list;
 }
 
@@ -81,16 +81,19 @@ let check
       ClassMetadataEnvironment.create
         (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
     in
-    let environment =
+    let global_environment =
       AnnotatedGlobalEnvironment.create
         (ClassMetadataEnvironment.read_only class_metadata_environment)
+    in
+    let environment =
+      TypeEnvironment.create (AnnotatedGlobalEnvironment.read_only global_environment)
     in
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
     let resolution =
       AnnotatedGlobalEnvironment.ReadOnly.resolution
-        (AnnotatedGlobalEnvironment.read_only environment)
+        (AnnotatedGlobalEnvironment.read_only global_environment)
     in
     let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
       let unannotated_global_environment_update =
@@ -125,7 +128,7 @@ let check
       if debug then
         GlobalResolution.check_class_hierarchy_integrity resolution;
       AnnotatedGlobalEnvironment.update
-        environment
+        global_environment
         ~configuration
         ~scheduler
         class_metadata_environment_update
@@ -158,11 +161,7 @@ let check
     environment
   in
   let errors =
-    Analysis.Check.analyze_sources
-      ~scheduler
-      ~configuration
-      ~environment:(Analysis.AnnotatedGlobalEnvironment.read_only environment)
-      qualifiers
+    Analysis.Check.analyze_and_postprocess ~scheduler ~configuration ~environment qualifiers
   in
   Profiling.track_shared_memory_usage ();
 
@@ -207,9 +206,4 @@ let check
   ( match original_scheduler with
   | None -> Scheduler.destroy scheduler
   | Some _ -> () );
-  {
-    module_tracker;
-    ast_environment;
-    environment = AnnotatedGlobalEnvironment.read_only environment;
-    errors;
-  }
+  { module_tracker; ast_environment; environment; errors }

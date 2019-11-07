@@ -13,9 +13,9 @@ module type Signature = sig
 
   val run
     :  configuration:Configuration.Analysis.t ->
-    environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+    environment:TypeEnvironment.t ->
     source:Source.t ->
-    Error.t list
+    unit
 end
 
 let checks : (module Signature) String.Map.t =
@@ -53,17 +53,11 @@ let create_check ~configuration:{ Configuration.Analysis.infer; additional_check
       let run_one_check (module Check : Signature) =
         Check.run ~configuration ~environment ~source
       in
-      List.concat_map filtered_checks ~f:run_one_check
+      List.iter filtered_checks ~f:run_one_check
   end
   in
   (module AggregatedCheck)
 
-
-type analyze_source_results = {
-  errors: (Source.t * Error.t list) list;
-  number_files: int;
-}
-(** Internal result type; not exposed. *)
 
 let run_check
     ?open_documents
@@ -73,7 +67,6 @@ let run_check
     checked_sources
     (module Check : Signature)
   =
-  let empty_result = { errors = []; number_files = 0 } in
   let number_of_sources = List.length checked_sources in
   Log.info "Running check `%s`..." Check.name;
   let timer = Timer.start () in
@@ -81,7 +74,7 @@ let run_check
     Annotated.Class.AttributeCache.clear ();
     AstEnvironment.FromEmptyStubCache.clear ();
     let analyze_source
-        { errors; number_files }
+        number_files
         ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
       =
       let configuration =
@@ -90,43 +83,27 @@ let run_check
             { configuration with Configuration.Analysis.store_type_check_resolution = true }
         | _ -> configuration
       in
-      let new_errors = Check.run ~configuration ~environment ~source in
-      { errors = (source, new_errors) :: errors; number_files = number_files + 1 }
+      Check.run ~configuration ~environment ~source;
+      number_files + 1
     in
-    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+    let ast_environment = TypeEnvironment.ast_environment environment in
     List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-    |> List.fold ~init:empty_result ~f:analyze_source
+    |> List.fold ~init:0 ~f:analyze_source
   in
   let reduce left right =
-    let number_files = left.number_files + right.number_files in
+    let number_files = left + right in
     Log.log ~section:`Progress "Processed %d of %d sources" number_files number_of_sources;
-    { errors = List.append left.errors right.errors; number_files }
+    number_files
   in
-  let { errors; _ } =
+  let _ =
     Scheduler.map_reduce
       scheduler
       ~configuration
       ~bucket_size:75
-      ~initial:empty_result
+      ~initial:0
       ~map
       ~reduce
       ~inputs:checked_sources
-      ()
-  in
-  Log.log ~section:`Progress "Postprocessing...";
-  let map _ source_errors =
-    List.concat_map source_errors ~f:(fun (source, error) -> Postprocessing.run ~source error)
-  in
-  let reduce = List.append in
-  let errors =
-    Scheduler.map_reduce
-      scheduler
-      ~configuration
-      ~bucket_size:200
-      ~initial:[]
-      ~map
-      ~reduce
-      ~inputs:errors
       ()
   in
   Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
@@ -135,7 +112,7 @@ let run_check
     ~name:"shared memory size post-typecheck"
     ~integers:["size", Memory.heap_size ()]
     ();
-  errors
+  ()
 
 
 let analyze_sources
@@ -146,7 +123,7 @@ let analyze_sources
     ~environment
     sources
   =
-  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+  let ast_environment = TypeEnvironment.ast_environment environment in
   Annotated.Class.AttributeCache.clear ();
   let checked_sources =
     if filter_external_sources then
@@ -163,10 +140,49 @@ let analyze_sources
   Log.info "Checking %d sources..." number_of_sources;
   Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
   let timer = Timer.start () in
-  let errors =
-    let check = create_check ~configuration in
-    run_check ?open_documents ~scheduler ~configuration ~environment checked_sources check
-  in
+  run_check
+    ?open_documents
+    ~scheduler
+    ~configuration
+    ~environment
+    checked_sources
+    (create_check ~configuration);
   Statistics.performance ~name:"analyzed sources" ~phase_name:"Type check" ~timer ();
-  Profiling.track_shared_memory_usage ~name:"After analyze_sources" ();
-  errors
+  Profiling.track_shared_memory_usage ~name:"After analyze_sources" ()
+
+
+let postprocess_sources ~scheduler ~configuration ~environment sources =
+  Log.log ~section:`Progress "Postprocessing...";
+  let map _ modules = Postprocessing.run ~modules environment in
+  let reduce = List.append in
+  Scheduler.map_reduce
+    scheduler
+    ~configuration
+    ~bucket_size:200
+    ~initial:[]
+    ~map
+    ~reduce
+    ~inputs:sources
+    ()
+
+
+let analyze_and_postprocess
+    ?open_documents
+    ?filter_external_sources
+    ~scheduler
+    ~configuration
+    ~environment
+    sources
+  =
+  analyze_sources
+    ?open_documents
+    ?filter_external_sources
+    ~scheduler
+    ~configuration
+    ~environment
+    sources;
+  postprocess_sources
+    ~scheduler
+    ~configuration
+    ~environment:(TypeEnvironment.read_only environment)
+    sources

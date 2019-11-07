@@ -12,15 +12,14 @@ open Test
 let assert_deobfuscation ~context source expected =
   let configuration, environment =
     let project = ScratchProject.setup ~context [] in
-    let _, _, environment = ScratchProject.build_environment project in
+    let _, _, environment = ScratchProject.build_type_environment project in
     ScratchProject.configuration_of project, environment
   in
   let handle = "qualifier.py" in
   let actual =
     let source = parse ~handle source in
-    TypeCheck.run ~configuration ~environment ~source |> ignore;
-    DeobfuscationCheck.run ~configuration ~environment ~source
-    |> function
+    DeobfuscationCheck.run ~configuration ~environment ~source;
+    match TypeEnvironment.get_errors environment !&"qualifier" with
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in
@@ -28,7 +27,8 @@ let assert_deobfuscation ~context source expected =
     let metadata = Source.Metadata.create_for_testing () in
     Source.equal { left with Source.metadata } { right with Source.metadata }
   in
-  assert_equal ~cmp:source_equal ~printer:Source.show (parse ~handle expected) actual
+  assert_equal ~cmp:source_equal ~printer:Source.show (parse ~handle expected) actual;
+  Memory.reset_shared_memory ()
 
 
 let test_forward context =

@@ -349,7 +349,9 @@ let test_due_to_analysis_limitations _ =
 
 let test_join context =
   let resolution =
-    let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
+    let _, _, environment =
+      ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
+    in
     AnnotatedGlobalEnvironment.ReadOnly.resolution environment
   in
   let assert_join left right expected =
@@ -610,7 +612,9 @@ let test_join context =
 
 let test_less_or_equal context =
   let resolution =
-    let _, _, environment = ScratchProject.setup ~context [] |> ScratchProject.build_environment in
+    let _, _, environment =
+      ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
+    in
     AnnotatedGlobalEnvironment.ReadOnly.resolution environment
   in
   assert_true
@@ -692,7 +696,7 @@ let test_filter context =
           |}
           );
         ]
-      |> ScratchProject.build_environment
+      |> ScratchProject.build_global_environment
     in
     AnnotatedGlobalEnvironment.ReadOnly.resolution environment
   in

@@ -134,9 +134,7 @@ let run_analysis
         ~environment
         external_sources
       |> ignore;
-      ( environment,
-        Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment,
-        qualifiers )
+      environment, Analysis.TypeEnvironment.ast_environment environment, qualifiers
     in
     let filename_lookup path_reference =
       match repository_root with
@@ -166,7 +164,7 @@ let run_analysis
             rule_filter;
           }
         ~filename_lookup
-        ~environment
+        ~environment:(Analysis.TypeEnvironment.read_only environment)
         ~qualifiers
         ()
     in

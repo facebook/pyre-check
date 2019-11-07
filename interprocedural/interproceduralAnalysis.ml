@@ -361,7 +361,7 @@ let callables_to_dump =
 
 
 let analyze_callable analyses step callable environment =
-  let resolution = Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
   let () =
     (* Verify invariants *)
     let open Fixpoint in
@@ -667,7 +667,8 @@ let compute_fixpoint
     let iterations = iterate ~iteration:0 all_callables in
     let dump_callable callable =
       let global_resolution =
-        Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+        Analysis.TypeEnvironment.ReadOnly.global_environment environment
+        |> Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution
       in
       let resolution = Analysis.TypeCheck.resolution global_resolution () in
       let resolution = Analysis.Resolution.global_resolution resolution in

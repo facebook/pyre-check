@@ -18,19 +18,18 @@ let setup ?(update_environment_with = []) ~context ~handle source =
     in
     ScratchProject.setup ~context ~external_sources [handle, source]
   in
-  let sources, _, environment = ScratchProject.build_environment project in
+  let sources, _, environment = ScratchProject.build_type_environment project in
   let source =
     List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
         String.equal relative handle)
   in
-  ScratchProject.configuration_of project, source, environment
+  source, TypeEnvironment.read_only environment
 
 
 let create_call_graph ?(update_environment_with = []) ~context source_text =
-  let configuration, source, environment =
+  let source, environment =
     setup ~update_environment_with ~context ~handle:"test.py" source_text
   in
-  let errors = TypeCheck.run ~configuration ~environment ~source in
   let record_overrides overrides =
     let record_override_edge ~key:member ~data:subtypes =
       DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
@@ -38,13 +37,16 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
     Reference.Map.iteri overrides ~f:record_override_edge
   in
   DependencyGraph.create_overrides ~environment ~source |> record_overrides;
-  if not (List.is_empty errors) then
-    Format.asprintf
-      "Type errors in %s\n%a"
-      source_text
-      (Format.pp_print_list TypeCheck.Error.pp)
-      errors
-    |> failwith;
+  let () =
+    let errors = TypeEnvironment.ReadOnly.get_errors environment !&"test" in
+    if not (List.is_empty errors) then
+      Format.asprintf
+        "Type errors in %s\n%a"
+        source_text
+        (Format.pp_print_list TypeCheck.Error.pp)
+        errors
+      |> failwith
+  in
   DependencyGraph.create_callgraph ~environment ~source
 
 
@@ -320,16 +322,15 @@ let test_type_collection context =
   let assert_type_collection source ~handle ~expected =
     let configuration, source, environment =
       let project = ScratchProject.setup ~context [handle, source] in
-      let _, ast_environment, environment = ScratchProject.build_environment project in
+      let _, ast_environment, environment = ScratchProject.build_type_environment project in
       let source =
         AstEnvironment.ReadOnly.get_source
           (AstEnvironment.read_only ast_environment)
           (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
         |> fun option -> Option.value_exn option
       in
-      ScratchProject.configuration_of project, source, environment
+      ScratchProject.configuration_of project, source, TypeEnvironment.read_only environment
     in
-    TypeCheck.run ~configuration ~environment ~source |> ignore;
     let defines =
       Preprocessing.defines ~include_toplevels:true source
       |> List.map ~f:(fun { Node.value; _ } -> value)
@@ -341,7 +342,7 @@ let test_type_collection context =
       let annotations =
         LocalAnnotationMap.get_precondition lookup key |> fun value -> Option.value_exn value
       in
-      let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+      let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
       let resolution = TypeCheck.resolution global_resolution ~annotations () in
       let statement = List.nth_exn statements statement_index in
       Visit.collect_calls_and_names statement
@@ -417,7 +418,7 @@ let test_method_overrides context =
       in
       List.map expected ~f:create_callables
     in
-    let _, source, environment = setup ~update_environment_with ~context ~handle source in
+    let source, environment = setup ~update_environment_with ~context ~handle source in
     let overrides_map = DependencyGraph.create_overrides ~environment ~source in
     let expected_overrides = Reference.Map.of_alist_exn expected in
     let equal_elements = List.equal Reference.equal in
@@ -482,8 +483,7 @@ let test_method_overrides context =
 let test_strongly_connected_components context =
   let assert_strongly_connected_components source ~handle ~expected =
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
-    let configuration, source, environment = setup ~context ~handle source in
-    TypeCheck.run ~configuration ~environment ~source |> ignore;
+    let source, environment = setup ~context ~handle source in
     let partitions =
       let edges =
         DependencyGraph.create_callgraph ~environment ~source |> DependencyGraph.from_callgraph

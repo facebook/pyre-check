@@ -9,7 +9,7 @@ open Statement
 open Interprocedural
 
 val record_and_merge_call_graph
-  :  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+  :  environment:TypeEnvironment.ReadOnly.t ->
   call_graph:DependencyGraph.callgraph ->
   source:Source.t ->
   DependencyGraph.callgraph
@@ -26,7 +26,7 @@ val analyze
   analysis_kind:Interprocedural.AnalysisKind.abstract ->
   configuration:Configuration.StaticAnalysis.t ->
   filename_lookup:(Reference.t -> string option) ->
-  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
   unit ->
   Interprocedural.Error.t list

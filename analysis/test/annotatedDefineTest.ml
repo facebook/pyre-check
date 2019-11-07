@@ -37,7 +37,7 @@ let test_parent_definition context =
   in
   let assert_parent ~expected ~source ~name ~parent =
     let _, _, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let actual = parent_class_definition environment name parent >>| Class.name in
     let cmp = Option.equal Reference.equal in
@@ -78,7 +78,8 @@ let test_decorate context =
   let assert_decorated source ~expected =
     let source, environment =
       let _, ast_environment, environment =
-        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+        ScratchProject.setup ~context ["test.py", source]
+        |> ScratchProject.build_global_environment
       in
       ( Option.value_exn
           (AstEnvironment.ReadOnly.get_source

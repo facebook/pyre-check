@@ -1056,7 +1056,10 @@ let test_incremental_typecheck context =
         def foo() -> None:
           return 1
         |} in
+  let errors = CommandTest.make_errors ~context ~handle source in
   let stub_handle = "test_incremental_typecheck_stub.pyi" in
+  let stub_source = "def foo() -> int: return \"\"" in
+  let stub_errors = CommandTest.make_errors ~context ~handle:stub_handle stub_source in
   let { ScratchServer.configuration; server_configuration; state } =
     ScratchServer.start ~context [handle, source; stub_handle, ""]
   in
@@ -1069,7 +1072,6 @@ let test_incremental_typecheck context =
   let { Configuration.Analysis.local_root; _ } = configuration in
   let path = Path.create_relative ~root:local_root ~relative:handle in
   let stub_path = Path.create_relative ~root:local_root ~relative:stub_handle in
-  let errors = CommandTest.make_errors ~context ~handle source in
   assert_response
     ~state
     ~request:(Protocol.Request.TypeCheckRequest [path])
@@ -1090,12 +1092,10 @@ let test_incremental_typecheck context =
     ~state
     ~request:(Protocol.Request.TypeCheckRequest [update_file stub_path ~content:""])
     (Protocol.TypeCheckResponse []);
-  let source = "def foo() -> int: return \"\"" in
-  let errors = CommandTest.make_errors ~context ~handle:stub_handle source in
   assert_response
     ~state
-    ~request:(Protocol.Request.TypeCheckRequest [update_file stub_path ~content:source])
-    (Protocol.TypeCheckResponse errors)
+    ~request:(Protocol.Request.TypeCheckRequest [update_file stub_path ~content:stub_source])
+    (Protocol.TypeCheckResponse stub_errors)
 
 
 let test_protocol_language_server_protocol context =
@@ -1115,11 +1115,11 @@ let test_did_save_with_content context =
         def foo()->None:
           return 1
     |} |> trim_extra_indentation in
+  let errors = CommandTest.make_errors ~context ~handle source in
   let { ScratchServer.configuration; server_configuration; state } =
     ScratchServer.start ~context [handle, source]
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let errors = CommandTest.make_errors ~context ~handle source in
   let request =
     LanguageServer.Protocol.DidSaveTextDocument.create ~root:local_root handle (Some source)
     |> Or_error.ok_exn
@@ -1257,8 +1257,10 @@ let test_incremental_lookups context =
   let request =
     Protocol.Request.TypeCheckRequest [Path.create_relative ~root:local_root ~relative:handle]
   in
-  let { Request.state; _ } = Request.process ~state ~configuration:server_configuration ~request in
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution state.State.environment in
+  let { Request.state = { environment; _ }; _ } =
+    Request.process ~state ~configuration:server_configuration ~request
+  in
+  let global_resolution = TypeEnvironment.global_resolution environment in
   let annotations =
     let ast_environment = GlobalResolution.ast_environment global_resolution in
     AstEnvironment.ReadOnly.get_source ast_environment qualifier
@@ -1296,7 +1298,7 @@ let test_incremental_repopulate context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let get_annotation { State.environment; _ } access_name =
-    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let resolution = TypeEnvironment.global_resolution environment in
     match
       GlobalResolution.function_definitions resolution (Reference.combine qualifier !&access_name)
     with
@@ -1400,7 +1402,7 @@ let test_incremental_attribute_caching context =
   in
   let assert_errors ~state expected =
     let get_error_strings { State.errors; environment; _ } =
-      let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+      let ast_environment = TypeEnvironment.ast_environment environment in
       Hashtbl.to_alist errors
       |> List.map ~f:snd
       |> List.concat

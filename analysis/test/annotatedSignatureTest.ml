@@ -64,7 +64,7 @@ let test_select context =
                 callable
                 arguments );
           ]
-        |> ScratchProject.build_environment
+        |> ScratchProject.build_global_environment
       in
       let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
       let resolution =

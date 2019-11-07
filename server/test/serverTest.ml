@@ -42,15 +42,16 @@ let initialize_server ?incremental_style ~context ~initial_sources =
     in
     ScratchProject.setup ?incremental_style ~context ~external_sources internal_sources
   in
-  let sources, _, environment = ScratchProject.build_environment project in
+  let sources, _, global_environment = ScratchProject.build_global_environment project in
   let configuration = ScratchProject.configuration_of project in
   let ast_environment = AstEnvironment.create module_tracker in
+  let environment = TypeEnvironment.create global_environment in
   let new_errors =
     let qualifiers =
       List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
           qualifier)
     in
-    Analysis.Check.analyze_sources
+    Analysis.Check.analyze_and_postprocess
       ~scheduler:(mock_scheduler ())
       ~configuration
       ~environment

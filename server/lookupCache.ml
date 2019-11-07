@@ -21,7 +21,7 @@ type lookup = {
 }
 
 let instantiate_location ~state:{ State.environment; _ } =
-  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+  let ast_environment = TypeEnvironment.ast_environment environment in
   Location.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
 
 
@@ -50,8 +50,8 @@ let get_lookups
   let generate_lookups paths =
     let generate_lookup (path, ({ SourcePath.qualifier; _ } as source_path)) =
       let lookup =
-        let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
-        let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+        let global_resolution = TypeEnvironment.global_resolution environment in
+        let ast_environment = TypeEnvironment.ast_environment environment in
         AstEnvironment.ReadOnly.get_source ast_environment qualifier
         >>| Lookup.create_of_source global_resolution
       in

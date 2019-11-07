@@ -18,10 +18,10 @@ let assert_taint ?models ~context source expect =
     | Some models -> [handle, source; "models.py", models]
     | None -> [handle, source]
   in
-  let configuration, ast_environment, environment =
+  let ast_environment, environment =
     let project = Test.ScratchProject.setup ~context sources in
-    let _, ast_environment, environment = Test.ScratchProject.build_environment project in
-    Test.ScratchProject.configuration_of project, ast_environment, environment
+    let _, ast_environment, environment = Test.ScratchProject.build_type_environment project in
+    ast_environment, TypeEnvironment.read_only environment
   in
   let source =
     AstEnvironment.ReadOnly.get_source
@@ -29,7 +29,7 @@ let assert_taint ?models ~context source expect =
       (Ast.Reference.create "qualifier")
     |> fun option -> Option.value_exn option
   in
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->
@@ -41,7 +41,6 @@ let assert_taint ?models ~context source expect =
         |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
         |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
-  TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines = source |> Preprocessing.defines |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =

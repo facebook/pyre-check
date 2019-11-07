@@ -111,7 +111,7 @@ let test_integration context =
       let serialized_model callable : string =
         let externalization =
           let filename_lookup =
-            AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment
+            TypeEnvironment.ReadOnly.ast_environment environment
             |> AstEnvironment.ReadOnly.get_relative
           in
           Interprocedural.Analysis.externalize

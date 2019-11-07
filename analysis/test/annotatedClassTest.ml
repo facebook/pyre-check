@@ -30,7 +30,7 @@ let last_statement_exn = function
 let test_generics context =
   let assert_generics source generics =
     let _, ast_environment, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
       AstEnvironment.ReadOnly.get_source
@@ -117,7 +117,7 @@ let test_superclasses context =
     |}
         );
       ]
-    |> ScratchProject.build_environment
+    |> ScratchProject.build_global_environment
   in
   let ( ! ) name =
     {
@@ -167,7 +167,8 @@ let test_get_decorator context =
   let assert_get_decorator source decorator expected =
     let resolution =
       let _, _, environment =
-        ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+        ScratchProject.setup ~context ["__init__.py", source]
+        |> ScratchProject.build_global_environment
       in
       AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     in
@@ -283,7 +284,7 @@ let test_constructors context =
     let instantiated = "test." ^ instantiated in
     Class.AttributeCache.clear ();
     let _, ast_environment, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let source =
@@ -411,7 +412,8 @@ let test_has_method context =
   let get_actual source target_method =
     let resolution =
       let _, _, environment =
-        ScratchProject.setup ~context ["__init__.py", source] |> ScratchProject.build_environment
+        ScratchProject.setup ~context ["__init__.py", source]
+        |> ScratchProject.build_global_environment
       in
       AnnotatedGlobalEnvironment.ReadOnly.resolution environment
     in
@@ -475,7 +477,7 @@ let test_is_protocol _ =
 let test_class_attributes context =
   let setup source =
     let _, ast_environment, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
       AstEnvironment.ReadOnly.get_source
@@ -791,7 +793,7 @@ let test_fallback_attribute context =
   let assert_fallback_attribute ~name source annotation =
     Class.AttributeCache.clear ();
     let _, ast_environment, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let resolution = TypeCheck.resolution global_resolution () in
@@ -914,7 +916,7 @@ let test_fallback_attribute context =
 let test_constraints context =
   let assert_constraints ~target ~instantiated ?parameters source expected =
     let _, ast_environment, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let source =
@@ -1197,7 +1199,7 @@ let test_metaclasses context =
         "test." ^ metaclass
     in
     let _, ast_environment, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
       AstEnvironment.ReadOnly.get_source
@@ -1339,7 +1341,7 @@ let test_overrides context =
     |}
           );
         ]
-      |> ScratchProject.build_environment
+      |> ScratchProject.build_global_environment
     in
     AnnotatedGlobalEnvironment.ReadOnly.resolution environment
   in
@@ -1359,7 +1361,7 @@ let test_overrides context =
 let test_implicit_attributes context =
   let assert_unimplemented_attributes_equal ~source ~class_name ~expected =
     let _, _, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_environment
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     let definition =

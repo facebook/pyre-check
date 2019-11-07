@@ -358,7 +358,7 @@ let check_expectation
     |> Option.value ~default:[]
   in
   let actual_errors =
-    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+    let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     List.map
       actual_errors
       ~f:(Error.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
@@ -389,7 +389,7 @@ let run_with_taint_models tests ~name =
       |> Test.trim_extra_indentation
     in
     let _, _, environment =
-      Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_environment
+      Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_environment
     in
     let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     Model.parse
@@ -414,13 +414,13 @@ type test_environment = {
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
   all_callables: Callable.t list;
-  environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+  environment: TypeEnvironment.ReadOnly.t;
 }
 
 let initialize ?(handle = "test.py") ?models ~context source_content =
   let configuration, ast_environment, environment =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    let _, ast_environment, environment = Test.ScratchProject.build_environment project in
+    let _, ast_environment, environment = Test.ScratchProject.build_type_environment project in
     ( Test.ScratchProject.configuration_of project,
       AstEnvironment.read_only ast_environment,
       environment )
@@ -438,7 +438,11 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       | AnalysisError.NotCallable _ -> false
       | _ -> true
     in
-    TypeCheck.run ~configuration ~environment ~source |> List.filter ~f:keep
+    let errors =
+      let { Source.source_path = { SourcePath.qualifier; _ }; _ } = source in
+      TypeEnvironment.get_errors environment qualifier
+    in
+    Postprocessing.run_on_source ~source errors |> List.filter ~f:keep
   in
   ( if not (List.is_empty errors) then
       let errors =
@@ -454,6 +458,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       failwithf "Pyre errors were found in `%s`:\n%s" handle errors () );
 
   (* Overrides must be done first, as they influence the call targets. *)
+  let environment = TypeEnvironment.read_only environment in
   let overrides =
     let overrides = DependencyGraph.create_overrides ~environment ~source in
     Service.StaticAnalysis.record_overrides overrides;
@@ -465,10 +470,9 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       ~call_graph:DependencyGraph.empty_callgraph
       ~source
   in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let callables, stubs =
-    Service.StaticAnalysis.callables
-      ~resolution:(AnnotatedGlobalEnvironment.ReadOnly.resolution environment)
-      ~source
+    Service.StaticAnalysis.callables ~resolution:global_resolution ~source
     |> List.map ~f:(fun (callable, define) -> (callable :> Callable.t), define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
@@ -485,8 +489,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       | None -> Callable.Map.empty
       | Some source ->
           Model.parse
-            ~resolution:
-              (TypeCheck.resolution (AnnotatedGlobalEnvironment.ReadOnly.resolution environment) ())
+            ~resolution:(TypeCheck.resolution global_resolution ())
             ~source:(Test.trim_extra_indentation source)
             ~configuration:TaintConfiguration.default
             Callable.Map.empty

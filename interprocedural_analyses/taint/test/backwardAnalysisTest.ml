@@ -12,10 +12,10 @@ open TestHelper
 
 let assert_taint ~context source expected =
   let handle = "qualifier.py" in
-  let configuration, environment, ast_environment =
+  let environment, ast_environment =
     let project = Test.ScratchProject.setup ~context [handle, source] in
-    let _, ast_environment, environment = Test.ScratchProject.build_environment project in
-    Test.ScratchProject.configuration_of project, environment, ast_environment
+    let _, ast_environment, environment = Test.ScratchProject.build_type_environment project in
+    TypeEnvironment.read_only environment, ast_environment
   in
   let source =
     AstEnvironment.ReadOnly.get_source
@@ -23,7 +23,6 @@ let assert_taint ~context source expected =
       (Ast.Reference.create "qualifier")
     |> fun option -> Option.value_exn option
   in
-  TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =

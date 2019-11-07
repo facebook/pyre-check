@@ -27,7 +27,7 @@ module type FUNCTION_CONTEXT = sig
 
   val is_constructor : unit -> bool
 
-  val environment : AnnotatedGlobalEnvironment.ReadOnly.t
+  val environment : TypeEnvironment.ReadOnly.t
 
   val debug : bool
 end
@@ -653,7 +653,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     let backward ?key state ~statement:{ Node.value = statement; _ } =
       let resolution =
         let global_resolution =
-          AnnotatedGlobalEnvironment.ReadOnly.resolution FunctionContext.environment
+          TypeEnvironment.ReadOnly.global_resolution FunctionContext.environment
         in
         TypeCheck.resolution_with_key
           ~global_resolution
@@ -761,7 +761,7 @@ let extract_tito_and_sink_models define ~resolution ~existing_backward entry_tai
 let run ~environment ~define ~existing_model =
   let ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define) =
     (* Apply decorators to make sure we match parameters up correctly. *)
-    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     Annotated.Define.create define
     |> Annotated.Define.decorate ~resolution
     |> Annotated.Define.define
@@ -796,7 +796,7 @@ let run ~environment ~define ~existing_model =
     | Some entry_state -> log "Final state: %a" FixpointState.pp entry_state
     | None -> log "No final state found"
   in
-  let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let extract_model FixpointState.{ taint; _ } =
     let model =
       extract_tito_and_sink_models
