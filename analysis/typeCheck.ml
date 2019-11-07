@@ -544,43 +544,51 @@ module State (Context : Context) = struct
     (* Add type variables *)
     let resolution =
       let variables =
+        let variables_of_class class_name =
+          let unarize unaries =
+            let fix_invalid_parameters_in_bounds unary =
+              match
+                GlobalResolution.check_invalid_type_parameters
+                  global_resolution
+                  (Type.Variable unary)
+              with
+              | _, Type.Variable unary -> unary
+              | _ -> failwith "did not transform"
+            in
+            List.map unaries ~f:fix_invalid_parameters_in_bounds
+            |> List.map ~f:(fun unary -> Type.Variable.Unary unary)
+          in
+          let extract = function
+            | ClassHierarchy.Unaries unaries -> unarize unaries
+            | ClassHierarchy.Concatenation concatenation ->
+                unarize (Type.OrderedTypes.Concatenation.head concatenation)
+                @ [
+                    Type.Variable.ListVariadic
+                      (Type.OrderedTypes.Concatenation.middle concatenation);
+                  ]
+                @ unarize (Type.OrderedTypes.Concatenation.tail concatenation)
+          in
+          Reference.show class_name
+          |> GlobalResolution.variables global_resolution
+          >>| extract
+          |> Option.value ~default:[]
+        in
         match Define.is_class_toplevel define with
         | true ->
             let class_name = Option.value_exn parent in
-            let unarize unaries =
-              let fix_invalid_parameters_in_bounds unary =
-                match
-                  GlobalResolution.check_invalid_type_parameters
-                    global_resolution
-                    (Type.Variable unary)
-                with
-                | _, Type.Variable unary -> unary
-                | _ -> failwith "did not transform"
-              in
-              List.map unaries ~f:fix_invalid_parameters_in_bounds
-              |> List.map ~f:(fun unary -> Type.Variable.Unary unary)
-            in
-            let extract = function
-              | ClassHierarchy.Unaries unaries -> unarize unaries
-              | ClassHierarchy.Concatenation concatenation ->
-                  unarize (Type.OrderedTypes.Concatenation.head concatenation)
-                  @ [
-                      Type.Variable.ListVariadic
-                        (Type.OrderedTypes.Concatenation.middle concatenation);
-                    ]
-                  @ unarize (Type.OrderedTypes.Concatenation.tail concatenation)
-            in
-            Reference.show class_name
-            |> GlobalResolution.variables global_resolution
-            >>| extract
-            |> Option.value ~default:[]
+            variables_of_class class_name
         | false ->
-            let parser = GlobalResolution.annotation_parser global_resolution in
-            Node.create signature ~location
-            |> AnnotatedCallable.create_overload ~parser
-            |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
-            |> Type.Variable.all_free_variables
-            |> List.dedup_and_sort ~compare:Type.Variable.compare
+            let define_variables =
+              let parser = GlobalResolution.annotation_parser global_resolution in
+              Node.create signature ~location
+              |> AnnotatedCallable.create_overload ~parser
+              |> (fun { parameters; _ } ->
+                   Type.Callable.create ~parameters ~annotation:Type.Top ())
+              |> Type.Variable.all_free_variables
+              |> List.dedup_and_sort ~compare:Type.Variable.compare
+            in
+            let parent_variables = Option.value_map parent ~f:variables_of_class ~default:[] in
+            List.rev_append define_variables parent_variables
       in
       List.fold variables ~init:resolution ~f:(fun resolution variable ->
           Resolution.add_type_variable resolution ~variable)
@@ -5020,7 +5028,7 @@ let check_typecheck_unit
     in
     resolution global_resolution ()
   in
-  let check_nested = not (Define.is_toplevel value) in
+  let check_nested = not (Define.is_toplevel value || Define.is_class_toplevel value) in
   check_define ~check_nested ~configuration ~resolution ~source define
 
 
@@ -5029,7 +5037,7 @@ let check_source ~configuration ~environment source =
     ~include_stubs:true
     ~include_nested:false
     ~include_toplevels:true
-    ~include_methods:false
+    ~include_methods:true
     source
   |> List.map ~f:(check_typecheck_unit ~configuration ~environment ~source)
   |> aggregate_results
