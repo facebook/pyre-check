@@ -13,6 +13,10 @@ from typing import Any, BinaryIO, Dict, Optional
 JSON = Dict[str, Any]
 
 
+class JSONRPCException(Exception):
+    pass
+
+
 class Request(object):
     def __init__(
         self, method: str, id: Optional[str] = None, parameters: Optional[JSON] = None
@@ -105,7 +109,7 @@ def read_request(file: BinaryIO) -> Optional[Request]:
     return None
 
 
-def read_response(file: BinaryIO) -> Optional[Response]:
+def read_response(file: BinaryIO) -> Response:
     payload = _read_payload(file)
     if payload and Response.validate_payload(payload):
         return Response(
@@ -113,7 +117,7 @@ def read_response(file: BinaryIO) -> Optional[Response]:
             error=payload.get("error"),
             id=payload.get("id"),
         )
-    return None
+    raise JSONRPCException
 
 
 def perform_handshake(

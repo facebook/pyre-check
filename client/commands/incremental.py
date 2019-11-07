@@ -6,17 +6,20 @@
 # pyre-unsafe
 
 import atexit
+import json
 import logging
 import os
 import subprocess
 from logging import Logger
 from typing import IO, List, cast
 
+from .. import json_rpc
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
 from .command import (
     ClientException,
     ExitCode,
     IncrementalStyle,
+    Result,
     State,
     typeshed_search_path,
 )
@@ -27,6 +30,11 @@ from .start import Start
 LOG: Logger = logging.getLogger(__name__)
 
 
+def _convert_to_result(response: json_rpc.Response):
+    error_code = ExitCode.FAILURE if response.error else ExitCode.SUCCESS
+    return Result(output=json.dumps(response.result), code=error_code)
+
+
 class Incremental(Reporting):
     NAME = "incremental"
 
@@ -34,6 +42,8 @@ class Incremental(Reporting):
         super(Incremental, self).__init__(arguments, configuration, analysis_directory)
         self._nonblocking = arguments.nonblocking  # type: bool
         self._incremental_style = arguments.incremental_style  # type: bool
+        self._version_hash = configuration.version_hash
+        self._use_json_sockets: bool = arguments.use_json_sockets
 
     def _run(self) -> None:
         if self._state() == State.DEAD:
@@ -59,20 +69,30 @@ class Incremental(Reporting):
 
         if self._state() != State.DEAD:
             LOG.info("Waiting for server...")
+        if self._use_json_sockets:
+            request = json_rpc.Request(
+                method="displayTypeErrors", parameters={"files": []}
+            )
+            self._send_and_handle_socket_request(request, self._version_hash)
+        else:
+            result = self._call_client(command=self.NAME)
+            try:
+                result.check()
+                errors = self._get_errors(result)
+                self._print(errors)
 
-        result = self._call_client(command=self.NAME)
+                if errors:
+                    self._exit_code = ExitCode.FOUND_ERRORS
+            except ClientException as exception:
+                LOG.error("Error while waiting for server: %s", str(exception))
+                LOG.error("Run `pyre restart` in order to restart the server.")
+                self._exit_code = ExitCode.FAILURE
 
-        try:
-            result.check()
-            errors = self._get_errors(result)
-            self._print(errors)
-
-            if errors:
-                self._exit_code = ExitCode.FOUND_ERRORS
-        except ClientException as exception:
-            LOG.error("Error while waiting for server: %s", str(exception))
-            LOG.error("Run `pyre restart` in order to restart the server.")
-            self._exit_code = ExitCode.FAILURE
+    def _socket_result_handler(self, result: Result) -> None:
+        errors = self._get_errors(result)
+        self._print(errors)
+        if errors:
+            self._exit_code = ExitCode.FOUND_ERRORS
 
     def _flags(self) -> List[str]:
         flags = super()._flags()

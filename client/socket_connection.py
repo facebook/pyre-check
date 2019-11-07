@@ -5,12 +5,16 @@
 
 # pyre-strict
 
+import logging
 import os
 import socket
 from types import TracebackType
 from typing import BinaryIO, Optional
 
 from . import json_rpc
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class SocketException(Exception):
@@ -48,6 +52,11 @@ class SocketConnection(object):
 
     def _socket_path(self) -> str:
         return os.path.join(self.root, "server", "json_server.sock")
+
+    def send_request(self, request: json_rpc.Request) -> None:
+        if not request.write(self.output):
+            LOG.info("Failed to communicate with server. Shutting down.")
+            raise SocketException
 
     def __enter__(self) -> "SocketConnection":
         self.connect()

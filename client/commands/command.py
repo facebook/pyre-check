@@ -7,6 +7,7 @@
 
 import argparse
 import enum
+import json
 import logging
 import os
 import re
@@ -17,11 +18,12 @@ import threading
 from abc import abstractmethod
 from typing import Iterable, List, Optional, Set  # noqa
 
-from .. import log
+from .. import json_rpc, log
 from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import remove_if_exists
+from ..socket_connection import SocketConnection, SocketException
 
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger
@@ -101,6 +103,14 @@ def typeshed_search_path(typeshed_root: str) -> List[str]:
                 continue
             search_path.append(os.path.join(typeshed_subdirectory, version_name))
     return search_path
+
+
+def _convert_json_response_to_result(response: json_rpc.Response) -> Result:
+    if response.error:
+        error_code = ExitCode.FAILURE
+    else:
+        error_code = ExitCode.SUCCESS
+    return Result(output=json.dumps(response.result), code=error_code)
 
 
 class Command:
@@ -308,6 +318,35 @@ class Command:
             return State.RUNNING
         except Exception:
             return State.DEAD
+
+    # will open a socket, send a request, read the response and close the socket.
+    def _send_and_handle_socket_request(
+        self, request: json_rpc.Request, version_hash: str
+    ) -> None:
+        try:
+            with SocketConnection(
+                self._configuration.log_directory
+            ) as socket_connection:
+                socket_connection.perform_handshake(version_hash)
+                socket_connection.send_request(request)
+                response = json_rpc.read_response(socket_connection.input)
+                result = _convert_json_response_to_result(response)
+                result.check()
+                self._socket_result_handler(result)
+        except (
+            SocketException,
+            ResourceWarning,
+            ClientException,
+            json_rpc.JSONRPCException,
+        ) as exception:
+            LOG.error("Error while waiting for server: %s", str(exception))
+            LOG.error("Run `pyre restart` in order to restart the server.")
+            self._exit_code = ExitCode.FAILURE
+
+    # Will be overwritten in subclasses to specialize how json socket
+    # responses are handled.
+    def _socket_result_handler(self, result: Result) -> None:
+        log.stdout.write(result.output)
 
     def profiling_log_path(self) -> str:
         return os.path.join(self._log_directory, "profiling.log")

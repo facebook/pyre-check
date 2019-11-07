@@ -18,7 +18,7 @@ from ...analysis_directory import AnalysisDirectory
 def mock_arguments(  # noqa
     build=False,
     changed_files_path=None,
-    command=None,
+    command=None,  # noqa
     load_initial_state_from=None,
     no_saved_state=False,
     no_verify=False,
@@ -70,6 +70,7 @@ def mock_arguments(  # noqa
     arguments.taint_models_path = []
     arguments.targets = targets
     arguments.terminal = terminal
+    arguments.use_json_sockets = False
     arguments.verbose = False
     arguments.repository_root = None
     arguments.rule = None

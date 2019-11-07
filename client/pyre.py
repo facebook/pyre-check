@@ -247,7 +247,10 @@ def main() -> int:
     parser.add_argument(
         "--saved-state-project", default=None, type=str, help=argparse.SUPPRESS
     )
-
+    # Temporary flag to help migrate to json sockets for incremental and query commands.
+    parser.add_argument(
+        "--use-json-sockets", action="store_true", default=False, help=argparse.SUPPRESS
+    )
     # Subcommands.
     parsed_commands = parser.add_subparsers(
         metavar="{analyze, check, color, kill, incremental, initialize (init), "
