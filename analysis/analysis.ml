@@ -44,6 +44,7 @@ module Resolution = Resolution
 module SharedMemoryKeys = SharedMemoryKeys
 module Type = Type
 module TypeCheck = TypeCheck
+module TypeEnvironment = TypeEnvironment
 module TypeOrder = TypeOrder
 module TypeConstraints = TypeConstraints
 module Inference = Inference

@@ -1002,6 +1002,8 @@ and Define : sig
 
   val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
 
+  val name : t -> Reference.t
+
   val unqualified_name : t -> Identifier.t
 
   val self_identifier : t -> Identifier.t
@@ -1265,6 +1267,8 @@ end = struct
   let create_class_toplevel ~parent ~statements =
     { signature = Signature.create_class_toplevel ~parent; body = statements }
 
+
+  let name { signature = { Signature.name; _ }; _ } = name
 
   let unqualified_name { signature; _ } = Signature.unqualified_name signature
 

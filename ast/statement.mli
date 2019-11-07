@@ -247,6 +247,8 @@ and Define : sig
 
   val create_class_toplevel : parent:Reference.t -> statements:Statement.t list -> t
 
+  val name : t -> Reference.t
+
   val unqualified_name : t -> Identifier.t
 
   val self_identifier : t -> Identifier.t
