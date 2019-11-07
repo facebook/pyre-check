@@ -27,6 +27,7 @@ let test_parent_definition context =
           async = false;
           generator = false;
           parent = Some (Reference.create parent);
+          nesting_define = None;
         };
       body = [+Statement.Pass];
     }

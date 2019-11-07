@@ -937,7 +937,9 @@ and Define : sig
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      parent: Reference.t option; (* The class owning the method. *)
+      parent: Reference.t option;
+      (* The class owning the method. *)
+      nesting_define: Reference.t option;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -1067,13 +1069,25 @@ end = struct
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
-      parent: Reference.t option; (* The class owning the method. *)
+      parent: Reference.t option;
+      (* The class owning the method. *)
+      nesting_define: Reference.t option;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let location_sensitive_hash_fold
         state
-        { name; parameters; decorators; docstring; return_annotation; async; generator; parent }
+        {
+          name;
+          parameters;
+          decorators;
+          docstring;
+          return_annotation;
+          async;
+          generator;
+          parent;
+          nesting_define;
+        }
       =
       let state = [%hash_fold: Reference.t] state name in
       let state =
@@ -1088,7 +1102,8 @@ end = struct
       in
       let state = [%hash_fold: bool] state async in
       let state = [%hash_fold: bool] state generator in
-      [%hash_fold: Reference.t option] state parent
+      let state = [%hash_fold: Reference.t option] state parent in
+      [%hash_fold: Reference.t option] state nesting_define
 
 
     let location_sensitive_compare left right =
@@ -1137,6 +1152,7 @@ end = struct
         async = false;
         generator = false;
         parent = None;
+        nesting_define = None;
       }
 
 
@@ -1150,6 +1166,7 @@ end = struct
         async = false;
         generator = false;
         parent = Some parent;
+        nesting_define = None;
       }
 
 

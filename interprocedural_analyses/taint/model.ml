@@ -743,6 +743,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
               async = false;
               generator = false;
               parent = None;
+              nesting_define = None;
             }
           in
           [signature, location, Callable.create_object name]
@@ -766,6 +767,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
               async = false;
               generator = false;
               parent = None;
+              nesting_define = None;
             }
           in
           [signature, location, Callable.create_object name]

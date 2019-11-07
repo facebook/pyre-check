@@ -362,6 +362,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
                       async = false;
                       generator = false;
                       parent = Some (Reference.create "typing.GenericMeta");
+                      nesting_define = None;
                     };
                   body = [];
                 }

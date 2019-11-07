@@ -1347,6 +1347,7 @@ let mock_signature =
     async = false;
     generator = false;
     parent = None;
+    nesting_define = None;
   }
 
 

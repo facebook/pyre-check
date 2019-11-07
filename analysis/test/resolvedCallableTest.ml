@@ -29,6 +29,7 @@ let test_apply_decorators context =
        async = false;
        generator = false;
        parent = None;
+       nesting_define = None;
      })
     |> Node.create_with_default_location
   in

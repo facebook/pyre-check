@@ -37,6 +37,7 @@ let test_return_annotation context =
           async;
           generator;
           parent = None;
+          nesting_define = None;
         }
       in
       Callable.return_annotation ~signature ~parser

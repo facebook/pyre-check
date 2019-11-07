@@ -26,6 +26,7 @@ let test_is_method _ =
           async = false;
           generator = false;
           parent = parent >>| Reference.create;
+          nesting_define = None;
         };
       body = [+Statement.Pass];
     }
@@ -47,6 +48,7 @@ let test_is_classmethod _ =
           async = false;
           generator = false;
           parent = Some !&"bar";
+          nesting_define = None;
         };
       body = [+Statement.Pass];
     }
@@ -72,6 +74,7 @@ let test_is_class_property _ =
           async = false;
           generator = false;
           parent = Some !&"bar";
+          nesting_define = None;
         };
       body = [+Statement.Pass];
     }
@@ -95,6 +98,7 @@ let test_decorator _ =
           async = false;
           generator = false;
           parent = None;
+          nesting_define = None;
         };
       body = [+Statement.Pass];
     }
@@ -131,6 +135,7 @@ let test_is_constructor _ =
             async = false;
             generator = false;
             parent = parent >>| Reference.create;
+            nesting_define = None;
           };
         body = [+Statement.Pass];
       }
@@ -405,6 +410,7 @@ let test_attributes _ =
                 async = false;
                 generator = false;
                 parent = None;
+                nesting_define = None;
               }
             in
             let signatures = List.init ~f:(fun _ -> define) number_of_defines in

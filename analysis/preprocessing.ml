@@ -642,7 +642,8 @@ let qualify
       let qualify_define
           ({ qualifier; _ } as original_scope)
           ( {
-              Define.signature = { name; parameters; decorators; return_annotation; parent; _ };
+              Define.signature =
+                { name; parameters; decorators; return_annotation; parent; nesting_define; _ };
               body;
               _;
             } as define )
@@ -652,6 +653,9 @@ let qualify
           return_annotation >>| qualify_expression ~qualify_strings:true ~scope
         in
         let parent = parent >>| fun parent -> qualify_reference ~scope parent in
+        let nesting_define =
+          nesting_define >>| fun nesting_define -> qualify_reference ~scope nesting_define
+        in
         let decorators =
           List.map
             decorators
@@ -668,7 +672,15 @@ let qualify
         in
         let original_scope_with_alias, name = qualify_function_name ~scope:original_scope name in
         let signature =
-          { define.signature with name; parameters; decorators; return_annotation; parent }
+          {
+            define.signature with
+            name;
+            parameters;
+            decorators;
+            return_annotation;
+            parent;
+            nesting_define;
+          }
         in
         original_scope_with_alias, { define with signature; body }
       in
@@ -1921,6 +1933,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               async = false;
               generator = false;
               parent = Some parent;
+              nesting_define = None;
             };
           body =
             [
@@ -2106,6 +2119,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                     async = false;
                     generator = false;
                     parent = Some name;
+                    nesting_define = None;
                   };
                 body = [Node.create Statement.Pass ~location];
               }

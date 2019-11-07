@@ -24,6 +24,7 @@ let test_to_dot _ =
             async = false;
             generator = false;
             parent = None;
+            nesting_define = None;
           };
         body;
       }
@@ -108,6 +109,7 @@ let assert_cfg body expected =
           async = false;
           generator = false;
           parent = None;
+          nesting_define = None;
         };
       body;
     }

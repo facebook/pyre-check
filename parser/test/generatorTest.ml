@@ -561,6 +561,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -584,6 +585,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -603,6 +605,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -622,6 +625,7 @@ let test_define _ =
                async = true;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -641,6 +645,7 @@ let test_define _ =
                async = true;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
@@ -660,6 +665,7 @@ let test_define _ =
                async = true;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -679,6 +685,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -709,6 +716,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -728,6 +736,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -751,6 +760,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -778,6 +788,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -800,6 +811,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -819,6 +831,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -842,6 +855,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -866,6 +880,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -881,6 +896,7 @@ let test_define _ =
                         async = false;
                         generator = false;
                         parent = None;
+                        nesting_define = Some !&"foo";
                       };
                     body =
                       [
@@ -907,6 +923,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -933,6 +950,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -956,6 +974,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -1001,6 +1020,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -1024,6 +1044,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Integer 1)];
          };
@@ -1043,6 +1064,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1071,6 +1093,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1099,6 +1122,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1127,6 +1151,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1154,6 +1179,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1180,6 +1206,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1206,6 +1233,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1240,6 +1268,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1274,6 +1303,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1313,6 +1343,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1348,6 +1379,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1381,6 +1413,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1409,6 +1442,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1451,6 +1485,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1494,6 +1529,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1538,6 +1574,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1570,6 +1607,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1598,6 +1636,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1642,6 +1681,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Pass];
          };
@@ -1680,6 +1720,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Pass];
          };
@@ -1714,6 +1755,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Pass];
          };
@@ -1744,6 +1786,7 @@ let test_define _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
@@ -1773,11 +1816,563 @@ let test_define _ =
                async = true;
                generator = true;
                parent = None;
+               nesting_define = None;
              };
            body =
              [
                +Statement.Yield
                   (+Expression.Yield (Some (+Expression.String (StringLiteral.create "A"))));
+             ];
+         };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+        def foo():
+          def bar():
+            pass
+          def baz():
+            pass
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"bar";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = Some !&"foo";
+                      };
+                    body = [+Statement.Pass];
+                  };
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"baz";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = Some !&"foo";
+                      };
+                    body = [+Statement.Pass];
+                  };
+             ];
+         };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+        def foo():
+          def bar():
+            def baz():
+              pass
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"bar";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = Some !&"foo";
+                      };
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"baz";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"bar";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+        def foo():
+          if True:
+            def bar():
+              pass
+          else:
+            def baz():
+              pass
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.If
+                  {
+                    If.test = +Expression.True;
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                    orelse =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"baz";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+        def foo():
+          while True:
+            def bar():
+              pass
+          else:
+            def baz():
+              pass
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.While
+                  {
+                    While.test = +Expression.True;
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                    orelse =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"baz";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+        def foo():
+          with True:
+            def bar():
+              pass
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.With
+                  {
+                    With.items = [+Expression.True, None];
+                    async = false;
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+        def foo():
+          try:
+            def bar():
+              pass
+          except:
+            def baz():
+              pass
+          finally:
+            def quix():
+              pass
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Try
+                  {
+                    Try.body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                    orelse = [];
+                    handlers =
+                      [
+                        {
+                          Try.Handler.kind = None;
+                          name = None;
+                          body =
+                            [
+                              +Statement.Define
+                                 {
+                                   signature =
+                                     {
+                                       name = !&"baz";
+                                       parameters = [];
+                                       decorators = [];
+                                       docstring = None;
+                                       return_annotation = None;
+                                       async = false;
+                                       generator = false;
+                                       parent = None;
+                                       nesting_define = Some !&"foo";
+                                     };
+                                   body = [+Statement.Pass];
+                                 };
+                            ];
+                        };
+                      ];
+                    finally =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"quix";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+        class C:
+          def bar():
+            def baz():
+              pass
+    |})
+    [
+      +Statement.Class
+         {
+           Class.name = !&"C";
+           bases = [];
+           decorators = [];
+           docstring = None;
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"bar";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = Some !&"C";
+                        nesting_define = None;
+                      };
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"baz";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"bar";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation
+       {|
+        def foo():
+          class C:
+            def bar():
+              def baz():
+                pass
+    |})
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Class
+                  {
+                    Class.name = !&"C";
+                    bases = [];
+                    decorators = [];
+                    docstring = None;
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = Some !&"C";
+                                 nesting_define = None;
+                               };
+                             body =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
+                                        {
+                                          name = !&"baz";
+                                          parameters = [];
+                                          decorators = [];
+                                          docstring = None;
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent = None;
+                                          nesting_define = Some !&"bar";
+                                        };
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                           };
+                      ];
+                  };
              ];
          };
     ];
@@ -3294,6 +3889,7 @@ let test_class _ =
                         async = false;
                         generator = false;
                         parent = Some !&"foo";
+                        nesting_define = None;
                       };
                     body = [+Statement.Pass];
                   };
@@ -3323,6 +3919,7 @@ let test_class _ =
                         async = false;
                         generator = false;
                         parent = Some !&"foo";
+                        nesting_define = None;
                       };
                     body =
                       [
@@ -3338,6 +3935,7 @@ let test_class _ =
                                  async = false;
                                  generator = false;
                                  parent = None;
+                                 nesting_define = Some !&"bar";
                                };
                              body = [+Statement.Pass];
                            };
@@ -3476,6 +4074,7 @@ let test_class _ =
                         async = false;
                         generator = false;
                         parent = Some !&"foo";
+                        nesting_define = None;
                       };
                     body = [+Statement.Pass];
                   };
@@ -3506,6 +4105,7 @@ let test_class _ =
                         async = false;
                         generator = false;
                         parent = Some !&"foo";
+                        nesting_define = None;
                       };
                     body =
                       [
@@ -3560,6 +4160,7 @@ let test_class _ =
                                  async = false;
                                  generator = false;
                                  parent = Some !&"foo";
+                                 nesting_define = None;
                                };
                              body = [+Statement.Pass];
                            };
@@ -4720,6 +5321,7 @@ let test_stubs _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
@@ -4739,6 +5341,7 @@ let test_stubs _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
@@ -4758,6 +5361,7 @@ let test_stubs _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
@@ -4784,6 +5388,7 @@ let test_stubs _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Expression (+Expression.Ellipsis)];
          };
@@ -4854,6 +5459,7 @@ let test_ellipsis _ =
                async = false;
                generator = false;
                parent = None;
+               nesting_define = None;
              };
            body = [+Statement.Pass];
          };

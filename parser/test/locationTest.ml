@@ -906,6 +906,7 @@ let test_class_locations _ =
                             async = false;
                             generator = false;
                             parent = Some !&"foo";
+                            nesting_define = None;
                           };
                         body = [node ~start:(2, 12) ~stop:(2, 16) Statement.Pass];
                       });
@@ -986,6 +987,7 @@ let test_class_locations _ =
                                        async = false;
                                        generator = false;
                                        parent = Some !&"foo";
+                                       nesting_define = None;
                                      };
                                    body = [node ~start:(5, 6) ~stop:(5, 10) Statement.Pass];
                                  });
@@ -1018,6 +1020,7 @@ let test_define_locations _ =
                  async = true;
                  generator = false;
                  parent = None;
+                 nesting_define = None;
                };
              body =
                [
@@ -1052,6 +1055,7 @@ let test_define_locations _ =
                  async = false;
                  generator = false;
                  parent = None;
+                 nesting_define = None;
                };
              body =
                [
@@ -1070,6 +1074,7 @@ let test_define_locations _ =
                             async = false;
                             generator = false;
                             parent = None;
+                            nesting_define = Some !&"foo";
                           };
                         body =
                           [
@@ -1135,6 +1140,7 @@ let test_define_locations _ =
                  async = false;
                  generator = false;
                  parent = None;
+                 nesting_define = None;
                };
              body = [node ~start:(6, 2) ~stop:(6, 6) Statement.Pass];
            });
@@ -1179,6 +1185,7 @@ let test_define_locations _ =
                  async = false;
                  generator = false;
                  parent = None;
+                 nesting_define = None;
                };
              body =
                [
@@ -2611,6 +2618,7 @@ let test_stub_locations _ =
                  async = false;
                  generator = false;
                  parent = None;
+                 nesting_define = None;
                };
              body =
                [
@@ -2655,6 +2663,7 @@ let test_stub_locations _ =
                  async = false;
                  generator = false;
                  parent = None;
+                 nesting_define = None;
                };
              body =
                [

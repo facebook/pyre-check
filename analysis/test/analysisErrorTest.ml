@@ -21,6 +21,7 @@ let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
     async = false;
     generator = false;
     parent = None;
+    nesting_define = None;
   }
 
 

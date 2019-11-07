@@ -242,6 +242,7 @@ module Make (Transformer : Transformer) = struct
                   return_annotation;
                   async;
                   parent;
+                  nesting_define;
                   generator;
                   docstring;
                 };
@@ -258,6 +259,7 @@ module Make (Transformer : Transformer) = struct
                     return_annotation = return_annotation >>| transform_expression;
                     async;
                     parent;
+                    nesting_define;
                     generator;
                     docstring;
                   };

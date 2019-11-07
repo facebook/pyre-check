@@ -59,6 +59,7 @@ let assert_fixpoint body expected =
           async = false;
           generator = false;
           parent = None;
+          nesting_define = None;
         };
       body;
     }

@@ -1753,6 +1753,7 @@ let test_expand_implicit_returns _ =
                     async = false;
                     generator = false;
                     parent = None;
+                    nesting_define = None;
                   };
                 body = expected_body;
               };
@@ -1938,6 +1939,7 @@ let test_defines _ =
           async = false;
           generator = false;
           parent = None;
+          nesting_define = None;
         };
       body = [+Statement.Expression (+Expression.Float 1.0)];
     }
@@ -1954,6 +1956,7 @@ let test_defines _ =
           async = false;
           generator = false;
           parent = None;
+          nesting_define = None;
         };
       body;
     }
@@ -1970,6 +1973,7 @@ let test_defines _ =
           async = false;
           generator = false;
           parent = Some (Reference.create parent);
+          nesting_define = None;
         };
       body;
     }
@@ -1988,6 +1992,7 @@ let test_defines _ =
           async = false;
           generator = false;
           parent = None;
+          nesting_define = None;
         };
       body = [+Statement.Expression (+Expression.Float 1.0)];
     }
@@ -2004,6 +2009,7 @@ let test_defines _ =
           async = false;
           generator = false;
           parent = None;
+          nesting_define = None;
         };
       body = [+Statement.Expression (+Expression.Float 1.0); +Statement.Define inner];
     }
@@ -2054,6 +2060,7 @@ let test_classes _ =
                    async = false;
                    generator = false;
                    parent = Some !&"foo";
+                   nesting_define = None;
                  };
                body = [+Statement.Pass];
              };

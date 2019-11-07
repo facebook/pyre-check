@@ -3646,6 +3646,7 @@ module TypedDictionary = struct
               async = false;
               generator = false;
               parent = Some (Reference.create class_name);
+              nesting_define = None;
             };
           body = [];
         }
