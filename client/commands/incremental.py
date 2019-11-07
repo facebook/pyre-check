@@ -69,6 +69,7 @@ class Incremental(Reporting):
 
         if self._state() != State.DEAD:
             LOG.info("Waiting for server...")
+
         if self._use_json_sockets:
             request = json_rpc.Request(
                 method="displayTypeErrors", parameters={"files": []}

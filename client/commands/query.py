@@ -11,7 +11,7 @@ import re
 from logging import Logger
 from typing import Dict, List, Optional
 
-from .. import log
+from .. import json_rpc, log
 from .command import Command
 
 
@@ -40,11 +40,19 @@ class Query(Command):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Query, self).__init__(arguments, configuration, analysis_directory)
         self.query = self._rewrite_paths(arguments.query)
+        self._version_hash = configuration.version_hash
+        self._use_json_sockets = arguments.use_json_sockets
 
     def _flags(self) -> List[str]:
         return [self.query]
 
     def _run(self) -> None:
-        result = self._call_client(command=self.NAME)
-        result.check()
-        log.stdout.write(result.output)
+        if self._use_json_sockets:
+            request = json_rpc.Request(
+                method="typeQuery", parameters={"query": self.query}
+            )
+            self._send_and_handle_socket_request(request, self._version_hash)
+        else:
+            result = self._call_client(command=self.NAME)
+            result.check()
+            log.stdout.write(result.output)

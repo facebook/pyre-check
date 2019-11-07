@@ -50,13 +50,13 @@ class SocketConnection(object):
                 "Exception encountered during handshake: `{}`".format(error)
             )
 
-    def _socket_path(self) -> str:
-        return os.path.join(self.root, "server", "json_server.sock")
-
     def send_request(self, request: json_rpc.Request) -> None:
         if not request.write(self.output):
             LOG.info("Failed to communicate with server. Shutting down.")
             raise SocketException
+
+    def _socket_path(self) -> str:
+        return os.path.join(self.root, "server", "json_server.sock")
 
     def __enter__(self) -> "SocketConnection":
         self.connect()
