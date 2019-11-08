@@ -4540,8 +4540,24 @@ module State (Context : Context) = struct
             GlobalResolution.resolve_exports global_resolution ~reference:class_name
           in
           if not (Reference.equal class_name exported_name) then
+            let is_shadowed_class_imported =
+              not
+                (Option.equal
+                   Reference.equal
+                   (Reference.prefix class_name)
+                   (Reference.prefix exported_name))
+            in
             let error =
-              Error.create ~location ~kind:(Error.RedefinedClass class_name) ~define:Context.define
+              Error.create
+                ~location
+                ~kind:
+                  (Error.RedefinedClass
+                     {
+                       current_class = class_name;
+                       shadowed_class = exported_name;
+                       is_shadowed_class_imported;
+                     })
+                ~define:Context.define
             in
             error :: errors
           else

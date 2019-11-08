@@ -570,7 +570,7 @@ let test_check_attributes context =
       from foo import Bar
       class Bar: pass
     |}
-    ["Redefined class [50]: Class `Bar` conflicts with an imported class."]
+    ["Redefined class [50]: Class `test.Bar` conflicts with imported class `foo.Bar`."]
 
 
 let test_attribute_decorators context =

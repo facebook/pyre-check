@@ -1194,7 +1194,7 @@ let test_check_aliases context =
       foo(FOO())
     |}
     [
-      "Redefined class [50]: Class `FOO` conflicts with an imported class.";
+      "Redefined class [50]: Class `FOO` conflicts with class `BAR`.";
       "Illegal annotation target [35]: Target `test.FOO.x` cannot be annotated.";
       "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
       "Incompatible variable type [9]: FOO is declared to have type `typing.Type[FOO]` but is \

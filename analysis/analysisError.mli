@@ -223,7 +223,11 @@ type kind =
       is_type_alias: bool;
       missing_annotation: missing_annotation;
     }
-  | RedefinedClass of Reference.t
+  | RedefinedClass of {
+      current_class: Reference.t;
+      shadowed_class: Reference.t;
+      is_shadowed_class_imported: bool;
+    }
   | RedundantCast of Type.t
   | RevealedType of {
       expression: Expression.t;

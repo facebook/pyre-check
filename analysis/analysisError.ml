@@ -232,7 +232,11 @@ type kind =
       is_type_alias: bool;
       missing_annotation: missing_annotation;
     }
-  | RedefinedClass of Reference.t
+  | RedefinedClass of {
+      current_class: Reference.t;
+      shadowed_class: Reference.t;
+      is_shadowed_class_imported: bool;
+    }
   | RedundantCast of Type.t
   | RevealedType of {
       expression: Expression.t;
@@ -1496,9 +1500,18 @@ let messages ~concise ~signature location kind =
     match given_annotation with
     | Some Type.Any -> [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
     | _ -> [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name] )
-  | RedefinedClass name when concise -> [Format.asprintf "Class `%a` redefined" pp_reference name]
-  | RedefinedClass name ->
-      [Format.asprintf "Class `%a` conflicts with an imported class." pp_reference name]
+  | RedefinedClass { shadowed_class; _ } when concise ->
+      [Format.asprintf "Class `%a` redefined" pp_reference shadowed_class]
+  | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported } ->
+      [
+        Format.asprintf
+          "Class `%a` conflicts with %sclass `%a`."
+          pp_reference
+          current_class
+          (if is_shadowed_class_imported then "imported " else "")
+          pp_reference
+          shadowed_class;
+      ]
   | RedundantCast _ when concise -> ["The cast is redundant."]
   | RedundantCast annotation ->
       [Format.asprintf "The value being cast is already of type `%a`." pp_type annotation]
@@ -2983,7 +2996,16 @@ let dequalify
             is_type_alias;
             missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
           }
-    | RedefinedClass name -> RedefinedClass (dequalify_reference name)
+    | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported }
+      when not is_shadowed_class_imported ->
+        (* Both are locally-defined classes, so dequalify their references. *)
+        RedefinedClass
+          {
+            current_class = dequalify_reference current_class;
+            shadowed_class = dequalify_reference shadowed_class;
+            is_shadowed_class_imported;
+          }
+    | RedefinedClass redefined_class -> RedefinedClass redefined_class
     | RedundantCast annotation -> RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
         RevealedType { expression; annotation = dequalify_annotation annotation }
