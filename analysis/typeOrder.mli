@@ -12,13 +12,24 @@ module ProtocolAssumptions : sig
 end
 [@@deriving show]
 
+module CallableAssumptions : sig
+  type t
+
+  val empty : t
+end
+[@@deriving show]
+
 type order = {
   handler: (module ClassHierarchy.Handler);
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
   attributes:
-    Type.t -> protocol_assumptions:ProtocolAssumptions.t -> AnnotatedAttribute.t list option;
+    Type.t ->
+    protocol_assumptions:ProtocolAssumptions.t ->
+    callable_assumptions:CallableAssumptions.t ->
+    AnnotatedAttribute.t list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
   protocol_assumptions: ProtocolAssumptions.t;
+  callable_assumptions: CallableAssumptions.t;
 }
 
 val solve_less_or_equal

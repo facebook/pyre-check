@@ -62,9 +62,10 @@ let order_and_environment ~context source =
   ( {
       TypeOrder.handler = GlobalResolution.class_hierarchy global_resolution;
       constructor = (fun _ ~protocol_assumptions:_ -> None);
-      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      attributes = (fun _ ~protocol_assumptions:_ ~callable_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
+      callable_assumptions = TypeOrder.CallableAssumptions.empty;
     },
     environment )
 

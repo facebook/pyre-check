@@ -45,6 +45,7 @@ type t = {
   is_protocol: Type.t -> bool;
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
   protocol_assumptions: TypeOrder.ProtocolAssumptions.t;
+  callable_assumptions: TypeOrder.CallableAssumptions.t;
   global: Reference.t -> global option;
 }
 
@@ -190,6 +191,7 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
     attribute;
     is_protocol;
     protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
+    callable_assumptions = TypeOrder.CallableAssumptions.empty;
     global;
   }
 
@@ -230,12 +232,22 @@ let class_definition { class_definition; _ } annotation =
 
 let class_metadata { class_metadata; _ } annotation = primitive_name annotation >>= class_metadata
 
-let full_order ({ class_hierarchy; attributes = a; protocol_assumptions; _ } as resolution) =
+let full_order
+    ( {
+        class_hierarchy;
+        attributes = attributes_lookup;
+        protocol_assumptions;
+        callable_assumptions;
+        _;
+      } as resolution )
+  =
   let constructor instantiated ~protocol_assumptions =
     instantiated |> Type.primitive_name >>= constructor { resolution with protocol_assumptions }
   in
-  let attributes t ~protocol_assumptions =
-    a ~resolution:{ resolution with protocol_assumptions } t
+  let attributes class_type ~protocol_assumptions ~callable_assumptions =
+    attributes_lookup
+      ~resolution:{ resolution with protocol_assumptions; callable_assumptions }
+      class_type
   in
   let is_protocol annotation ~protocol_assumptions =
     is_protocol { resolution with protocol_assumptions } annotation
@@ -246,6 +258,7 @@ let full_order ({ class_hierarchy; attributes = a; protocol_assumptions; _ } as 
     attributes;
     is_protocol;
     protocol_assumptions;
+    callable_assumptions;
   }
 
 

@@ -1033,6 +1033,20 @@ let test_check_callable_protocols context =
     |}
     [];
 
+  assert_type_errors
+    {|
+      class Call:
+        def __call__(self: typing.Callable[[int], str], x: int) -> str: ...
+      def foo(call: Call) -> None:
+        reveal_type(call())
+    |}
+    [
+      (* TODO(T57097891): Invalid method signature error is a false positive, because solving less
+         or equal for ~left:CallableClass ~right:typing.Callable works while reversed does not. *)
+        "Invalid method signature [47]: `typing.Callable[[int], str]` cannot be the type of `self`.";
+      "Revealed type [-1]: Revealed type for `call()` is `str`.";
+    ];
+
   (* We handle subclassing. *)
   assert_type_errors
     {|

@@ -57,7 +57,7 @@ let parse_attributes ~parse_annotation ~class_name =
 
 let less_or_equal
     ?(constructor = fun _ ~protocol_assumptions:_ -> None)
-    ?(attributes = fun _ ~protocol_assumptions:_ -> None)
+    ?(attributes = fun _ ~protocol_assumptions:_ ~callable_assumptions:_ -> None)
     ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
     handler
   =
@@ -68,6 +68,7 @@ let less_or_equal
       attributes;
       is_protocol;
       protocol_assumptions = ProtocolAssumptions.empty;
+      callable_assumptions = CallableAssumptions.empty;
     }
 
 
@@ -76,15 +77,16 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) ha
     {
       handler;
       constructor;
-      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      attributes = (fun _ ~protocol_assumptions:_ ~callable_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       protocol_assumptions = ProtocolAssumptions.empty;
+      callable_assumptions = CallableAssumptions.empty;
     }
 
 
 let join
     ?(constructor = fun _ ~protocol_assumptions:_ -> None)
-    ?(attributes = fun _ ~protocol_assumptions:_ -> None)
+    ?(attributes = fun _ ~protocol_assumptions:_ ~callable_assumptions:_ -> None)
     handler
   =
   join
@@ -94,6 +96,7 @@ let join
       attributes;
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       protocol_assumptions = ProtocolAssumptions.empty;
+      callable_assumptions = CallableAssumptions.empty;
     }
 
 
@@ -102,9 +105,10 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
     {
       handler;
       constructor;
-      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      attributes = (fun _ ~protocol_assumptions:_ ~callable_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       protocol_assumptions = ProtocolAssumptions.empty;
+      callable_assumptions = CallableAssumptions.empty;
     }
 
 
@@ -867,7 +871,7 @@ let test_less_or_equal context =
                ~constraints:(Type.Variable.Explicit [Type.integer; Type.bool]))
       | _ -> None
     in
-    let attributes annotation ~protocol_assumptions:_ =
+    let attributes annotation ~protocol_assumptions:_ ~callable_assumptions:_ =
       let parse_annotation =
         let aliases = function
           | "_T" -> Some (Type.variable "_T")
@@ -1648,7 +1652,7 @@ let test_join context =
       else
         parse_single_expression source |> Type.create ~aliases
     in
-    let attributes annotation ~protocol_assumptions:_ =
+    let attributes annotation ~protocol_assumptions:_ ~callable_assumptions:_ =
       let parse_annotation =
         let aliases = function
           | "_T" -> Some (Type.variable "_T")
@@ -2503,7 +2507,7 @@ let test_solve_less_or_equal context =
       ~left
       ~right
       ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
-      ?(attributes = fun _ ~protocol_assumptions:_ -> None)
+      ?(attributes = fun _ ~protocol_assumptions:_ ~callable_assumptions:_ -> None)
       ?constraints
       ?(leave_unbound_in_left = [])
       ?(postprocess = default_postprocess)
@@ -2526,6 +2530,7 @@ let test_solve_less_or_equal context =
         attributes;
         is_protocol;
         protocol_assumptions = ProtocolAssumptions.empty;
+        callable_assumptions = CallableAssumptions.empty;
       }
     in
     let leave_unbound_in_left = List.map leave_unbound_in_left ~f:(fun a -> "test." ^ a) in
@@ -2859,7 +2864,7 @@ let test_solve_less_or_equal context =
     | Type.Parametric { name = "test.G_invariant"; _ } -> true
     | _ -> false
   in
-  let attributes annotation ~protocol_assumptions:_ =
+  let attributes annotation ~protocol_assumptions:_ ~callable_assumptions:_ =
     match annotation with
     | Type.Primitive "test.G_invariant" ->
         Some
@@ -3184,7 +3189,7 @@ let test_instantiate_protocol_parameters context =
     in
     let order =
       let classes, protocols = parse_attributes classes, parse_attributes protocols in
-      let attributes annotation ~protocol_assumptions:_ =
+      let attributes annotation ~protocol_assumptions:_ ~callable_assumptions:_ =
         match annotation with
         | Type.Primitive primitive ->
             List.Assoc.find (classes @ protocols) primitive ~equal:String.equal
@@ -3205,6 +3210,7 @@ let test_instantiate_protocol_parameters context =
         attributes;
         is_protocol;
         protocol_assumptions = ProtocolAssumptions.empty;
+        callable_assumptions = CallableAssumptions.empty;
       }
     in
     assert_equal
@@ -3385,9 +3391,10 @@ let test_mark_escaped_as_escaped context =
       {
         handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
-        attributes = (fun _ ~protocol_assumptions:_ -> None);
+        attributes = (fun _ ~protocol_assumptions:_ ~callable_assumptions:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         protocol_assumptions = ProtocolAssumptions.empty;
+        callable_assumptions = CallableAssumptions.empty;
       }
     in
     let constraints = TypeConstraints.empty in

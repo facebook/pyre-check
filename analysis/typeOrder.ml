@@ -51,13 +51,43 @@ end = struct
   let empty = []
 end
 
+module CallableAssumptions : sig
+  (* This should be removed when classes can be generic over TParams, and Callable can be treated
+     like any other generic protocol. *)
+  type t
+
+  val find_assumed_callable_type : candidate:Type.t -> t -> Type.t option
+
+  val add : candidate:Type.t -> callable:Type.t -> t -> t
+
+  val empty : t
+end = struct
+  type callable_assumption = Type.t
+
+  type t = (Type.t, callable_assumption) List.Assoc.t
+
+  let find_assumed_callable_type ~candidate assumptions =
+    List.Assoc.find assumptions candidate ~equal:Type.equal
+
+
+  let add ~candidate ~callable existing_assumptions =
+    List.Assoc.add existing_assumptions candidate callable ~equal:Type.equal
+
+
+  let empty = []
+end
+
 type order = {
   handler: (module ClassHierarchy.Handler);
   constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
   attributes:
-    Type.t -> protocol_assumptions:ProtocolAssumptions.t -> AnnotatedAttribute.t list option;
+    Type.t ->
+    protocol_assumptions:ProtocolAssumptions.t ->
+    callable_assumptions:CallableAssumptions.t ->
+    AnnotatedAttribute.t list option;
   is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
   protocol_assumptions: ProtocolAssumptions.t;
+  callable_assumptions: CallableAssumptions.t;
 }
 
 module type FullOrderTypeWithoutT = sig
@@ -100,21 +130,37 @@ module OrderImplementation = struct
   module Make (OrderedConstraints : OrderedConstraintsType) = struct
     type t = order
 
-    let get_dunder_call_method { attributes; protocol_assumptions; _ } annotation =
-      let find_call = function
-        | {
-            Node.value =
-              {
-                AnnotatedAttribute.name = "__call__";
-                annotation = Type.Callable _ as annotation;
+    let resolve_callable_protocol
+        ~assumption
+        ~order:{ attributes; protocol_assumptions; callable_assumptions; _ }
+        annotation
+      =
+      match
+        CallableAssumptions.find_assumed_callable_type ~candidate:annotation callable_assumptions
+      with
+      | Some assumption -> Some assumption
+      | None ->
+          let new_callable_assumptions =
+            CallableAssumptions.add ~candidate:annotation ~callable:assumption callable_assumptions
+          in
+          let find_call = function
+            | {
+                Node.value =
+                  {
+                    AnnotatedAttribute.name = "__call__";
+                    annotation = Type.Callable _ as annotation;
+                    _;
+                  };
                 _;
-              };
-            _;
-          } ->
-            Some annotation
-        | _ -> None
-      in
-      attributes annotation ~protocol_assumptions >>= List.find_map ~f:find_call
+              } ->
+                Some annotation
+            | _ -> None
+          in
+          attributes
+            annotation
+            ~protocol_assumptions
+            ~callable_assumptions:new_callable_assumptions
+          >>= List.find_map ~f:find_call
 
 
     (* TODO(T40105833): merge this with actual signature select *)
@@ -643,7 +689,7 @@ module OrderImplementation = struct
           >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
           |> Option.value ~default:[]
       | left, Type.Callable _ ->
-          get_dunder_call_method order left
+          resolve_callable_protocol ~order ~assumption:right left
           >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
           |> Option.value ~default:[]
       | Type.Callable _, _ -> []
@@ -1162,7 +1208,7 @@ module OrderImplementation = struct
         | Type.Callable callable, other
         | other, Type.Callable callable ->
             let default =
-              match get_dunder_call_method order other with
+              match resolve_callable_protocol ~order ~assumption:right other with
               | Some other_callable -> join order other_callable (Type.Callable callable)
               | None -> Type.union [left; right]
             in
@@ -1349,6 +1395,7 @@ module OrderImplementation = struct
             attributes;
             handler = (module Handler : ClassHierarchy.Handler) as handler;
             protocol_assumptions;
+            callable_assumptions;
             _;
           } as order )
         ~candidate
@@ -1400,7 +1447,10 @@ module OrderImplementation = struct
                   =
                   (not (Type.is_object parent)) && not (Type.is_generic_primitive parent)
                 in
-                attributes ~protocol_assumptions:new_assumptions (Type.Primitive protocol)
+                attributes
+                  ~protocol_assumptions:new_assumptions
+                  ~callable_assumptions
+                  (Type.Primitive protocol)
                 >>| List.filter ~f:is_not_object_or_generic_method
               in
               let candidate_attributes, desanitize_map =
@@ -1461,7 +1511,10 @@ module OrderImplementation = struct
                       in
                       SanitizeTransform.visit [] candidate
                     in
-                    ( attributes ~protocol_assumptions:new_assumptions sanitized_candidate,
+                    ( attributes
+                        ~protocol_assumptions:new_assumptions
+                        ~callable_assumptions
+                        sanitized_candidate,
                       desanitize_map )
               in
               match candidate_attributes, protocol_attributes with
