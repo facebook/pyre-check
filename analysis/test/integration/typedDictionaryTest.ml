@@ -122,6 +122,38 @@ let test_check_typed_dictionaries context =
     ];
   assert_test_typed_dictionary
     {|
+      import typing_extensions
+      Movie = typing_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def foo(x: int) -> str:
+        return ""
+      def f(key: str) -> None:
+        movie: Movie
+        a = foo(movie[key])
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      ^ "to call `foo` but got `str`.";
+      "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
+      ^ "Expected one of ('name', 'year').";
+    ];
+  assert_test_typed_dictionary
+    {|
+      import typing
+      Movie = typing.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def foo(x: int) -> str:
+        return ""
+      def f(key: str) -> None:
+        movie: Movie
+        a = foo(movie[key])
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      ^ "to call `foo` but got `str`.";
+      "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. "
+      ^ "Expected one of ('name', 'year').";
+    ];
+  assert_test_typed_dictionary
+    {|
       import mypy_extensions
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       Film = mypy_extensions.TypedDict('Film', {'name': str, 'year': 'int', 'director': str})
@@ -949,6 +981,14 @@ let test_check_typed_dictionaries context =
     {|
       import mypy_extensions
       class NotTotalTypedDict(mypy_extensions.TypedDict, total=False):
+        required: int
+      foo = NotTotalTypedDict()
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      import typing_extensions
+      class NotTotalTypedDict(typing_extensions.TypedDict, total=False):
         required: int
       foo = NotTotalTypedDict()
     |}

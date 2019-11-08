@@ -1675,7 +1675,13 @@ let expand_typed_dictionary_declarations
                               (Name.Attribute
                                 {
                                   base =
-                                    { Node.value = Name (Name.Identifier "mypy_extensions"); _ };
+                                    {
+                                      Node.value =
+                                        Name
+                                          (Name.Identifier
+                                            ("mypy_extensions" | "typing_extensions" | "typing"));
+                                      _;
+                                    };
                                   attribute = "TypedDict";
                                   _;
                                 });
@@ -1713,7 +1719,14 @@ let expand_typed_dictionary_declarations
                       Name
                         (Name.Attribute
                           {
-                            base = { Node.value = Name (Name.Identifier "mypy_extensions"); _ };
+                            base =
+                              {
+                                Node.value =
+                                  Name
+                                    (Name.Identifier
+                                      ("mypy_extensions" | "typing_extensions" | "typing"));
+                                _;
+                              };
                             attribute = "TypedDict";
                             _;
                           });

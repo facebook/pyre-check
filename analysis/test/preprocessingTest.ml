@@ -2145,6 +2145,20 @@ let test_expand_typed_dictionaries _ =
     ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   assert_expand
     {|
+      Movie = typing_extensions.TypedDict('Movie', {'name': str, 'year': int})
+    |}
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+  assert_expand
+    {|
+      Movie = typing.TypedDict('Movie', {'name': str, 'year': int})
+    |}
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+  assert_expand
+    {|
       Movie = mypy_extensions.TypedDict('Movie', {})
     |}
     {|
@@ -2170,6 +2184,24 @@ let test_expand_typed_dictionaries _ =
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict):
+        name: str
+        year: int
+    |}
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+  assert_expand
+    {|
+      class Movie(typing_extensions.TypedDict):
+        name: str
+        year: int
+    |}
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+  assert_expand
+    {|
+      class Movie(typing.TypedDict):
         name: str
         year: int
     |}
