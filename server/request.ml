@@ -426,7 +426,11 @@ let process_type_query_request
     let global_resolution = TypeEnvironment.global_resolution environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
     let resolution = TypeCheck.resolution global_resolution () in
-    let parse_and_validate ?(unknown_is_top = false) expression =
+    let parse_and_validate
+        ?(unknown_is_top = false)
+        ?(fill_missing_type_parameters_with_any = false)
+        expression
+      =
       let annotation =
         (* Return untracked so we can specifically message the user about them. *)
         GlobalResolution.parse_annotation
@@ -442,6 +446,26 @@ let process_type_query_request
             | _ -> None
           in
           Type.instantiate annotation ~constraints
+        else
+          annotation
+      in
+      let annotation =
+        if fill_missing_type_parameters_with_any && Type.is_primitive annotation then
+          let generics =
+            GlobalResolution.class_definition global_resolution annotation
+            >>| Annotated.Class.create
+            >>| Annotated.Class.generics ~resolution:global_resolution
+          in
+          match generics, annotation with
+          | Some (Type.OrderedTypes.Concrete generics), Type.Primitive primitive
+            when not (List.is_empty generics) ->
+              Type.Parametric
+                {
+                  name = primitive;
+                  parameters =
+                    Type.OrderedTypes.Concrete (List.map generics ~f:(fun _ -> Type.Any));
+                }
+          | _ -> annotation
         else
           annotation
       in
@@ -890,7 +914,9 @@ let process_type_query_request
               Some { TypeQuery.name = Reference.last name; parameters; return_annotation }
           | _ -> None
         in
-        let parsed_annotation = parse_and_validate annotation in
+        let parsed_annotation =
+          parse_and_validate ~fill_missing_type_parameters_with_any:true annotation
+        in
         GlobalResolution.class_definition global_resolution parsed_annotation
         >>| Annotated.Class.create
         >>| Annotated.Class.attributes

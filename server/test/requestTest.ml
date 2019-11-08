@@ -385,6 +385,24 @@ let test_process_type_query_request context =
         }
       ]
     }
+    |};
+  assert_response
+    (Protocol.TypeQuery.Methods (parse_single_expression "classy.C"))
+    {|
+    {
+      "response": {
+        "methods": [
+          {
+            "name": "foo",
+            "parameters": [
+              "self",
+              "typing.Any"
+            ],
+            "return_annotation": "None"
+          }
+        ]
+      }
+    }
     |}
 
 
