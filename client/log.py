@@ -186,7 +186,7 @@ def initialize(arguments: argparse.Namespace) -> None:
     handlers = [stream_handler]  # type: List[logging.Handler]
 
     if not arguments.noninteractive:
-        if not arguments.log_directory:
+        if not hasattr(arguments, "log_directory") or not arguments.log_directory:
             find_log_directory(arguments)
         file_handler = logging.FileHandler(
             os.path.join(arguments.log_directory, "pyre.stderr")

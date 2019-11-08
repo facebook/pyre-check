@@ -134,11 +134,16 @@ def switch_root(arguments) -> None:
 
 def find_log_directory(arguments) -> None:
     """Pyre outputs all logs to a .pyre directory that lives in the project root."""
-    if arguments.log_directory is None:
-        if not arguments.current_directory:
+    if not hasattr(arguments, "log_directory") or arguments.log_directory is None:
+        if (
+            not hasattr(arguments, "current_directory")
+            or not arguments.current_directory
+        ):
             switch_root(arguments)
         log_directory = os.path.join(arguments.current_directory, LOG_DIRECTORY)
-        local_configuration: Optional[str] = arguments.local_configuration
+        local_configuration: Optional[str] = arguments.local_configuration if hasattr(
+            arguments, "local_configuration"
+        ) else None
         if local_configuration:
             # `log_directory` will never escape `.pyre/` because in `switch_root` we have
             # guaranteed that configurations are never deeper than local configurations
