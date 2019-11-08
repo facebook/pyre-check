@@ -833,8 +833,8 @@ module State (Context : Context) = struct
                       let compatible =
                         GlobalResolution.constraints_solution_exists
                           global_resolution
-                          ~left:annotation
-                          ~right:resolved
+                          ~left:resolved
+                          ~right:annotation
                       in
                       let state =
                         let name = Identifier.sanitized name in

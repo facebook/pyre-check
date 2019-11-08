@@ -197,7 +197,6 @@ let test_check_method_parameters context =
       reveal_type(StringEnumTwo["key"])
     |}
     [
-      "Invalid method signature [47]: `typing.Type[Variable[_T]]` cannot be the type of `self`.";
       "Revealed type [-1]: Revealed type for `test.StringEnum[\"key\"]` is `StringEnum`.";
       "Revealed type [-1]: Revealed type for `test.StringEnumTwo[\"key\"]` is `StringEnumTwo`.";
     ];
@@ -1040,11 +1039,18 @@ let test_check_callable_protocols context =
       def foo(call: Call) -> None:
         reveal_type(call())
     |}
+    ["Revealed type [-1]: Revealed type for `call()` is `str`."];
+
+  assert_type_errors
+    {|
+      class Call:
+        def __call__(self: typing.Callable[[int], str], x: int) -> int: ...
+      def foo(call: Call) -> None:
+        reveal_type(call())
+    |}
     [
-      (* TODO(T57097891): Invalid method signature error is a false positive, because solving less
-         or equal for ~left:CallableClass ~right:typing.Callable works while reversed does not. *)
-        "Invalid method signature [47]: `typing.Callable[[int], str]` cannot be the type of `self`.";
-      "Revealed type [-1]: Revealed type for `call()` is `str`.";
+      "Invalid method signature [47]: `typing.Callable[[int], str]` cannot be the type of `self`.";
+      "Revealed type [-1]: Revealed type for `call()` is `int`.";
     ];
 
   (* We handle subclassing. *)
