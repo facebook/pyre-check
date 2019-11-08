@@ -55,7 +55,7 @@ module TypeQuery = struct
     | ComputeHashesToKeys
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
-    | Defines of Reference.t
+    | Defines of Reference.t list
     | DependentDefines of Path.t list
     | DumpCallGraph
     | DumpClassHierarchy

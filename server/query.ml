@@ -84,7 +84,7 @@ let help () =
       ComputeHashesToKeys;
       CoverageInFile path;
       DecodeOcamlValues [];
-      Defines (Reference.create "");
+      Defines [Reference.create ""];
       DumpCallGraph;
       DumpClassHierarchy;
       DumpDependencies path;
@@ -150,7 +150,7 @@ let parse_query
       | "callees", [name] -> Request.TypeQueryRequest (Callees (reference name))
       | "callees_with_location", [name] ->
           Request.TypeQueryRequest (CalleesWithLocation (reference name))
-      | "defines", [name] -> Request.TypeQueryRequest (Defines (reference name))
+      | "defines", names -> Request.TypeQueryRequest (Defines (List.map names ~f:reference))
       | "dump_call_graph", [] -> Request.TypeQueryRequest DumpCallGraph
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
       | "coverage_in_file", [path] ->

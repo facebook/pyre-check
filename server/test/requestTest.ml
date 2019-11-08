@@ -280,7 +280,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines (Reference.create "test"))
+    (Protocol.TypeQuery.Defines [Reference.create "test"])
     {|
     {
       "response": [
@@ -298,7 +298,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines (Reference.create "classy"))
+    (Protocol.TypeQuery.Defines [Reference.create "classy"])
     {|
     {
       "response": [
@@ -320,7 +320,7 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines (Reference.create "define_test"))
+    (Protocol.TypeQuery.Defines [Reference.create "define_test"])
     {|
     {
       "response": [
@@ -348,12 +348,44 @@ let test_process_type_query_request context =
     }
     |};
   assert_response
-    (Protocol.TypeQuery.Defines (Reference.create "nonexistent"))
+    (Protocol.TypeQuery.Defines [Reference.create "nonexistent"])
     {|
-  {
-    "error": "No module matching `nonexistent` found."
-  }
-  |}
+    {
+      "response": []
+    }
+    |};
+  assert_response
+    (Protocol.TypeQuery.Defines [Reference.create "test"; Reference.create "classy"])
+    {|
+    {
+      "response": [
+        {
+          "name": "test.foo",
+          "parameters": [
+            {
+              "name": "a",
+              "annotation": "int"
+            }
+          ],
+          "return_annotation": "int"
+        },
+        {
+          "name": "classy.C.foo",
+          "parameters": [
+            {
+              "name": "self",
+              "annotation": null
+            },
+            {
+              "name": "x",
+              "annotation": "T"
+            }
+          ],
+          "return_annotation": "None"
+        }
+      ]
+    }
+    |}
 
 
 let assert_errors_equal ~actual_errors ~expected_errors =
