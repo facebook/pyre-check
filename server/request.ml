@@ -694,6 +694,42 @@ let process_type_query_request
             ~f:build_response
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
+    | TypeQuery.Defines module_name -> (
+        let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+        match AstEnvironment.ReadOnly.get_source ast_environment module_name with
+        | Some definition ->
+            let defines =
+              Preprocessing.defines
+                ~include_stubs:true
+                ~include_nested:true
+                ~include_methods:true
+                definition
+            in
+            let represent
+                {
+                  Node.value =
+                    { Statement.Define.signature = { name; return_annotation; parameters; _ }; _ };
+                  _;
+                }
+              =
+              let represent_parameter
+                  { Node.value = { Expression.Parameter.name; annotation; _ }; _ }
+                =
+                {
+                  TypeQuery.parameter_name = Identifier.sanitized name;
+                  parameter_annotation = annotation;
+                }
+              in
+              {
+                TypeQuery.define_name = name;
+                parameters = List.map parameters ~f:represent_parameter;
+                return_annotation;
+              }
+            in
+            TypeQuery.Response (TypeQuery.FoundDefines (List.map defines ~f:represent))
+        | None ->
+            TypeQuery.Error
+              (Format.sprintf "No module matching `%s` found." (Reference.show module_name)) )
     | TypeQuery.DependentDefines paths ->
         let modules =
           List.filter_map paths ~f:(ModuleTracker.lookup_path ~configuration module_tracker)

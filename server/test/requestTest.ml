@@ -76,6 +76,20 @@ let test_process_type_query_request context =
           await_me()
        |}
         );
+        ( "classy.py",
+          {|
+         from typing import Generic, TypeVar
+         T = TypeVar("T")
+         class C(Generic[T]):
+           def foo(self, x: T) -> None: ...
+        |}
+        );
+        ( "define_test.py",
+          {|
+            def with_var( *args): ...
+            def with_kwargs( **kwargs): ...
+          |}
+        );
       ]
   in
   let assert_response request expected_response =
@@ -264,7 +278,82 @@ let test_process_type_query_request context =
             "test.foo": []
         }
     }
-    |}
+    |};
+  assert_response
+    (Protocol.TypeQuery.Defines (Reference.create "test"))
+    {|
+    {
+      "response": [
+        {
+          "name": "test.foo",
+          "parameters": [
+            {
+              "name": "a",
+              "annotation": "int"
+            }
+          ],
+          "return_annotation": "int"
+        }
+      ]
+    }
+    |};
+  assert_response
+    (Protocol.TypeQuery.Defines (Reference.create "classy"))
+    {|
+    {
+      "response": [
+        {
+          "name": "classy.C.foo",
+          "parameters": [
+            {
+              "name": "self",
+              "annotation": null
+            },
+            {
+              "name": "x",
+              "annotation": "T"
+            }
+          ],
+          "return_annotation": "None"
+        }
+      ]
+    }
+    |};
+  assert_response
+    (Protocol.TypeQuery.Defines (Reference.create "define_test"))
+    {|
+    {
+      "response": [
+        {
+          "name": "define_test.with_kwargs",
+          "parameters": [
+            {
+              "name": "**kwargs",
+              "annotation": null
+            }
+          ],
+          "return_annotation": null
+        },
+        {
+          "name": "define_test.with_var",
+          "parameters": [
+            {
+              "name": "*args",
+              "annotation": null
+            }
+          ],
+          "return_annotation": null
+        }
+      ]
+    }
+    |};
+  assert_response
+    (Protocol.TypeQuery.Defines (Reference.create "nonexistent"))
+    {|
+  {
+    "error": "No module matching `nonexistent` found."
+  }
+  |}
 
 
 let assert_errors_equal ~actual_errors ~expected_errors =

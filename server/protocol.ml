@@ -55,6 +55,7 @@ module TypeQuery = struct
     | ComputeHashesToKeys
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
+    | Defines of Reference.t
     | DependentDefines of Path.t list
     | DumpCallGraph
     | DumpClassHierarchy
@@ -176,6 +177,19 @@ module TypeQuery = struct
   }
   [@@deriving eq, show]
 
+  type parameter_representation = {
+    parameter_name: string;
+    parameter_annotation: Expression.t option;
+  }
+  [@@deriving eq, show]
+
+  type define = {
+    define_name: Reference.t;
+    parameters: parameter_representation list;
+    return_annotation: Expression.t option;
+  }
+  [@@deriving eq, show]
+
   let _ = show_compatibility (* unused, but pp is *)
 
   type base_response =
@@ -189,6 +203,7 @@ module TypeQuery = struct
     | Decoded of decoded
     | Errors of Analysis.Error.Instantiated.t list
     | FoundAttributes of attribute list
+    | FoundDefines of define list
     | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
     | FoundPath of string
@@ -283,6 +298,30 @@ module TypeQuery = struct
     | Path path -> `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
+    | FoundDefines defines ->
+        let define_to_yojson { define_name; parameters; return_annotation } =
+          let annotation_to_yojson = function
+            | None -> `Null
+            | Some annotation ->
+                Expression.sanitized annotation
+                |> Expression.show
+                |> fun annotation -> `String annotation
+          in
+          let parameter_representation_to_yojson { parameter_name; parameter_annotation } =
+            `Assoc
+              [
+                "name", `String parameter_name;
+                "annotation", annotation_to_yojson parameter_annotation;
+              ]
+          in
+          `Assoc
+            [
+              "name", `String (Reference.show define_name);
+              "parameters", `List (List.map parameters ~f:parameter_representation_to_yojson);
+              "return_annotation", annotation_to_yojson return_annotation;
+            ]
+        in
+        `List (List.map defines ~f:define_to_yojson)
     | FoundKeyMapping associative_list ->
         `Assoc (List.map associative_list ~f:(fun { hash; key } -> hash, `String key))
     | FoundMethods methods ->

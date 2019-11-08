@@ -55,6 +55,7 @@ module TypeQuery : sig
     | ComputeHashesToKeys
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
+    | Defines of Reference.t
     | DependentDefines of Path.t list
     | DumpCallGraph
     | DumpClassHierarchy
@@ -176,6 +177,19 @@ module TypeQuery : sig
   }
   [@@deriving eq, show]
 
+  type parameter_representation = {
+    parameter_name: string;
+    parameter_annotation: Expression.t option;
+  }
+  [@@deriving eq, show]
+
+  type define = {
+    define_name: Reference.t;
+    parameters: parameter_representation list;
+    return_annotation: Expression.t option;
+  }
+  [@@deriving eq, show]
+
   type base_response =
     | Boolean of bool
     | Callees of Dependencies.Callgraph.callee list
@@ -187,6 +201,7 @@ module TypeQuery : sig
     | Decoded of decoded
     | Errors of Error.Instantiated.t list
     | FoundAttributes of attribute list
+    | FoundDefines of define list
     | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
     | FoundPath of string

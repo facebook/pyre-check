@@ -26,6 +26,8 @@ let help () =
         Some
           "callees_with_location(function): calls from a given function, including the locations \
            at which they are called."
+    | Defines _ ->
+        Some "defines(module_name): Returns a JSON with the signature of a given define."
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
     | ComputeHashesToKeys -> None
@@ -82,6 +84,7 @@ let help () =
       ComputeHashesToKeys;
       CoverageInFile path;
       DecodeOcamlValues [];
+      Defines (Reference.create "");
       DumpCallGraph;
       DumpClassHierarchy;
       DumpDependencies path;
@@ -147,6 +150,7 @@ let parse_query
       | "callees", [name] -> Request.TypeQueryRequest (Callees (reference name))
       | "callees_with_location", [name] ->
           Request.TypeQueryRequest (CalleesWithLocation (reference name))
+      | "defines", [name] -> Request.TypeQueryRequest (Defines (reference name))
       | "dump_call_graph", [] -> Request.TypeQueryRequest DumpCallGraph
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
       | "coverage_in_file", [path] ->

@@ -186,7 +186,8 @@ let test_parse_query context =
     (ValidateTaintModels (Some path));
   assert_parses
     (Format.sprintf "run_check('cool_static_analysis', '%s')" (Path.absolute path))
-    (RunCheck { check_name = "cool_static_analysis"; paths = [path] })
+    (RunCheck { check_name = "cool_static_analysis"; paths = [path] });
+  assert_parses "defines(a.b)" (Defines (Reference.create "a.b"))
 
 
 let test_to_yojson _ =
