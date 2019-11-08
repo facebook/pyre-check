@@ -675,8 +675,8 @@ let test_preamble _ =
       preamble
       (With.preamble block)
   in
-  assert_preamble "with item: pass" "item";
-  assert_preamble "with item, other: pass" "item; other";
+  assert_preamble "with item: pass" "item.__enter__()";
+  assert_preamble "with item, other: pass" "item.__enter__(); other.__enter__()";
   assert_preamble "with item as name: pass" "name = item.__enter__()";
   assert_preamble "async with item as name: pass" "name = await item.__aenter__()";
   let assert_preamble block preamble =

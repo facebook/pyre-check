@@ -931,9 +931,29 @@ let test_assign context =
         d = {}
         d["bar"] = awaitable()
         d["foo"] = "not awaitable"
-        await asyncio.gather(*d.values())
+        await asyncio.gather( *d.values())
     |}
-    []
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      async def foo() -> int:
+        return 0
+      async def bar() -> None:
+        async with foo():
+          return
+    |}
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      async def foo() -> int:
+        return 0
+      async def bar() -> None:
+        with foo():
+          return
+    |}
+    ["Unawaited awaitable [1001]: `test.foo()` is never awaited."]
 
 
 let () =

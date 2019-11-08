@@ -1975,36 +1975,36 @@ end = struct
 
   let preamble { items; async; _ } =
     let preamble (({ Node.location; _ } as expression), target) =
-      target
-      >>| (fun target ->
-            let open Expression in
-            let enter_call =
-              let create_call call_name =
+      let open Expression in
+      let enter_call =
+        let create_call call_name =
+          {
+            Node.location;
+            value =
+              Expression.Call
                 {
-                  Node.location;
-                  value =
-                    Expression.Call
-                      {
-                        callee =
-                          {
-                            Node.location;
-                            value =
-                              Name
-                                (Name.Attribute
-                                   { base = expression; attribute = call_name; special = true });
-                          };
-                        arguments = [];
-                      };
-                }
-              in
-              if async then
-                Node.create ~location (Expression.Await (create_call "__aenter__"))
-              else
-                create_call "__enter__"
-            in
-            let assign = { Assign.target; annotation = None; value = enter_call; parent = None } in
-            Node.create ~location (Statement.Assign assign))
-      |> Option.value ~default:(Node.create ~location (Statement.Expression expression))
+                  callee =
+                    {
+                      Node.location;
+                      value =
+                        Name
+                          (Name.Attribute
+                             { base = expression; attribute = call_name; special = true });
+                    };
+                  arguments = [];
+                };
+          }
+        in
+        if async then
+          Node.create ~location (Expression.Await (create_call "__aenter__"))
+        else
+          create_call "__enter__"
+      in
+      match target with
+      | Some target ->
+          let assign = { Assign.target; annotation = None; value = enter_call; parent = None } in
+          Node.create ~location (Statement.Assign assign)
+      | None -> Node.create ~location (Statement.Expression enter_call)
     in
     List.map items ~f:preamble
 end

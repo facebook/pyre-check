@@ -22,9 +22,9 @@ module Node : sig
     | With of With.t
     | While of While.t
     | Yield
-  [@@deriving compare, eq, show]
+  [@@deriving compare, eq, show, sexp]
 
-  type t [@@deriving compare, eq]
+  type t [@@deriving compare, eq, sexp]
 
   val create : int -> kind -> Int.Set.t -> Int.Set.t -> t
 

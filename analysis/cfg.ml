@@ -23,7 +23,7 @@ module Node = struct
     | With of With.t
     | While of While.t
     | Yield
-  [@@deriving compare, eq, show]
+  [@@deriving compare, eq, show, sexp]
 
   type t = {
     id: int;
@@ -31,7 +31,7 @@ module Node = struct
     mutable predecessors: Int.Set.t;
     mutable successors: Int.Set.t;
   }
-  [@@deriving compare, eq]
+  [@@deriving compare, eq, sexp]
 
   let pp format node =
     Format.fprintf

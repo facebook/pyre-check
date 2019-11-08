@@ -114,6 +114,15 @@ let assert_cfg body expected =
       body;
     }
   in
+  let pp formatter control_flow_graph =
+    Hashtbl.to_alist control_flow_graph
+    |> List.map ~f:snd
+    |> List.map ~f:Analysis.Cfg.Node.sexp_of_t
+    |> List.map ~f:Sexp.to_string_hum
+    |> List.sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+    |> String.pp formatter
+  in
   assert_equal
     ~cmp:equal
     ~printer:(fun cfg -> Format.asprintf "%a" pp cfg)
@@ -713,7 +722,24 @@ let test_with _ =
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.With block) [0] [6];
-      node 6 (Node.Block [!!"item"; !!"body"; !!"after"]) [5] [1];
+      node
+        6
+        (Node.Block
+           [
+             +Statement.Expression
+                (+Expression.Call
+                    {
+                      Call.callee =
+                        +Expression.Name
+                           (Name.Attribute
+                              { base = !"item"; attribute = "__enter__"; special = true });
+                      arguments = [];
+                    });
+             !!"body";
+             !!"after";
+           ])
+        [5]
+        [1];
     ]
 
 

@@ -189,6 +189,24 @@ let test_check_async context =
       "Inconsistent override [15]: `test.C.f` overrides method defined in `A` "
       ^ "inconsistently. Returned type `typing.AsyncIterator[int]` is not a "
       ^ "subtype of the overridden return `typing.AsyncIterator[str]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import AsyncContextManager
+      async def bar(async_context_manager: AsyncContextManager[int]) -> int:
+        async with async_context_manager:
+          return 0
+    |}
+    [];
+  assert_type_errors
+    {|
+      async def foo() -> int:
+        async with 1:
+          return 0
+    |}
+    [
+      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+      "Undefined attribute [16]: `int` has no attribute `__aenter__`.";
     ]
 
 
