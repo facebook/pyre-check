@@ -19,3 +19,11 @@ class Map(Generic[_T1, _T2]):
 
 class Concatenate(metaclass=GenericMeta):
     pass
+
+
+class PositionalArgumentsOf(metaclass=ParameterSpecificationComponentMeta):
+    pass
+
+
+class KeywordArgumentsOf(metaclass=ParameterSpecificationComponentMeta):
+    pass
