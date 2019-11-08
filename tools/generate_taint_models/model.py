@@ -8,7 +8,7 @@
 import ast
 import inspect
 import types
-from typing import Callable, Iterable, List, NamedTuple, Optional, Set, Union
+from typing import Callable, Iterable, List, NamedTuple, Optional, Set, Tuple, Union
 
 import _ast
 
@@ -16,6 +16,30 @@ from .inspect_parser import extract_annotation, extract_name, extract_view_name
 
 
 FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
+
+
+class RawCallableModel(NamedTuple):
+    callable_name: str
+    # The tuple's second element is the taint of the parameter.
+    parameters: List[Tuple[str, Optional[str]]]
+    returns: Optional[str] = None
+
+    def generate(self) -> str:
+        serialized_parameters = []
+        for parameter_name, taint in self.parameters:
+            if taint:
+                serialized_parameters.append(f"{parameter_name}: {taint}")
+            else:
+                serialized_parameters.append(parameter_name)
+        returns = self.returns
+        if returns:
+            return_annotation = f" -> {returns}"
+        else:
+            return_annotation = ""
+        return (
+            f"def {self.callable_name}({', '.join(serialized_parameters)})"
+            f"{return_annotation}: ..."
+        )
 
 
 class CallableModel(NamedTuple):
@@ -45,7 +69,6 @@ class CallableModel(NamedTuple):
         name_whitelist = self.parameter_name_whitelist
         for parameter_name in view_parameters:
             parameter = view_parameters[parameter_name]
-            annotation = ""
             whitelist = self.whitelisted_parameters
             should_annotate = True
             if name_whitelist is not None and parameter_name not in name_whitelist:
@@ -54,33 +77,17 @@ class CallableModel(NamedTuple):
                 should_annotate = False
             if should_annotate:
                 if parameter.kind == inspect.Parameter.VAR_KEYWORD:
-                    keywords = self.kwarg
-                    if keywords is not None:
-                        annotation = f": {keywords}"
-                    else:
-                        annotation = ""
+                    taint = self.kwarg
                 elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-                    variable = self.vararg
-                    if variable is not None:
-                        annotation = f": {variable}"
-                    else:
-                        annotation = ""
+                    taint = self.vararg
                 else:
-                    argument = self.arg
-                    if argument is not None:
-                        annotation = f": {argument}"
-                    else:
-                        annotation = ""
-
-            parameters.append(f"{extract_name(parameter)}{annotation}")
-
-        parameters = ", ".join(parameters) if len(parameters) > 0 else ""
-        returns = self.returns
-        if returns is not None:
-            returns = f" -> {returns}"
-        else:
-            returns = ""
-        return f"def {view_name}({parameters}){returns}: ..."
+                    taint = self.arg
+            else:
+                taint = None
+            parameters.append((extract_name(parameter), taint))
+        return RawCallableModel(
+            callable_name=view_name, parameters=parameters, returns=self.returns
+        ).generate()
 
 
 def _annotate(argument: str, annotation: Optional[str]) -> str:

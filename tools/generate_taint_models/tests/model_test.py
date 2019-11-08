@@ -195,3 +195,31 @@ class ModelTest(unittest.TestCase):
             ).generate(),
             "name: TaintSink[Test] = ...",
         )
+
+    def test_raw_callable_model(self) -> None:
+        self.assertEqual(
+            model.RawCallableModel(
+                callable_name="qualified.C.name",
+                parameters=[
+                    ("self", "TaintSource[UserControlled]"),
+                    ("a", None),
+                    ("b", "TaintSource[Foo]"),
+                ],
+            ).generate(),
+            "def qualified.C.name(self: TaintSource[UserControlled], a, "
+            "b: TaintSource[Foo]): ...",
+        )
+        self.assertEqual(
+            model.RawCallableModel(
+                callable_name="qualified.C.name",
+                parameters=[("self", None), ("*args", "TaintSource[Var]")],
+            ).generate(),
+            "def qualified.C.name(self, *args: TaintSource[Var]): ...",
+        )
+        self.assertEqual(
+            model.RawCallableModel(
+                callable_name="qualified.C.name",
+                parameters=[("self", None), ("**kwargs", "TaintSource[UC]")],
+            ).generate(),
+            "def qualified.C.name(self, **kwargs: TaintSource[UC]): ...",
+        )
