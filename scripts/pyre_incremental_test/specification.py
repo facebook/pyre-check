@@ -1,5 +1,3 @@
-# pyre-strict
-
 import logging
 from abc import ABC, abstractmethod
 from contextlib import contextmanager

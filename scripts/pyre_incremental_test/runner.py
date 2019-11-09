@@ -1,5 +1,3 @@
-# pyre-strict
-
 import json
 import logging
 from contextlib import contextmanager

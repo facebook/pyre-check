@@ -1,5 +1,3 @@
-# pyre-strict
-
 import unittest
 from pathlib import Path
 

@@ -1,5 +1,3 @@
-# pyre-strict
-
 import argparse
 import enum
 import json
