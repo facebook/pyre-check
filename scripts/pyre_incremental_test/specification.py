@@ -301,12 +301,12 @@ class Specification:
     old_state: RepositoryState
     new_state: RepositoryUpdate
 
-    pyre_check_pyre_options: str
-    pyre_check_options: str
-    pyre_start_pyre_options: str
-    pyre_start_options: str
-    pyre_incremental_pyre_options: str
-    pyre_incremental_options: str
+    pyre_check_pyre_options: str = ""
+    pyre_check_options: str = ""
+    pyre_start_pyre_options: str = ""
+    pyre_start_options: str = ""
+    pyre_incremental_pyre_options: str = ""
+    pyre_incremental_options: str = ""
 
     def to_json(self) -> Dict[str, Any]:
         result: Dict[str, Any] = {
