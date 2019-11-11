@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import json
 import logging
 import os
@@ -28,6 +29,16 @@ class Initialize(Command):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         self._local = arguments.local  # type: bool
         super(Initialize, self).__init__(arguments, configuration, analysis_directory)
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        initialize = parser.add_parser(cls.NAME, aliases=["init"])
+        initialize.set_defaults(command=cls)
+        initialize.add_argument(
+            "--local",
+            action="store_true",
+            help="Initializes a local configuration in a project subdirectory.",
+        )
 
     def _get_configuration(self) -> Dict[str, Any]:
         configuration = {}  # type: Dict[str, Any]

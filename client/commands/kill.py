@@ -33,6 +33,14 @@ class Kill(Command):
     ) -> None:
         super(Kill, self).__init__(arguments, configuration, analysis_directory)
 
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        kill = parser.add_parser(cls.NAME)
+        kill.set_defaults(command=cls)
+        kill.add_argument(
+            "--with-fire", action="store_true", help="Adds emphasis to the command."
+        )
+
     def _run(self) -> None:
         # Kills all processes that have the same binary as the one specified
         # in the configuration.

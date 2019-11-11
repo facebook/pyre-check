@@ -160,6 +160,10 @@ class Command:
         else:
             self._local_root = arguments.original_directory
 
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        pass
+
     def run(self) -> "Command":
         self._run()
         return self

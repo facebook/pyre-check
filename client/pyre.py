@@ -14,7 +14,6 @@ import traceback
 from typing import Type  # noqa
 
 from . import (
-    assert_writable_directory,
     buck,
     commands,
     find_log_directory,
@@ -49,20 +48,6 @@ def main() -> int:
         if not os.access(file_path, os.X_OK):
             raise EnvironmentException("%s is not an executable file" % file_path)
         return file_path
-
-    def writable_directory(path: str) -> str:
-        # Create the directory if it does not exist.
-        try:
-            os.makedirs(path)
-        except FileExistsError:
-            pass
-        assert_writable_directory(path)
-        return path
-
-    def file_exists(path: str) -> str:
-        if not os.path.exists(path):
-            raise argparse.ArgumentTypeError("ERROR: " + str(path) + " does not exist")
-        return path
 
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
@@ -260,253 +245,22 @@ def main() -> int:
         """,
     )
 
-    incremental_help = """
-    Connects to a running Pyre server and returns the current type errors for your
-    project. If no server exists for your projects, starts a new one. Running `pyre`
-    implicitly runs `pyre incremental`.
-
-    By default, incremental checks ensure that all dependencies of changed files are
-    analyzed before returning results. If you'd like to get partial type checking
-    results eagerly, you can run `pyre incremental --nonblocking`.
-    """
-    incremental = parsed_commands.add_parser(
-        commands.Incremental.NAME, epilog=incremental_help
-    )
-    incremental.set_defaults(command=commands.Incremental)
-    incremental.add_argument(
-        "--nonblocking",
-        action="store_true",
-        help=(
-            "Ask the server to return partial results immediately, "
-            "even if analysis is still in progress."
-        ),
-    )
-    incremental.add_argument(
-        "--incremental-style",
-        type=IncrementalStyle,
-        choices=list(IncrementalStyle),
-        default=IncrementalStyle.SHALLOW,
-        help="How to approach doing incremental checks.",
-    )
-    rage = parsed_commands.add_parser(
-        commands.Rage.NAME,
-        epilog="""
-        Collects troubleshooting diagnostics for Pyre, and writes this information to
-        the terminal.
-        """,
-    )
-    rage.set_defaults(command=commands.Rage)
-
-    check = parsed_commands.add_parser(
-        commands.Check.NAME,
-        epilog="""
-      Runs a one-time check of a project without initializing a type check server.
-    """,
-    )
-    check.set_defaults(command=commands.Check)
-
-    color = parsed_commands.add_parser(commands.Color.NAME)
-    color.add_argument("path")
-    color.set_defaults(command=commands.Color)
-
-    deobfuscate = parsed_commands.add_parser(commands.Deobfuscate.NAME)
-
-    deobfuscate.set_defaults(command=commands.Deobfuscate)
-
-    analyze = parsed_commands.add_parser(commands.Analyze.NAME)
-    analyze.set_defaults(command=commands.Analyze)
-    analyze.add_argument(
-        "analysis", nargs="?", default="taint", help="Type of analysis to run: {taint}"
-    )
-    analyze.add_argument(
-        "--taint-models-path",
-        action="append",
-        default=[],
-        type=readable_directory,
-        help="Location of taint models",
-    )
-    analyze.add_argument(
-        "--no-verify",
-        action="store_true",
-        help="Do not verify models for the taint analysis.",
-    )
-    analyze.add_argument(
-        "--save-results-to",
-        default=None,
-        type=writable_directory,
-        help="Directory to write analysis results to.",
-    )
-    analyze.add_argument("--dump-call-graph", action="store_true")
-    analyze.add_argument("--repository-root", type=os.path.abspath)
-    analyze.add_argument("--rule", action="append", type=int)
-
-    persistent = parsed_commands.add_parser(
-        commands.Persistent.NAME,
-        epilog="""
-        Entry point for IDE integration to Pyre. Communicates with a
-        Pyre server using the Language Server Protocol, accepts input from stdin and
-        writing diagnostics and responses from the Pyre server to stdout.
-        """,
-    )
-    persistent.add_argument(
-        "--no-watchman",
-        action="store_true",
-        help="Do not spawn a watchman client in the background.",
-    )
-    persistent.set_defaults(command=commands.Persistent, noninteractive=True)
-
-    start = parsed_commands.add_parser(
-        commands.Start.NAME, epilog="Starts a pyre server as a daemon."
-    )
-    start.add_argument(
-        "--terminal", action="store_true", help="Run the server in the terminal."
-    )
-    start.add_argument(
-        "--store-type-check-resolution",
-        action="store_true",
-        help="Store extra information for `types` queries.",
-    )
-    start.add_argument(
-        "--no-watchman",
-        action="store_true",
-        help="Do not spawn a watchman client in the background.",
-    )
-    start.add_argument(
-        "--incremental-style",
-        type=IncrementalStyle,
-        choices=list(IncrementalStyle),
-        default=IncrementalStyle.SHALLOW,
-        help="How to approach doing incremental checks.",
-    )
-    start.set_defaults(command=commands.Start)
-
-    stop = parsed_commands.add_parser(
-        commands.Stop.NAME, epilog="Signals the Pyre server to stop."
-    )
-    stop.set_defaults(command=commands.Stop)
-
-    restart = parsed_commands.add_parser(
-        commands.Restart.NAME,
-        epilog="Restarts a server. Equivalent to `pyre stop && pyre start`.",
-    )
-    restart.add_argument(
-        "--terminal", action="store_true", help="Run the server in the terminal."
-    )
-    restart.add_argument(
-        "--store-type-check-resolution",
-        action="store_true",
-        help="Store extra information for `types` queries.",
-    )
-    restart.add_argument(
-        "--no-watchman",
-        action="store_true",
-        help="Do not spawn a watchman client in the background.",
-    )
-    restart.add_argument(
-        "--incremental-style",
-        type=IncrementalStyle,
-        choices=list(IncrementalStyle),
-        default=IncrementalStyle.SHALLOW,
-        help="How to approach doing incremental checks.",
-    )
-    restart.set_defaults(command=commands.Restart)
-
-    kill = parsed_commands.add_parser(commands.Kill.NAME)
-    kill.add_argument(
-        "--with-fire", action="store_true", help="Adds emphasis to the command."
-    )
-    kill.set_defaults(command=commands.Kill)
-
-    initialize = parsed_commands.add_parser(commands.Initialize.NAME, aliases=["init"])
-    initialize.add_argument(
-        "--local",
-        action="store_true",
-        help="Initializes a local configuration in a project subdirectory.",
-    )
-    initialize.set_defaults(command=commands.Initialize)
-
-    query_message = """
-    `https://pyre-check.org/docs/querying-pyre.html` contains examples and documentation
-    for this command, which queries a running pyre server for type, function and
-    attribute information.
-
-    To get a full list of queries, you can run `pyre query help`.
-    """
-    query = parsed_commands.add_parser(commands.Query.NAME, epilog=query_message)
-    query_argument_message = """
-    `pyre query help` will give a full list of available queries for the running Pyre.
-     Example: `pyre query "superclasses(int)"`.
-    """
-    query.add_argument("query", help=query_argument_message)
-    query.set_defaults(command=commands.Query)
-
-    infer = parsed_commands.add_parser(commands.Infer.NAME)
-    infer.add_argument(
-        "-p",
-        "--print-only",
-        action="store_true",
-        help="Print raw JSON errors to standard output, "
-        + "without converting to stubs or annnotating.",
-    )
-    infer.add_argument(
-        "-f",
-        "--full-only",
-        action="store_true",
-        help="Only output fully annotated functions. Requires infer flag.",
-    )
-    infer.add_argument(
-        "-r",
-        "--recursive",
-        action="store_true",
-        help="Recursively run infer until no new annotations are generated."
-        + " Requires infer flag.",
-    )
-    infer.add_argument(
-        "-i",
-        "--in-place",
-        nargs="*",
-        metavar="path",
-        type=file_exists,
-        help="Add annotations to functions in selected paths."
-        + " Takes a set of files and folders to add annotations to."
-        + " If no paths are given, all functions are annotated."
-        + " WARNING: Modifies original files and requires infer flag and retype",
-    )
-    infer.add_argument(
-        "--json",
-        action="store_true",
-        help="Accept JSON input instead of running full check.",
-    )
-    infer.add_argument(
-        "--annotate-from-existing-stubs",
-        action="store_true",
-        help="Add annotations from existing stubs.",
-    )
-    infer.add_argument(
-        "--debug-infer",
-        action="store_true",
-        help="Print error message when file fails to annotate.",
-    )
-    infer.set_defaults(command=commands.Infer)
-
-    statistics = parsed_commands.add_parser(commands.Statistics.NAME)
-    statistics.add_argument(
-        "filter_paths",
-        nargs="*",
-        type=file_exists,
-        help="Source path(s) to gather metrics for.",
-    )
-    statistics.set_defaults(command=commands.Statistics)
-
-    profile = parsed_commands.add_parser(commands.Profile.NAME)
-    profile.add_argument(
-        "--output",
-        type=ProfileOutput,
-        choices=ProfileOutput,
-        help="Specify what to output.",
-        default=ProfileOutput.COLD_START_PHASES,
-    )
-    profile.set_defaults(command=commands.Profile)
+    commands.Incremental.add_subparser(parsed_commands)
+    commands.Rage.add_subparser(parsed_commands)
+    commands.Check.add_subparser(parsed_commands)
+    commands.Color.add_subparser(parsed_commands)
+    commands.Deobfuscate.add_subparser(parsed_commands)
+    commands.Analyze.add_subparser(parsed_commands)
+    commands.Persistent.add_subparser(parsed_commands)
+    commands.Start.add_subparser(parsed_commands)
+    commands.Stop.add_subparser(parsed_commands)
+    commands.Restart.add_subparser(parsed_commands)
+    commands.Kill.add_subparser(parsed_commands)
+    commands.Initialize.add_subparser(parsed_commands)
+    commands.Query.add_subparser(parsed_commands)
+    commands.Infer.add_subparser(parsed_commands)
+    commands.Statistics.add_subparser(parsed_commands)
+    commands.Profile.add_subparser(parsed_commands)
 
     arguments = parser.parse_args()
 
@@ -586,7 +340,11 @@ def main() -> int:
 
         command = arguments.command
         exit_code = (
-            command(arguments, configuration, analysis_directory).run().exit_code()
+            # pyre-fixme[6]: Expected Configuration for 2nd anonymous parameter
+            # to call Kill.__init__ but got Optional[Configuration].
+            command(arguments, configuration, analysis_directory)
+            .run()
+            .exit_code()
         )
     except buck.BuckException as error:
         LOG.error(str(error))

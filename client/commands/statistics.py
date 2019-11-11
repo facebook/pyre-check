@@ -6,6 +6,7 @@
 
 import argparse
 import json
+import os
 from collections import defaultdict
 from pathlib import Path
 from re import compile
@@ -195,6 +196,12 @@ def _find_paths(local_configuration: str, paths: List[str]) -> List[Path]:
     return [pyre_configuration_directory]
 
 
+def file_exists(path: str) -> str:
+    if not os.path.exists(path):
+        raise argparse.ArgumentTypeError("ERROR: " + str(path) + " does not exist")
+    return path
+
+
 class Statistics(Command):
     NAME = "statistics"
 
@@ -208,6 +215,17 @@ class Statistics(Command):
         self._local_configuration: str = arguments.local_configuration
         self._filter_paths: List[str] = arguments.filter_paths
         self._configuration = configuration
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        statistics = parser.add_parser(cls.NAME)
+        statistics.set_defaults(command=cls)
+        statistics.add_argument(
+            "filter_paths",
+            nargs="*",
+            type=file_exists,
+            help="Source path(s) to gather metrics for.",
+        )
 
     def _run(self) -> None:
         self._analysis_directory.prepare()

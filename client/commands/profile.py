@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
+import argparse
 import json
 import logging
 from dataclasses import dataclass
@@ -173,6 +173,18 @@ def to_incremental_updates(events: Sequence[Event]) -> List[Dict[str, int]]:
 
 class Profile(Command):
     NAME = "profile"
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        profile = parser.add_parser(cls.NAME)
+        profile.set_defaults(command=cls)
+        profile.add_argument(
+            "--output",
+            type=ProfileOutput,
+            choices=ProfileOutput,
+            help="Specify what to output.",
+            default=ProfileOutput.COLD_START_PHASES,
+        )
 
     def _run(self) -> None:
         try:

@@ -403,6 +403,57 @@ class Infer(Reporting):
         self._annotate_from_existing_stubs = arguments.annotate_from_existing_stubs
         self._formatter = configuration.formatter
 
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        infer = parser.add_parser(cls.NAME)
+        infer.set_defaults(command=cls)
+        infer.add_argument(
+            "-p",
+            "--print-only",
+            action="store_true",
+            help="Print raw JSON errors to standard output, "
+            + "without converting to stubs or annnotating.",
+        )
+        infer.add_argument(
+            "-f",
+            "--full-only",
+            action="store_true",
+            help="Only output fully annotated functions. Requires infer flag.",
+        )
+        infer.add_argument(
+            "-r",
+            "--recursive",
+            action="store_true",
+            help="Recursively run infer until no new annotations are generated."
+            + " Requires infer flag.",
+        )
+        infer.add_argument(
+            "-i",
+            "--in-place",
+            nargs="*",
+            metavar="path",
+            type=file_exists,
+            help="Add annotations to functions in selected paths."
+            + " Takes a set of files and folders to add annotations to."
+            + " If no paths are given, all functions are annotated."
+            + " WARNING: Modifies original files and requires infer flag and retype",
+        )
+        infer.add_argument(
+            "--json",
+            action="store_true",
+            help="Accept JSON input instead of running full check.",
+        )
+        infer.add_argument(
+            "--annotate-from-existing-stubs",
+            action="store_true",
+            help="Add annotations from existing stubs.",
+        )
+        infer.add_argument(
+            "--debug-infer",
+            action="store_true",
+            help="Print error message when file fails to annotate.",
+        )
+
     def run(self) -> Command:
         self._analysis_directory.prepare()
         if self._annotate_from_existing_stubs:

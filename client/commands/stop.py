@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import logging
 import os
 import time
@@ -24,6 +25,11 @@ class Stop(Command):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Stop, self).__init__(arguments, configuration, analysis_directory)
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        stop = parser.add_parser(cls.NAME, epilog="Signals the Pyre server to stop.")
+        stop.set_defaults(command=cls)
 
     def _flags(self) -> List[str]:
         return []

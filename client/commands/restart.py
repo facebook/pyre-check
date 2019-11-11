@@ -5,8 +5,9 @@
 
 # pyre-unsafe
 
+import argparse
 
-from .command import Command
+from .command import Command, IncrementalStyle
 from .incremental import Incremental
 from .start import Start
 from .stop import Stop
@@ -17,6 +18,34 @@ class Restart(Command):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Restart, self).__init__(arguments, configuration, analysis_directory)
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        restart = parser.add_parser(
+            cls.NAME,
+            epilog="Restarts a server. Equivalent to `pyre stop && pyre start`.",
+        )
+        restart.set_defaults(command=cls)
+        restart.add_argument(
+            "--terminal", action="store_true", help="Run the server in the terminal."
+        )
+        restart.add_argument(
+            "--store-type-check-resolution",
+            action="store_true",
+            help="Store extra information for `types` queries.",
+        )
+        restart.add_argument(
+            "--no-watchman",
+            action="store_true",
+            help="Do not spawn a watchman client in the background.",
+        )
+        restart.add_argument(
+            "--incremental-style",
+            type=IncrementalStyle,
+            choices=list(IncrementalStyle),
+            default=IncrementalStyle.SHALLOW,
+            help="How to approach doing incremental checks.",
+        )
 
     def _run(self) -> None:
         Stop(self._arguments, self._configuration, self._analysis_directory).run()

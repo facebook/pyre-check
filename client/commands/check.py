@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import logging
 from logging import Logger
 from typing import List
@@ -22,6 +23,16 @@ class Check(Reporting):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Check, self).__init__(arguments, configuration, analysis_directory)
         self._number_of_workers = configuration.number_of_workers
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        check = parser.add_parser(
+            cls.NAME,
+            epilog="""
+          Runs a one-time check of a project without initializing a type check server.
+        """,
+        )
+        check.set_defaults(command=cls)
 
     def _flags(self) -> List[str]:
         flags = super()._flags()

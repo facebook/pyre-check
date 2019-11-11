@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import errno
 import logging
 import os
@@ -53,6 +54,31 @@ class Start(Reporting):
             self._changed_files_path = None
             self._load_initial_state_from = None
             self._saved_state_project = None
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        start = parser.add_parser(cls.NAME, epilog="Starts a pyre server as a daemon.")
+        start.set_defaults(command=cls)
+        start.add_argument(
+            "--terminal", action="store_true", help="Run the server in the terminal."
+        )
+        start.add_argument(
+            "--store-type-check-resolution",
+            action="store_true",
+            help="Store extra information for `types` queries.",
+        )
+        start.add_argument(
+            "--no-watchman",
+            action="store_true",
+            help="Do not spawn a watchman client in the background.",
+        )
+        start.add_argument(
+            "--incremental-style",
+            type=IncrementalStyle,
+            choices=list(IncrementalStyle),
+            default=IncrementalStyle.SHALLOW,
+            help="How to approach doing incremental checks.",
+        )
 
     def _run(self) -> None:
         blocking = False

@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import logging
 import os
 import re
@@ -42,6 +43,24 @@ class Query(Command):
         self.query = self._rewrite_paths(arguments.query)
         self._version_hash = configuration.version_hash
         self._use_json_sockets = arguments.use_json_sockets
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        query_message = """
+        `https://pyre-check.org/docs/querying-pyre.html` contains examples and documentation
+        for this command, which queries a running pyre server for type, function and
+        attribute information.
+
+        To get a full list of queries, you can run `pyre query help`.
+        """
+        query = parser.add_parser(cls.NAME, epilog=query_message)
+        query.set_defaults(command=cls)
+        query_argument_message = """
+        `pyre query help` will give a full list of available queries for \
+        the running Pyre server.
+         Example: `pyre query "superclasses(int)"`.
+        """
+        query.add_argument("query", help=query_argument_message)
 
     def _flags(self) -> List[str]:
         return [self.query]

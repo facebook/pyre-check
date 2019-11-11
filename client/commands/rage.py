@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-unsafe
+import argparse
 from typing import List
 
 from .. import get_binary_version
@@ -19,6 +20,17 @@ class Rage(Command):
         # pyre-fixme[16]: `Namespace` has no attribute `command`.
         self._arguments.command = self.NAME
         self._configuration = configuration
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        rage = parser.add_parser(
+            cls.NAME,
+            epilog="""
+            Collects troubleshooting diagnostics for Pyre, and writes this
+            information to the terminal.
+            """,
+        )
+        rage.set_defaults(command=cls)
 
     def _flags(self) -> List[str]:
         return []

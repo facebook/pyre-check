@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import atexit
 import json
 import logging
@@ -44,6 +45,35 @@ class Incremental(Reporting):
         self._incremental_style = arguments.incremental_style  # type: bool
         self._version_hash = configuration.version_hash
         self._use_json_sockets: bool = arguments.use_json_sockets
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        incremental_help = """
+        Connects to a running Pyre server and returns the current type errors for your
+        project. If no server exists for your projects, starts a new one. Running `pyre`
+        implicitly runs `pyre incremental`.
+
+        By default, incremental checks ensure that all dependencies of changed files are
+        analyzed before returning results. If you'd like to get partial type checking
+        results eagerly, you can run `pyre incremental --nonblocking`.
+        """
+        incremental = parser.add_parser(cls.NAME, epilog=incremental_help)
+        incremental.set_defaults(command=cls)
+        incremental.add_argument(
+            "--nonblocking",
+            action="store_true",
+            help=(
+                "Ask the server to return partial results immediately, "
+                "even if analysis is still in progress."
+            ),
+        )
+        incremental.add_argument(
+            "--incremental-style",
+            type=IncrementalStyle,
+            choices=list(IncrementalStyle),
+            default=IncrementalStyle.SHALLOW,
+            help="How to approach doing incremental checks.",
+        )
 
     def _run(self) -> None:
         if self._state() == State.DEAD:

@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-unsafe
+import argparse
 import json
 from enum import Enum
 from typing import List
@@ -113,6 +114,12 @@ class Color(Command):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         self.path = arguments.path
         super(Color, self).__init__(arguments, configuration, analysis_directory)
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        color = parser.add_parser(cls.NAME)
+        color.set_defaults(command=cls)
+        color.add_argument("path")
 
     def _flags(self) -> List[str]:
         return ["coverage_in_file('" + self.path + "')"]

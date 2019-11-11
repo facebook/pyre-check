@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import argparse
 import json
 import re
 import select
@@ -21,6 +22,23 @@ class Persistent(Command):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Persistent, self).__init__(arguments, configuration, analysis_directory)
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        persistent = parser.add_parser(
+            cls.NAME,
+            epilog="""
+            Entry point for IDE integration to Pyre. Communicates with a
+            Pyre server using the Language Server Protocol, accepts input from stdin and
+            writing diagnostics and responses from the Pyre server to stdout.
+            """,
+        )
+        persistent.set_defaults(command=cls, noninteractive=True)
+        persistent.add_argument(
+            "--no-watchman",
+            action="store_true",
+            help="Do not spawn a watchman client in the background.",
+        )
 
     def _run(self) -> None:
         arguments = self._arguments
