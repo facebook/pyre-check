@@ -579,10 +579,7 @@ def main() -> int:
             if arguments.command in [commands.Kill]:
                 analysis_directory = AnalysisDirectory(".")
             else:
-                isolate = (
-                    arguments.command in [commands.Analyze, commands.Check]
-                    and not arguments.use_global_shared_analysis_directory
-                )
+                isolate = arguments.command in [commands.Analyze, commands.Check]
                 analysis_directory = resolve_analysis_directory(
                     arguments, commands, configuration, isolate=isolate
                 )
