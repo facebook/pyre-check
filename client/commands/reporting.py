@@ -23,6 +23,8 @@ LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
 class Reporting(Command):
+    NAME = "reporting"
+
     def __init__(
         self,
         arguments: argparse.Namespace,

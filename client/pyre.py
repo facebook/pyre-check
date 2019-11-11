@@ -52,31 +52,17 @@ def main() -> int:
     commands.Command.add_arguments(parser)
 
     # Subcommands.
+    subcommand_names = ", ".join([command.NAME for command in commands.COMMANDS])
     parsed_commands = parser.add_subparsers(
-        metavar="{analyze, check, color, kill, incremental, initialize (init), "
-        "query, rage, restart, statistics, start, stop}",
+        metavar="{}".format(subcommand_names),
         help="""
         The pyre command to run; defaults to `incremental`.
         Run `pyre command --help` for documentation on a specific command.
         """,
     )
 
-    commands.Incremental.add_subparser(parsed_commands)
-    commands.Rage.add_subparser(parsed_commands)
-    commands.Check.add_subparser(parsed_commands)
-    commands.Color.add_subparser(parsed_commands)
-    commands.Deobfuscate.add_subparser(parsed_commands)
-    commands.Analyze.add_subparser(parsed_commands)
-    commands.Persistent.add_subparser(parsed_commands)
-    commands.Start.add_subparser(parsed_commands)
-    commands.Stop.add_subparser(parsed_commands)
-    commands.Restart.add_subparser(parsed_commands)
-    commands.Kill.add_subparser(parsed_commands)
-    commands.Initialize.add_subparser(parsed_commands)
-    commands.Query.add_subparser(parsed_commands)
-    commands.Infer.add_subparser(parsed_commands)
-    commands.Statistics.add_subparser(parsed_commands)
-    commands.Profile.add_subparser(parsed_commands)
+    for command in commands.COMMANDS:
+        command.add_subparser(parsed_commands)
 
     arguments = parser.parse_args()
 

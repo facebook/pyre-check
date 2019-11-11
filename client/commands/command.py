@@ -125,6 +125,8 @@ def executable_file(file_path: str) -> str:
 
 
 class Command:
+    NAME = ""  # type: str
+
     _buffer = []  # type: List[str]
     _call_client_terminated = False  # type: bool
 
