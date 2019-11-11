@@ -174,11 +174,8 @@ let test_final_attributes context =
         reveal_type(x)
         x = 2
     |}
-    (* TODO(T56724271) Support this form *)
     [
-      "Invalid type parameters [24]: Generic type `Final` expects 1 type parameter.";
-      "Revealed type [-1]: Revealed type for `x` is `typing.Any` (inferred: \
-       `typing_extensions.Literal[1]`).";
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
       "Invalid assignment [41]: Cannot reassign final attribute `x`.";
     ];
   assert_type_errors

@@ -3293,7 +3293,8 @@ module State (Context : Context) = struct
                            ~left:resolved
                            ~right:expected))
                   && (not is_typed_dictionary_initialization)
-                  && not is_valid_enumeration_assignment
+                  && (not is_valid_enumeration_assignment)
+                  && not (Annotation.is_final target_annotation)
                 in
                 let open Annotated in
                 match attribute, reference with

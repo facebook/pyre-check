@@ -460,6 +460,7 @@ let is_ellipsis = function
 
 let is_final = function
   | Parametric { name = "typing.Final" | "typing_extensions.Final"; _ } -> true
+  | Primitive ("typing.Final" | "typing_extensions.Final") -> true
   | _ -> false
 
 
@@ -2461,6 +2462,7 @@ let final_value = function
   | Parametric
       { name = "typing.Final" | "typing_extensions.Final"; parameters = Concrete [parameter] } ->
       Some parameter
+  | Primitive ("typing.Final" | "typing_extensions.Final") -> Some Top
   | _ -> None
 
 

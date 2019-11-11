@@ -341,6 +341,7 @@ let check_invalid_type_parameters resolution annotation =
               Type.parametric name given, sofar
         in
         match annotation with
+        | Type.Primitive ("typing.Final" | "typing_extensions.Final") -> annotation, sofar
         | Type.Primitive name -> invalid_type_parameters ~name ~given:(Concrete [])
         (* natural variadics *)
         | Type.Parametric { name = "typing.Protocol"; _ }
