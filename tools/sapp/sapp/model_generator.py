@@ -242,7 +242,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         caller = issue["callable"]
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
-        titos = self._generate_tito(issue, caller)
+        titos = self._generate_tito(callinfo, caller)
         call_tf = self._generate_raw_postcondition(
             run,
             issue["filename"],
@@ -346,7 +346,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         caller = issue["callable"]
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
-        titos = self._generate_tito(issue, caller)
+        titos = self._generate_tito(callinfo, caller)
         call_tf = self._generate_raw_precondition(
             run,
             issue["filename"],
