@@ -113,10 +113,17 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 LOG.info("Skipping update: Pyre doesn't track any of these files.")
                 return
 
-            LOG.info("Notifying server of update to files %s.", updated_paths.updated)
+            LOG.info(
+                "Notifying server of update to files %s and invalidation of %s.",
+                updated_paths.updated_paths,
+                updated_paths.deleted_paths,
+            )
             message = json_rpc.Request(
                 method="updateFiles",
-                parameters={"files": updated_paths.updated, "invalidated": []},
+                parameters={
+                    "files": updated_paths.updated_paths,
+                    "invalidated": updated_paths.deleted_paths,
+                },
             )
             if not message.write(self.socket_connection.output):
                 LOG.info("Failed to communicate with server. Shutting down.")

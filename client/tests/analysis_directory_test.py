@@ -8,18 +8,46 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 from unittest.mock import MagicMock, call, patch
 
 from .. import buck, commands, filesystem
 from ..analysis_directory import (
     AnalysisDirectory,
     SharedAnalysisDirectory,
+    UpdatedPaths,
     resolve_analysis_directory,
 )
 
 
 class AnalysisDirectoryTest(unittest.TestCase):
+    def assertEqualRootAndFilterRoot(
+        self, actual: AnalysisDirectory, expected: AnalysisDirectory
+    ) -> None:
+        self.assertEqual(expected.get_root(), actual.get_root())
+        self.assertEqual(expected.get_filter_root(), actual.get_filter_root())
+
+    @patch.object(os.path, "isfile")
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_process_updated_files(self, abspath: MagicMock, isfile: MagicMock) -> None:
+        analysis_directory = AnalysisDirectory(
+            path="foo/bar", search_path=["baz$hello"]
+        )
+        isfile.side_effect = lambda path: path != "foo/bar/deleted.py"
+        actual = analysis_directory.process_updated_files(
+            [
+                "foo/bar/tracked.py",
+                "foo/not_tracked.py",
+                "baz/hello/also_tracked.py",
+                "foo/bar/deleted.py",
+            ]
+        )
+        expected = UpdatedPaths(
+            updated_paths=["foo/bar/tracked.py", "baz/hello/also_tracked.py"],
+            deleted_paths=["foo/bar/deleted.py"],
+        )
+        self.assertEqual(actual, expected)
+
     @patch.object(
         buck,
         "generate_source_directories",
@@ -30,12 +58,6 @@ class AnalysisDirectoryTest(unittest.TestCase):
         arguments.build = None
         arguments.original_directory = "/project"
         arguments.current_directory = "/project"
-
-        def assert_analysis_directory(
-            expected: AnalysisDirectory, actual: AnalysisDirectory
-        ) -> None:
-            self.assertEqual(expected.get_root(), actual.get_root())
-            self.assertEqual(expected.get_filter_root(), actual.get_filter_root())
 
         configuration = MagicMock()
         configuration.source_directories = []
@@ -49,7 +71,9 @@ class AnalysisDirectoryTest(unittest.TestCase):
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
         )
-        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+        self.assertEqualRootAndFilterRoot(
+            analysis_directory, expected_analysis_directory
+        )
 
         arguments.source_directories = ["/symlinked/directory"]
         arguments.targets = []
@@ -60,7 +84,165 @@ class AnalysisDirectoryTest(unittest.TestCase):
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
         )
-        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+        self.assertEqualRootAndFilterRoot(
+            analysis_directory, expected_analysis_directory
+        )
+
+
+class SharedAnalysisDirectoryTest(unittest.TestCase):
+    def assertEqualRootAndFilterRoot(
+        self, actual: AnalysisDirectory, expected: AnalysisDirectory
+    ) -> None:
+        self.assertEqual(expected.get_root(), actual.get_root())
+        self.assertEqual(expected.get_filter_root(), actual.get_filter_root())
+
+    def assertFileIsLinkedBothWays(
+        self,
+        relative_path: str,
+        shared_analysis_directory: SharedAnalysisDirectory,
+        scratch_directory: str,
+        project_directory: str,
+    ) -> None:
+        self.assertEqual(
+            os.path.realpath(os.path.join(scratch_directory, relative_path)),
+            os.path.join(project_directory, relative_path),
+        )
+        self.assertEqual(
+            shared_analysis_directory._symbolic_links[
+                os.path.join(project_directory, relative_path)
+            ],
+            os.path.join(scratch_directory, relative_path),
+        )
+
+    def test_should_rebuild(self) -> None:
+        self.assertTrue(
+            SharedAnalysisDirectory.should_rebuild(
+                updated_tracked_paths=["a.py", "b.py", "c.py", "d.py"],
+                new_paths=[],
+                deleted_paths=[],
+            )
+        )
+        self.assertTrue(
+            SharedAnalysisDirectory.should_rebuild(
+                updated_tracked_paths=[],
+                new_paths=["a.py", "b.py"],
+                deleted_paths=["c.py", "d.py", "e.py"],
+            )
+        )
+        self.assertFalse(
+            SharedAnalysisDirectory.should_rebuild(
+                updated_tracked_paths=["a.py"], new_paths=[], deleted_paths=[]
+            )
+        )
+
+    @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
+    @patch.object(os, "getcwd", return_value="project")
+    @patch.object(os.path, "isfile")
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_process_updated_files_no_rebuild(
+        self,
+        abspath: MagicMock,
+        isfile: MagicMock,
+        getcwd: MagicMock,
+        should_rebuild: MagicMock,
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], search_path=["baz$hello"]
+        )
+        isfile.side_effect = lambda path: path != "project/deleted.py"
+
+        shared_analysis_directory._symbolic_links = {
+            "project/tracked.py": "scratch/bar/tracked.py"
+        }
+        actual = shared_analysis_directory.process_updated_files(
+            [
+                "project/tracked.py",
+                "other_project/not_tracked.py",
+                "project/something/new_file.py",
+                "project/deleted.py",
+                "baz/hello/new_file_tracked_because_of_search_path.py",
+            ]
+        )
+        # We ignore individually added or deleted paths unless there is a
+        # rebuild. Note, however, that new files in the search_path are shown as
+        # updated files. This is the existing behavior and may be a bug.
+        expected = UpdatedPaths(
+            updated_paths=[
+                "scratch/bar/tracked.py",
+                "baz/hello/new_file_tracked_because_of_search_path.py",
+            ],
+            deleted_paths=[],
+        )
+        self.assertEqual(actual, expected)
+
+    @patch.object(SharedAnalysisDirectory, "rebuild")
+    @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=True)
+    @patch.object(os, "getcwd", return_value="project")
+    @patch.object(os.path, "isfile")
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_process_updated_files_rebuild(
+        self,
+        abspath: MagicMock,
+        isfile: MagicMock,
+        getcwd: MagicMock,
+        should_rebuild: MagicMock,
+        rebuild: MagicMock,
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], search_path=["baz$hello"]
+        )
+        isfile.side_effect = lambda path: path != "project/deleted.py"
+
+        def update_paths_for_rebuild() -> None:
+            shared_analysis_directory._symbolic_links[
+                "project/something/new_file_from_rebuild.py"
+            ] = "scratch/new_file_from_rebuild.py"
+            del shared_analysis_directory._symbolic_links[
+                "project/deleted_by_rebuild.py"
+            ]
+
+        rebuild.side_effect = update_paths_for_rebuild
+
+        shared_analysis_directory._symbolic_links = {
+            "project/tracked.py": "scratch/tracked.py",
+            "project/deleted_by_rebuild.py": "scratch/deleted_by_rebuild.py",
+        }
+        actual = shared_analysis_directory.process_updated_files(
+            [
+                "project/tracked.py",
+                "other_project/not_tracked.py",
+                "project/something/new_file.py",
+                "project/deleted.py",
+                "baz/hello/new_file_tracked_because_of_search_path.py",
+            ]
+        )
+        expected = UpdatedPaths(
+            updated_paths=[
+                # Tracked files.
+                "scratch/tracked.py",
+                "baz/hello/new_file_tracked_because_of_search_path.py",
+                # New file from the rebuild.
+                "scratch/new_file_from_rebuild.py",
+            ],
+            deleted_paths=["scratch/deleted_by_rebuild.py"],
+        )
+        self.assertEqual(actual, expected)
+
+    @patch.object(
+        buck,
+        "generate_source_directories",
+        side_effect=lambda targets, build, prompt: targets,
+    )
+    def test_resolve_analysis_directory(self, buck) -> None:  # pyre-fixme[2]
+        arguments = MagicMock()
+        arguments.build = None
+        arguments.original_directory = "/project"
+        arguments.current_directory = "/project"
+
+        configuration = MagicMock()
+        configuration.source_directories = []
+        configuration.targets = []
+        configuration.local_configuration_root = None
 
         arguments.source_directories = []
         arguments.targets = ["//x:y"]
@@ -74,7 +256,9 @@ class AnalysisDirectoryTest(unittest.TestCase):
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
         )
-        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+        self.assertEqualRootAndFilterRoot(
+            analysis_directory, expected_analysis_directory
+        )
 
         arguments.source_directories = ["a/b"]
         arguments.targets = ["//x:y", "//y/..."]
@@ -89,7 +273,9 @@ class AnalysisDirectoryTest(unittest.TestCase):
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
         )
-        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+        self.assertEqualRootAndFilterRoot(
+            analysis_directory, expected_analysis_directory
+        )
 
         arguments.source_directories = []
         arguments.targets = []
@@ -105,7 +291,9 @@ class AnalysisDirectoryTest(unittest.TestCase):
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
         )
-        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+        self.assertEqualRootAndFilterRoot(
+            analysis_directory, expected_analysis_directory
+        )
 
     def test_merge_into_paths(self) -> None:
         directory = tempfile.mkdtemp()  # type: str
@@ -201,3 +389,115 @@ class AnalysisDirectoryTest(unittest.TestCase):
             ],
             any_order=True,
         )
+
+    def test_prepare(self) -> None:
+        buck_output_directory = tempfile.mkdtemp()  # type: str
+        project_directory = tempfile.mkdtemp()  # type: str
+        original_scratch_directory = tempfile.mkdtemp()  # type: str
+
+        with patch.object(buck.FastBuckBuilder, "build") as build, patch.object(
+            SharedAnalysisDirectory, "get_root", return_value=original_scratch_directory
+        ):
+            fast_buck_builder = buck.FastBuckBuilder(buck_root="dummy_buck_root")
+            shared_analysis_directory = SharedAnalysisDirectory(
+                source_directories=[],
+                targets=["target1"],
+                buck_builder=fast_buck_builder,
+            )
+
+            Path(project_directory, "existing.py").touch()
+
+            def build_buck_directory(argument: filesystem.BuckBuilder) -> List[str]:
+                Path(buck_output_directory, "existing.py").symlink_to(
+                    Path(Path(project_directory, "existing.py"))
+                )
+                return [buck_output_directory]
+
+            build.side_effect = build_buck_directory
+
+            Path(original_scratch_directory, "obsolete.py").touch()
+
+            shared_analysis_directory.prepare()
+
+            self.assertFalse(
+                os.path.lexists(os.path.join(original_scratch_directory, "obsolete.py"))
+            )
+
+            self.assertFileIsLinkedBothWays(
+                "existing.py",
+                shared_analysis_directory,
+                original_scratch_directory,
+                project_directory,
+            )
+
+    def test_rebuild(self) -> None:
+        buck_output_directory = tempfile.mkdtemp("_buck_output")  # type: str
+        project_directory = tempfile.mkdtemp("_project")  # type: str
+        original_scratch_directory = tempfile.mkdtemp("_original_scratch")  # type: str
+
+        with patch.object(buck.FastBuckBuilder, "build") as build, patch.object(
+            SharedAnalysisDirectory, "get_root", return_value=original_scratch_directory
+        ):
+            fast_buck_builder = buck.FastBuckBuilder(buck_root="dummy_buck_root")
+            shared_analysis_directory = SharedAnalysisDirectory(
+                source_directories=[],
+                targets=["target1"],
+                buck_builder=fast_buck_builder,
+            )
+
+            Path(project_directory, "existing.py").touch()
+            Path(project_directory, "to_be_deleted.py").touch()
+
+            def build_buck_directory(argument: filesystem.BuckBuilder) -> List[str]:
+                Path(buck_output_directory, "existing.py").symlink_to(
+                    Path(project_directory, "existing.py")
+                )
+                Path(buck_output_directory, "to_be_deleted.py").symlink_to(
+                    Path(project_directory, "to_be_deleted.py")
+                )
+                return [buck_output_directory]
+
+            build.side_effect = build_buck_directory
+
+            Path(
+                original_scratch_directory, "obsolete_file_in_scratch_directory.py"
+            ).touch()
+
+            shared_analysis_directory.prepare()
+
+            # Update the project directory.
+            Path(project_directory, "new_file.py").touch()
+            os.remove(os.path.join(project_directory, "to_be_deleted.py"))
+
+            def update_buck_directory() -> None:
+                os.remove(os.path.join(buck_output_directory, "to_be_deleted.py"))
+                Path(buck_output_directory, "new_file.py").symlink_to(
+                    Path(project_directory, "new_file.py")
+                )
+
+            build.side_effect = update_buck_directory()
+
+            shared_analysis_directory.rebuild()
+
+            self.assertFileIsLinkedBothWays(
+                "existing.py",
+                shared_analysis_directory,
+                original_scratch_directory,
+                project_directory,
+            )
+            self.assertFileIsLinkedBothWays(
+                "new_file.py",
+                shared_analysis_directory,
+                original_scratch_directory,
+                project_directory,
+            )
+
+            self.assertFalse(
+                os.path.lexists(
+                    os.path.join(original_scratch_directory, "to_be_deleted.py")
+                )
+            )
+            self.assertNotIn(
+                os.path.join(project_directory, "to_be_deleted.py"),
+                shared_analysis_directory._symbolic_links,
+            )

@@ -9,9 +9,9 @@ import os
 import shutil
 import subprocess
 from time import time
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, NamedTuple, Optional, Set
 
-from . import _resolve_filter_paths, buck, log
+from . import _resolve_filter_paths, buck, filesystem, log
 from .exceptions import EnvironmentException
 from .filesystem import (
     BuckBuilder,
@@ -29,12 +29,25 @@ from .filesystem import (
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class UpdatedPaths:
-    def __init__(self, updated: List[str]) -> None:
-        self.updated = updated
+# If there are a lot of tracked files that are updated at the same time, it is
+# probably a rebase. So, rebuild just to be safe.
+REBUILD_THRESHOLD_FOR_UPDATED_PATHS: int = 4
+
+
+# If there are a lot of new or deleted files, it is probably a rebase.
+# This is a separate threshold from the number of updated tracked files because
+# we don't know for sure if these new files should actually be tracked. So, we
+# might want a higher threshold in order to avoid rebuilding for spurious new
+# files.
+REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS: int = 5
+
+
+class UpdatedPaths(NamedTuple):
+    updated_paths: List[str]
+    deleted_paths: List[str]
 
     def is_empty(self) -> bool:
-        return not self.updated
+        return not self.updated_paths and not self.deleted_paths
 
 
 class AnalysisDirectory:
@@ -73,8 +86,13 @@ class AnalysisDirectory:
             Return a list of files (corresponding to the given paths) that Pyre
             should be tracking.
         """
-        tracked_paths = [path for path in paths if self._is_tracked(path)]
-        return UpdatedPaths(updated=tracked_paths)
+        deleted_paths = [path for path in paths if not os.path.isfile(path)]
+        tracked_paths = [
+            path
+            for path in paths
+            if self._is_tracked(path) and path not in deleted_paths
+        ]
+        return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
 
     def cleanup(self) -> None:
         pass
@@ -180,8 +198,40 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             )
         self._symbolic_links.update(self.compute_symbolic_links())
 
+    def rebuild(self) -> None:
+        start = time()
+
+        root = self.get_root()
+        LOG.info("Updating shared directory `%s`", root)
+
+        self._resolve_source_directories()
+
+        with filesystem.acquire_lock(os.path.join(root, ".pyre.lock"), blocking=True):
+            all_paths = {}
+            for source_directory in self._source_directories:
+                self._merge_into_paths(source_directory, all_paths)
+            for relative_path, project_path in all_paths.items():
+                scratch_path = os.path.join(root, relative_path)
+                if os.path.realpath(scratch_path) != project_path:
+                    add_symbolic_link(scratch_path, project_path)
+            for scratch_path in self._symbolic_links.values():
+                if not os.path.exists(scratch_path):
+                    os.remove(scratch_path)
+            LOG.log(log.PERFORMANCE, "Updated shared directory in %fs", time() - start)
+        self._symbolic_links = self.compute_symbolic_links()
+
     def compute_symbolic_links(self) -> Dict[str, str]:
         return _compute_symbolic_link_mapping(self.get_root(), self._extensions)
+
+    @staticmethod
+    def should_rebuild(
+        updated_tracked_paths: List[str], new_paths: List[str], deleted_paths: List[str]
+    ) -> bool:
+        return (
+            len(updated_tracked_paths) >= REBUILD_THRESHOLD_FOR_UPDATED_PATHS
+            or len(new_paths) + len(deleted_paths)
+            >= REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS
+        )
 
     def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """
@@ -191,7 +241,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
             This method will remove/add symbolic links for deleted/new files.
         """
-        tracked_files = []
+        tracked_paths = []
         deleted_paths = [path for path in paths if not os.path.isfile(path)]
         new_paths = [
             path
@@ -208,11 +258,25 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
         for path in updated_paths:
             if path in self._symbolic_links:
-                tracked_files.append(self._symbolic_links[path])
+                tracked_paths.append(self._symbolic_links[path])
             elif self._is_tracked(path):
-                tracked_files.append(path)
+                tracked_paths.append(path)
 
-        return UpdatedPaths(updated=tracked_files)
+        if SharedAnalysisDirectory.should_rebuild(
+            tracked_paths, new_paths, deleted_paths
+        ):
+            old_scratch_paths = set(self._symbolic_links.values())
+            self.rebuild()
+            new_scratch_paths = set(self._symbolic_links.values())
+            # We ignore the individual new_paths from above and consider only
+            # paths updated during a rebuild.
+            tracked_paths.extend(new_scratch_paths - old_scratch_paths)
+            deleted_paths = list(old_scratch_paths - new_scratch_paths)
+        else:
+            # We always ignore the deleted_paths computed initially.
+            deleted_paths = []
+
+        return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
 
     def cleanup(self) -> None:
         try:
