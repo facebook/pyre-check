@@ -20,8 +20,8 @@ from typing import Any, List, Optional, Set, Union  # noqa
 
 from .. import apply_annotations, log
 from .check import Check
-from .command import Command, Result, typeshed_search_path
-from .reporting import JSON, Reporting
+from .command import JSON, Command, Result, typeshed_search_path
+from .reporting import Reporting
 
 
 LOG: Logger = logging.getLogger(__name__)

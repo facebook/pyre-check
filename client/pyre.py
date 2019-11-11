@@ -21,7 +21,6 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
-    readable_directory,
     switch_root,
     translate_arguments,
 )
@@ -42,13 +41,6 @@ LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
 def main() -> int:
-    def executable_file(file_path: str) -> str:
-        if not os.path.isfile(file_path):
-            raise EnvironmentException("%s is not a valid file" % file_path)
-        if not os.access(file_path, os.X_OK):
-            raise EnvironmentException("%s is not an executable file" % file_path)
-        return file_path
-
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -57,184 +49,8 @@ def main() -> int:
         "\n   `PYRE_VERSION_HASH` overrides the pyre version set in the "
         "configuration files.",
     )
+    commands.Command.add_arguments(parser)
 
-    parser.add_argument(
-        "-l", "--local-configuration", type=str, help="Use a local configuration"
-    )
-
-    parser.add_argument(
-        "--version",
-        action="store_true",
-        help="Print the client and binary versions of Pyre.",
-    )
-
-    parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--sequential", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--strict", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--additional-check", action="append", help=argparse.SUPPRESS)
-
-    parser.add_argument(
-        "--show-error-traces",
-        action="store_true",
-        help="Display errors trace information",
-    )
-
-    # Logging.
-    parser.add_argument(
-        "--output",
-        choices=[commands.reporting.TEXT, commands.reporting.JSON],
-        default=commands.reporting.TEXT,
-        help="How to format output",
-    )
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument(
-        "--enable-profiling", action="store_true", help=argparse.SUPPRESS
-    )
-    parser.add_argument(
-        "--enable-memory-profiling", action="store_true", help=argparse.SUPPRESS
-    )
-    parser.add_argument(
-        "-n",
-        "--noninteractive",
-        action="store_true",
-        help="Disable interactive logging",
-    )
-    parser.add_argument(
-        "--hide-parse-errors",
-        action="store_true",
-        help="Hide detailed information about parse errors",
-    )
-    parser.add_argument(
-        "--show-parse-errors",
-        action="store_true",
-        help="[DEPRECATED] Show detailed information about parse errors",
-    )
-    parser.add_argument(
-        "--logging-sections", help=argparse.SUPPRESS  # Enable sectional logging.
-    )
-    parser.add_argument(
-        "--log-identifier",
-        default="",
-        help=argparse.SUPPRESS,  # Add given identifier to logged samples.
-    )
-    parser.add_argument(
-        "--log-directory", help=argparse.SUPPRESS  # Override default location for logs
-    )
-    parser.add_argument(
-        "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
-    )
-    parser.add_argument("--formatter", help=argparse.SUPPRESS)
-
-    # Link tree determination.
-    buck_arguments = parser.add_argument_group("buck")
-    buck_arguments.add_argument(
-        "--target", action="append", dest="targets", help="The buck target to check"
-    )
-    buck_arguments.add_argument(
-        "--build",
-        action="store_true",
-        help="Freshly build all the necessary artifacts.",
-    )
-    buck_arguments.add_argument(
-        "--use-buck-builder",
-        action="store_true",
-        help="Use Pyre's experimental builder for Buck projects.",
-    )
-    buck_arguments.add_argument(
-        "--use-legacy-builder",
-        action="store_true",
-        help="Use Pyre's legacy builder for Buck projects.",
-    )
-    buck_arguments.add_argument(
-        "--buck-builder-debug", action="store_true", help=argparse.SUPPRESS
-    )
-
-    source_directories = parser.add_argument_group("source-directories")
-    source_directories.add_argument(
-        "--source-directory",
-        action="append",
-        dest="source_directories",
-        help="The source directory to check",
-        type=os.path.abspath,
-    )
-    source_directories.add_argument(
-        "--filter-directory", help=argparse.SUPPRESS  # override filter directory
-    )
-
-    parser.add_argument(
-        "--use-global-shared-analysis-directory",
-        action="store_true",
-        help=argparse.SUPPRESS,
-    )
-    parser.add_argument(
-        "--no-saved-state",
-        action="store_true",
-        help="Don't attempt to load Pyre from a saved state.",
-    )
-
-    # Handling of search path
-    parser.add_argument(
-        "--search-path",
-        action="append",
-        default=[],
-        type=readable_directory,
-        help="Add an additional directory of modules and stubs to include"
-        " in the type environment",
-    )
-    parser.add_argument(
-        "--preserve-pythonpath",
-        action="store_true",
-        default=False,
-        help="Preserve the value of the PYTHONPATH environment variable and "
-        "inherit the current python environment's search path",
-    )
-
-    parser.add_argument(
-        "--binary",
-        default=None,
-        type=executable_file,
-        help="Location of the pyre binary",
-    )
-
-    parser.add_argument(
-        "--buck-builder-binary",
-        default=None,
-        help="Location of the buck builder binary",
-    )
-    parser.add_argument("--buck-builder-target", default=None, help=argparse.SUPPRESS)
-
-    parser.add_argument(
-        "--exclude",
-        action="append",
-        default=[],
-        help="Exclude files and directories matching this regexp from parsing",
-    )
-
-    # Typeshed stubs location
-    parser.add_argument(
-        "--typeshed",
-        default=None,
-        type=readable_directory,
-        help="Location of the typeshed stubs",
-    )
-    parser.add_argument(
-        "--save-initial-state-to",
-        default=None,
-        help="Path to serialize pyre's initial state to.",
-    )
-    parser.add_argument(
-        "--load-initial-state-from", default=None, type=str, help=argparse.SUPPRESS
-    )
-    parser.add_argument(
-        "--changed-files-path", default=None, type=str, help=argparse.SUPPRESS
-    )
-    parser.add_argument(
-        "--saved-state-project", default=None, type=str, help=argparse.SUPPRESS
-    )
-    # Temporary flag to help migrate to json sockets for incremental and query commands.
-    parser.add_argument(
-        "--use-json-sockets", action="store_true", default=False, help=argparse.SUPPRESS
-    )
     # Subcommands.
     parsed_commands = parser.add_subparsers(
         metavar="{analyze, check, color, kill, incremental, initialize (init), "

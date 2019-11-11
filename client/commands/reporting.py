@@ -16,13 +16,10 @@ from ..analysis_directory import AnalysisDirectory
 from ..configuration import Configuration
 from ..error import Error
 from ..filesystem import translate_path
-from .command import ClientException, Command, Result
+from .command import TEXT, ClientException, Command, Result
 
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger
-
-TEXT = "text"  # type: str
-JSON = "json"  # type: str
 
 
 class Reporting(Command):
