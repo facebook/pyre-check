@@ -67,11 +67,11 @@ class RepositoryState(ABC):
 
 class RepositoryUpdate(ABC):
     @abstractmethod
-    def update(self, environment: Environment, working_directory: Path) -> None:
+    def to_json(self) -> Dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
-    def to_json(self) -> Dict[str, Any]:
+    def update_steps(self) -> List["SingleUpdate"]:
         raise NotImplementedError
 
     @staticmethod
@@ -105,9 +105,11 @@ class RepositoryUpdate(ABC):
                     raise InvalidSpecificationException(
                         "Batch updates must be specified as lists"
                     )
-                return BatchRepositoryUpdate(
-                    [RepositoryUpdate.from_json(update) for update in updates]
-                )
+                parsed_updates: List[SingleUpdate] = []
+                for update in updates:
+                    parsed_update = RepositoryUpdate.from_json(update)
+                    parsed_updates.extend(parsed_update.update_steps())
+                return BatchRepositoryUpdate(parsed_updates)
             else:
                 raise InvalidSpecificationException(
                     f"Cannot create RepositoryUpdate due to unrecognized kind"
@@ -116,6 +118,15 @@ class RepositoryUpdate(ABC):
             raise InvalidSpecificationException(
                 f"Cannot create RepositoryUpdate due to missing field '{key}'"
             )
+
+
+class SingleUpdate(RepositoryUpdate):
+    @abstractmethod
+    def update(self, environment: Environment, working_directory: Path) -> None:
+        raise NotImplementedError
+
+    def update_steps(self) -> List["SingleUpdate"]:
+        return [self]
 
 
 @dataclass(frozen=True)
@@ -211,7 +222,9 @@ class UpdatedRepositoryState(RepositoryState):
     def _do_prepare(self, environment: Environment) -> Iterator[Path]:
         with self.base.activate_sandbox(environment) as sandbox_root:
             for update in self.updates:
-                update.update(environment, sandbox_root)
+                single_updates = update.update_steps()
+                for single_update in single_updates:
+                    single_update.update(environment, sandbox_root)
             yield sandbox_root
 
     def activate_sandbox(self, environment: Environment) -> ContextManager[Path]:
@@ -219,7 +232,7 @@ class UpdatedRepositoryState(RepositoryState):
 
 
 @dataclass(frozen=True)
-class HgRepositoryUpdate(RepositoryUpdate):
+class HgRepositoryUpdate(SingleUpdate):
     commit_hash: str
 
     def update(self, environment: Environment, working_directory: Path) -> None:
@@ -233,7 +246,7 @@ class HgRepositoryUpdate(RepositoryUpdate):
 
 
 @dataclass(frozen=True)
-class PatchRepositoryUpdate(RepositoryUpdate):
+class PatchRepositoryUpdate(SingleUpdate):
     patch: str
     patch_flags: str
 
@@ -249,7 +262,7 @@ class PatchRepositoryUpdate(RepositoryUpdate):
 
 
 @dataclass(frozen=True)
-class FileRepositoryUpdate(RepositoryUpdate):
+class FileRepositoryUpdate(SingleUpdate):
     changes: Dict[str, str]
     removals: List[str]
 
@@ -271,17 +284,16 @@ class FileRepositoryUpdate(RepositoryUpdate):
 
 @dataclass(frozen=True)
 class BatchRepositoryUpdate(RepositoryUpdate):
-    updates: List[RepositoryUpdate]
-
-    def update(self, environment: Environment, working_directory: Path) -> None:
-        for update in self.updates:
-            update.update(environment, working_directory)
+    _updates: List[SingleUpdate]
 
     def to_json(self) -> Dict[str, Any]:
         return {
             "kind": "batch",
-            "updates": [update.to_json() for update in self.updates],
+            "updates": [update.to_json() for update in self._updates],
         }
+
+    def update_steps(self) -> List[SingleUpdate]:
+        return self._updates
 
 
 @dataclass(frozen=True)

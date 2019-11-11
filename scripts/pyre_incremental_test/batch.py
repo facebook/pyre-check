@@ -6,7 +6,12 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List
 
 from .environment import Environment
-from .runner import ResultComparison, benchmark_server, compare_server_to_full
+from .runner import (
+    ProfileLogs,
+    ResultComparison,
+    benchmark_server,
+    compare_server_to_full,
+)
 from .specification import Specification
 
 
@@ -81,7 +86,7 @@ class FinishedRunnerResult(RunnerResult, metaclass=ABCMeta):
             },
             integers={
                 "full_check_time": self._output.full_check_time,
-                "incremental_check_time": self._output.incremental_check_time,
+                "incremental_check_time": self._output.profile_logs.total_of_totals(),
             },
         )
 
@@ -111,11 +116,11 @@ class FailedRunnerResult(FinishedRunnerResult):
 
 
 class BenchmarkResult(RunnerResult):
-    _incremental_check_time: int
+    _profile_logs: ProfileLogs
 
-    def __init__(self, input: Specification, incremental_check_time: int) -> None:
+    def __init__(self, input: Specification, profile_logs: ProfileLogs) -> None:
         super().__init__(input)
-        self._incremental_check_time = incremental_check_time
+        self._profile_logs = profile_logs
 
     def get_status(self) -> str:
         return "benchmark"
@@ -124,7 +129,8 @@ class BenchmarkResult(RunnerResult):
         return {
             "status": self.get_status(),
             "input": self.input.to_json(),
-            "time": self._incremental_check_time,
+            "time": self._profile_logs.total_of_totals(),
+            "profile_logs": self._profile_logs.to_json(),
         }
 
     def to_logger_sample(self) -> Sample:
@@ -133,8 +139,11 @@ class BenchmarkResult(RunnerResult):
                 "status": self.get_status(),
                 "input": json.dumps(self.input.to_json()),
             },
-            integers={"incremental_check_time": self._incremental_check_time},
+            integers={"incremental_check_time": self._profile_logs.total_of_totals()},
         )
+
+    def profile_logs(self) -> ProfileLogs:
+        return self._profile_logs
 
 
 def run_single_test(environment: Environment, input: Specification) -> RunnerResult:

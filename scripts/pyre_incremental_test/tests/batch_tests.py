@@ -53,6 +53,8 @@ class BasicExecute:
             new_commit = command.split()[-1]
             self._current_commit = new_commit
             return self._clean_output
+        elif " profile" in command:
+            return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
         elif command.endswith("check"):
             return self.get_check_result()
         elif command.endswith("incremental"):

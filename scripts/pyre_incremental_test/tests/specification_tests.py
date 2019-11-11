@@ -80,7 +80,7 @@ class SpecificationTest(unittest.TestCase):
                 }
             ),
             BatchRepositoryUpdate(
-                updates=[
+                [
                     HgRepositoryUpdate(commit_hash="my_hash"),
                     PatchRepositoryUpdate(patch="my_patch", patch_flags=""),
                 ]

@@ -25,6 +25,7 @@ class RunnerTest(unittest.TestCase):
         typeshed_override: Optional[str] = None,
         pyre_client_override: Optional[str] = None,
     ) -> None:
+        self.maxDiff = None
         environment = TestEnvironment(mock_execute)
         environment.pyre_binary_override = pyre_binary_override
         environment.typeshed_override = typeshed_override
@@ -53,8 +54,13 @@ class RunnerTest(unittest.TestCase):
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update old_hash"),
-            CommandInput(Path("old_root"), "pyre --option2 --no-saved-state restart"),
+            CommandInput(
+                Path("old_root"),
+                "pyre --option2 --no-saved-state --enable-profiling restart",
+            ),
+            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
             CommandInput(Path("old_root"), "hg update --clean new_hash"),
+            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
             CommandInput(
                 Path("old_root"),
                 "pyre --option3 --output=json --noninteractive incremental",
@@ -69,6 +75,8 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             else:
                 return CommandOutput(return_code=0, stdout="", stderr="")
 
@@ -85,6 +93,8 @@ class RunnerTest(unittest.TestCase):
             )
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             elif command_input.command.endswith(
                 "check"
             ) or command_input.command.endswith("incremental"):
@@ -107,6 +117,8 @@ class RunnerTest(unittest.TestCase):
             )
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             elif command_input.command.endswith("check"):
                 return CommandOutput(
                     return_code=1, stdout=json.dumps([asdict(pyre_error)]), stderr=""
@@ -143,6 +155,8 @@ class RunnerTest(unittest.TestCase):
             )
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             elif command_input.command.endswith("check"):
                 return CommandOutput(
                     return_code=1, stdout=json.dumps([asdict(pyre_error0)]), stderr=""
@@ -191,9 +205,19 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"),
                 "client --binary bin --typeshed bikeshed --option2 "
-                "--no-saved-state restart",
+                "--no-saved-state --enable-profiling restart",
+            ),
+            CommandInput(
+                Path("old_root"),
+                "client --binary bin --typeshed bikeshed profile "
+                "--output=cold_start_phases",
             ),
             CommandInput(Path("old_root"), "hg update --clean new_hash"),
+            CommandInput(
+                Path("old_root"),
+                "client --binary bin --typeshed bikeshed profile "
+                "--output=incremental_updates",
+            ),
             CommandInput(
                 Path("old_root"),
                 "client --binary bin --typeshed bikeshed --option3 "
@@ -252,8 +276,12 @@ class RunnerTest(unittest.TestCase):
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update old_hash"),
-            CommandInput(Path("old_root"), "pyre  --no-saved-state restart"),
+            CommandInput(
+                Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
+            ),
+            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
             CommandInput(Path("old_root"), "patch -p1", patch_content),
+            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -267,6 +295,8 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             else:
                 return CommandOutput(return_code=0, stdout="", stderr="")
 
@@ -301,11 +331,15 @@ class RunnerTest(unittest.TestCase):
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update old_hash"),
-            CommandInput(Path("old_root"), "pyre  --no-saved-state restart"),
+            CommandInput(
+                Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
+            ),
+            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
             CommandInput(Path("old_root"), f"tee {handle_a}", content_a),
             CommandInput(Path("old_root"), f"tee {handle_b}", content_b),
             CommandInput(Path("old_root"), f"rm -f {handle_c}"),
             CommandInput(Path("old_root"), f"rm -f {handle_d}"),
+            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -319,6 +353,8 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             else:
                 return CommandOutput(return_code=0, stdout="", stderr="")
 
@@ -351,9 +387,14 @@ class RunnerTest(unittest.TestCase):
         expected_commands = [
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update old_hash"),
-            CommandInput(Path("old_root"), "pyre  --no-saved-state restart"),
+            CommandInput(
+                Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
+            ),
+            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
             CommandInput(Path("old_root"), "hg update --clean new_hashA"),
+            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
             CommandInput(Path("old_root"), "hg update --clean new_hashB"),
+            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -367,6 +408,8 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             else:
                 return CommandOutput(return_code=0, stdout="", stderr="")
 
@@ -401,8 +444,14 @@ class RunnerTest(unittest.TestCase):
             ),
             CommandInput(Path("/mock/tmp"), f"tee {handle_a}", content_a),
             CommandInput(Path("/mock/tmp"), f"tee {handle_b}", content_b),
-            CommandInput(Path("/mock/tmp"), "pyre  --no-saved-state restart"),
+            CommandInput(
+                Path("/mock/tmp"), "pyre  --no-saved-state --enable-profiling restart"
+            ),
+            CommandInput(Path("/mock/tmp"), "pyre profile --output=cold_start_phases"),
             CommandInput(Path("/mock/tmp"), f"rm -f {handle_a}"),
+            CommandInput(
+                Path("/mock/tmp"), "pyre profile --output=incremental_updates"
+            ),
             CommandInput(
                 Path("/mock/tmp"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -416,6 +465,8 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("mktemp"):
                 return CommandOutput(return_code=0, stdout="/mock/tmp", stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             else:
                 return CommandOutput(return_code=0, stdout="", stderr="")
 
@@ -451,8 +502,12 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), "hg update old_hash"),
             CommandInput(Path("old_root"), "hg update --clean new_hashA"),
             CommandInput(Path("old_root"), "hg update --clean new_hashB"),
-            CommandInput(Path("old_root"), "pyre  --no-saved-state restart"),
+            CommandInput(
+                Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
+            ),
+            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
             CommandInput(Path("old_root"), "hg update --clean new_hashC"),
+            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -466,6 +521,8 @@ class RunnerTest(unittest.TestCase):
         def always_clean_execute(command_input: CommandInput) -> CommandOutput:
             if command_input.command.startswith("hg whereami"):
                 return CommandOutput(return_code=0, stdout=initial_hash, stderr="")
+            elif " profile" in command_input.command:
+                return CommandOutput(return_code=0, stdout="[{}, {}, {}]", stderr="")
             else:
                 return CommandOutput(return_code=0, stdout="", stderr="")
 

@@ -3,11 +3,13 @@ import logging
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from time import time
-from typing import Any, Dict, Iterator, List, Optional
+from time import sleep, time
+from typing import Any, Dict, Iterator, List, Mapping, Optional, overload
+
+from typing_extensions import Literal
 
 from .environment import Environment
-from .specification import Specification
+from .specification import BatchRepositoryUpdate, Specification
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -58,8 +60,19 @@ class PyreRunner:
             invocation += f" --typeshed {typeshed_override}"
         self._pyre_invocation: str = invocation
 
-    def update(self) -> None:
-        self._specification.new_state.update(self._environment, self._working_directory)
+    def update(self) -> List[Mapping[str, int]]:
+        incremental_update_logs: List[Mapping[str, int]] = []
+        new_state = self._specification.new_state
+        updates = new_state.update_steps()
+        for expected, update in enumerate(updates):
+            update.update(self._environment, self._working_directory)
+            while True:
+                incremental_update_logs = self.run_profile("incremental_updates")
+                if len(incremental_update_logs) > expected:
+                    break
+                else:
+                    sleep(1)
+        return incremental_update_logs
 
     def run_check(self) -> List[PyreError]:
         pyre_check_command = (
@@ -78,18 +91,19 @@ class PyreRunner:
         else:
             return [PyreError.from_json(x) for x in json.loads(output.stdout)]
 
-    def run_start(self) -> None:
+    def run_start(self) -> Mapping[str, int]:
         pyre_start_command = (
             # Use `pyre restart` instead of `pyre start` as the we want to:
             # - Kill existing servers
             # - Force the initial check to finish
             f"{self._pyre_invocation} {self._specification.pyre_start_pyre_options} "
-            "--no-saved-state "
+            "--no-saved-state --enable-profiling "
             f"restart {self._specification.pyre_start_options}"
         ).rstrip()
         self._environment.checked_run(
             working_directory=self._working_directory, command=pyre_start_command
         )
+        return self.run_profile("cold_start_phases")
 
     def run_stop(self) -> None:
         self._environment.checked_run(
@@ -115,6 +129,27 @@ class PyreRunner:
         else:
             return [PyreError.from_json(x) for x in json.loads(output.stdout)]
 
+    @overload
+    def run_profile(
+        self, output_kind: Literal["incremental_updates"]
+    ) -> List[Mapping[str, int]]:
+        ...
+
+    @overload  # noqa T20027161
+    def run_profile(
+        self, output_kind: Literal["cold_start_phases"]
+    ) -> Mapping[str, int]:
+        ...
+
+    def run_profile(self, output_kind: str) -> object:  # noqa T20027161
+        pyre_profile_command = (
+            f"{self._pyre_invocation} " f"profile --output={output_kind}"
+        ).rstrip()
+        output = self._environment.checked_run(
+            working_directory=self._working_directory, command=pyre_profile_command
+        )
+        return json.loads(output.stdout)
+
 
 @contextmanager
 def _create_pyre_runner(
@@ -139,15 +174,31 @@ class InconsistentOutput:
 
 
 @dataclass
+class ProfileLogs:
+    incremental_update_logs: List[Mapping[str, int]]
+    cold_start_log: Mapping[str, int]
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "incremental_update_logs": self.incremental_update_logs,
+            "cold_start_log": self.cold_start_log,
+        }
+
+    def total_of_totals(self) -> int:
+        return sum(log["total"] for log in self.incremental_update_logs)
+
+
+@dataclass
 class ResultComparison:
     discrepancy: Optional[InconsistentOutput]
     full_check_time: int
-    incremental_check_time: int
+    profile_logs: ProfileLogs
 
     def to_json(self, dont_show_discrepancy: bool = False) -> Dict[str, Any]:
         result: Dict[str, Any] = {
             "full_check_time": self.full_check_time,
-            "incremental_check_time": self.incremental_check_time,
+            "incremental_check_time": self.profile_logs.total_of_totals(),
+            "profile_logs": self.profile_logs.to_json(),
         }
         discrepancy = self.discrepancy
         if dont_show_discrepancy:
@@ -165,14 +216,12 @@ def compare_server_to_full(
     LOG.info("Preparing base repository state...")
     with _create_pyre_runner(environment, specification) as pyre_runner:
         LOG.debug("Starting pyre server...")
-        pyre_runner.run_start()
+        cold_start_log = pyre_runner.run_start()
         LOG.debug("Preparing updated repository state...")
-        pyre_runner.update()
+        incremental_update_logs = pyre_runner.update()
 
-        start_time = time()
         LOG.info("Running pyre incremental check...")
         incremental_check_output = pyre_runner.run_incremental()
-        incremental_check_time = int((time() - start_time) * 1000)
         LOG.debug(f"Stopping pyre server...")
         pyre_runner.run_stop()
         LOG.info(
@@ -192,24 +241,25 @@ def compare_server_to_full(
         if incremental_check_output == full_check_output
         else InconsistentOutput(full_check_output, incremental_check_output)
     )
-    return ResultComparison(discrepancy, full_check_time, incremental_check_time)
+    profile_logs = ProfileLogs(incremental_update_logs, cold_start_log)
+    return ResultComparison(discrepancy, full_check_time, profile_logs)
 
 
-def benchmark_server(environment: Environment, specification: Specification) -> int:
+def benchmark_server(
+    environment: Environment, specification: Specification
+) -> ProfileLogs:
     LOG.info("Preparing base repository state...")
     with _create_pyre_runner(environment, specification) as pyre_runner:
         LOG.debug("Starting pyre server...")
-        pyre_runner.run_start()
+        cold_start_log = pyre_runner.run_start()
         LOG.debug("Preparing updated repository state...")
-        pyre_runner.update()
+        incremental_update_logs = pyre_runner.update()
 
-        start_time = time()
         LOG.info("Running pyre incremental check...")
         incremental_check_output = pyre_runner.run_incremental()
-        incremental_check_time = int((time() - start_time) * 1000)
         LOG.debug(f"Stopping pyre server...")
         pyre_runner.run_stop()
         LOG.info(
             f"Pyre incremental check successfully finished (with {len(incremental_check_output)} errors)."  # noqa: line too long
         )
-    return incremental_check_time
+    return ProfileLogs(incremental_update_logs, cold_start_log)
