@@ -39,7 +39,11 @@ class Rage(Command):
         rage.set_defaults(command=cls)
 
     def _flags(self) -> List[str]:
-        return []
+        log_directory = self._log_directory
+        if log_directory:
+            return ["-log-directory", log_directory]
+        else:
+            return []
 
     def _run(self) -> None:
         # Do not use logging. Logging goes to stderr.

@@ -50,13 +50,13 @@ let get_pyre_locks () =
   | Unix.Unix_error _ -> []
 
 
-let run_rage local_root () =
+let run_rage log_directory local_root () =
   Out_channel.printf
     "Actual binary version: %s\nBinary build info: %s\n"
     (Version.version ())
     (Version.build_info ());
   let configuration =
-    Configuration.Analysis.create ~local_root:(Path.create_absolute local_root) ()
+    Configuration.Analysis.create ?log_directory ~local_root:(Path.create_absolute local_root) ()
   in
   let logs =
     get_mercurial_base ()
@@ -73,5 +73,7 @@ let command =
   let open Command.Spec in
   Command.basic_spec
     ~summary:"Reports debugging diagnostics for Pyre to the standard output."
-    (empty +> anon (maybe_with_default "." ("source-root" %: string)))
+    ( empty
+    +> flag "-log-directory" (optional string) ~doc:"Location to write logs and other data"
+    +> anon (maybe_with_default "." ("source-root" %: string)) )
     run_rage
