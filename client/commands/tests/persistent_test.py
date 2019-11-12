@@ -40,7 +40,14 @@ class PersistentTest(unittest.TestCase):
             )
             self.assertEqual(
                 command._flags(),
-                ["-log-identifier", '"."', "-expected-binary-version", "hash"],
+                [
+                    "-log-identifier",
+                    '"."',
+                    "-expected-binary-version",
+                    "hash",
+                    "-log-directory",
+                    ".pyre",
+                ],
             )
             self.assertEqual(arguments.store_type_check_resolution, False)
             command.run()
