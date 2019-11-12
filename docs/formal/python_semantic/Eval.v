@@ -428,7 +428,7 @@ Definition final_state : State := set test_state "y"%string (Value.Integer 42).
 
 (* Function call `y := int_id(42)` *)
 Definition Prog :=
-    Statement.Call (Some (YID, Typ.None))
+    Statement.Call (Some (YID, Typ.Integer))
       (Expression.Id "int_id"%string)
       ((None, Int 42) :: nil).
 
@@ -499,6 +499,7 @@ now apply sssWhileFalse.
 now apply sss_refl.
 Qed.
 
+End Test.
 (* end hide *)
 
 (** Single Step Semantic is a deterministic relation *)
@@ -554,4 +555,3 @@ destruct h as [
 - inversion h; subst; clear h; [ | now idtac ].
   now rewrite H in H8; injection H8; intros; subst.
 Qed.
-End Test.

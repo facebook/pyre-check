@@ -1235,3 +1235,85 @@ destruct 1 as [
     right; exists (set saved_state target v); exists Statement.Pass; exists k0.
     now constructor.
 Qed.
+
+(* begin hide *)
+Module Test.
+
+(* Creating a test context with no type information on variable, and
+the same function information that Eval.Test.test_state *)
+Definition test_context: Context := Empty (info Eval.Test.test_state).
+
+(* Final typing context, with y:int as only type information *)
+Definition final_context : Context := set test_context "y"%string Typ.Integer.
+
+(* We show here that in the context `test_context`, and under any return type,
+   type checking the program Eval.Test.Prog only introduces y:int in the
+     context *)
+Lemma Typing_Prog: forall return_type,
+  typ test_context return_type Eval.Test.Prog final_context.
+Proof.
+intro return_type.
+unfold Test.Prog, final_context, Test.YID.
+apply typCallFun with (function_def := Test.int_id)
+(* here I have to provide the return context of the function call, which 
+   is not used in the conclusion, but a witness that the body of the function
+   was correctly typed *)
+  (return_context := set test_context "x"%string Typ.Integer).
+- reflexivity.
+- reflexivity.
+- simpl; split; [| exact I].
+  now constructor.
+- constructor.
+  constructor.
+  simpl.
+  reflexivity.
+Qed.
+
+Definition test_context2 : Context := Empty (info Eval.Test.test_state2).
+
+Lemma Typing_Prog2: forall return_type,
+  typ test_context2 return_type Eval.Test.Prog2 test_context2.
+Proof.
+intro return_type.
+apply typCallProc with (function_def := Test.expect_int)
+  (return_context :=
+   mkContext (prepare_call_context Empty0 (parameters Test.expect_int))
+     (info test_context2)).
+- reflexivity.
+- reflexivity.
+- simpl; split; [| exact I].
+  now constructor.
+- now constructor.
+Qed.
+
+(* Some well-formed proofs *)
+Lemma well_formed_int_id : well_formed_function (info test_context) Test.int_id.
+Proof.
+unfold well_formed_function.
+exists (mkContext (prepare_call_context Empty0 (parameters Test.int_id))
+       (info test_context)).
+constructor.
+constructor.
+simpl.
+reflexivity.
+Qed.
+
+Lemma well_formed_test: well_formed Test.test_state test_context.
+Proof.
+split; [| split; [ reflexivity | intros fname fdef ]].
+- intros id T.
+  unfold test_context; simpl.
+  unfold get0; simpl.
+  unfold get_map; simpl.
+  intro h; discriminate h.
+- unfold get_info; simpl.
+  rewrite get_set_map.
+  case_eq (fname =? "int_id")%string; intro heq.
+  + intro h; injection h; clear h; intro h; subst.
+    exact well_formed_int_id.
+  + unfold get_map; simpl.
+    intro h; discriminate h.
+Qed.
+
+End Test.
+(* end hide *)
