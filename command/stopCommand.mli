@@ -6,6 +6,6 @@
 open Core
 
 (* Exposed for testing. *)
-val stop : local_root:string -> int
+val stop : log_directory:string option -> local_root:string -> int
 
 val command : Command.t

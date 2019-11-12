@@ -12,9 +12,9 @@ module Time = Core_kernel.Time_ns.Span
 
 exception NotRunning
 
-let stop ~local_root =
+let stop ~log_directory ~local_root =
   let configuration =
-    Configuration.Analysis.create ~local_root:(Path.create_absolute local_root) ()
+    Configuration.Analysis.create ?log_directory ~local_root:(Path.create_absolute local_root) ()
   in
   try
     let in_channel, _ =
@@ -79,13 +79,16 @@ let stop ~local_root =
       1
 
 
-let run local_root () =
-  let code = stop ~local_root in
+let run log_directory local_root () =
+  let code = stop ~log_directory ~local_root in
   exit code
 
 
 let command =
   Command.basic_spec
     ~summary:"Stop the server"
-    Command.Spec.(empty +> anon (maybe_with_default "." ("source-root" %: string)))
+    Command.Spec.(
+      empty
+      +> flag "-log-directory" (optional string) ~doc:"Location to write logs and other data"
+      +> anon (maybe_with_default "." ("source-root" %: string)))
     run

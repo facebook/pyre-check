@@ -20,7 +20,7 @@ let test_persistent_client_connect context =
   in
   let tear_down client_socket _ =
     Unix.close client_socket;
-    Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore
+    Commands.Stop.stop ~log_directory:None ~local_root:(Path.absolute local_root) |> ignore
   in
   let client_socket = bracket set_up tear_down context in
   Socket.write client_socket (Protocol.Request.ClientConnectionRequest Protocol.Persistent);

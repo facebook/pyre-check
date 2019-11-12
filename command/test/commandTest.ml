@@ -144,7 +144,7 @@ let stop_server
       _;
     }
   =
-  Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore;
+  Commands.Stop.stop ~log_directory:None ~local_root:(Path.absolute local_root) |> ignore;
   with_timeout ~seconds:3 poll_for_deletion socket_path;
   clean_environment ()
 

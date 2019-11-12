@@ -99,7 +99,7 @@ let test_language_server_protocol_json_format context =
 let test_server_stops context =
   let local_root = bracket_tmpdir context |> Pyre.Path.create_absolute in
   let pid = Pid.of_int (CommandTest.start_server ~local_root ()) in
-  Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore;
+  Commands.Stop.stop ~log_directory:None ~local_root:(Path.absolute local_root) |> ignore;
   let {
     Configuration.Server.socket = { path = socket_path; _ };
     json_socket = { path = json_socket_path; _ };
@@ -140,7 +140,7 @@ let test_server_exits_on_directory_removal context =
 
 let test_stop_handles_unix_errors context =
   let long_path = bracket_tmpdir ~suffix:(String.init ~f:(fun _ -> 'a') 140) context in
-  Commands.Stop.stop ~local_root:long_path |> ignore
+  Commands.Stop.stop ~log_directory:None ~local_root:long_path |> ignore
 
 
 let test_json_socket context =
@@ -151,7 +151,7 @@ let test_json_socket context =
     Pid.of_int (CommandTest.start_server ~local_root ~expected_version:"1234" ())
   in
   let stop_server pid _ =
-    Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore;
+    Commands.Stop.stop ~log_directory:None ~local_root:(Path.absolute local_root) |> ignore;
     CommandTest.with_timeout
       ~seconds:1
       (fun () ->
@@ -1037,7 +1037,7 @@ let test_connect context =
    * routine is called, and due to the nature of the Lazy library this is non-reentrant. *)
   Unix.nanosleep 0.5 |> ignore;
   let cleanup () =
-    Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore;
+    Commands.Stop.stop ~log_directory:None ~local_root:(Path.absolute local_root) |> ignore;
     CommandTest.with_timeout CommandTest.poll_for_deletion socket_path ~seconds:3;
     CommandTest.with_timeout CommandTest.poll_for_deletion json_socket_path ~seconds:3
   in

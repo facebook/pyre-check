@@ -38,7 +38,11 @@ class Stop(Command):
         stop.set_defaults(command=cls)
 
     def _flags(self) -> List[str]:
-        return []
+        log_directory = self._log_directory
+        flags = []
+        if log_directory:
+            flags.extend(["-log-directory", log_directory])
+        return flags
 
     def _run(self) -> None:
         def _kill():
@@ -68,6 +72,7 @@ class Stop(Command):
                         # process has terminated, a ProcessLookupError will be thrown.
                         os.kill(pid_to_poll, 0)
                         time.sleep(0.1)
+                stopped = True
             except ClientException:
                 # An error was encountered when running `pyre stop`.
                 stopped = False

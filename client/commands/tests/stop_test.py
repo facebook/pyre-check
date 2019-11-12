@@ -73,4 +73,4 @@ class StopTest(unittest.TestCase):
         arguments.debug = True
         call_client.side_effect = None
         flags = commands.Stop(arguments, configuration, analysis_directory)._flags()
-        self.assertEqual(flags, [])
+        self.assertEqual(flags, ["-log-directory", ".pyre"])
