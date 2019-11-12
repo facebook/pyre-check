@@ -8,8 +8,9 @@
 import argparse
 import logging
 from logging import Logger
-from typing import List
+from typing import List, Optional
 
+from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from .command import ExitCode, typeshed_search_path
 from .reporting import Reporting
 
@@ -20,7 +21,12 @@ LOG: Logger = logging.getLogger(__name__)
 class Check(Reporting):
     NAME = "check"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         super(Check, self).__init__(arguments, configuration, analysis_directory)
         self._number_of_workers = configuration.number_of_workers
 
@@ -33,6 +39,11 @@ class Check(Reporting):
         """,
         )
         check.set_defaults(command=cls)
+
+    def generate_analysis_directory(self) -> AnalysisDirectory:
+        return resolve_analysis_directory(
+            self._arguments, self._configuration, build=True, isolate=True
+        )
 
     def _flags(self) -> List[str]:
         flags = super()._flags()

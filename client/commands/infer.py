@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Set, Union  # noqa
 
 from .. import apply_annotations, log
+from ..analysis_directory import AnalysisDirectory
 from .check import Check
 from .command import JSON, Command, Result, typeshed_search_path
 from .reporting import Reporting
@@ -393,7 +394,12 @@ def file_exists(path):
 class Infer(Reporting):
     NAME = "infer"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         arguments.show_error_traces = True
         arguments.output = JSON
         super(Infer, self).__init__(arguments, configuration, analysis_directory)

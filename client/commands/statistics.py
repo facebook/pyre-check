@@ -10,7 +10,7 @@ import os
 from collections import defaultdict
 from pathlib import Path
 from re import compile
-from typing import Dict, List, Pattern, Sequence
+from typing import Dict, List, Optional, Pattern, Sequence
 
 import libcst as cst
 
@@ -209,7 +209,7 @@ class Statistics(Command):
         self,
         arguments: argparse.Namespace,
         configuration: Configuration,
-        analysis_directory: AnalysisDirectory,
+        analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Statistics, self).__init__(arguments, configuration, analysis_directory)
         self._local_configuration: str = arguments.local_configuration

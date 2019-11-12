@@ -7,9 +7,10 @@
 import argparse
 import json
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from .. import log
+from ..analysis_directory import AnalysisDirectory
 from .command import Command
 
 
@@ -111,7 +112,12 @@ class PrintColor:
 class Color(Command):
     NAME = "color"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         self.path = arguments.path
         super(Color, self).__init__(arguments, configuration, analysis_directory)
 

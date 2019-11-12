@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from ... import commands, configuration_monitor, project_files_monitor
+from ...analysis_directory import AnalysisDirectory
 from ...commands import restart
 from .command_test import mock_arguments, mock_configuration
 
@@ -28,7 +29,7 @@ class RestartTest(unittest.TestCase):
 
         configuration = mock_configuration()
 
-        analysis_directory = "."
+        analysis_directory = AnalysisDirectory(".")
 
         with patch.object(restart, "Stop") as commands_Stop, patch.object(
             restart, "Start"

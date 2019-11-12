@@ -24,7 +24,6 @@ from . import (
     switch_root,
     translate_arguments,
 )
-from .analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from .commands import (  # noqa
     Command,
     ExitCode,
@@ -84,8 +83,8 @@ def main() -> int:
             LOG.warning("Defaulting to non-incremental check.")
             arguments.command = commands.Check
 
+    command = None
     configuration = None
-    analysis_directory = None
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
@@ -102,9 +101,7 @@ def main() -> int:
         find_log_directory(arguments)
         log.initialize(arguments)
 
-        if arguments.command in [commands.Initialize]:
-            analysis_directory = AnalysisDirectory(".")
-        else:
+        if arguments.command not in [commands.Initialize]:
             if arguments.version:
                 binary_version = get_binary_version_from_file(
                     arguments.local_configuration
@@ -132,22 +129,8 @@ def main() -> int:
                 )
                 return ExitCode.SUCCESS
 
-            if arguments.command in [commands.Kill]:
-                analysis_directory = AnalysisDirectory(".")
-            else:
-                isolate = arguments.command in [commands.Analyze, commands.Check]
-                analysis_directory = resolve_analysis_directory(
-                    arguments, commands, configuration, isolate=isolate
-                )
-
-        command = arguments.command
-        exit_code = (
-            # pyre-fixme[6]: Expected Configuration for 2nd anonymous parameter
-            # to call Kill.__init__ but got Optional[Configuration].
-            command(arguments, configuration, analysis_directory)
-            .run()
-            .exit_code()
-        )
+        command = arguments.command(arguments, configuration)
+        exit_code = command.run().exit_code()
     except buck.BuckException as error:
         LOG.error(str(error))
         if arguments.command == commands.Persistent:
@@ -171,8 +154,8 @@ def main() -> int:
         exit_code = ExitCode.SUCCESS
     finally:
         log.cleanup(arguments)
-        if analysis_directory:
-            analysis_directory.cleanup()
+        if command:
+            command.analysis_directory.cleanup()
         if configuration and configuration.logger:
             log_statistics(
                 "perfpipe_pyre_usage",

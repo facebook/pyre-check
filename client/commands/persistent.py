@@ -13,6 +13,7 @@ import sys
 import time
 from typing import List, Optional
 
+from ..analysis_directory import AnalysisDirectory
 from .command import Command, IncrementalStyle
 from .start import Start
 
@@ -20,7 +21,12 @@ from .start import Start
 class Persistent(Command):
     NAME = "persistent"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         super(Persistent, self).__init__(arguments, configuration, analysis_directory)
 
     @classmethod

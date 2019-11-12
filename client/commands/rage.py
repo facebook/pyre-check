@@ -5,9 +5,10 @@
 
 # pyre-unsafe
 import argparse
-from typing import List
+from typing import List, Optional
 
 from .. import get_binary_version
+from ..analysis_directory import AnalysisDirectory
 from ..version import __version__
 from .command import Command
 
@@ -15,7 +16,12 @@ from .command import Command
 class Rage(Command):
     NAME = "rage"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         super(Rage, self).__init__(arguments, configuration, analysis_directory)
         # pyre-fixme[16]: `Namespace` has no attribute `command`.
         self._arguments.command = self.NAME

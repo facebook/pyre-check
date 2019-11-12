@@ -13,6 +13,7 @@ from logging import Logger
 from typing import Dict, List, Optional
 
 from .. import json_rpc, log
+from ..analysis_directory import AnalysisDirectory
 from .command import Command
 
 
@@ -38,7 +39,12 @@ class Query(Command):
                 query = query.replace(path, symbolic_link_mapping[absolute_path])
         return query
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         super(Query, self).__init__(arguments, configuration, analysis_directory)
         self.query = self._rewrite_paths(arguments.query)
         self._version_hash = configuration.version_hash

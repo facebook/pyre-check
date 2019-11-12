@@ -13,9 +13,10 @@ import shutil
 import subprocess
 import sys
 from logging import Logger
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .. import BINARY_NAME, CONFIGURATION_FILE, find_typeshed, log
+from ..analysis_directory import AnalysisDirectory
 from ..exceptions import EnvironmentException
 from .command import Command
 
@@ -26,7 +27,12 @@ LOG: Logger = logging.getLogger(__name__)
 class Initialize(Command):
     NAME = "initialize"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         self._local = arguments.local  # type: bool
         super(Initialize, self).__init__(arguments, configuration, analysis_directory)
 
@@ -39,6 +45,9 @@ class Initialize(Command):
             action="store_true",
             help="Initializes a local configuration in a project subdirectory.",
         )
+
+    def generate_analysis_directory(self) -> AnalysisDirectory:
+        return AnalysisDirectory(".")
 
     def _get_configuration(self) -> Dict[str, Any]:
         configuration = {}  # type: Dict[str, Any]

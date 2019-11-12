@@ -356,6 +356,7 @@ class FilesystemTest(unittest.TestCase):
         arguments.current_directory = "/root/local"
         arguments.use_buck_builder = False
         arguments.ignore_unbuilt_dependencies = False
+        arguments.local_configuration = None
         configuration = MagicMock()
         configuration.source_directories = []
         configuration.local_configuration_root = "/root/local"
@@ -403,9 +404,8 @@ class FilesystemTest(unittest.TestCase):
             arguments.targets = ["arguments_target"]
             configuration.source_directories = ["configuration_source_directory"]
 
-            analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration
-            )
+            command = commands.Check(arguments, configuration)
+            analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with({"arguments_target"}, build=True)
@@ -418,11 +418,8 @@ class FilesystemTest(unittest.TestCase):
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
             # same test as above, but Start instead of Check; build should be False
-            arguments.command = commands.Start
-
-            analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration
-            )
+            command = commands.Start(arguments, configuration)
+            analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(
@@ -437,19 +434,15 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
-            arguments.command = commands.Start
-            analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration
-            )
+            command = commands.Start(arguments, configuration)
+            analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(
                 {"arguments_target"}, build=False
             )
-            arguments.command = commands.Restart
-            analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration
-            )
+            command = commands.Restart(arguments, configuration)
+            analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with({"arguments_target"}, build=True)
@@ -467,9 +460,8 @@ class FilesystemTest(unittest.TestCase):
             configuration.targets = ["configuration_target"]
             configuration.source_directories = []
 
-            analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration
-            )
+            command = commands.Check(arguments, configuration)
+            analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
 
@@ -489,9 +481,8 @@ class FilesystemTest(unittest.TestCase):
             arguments.targets = []
             configuration.targets = ["."]
 
-            analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration
-            )
+            command = commands.Check(arguments, configuration)
+            analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
 

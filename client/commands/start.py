@@ -13,6 +13,7 @@ from logging import Logger
 from typing import List, Optional
 
 from .. import configuration_monitor, filesystem, project_files_monitor
+from ..analysis_directory import AnalysisDirectory
 from .command import ExitCode, IncrementalStyle, typeshed_search_path
 from .reporting import Reporting
 
@@ -23,7 +24,12 @@ LOG: Logger = logging.getLogger(__name__)
 class Start(Reporting):
     NAME = "start"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         super(Start, self).__init__(arguments, configuration, analysis_directory)
         self._taint_models_path = configuration.taint_models_path  # type: List[str]
         self._terminal = arguments.terminal  # type: bool

@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import functools
 import logging
 import os
@@ -12,6 +13,7 @@ from time import time
 from typing import Dict, List, NamedTuple, Optional, Set
 
 from . import _resolve_filter_paths, buck, filesystem, log
+from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .filesystem import (
     BuckBuilder,
@@ -330,7 +332,10 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
 
 def resolve_analysis_directory(
-    arguments, commands, configuration, isolate: bool = False  # pyre-fixme[2]
+    arguments: argparse.Namespace,
+    configuration: Configuration,
+    build: bool = False,
+    isolate: bool = False,
 ) -> AnalysisDirectory:
     # Only read from the configuration if no explicit targets are passed in.
     if not arguments.source_directories and not arguments.targets:
@@ -373,11 +378,7 @@ def resolve_analysis_directory(
             search_path=configuration.search_path,
         )
     else:
-        build = arguments.build or arguments.command in [
-            commands.Analyze,
-            commands.Check,
-            commands.Restart,
-        ]
+        build = arguments.build or build
         buck_builder = buck.SimpleBuckBuilder(build=build)
         if use_buck_builder:
             buck_root = buck.find_buck_root(os.getcwd())

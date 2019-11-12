@@ -10,8 +10,9 @@ import logging
 import os
 import time
 from logging import Logger
-from typing import List
+from typing import List, Optional
 
+from ..analysis_directory import AnalysisDirectory
 from ..project_files_monitor import ProjectFilesMonitor
 from .command import ClientException, Command, State
 from .kill import Kill
@@ -23,7 +24,12 @@ LOG: Logger = logging.getLogger(__name__)
 class Stop(Command):
     NAME = "stop"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         super(Stop, self).__init__(arguments, configuration, analysis_directory)
 
     @classmethod

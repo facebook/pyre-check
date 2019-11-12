@@ -12,9 +12,10 @@ import logging
 import os
 import subprocess
 from logging import Logger
-from typing import IO, List, cast
+from typing import IO, List, Optional, cast
 
 from .. import json_rpc
+from ..analysis_directory import AnalysisDirectory
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
 from .command import (
     ClientException,
@@ -39,7 +40,12 @@ def _convert_to_result(response: json_rpc.Response):
 class Incremental(Reporting):
     NAME = "incremental"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         super(Incremental, self).__init__(arguments, configuration, analysis_directory)
         self._nonblocking = arguments.nonblocking  # type: bool
         self._incremental_style = arguments.incremental_style  # type: bool

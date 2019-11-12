@@ -9,7 +9,7 @@ import os
 from typing import List, Optional  # noqa
 
 from .. import assert_writable_directory, log, readable_directory
-from ..analysis_directory import AnalysisDirectory
+from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from .check import Check
 
@@ -31,7 +31,7 @@ class Analyze(Check):
         self,
         arguments: argparse.Namespace,
         configuration: Configuration,
-        analysis_directory: AnalysisDirectory,
+        analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Analyze, self).__init__(arguments, configuration, analysis_directory)
         self._analysis = arguments.analysis  # type: str
@@ -75,6 +75,11 @@ class Analyze(Check):
         analyze.add_argument("--dump-call-graph", action="store_true")
         analyze.add_argument("--repository-root", type=os.path.abspath)
         analyze.add_argument("--rule", action="append", type=int)
+
+    def generate_analysis_directory(self) -> AnalysisDirectory:
+        return resolve_analysis_directory(
+            self._arguments, self._configuration, build=True, isolate=True
+        )
 
     def _flags(self) -> List[str]:
         flags = super()._flags()

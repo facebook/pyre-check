@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, List
 from unittest.mock import MagicMock, call, patch
 
-from .. import buck, commands, filesystem
+from .. import buck, filesystem
 from ..analysis_directory import (
     AnalysisDirectory,
     SharedAnalysisDirectory,
@@ -68,9 +68,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
         arguments.targets = []
         arguments.filter_directory = None
         expected_analysis_directory = AnalysisDirectory("a/b")
-        analysis_directory = resolve_analysis_directory(
-            arguments, commands, configuration
-        )
+        analysis_directory = resolve_analysis_directory(arguments, configuration)
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
@@ -81,9 +79,7 @@ class AnalysisDirectoryTest(unittest.TestCase):
         expected_analysis_directory = AnalysisDirectory(
             "/symlinked/directory", filter_paths=["/real/directory"]
         )
-        analysis_directory = resolve_analysis_directory(
-            arguments, commands, configuration
-        )
+        analysis_directory = resolve_analysis_directory(arguments, configuration)
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
@@ -253,9 +249,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/project",
             filter_paths=["/real/directory"],
         )
-        analysis_directory = resolve_analysis_directory(
-            arguments, commands, configuration
-        )
+        analysis_directory = resolve_analysis_directory(arguments, configuration)
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
@@ -270,9 +264,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/project",
             filter_paths=["/filter"],
         )
-        analysis_directory = resolve_analysis_directory(
-            arguments, commands, configuration
-        )
+        analysis_directory = resolve_analysis_directory(arguments, configuration)
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
@@ -288,9 +280,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/project",
             filter_paths=["/filter"],
         )
-        analysis_directory = resolve_analysis_directory(
-            arguments, commands, configuration
-        )
+        analysis_directory = resolve_analysis_directory(arguments, configuration)
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )

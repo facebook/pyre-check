@@ -6,7 +6,9 @@
 # pyre-unsafe
 
 import argparse
+from typing import Optional
 
+from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from .command import Command, IncrementalStyle
 from .incremental import Incremental
 from .start import Start
@@ -16,7 +18,12 @@ from .stop import Stop
 class Restart(Command):
     NAME = "restart"
 
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments,
+        configuration,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
         super(Restart, self).__init__(arguments, configuration, analysis_directory)
 
     @classmethod
@@ -45,6 +52,11 @@ class Restart(Command):
             choices=list(IncrementalStyle),
             default=IncrementalStyle.SHALLOW,
             help="How to approach doing incremental checks.",
+        )
+
+    def generate_analysis_directory(self) -> AnalysisDirectory:
+        return resolve_analysis_directory(
+            self._arguments, self._configuration, build=True
         )
 
     def _run(self) -> None:

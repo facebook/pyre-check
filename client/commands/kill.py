@@ -9,7 +9,7 @@ import os
 import shutil
 import signal
 import subprocess
-from typing import Iterable  # noqa
+from typing import Optional
 
 import psutil
 
@@ -29,7 +29,7 @@ class Kill(Command):
         self,
         arguments: argparse.Namespace,
         configuration: Configuration,
-        analysis_directory: AnalysisDirectory,
+        analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Kill, self).__init__(arguments, configuration, analysis_directory)
 
@@ -40,6 +40,9 @@ class Kill(Command):
         kill.add_argument(
             "--with-fire", action="store_true", help="Adds emphasis to the command."
         )
+
+    def generate_analysis_directory(self) -> AnalysisDirectory:
+        return AnalysisDirectory(".")
 
     def _run(self) -> None:
         # Kills all processes that have the same binary as the one specified

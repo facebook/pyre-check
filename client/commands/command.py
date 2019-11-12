@@ -18,7 +18,7 @@ from abc import abstractmethod
 from typing import Iterable, List, Optional, Set  # noqa
 
 from .. import json_rpc, log, readable_directory
-from ..analysis_directory import AnalysisDirectory
+from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from ..filesystem import remove_if_exists
@@ -138,12 +138,11 @@ class Command:
         self,
         arguments: argparse.Namespace,
         configuration: Configuration,
-        analysis_directory: AnalysisDirectory,
+        analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         self._arguments = arguments
         self._configuration = configuration
 
-        self._analysis_directory = analysis_directory
         self._debug = arguments.debug  # type: bool
         self._enable_profiling = arguments.enable_profiling  # type: bool
         self._enable_memory_profiling = arguments.enable_memory_profiling  # type: bool
@@ -173,6 +172,10 @@ class Command:
             )
         else:
             self._local_root = arguments.original_directory
+
+        self._analysis_directory: AnalysisDirectory = (
+            analysis_directory or self.generate_analysis_directory()
+        )
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
@@ -353,7 +356,8 @@ class Command:
         parser.add_argument(
             "--saved-state-project", default=None, type=str, help=argparse.SUPPRESS
         )
-        # Temporary flag to help migrate to json sockets for incremental and query commands.
+        # Temporary flag to help migrate to json sockets for incremental and query
+        # commands.
         parser.add_argument(
             "--use-json-sockets",
             action="store_true",
@@ -364,6 +368,9 @@ class Command:
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         pass
+
+    def generate_analysis_directory(self) -> AnalysisDirectory:
+        return resolve_analysis_directory(self._arguments, self._configuration)
 
     def run(self) -> "Command":
         self._run()
@@ -554,3 +561,7 @@ class Command:
 
     def profiling_log_path(self) -> str:
         return os.path.join(self._log_directory, "profiling.log")
+
+    @property
+    def analysis_directory(self) -> AnalysisDirectory:
+        return self._analysis_directory
