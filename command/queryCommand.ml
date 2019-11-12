@@ -10,9 +10,9 @@ open Server
 open Protocol
 open TypeQuery
 
-let run_query serialized local_root () =
+let run_query log_directory serialized local_root () =
   let local_root = Path.create_absolute local_root in
-  let configuration = Configuration.Analysis.create ~local_root () in
+  let configuration = Configuration.Analysis.create ~local_root ?log_directory () in
   (fun () ->
     if String.equal serialized "help" then
       Log.print "%s" (Query.help ())
@@ -71,5 +71,8 @@ let command =
   let open Command.Spec in
   Command.basic_spec
     ~summary:"Queries the server for type order information."
-    (empty +> anon ("query" %: string) +> anon (maybe_with_default "." ("source-root" %: string)))
+    ( empty
+    +> flag "-log-directory" (optional string) ~doc:"Location to write logs and other data"
+    +> anon ("query" %: string)
+    +> anon (maybe_with_default "." ("source-root" %: string)) )
     run_query

@@ -25,6 +25,13 @@ class QueryTest(unittest.TestCase):
             commands.Query(arguments, configuration, AnalysisDirectory(".")).run()
             call_client.assert_called_once_with(command=commands.Query.NAME)
 
+        arguments.log_directory = "/tmp/foo"
+        arguments.query = "query"
+        self.assertEqual(
+            commands.Query(arguments, configuration, AnalysisDirectory("."))._flags(),
+            ["query", "-log-directory", "/tmp/foo"],
+        )
+
     def test_rewrite_paths(self) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()

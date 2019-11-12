@@ -69,7 +69,11 @@ class Query(Command):
         query.add_argument("query", help=query_argument_message)
 
     def _flags(self) -> List[str]:
-        return [self.query]
+        flags = [self.query]
+        log_directory = self._log_directory
+        if log_directory:
+            flags.extend(["-log-directory", log_directory])
+        return flags
 
     def _run(self) -> None:
         if self._use_json_sockets:
