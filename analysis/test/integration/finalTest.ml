@@ -189,6 +189,52 @@ let test_final_attributes context =
         x = 9
     |}
     ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+  assert_type_errors
+    {|
+      from typing import Final
+      class A:
+        x: Final[int]
+        y: Final[int]
+
+        def __init__(self) -> None:
+            self.x = 1
+      |}
+    [
+      "Uninitialized attribute [13]: Attribute `y` is declared in class `A` to have type `int` \
+       but is never initialized.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+      class A:
+        x: Final[int] = 100
+        y: Final[int]
+
+        def __init__(self) -> None:
+            self.x = 1
+      |}
+    [
+      "Uninitialized attribute [13]: Attribute `y` is declared in class `A` to have type `int` \
+       but is never initialized.";
+      "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+      class A:
+        x: Final[int]
+        y: Final[int]
+
+        def foo(self) -> None:
+            self.x = 1
+      |}
+    [
+      "Uninitialized attribute [13]: Attribute `x` is declared in class `A` to have type `int` \
+       but is never initialized.";
+      "Uninitialized attribute [13]: Attribute `y` is declared in class `A` to have type `int` \
+       but is never initialized.";
+      "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
+    ];
   ()
 
 

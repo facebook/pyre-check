@@ -3145,6 +3145,15 @@ module State (Context : Context) = struct
                       in
                       let read_only_non_property_attribute =
                         match attribute >>| fst >>| Node.value with
+                        | Some
+                            {
+                              AnnotatedAttribute.visibility = ReadOnly _;
+                              property = false;
+                              value = { Node.value = Expression.Ellipsis; _ };
+                              _;
+                            }
+                          when Define.is_constructor define ->
+                            false
                         | Some { AnnotatedAttribute.visibility = ReadOnly _; property = false; _ }
                           ->
                             true
