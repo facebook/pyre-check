@@ -534,7 +534,8 @@ module State (Context : Context) = struct
       value =
         {
           Define.signature =
-            { name; parent; parameters; return_annotation; decorators; async; _ } as signature;
+            { name; parent; parameters; return_annotation; decorators; async; nesting_define; _ }
+            as signature;
           _;
         } as define;
     }
@@ -544,7 +545,7 @@ module State (Context : Context) = struct
     (* Add type variables *)
     let resolution =
       let variables =
-        let variables_of_class class_name =
+        let type_variables_of_class class_name =
           let unarize unaries =
             let fix_invalid_parameters_in_bounds unary =
               match
@@ -573,22 +574,48 @@ module State (Context : Context) = struct
           >>| extract
           |> Option.value ~default:[]
         in
+        let type_variables_of_define signature =
+          let parser = GlobalResolution.annotation_parser global_resolution in
+          Node.create signature ~location
+          |> AnnotatedCallable.create_overload ~parser
+          |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
+          |> Type.Variable.all_free_variables
+          |> List.dedup_and_sort ~compare:Type.Variable.compare
+        in
         match Define.is_class_toplevel define with
         | true ->
             let class_name = Option.value_exn parent in
-            variables_of_class class_name
+            type_variables_of_class class_name
         | false ->
-            let define_variables =
-              let parser = GlobalResolution.annotation_parser global_resolution in
-              Node.create signature ~location
-              |> AnnotatedCallable.create_overload ~parser
-              |> (fun { parameters; _ } ->
-                   Type.Callable.create ~parameters ~annotation:Type.Top ())
-              |> Type.Variable.all_free_variables
-              |> List.dedup_and_sort ~compare:Type.Variable.compare
+            let define_variables = type_variables_of_define signature in
+            let nesting_define_variables =
+              let rec walk_nesting_define sofar = function
+                | None -> sofar
+                | Some define_name -> (
+                  (* TODO (T57339384): This operation should only depend on the signature, not the
+                     body *)
+                  match GlobalResolution.define_body global_resolution define_name with
+                  | None -> sofar
+                  | Some
+                      {
+                        Node.value =
+                          {
+                            Define.signature = { Define.Signature.nesting_define; _ } as signature;
+                            _;
+                          };
+                        _;
+                      } ->
+                      let sofar = List.rev_append (type_variables_of_define signature) sofar in
+                      walk_nesting_define sofar nesting_define )
+              in
+              walk_nesting_define [] nesting_define
             in
-            let parent_variables = Option.value_map parent ~f:variables_of_class ~default:[] in
-            List.rev_append define_variables parent_variables
+            let parent_variables =
+              (* PEP484 specifies that scope of the type variables of the outer class doesn't cover
+                 the inner one. We are able to inspect only 1 level of nesting class as a result. *)
+              Option.value_map parent ~f:type_variables_of_class ~default:[]
+            in
+            List.concat_no_order [define_variables; nesting_define_variables; parent_variables]
       in
       List.fold variables ~init:resolution ~f:(fun resolution variable ->
           Resolution.add_type_variable resolution ~variable)

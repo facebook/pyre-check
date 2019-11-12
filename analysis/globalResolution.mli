@@ -89,6 +89,8 @@ val parse_annotation
 
 val class_definition : t -> Type.t -> ClassSummary.t Node.t option
 
+val define_body : t -> Reference.t -> Define.t Node.t option
+
 val solve_ordered_types_less_or_equal
   :  t ->
   left:Type.OrderedTypes.t ->

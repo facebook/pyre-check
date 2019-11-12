@@ -38,6 +38,7 @@ type t = {
   aliases: Type.Primitive.t -> Type.alias option;
   module_definition: Reference.t -> Module.t option;
   class_definition: Type.Primitive.t -> ClassSummary.t Node.t option;
+  define_body: Reference.t -> Define.t Node.t option;
   class_metadata: Type.Primitive.t -> ClassMetadataEnvironment.class_metadata option;
   constructor: resolution:t -> Type.Primitive.t -> Type.t option;
   attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
@@ -109,6 +110,11 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
   in
   let module_definition =
     AstEnvironment.ReadOnly.get_module_metadata ?dependency ast_environment
+  in
+  let define_body =
+    UnannotatedGlobalEnvironment.ReadOnly.get_define_body
+      ?dependency
+      unannotated_global_environment
   in
   let aliases = AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment in
   let edges =
@@ -183,6 +189,7 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
     class_hierarchy;
     aliases;
     module_definition;
+    define_body;
     class_definition;
     class_metadata;
     constructor;
@@ -229,6 +236,8 @@ let primitive_name annotation =
 let class_definition { class_definition; _ } annotation =
   primitive_name annotation >>= class_definition
 
+
+let define_body { define_body; _ } name = define_body name
 
 let class_metadata { class_metadata; _ } annotation = primitive_name annotation >>= class_metadata
 
