@@ -324,6 +324,11 @@ Inductive sss: State -> Statement.t -> Cont ->
     | sssReturnSeq: forall state st k ret,
         sss state (Statement.Return ret) (KSeq st k)
             state (Statement.Return ret) k
+    (* if some `Return` is spotted at toplevel (outside any function),
+       we transition to the standard "exit" state: Pass/KStop *)
+    | sssReturnStop: forall state ret,
+        sss state (Statement.Return ret) KStop
+            state Statement.Pass KStop
     | sssPassProc: forall (state call_state: State) k,
         sss state Statement.Pass (KCall call_state None k)
             call_state Statement.Pass k
@@ -363,8 +368,8 @@ Inductive sss: State -> Statement.t -> Cont ->
 (** Multi step version of sss *)
 Inductive sssn: State -> Statement.t -> Cont ->
                State -> Statement.t -> Cont -> Prop  :=
- | sss_refl : forall state st k, sssn state st k state st k
- | sss_trans:  forall state st k state' st' k' state'' st'' k'',
+ | sss_refl: forall state st k, sssn state st k state st k
+ | sss_trans: forall state st k state' st' k' state'' st'' k'',
          sss state st k state' st' k' ->
          sssn state' st' k' state'' st'' k'' ->
          sssn state st k state'' st'' k''
@@ -511,6 +516,7 @@ destruct h as [
     | s s' ret k
     | s test body orelse k ret
     | s st k ret
+    | s ret
     | s s' k
     | s expr v k heval
     | s st0 st1 k 

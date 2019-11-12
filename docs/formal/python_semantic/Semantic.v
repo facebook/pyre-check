@@ -1093,6 +1093,9 @@ destruct h as [
   + inversion hk; subst; clear hk.
     exists context; exists context'0; exists T;
       split; [ now constructor | now split ].
+  + inversion hk; subst; clear hk.
+    exists context; exists context; exists Typ.None;
+      split; [ now constructor | now split ].
 Qed.
 
 (** If some <<arguments>> are correctly typed by some <<parameters>> then
@@ -1124,10 +1127,6 @@ Qed.
         when a return statement is missing. We can't rule it out using
         typing only. We should make sure that all programs we check
         have the relevant 'return' invocation in all functions.
-    - statement == Return and continuation == KStop: a top level 'return'
-        statement. We can't rule it out either with typing only without
-        cluttering the system, so we need to make some kind of dead-code
-        elimination if that happens.
 *)
 Definition done st k :=
   match st with 
@@ -1137,7 +1136,6 @@ Definition done st k :=
     | KCall _ _ _ => True
     | _ => False
   end
-  | Statement.Return _ => k = KStop
   | _ => False
 end.
 
@@ -1224,7 +1222,8 @@ destruct 1 as [
     rewrite <- hwf.
   now apply hg.
 - inversion hk; subst; clear hk.
-  + now left; firstorder.
+  + right; repeat eexists.
+    now constructor.
   + right; repeat eexists.
     now econstructor.
   + right; repeat eexists.
