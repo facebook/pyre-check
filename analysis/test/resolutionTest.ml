@@ -393,7 +393,16 @@ let test_class_definitions context =
       );
     ]
     "foo.Foo"
-    ["foo.Foo", 1; "foo.Foo", 2]
+    ["foo.Foo", 1; "foo.Foo", 2];
+
+  (* Also handle the case where foo.bar is a class but foo.bar the module exists. *)
+  assert_classes
+    ["foo.py", {|
+         class bar:
+           a = 1
+       |}; "foo/bar.py", "pass"]
+    "foo.bar"
+    ["foo.bar", 1]
 
 
 (* We don't reverse order when returning the classes. *)

@@ -574,7 +574,7 @@ let containing_source resolution reference =
   let ast_environment = ast_environment resolution in
   let rec qualifier ~lead ~tail =
     match tail with
-    | head :: tail ->
+    | head :: (_ :: _ as tail) ->
         let new_lead = Reference.create ~prefix:lead head in
         if Option.is_none (module_definition resolution new_lead) then
           lead
