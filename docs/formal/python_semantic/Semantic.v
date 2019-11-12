@@ -570,30 +570,20 @@ Inductive typ : Context -> Typ.t -> Statement.t -> Context -> Prop :=
       typ context return_type orelse context' ->
       typ context return_type (While test body orelse) context'
   | typCallFun: forall (context: Context) return_type target annotation
-      function_name arguments function_def return_context,
+      function_name arguments function_def,
       get_info context function_name = Some function_def ->
       return_annotation function_def = annotation ->
       check_arguments context arguments (parameters function_def) ->
-      typ
-        (mkContext (prepare_call_context Empty0 (parameters function_def)) (info context))
-        annotation
-        (body function_def)
-        return_context ->
       typ
         context
         return_type
         (Call (Some (Lvalue.Id target, annotation)) (Expression.Id function_name) arguments)
         (set context target (return_annotation function_def))
   | typCallProc: forall (context: Context) return_type function_name arguments
-      function_def return_context,
+      function_def,
       get_info context function_name = Some function_def ->
       return_annotation function_def = Typ.None ->
       check_arguments context arguments (parameters function_def) ->
-      typ
-        (mkContext (prepare_call_context Empty0 (parameters function_def)) (info context))
-        Typ.None
-        (body function_def)
-        return_context ->
       typ context return_type (Call None (Expression.Id function_name) arguments) context
   | typReturn: forall (context context': Context) ret T,
           ok context ret T ->
@@ -985,8 +975,8 @@ destruct h as [
   | context return_type
   | context context' context'' return_type stmt next hst hnext
   | context context' return_type test body orlelse hok hbody horelse
-  | context return_type target annotation f arguments func return_context hg hT hcheck
-  | context return_type f arguments func return_context hg hret hcheck
+  | context return_type target annotation f arguments func hg hret hcheck
+  | context return_type f arguments func hg hret hcheck
   | context context' ret T hok
 ]; intros s s' stmt' k k' hk hwf hs.
 (* Assign *)
@@ -1160,9 +1150,8 @@ destruct 1 as [
   | context context' context'' return_type st next hst hnext
   | context context' return_type test body orlelse hok hbody horelse
   | context return_type target annotation function_name arguments function_def
-      return_context hg hret hcheck htyp
-  | context return_type function_name arguments function_def return_context
-      hg hret hcheck htyp
+      hg hret hcheck
+  | context return_type function_name arguments function_def hg hret hcheck 
   | context context' ret T hok
 ]; intros hk state hwf.
 - apply eval_ok with (state := state) in okvalue; [ | now apply hwf ].
@@ -1254,19 +1243,11 @@ Lemma Typing_Prog: forall return_type,
 Proof.
 intro return_type.
 unfold Test.Prog, final_context, Test.YID.
-apply typCallFun with (function_def := Test.int_id)
-(* here I have to provide the return context of the function call, which 
-   is not used in the conclusion, but a witness that the body of the function
-   was correctly typed *)
-  (return_context := set test_context "x"%string Typ.Integer).
+apply typCallFun with (function_def := Test.int_id).
 - reflexivity.
 - reflexivity.
 - simpl; split; [| exact I].
   now constructor.
-- constructor.
-  constructor.
-  simpl.
-  reflexivity.
 Qed.
 
 Definition test_context2 : Context := Empty (info Eval.Test.test_state2).
@@ -1275,15 +1256,11 @@ Lemma Typing_Prog2: forall return_type,
   typ test_context2 return_type Eval.Test.Prog2 test_context2.
 Proof.
 intro return_type.
-apply typCallProc with (function_def := Test.expect_int)
-  (return_context :=
-   mkContext (prepare_call_context Empty0 (parameters Test.expect_int))
-     (info test_context2)).
+apply typCallProc with (function_def := Test.expect_int).
 - reflexivity.
 - reflexivity.
 - simpl; split; [| exact I].
   now constructor.
-- now constructor.
 Qed.
 
 (* Some well-formed proofs *)
