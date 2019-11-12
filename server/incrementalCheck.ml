@@ -33,6 +33,8 @@ let recheck
   let scheduler =
     Scheduler.with_parallel scheduler ~is_parallel:(List.length module_updates > 10)
   in
+  Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
+  SharedMem.invalidate_caches ();
   Log.info "Parsing %d updated modules..." (List.length module_updates);
   StatusUpdate.warning
     ~message:"Reparsing updated modules..."

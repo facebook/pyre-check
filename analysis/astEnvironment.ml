@@ -349,7 +349,6 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~ast_environmen
     parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths
   in
   process_sources ~configuration ~scheduler ~preprocessing_state ~ast_environment parsed;
-  SharedMem.invalidate_caches ();
   { parsed = List.sort parsed ~compare:Reference.compare; syntax_error; system_error }
 
 
