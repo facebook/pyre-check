@@ -10,7 +10,7 @@ open Analysis
 open Pyre
 open Test
 
-let test_simple_registration context =
+let test_global_registration context =
   let assert_registers ?(expected = true) source name =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
@@ -36,6 +36,194 @@ let test_simple_registration context =
    class Foo:
      pass
   |} "test.Bar";
+  ()
+
+
+let test_define_registration context =
+  let assert_registers ~expected source =
+    let project = ScratchProject.setup ["test.py", source] ~context in
+    let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
+    let unannotated_global_environment =
+      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
+    in
+    let _ =
+      UnannotatedGlobalEnvironment.update
+        unannotated_global_environment
+        ~scheduler:(mock_scheduler ())
+        ~configuration:(Configuration.Analysis.create ())
+        ~ast_environment_update_result
+        (Reference.Set.singleton (Reference.create "test"))
+    in
+    let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
+    let actual = UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module read_only !&"test" in
+    let expected = List.sort expected ~compare:Reference.compare in
+    assert_equal
+      ~cmp:(List.equal Reference.equal)
+      ~printer:(List.to_string ~f:Reference.show)
+      expected
+      actual
+  in
+  assert_registers {|
+    def foo():
+      pass
+  |} ~expected:[!&"test.$toplevel"; !&"test.foo"];
+  assert_registers
+    {|
+    def bar(): ...
+    def foo():
+      return bar()
+  |}
+    ~expected:[!&"test.$toplevel"; !&"test.foo"; !&"test.bar"];
+  assert_registers
+    {|
+     from typing import overload
+     
+     @overload
+     def foo(x: int) -> int: ...
+     @overload
+     def foo(x: str) -> str: ...
+
+     def foo(x):
+       return x
+  |}
+    ~expected:[!&"test.$toplevel"; !&"test.foo"];
+  assert_registers
+    {|
+     class Foo:
+       pass
+    |}
+    ~expected:[!&"test.$toplevel"; !&"test.Foo.$class_toplevel"];
+  assert_registers
+    {|
+     class Foo:
+       x: int
+     class Foo:
+       y: str
+    |}
+    ~expected:[!&"test.$toplevel"; !&"test.Foo.$class_toplevel"];
+  assert_registers
+    {|
+     class Foo:
+       def foo(self): ...
+    |}
+    ~expected:[!&"test.$toplevel"; !&"test.Foo.$class_toplevel"; !&"test.Foo.foo"];
+  assert_registers
+    {|
+    def foo():
+      def bar():
+        ...
+      return bar()
+  |}
+    ~expected:[!&"test.$toplevel"; !&"test.foo"; !&"$local_test?foo$bar"];
+  assert_registers
+    {|
+     def foo():
+       def bar():
+         pass
+       bar()
+       def baz():
+         pass
+       baz()
+    |}
+    ~expected:[!&"test.$toplevel"; !&"test.foo"; !&"$local_test?foo$bar"; !&"$local_test?foo$baz"];
+  assert_registers
+    {|
+     def foo():
+       def bar():
+         def baz():
+           pass
+       bar(x)
+    |}
+    ~expected:
+      [!&"test.$toplevel"; !&"test.foo"; !&"$local_test?foo$bar"; !&"$local_test?foo?bar$baz"];
+  assert_registers
+    {|
+     def foo(flag):
+       if flag:
+         def bar():
+           pass
+         return bar()
+       else:
+         def baz():
+           pass
+         return baz()
+    |}
+    ~expected:[!&"test.$toplevel"; !&"test.foo"; !&"$local_test?foo$bar"; !&"$local_test?foo$baz"];
+  assert_registers
+    {|
+     def foo():
+       for x in range(3):
+         def bar():
+           def baz():
+             pass
+       return bar(x)
+    |}
+    ~expected:
+      [!&"test.$toplevel"; !&"test.foo"; !&"$local_test?foo$bar"; !&"$local_test?foo?bar$baz"];
+  assert_registers
+    {|
+     def foo():
+       with open("something") as f:
+         def bar():
+           def baz():
+             pass
+         bar()
+    |}
+    ~expected:
+      [!&"test.$toplevel"; !&"test.foo"; !&"$local_test?foo$bar"; !&"$local_test?foo?bar$baz"];
+  assert_registers
+    {|
+     def foo():
+       try:
+         def bar():
+           pass
+         bar()
+       except:
+         def baz():
+           pass
+         baz()
+       finally:
+         def quix():
+           pass
+         return quix()
+    |}
+    ~expected:
+      [
+        !&"test.$toplevel";
+        !&"test.foo";
+        !&"$local_test?foo$bar";
+        !&"$local_test?foo$baz";
+        !&"$local_test?foo$quix";
+      ];
+
+  (* Semantically shouldn't support these. But syntactically it makes sense to not fail *)
+  assert_registers
+    {|
+     def foo():
+       class C:
+         x: int
+         def bar(self): ...
+    |}
+    ~expected:
+      [!&"test.$toplevel"; !&"test.foo"; !&"test.foo.C.$class_toplevel"; !&"test.foo.C.bar"];
+  assert_registers
+    {|
+     def foo():
+       class C:
+         x: int
+         def bar(self):
+           class D:
+             def baz(self): ...
+    |}
+    ~expected:
+      [
+        !&"test.$toplevel";
+        !&"test.foo";
+        !&"test.foo.C.$class_toplevel";
+        !&"test.foo.C.bar";
+        !&"test.foo.C.bar.D.$class_toplevel";
+        !&"test.foo.C.bar.D.baz";
+      ];
   ()
 
 
@@ -231,6 +419,27 @@ let test_updates context =
             ~dependency
           >>| remove_target_location
           |> assert_equal ~cmp ~printer expectation
+      | `DefineBody (define_name, dependency, expectation) ->
+          let actual =
+            UnannotatedGlobalEnvironment.ReadOnly.get_define_body read_only define_name ~dependency
+          in
+          let cmp =
+            let equal left right =
+              Int.equal
+                0
+                (Node.location_sensitive_compare
+                   Statement.Define.location_sensitive_compare
+                   left
+                   right)
+            in
+            Option.equal equal
+          in
+          assert_equal
+            ~cmp
+            ~printer:(fun bodies ->
+              Sexp.to_string_hum [%message (bodies : Statement.Define.t Node.t option)])
+            expectation
+            actual
     in
     List.iter middle_actions ~f:execute_action;
     let add_file
@@ -700,13 +909,454 @@ let test_updates context =
             Some (UnannotatedGlobalEnvironment.Define [parse_define "def foo() -> None: pass"]) );
       ]
     ();
+
+  (* Get typecheck unit *)
+  let dependency = SharedMemoryKeys.TypeCheckSource !&"test" in
+  let open Statement in
+  let open Expression in
+  let path = !&"test" in
+  let create_simple_return ~start ~stop expression =
+    node
+      ~path
+      ~start
+      ~stop
+      (Statement.Return { Return.is_implicit = false; expression = Some expression })
+  in
+  let create_simple_define ~start ~stop name body =
+    node
+      ~path
+      ~start
+      ~stop
+      {
+        Define.signature =
+          {
+            Define.Signature.name;
+            parameters = [];
+            decorators = [];
+            docstring = None;
+            return_annotation = None;
+            async = false;
+            generator = false;
+            parent = None;
+            nesting_define = None;
+          };
+        body;
+      }
+  in
+  (* Body doesn't change *)
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+    |}
+    ~new_source:{|
+      def foo():
+        return 1 
+    |}
+    ~middle_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                 ]) );
+      ]
+    ~expected_triggers:[]
+    ~post_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                 ]) );
+      ]
+    ();
+
+  (* Body changes *)
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+    |}
+    ~new_source:{|
+      def foo():
+        return 2
+    |}
+    ~middle_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                 ]) );
+      ]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
+                 ]) );
+      ]
+    ();
+
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+    |}
+    ~new_source:{|
+      def foo():
+        return 2
+      def foo():
+        return 3
+    |}
+    ~middle_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                 ]) );
+      ]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        (* Last define wins *)
+          `DefineBody
+            ( !&"test.foo",
+              dependency,
+              Some
+                (create_simple_define
+                   ~start:(4, 0)
+                   ~stop:(5, 10)
+                   !&"test.foo"
+                   [
+                     create_simple_return
+                       ~start:(5, 2)
+                       ~stop:(5, 10)
+                       (node ~path ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 3));
+                   ]) );
+      ]
+    ();
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+      def foo():
+        return 2
+    |}
+    ~new_source:{|
+      def foo():
+        return 3
+    |}
+    ~middle_actions:
+      [
+        (* Last define wins *)
+          `DefineBody
+            ( !&"test.foo",
+              dependency,
+              Some
+                (create_simple_define
+                   ~start:(4, 0)
+                   ~stop:(5, 10)
+                   !&"test.foo"
+                   [
+                     create_simple_return
+                       ~start:(5, 2)
+                       ~stop:(5, 10)
+                       (node ~path ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 2));
+                   ]) );
+      ]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 3));
+                 ]) );
+      ]
+    ();
+
+  (* Overloads doesn't count *)
+  assert_updates
+    ~original_source:
+      {|
+      from typing import overload
+      @overload
+      def foo(x: int) -> int: ...
+      @overload
+      def foo(x: str) -> str: ...
+      def foo(x):
+        return x
+    |}
+    ~new_source:
+      {|
+      from typing import overload
+      @overload
+      def foo(x: str) -> str: ...
+      def foo(x):
+        return x
+      @overload
+      def foo(x: int) -> int: ...
+    |}
+    ~middle_actions:
+      [
+        (let body =
+           node
+             ~path
+             ~start:(7, 0)
+             ~stop:(8, 10)
+             {
+               Define.signature =
+                 {
+                   Define.Signature.name = !&"test.foo";
+                   parameters =
+                     [
+                       node
+                         ~path
+                         ~start:(7, 8)
+                         ~stop:(7, 9)
+                         { Parameter.name = "$parameter$x"; value = None; annotation = None };
+                     ];
+                   decorators = [];
+                   docstring = None;
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               body =
+                 [
+                   create_simple_return
+                     ~start:(8, 2)
+                     ~stop:(8, 10)
+                     (node
+                        ~path
+                        ~start:(8, 9)
+                        ~stop:(8, 10)
+                        (Expression.Name (Name.Identifier "$parameter$x")));
+                 ];
+             }
+         in
+         `DefineBody (!&"test.foo", dependency, Some body));
+      ]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        (let body =
+           node
+             ~path
+             ~start:(5, 0)
+             ~stop:(6, 10)
+             {
+               Define.signature =
+                 {
+                   Define.Signature.name = !&"test.foo";
+                   parameters =
+                     [
+                       node
+                         ~path
+                         ~start:(5, 8)
+                         ~stop:(5, 9)
+                         { Parameter.name = "$parameter$x"; value = None; annotation = None };
+                     ];
+                   decorators = [];
+                   docstring = None;
+                   return_annotation = None;
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               body =
+                 [
+                   create_simple_return
+                     ~start:(6, 2)
+                     ~stop:(6, 10)
+                     (node
+                        ~path
+                        ~start:(6, 9)
+                        ~stop:(6, 10)
+                        (Expression.Name (Name.Identifier "$parameter$x")));
+                 ];
+             }
+         in
+         `DefineBody (!&"test.foo", dependency, Some body));
+      ]
+    ();
+
+  (* Location-only change *)
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+    |}
+    ~new_source:
+      {|
+      # The truth is, the game was rigged from the start.
+      def foo():
+          return 1
+    |}
+    ~middle_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                 ]) );
+      ]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(3, 0)
+                 ~stop:(4, 12)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(4, 4)
+                     ~stop:(4, 12)
+                     (node ~path ~start:(4, 11) ~stop:(4, 12) (Expression.Integer 1));
+                 ]) );
+      ]
+    ();
+
+  (* Added define *)
+  assert_updates
+    ~original_source:{|
+    |}
+    ~new_source:{|
+      def foo():
+        return 2
+    |}
+    ~middle_actions:[`DefineBody (!&"test.foo", dependency, None)]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
+                 ]) );
+      ]
+    ();
+
+  (* Removed define *)
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+    |}
+    ~new_source:{|
+    |}
+    ~middle_actions:
+      [
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(2, 0)
+                 ~stop:(3, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(3, 2)
+                     ~stop:(3, 10)
+                     (node ~path ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                 ]) );
+      ]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`DefineBody (!&"test.foo", dependency, None)]
+    ();
   ()
 
 
 let () =
   "environment"
   >::: [
-         "simple_registration" >:: test_simple_registration;
+         "global_registration" >:: test_global_registration;
+         "define_registration" >:: test_define_registration;
          "simple_globals" >:: test_simple_global_registration;
          "updates" >:: test_updates;
        ]

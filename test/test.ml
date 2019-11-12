@@ -229,10 +229,11 @@ let collect_nodes_as_strings source =
   Collector.collect source
 
 
-let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
+let node ?(path = Reference.empty) ~start:(start_line, start_column) ~stop:(stop_line, stop_column)
+  =
   let location =
     {
-      Location.path = Reference.empty;
+      Location.path;
       start = { Location.line = start_line; Location.column = start_column };
       stop = { Location.line = stop_line; Location.column = stop_column };
     }

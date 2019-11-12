@@ -30,9 +30,10 @@ module ReadOnly : sig
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
-  val get_class_definition : t -> ?dependency:dependency -> string -> ClassSummary.t Node.t option
-
   val class_exists : t -> ?dependency:dependency -> string -> bool
+
+  (* APIs that start with prefix `all_` are not dependency tracked and are for testing purpose
+     only. DO NOT USE THEM IN PROD. *)
 
   val all_classes : t -> Type.Primitive.t list
 
@@ -40,11 +41,19 @@ module ReadOnly : sig
 
   val all_unannotated_globals : t -> Reference.t list
 
+  val all_defines : t -> Reference.t list
+
+  val all_defines_in_module : t -> Reference.t -> Reference.t list
+
+  val get_class_definition : t -> ?dependency:dependency -> string -> ClassSummary.t Node.t option
+
   val get_unannotated_global
     :  t ->
     ?dependency:dependency ->
     Reference.t ->
     unannotated_global option
+
+  val get_define_body : t -> ?dependency:dependency -> Reference.t -> Define.t Node.t option
 end
 
 val create : AstEnvironment.ReadOnly.t -> t
@@ -58,6 +67,8 @@ module UpdateResult : sig
 
   val added_classes : t -> Type.Primitive.Set.t
 
+  val added_defines : t -> Reference.Set.t
+
   (* In principle we should only need to pass on those of these that are newly introduced, but we
      pass all current classes in the specified modules as a compatibility feature for downstream
      consumers not recording dependcies *)
@@ -65,11 +76,15 @@ module UpdateResult : sig
 
   val current_unannotated_globals : t -> Reference.Set.t
 
+  val current_defines : t -> Reference.Set.t
+
   (* Purely a compatibility feature for downstream consumers that are tracking their own
      dependencies off of these names rather than recording them directly *)
   val current_classes_and_removed_classes : t -> Type.Primitive.Set.t
 
   val current_and_previous_unannotated_globals : t -> Reference.Set.t
+
+  val current_and_previous_defines : t -> Reference.Set.t
 
   val locally_triggered_dependencies : t -> DependencyKey.KeySet.t
 
