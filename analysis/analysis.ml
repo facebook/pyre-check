@@ -41,6 +41,7 @@ module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
 module Refinement = Refinement
 module Resolution = Resolution
+module Scope = Scope
 module SharedMemoryKeys = SharedMemoryKeys
 module Type = Type
 module TypeCheck = TypeCheck

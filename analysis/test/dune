@@ -35,6 +35,7 @@
   refinementTest
   resolutionTest
   resolvedCallableTest
+  scopeTest
   typeCheckTest
   typeConstraintsTest
   typeOrderTest
