@@ -16,13 +16,13 @@ from ..model_generator import Configuration
 
 
 def _open_implementation(path_to_content: Dict[str, str]) -> Callable[[str, str], Any]:
-    def _open_implementation(path: str, mode: str) -> IO[Any]:
+    def _nested_open_implementation(path: str, mode: str) -> IO[Any]:
         if path in path_to_content:
             return mock_open(read_data=path_to_content[path]).return_value
         else:
             raise FileNotFoundError(path)
 
-    return _open_implementation
+    return _nested_open_implementation
 
 
 class GetGlobalsTest(unittest.TestCase):
