@@ -6,13 +6,10 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any, Dict, List, NamedTuple, Optional, cast
 
-from .commands.command import ExitCode
-
 
 # We use NamedTuple instead of dataclasses for Python3.5/6 support.
 class PyreCheckResult(NamedTuple):
-    # This is a lie (we get it from subprocess.run at the moment), but a useful one.
-    exit_code: ExitCode
+    exit_code: int
     errors: Optional[List[str]]
 
 
@@ -79,9 +76,5 @@ class PyreConnection:
 def _parse_check_output(
     completed_process: "subprocess.CompletedProcess[bytes]"
 ) -> PyreCheckResult:
-    exit_code = cast(ExitCode, completed_process.returncode)
-    if exit_code not in {ExitCode.SUCCESS, ExitCode.FOUND_ERRORS}:
-        errors = None
-    else:
-        errors = completed_process.stdout.decode().split()
-    return PyreCheckResult(exit_code=exit_code, errors=errors)
+    errors = completed_process.stdout.decode().split()
+    return PyreCheckResult(exit_code=completed_process.returncode, errors=errors)
