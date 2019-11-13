@@ -29,7 +29,7 @@ let unannotated_global_environment environment =
 
 
 module GlobalValue = struct
-  type t = GlobalResolution.global
+  type t = GlobalResolution.global option
 
   let prefix = Prefix.make ()
 
@@ -37,17 +37,18 @@ module GlobalValue = struct
 
   let unmarshall value = Marshal.from_string value 0
 
-  let compare = GlobalResolution.compare_global
+  let compare = Option.compare GlobalResolution.compare_global
 end
 
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
-let produce_global_annotation environment name ~track_dependencies =
+let produce_global_annotation class_metadata_environment name ~track_dependencies =
+  let environment = { class_metadata_environment } in
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
   let resolution =
     GlobalResolution.create
       ?dependency
-      ~class_metadata_environment:(class_metadata_environment environment)
+      ~class_metadata_environment
       ~global:(fun _ -> None)
       (module Annotated.Class)
   in
@@ -150,6 +151,8 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
 
   let convert_trigger = Fn.id
 
+  let key_to_trigger = Fn.id
+
   module TriggerSet = Reference.Set
 
   let produce_value = produce_global_annotation
@@ -157,23 +160,6 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
   let filter_upstream_dependency = function
     | SharedMemoryKeys.AnnotateGlobal name -> Some name
     | _ -> None
-
-
-  let added_keys upstream_update =
-    let upstream =
-      ClassMetadataEnvironment.UpdateResult.upstream upstream_update
-      |> ClassHierarchyEnvironment.UpdateResult.upstream
-      |> AliasEnvironment.UpdateResult.upstream
-    in
-    let new_classes =
-      UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes upstream
-      |> Type.Primitive.Set.to_list
-      |> List.map ~f:Reference.create
-    in
-    let new_unannotated_globals =
-      UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals upstream
-    in
-    List.fold ~init:new_unannotated_globals ~f:Set.add new_classes
 
 
   let current_and_previous_keys upstream_update =
@@ -201,16 +187,20 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
       (unannotated_global_environment { class_metadata_environment })
 
 
-  let serialize_value annotation = Node.value annotation |> Annotation.sexp_of_t |> Sexp.to_string
+  let serialize_value = function
+    | Some annotation -> Node.value annotation |> Annotation.sexp_of_t |> Sexp.to_string
+    | None -> "None"
+
 
   let show_key = Reference.show
 
-  let equal_value first second = Annotation.equal (Node.value first) (Node.value second)
+  let equal_value =
+    Option.equal (fun first second -> Annotation.equal (Node.value first) (Node.value second))
 end)
 
-let update environment ~scheduler ~configuration upstream_update =
+let update { class_metadata_environment } ~scheduler ~configuration upstream_update =
   GlobalResolution.AnnotationCache.clear ~scheduler ~configuration;
-  GlobalTable.update environment ~scheduler ~configuration upstream_update
+  GlobalTable.update class_metadata_environment ~scheduler ~configuration upstream_update
 
 
 let read_only { class_metadata_environment } = GlobalTable.read_only class_metadata_environment

@@ -114,15 +114,19 @@ module EnvironmentTable = struct
 
     val convert_trigger : trigger -> Key.t
 
+    val key_to_trigger : Key.t -> trigger
+
     module TriggerSet : Set.S with type Elt.t = trigger
 
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
 
-    val added_keys : UpdateResult.upstream -> TriggerSet.t
-
     val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
 
-    val produce_value : t -> trigger -> track_dependencies:bool -> Value.t option
+    val produce_value
+      :  PreviousEnvironment.ReadOnly.t ->
+      trigger ->
+      track_dependencies:bool ->
+      Value.t
 
     val all_keys : PreviousEnvironment.ReadOnly.t -> Key.t list
 
@@ -142,13 +146,15 @@ module EnvironmentTable = struct
       SharedMemoryKeys.DependencyKey.Transaction.t
 
     val get : ?dependency:SharedMemoryKeys.DependencyKey.t -> key -> t option
+
+    val add_dependency : key -> SharedMemoryKeys.DependencyKey.t -> unit
   end
 
   module type S = sig
     module In : In
 
     val update
-      :  In.t ->
+      :  In.PreviousEnvironment.ReadOnly.t ->
       scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
       In.PreviousEnvironment.UpdateResult.t ->
@@ -157,7 +163,7 @@ module EnvironmentTable = struct
     module ReadOnly : sig
       type t
 
-      val get : t -> ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t option
+      val get : t -> ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t
 
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
@@ -182,7 +188,7 @@ module EnvironmentTable = struct
         let register =
           let set name =
             In.produce_value environment name ~track_dependencies
-            |> Option.iter ~f:(Table.add (In.convert_trigger name))
+            |> Table.add (In.convert_trigger name)
           in
           List.iter ~f:set
         in
@@ -204,9 +210,7 @@ module EnvironmentTable = struct
                 in
                 let (), triggered_dependencies =
                   let names_to_update =
-                    dependencies
-                    |> List.fold ~f:Set.add ~init:(In.added_keys upstream_update)
-                    |> Set.to_list
+                    dependencies |> List.fold ~f:Set.add ~init:In.TriggerSet.empty |> Set.to_list
                   in
                   let keys =
                     List.map names_to_update ~f:In.convert_trigger |> Table.KeySet.of_list
@@ -243,7 +247,7 @@ module EnvironmentTable = struct
     module ReadOnly = struct
       type t = {
         upstream_environment: In.PreviousEnvironment.ReadOnly.t;
-        get: ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t option;
+        get: ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t;
         hash_to_key_map: In.PreviousEnvironment.ReadOnly.t -> string String.Map.t;
         serialize_decoded: Memory.decodable -> (string * string * string option) option;
         decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
@@ -263,7 +267,20 @@ module EnvironmentTable = struct
     end
 
     let read_only upstream_environment =
-      let get = Table.get in
+      let get ?dependency key =
+        match Table.get ?dependency key with
+        | Some hit -> hit
+        | None ->
+            let value =
+              In.produce_value
+                upstream_environment
+                (In.key_to_trigger key)
+                ~track_dependencies:true
+            in
+            Table.add key value;
+            Option.iter dependency ~f:(Table.add_dependency key);
+            value
+      in
       let hash_to_key_map environment =
         Table.compute_hashes_to_keys ~keys:(In.all_keys environment)
       in

@@ -21,7 +21,7 @@ type class_metadata = {
 [@@deriving eq, compare, show]
 
 module ClassMetadataValue = struct
-  type t = class_metadata
+  type t = class_metadata option
 
   let prefix = Prefix.make ()
 
@@ -29,12 +29,12 @@ module ClassMetadataValue = struct
 
   let unmarshall value = Marshal.from_string value 0
 
-  let compare = compare_class_metadata
+  let compare = Option.compare compare_class_metadata
 end
 
 module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
-let produce_class_metadata { class_hierarchy_environment } class_name ~track_dependencies =
+let produce_class_metadata class_hierarchy_environment class_name ~track_dependencies =
   let unannotated_global_environment_dependency =
     Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
   in
@@ -108,6 +108,8 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let convert_trigger = Fn.id
 
+  let key_to_trigger = Fn.id
+
   module TriggerSet = Type.Primitive.Set
 
   let produce_value = produce_class_metadata
@@ -115,12 +117,6 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
   let filter_upstream_dependency = function
     | SharedMemoryKeys.RegisterClassMetadata name -> Some name
     | _ -> None
-
-
-  let added_keys upstream_update =
-    ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
-    |> AliasEnvironment.UpdateResult.upstream
-    |> UnannotatedGlobalEnvironment.UpdateResult.added_classes
 
 
   let current_and_previous_keys upstream_update =
@@ -135,23 +131,25 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
 
 
-  let serialize_value { successors; is_test; is_final; extends_placeholder_stub_class } =
-    `Assoc
-      [
-        "successors", `String (List.to_string ~f:Type.Primitive.show successors);
-        "is_test", `Bool is_test;
-        "is_final", `Bool is_final;
-        "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class;
-      ]
-    |> Yojson.to_string
+  let serialize_value = function
+    | Some { successors; is_test; is_final; extends_placeholder_stub_class } ->
+        `Assoc
+          [
+            "successors", `String (List.to_string ~f:Type.Primitive.show successors);
+            "is_test", `Bool is_test;
+            "is_final", `Bool is_final;
+            "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class;
+          ]
+        |> Yojson.to_string
+    | None -> "None"
 
 
   let show_key = Fn.id
 
-  let equal_value = equal_class_metadata
+  let equal_value = Option.equal equal_class_metadata
 end)
 
-let update = MetadataTable.update
+let update { class_hierarchy_environment } = MetadataTable.update class_hierarchy_environment
 
 let read_only { class_hierarchy_environment } = MetadataTable.read_only class_hierarchy_environment
 

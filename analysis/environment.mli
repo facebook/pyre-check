@@ -110,15 +110,13 @@ module EnvironmentTable : sig
 
     val convert_trigger : trigger -> Key.t
 
+    val key_to_trigger : Key.t -> trigger
+
     module TriggerSet : Set.S with type Elt.t = trigger
 
     (* This function should extract the relevant updates from upstream triggers. Usually this
        selecting the relevant variant from SharedMemoryKeys.dependency *)
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
-
-    (* Environment updates both have to update invalidated entries and calculate values for added
-       ones. This function should return those new keys *)
-    val added_keys : UpdateResult.upstream -> TriggerSet.t
 
     (* For compatibility with the old dependency mode, we also need a different kind of key
        discovery that just returns all of the keys under current consideration. For now this
@@ -127,7 +125,11 @@ module EnvironmentTable : sig
     val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
 
     (* This is the actual main function of the update. *)
-    val produce_value : t -> trigger -> track_dependencies:bool -> Value.t option
+    val produce_value
+      :  PreviousEnvironment.ReadOnly.t ->
+      trigger ->
+      track_dependencies:bool ->
+      Value.t
 
     val all_keys : PreviousEnvironment.ReadOnly.t -> Key.t list
 
@@ -142,7 +144,7 @@ module EnvironmentTable : sig
     module In : In
 
     val update
-      :  In.t ->
+      :  In.PreviousEnvironment.ReadOnly.t ->
       scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
       In.PreviousEnvironment.UpdateResult.t ->
@@ -151,7 +153,7 @@ module EnvironmentTable : sig
     module ReadOnly : sig
       type t
 
-      val get : t -> ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t option
+      val get : t -> ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t
 
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 

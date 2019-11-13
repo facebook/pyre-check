@@ -14,7 +14,7 @@ type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly
 let create unannotated_global_environment = { unannotated_global_environment }
 
 module AliasValue = struct
-  type t = Type.alias
+  type t = Type.alias option
 
   let prefix = Prefix.make ()
 
@@ -22,7 +22,7 @@ module AliasValue = struct
 
   let unmarshall value = Marshal.from_string value 0
 
-  let compare = Type.compare_alias
+  let compare = Option.compare Type.compare_alias
 end
 
 let ast_environment { unannotated_global_environment } =
@@ -276,7 +276,8 @@ let extract_alias { unannotated_global_environment } name ~dependency =
   >>= extract_alias
 
 
-let produce_alias environment global_name ~track_dependencies =
+let produce_alias unannotated_global_environment global_name ~track_dependencies =
+  let environment = { unannotated_global_environment } in
   (* TODO(T53786399): Optimize this function. Theres a lot of perf potentially to be gained here,
      currently biasing towards simplicity *)
   let dependency =
@@ -321,6 +322,8 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
 
   let convert_trigger = Reference.show
 
+  let key_to_trigger = Reference.create ?prefix:None
+
   type nonrec t = t
 
   module TriggerSet = Reference.Set
@@ -330,10 +333,6 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
   let filter_upstream_dependency = function
     | SharedMemoryKeys.AliasRegister name -> Some name
     | _ -> None
-
-
-  let added_keys upstream_update =
-    UnannotatedGlobalEnvironment.UpdateResult.added_unannotated_globals upstream_update
 
 
   let current_and_previous_keys upstream_update =
@@ -346,14 +345,17 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
     |> List.map ~f:Reference.show
 
 
-  let serialize_value = Type.show_alias
+  let serialize_value = function
+    | Some alias -> Type.show_alias alias
+    | None -> "None"
+
 
   let show_key = Fn.id
 
-  let equal_value = Type.equal_alias
+  let equal_value = Option.equal Type.equal_alias
 end)
 
-let update = Aliases.update
+let update { unannotated_global_environment } = Aliases.update unannotated_global_environment
 
 let read_only { unannotated_global_environment } = Aliases.read_only unannotated_global_environment
 
