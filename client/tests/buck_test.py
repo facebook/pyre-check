@@ -168,16 +168,16 @@ class BuckTest(unittest.TestCase):
                 buck.generate_source_directories(["target"], build=True)
                 mock_build.assert_has_calls([call(["normalized"], ["target"])])
 
-    @patch.object(buck, "find_buck_root", return_value="/BUCK_ROOT")
-    def test_resolve_relative_paths(self, find_buck_root) -> None:
+    @patch.object(buck, "find_buck_root", return_value="/PROJECT_BUCK_ROOT")
+    def test_query_buck_relative_paths(self, find_buck_root) -> None:
         with patch.object(subprocess, "check_output") as buck_query:
             buck_query.return_value = json.dumps(
                 {
-                    "ownerA": {
+                    "targetA": {
                         "buck.base_path": "src/python",
                         "srcs": {"a.py": "a.py", "b/c.py": "otherDirectory/c.py"},
                     },
-                    "ownerB": {
+                    "targetB": {
                         "buck.base_path": "src/python",
                         "buck.base_module": "com.companyname",
                         "srcs": {"package.py": "package.py"},
@@ -186,23 +186,32 @@ class BuckTest(unittest.TestCase):
             ).encode("utf-8")
 
             paths = [
-                "/BUCK_ROOT/src/python/a.py",  # tracked paths
-                "/BUCK_ROOT/src/python/b/c.py",
-                "/BUCK_ROOT/src/python/package.py",
-                "/BUCK_ROOT/src/java/python/a.py",  # untracked paths
-                "/BUCK_ROOT/com/companyname/package.py"
+                "/PROJECT_BUCK_ROOT/src/python/a.py",  # tracked paths
+                "/PROJECT_BUCK_ROOT/src/python/b/c.py",
+                "/PROJECT_BUCK_ROOT/src/python/package.py",
+                "/PROJECT_BUCK_ROOT/src/java/python/a.py",  # untracked paths
+                "/PROJECT_BUCK_ROOT/com/companyname/package.py"
                 "/OTHER_PROJECT/src/python/a.py",
             ]
             self.assertDictEqual(
-                buck.resolve_relative_paths(paths),
+                buck.query_buck_relative_paths(paths, targets=["targetA", "targetB"]),
                 {
-                    "/BUCK_ROOT/src/python/a.py": "src/python/a.py",
-                    "/BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
-                    "/BUCK_ROOT/src/python/package.py": "com/companyname/package.py",
+                    "/PROJECT_BUCK_ROOT/src/python/a.py": "src/python/a.py",
+                    "/PROJECT_BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
+                    "/PROJECT_BUCK_ROOT/src/python/package.py": "com/companyname/package.py",
+                },
+            )
+            self.assertDictEqual(
+                buck.query_buck_relative_paths(paths, targets=["targetA"]),
+                {
+                    "/PROJECT_BUCK_ROOT/src/python/a.py": "src/python/a.py",
+                    "/PROJECT_BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
                 },
             )
 
         with patch.object(
             subprocess, "check_output", side_effect=subprocess.TimeoutExpired("cmd", 30)
         ):
-            self.assertRaises(buck.BuckException, buck.resolve_relative_paths, [])
+            self.assertRaises(
+                buck.BuckException, buck.query_buck_relative_paths, [], ["targetA"]
+            )

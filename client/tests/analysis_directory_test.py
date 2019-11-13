@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, List
 from unittest.mock import MagicMock, call, patch
 
-from .. import buck, filesystem
+from .. import analysis_directory, buck, commands, filesystem
 from ..analysis_directory import (
     AnalysisDirectory,
     SharedAnalysisDirectory,
@@ -131,45 +131,137 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             )
         )
 
+    @patch.object(analysis_directory, "add_symbolic_link")
+    @patch.object(SharedAnalysisDirectory, "rebuild")
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
     @patch.object(os, "getcwd", return_value="project")
-    @patch.object(os.path, "isfile")
+    @patch.object(os.path, "isfile", return_value=True)
     @patch.object(os.path, "abspath", side_effect=lambda path: path)
-    def test_process_updated_files_no_rebuild(
+    def test_process_updated_files_only_tracked_files(
         self,
         abspath: MagicMock,
         isfile: MagicMock,
         getcwd: MagicMock,
         should_rebuild: MagicMock,
+        rebuild: MagicMock,
+        add_symbolic_link: MagicMock,
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[],
+            targets=["target1"],
+            search_path=["scratch$baz$hello"],
+        )
+
+        old_symbolic_links = {
+            "project/tracked.py": "scratch/bar/tracked.py",
+            "project/tracked2.py": "scratch/bar/tracked2.py",
+        }
+        shared_analysis_directory._symbolic_links = old_symbolic_links
+        actual = shared_analysis_directory.process_updated_files(
+            [
+                "project/tracked.py",
+                "project/tracked2.py",
+                "other_project/not_tracked.py",
+                "scratch/baz/hello/new_file_tracked_because_of_search_path.py",
+            ]
+        )
+        # Note, however, that new files in the search_path are shown as
+        # updated files. This is the existing behavior and may be a bug.
+        expected = UpdatedPaths(
+            updated_paths=[
+                "scratch/bar/tracked.py",
+                "scratch/bar/tracked2.py",
+                "scratch/baz/hello/new_file_tracked_because_of_search_path.py",
+            ],
+            deleted_paths=[],
+        )
+        self.assertEqual(actual, expected)
+        rebuild.assert_not_called()
+        add_symbolic_link.assert_not_called()
+        self.assertEqual(shared_analysis_directory._symbolic_links, old_symbolic_links)
+
+    @patch.object(analysis_directory, "add_symbolic_link")
+    @patch.object(SharedAnalysisDirectory, "get_root", return_value="scratch")
+    @patch.object(buck, "query_buck_relative_paths")
+    @patch.object(SharedAnalysisDirectory, "rebuild")
+    @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
+    @patch.object(os, "getcwd", return_value="project")
+    @patch.object(os.path, "isfile", return_value=True)
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_process_updated_files_one_new_file(
+        self,
+        abspath: MagicMock,
+        isfile: MagicMock,
+        getcwd: MagicMock,
+        should_rebuild: MagicMock,
+        rebuild: MagicMock,
+        query_buck_relative_paths: MagicMock,
+        get_root: MagicMock,
+        add_symbolic_link: MagicMock,
     ) -> None:
         shared_analysis_directory = SharedAnalysisDirectory(
             source_directories=[], targets=["target1"], search_path=["baz$hello"]
         )
-        isfile.side_effect = lambda path: path != "project/deleted.py"
+
+        query_buck_relative_paths.return_value = {
+            "project/something/new_file.py": "foo/new_file.py"
+        }
 
         shared_analysis_directory._symbolic_links = {
             "project/tracked.py": "scratch/bar/tracked.py"
         }
         actual = shared_analysis_directory.process_updated_files(
-            [
-                "project/tracked.py",
-                "other_project/not_tracked.py",
-                "project/something/new_file.py",
-                "project/deleted.py",
-                "baz/hello/new_file_tracked_because_of_search_path.py",
-            ]
+            ["project/tracked.py", "project/something/new_file.py"]
         )
-        # We ignore individually added or deleted paths unless there is a
-        # rebuild. Note, however, that new files in the search_path are shown as
-        # updated files. This is the existing behavior and may be a bug.
         expected = UpdatedPaths(
-            updated_paths=[
-                "scratch/bar/tracked.py",
-                "baz/hello/new_file_tracked_because_of_search_path.py",
-            ],
+            updated_paths=["scratch/bar/tracked.py", "scratch/foo/new_file.py"],
             deleted_paths=[],
         )
         self.assertEqual(actual, expected)
+        self.assertEqual(
+            shared_analysis_directory._symbolic_links,
+            {
+                "project/tracked.py": "scratch/bar/tracked.py",
+                "project/something/new_file.py": "scratch/foo/new_file.py",
+            },
+        )
+        rebuild.assert_not_called()
+        add_symbolic_link.assert_called_once_with(
+            "scratch/foo/new_file.py", "project/something/new_file.py"
+        )
+
+    @patch.object(analysis_directory, "_delete_symbolic_link")
+    @patch.object(SharedAnalysisDirectory, "get_root", return_value="scratch")
+    @patch.object(SharedAnalysisDirectory, "rebuild")
+    @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=False)
+    @patch.object(os, "getcwd", return_value="project")
+    @patch.object(os.path, "isfile")
+    @patch.object(os.path, "abspath", side_effect=lambda path: path)
+    def test_process_updated_files_one_deleted_file(
+        self,
+        abspath: MagicMock,
+        isfile: MagicMock,
+        getcwd: MagicMock,
+        should_rebuild: MagicMock,
+        rebuild: MagicMock,
+        get_root: MagicMock,
+        delete_symbolic_link: MagicMock,
+    ) -> None:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], search_path=["baz$hello"]
+        )
+        isfile.side_effect = lambda path: path != "project/deleted.py"
+        shared_analysis_directory._symbolic_links = {
+            "project/deleted.py": "scratch/bar/deleted.py"
+        }
+        actual = shared_analysis_directory.process_updated_files(["project/deleted.py"])
+        expected = UpdatedPaths(
+            updated_paths=[], deleted_paths=["scratch/bar/deleted.py"]
+        )
+        self.assertEqual(actual, expected)
+        self.assertEqual(shared_analysis_directory._symbolic_links, {})
+        rebuild.assert_not_called()
+        delete_symbolic_link.assert_called_once_with("scratch/bar/deleted.py")
 
     @patch.object(SharedAnalysisDirectory, "rebuild")
     @patch.object(SharedAnalysisDirectory, "should_rebuild", return_value=True)

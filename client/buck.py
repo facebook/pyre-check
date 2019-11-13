@@ -14,7 +14,7 @@ import threading
 from collections import namedtuple
 from json.decoder import JSONDecodeError
 from logging import Logger
-from typing import Dict, Iterable, List, Optional, Set, Tuple, cast  # noqa
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, cast  # noqa
 
 from .filesystem import BuckBuilder, find_root
 
@@ -290,11 +290,12 @@ def find_buck_root(path: str) -> Optional[str]:
     return find_root(path, ".buckconfig")
 
 
-def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
-    """
-        Query buck to obtain a mapping from each absolute path to the relative
-        location in the analysis directory.
-    """
+def query_buck_relative_paths(
+    project_paths: Iterable[str], targets: Iterable[str]
+) -> Dict[str, str]:
+    """Return a mapping from each absolute project path to its relative location
+    in the buck output directory.
+    This queries buck and only returns paths that are covered by `targets`."""
     buck_root = find_buck_root(os.getcwd())
     if buck_root is None:
         LOG.error(
@@ -308,7 +309,7 @@ def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
         "--output-attribute",
         ".*",
         "owner(%s)",
-        *paths,
+        *project_paths,
     ]
     try:
         output = json.loads(
@@ -322,29 +323,24 @@ def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
         JSONDecodeError,
     ) as error:
         raise BuckException("Querying buck for relative paths failed: {}".format(error))
-    # TODO(T40580762) we should use the owner name to determine which files are a
-    # part of the pyre project
+    relevant_output = {
+        target: value for target, value in output.items() if target in targets
+    }
     results = {}
-    for path in paths:
-        # For each path, search for the target that owns it.
-        for owner in output.values():
-            prefix = os.path.join(buck_root, owner["buck.base_path"]) + os.sep
-
-            if not path.startswith(prefix):
+    for project_path in project_paths:
+        for target_data in relevant_output.values():
+            prefix = os.path.join(buck_root, target_data["buck.base_path"]) + os.sep
+            suffix = project_path[len(prefix) :]
+            if not project_path.startswith(prefix) or suffix not in target_data["srcs"]:
                 continue
 
-            suffix = path[len(prefix) :]
-
-            if suffix not in owner["srcs"]:
-                continue
-
-            if "buck.base_module" in owner:
-                base_path = os.path.join(*owner["buck.base_module"].split("."))
+            if "buck.base_module" in target_data:
+                base_path = os.path.join(*target_data["buck.base_module"].split("."))
             else:
-                base_path = owner["buck.base_path"]
-
-            results[path] = os.path.join(base_path, owner["srcs"][suffix])
-            break  # move on to next path
+                base_path = target_data["buck.base_path"]
+            results[project_path] = os.path.join(base_path, target_data["srcs"][suffix])
+            # Break after the first one because there might be multiple matches.
+            break
     return results
 
 

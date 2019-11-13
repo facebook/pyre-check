@@ -18,6 +18,7 @@ from .exceptions import EnvironmentException
 from .filesystem import (
     BuckBuilder,
     _compute_symbolic_link_mapping,
+    _delete_symbolic_link,
     acquire_lock,
     add_symbolic_link,
     find_python_paths,
@@ -236,13 +237,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         )
 
     def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
-        """
-            Return the paths in the analysis directory (symbolic links)
-            corresponding to the given paths.
-            Result also includes any files which are within a tracked directory.
-
-            This method will remove/add symbolic links for deleted/new files.
-        """
+        """Update the analysis directory for any new or deleted files.
+        Rebuild the directory using buck if needed.
+        Return the updated and deleted paths."""
         tracked_paths = []
         deleted_paths = [path for path in paths if not os.path.isfile(path)]
         new_paths = [
@@ -274,10 +271,51 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             # paths updated during a rebuild.
             tracked_paths.extend(new_scratch_paths - old_scratch_paths)
             deleted_paths = list(old_scratch_paths - new_scratch_paths)
-        else:
-            # We always ignore the deleted_paths computed initially.
-            deleted_paths = []
+            return UpdatedPaths(
+                updated_paths=tracked_paths, deleted_paths=deleted_paths
+            )
+        elif not (new_paths or deleted_paths):
+            return UpdatedPaths(
+                updated_paths=tracked_paths, deleted_paths=deleted_paths
+            )
 
+        if new_paths:
+            LOG.info("Detected new paths: %s.", ",".join(new_paths))
+            relative_link_map = {}
+            try:
+                relative_link_map = buck.query_buck_relative_paths(
+                    new_paths, self._targets
+                )
+            except buck.BuckException as error:
+                LOG.error("Exception occurred when querying buck: %s", error)
+                LOG.error("No new paths will be added to the analysis directory.")
+
+            absolute_link_map = {
+                path: os.path.join(self.get_root(), relative_link)
+                for path, relative_link in relative_link_map.items()
+            }
+            tracked_paths.extend(absolute_link_map.values())
+            for path, absolute_link in absolute_link_map.items():
+                try:
+                    add_symbolic_link(absolute_link, path)
+                    self._symbolic_links[path] = absolute_link
+                except OSError:
+                    LOG.warning("Failed to add link at %s.", absolute_link)
+        if deleted_paths:
+            LOG.info("Detected deleted paths: `%s`.", "`,`".join(deleted_paths))
+            deleted_links = [
+                self._symbolic_links[project_path]
+                for project_path in deleted_paths
+                if project_path in self._symbolic_links
+            ]
+            for path in deleted_paths:
+                link = self._symbolic_links.pop(path, None)
+                if link:
+                    try:
+                        _delete_symbolic_link(link)
+                    except OSError:
+                        LOG.warning("Failed to delete link at `%s`.", link)
+            deleted_paths = deleted_links
         return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
 
     def cleanup(self) -> None:
