@@ -57,14 +57,28 @@ class ImportStatement(NamedTuple):
     names: Set[str]
 
 
-class TypeCollector(cst.CSTVisitor):
+class ImportCollector(cst.CSTVisitor):
     def __init__(self) -> None:
+        self.existing_imports: Set[str] = set()
+
+    def visit_Import(self, node: cst.Import) -> None:
+        for imported_name in node.names:
+            asname = imported_name.asname
+            if asname:
+                self.existing_imports.add(_get_attribute_as_string(asname.name))
+            else:
+                self.existing_imports.add(_get_attribute_as_string(imported_name.name))
+
+
+class TypeCollector(cst.CSTVisitor):
+    def __init__(self, existing_imports: Set[str]) -> None:
         # Qualifier for storing the canonical name of the current function.
         self.qualifier: List[str] = []
         # Store the annotations.
         self.function_annotations: Dict[str, FunctionAnnotation] = {}
         self.attribute_annotations: Dict[str, cst.Annotation] = {}
         self.imports: Dict[str, ImportStatement] = {}
+        self.existing_imports: Set[str] = existing_imports
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self.qualifier.append(node.name.value)
@@ -108,8 +122,13 @@ class TypeCollector(cst.CSTVisitor):
         #  str]`.
         self._add_to_imports(node.names, cst.Name(module.value), module.value)
 
-    def _add_annotation_to_imports(self, annotation: cst.Attribute) -> cst.Name:
+    def _add_annotation_to_imports(
+        self, annotation: cst.Attribute
+    ) -> Union[cst.Name, cst.Attribute]:
         key = _get_attribute_as_string(annotation.value)
+        # Don't attempt to re-import existing imports.
+        if key in self.existing_imports:
+            return annotation
         self._add_to_imports(
             [cst.ImportAlias(name=annotation.attr)], annotation.value, key
         )
@@ -474,7 +493,9 @@ def _parse(file: IO[Any]) -> cst.Module:
 
 
 def _annotate_source(stubs: cst.Module, source: cst.Module) -> cst.Module:
-    visitor = TypeCollector()
+    import_visitor = ImportCollector()
+    source.visit(import_visitor)
+    visitor = TypeCollector(import_visitor.existing_imports)
     stubs.visit(visitor)
     transformer = TypeTransformer(
         visitor.function_annotations, visitor.attribute_annotations, visitor.imports

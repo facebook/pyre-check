@@ -597,3 +597,33 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 return A
             """,
         )
+        self.assert_annotations(
+            stub="""
+            def foo() -> db.Connection: ...
+            """,
+            source="""
+            import my.cool.db as db
+            def foo():
+              return db.Connection()
+            """,
+            expected="""
+            import my.cool.db as db
+            def foo() -> db.Connection:
+              return db.Connection()
+            """,
+        )
+        self.assert_annotations(
+            stub="""
+            def foo() -> typing.Sequence[int]: ...
+            """,
+            source="""
+            import typing
+            def foo():
+              return []
+            """,
+            expected="""
+            import typing
+            def foo() -> typing.Sequence[int]:
+              return []
+            """,
+        )
