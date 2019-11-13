@@ -746,6 +746,15 @@ let test_infer_backward context =
           x += 1
     |}
     [{|[{"name":"x","type":"int","value":null}]|}];
+
+  (* Analysis doesn't crash when __iadd__ is called with non-simple names. *)
+  assert_infer
+    ~fields:["inference.parameters"]
+    {|
+      def foo(x) -> None:
+        x[0] += y[3]
+    |}
+    [];
   ()
 
 

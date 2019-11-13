@@ -10,6 +10,12 @@ open Pyre
 open Statement
 module Error = AnalysisError
 
+let add_local ~resolution ~name ~annotation =
+  match name_to_reference name with
+  | Some reference -> Resolution.set_local resolution ~reference ~annotation
+  | None -> resolution
+
+
 module type Context = sig
   val configuration : Configuration.Analysis.t
 
@@ -275,9 +281,9 @@ module State (Context : Context) = struct
           }
         when is_simple_name name && Type.is_dictionary (resolve base) ->
           let resolution =
-            Resolution.set_local
-              resolution
-              ~reference:(name_to_reference_exn name)
+            add_local
+              ~resolution
+              ~name
               ~annotation:
                 (Annotation.create (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
           in
@@ -317,10 +323,7 @@ module State (Context : Context) = struct
             |> Type.list
             |> Annotation.create
           in
-          let resolution =
-            Resolution.set_local resolution ~reference:(name_to_reference_exn name) ~annotation
-          in
-          { state with resolution }
+          { state with resolution = add_local ~resolution ~name ~annotation }
       | Statement.Assign
           {
             value = { value = Dictionary { keywords = []; entries = [] }; _ };
@@ -329,9 +332,9 @@ module State (Context : Context) = struct
           }
         when is_simple_name name ->
           let resolution =
-            Resolution.set_local
-              resolution
-              ~reference:(name_to_reference_exn name)
+            add_local
+              ~resolution
+              ~name
               ~annotation:(Annotation.create (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
           in
           { state with resolution }
@@ -339,10 +342,7 @@ module State (Context : Context) = struct
           { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
         when is_simple_name name ->
           let resolution =
-            Resolution.set_local
-              resolution
-              ~reference:(name_to_reference_exn name)
-              ~annotation:(Annotation.create (Type.list Type.Bottom))
+            add_local ~resolution ~name ~annotation:(Annotation.create (Type.list Type.Bottom))
           in
           { state with resolution }
       | _ ->
@@ -588,10 +588,7 @@ module State (Context : Context) = struct
                 let resolution =
                   resolve_assign target_annotation (forward_expression ~state ~expression:value)
                   >>| (fun refined ->
-                        Resolution.set_local
-                          resolution
-                          ~reference:(name_to_reference_exn name)
-                          ~annotation:(Annotation.create refined))
+                        add_local ~resolution ~name ~annotation:(Annotation.create refined))
                   |> Option.value ~default:resolution
                 in
                 annotate_call_accesses statement resolution
@@ -633,10 +630,7 @@ module State (Context : Context) = struct
           let return_annotation =
             Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
           in
-          Resolution.set_local
-            resolution
-            ~reference:(name_to_reference_exn name)
-            ~annotation:return_annotation
+          add_local ~resolution ~name ~annotation:return_annotation
       | Return { Return.expression = Some { Node.value = Tuple expressions; _ }; _ } -> (
           let return_annotation =
             Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
@@ -652,10 +646,7 @@ module State (Context : Context) = struct
                 ~f:(fun resolution annotation expression ->
                   match Node.value expression with
                   | Name name when is_simple_name name ->
-                      Resolution.set_local
-                        resolution
-                        ~reference:(name_to_reference_exn name)
-                        ~annotation:(Annotation.create annotation)
+                      add_local ~resolution ~name ~annotation:(Annotation.create annotation)
                   | _ -> resolution)
           | _ -> resolution )
       | _ -> annotate_call_accesses statement resolution
