@@ -776,40 +776,6 @@ compound_statement:
             parameters
       in
       let name = snd name in
-      let rec transform_statement statement =
-        let open Statement in
-        match statement with
-        | { Node.location; value = Define define } ->
-           let signature = { define.signature with Define.Signature.nesting_define = Some name } in
-           { Node.location; value = Define { define with signature } }
-        | { Node.location; value = For for_ } ->
-           let body = transform_statements for_.body in
-           let orelse = transform_statements for_.orelse in
-           { Node.location; value = For { for_ with body; orelse } }
-        | { Node.location; value = If if_ } ->
-           let body = transform_statements if_.body in
-           let orelse = transform_statements if_.orelse in
-           { Node.location; value = If { if_ with body; orelse } }
-        | { Node.location; value = Try { Try.body; orelse; finally; handlers } } ->
-           let body = transform_statements body in
-           let orelse = transform_statements orelse in
-           let finally = transform_statements finally in
-           let handlers =
-             List.map handlers ~f:(fun ({ Try.Handler.body; _ } as handler) ->
-               let body = transform_statements body in
-               { handler with body })
-           in
-           { Node.location; value = Try { Try.body; orelse; finally; handlers } }
-        | { Node.location; value = With with_ } ->
-           let body = transform_statements with_.body in
-           { Node.location; value = With { with_ with body } }
-        | { Node.location; value = While while_ } ->
-           let body = transform_statements while_.body in
-           let orelse = transform_statements while_.orelse in
-           { Node.location; value = While { while_ with body; orelse } }
-        | statement -> statement
-      and transform_statements statements = List.map statements ~f:transform_statement
-      in
       {
         Node.location;
         value = Define {
@@ -824,7 +790,7 @@ compound_statement:
             nesting_define = None;
             docstring = docstring;
           };
-          body = transform_statements body;
+          body
         };
       }
     }

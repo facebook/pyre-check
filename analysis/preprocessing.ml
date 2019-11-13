@@ -2151,6 +2151,52 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
   { source with Source.statements = List.map statements ~f:expand_new_type }
 
 
+let populate_nesting_defines ({ Source.statements; _ } as source) =
+  let open Statement in
+  let rec transform_statement ~nesting_define statement =
+    match statement with
+    | {
+     Node.location;
+     value = Define { Define.signature = { Define.Signature.name; _ } as signature; body };
+    } ->
+        let signature = { signature with Define.Signature.nesting_define } in
+        let body = transform_statements ~nesting_define:(Some name) body in
+        { Node.location; value = Define { signature; body } }
+    | { Node.location; value = Class class_ } ->
+        let body = transform_statements ~nesting_define:None class_.body in
+        { Node.location; value = Class { class_ with body } }
+    | { Node.location; value = For for_ } ->
+        let body = transform_statements ~nesting_define for_.body in
+        let orelse = transform_statements ~nesting_define for_.orelse in
+        { Node.location; value = For { for_ with body; orelse } }
+    | { Node.location; value = If if_ } ->
+        let body = transform_statements ~nesting_define if_.body in
+        let orelse = transform_statements ~nesting_define if_.orelse in
+        { Node.location; value = If { if_ with body; orelse } }
+    | { Node.location; value = Try { Try.body; orelse; finally; handlers } } ->
+        let body = transform_statements ~nesting_define body in
+        let orelse = transform_statements ~nesting_define orelse in
+        let finally = transform_statements ~nesting_define finally in
+        let handlers =
+          List.map handlers ~f:(fun ({ Try.Handler.body; _ } as handler) ->
+              let body = transform_statements ~nesting_define body in
+              { handler with body })
+        in
+        { Node.location; value = Try { Try.body; orelse; finally; handlers } }
+    | { Node.location; value = With with_ } ->
+        let body = transform_statements ~nesting_define with_.body in
+        { Node.location; value = With { with_ with body } }
+    | { Node.location; value = While while_ } ->
+        let body = transform_statements ~nesting_define while_.body in
+        let orelse = transform_statements ~nesting_define while_.orelse in
+        { Node.location; value = While { while_ with body; orelse } }
+    | statement -> statement
+  and transform_statements ~nesting_define statements =
+    List.map statements ~f:(transform_statement ~nesting_define)
+  in
+  { source with Source.statements = transform_statements ~nesting_define:None statements }
+
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports
@@ -2169,6 +2215,7 @@ let preprocess_phase1 source =
   |> expand_typed_dictionary_declarations
   |> expand_named_tuples
   |> expand_new_types
+  |> populate_nesting_defines
 
 
 let preprocess source = preprocess_phase0 source |> preprocess_phase1

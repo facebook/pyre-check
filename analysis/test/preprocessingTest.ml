@@ -703,6 +703,39 @@ let test_qualify _ =
       qualifier.foo()
     |};
 
+  assert_qualify
+    {|
+      def foo():
+        def foo():
+          pass
+        def foo():
+          pass
+    |}
+    {|
+      def qualifier.foo():
+        def $local_qualifier?foo$foo():
+          pass
+        def $local_qualifier?foo$foo():
+          pass
+    |};
+  assert_qualify
+    {|
+      def foo():
+        def foo():
+          def foo():
+            pass
+        def bar():
+          pass
+    |}
+    {|
+      def qualifier.foo():
+        def $local_qualifier?foo$foo():
+          def $local_qualifier?foo?foo$foo():
+            pass
+        def $local_qualifier?foo$bar():
+          pass
+    |};
+
   (* TODO(T47589601): We cannot correctly handle this case for now due to our current limited
      aliases recording mechanism. *)
   assert_qualify
@@ -2466,6 +2499,606 @@ let test_transform_ast _ =
     |}
 
 
+let test_populate_nesting_define _ =
+  let assert_populated source_text expected =
+    let source = Test.parse ~handle:"test.py" (trim_extra_indentation source_text) in
+    let { Source.statements = actual; _ } = Preprocessing.populate_nesting_defines source in
+    assert_equal
+      ~cmp:[%compare.equal: Statement.t list]
+      ~printer:
+        (List.to_string ~f:(fun statement -> Sexp.to_string_hum (Statement.sexp_of_t statement)))
+      expected
+      actual
+  in
+  assert_populated
+    "def foo():\n  def bar():\n    1\n    2\n3"
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"bar";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = Some !&"foo";
+                      };
+                    body =
+                      [
+                        +Statement.Expression (+Expression.Integer 1);
+                        +Statement.Expression (+Expression.Integer 2);
+                      ];
+                  };
+             ];
+         };
+      +Statement.Expression (+Expression.Integer 3);
+    ];
+
+  assert_populated
+    {|
+        def foo():
+          def bar():
+            pass
+          def baz():
+            pass
+    |}
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"bar";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = Some !&"foo";
+                      };
+                    body = [+Statement.Pass];
+                  };
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"baz";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = Some !&"foo";
+                      };
+                    body = [+Statement.Pass];
+                  };
+             ];
+         };
+    ];
+  assert_populated
+    {|
+        def foo():
+          def bar():
+            def baz():
+              pass
+    |}
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"bar";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = Some !&"foo";
+                      };
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"baz";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"bar";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_populated
+    {|
+        def foo():
+          if True:
+            def bar():
+              pass
+          else:
+            def baz():
+              pass
+    |}
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.If
+                  {
+                    If.test = +Expression.True;
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                    orelse =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"baz";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_populated
+    {|
+        def foo():
+          while True:
+            def bar():
+              pass
+          else:
+            def baz():
+              pass
+    |}
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.While
+                  {
+                    While.test = +Expression.True;
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                    orelse =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"baz";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_populated
+    {|
+        def foo():
+          with True:
+            def bar():
+              pass
+    |}
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.With
+                  {
+                    With.items = [+Expression.True, None];
+                    async = false;
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_populated
+    {|
+        def foo():
+          try:
+            def bar():
+              pass
+          except:
+            def baz():
+              pass
+          finally:
+            def qux():
+              pass
+    |}
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Try
+                  {
+                    Try.body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                    orelse = [];
+                    handlers =
+                      [
+                        {
+                          Try.Handler.kind = None;
+                          name = None;
+                          body =
+                            [
+                              +Statement.Define
+                                 {
+                                   signature =
+                                     {
+                                       name = !&"baz";
+                                       parameters = [];
+                                       decorators = [];
+                                       docstring = None;
+                                       return_annotation = None;
+                                       async = false;
+                                       generator = false;
+                                       parent = None;
+                                       nesting_define = Some !&"foo";
+                                     };
+                                   body = [+Statement.Pass];
+                                 };
+                            ];
+                        };
+                      ];
+                    finally =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"qux";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"foo";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_populated
+    {|
+        class C:
+          def bar():
+            def baz():
+              pass
+    |}
+    [
+      +Statement.Class
+         {
+           Class.name = !&"C";
+           bases = [];
+           decorators = [];
+           docstring = None;
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"bar";
+                        parameters = [];
+                        decorators = [];
+                        docstring = None;
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = Some !&"C";
+                        nesting_define = None;
+                      };
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"baz";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = None;
+                                 nesting_define = Some !&"bar";
+                               };
+                             body = [+Statement.Pass];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  assert_populated
+    {|
+        def foo():
+          class C:
+            def bar():
+              def baz():
+                pass
+    |}
+    [
+      +Statement.Define
+         {
+           signature =
+             {
+               name = !&"foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           body =
+             [
+               +Statement.Class
+                  {
+                    Class.name = !&"C";
+                    bases = [];
+                    decorators = [];
+                    docstring = None;
+                    body =
+                      [
+                        +Statement.Define
+                           {
+                             signature =
+                               {
+                                 name = !&"bar";
+                                 parameters = [];
+                                 decorators = [];
+                                 docstring = None;
+                                 return_annotation = None;
+                                 async = false;
+                                 generator = false;
+                                 parent = Some !&"C";
+                                 nesting_define = None;
+                               };
+                             body =
+                               [
+                                 +Statement.Define
+                                    {
+                                      signature =
+                                        {
+                                          name = !&"baz";
+                                          parameters = [];
+                                          decorators = [];
+                                          docstring = None;
+                                          return_annotation = None;
+                                          async = false;
+                                          generator = false;
+                                          parent = None;
+                                          nesting_define = Some !&"bar";
+                                        };
+                                      body = [+Statement.Pass];
+                                    };
+                               ];
+                           };
+                      ];
+                  };
+             ];
+         };
+    ];
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -2482,5 +3115,6 @@ let () =
          "transform_ast" >:: test_transform_ast;
          "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
          "typed_dictionaries" >:: test_expand_typed_dictionaries;
+         "nesting_define" >:: test_populate_nesting_define;
        ]
   |> Test.run
