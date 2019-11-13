@@ -30,34 +30,34 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
     def test_annotate_functions(self) -> None:
         self.assert_annotations(
-            """
+            stub="""
             def foo() -> int: ...
             """,
-            """
+            source="""
             def foo():
                 return 1
             """,
-            """
+            expected="""
             def foo() -> int:
                 return 1
             """,
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo() -> int: ...
 
             class A:
                 def foo() -> str: ...
             """,
-            """
+            source="""
             def foo():
                 return 1
             class A:
                 def foo():
                     return ''
             """,
-            """
+            expected="""
             def foo() -> int:
                 return 1
             class A:
@@ -67,41 +67,41 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             bar: int = ...
             """,
-            """
+            source="""
             bar = foo()
             """,
-            """
+            expected="""
             bar: int = foo()
             """,
         )
 
         self.assert_annotations(
-            """
+            stub="""
             bar: int = ...
             """,
-            """
+            source="""
             bar: str = foo()
             """,
-            """
+            expected="""
             bar: str = foo()
             """,
         )
 
         self.assert_annotations(
-            """
+            stub="""
             bar: int = ...
             class A:
                 bar: str = ...
             """,
-            """
+            source="""
             bar = foo()
             class A:
                 bar = foobar()
             """,
-            """
+            expected="""
             bar: int = foo()
             class A:
                 bar: str = foobar()
@@ -109,17 +109,17 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             bar: int = ...
             class A:
                 bar: str = ...
             """,
-            """
+            source="""
             bar = foo()
             class A:
                 bar = foobar()
             """,
-            """
+            expected="""
             bar: int = foo()
             class A:
                 bar: str = foobar()
@@ -127,17 +127,17 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             a: int = ...
             b: str = ...
             """,
-            """
+            source="""
             def foo() -> Tuple[int, str]:
                 return (1, "")
 
             a, b = foo()
             """,
-            """
+            expected="""
             a: int
             b: str
 
@@ -149,15 +149,15 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             x: int = ...
             y: int = ...
             z: int = ...
             """,
-            """
+            source="""
             x = y = z = 1
             """,
-            """
+            expected="""
             x: int
             y: int
             z: int
@@ -168,16 +168,16 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
         # Don't add annotations if one is already present
         self.assert_annotations(
-            """
+            stub="""
             def foo(x: int = 1) -> List[str]: ...
             """,
-            """
+            source="""
             from typing import Iterable, Any
 
             def foo(x = 1) -> Iterable[Any]:
                 return ['']
             """,
-            """
+            expected="""
             from typing import Iterable, Any
 
             def foo(x: int = 1) -> Iterable[Any]:
@@ -186,16 +186,16 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             from typing import List
 
             def foo() -> List[int]: ...
             """,
-            """
+            source="""
             def foo():
                 return [1]
             """,
-            """
+            expected="""
             from typing import List
 
             def foo() -> List[int]:
@@ -204,18 +204,18 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             from typing import List
 
             def foo() -> List[int]: ...
             """,
-            """
+            source="""
             from typing import Union
 
             def foo():
                 return [1]
             """,
-            """
+            expected="""
             from typing import List, Union
 
             def foo() -> List[int]:
@@ -224,16 +224,16 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             a: Dict[str, int] = ...
             """,
-            """
+            source="""
             def foo() -> int:
                 return 1
             a = {}
             a['x'] = foo()
             """,
-            """
+            expected="""
             def foo() -> int:
                 return 1
             a: Dict[str, int] = {}
@@ -242,12 +242,12 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             from typing import Any, Dict
 
             b: Dict[Any, Any] = ...
             """,
-            """
+            source="""
             from typing import Tuple
 
             def foo() -> Tuple[int, str]:
@@ -258,7 +258,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
             b['z'] = b['x'] = foo()
 
             """,
-            """
+            expected="""
             from typing import Any, Dict, Tuple
 
             def foo() -> Tuple[int, str]:
@@ -272,10 +272,10 @@ class ApplyAnnotationsTest(unittest.TestCase):
         # Test that tuples with subscripts are handled correctly
         # and top level annotations are added in the correct place
         self.assert_annotations(
-            """
+            stub="""
             a: int = ...
             """,
-            """
+            source="""
             from typing import Tuple
 
             def foo() -> Tuple[str, int]:
@@ -283,7 +283,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
             b['z'], a = foo()
             """,
-            """
+            expected="""
             from typing import Tuple
             a: int
 
@@ -296,17 +296,17 @@ class ApplyAnnotationsTest(unittest.TestCase):
 
         # Don't override existing default parameter values
         self.assert_annotations(
-            """
+            stub="""
             class B:
                 def foo(self, x: int = a.b.A.__add__(1), y=None) -> int: ...
             """,
-            """
+            source="""
             class B:
                 def foo(self, x = A + 1, y = None) -> int:
                     return x
 
             """,
-            """
+            expected="""
             class B:
                 def foo(self, x: int = A + 1, y = None) -> int:
                     return x
@@ -314,31 +314,31 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo(x: int) -> int: ...
             """,
-            """
+            source="""
             def foo(x) -> int:
                 return x
             """,
-            """
+            expected="""
             def foo(x: int) -> int:
                 return x
             """,
         )
 
         self.assert_annotations(
-            """
+            stub="""
             async def a(r: Request, z=None) -> django.http.response.HttpResponse: ...
             async def b(r: Request, z=None) -> django.http.response.HttpResponse: ...
             async def c(r: Request, z=None) -> django.http.response.HttpResponse: ...
             """,
-            """
+            source="""
             async def a(r: Request, z=None): ...
             async def b(r: Request, z=None): ...
             async def c(r: Request, z=None): ...
             """,
-            """
+            expected="""
             from django.http.response import HttpResponse
 
             async def a(r: Request, z=None) -> HttpResponse: ...
@@ -348,27 +348,27 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo(x: int) -> int: ...
             """,
-            """
+            source="""
             def foo(x) -> int:
                 return x
             """,
-            """
+            expected="""
             def foo(x: int) -> int:
                 return x
             """,
         )
 
         self.assert_annotations(
-            """
+            stub="""
             FOO: a.b.Example = ...
             """,
-            """
+            source="""
             FOO = bar()
             """,
-            """
+            expected="""
             from a.b import Example
 
             FOO: Example = bar()
@@ -376,13 +376,13 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             FOO: Union[a.b.Example, int] = ...
             """,
-            """
+            source="""
             FOO = bar()
             """,
-            """
+            expected="""
             from a.b import Example
 
             FOO: Union[Example, int] = bar()
@@ -390,14 +390,14 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo(x: int) -> List[Union[a.b.Example, str]]: ...
             """,
-            """
+            source="""
             def foo(x: int):
                 return [barfoo(), ""]
             """,
-            """
+            expected="""
             from a.b import Example
 
             def foo(x: int) -> List[Union[Example, str]]:
@@ -406,14 +406,14 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo(x: int) -> Optional[a.b.Example]: ...
             """,
-            """
+            source="""
             def foo(x: int):
                 pass
             """,
-            """
+            expected="""
             from a.b import Example
 
             def foo(x: int) -> Optional[Example]:
@@ -422,31 +422,31 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo(x: int) -> str: ...
             """,
-            """
+            source="""
             def foo(x: str):
                 pass
             """,
-            """
+            expected="""
             def foo(x: str) -> str:
                 pass
             """,
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo(x: int)-> Union[
                 Coroutine[Any, Any, django.http.response.HttpResponse], str
             ]:
                 ...
             """,
-            """
+            source="""
             def foo(x: int):
                 pass
             """,
-            """
+            expected="""
             from django.http.response import HttpResponse
 
             def foo(x: int) -> Union[
@@ -457,15 +457,15 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo(x: django.http.response.HttpResponse) -> str:
                 pass
             """,
-            """
+            source="""
             def foo(x) -> str:
                 pass
             """,
-            """
+            expected="""
             from django.http.response import HttpResponse
 
             def foo(x: HttpResponse) -> str:
@@ -474,7 +474,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             from typing import Any, Dict, List
 
             from typing import Any, List
@@ -482,7 +482,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
             def foo() -> List[Any]: ...
             def goo() -> Dict[Any, Any]: ...
             """,
-            """
+            source="""
             from typing import Any
 
             def foo():
@@ -492,7 +492,7 @@ class ApplyAnnotationsTest(unittest.TestCase):
                 return {}
 
             """,
-            """
+            expected="""
             from typing import Any, Dict, List
 
             def foo() -> List[Any]:
@@ -505,16 +505,16 @@ class ApplyAnnotationsTest(unittest.TestCase):
         )
 
         self.assert_annotations(
-            """
+            stub="""
             def foo() -> b.b.A: ...
             """,
-            """
+            source="""
             from c import bar, A
 
             def foo():
                 return bar()
             """,
-            """
+            expected="""
             from c import bar, A
 
             def foo() -> A:
@@ -522,17 +522,17 @@ class ApplyAnnotationsTest(unittest.TestCase):
             """,
         )
         self.assert_annotations(
-            """
+            stub="""
             def foo() -> b.b.A: ...
             """,
-            """
+            source="""
             from a import *
             from c import bar, A
 
             def foo():
                 return bar()
             """,
-            """
+            expected="""
             from a import *
             from c import bar, A
 
@@ -541,16 +541,16 @@ class ApplyAnnotationsTest(unittest.TestCase):
             """,
         )
         self.assert_annotations(
-            """
+            stub="""
             def foo() -> b.b.A: ...
             """,
-            """
+            source="""
             from c import A as B, bar
 
             def foo():
                 return bar()
             """,
-            """
+            expected="""
             from c import A as B, bar
             from b.b import A
 
@@ -561,34 +561,34 @@ class ApplyAnnotationsTest(unittest.TestCase):
         # Work around to avoid marking this test file as generated.
         generated = "generated"
         self.assert_annotations(
-            """
+            stub="""
             def foo() -> int: ...
             """,
-            f"""
+            source=f"""
             # @{generated}
             def foo():
                 return 1
             """,
-            f"""
+            expected=f"""
             # @{generated}
             def foo():
                 return 1
             """,
         )
         self.assert_annotations(
-            """
+            stub="""
             from typing import Type
 
             def foo() -> Type[foo.A]: ...
             """,
-            """
+            source="""
             def foo():
                 class A:
                     x = 1
                 return A
 
             """,
-            """
+            expected="""
             from typing import Type
 
             def foo() -> Type[foo.A]:
