@@ -1,4 +1,5 @@
-from typing import Iterable, List, NamedTuple
+from collections import ChainMap
+from typing import Dict, Iterable, List, NamedTuple, Optional
 
 from .connection_api import PyreConnection
 
@@ -32,3 +33,12 @@ def defines(pyre_connection: PyreConnection, modules: Iterable[str]) -> List[Def
         )
         for element in result["response"]
     ]
+
+
+def get_class_hierarchy(
+    pyre_connection: PyreConnection
+) -> Optional[Dict[str, List[str]]]:
+    result = pyre_connection.query_server("dump_class_hierarchy()")
+    if result is None or "response" not in result:
+        return None
+    return dict(ChainMap(*result["response"]))
