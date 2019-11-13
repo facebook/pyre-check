@@ -52,3 +52,44 @@ class QueryAPITest(unittest.TestCase):
         )
         pyre_connection.query_server.return_value = {"error": "Found an issue"}
         self.assertEqual(query_api.get_class_hierarchy(pyre_connection), None)
+
+    def test_get_call_graph(self) -> None:
+        pyre_connection = MagicMock()
+        pyre_connection.query_server.return_value = {
+            "response": {
+                "async_test.foo": [],
+                "async_test.bar": [
+                    {
+                        "locations": [
+                            {
+                                "path": "async_test.py",
+                                "start": {"line": 6, "column": 4},
+                                "stop": {"line": 6, "column": 7},
+                            }
+                        ],
+                        "kind": "function",
+                        "target": "async_test.foo",
+                    }
+                ],
+            }
+        }
+
+        self.assertEqual(
+            query_api.get_call_graph(pyre_connection),
+            {
+                "async_test.foo": [],
+                "async_test.bar": [
+                    query_api.CallGraphTarget(
+                        target="async_test.foo",
+                        kind="function",
+                        locations=[
+                            query_api.Location(
+                                path="async_test.py",
+                                start=query_api.Position(line=6, column=4),
+                                stop=query_api.Position(line=6, column=7),
+                            )
+                        ],
+                    )
+                ],
+            },
+        )
