@@ -717,8 +717,8 @@ let test_qualify _ =
       def qualifier.foo():
         from abc import bar
         abc.bar()
-        def abc.bar(): pass
-        abc.bar()
+        def $local_qualifier?foo$bar(): pass
+        $local_qualifier?foo$bar()
     |};
   assert_qualify
     {|

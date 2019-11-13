@@ -403,9 +403,7 @@ let qualify
     if is_in_function then
       match Reference.as_list name with
       | [simple_name]
-        when (not (String.is_prefix simple_name ~prefix:"$"))
-             && (not (Set.mem locals name))
-             && not (Set.mem immutables name) ->
+        when (not (String.is_prefix simple_name ~prefix:"$")) && not (Set.mem immutables name) ->
           let alias = qualify_local_identifier simple_name ~qualifier |> name_to_reference_exn in
           ( {
               scope with
