@@ -162,21 +162,21 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
     | _ -> None
 
 
-  let current_and_previous_keys upstream_update =
+  let legacy_invalidated_keys upstream_update =
     let upstream =
       ClassMetadataEnvironment.UpdateResult.upstream upstream_update
       |> ClassHierarchyEnvironment.UpdateResult.upstream
       |> AliasEnvironment.UpdateResult.upstream
     in
-    let current_and_previous_classes =
-      UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes upstream
+    let previous_classes =
+      UnannotatedGlobalEnvironment.UpdateResult.previous_classes upstream
       |> Type.Primitive.Set.to_list
       |> List.map ~f:Reference.create
     in
-    let current_and_previous_unannotated_globals =
-      UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals upstream
+    let previous_unannotated_globals =
+      UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream
     in
-    List.fold ~init:current_and_previous_unannotated_globals ~f:Set.add current_and_previous_classes
+    List.fold ~init:previous_unannotated_globals ~f:Set.add previous_classes
 
 
   let all_keys class_metadata_environment =

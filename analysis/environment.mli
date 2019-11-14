@@ -119,10 +119,9 @@ module EnvironmentTable : sig
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
 
     (* For compatibility with the old dependency mode, we also need a different kind of key
-       discovery that just returns all of the keys under current consideration. For now this usually
-       is just going back to the UnannotatedGlobalEnvironment.UpdateResult.t and returning either
-       current_and_previous_classes or current_and_previous_unannotated_globals *)
-    val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
+       discovery that just returns all of the keys that possibly could have been affected by the
+       update *)
+    val legacy_invalidated_keys : UpdateResult.upstream -> TriggerSet.t
 
     (* This is the actual main function of the update. *)
     val produce_value

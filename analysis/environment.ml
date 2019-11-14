@@ -119,7 +119,7 @@ module EnvironmentTable = struct
 
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
 
-    val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
+    val legacy_invalidated_keys : UpdateResult.upstream -> TriggerSet.t
 
     val produce_value
       :  PreviousEnvironment.ReadOnly.t ->
@@ -229,14 +229,11 @@ module EnvironmentTable = struct
               name
               ~tags:["phase_name", In.Value.description]
               ~f:(fun _ ->
-                let current_and_previous_keys =
-                  In.current_and_previous_keys upstream_update |> Set.to_list
-                in
-                current_and_previous_keys
+                In.legacy_invalidated_keys upstream_update
+                |> Set.to_list
                 |> List.map ~f:In.convert_trigger
                 |> Table.KeySet.of_list
-                |> Table.remove_batch;
-                update ~names_to_update:current_and_previous_keys () ~track_dependencies:false)
+                |> Table.remove_batch)
           in
           In.UpdateResult.create
             ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty

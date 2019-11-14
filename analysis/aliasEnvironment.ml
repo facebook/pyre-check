@@ -333,9 +333,8 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
     | _ -> None
 
 
-  let current_and_previous_keys upstream_update =
-    UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals
-      upstream_update
+  let legacy_invalidated_keys upstream_update =
+    UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream_update
 
 
   let all_keys unannotated_global_environment =

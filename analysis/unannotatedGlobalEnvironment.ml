@@ -633,47 +633,20 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as 
 
 module UpdateResult = struct
   type t = {
-    current_classes: Type.Primitive.Set.t;
     previous_classes: Type.Primitive.Set.t;
-    current_unannotated_globals: Reference.Set.t;
     previous_unannotated_globals: Reference.Set.t;
-    current_defines: Reference.Set.t;
     previous_defines: Reference.Set.t;
     triggered_dependencies: DependencyKey.KeySet.t;
     upstream: AstEnvironment.UpdateResult.t;
   }
 
-  let added_unannotated_globals { current_unannotated_globals; previous_unannotated_globals; _ } =
-    Reference.Set.diff current_unannotated_globals previous_unannotated_globals
+  let previous_unannotated_globals { previous_unannotated_globals; _ } =
+    previous_unannotated_globals
 
 
-  let added_classes { current_classes; previous_classes; _ } =
-    Type.Primitive.Set.diff current_classes previous_classes
+  let previous_defines { previous_defines; _ } = previous_defines
 
-
-  let added_defines { current_defines; previous_defines; _ } =
-    Reference.Set.diff current_defines previous_defines
-
-
-  let current_classes { current_classes; _ } = current_classes
-
-  let current_unannotated_globals { current_unannotated_globals; _ } = current_unannotated_globals
-
-  let current_defines { current_defines; _ } = current_defines
-
-  let current_classes_and_removed_classes { current_classes; previous_classes; _ } =
-    Type.Primitive.Set.union current_classes previous_classes
-
-
-  let current_and_previous_unannotated_globals
-      { current_unannotated_globals; previous_unannotated_globals; _ }
-    =
-    Reference.Set.union current_unannotated_globals previous_unannotated_globals
-
-
-  let current_and_previous_defines { current_defines; previous_defines; _ } =
-    Reference.Set.union current_defines previous_defines
-
+  let previous_classes { previous_classes; _ } = previous_classes
 
   let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
@@ -720,7 +693,7 @@ let update
   KeyTracker.FunctionKeys.KeySet.of_list modified_qualifiers |> KeyTracker.FunctionKeys.remove_batch;
   match configuration with
   | { incremental_style = FineGrained; _ } ->
-      let current_classes, current_unannotated_globals, current_defines, triggered_dependencies =
+      let triggered_dependencies =
         Profiling.track_duration_and_shared_memory
           "TableUpdate(Unannotated globals)"
           ~tags:["phase_name", "Global discovery"]
@@ -753,23 +726,17 @@ let update
                 ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
                 ~define_additions:(Set.to_list define_additions)
             in
-            ( current_classes,
-              current_unannotated_globals,
-              current_defines,
-              DependencyKey.KeySet.union addition_triggers mutation_triggers ))
+            DependencyKey.KeySet.union addition_triggers mutation_triggers)
       in
       {
-        UpdateResult.current_classes;
-        previous_classes;
-        current_unannotated_globals;
+        UpdateResult.previous_classes;
         previous_unannotated_globals;
-        current_defines;
         previous_defines;
         triggered_dependencies;
         upstream;
       }
   | _ ->
-      let current_classes, current_unannotated_globals, current_defines, triggered_dependencies =
+      let triggered_dependencies =
         Profiling.track_duration_and_shared_memory
           "LegacyTableUpdate(Unannotated globals)"
           ~tags:["phase_name", "global discovery"]
@@ -779,17 +746,11 @@ let update
               ~previous_unannotated_globals_list
               ~previous_defines_list;
             update ();
-            ( KeyTracker.get_keys modified_qualifiers |> Type.Primitive.Set.of_list,
-              KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list,
-              KeyTracker.get_define_body_keys modified_qualifiers |> Reference.Set.of_list,
-              DependencyKey.KeySet.empty ))
+            DependencyKey.KeySet.empty)
       in
       {
-        current_classes;
         previous_classes;
-        current_unannotated_globals;
         previous_unannotated_globals;
-        current_defines;
         previous_defines;
         triggered_dependencies;
         upstream;

@@ -119,10 +119,10 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
     | _ -> None
 
 
-  let current_and_previous_keys upstream_update =
+  let legacy_invalidated_keys upstream_update =
     ClassHierarchyEnvironment.UpdateResult.upstream upstream_update
     |> AliasEnvironment.UpdateResult.upstream
-    |> UnannotatedGlobalEnvironment.UpdateResult.current_classes_and_removed_classes
+    |> UnannotatedGlobalEnvironment.UpdateResult.previous_classes
 
 
   let all_keys class_hierarchy_environment =

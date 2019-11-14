@@ -63,28 +63,11 @@ module UpdateResult : sig
      preenvironment updates *)
   type t
 
-  val added_unannotated_globals : t -> Reference.Set.t
+  val previous_unannotated_globals : t -> Reference.Set.t
 
-  val added_classes : t -> Type.Primitive.Set.t
+  val previous_classes : t -> Type.Primitive.Set.t
 
-  val added_defines : t -> Reference.Set.t
-
-  (* In principle we should only need to pass on those of these that are newly introduced, but we
-     pass all current classes in the specified modules as a compatibility feature for downstream
-     consumers not recording dependcies *)
-  val current_classes : t -> Type.Primitive.Set.t
-
-  val current_unannotated_globals : t -> Reference.Set.t
-
-  val current_defines : t -> Reference.Set.t
-
-  (* Purely a compatibility feature for downstream consumers that are tracking their own
-     dependencies off of these names rather than recording them directly *)
-  val current_classes_and_removed_classes : t -> Type.Primitive.Set.t
-
-  val current_and_previous_unannotated_globals : t -> Reference.Set.t
-
-  val current_and_previous_defines : t -> Reference.Set.t
+  val previous_defines : t -> Reference.Set.t
 
   val locally_triggered_dependencies : t -> DependencyKey.KeySet.t
 
