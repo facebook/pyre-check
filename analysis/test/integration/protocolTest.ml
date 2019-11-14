@@ -411,6 +411,16 @@ let test_check_protocol context =
       "Revealed type [-1]: Revealed type for `z` is `Union[int, str]`.";
     ];
 
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        __foo: int
+        def __bar(self) -> int: ...
+    |}
+    [
+      "Private protocol property [52]: Protocol `P` has private property `__bar`.";
+      "Private protocol property [52]: Protocol `P` has private property `__foo`.";
+    ];
   ()
 
 

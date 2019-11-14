@@ -4299,6 +4299,28 @@ module State (Context : Context) = struct
       Context.define
     in
     let class_initialization_errors errors =
+      let check_protocol_properties definition errors =
+        if AnnotatedClass.is_protocol definition then
+          let private_protocol_property_errors =
+            Annotated.Class.attributes
+              ~transitive:false
+              ~include_generated_attributes:true
+              ~resolution:global_resolution
+              definition
+            |> List.map ~f:AnnotatedAttribute.name
+            |> List.filter ~f:is_private_attribute
+            |> List.map ~f:(fun name ->
+                   Error.create
+                     ~location
+                     ~kind:
+                       (Error.PrivateProtocolProperty
+                          { name; parent = Annotated.Class.annotation definition })
+                     ~define:Context.define)
+          in
+          private_protocol_property_errors @ errors
+        else
+          errors
+      in
       (* Ensure all attributes are instantiated. This must happen after typechecking is finished to
          access the annotations added to resolution in the constructor. If a constructor does not
          exist, this function is triggered in the toplevel. *)
@@ -4458,6 +4480,7 @@ module State (Context : Context) = struct
           >>| List.fold ~init:errors ~f:is_final
           |> Option.value ~default:errors
         in
+        let check_protocol definition errors = check_protocol_properties definition errors in
         let check_attributes definition errors =
           (* Error on uninitialized attributes if there was no constructor in which to do so. *)
           if not (AnnotatedClass.has_explicit_constructor definition ~resolution:global_resolution)
@@ -4567,6 +4590,7 @@ module State (Context : Context) = struct
         >>| (fun definition ->
               errors
               |> check_bases
+              |> check_protocol definition
               |> check_attributes definition
               |> check_overrides definition
               |> check_redefined_class definition)

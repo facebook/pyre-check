@@ -228,6 +228,10 @@ type kind =
   | MissingReturnAnnotation of missing_annotation
   | MutuallyRecursiveTypeVariables of Reference.t option
   | NotCallable of Type.t
+  | PrivateProtocolProperty of {
+      name: Identifier.t;
+      parent: Type.t;
+    }
   | ProhibitedAny of {
       is_type_alias: bool;
       missing_annotation: missing_annotation;
@@ -343,6 +347,7 @@ let code = function
   | UnsafeCast _ -> 49
   | RedefinedClass _ -> 50
   | UnusedLocalMode _ -> 51
+  | PrivateProtocolProperty _ -> 52
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
   | Deobfuscation _ -> 1002
@@ -383,6 +388,7 @@ let name = function
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | MutuallyRecursiveTypeVariables _ -> "Mutually recursive type variables"
   | NotCallable _ -> "Call error"
+  | PrivateProtocolProperty _ -> "Private protocol property"
   | ProhibitedAny _ -> "Prohibited any"
   | RedefinedClass _ -> "Redefined class"
   | RedundantCast _ -> "Redundant cast"
@@ -1460,6 +1466,10 @@ let messages ~concise ~signature location kind =
           annotation;
       ]
   | NotCallable annotation -> [Format.asprintf "`%a` is not a function." pp_type annotation]
+  | PrivateProtocolProperty { name; parent } ->
+      [
+        Format.asprintf "Protocol `%a` has private property `%a`." pp_type parent pp_identifier name;
+      ]
   | ProhibitedAny { is_type_alias; missing_annotation = { given_annotation; _ } } when concise ->
       let annotation_kind = if is_type_alias then "Aliased" else "Given" in
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
@@ -1949,6 +1959,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | MutuallyRecursiveTypeVariables _
+  | PrivateProtocolProperty _
   | ProhibitedAny _
   | TooManyArguments _
   | TypedDictionaryAccessWithNonLiteral _
@@ -2190,6 +2201,7 @@ let less_or_equal ~resolution left right =
   | MissingReturnAnnotation _, _
   | MutuallyRecursiveTypeVariables _, _
   | NotCallable _, _
+  | PrivateProtocolProperty _, _
   | ProhibitedAny _, _
   | RedefinedClass _, _
   | RedundantCast _, _
@@ -2503,6 +2515,7 @@ let join ~resolution left right =
     | MissingReturnAnnotation _, _
     | MutuallyRecursiveTypeVariables _, _
     | NotCallable _, _
+    | PrivateProtocolProperty _, _
     | ProhibitedAny _, _
     | RedefinedClass _, _
     | RedundantCast _, _
@@ -2972,6 +2985,8 @@ let dequalify
     | MutuallyRecursiveTypeVariables callee ->
         MutuallyRecursiveTypeVariables (Option.map callee ~f:dequalify_reference)
     | NotCallable annotation -> NotCallable (dequalify annotation)
+    | PrivateProtocolProperty ({ parent; _ } as private_property) ->
+        PrivateProtocolProperty { private_property with parent = dequalify parent }
     | ProhibitedAny { is_type_alias; missing_annotation = { annotation; _ } as missing_annotation }
       ->
         ProhibitedAny
