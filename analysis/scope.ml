@@ -5,6 +5,7 @@
 
 open Core
 open Ast
+open Pyre
 
 module Binding = struct
   module Kind = struct
@@ -317,4 +318,100 @@ module Scope = struct
 
 
   let lookup_bindings { bindings; _ } = Map.find bindings
+
+  module Lookup = struct
+    type t =
+      | Binding of Binding.t
+      | Global
+      | Nonlocal
+    [@@deriving sexp, compare, hash]
+  end
+
+  let lookup { globals; nonlocals; bindings; _ } name =
+    match Set.mem globals name with
+    | true -> Some Lookup.Global
+    | false -> (
+        match Set.mem nonlocals name with
+        | true -> Some Lookup.Nonlocal
+        | false -> Map.find bindings name >>| fun binding -> Lookup.Binding binding )
+end
+
+module Access = struct
+  module Locality = struct
+    type t =
+      | Local
+      | Nonlocal
+      | Global
+    [@@deriving sexp, compare, hash]
+  end
+
+  module Kind = struct
+    type t =
+      | CurrentScope
+      | OuterScope of Locality.t
+    [@@deriving sexp, compare, hash]
+  end
+
+  type t = {
+    kind: Kind.t;
+    binding: Binding.t;
+    scope: Scope.t;
+  }
+  [@@deriving sexp, compare]
+end
+
+module ScopeStack = struct
+  type t = {
+    global: Scope.t;
+    locals: Scope.t list;
+  }
+
+  let create source = { global = Scope.of_source source; locals = [] }
+
+  let global_scope { global; _ } = global
+
+  let current_scope { locals; global } =
+    match locals with
+    | [] -> global
+    | scope :: _ -> scope
+
+
+  let lookup { locals; global } name =
+    let rec lookup_outer_scopes ~exclude_global = function
+      | [] ->
+          if exclude_global then
+            None
+          else
+            Scope.lookup_bindings global name >>| fun binding -> global, binding
+      | scope :: rest -> (
+          match Scope.lookup scope name with
+          | Some (Scope.Lookup.Binding binding) -> Some (scope, binding)
+          | Some Scope.Lookup.Global -> lookup_outer_scopes ~exclude_global []
+          | _ -> lookup_outer_scopes ~exclude_global rest )
+    in
+    match locals with
+    | [] ->
+        (* No need to deal with nested scopes if there's none *)
+        Scope.lookup_bindings global name
+        >>| fun binding -> { Access.binding; scope = global; kind = Access.Kind.CurrentScope }
+    | current_scope :: rest -> (
+        match Scope.lookup current_scope name with
+        | Some (Scope.Lookup.Binding binding) ->
+            (* Binding found in the current scope *)
+            Some { Access.binding; scope = current_scope; kind = Access.Kind.CurrentScope }
+        | Some Scope.Lookup.Global ->
+            Scope.lookup_bindings global name
+            >>| fun binding ->
+            { Access.binding; scope = global; kind = Access.(Kind.OuterScope Locality.Global) }
+        | Some Scope.Lookup.Nonlocal ->
+            lookup_outer_scopes ~exclude_global:true rest
+            >>| fun (scope, binding) ->
+            { Access.binding; scope; kind = Access.(Kind.OuterScope Locality.Nonlocal) }
+        | None ->
+            lookup_outer_scopes ~exclude_global:false rest
+            >>| fun (scope, binding) ->
+            { Access.binding; scope; kind = Access.(Kind.OuterScope Locality.Local) } )
+
+
+  let extend ~with_ { global; locals } = { global; locals = with_ :: locals }
 end

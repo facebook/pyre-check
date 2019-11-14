@@ -65,3 +65,44 @@ module Scope : sig
   (* Mostly for testing *)
   val lookup_bindings : t -> Identifier.t -> Binding.t option
 end
+
+(** Data structure that represents the result of a binding lookup in a stack of scopes *)
+module Access : sig
+  module Locality : sig
+    type t =
+      | Local
+      | Nonlocal
+      | Global
+    [@@deriving sexp, compare, hash]
+  end
+
+  module Kind : sig
+    type t =
+      | CurrentScope
+      | OuterScope of Locality.t
+    [@@deriving sexp, compare, hash]
+  end
+
+  type t = private {
+    kind: Kind.t;
+    binding: Binding.t;  (** The binding corresponding to the name looked up *)
+    scope: Scope.t;  (** The scope where the binding is found *)
+  }
+  [@@deriving sexp, compare]
+end
+
+(** Data structure that aggregates all bindings in a code block as well as all blocks that
+    (transitively) nest it. *)
+module ScopeStack : sig
+  type t
+
+  val create : Source.t -> t
+
+  val global_scope : t -> Scope.t
+
+  val current_scope : t -> Scope.t
+
+  val extend : with_:Scope.t -> t -> t
+
+  val lookup : t -> Identifier.t -> Access.t option
+end

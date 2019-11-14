@@ -637,6 +637,440 @@ let test_expression_local_bindings _ =
   ()
 
 
+module LookupSite = struct
+  type t =
+    | Global
+    | Define of Reference.t
+end
+
+module ExpectAccess = struct
+  type t = {
+    kind: Access.Kind.t;
+    binding: ExpectBinding.t;
+  }
+
+  let create kind binding = { kind; binding }
+end
+
+let assert_access ~actual ~expected name =
+  match actual, expected with
+  | None, None -> ()
+  | Some access, None ->
+      let message =
+        Format.asprintf
+          "Expected access to not exist but found: %a"
+          Sexp.pp_hum
+          (Access.sexp_of_t access)
+      in
+      assert_failure message
+  | None, Some _ ->
+      let message = Format.asprintf "Expected access to exist for %s but not found" name in
+      assert_failure message
+  | ( Some { Access.binding; kind; _ },
+      Some { ExpectAccess.kind = expected_kind; binding = expected_binding } ) ->
+      assert_equal
+        ~cmp:[%compare.equal: Access.Kind.t]
+        ~printer:(fun kind -> Sexp.to_string_hum [%message (kind : Access.Kind.t)])
+        expected_kind
+        kind;
+      assert_binding ~actual:(Some binding) ~expected:(Some expected_binding) name
+
+
+let test_scope_stack_lookup _ =
+  let assert_bindings ~expected ~site source_text =
+    let source =
+      Test.parse ~handle:"test.py" source_text |> Preprocessing.populate_nesting_defines
+    in
+    let scope_stack = ScopeStack.create source in
+    let scope_stack =
+      match site with
+      | LookupSite.Global -> scope_stack
+      | LookupSite.Define name ->
+          let all_defines =
+            Preprocessing.defines ~include_nested:true ~include_toplevels:false source
+          in
+          let find_define name =
+            match
+              List.find all_defines ~f:(fun { Node.value; _ } ->
+                  Reference.equal name (Statement.Define.name value))
+            with
+            | None ->
+                let message =
+                  Format.sprintf "Cannot find define with name %s" (Reference.show name)
+                in
+                failwith message
+            | Some define -> define
+          in
+          let defines =
+            (* Collect all defines that (transitively) nest the define whose name is `name` *)
+            let rec walk_nesting sofar = function
+              | None -> sofar
+              | Some name ->
+                  let {
+                    Node.value =
+                      {
+                        Statement.Define.signature =
+                          { Statement.Define.Signature.nesting_define; _ };
+                        _;
+                      } as define;
+                    _;
+                  }
+                    =
+                    find_define name
+                  in
+                  (* Shallow nests come before deep nests *)
+                  walk_nesting (define :: sofar) nesting_define
+            in
+            walk_nesting [] (Some name)
+          in
+          List.fold defines ~init:scope_stack ~f:(fun scope_stack define ->
+              let scope = Scope.of_define_exn define in
+              ScopeStack.extend scope_stack ~with_:scope)
+    in
+    List.iter expected ~f:(fun (name, expected) ->
+        let actual = ScopeStack.lookup scope_stack name in
+        assert_access ~actual ~expected name)
+  in
+  assert_bindings "" ~site:LookupSite.Global ~expected:["x", None];
+
+  assert_bindings
+    {|
+    x = 1
+  |}
+    ~site:LookupSite.Global
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+        "y", None;
+      ];
+
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      y = 1
+  |}
+    ~site:(LookupSite.Define !&"foo")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+        ( "y",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (4, 2) (4, 3))
+            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+      ];
+
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      x = 2
+  |}
+    ~site:(LookupSite.Define !&"foo")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (4, 2) (4, 3))
+            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+      ];
+
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      global x
+      x = 2
+  |}
+    ~site:(LookupSite.Define !&"foo")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global) ) );
+      ];
+
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      x = 2
+      def bar():
+        pass
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (4, 2) (4, 3))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+      ];
+
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      x = 2
+      def bar():
+        x = 3
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (6, 4) (6, 5))
+            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+      ];
+
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      x = 2
+      def bar():
+        global x
+        x = 3
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global) ) );
+      ];
+
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      x = 2
+      def bar():
+        nonlocal x
+        x = 3
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (4, 2) (4, 3))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Nonlocal) ) );
+      ];
+
+  (* Global search will ignore local/nonlocal bindings *)
+  assert_bindings
+    {|
+    def foo():
+      x = 1
+      def bar():
+        global x
+        x = 2
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:["x", None];
+  assert_bindings
+    {|
+    def foo():
+      x = 1
+      def bar():
+        nonlocal x
+        def baz():
+          global x
+          x = 2
+  |}
+    ~site:(LookupSite.Define !&"baz")
+    ~expected:["x", None];
+
+  (* Nonlocal search will ignore global bindings *)
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      def bar():
+        nonlocal x
+        x = 3
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:["x", None];
+
+  (* We don't care global/nonlocal declarations in the outer scope -- the binding is local from the
+     perspective of the current scope *)
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      global x
+      def bar():
+        pass
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+      ];
+  assert_bindings
+    {|
+    def foo():
+      x = 1
+      def bar():
+        nonlocal x
+        def baz():
+          pass
+  |}
+    ~site:(LookupSite.Define !&"baz")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (3, 2) (3, 3))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+      ];
+  assert_bindings
+    {|
+    x = 1
+    def foo():
+      global x
+      def bar():
+        x = 2
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (6, 4) (6, 5))
+            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+      ];
+  assert_bindings
+    {|
+    def foo():
+      x = 1
+      def bar():
+        nonlocal x
+        def baz():
+          x = 2
+  |}
+    ~site:(LookupSite.Define !&"baz")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (7, 6) (7, 7))
+            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+      ];
+
+  (* Demonstrate that we are able to find annotations of captured local variables *)
+  assert_bindings
+    {|
+    def foo() -> int:
+      x: int = 1
+      def bar(y: int) -> int:
+        return x + y
+      return bar(42)
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create
+                Binding.Kind.AssignTarget
+                (location (3, 2) (3, 3))
+                ~annotation:int_annotation
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+        ( "y",
+          Some
+            ( ExpectBinding.create
+                Binding.Kind.ParameterName
+                (location (4, 10) (4, 11))
+                ~annotation:int_annotation
+            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+      ];
+
+  (* Demonstrate that we are able to find annotations of captured parameters *)
+  assert_bindings
+    {|
+    def foo(x: int) -> int:
+      def bar(y: int) -> int:
+        return x + y
+      return bar(42)
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create
+                Binding.Kind.ParameterName
+                (location (2, 8) (2, 9))
+                ~annotation:int_annotation
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+        ( "y",
+          Some
+            ( ExpectBinding.create
+                Binding.Kind.ParameterName
+                (location (3, 10) (3, 11))
+                ~annotation:int_annotation
+            |> ExpectAccess.create Access.Kind.CurrentScope ) );
+      ];
+
+  (* Demonstrate that we are able to correctly handle global declarations that does not follow
+     control flow *)
+  assert_bindings
+    {|
+    x = 1
+    def foo(flag: bool):
+      if flag:
+        x = 2
+      else:
+        global x
+  |}
+    ~site:(LookupSite.Define !&"foo")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create Binding.Kind.AssignTarget (location (2, 0) (2, 1))
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Global) ) );
+      ];
+
+  (* Demonstrate that we are able to correctly find bindings that does not follow control flow *)
+  assert_bindings
+    {|
+    def foo():
+      def bar():
+        return x
+      x: int = 1
+      return bar()
+  |}
+    ~site:(LookupSite.Define !&"bar")
+    ~expected:
+      [
+        ( "x",
+          Some
+            ( ExpectBinding.create
+                Binding.Kind.AssignTarget
+                (location (5, 2) (5, 3))
+                ~annotation:int_annotation
+            |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
+      ];
+
+  ()
+
+
 let () =
   "scope"
   >::: [
@@ -644,5 +1078,6 @@ let () =
          "nonlocals" >:: test_nonlocal;
          "define_local_bindings" >:: test_define_local_bindings;
          "expression_local_bindings" >:: test_expression_local_bindings;
+         "scope_stack_lookup" >:: test_scope_stack_lookup;
        ]
   |> Test.run
