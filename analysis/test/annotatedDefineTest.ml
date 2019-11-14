@@ -29,6 +29,7 @@ let test_parent_definition context =
           parent = Some (Reference.create parent);
           nesting_define = None;
         };
+      captures = [];
       body = [+Statement.Pass];
     }
     |> Node.create_with_default_location

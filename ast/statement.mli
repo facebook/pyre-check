@@ -236,8 +236,17 @@ and Define : sig
     val has_return_annotation : t -> bool [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
+  module Capture : sig
+    type t = {
+      name: Identifier.t;
+      annotation: Expression.t option;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
   type t = {
     signature: Signature.t;
+    captures: Capture.t list;
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]

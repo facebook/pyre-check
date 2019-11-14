@@ -61,6 +61,7 @@ let assert_fixpoint body expected =
           parent = None;
           nesting_define = None;
         };
+      captures = [];
       body;
     }
   in

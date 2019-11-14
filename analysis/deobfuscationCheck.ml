@@ -390,7 +390,8 @@ let run
         let transformed =
           let value =
             match Node.value statement with
-            | Statement.Define ({ Define.signature = { name; parameters; _ }; body } as define) ->
+            | Statement.Define
+                ({ Define.signature = { name; parameters; _ }; captures; body } as define) ->
                 (* Scope parameters to the function. *)
                 let names = String.Hash_set.create () in
                 let scope_name identifier =
@@ -477,7 +478,7 @@ let run
                 let signature =
                   { define.signature with name = sanitize_reference name; parameters }
                 in
-                Statement.Define { signature; body }
+                Statement.Define { signature; captures; body }
             | For ({ For.target = { Node.value = Name name; _ } as target; _ } as block)
               when is_simple_name name ->
                 let target = { target with Node.value = Expression.Name (sanitize_name name) } in
@@ -633,7 +634,7 @@ let run
             match Node.value statement with
             | Statement.If ({ If.body; _ } as conditional) ->
                 Statement.If { conditional with If.body = fix_statement_list body }
-            | Define ({ Define.body; _ } as define) ->
+            | Define { Define.body; captures; signature } ->
                 let body =
                   let remove_docstring = function
                     | { Node.value = Statement.Expression { Node.value = String _; _ }; _ } :: tail
@@ -643,8 +644,8 @@ let run
                   in
                   fix_statement_list body |> remove_docstring
                 in
-                let signature = { define.signature with docstring = None } in
-                Define { signature; body }
+                let signature = { signature with docstring = None } in
+                Define { signature; captures; body }
             | value -> value
           in
           { statement with Node.value }

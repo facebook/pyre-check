@@ -227,7 +227,7 @@ module Scope = struct
             | `Duplicate -> sofar ))
 
 
-  let of_define { Statement.Define.signature; body } =
+  let of_define { Statement.Define.signature; body; _ } =
     let open Statement in
     if Define.Signature.is_toplevel signature then
       None

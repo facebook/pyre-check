@@ -3630,6 +3630,7 @@ module TypedDictionary = struct
               parent = Some (Reference.create class_name);
               nesting_define = None;
             };
+          captures = [];
           body = [];
         }
       |> Node.create_with_default_location

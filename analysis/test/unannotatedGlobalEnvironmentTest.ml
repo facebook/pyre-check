@@ -935,6 +935,7 @@ let test_updates context =
             parent = None;
             nesting_define = None;
           };
+        captures = [];
         body;
       }
   in
@@ -1178,6 +1179,7 @@ let test_updates context =
                    parent = None;
                    nesting_define = None;
                  };
+               captures = [];
                body =
                  [
                    create_simple_return
@@ -1221,6 +1223,7 @@ let test_updates context =
                    parent = None;
                    nesting_define = None;
                  };
+               captures = [];
                body =
                  [
                    create_simple_return

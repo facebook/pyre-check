@@ -139,9 +139,12 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           List.iter bases ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.iter decorators ~f:visit_expression
-      | Define { Define.signature = { parameters; decorators; return_annotation; _ }; body } ->
+      | Define
+          { Define.signature = { parameters; decorators; return_annotation; _ }; captures; body } ->
           List.iter parameters ~f:(visit_parameter ~state ~visitor ~visit_expression);
           List.iter body ~f:visit_statement;
+          List.iter captures ~f:(fun { Define.Capture.annotation; _ } ->
+              Option.iter annotation ~f:visit_expression);
           List.iter decorators ~f:visit_expression;
           Option.iter ~f:visit_expression return_annotation
       | Delete expression

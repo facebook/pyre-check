@@ -26,6 +26,7 @@ let test_to_dot _ =
             parent = None;
             nesting_define = None;
           };
+        captures = [];
         body;
       }
     in
@@ -111,6 +112,7 @@ let assert_cfg body expected =
           parent = None;
           nesting_define = None;
         };
+      captures = [];
       body;
     }
   in

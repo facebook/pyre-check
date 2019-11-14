@@ -987,8 +987,17 @@ and Define : sig
     val has_return_annotation : t -> bool
   end
 
+  module Capture : sig
+    type t = {
+      name: Identifier.t;
+      annotation: Expression.t option;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  end
+
   type t = {
     signature: Signature.t;
+    captures: Capture.t list;
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
@@ -1136,8 +1145,13 @@ end = struct
                           | _ -> (
                               match Bool.compare left.generator right.generator with
                               | x when not (Int.equal x 0) -> x
-                              | _ -> [%compare: Reference.t option] left.parent right.parent ) ) ) )
-              ) )
+                              | _ -> (
+                                  match [%compare: Reference.t option] left.parent right.parent with
+                                  | x when not (Int.equal x 0) -> x
+                                  | _ ->
+                                      [%compare: Reference.t option]
+                                        left.nesting_define
+                                        right.nesting_define ) ) ) ) ) ) )
 
 
     let create_toplevel ~qualifier =
@@ -1258,29 +1272,54 @@ end = struct
     let is_class_toplevel signature = String.equal (unqualified_name signature) "$class_toplevel"
   end
 
+  module Capture = struct
+    type t = {
+      name: Identifier.t;
+      annotation: Expression.t option;
+    }
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+    let location_sensitive_hash_fold state { name; annotation } =
+      let state = [%hash_fold: Identifier.t] state name in
+      match annotation with
+      | None -> state
+      | Some annotation -> Expression.location_sensitive_hash_fold state annotation
+
+
+    let location_sensitive_compare left right =
+      match [%compare: Identifier.t] left.name right.name with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Option.compare Expression.location_sensitive_compare left.annotation right.annotation
+  end
+
   type t = {
     signature: Signature.t;
+    captures: Capture.t list;
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  let location_sensitive_hash_fold state { signature; body } =
+  let location_sensitive_hash_fold state { signature; captures; body } =
     let state = Signature.location_sensitive_hash_fold state signature in
+    let state = List.fold captures ~init:state ~f:Capture.location_sensitive_hash_fold in
     List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold
 
 
   let location_sensitive_compare left right =
     match Signature.location_sensitive_compare left.signature right.signature with
     | x when not (Int.equal x 0) -> x
-    | _ -> List.compare Statement.location_sensitive_compare left.body right.body
+    | _ -> (
+        match List.compare Capture.location_sensitive_compare left.captures right.captures with
+        | x when not (Int.equal x 0) -> x
+        | _ -> List.compare Statement.location_sensitive_compare left.body right.body )
 
 
   let create_toplevel ~qualifier ~statements =
-    { signature = Signature.create_toplevel ~qualifier; body = statements }
+    { signature = Signature.create_toplevel ~qualifier; captures = []; body = statements }
 
 
   let create_class_toplevel ~parent ~statements =
-    { signature = Signature.create_class_toplevel ~parent; body = statements }
+    { signature = Signature.create_class_toplevel ~parent; captures = []; body = statements }
 
 
   let name { signature = { Signature.name; _ }; _ } = name
@@ -1370,7 +1409,7 @@ end = struct
   let show_json define = define |> to_yojson |> Yojson.Safe.pretty_to_string
 
   let implicit_attributes
-      ({ body; signature = { parameters; _ } } as define)
+      ({ body; signature = { parameters; _ }; _ } as define)
       ~definition:{ Class.body = definition_body; _ }
       : Attribute.t Identifier.SerializableMap.t
     =
@@ -1551,7 +1590,7 @@ end = struct
               | {
                   Node.value =
                     Statement.Define
-                      { signature = { name = callee; parent = Some parent; _ }; body };
+                      { signature = { name = callee; parent = Some parent; _ }; body; _ };
                   _;
                 }
                 when Reference.equal callee (Reference.create ~prefix:parent name) ->
@@ -2392,6 +2431,7 @@ module PrettyPrinter = struct
       {
         Define.signature = { name; parameters; decorators; return_annotation; async; parent; _ };
         body;
+        captures = _;
       }
     =
     let return_annotation =

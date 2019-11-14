@@ -790,6 +790,7 @@ compound_statement:
             nesting_define = None;
             docstring = docstring;
           };
+          captures = [];
           body
         };
       }

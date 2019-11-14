@@ -2861,6 +2861,7 @@ module State (Context : Context) = struct
               _;
             } as signature;
           body;
+          _;
         } as define;
     }
       =

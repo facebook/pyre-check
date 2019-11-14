@@ -1930,6 +1930,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               parent = Some parent;
               nesting_define = None;
             };
+          captures = [];
           body =
             [
               Node.create
@@ -2115,6 +2116,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                     parent = Some name;
                     nesting_define = None;
                   };
+                captures = [];
                 body = [Node.create Statement.Pass ~location];
               }
             |> Node.create ~location
@@ -2140,11 +2142,11 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
     match statement with
     | {
      Node.location;
-     value = Define { Define.signature = { Define.Signature.name; _ } as signature; body };
+     value = Define { Define.signature = { Define.Signature.name; _ } as signature; captures; body };
     } ->
         let signature = { signature with Define.Signature.nesting_define } in
         let body = transform_statements ~nesting_define:(Some name) body in
-        { Node.location; value = Define { signature; body } }
+        { Node.location; value = Define { signature; captures; body } }
     | { Node.location; value = Class class_ } ->
         let body = transform_statements ~nesting_define:None class_.body in
         { Node.location; value = Class { class_ with body } }

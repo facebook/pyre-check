@@ -245,6 +245,7 @@ module Make (Transformer : Transformer) = struct
                   generator;
                   docstring;
                 };
+              captures;
               body;
             } ->
             Define
@@ -262,6 +263,12 @@ module Make (Transformer : Transformer) = struct
                     generator;
                     docstring;
                   };
+                captures =
+                  List.map captures ~f:(fun { Define.Capture.name; annotation } ->
+                      {
+                        Define.Capture.name;
+                        annotation = Option.map annotation ~f:transform_expression;
+                      });
                 body = transform_list body ~f:transform_statement |> List.concat;
               }
         | Delete expression -> Delete (transform_expression expression)

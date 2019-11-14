@@ -28,6 +28,7 @@ let test_is_method _ =
           parent = parent >>| Reference.create;
           nesting_define = None;
         };
+      captures = [];
       body = [+Statement.Pass];
     }
   in
@@ -50,6 +51,7 @@ let test_is_classmethod _ =
           parent = Some !&"bar";
           nesting_define = None;
         };
+      captures = [];
       body = [+Statement.Pass];
     }
   in
@@ -76,6 +78,7 @@ let test_is_class_property _ =
           parent = Some !&"bar";
           nesting_define = None;
         };
+      captures = [];
       body = [+Statement.Pass];
     }
   in
@@ -100,6 +103,7 @@ let test_decorator _ =
           parent = None;
           nesting_define = None;
         };
+      captures = [];
       body = [+Statement.Pass];
     }
   in
@@ -137,6 +141,7 @@ let test_is_constructor _ =
             parent = parent >>| Reference.create;
             nesting_define = None;
           };
+        captures = [];
         body = [+Statement.Pass];
       }
     in
