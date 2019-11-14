@@ -74,13 +74,7 @@ module Record = struct
           | Contravariant -> "(contravariant)"
           | Invariant -> ""
         in
-        Format.fprintf
-          format
-          "%s[%s%s]%s"
-          name
-          (Identifier.sanitized variable)
-          constraints
-          variance
+        Format.fprintf format "%s[%s%s]%s" name (Identifier.sanitized variable) constraints variance
     end
 
     module RecordVariadic = struct
@@ -322,8 +316,7 @@ module Record = struct
     and 'annotation record_parameters =
       | Defined of 'annotation RecordParameter.t list
       | Undefined
-      | ParameterVariadicTypeVariable of
-          'annotation Variable.RecordVariadic.RecordParameters.record
+      | ParameterVariadicTypeVariable of 'annotation Variable.RecordVariadic.RecordParameters.record
 
     and 'annotation overload = {
       annotation: 'annotation;
@@ -447,9 +440,9 @@ let is_callable = function
 
 let is_dictionary ?(with_key = None) = function
   | Parametric { name = "dict"; parameters } -> (
-    match with_key, parameters with
-    | Some key, Concrete [key_parameter; _] -> equal key key_parameter
-    | _ -> true )
+      match with_key, parameters with
+      | Some key, Concrete [key_parameter; _] -> equal key key_parameter
+      | _ -> true )
   | _ -> false
 
 
@@ -717,8 +710,7 @@ let rec pp_concise format annotation =
   | Optional parameter -> Format.fprintf format "Optional[%a]" pp_concise parameter
   | Parametric { name; parameters = Concrete parameters } ->
       let name = strip_qualification (reverse_substitute name) in
-      if List.for_all parameters ~f:(fun parameter -> is_unbound parameter || is_top parameter)
-      then
+      if List.for_all parameters ~f:(fun parameter -> is_unbound parameter || is_top parameter) then
         Format.fprintf format "%s[]" name
       else
         Format.fprintf format "%s[%a]" name pp_comma_separated parameters
@@ -1250,10 +1242,8 @@ module Transform = struct
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
               match constraints with
-              | Record.Variable.Bound bound ->
-                  Record.Variable.Bound (visit_annotation bound ~state)
-              | Explicit constraints ->
-                  Explicit (List.map constraints ~f:(visit_annotation ~state))
+              | Record.Variable.Bound bound -> Record.Variable.Bound (visit_annotation bound ~state)
+              | Explicit constraints -> Explicit (List.map constraints ~f:(visit_annotation ~state))
               | Unconstrained -> Unconstrained
               | LiteralIntegers -> LiteralIntegers
             in
@@ -1505,7 +1495,7 @@ let primitive_substitution_map =
     "typing_extensions.Protocol", Primitive "typing.Protocol";
     (* This is broken in typeshed:
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
-      "PathLike", Primitive "_PathLike";
+    "PathLike", Primitive "_PathLike";
     "TSelf", variable "_PathLike";
   ]
   |> Identifier.Table.of_alist_exn
@@ -1522,11 +1512,11 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
     | Parametric
         { name; parameters = Concrete [Primitive left_parameter; Primitive right_parameter] }
       when Identifier.equal name Record.OrderedTypes.map_public_name -> (
-      match variable_aliases right_parameter with
-      | Some (Record.Variable.ListVariadic variable) ->
-          Some
-            { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [left_parameter] }
-      | _ -> None )
+        match variable_aliases right_parameter with
+        | Some (Record.Variable.ListVariadic variable) ->
+            Some
+              { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [left_parameter] }
+        | _ -> None )
     | _ -> None
   in
   match annotation with
@@ -1534,10 +1524,10 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
     when Identifier.equal name Record.OrderedTypes.RecordConcatenate.public_name -> (
       let parse_as_middle = function
         | Primitive potential_middle -> (
-          match variable_aliases potential_middle with
-          | Some (Record.Variable.ListVariadic variable) ->
-              Some { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [] }
-          | _ -> None )
+            match variable_aliases potential_middle with
+            | Some (Record.Variable.ListVariadic variable) ->
+                Some { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [] }
+            | _ -> None )
         | non_primitive -> create_map_operator_from_annotation non_primitive ~variable_aliases
       in
       let parameter_to_parsed =
@@ -1560,12 +1550,12 @@ let create_concatenation_operator_from_annotation annotation ~variable_aliases =
       create_map_operator_from_annotation annotation ~variable_aliases
       >>| fun map -> Record.OrderedTypes.RecordConcatenate.empty_wrap map
   | Primitive name -> (
-    match variable_aliases name with
-    | Some (Record.Variable.ListVariadic variable) ->
-        Some
-          (Record.OrderedTypes.RecordConcatenate.empty_wrap
-             { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [] })
-    | _ -> None )
+      match variable_aliases name with
+      | Some (Record.Variable.ListVariadic variable) ->
+          Some
+            (Record.OrderedTypes.RecordConcatenate.empty_wrap
+               { Record.OrderedTypes.RecordConcatenate.Middle.variable; mappers = [] })
+      | _ -> None )
   | _ -> None
 
 
@@ -1734,8 +1724,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                         Parameter.Anonymous
                           {
                             index;
-                            annotation =
-                              create_logic (Node.create_with_default_location annotation);
+                            annotation = create_logic (Node.create_with_default_location annotation);
                             default;
                           }
                     | "Named", Name (Name.Identifier name) :: annotation :: tail ->
@@ -1747,8 +1736,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                         Parameter.Named
                           {
                             name;
-                            annotation =
-                              create_logic (Node.create_with_default_location annotation);
+                            annotation = create_logic (Node.create_with_default_location annotation);
                             default;
                           }
                     | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
@@ -1760,8 +1748,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                         Parameter.KeywordOnly
                           {
                             name;
-                            annotation =
-                              create_logic (Node.create_with_default_location annotation);
+                            annotation = create_logic (Node.create_with_default_location annotation);
                             default;
                           }
                     | "Variable", tail ->
@@ -1795,10 +1782,10 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
                   | None -> normal () )
               | List parameters -> Defined (List.mapi ~f:extract_parameter parameters)
               | _ -> (
-                match variable_aliases (Expression.show parameters) with
-                | Some (Record.Variable.ParameterVariadic variable) ->
-                    ParameterVariadicTypeVariable variable
-                | _ -> Undefined )
+                  match variable_aliases (Expression.show parameters) with
+                  | Some (Record.Variable.ParameterVariadic variable) ->
+                      ParameterVariadicTypeVariable variable
+                  | _ -> Undefined )
             in
             { annotation = create_logic annotation; parameters; define_location = None }
         | _ -> undefined
@@ -1942,8 +1929,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
           | [{ Call.Argument.name = None; value = { Node.value = Expression.Tuple arguments; _ } }]
             ->
               Some (List.map arguments ~f:Node.value)
-          | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] ->
-              Some [argument]
+          | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] -> Some [argument]
           | _ -> None
         in
         let parse = function
@@ -1993,10 +1979,7 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
         let expression =
           try
             let parsed =
-              Parser.parse [value]
-              |> Source.create
-              |> Preprocessing.preprocess
-              |> Source.statements
+              Parser.parse [value] |> Source.create |> Preprocessing.preprocess |> Source.statements
             in
             match parsed with
             | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
@@ -2021,29 +2004,30 @@ let rec create_logic ~aliases ~variable_aliases { Node.value = expression; _ } =
   (* Substitutions. *)
   match result with
   | Primitive name -> (
-    match Identifier.Table.find primitive_substitution_map name with
-    | Some substitute -> substitute
-    | None -> result )
+      match Identifier.Table.find primitive_substitution_map name with
+      | Some substitute -> substitute
+      | None -> result )
   | Parametric { name; parameters = Concrete parameters } -> (
-    match Identifier.Table.find parametric_substitution_map name with
-    | Some name -> Parametric { name; parameters = substitute_ordered_types parameters }
-    | None -> (
-      match name with
-      | "typing_extensions.Annotated"
-      | "typing.Annotated"
-        when List.length parameters > 0 ->
-          annotated (List.hd_exn parameters)
-      | "typing.Optional" when List.length parameters = 1 -> optional (List.hd_exn parameters)
-      | "tuple"
-      | "typing.Tuple" ->
-          let tuple : tuple =
-            match parameters with
-            | [parameter; Primitive "..."] -> Unbounded parameter
-            | parameters -> substitute_ordered_types parameters |> fun bounded -> Bounded bounded
-          in
-          Tuple tuple
-      | "typing.Union" -> union parameters
-      | _ -> Parametric { name; parameters = substitute_ordered_types parameters } ) )
+      match Identifier.Table.find parametric_substitution_map name with
+      | Some name -> Parametric { name; parameters = substitute_ordered_types parameters }
+      | None -> (
+          match name with
+          | "typing_extensions.Annotated"
+          | "typing.Annotated"
+            when List.length parameters > 0 ->
+              annotated (List.hd_exn parameters)
+          | "typing.Optional" when List.length parameters = 1 -> optional (List.hd_exn parameters)
+          | "tuple"
+          | "typing.Tuple" ->
+              let tuple : tuple =
+                match parameters with
+                | [parameter; Primitive "..."] -> Unbounded parameter
+                | parameters ->
+                    substitute_ordered_types parameters |> fun bounded -> Bounded bounded
+              in
+              Tuple tuple
+          | "typing.Union" -> union parameters
+          | _ -> Parametric { name; parameters = substitute_ordered_types parameters } ) )
   | Union elements -> union elements
   | _ -> result
 
@@ -2056,9 +2040,9 @@ let create ~aliases =
   in
   let aliases = function
     | Primitive name -> (
-      match aliases name with
-      | Some (TypeAlias alias) -> Some alias
-      | _ -> None )
+        match aliases name with
+        | Some (TypeAlias alias) -> Some alias
+        | _ -> None )
     | _ -> None
   in
   create_logic ~aliases ~variable_aliases
@@ -2301,9 +2285,7 @@ module OrderedTypes = struct
               | Any -> Any
               | Concrete concretes -> Concrete (List.map concretes ~f:apply)
               | Concatenation { middle; wrapping = { head; tail } } ->
-                  let wrapping =
-                    { head = List.map head ~f:apply; tail = List.map tail ~f:apply }
-                  in
+                  let wrapping = { head = List.map head ~f:apply; tail = List.map tail ~f:apply } in
                   let middle = { middle with mappers = head_mapper :: middle.mappers } in
                   Concatenation { middle; wrapping }
             in
@@ -2375,9 +2357,7 @@ module OrderedTypes = struct
         let middle = middle concatenation in
         let concretes_head = List.sub against ~pos:0 ~len:head_length in
         let concretes_middle = List.sub against ~pos:head_length ~len:middle_length in
-        let concretes_tail =
-          List.sub against ~pos:(head_length + middle_length) ~len:tail_length
-        in
+        let concretes_tail = List.sub against ~pos:(head_length + middle_length) ~len:tail_length in
         let head = List.zip_exn head concretes_head in
         let tail = List.zip_exn tail concretes_tail in
         Some (create ~head ~tail (middle, concretes_middle))
@@ -2925,14 +2905,14 @@ end = struct
           when Identifier.equal variable_parameter_attribute (component_name PositionalArguments)
                && Identifier.equal keywords_parameter_attribute (component_name KeywordArguments)
           -> (
-          match
-            ( create_type variable_parameter_base ~aliases,
-              create_type keywords_parameter_base ~aliases )
-          with
-          | Primitive positionals_base, Primitive keywords_base
-            when Identifier.equal positionals_base keywords_base ->
-              get_variable positionals_base
-          | _ -> None )
+            match
+              ( create_type variable_parameter_base ~aliases,
+                create_type keywords_parameter_base ~aliases )
+            with
+            | Primitive positionals_base, Primitive keywords_base
+              when Identifier.equal positionals_base keywords_base ->
+                get_variable positionals_base
+            | _ -> None )
         | _ -> None
 
 
@@ -3240,9 +3220,9 @@ end = struct
     match Variadic.Parameters.parse_declaration expression ~target with
     | Some variable -> Some (ParameterVariadic variable)
     | None -> (
-      match Variadic.List.parse_declaration expression ~target with
-      | Some variable -> Some (ListVariadic variable)
-      | None -> None )
+        match Variadic.List.parse_declaration expression ~target with
+        | Some variable -> Some (ListVariadic variable)
+        | None -> None )
 
 
   let dequalify dequalify_map = function
@@ -3717,8 +3697,7 @@ let remove_undeclared annotation =
   | _ -> snd (RemoveUndeclared.visit () annotation)
 
 
-(* Transform tuples and callables so they are printed correctly when running infer and click to
-   fix. *)
+(* Transform tuples and callables so they are printed correctly when running infer and click to fix. *)
 let infer_transform annotation =
   let module InferTransform = Transform.Make (struct
     type state = unit

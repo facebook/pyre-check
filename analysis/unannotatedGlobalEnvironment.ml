@@ -187,8 +187,7 @@ end = struct
   end
 
   module ClassDefinitions =
-    Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.StringKey) (DependencyKey)
-      (ClassValue)
+    Memory.DependencyTrackedTableWithCache (SharedMemoryKeys.StringKey) (DependencyKey) (ClassValue)
 
   module UnannotatedGlobalValue = struct
     type t = unannotated_global
@@ -490,8 +489,7 @@ let missing_builtin_globals =
   [assign "None" Type.none; assign "..." Type.Any; assign "__debug__" Type.bool]
 
 
-let collect_unannotated_globals { Source.statements; source_path = { SourcePath.qualifier; _ }; _ }
-  =
+let collect_unannotated_globals { Source.statements; source_path = { SourcePath.qualifier; _ }; _ } =
   let rec visit_statement ~qualifier globals { Node.value; location } =
     let qualified_name target =
       let target = name_to_reference_exn target |> Reference.sanitize_qualified in
@@ -719,8 +717,7 @@ let update
   KeyTracker.ClassKeys.KeySet.of_list modified_qualifiers |> KeyTracker.ClassKeys.remove_batch;
   KeyTracker.UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers
   |> KeyTracker.UnannotatedGlobalKeys.remove_batch;
-  KeyTracker.FunctionKeys.KeySet.of_list modified_qualifiers
-  |> KeyTracker.FunctionKeys.remove_batch;
+  KeyTracker.FunctionKeys.KeySet.of_list modified_qualifiers |> KeyTracker.FunctionKeys.remove_batch;
   match configuration with
   | { incremental_style = FineGrained; _ } ->
       let current_classes, current_unannotated_globals, current_defines, triggered_dependencies =

@@ -56,8 +56,7 @@ module Binding = struct
         let body_names = of_statements body in
         let orelse_names = of_statements orelse in
         List.concat [target_names; body_names; orelse_names]
-    | Statement.If { If.body; orelse; _ } ->
-        List.append (of_statements body) (of_statements orelse)
+    | Statement.If { If.body; orelse; _ } -> List.append (of_statements body) (of_statements orelse)
     | Statement.Import { Import.imports; _ } ->
         let binding_of_import { Import.alias; name } =
           (* TODO: Track the location of import name. *)
@@ -70,12 +69,7 @@ module Binding = struct
                 Some { kind = Kind.ImportName; name; location; annotation = None }
           | Some alias ->
               Some
-                {
-                  kind = Kind.ImportName;
-                  name = Reference.show alias;
-                  location;
-                  annotation = None;
-                }
+                { kind = Kind.ImportName; name = Reference.show alias; location; annotation = None }
         in
         List.filter_map imports ~f:binding_of_import
     | Statement.Try { Try.body; handlers; orelse; finally } ->
@@ -226,10 +220,10 @@ module Scope = struct
             (* Global and nonlocal declarations take priority. *)
             sofar
         | false -> (
-          (* First binding wins. *)
-          match Map.add sofar ~key:name ~data:binding with
-          | `Ok result -> result
-          | `Duplicate -> sofar ))
+            (* First binding wins. *)
+            match Map.add sofar ~key:name ~data:binding with
+            | `Ok result -> result
+            | `Duplicate -> sofar ))
 
 
   let of_define { Statement.Define.signature; body } =
@@ -278,8 +272,7 @@ module Scope = struct
             kind = Kind.Lambda;
             globals;
             nonlocals;
-            bindings =
-              List.map parameters ~f:Binding.of_parameter |> create_map ~globals ~nonlocals;
+            bindings = List.map parameters ~f:Binding.of_parameter |> create_map ~globals ~nonlocals;
           }
     | DictionaryComprehension { Comprehension.generators; _ }
     | Generator { Comprehension.generators; _ }

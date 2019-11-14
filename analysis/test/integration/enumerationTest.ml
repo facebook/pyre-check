@@ -84,14 +84,12 @@ let test_enumeration_methods context =
 
 let test_check_enumeration_attributes context =
   let assert_type_errors = assert_type_errors ~context in
-  assert_type_errors
-    {|
+  assert_type_errors {|
       import enum
 
       class C(enum.IntEnum):
         a: int = 1
-    |}
-    [];
+    |} [];
   assert_type_errors {|
       import enum
 

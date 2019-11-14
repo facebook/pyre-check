@@ -89,8 +89,7 @@ module type AnnotatedClass = sig
     AnnotatedAttribute.t
 end
 
-let create ?dependency ~class_metadata_environment ~global (module AnnotatedClass : AnnotatedClass)
-  =
+let create ?dependency ~class_metadata_environment ~global (module AnnotatedClass : AnnotatedClass) =
   let class_hierarchy_environment =
     ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
   in
@@ -108,13 +107,9 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
       unannotated_global_environment
       ?dependency
   in
-  let module_definition =
-    AstEnvironment.ReadOnly.get_module_metadata ?dependency ast_environment
-  in
+  let module_definition = AstEnvironment.ReadOnly.get_module_metadata ?dependency ast_environment in
   let define_body =
-    UnannotatedGlobalEnvironment.ReadOnly.get_define_body
-      ?dependency
-      unannotated_global_environment
+    UnannotatedGlobalEnvironment.ReadOnly.get_define_body ?dependency unannotated_global_environment
   in
   let aliases = AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment in
   let edges =
@@ -212,8 +207,7 @@ let unannotated_global_environment resolution =
 
 
 let ast_environment resolution =
-  unannotated_global_environment resolution
-  |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+  unannotated_global_environment resolution |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 
 
 let is_tracked { class_hierarchy; _ } = ClassHierarchy.contains class_hierarchy
@@ -303,40 +297,44 @@ let check_invalid_type_parameters resolution annotation =
           let open ClassHierarchy in
           match generics, given with
           | Unaries generics, Type.OrderedTypes.Concrete given -> (
-            match List.zip generics given with
-            | Ok [] -> Type.Primitive name, sofar
-            | Ok paired ->
-                let check_parameter (generic, given) =
-                  let invalid =
-                    let order = full_order resolution in
-                    let pair = Type.Variable.UnaryPair (generic, given) in
-                    TypeOrder.OrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
-                    >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
-                    |> Option.is_none
+              match List.zip generics given with
+              | Ok [] -> Type.Primitive name, sofar
+              | Ok paired ->
+                  let check_parameter (generic, given) =
+                    let invalid =
+                      let order = full_order resolution in
+                      let pair = Type.Variable.UnaryPair (generic, given) in
+                      TypeOrder.OrderedConstraints.add_lower_bound
+                        TypeConstraints.empty
+                        ~order
+                        ~pair
+                      >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                      |> Option.is_none
+                    in
+                    if invalid then
+                      ( Type.Any,
+                        Some
+                          { name; kind = ViolateConstraints { actual = given; expected = generic } }
+                      )
+                    else
+                      given, None
                   in
-                  if invalid then
-                    ( Type.Any,
-                      Some
-                        { name; kind = ViolateConstraints { actual = given; expected = generic } }
-                    )
-                  else
-                    given, None
-                in
-                List.map paired ~f:check_parameter
-                |> List.unzip
-                |> fun (parameters, errors) ->
-                Type.parametric name (Concrete parameters), List.filter_map errors ~f:Fn.id @ sofar
-            | Unequal_lengths ->
-                let mismatch =
-                  {
-                    name;
-                    kind =
-                      IncorrectNumberOfParameters
-                        { actual = List.length given; expected = List.length generics };
-                  }
-                in
-                ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),
-                  mismatch :: sofar ) )
+                  List.map paired ~f:check_parameter
+                  |> List.unzip
+                  |> fun (parameters, errors) ->
+                  ( Type.parametric name (Concrete parameters),
+                    List.filter_map errors ~f:Fn.id @ sofar )
+              | Unequal_lengths ->
+                  let mismatch =
+                    {
+                      name;
+                      kind =
+                        IncorrectNumberOfParameters
+                          { actual = List.length given; expected = List.length generics };
+                    }
+                  in
+                  ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),
+                    mismatch :: sofar ) )
           | Concatenation _, Any -> Type.parametric name given, sofar
           | Unaries generics, Concatenation _
           | Unaries generics, Any ->
@@ -514,15 +512,12 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
       in
       if Type.is_concrete parameter then Type.set parameter else Type.Any
   | String { StringLiteral.kind; _ } -> (
-    match kind with
-    | StringLiteral.Bytes -> Type.bytes
-    | _ -> Type.string )
+      match kind with
+      | StringLiteral.Bytes -> Type.bytes
+      | _ -> Type.string )
   | Ternary { Ternary.target; alternative; _ } ->
       let annotation =
-        join
-          resolution
-          (resolve_literal resolution target)
-          (resolve_literal resolution alternative)
+        join resolution (resolve_literal resolution target) (resolve_literal resolution alternative)
       in
       if Type.is_concrete annotation then annotation else Type.Any
   | True -> Type.bool
@@ -779,8 +774,8 @@ let class_extends_placeholder_stub_class resolution { ClassSummary.bases; _ } =
 
 
 let global { global; _ } reference =
-  (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic
-     for module and for class *)
+  (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic for
+     module and for class *)
   match Reference.last reference with
   | "__doc__"
   | "__file__"

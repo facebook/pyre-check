@@ -153,9 +153,7 @@ let test_hardcoded_source context =
       def get_environment_variable():
         return os.environ
     |}
-    [
-      outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get_environment_variable";
-    ];
+    [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get_environment_variable"];
   assert_taint
     ~context
     ~models:

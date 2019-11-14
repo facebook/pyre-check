@@ -23,9 +23,7 @@ let empty_overrides = Reference.Map.empty
 
 let create_callgraph ~environment ~source =
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let fold_defines
-      dependencies
-      ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
+  let fold_defines dependencies ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
     =
     let module Callgraph = Analysis.Dependencies.Callgraph in
     let create_target method_name =
@@ -50,8 +48,8 @@ let create_callgraph ~environment ~source =
             match DependencyGraphSharedMemory.get_overriding_types ~member:direct_target with
             | None -> []
             | Some overriding_types ->
-                (* We want to ensure that we don't pick up on unrelated overrides, i.e. classes
-                   that subclass the direct target's parent but not the class being called from. *)
+                (* We want to ensure that we don't pick up on unrelated overrides, i.e. classes that
+                   subclass the direct target's parent but not the class being called from. *)
                 let keep_subtypes candidate =
                   let candidate_type = GlobalResolution.parse_reference resolution candidate in
                   GlobalResolution.less_or_equal resolution ~left:candidate_type ~right:class_name

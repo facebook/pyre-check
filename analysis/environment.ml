@@ -54,8 +54,7 @@ module UpdateResult = struct
     let upstream { upstream; _ } = upstream
 
     let all_triggered_dependencies { triggered_dependencies; upstream } =
-      triggered_dependencies
-      :: PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
+      triggered_dependencies :: PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
 
 
     let create ~triggered_dependencies ~upstream = { triggered_dependencies; upstream }
@@ -272,10 +271,7 @@ module EnvironmentTable = struct
         | Some hit -> hit
         | None ->
             let value =
-              In.produce_value
-                upstream_environment
-                (In.key_to_trigger key)
-                ~track_dependencies:true
+              In.produce_value upstream_environment (In.key_to_trigger key) ~track_dependencies:true
             in
             Table.add key value;
             Option.iter dependency ~f:(Table.add_dependency key);

@@ -323,12 +323,7 @@ let test_update_dependency_table _ =
     ~expected:["dep_a"; "dep_b"];
   UpdateDependencyTest.assert_dependencies
     [
-      {
-        key = "A1";
-        old_value = Some "A1Val";
-        new_value = Some "NewA1Val";
-        dependencies = ["dep_a"];
-      };
+      { key = "A1"; old_value = Some "A1Val"; new_value = Some "NewA1Val"; dependencies = ["dep_a"] };
       { key = "A2"; old_value = Some "A2Val"; new_value = Some "A2Val"; dependencies = ["dep_a"] };
     ]
     ~expected:["dep_a"];

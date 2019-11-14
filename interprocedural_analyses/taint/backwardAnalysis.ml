@@ -63,8 +63,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
   let transform_non_leaves path taint =
     let f feature =
       match feature with
-      | Features.Complex.ReturnAccessPath prefix ->
-          Features.Complex.ReturnAccessPath (prefix @ path)
+      | Features.Complex.ReturnAccessPath prefix -> Features.Complex.ReturnAccessPath (prefix @ path)
     in
     match path with
     | AbstractTreeDomain.Label.Any :: _ -> taint
@@ -193,9 +192,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 (* Attach nodes shouldn't affect analysis. *)
                 | Sinks.Attach -> BackwardState.Tree.empty
                 | Sinks.ParameterUpdate n -> (
-                  match List.nth arguments n with
-                  | None -> BackwardState.Tree.empty
-                  | Some argument -> get_argument_taint ~resolution ~argument state )
+                    match List.nth arguments n with
+                    | None -> BackwardState.Tree.empty
+                    | Some argument -> get_argument_taint ~resolution ~argument state )
                 | _ -> failwith "unexpected tito sink"
               in
               List.fold
@@ -329,14 +328,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       match AccessPath.get_global ~resolution callee, Node.value callee with
       | _, Name (Name.Identifier "super") -> (
-        match arguments with
-        | [_; Call.Argument.{ value = object_; _ }] ->
-            analyze_expression ~resolution ~taint ~state ~expression:object_
-        | _ -> (
-          (* Use implicit self *)
-          match FunctionContext.first_parameter () with
-          | Some root -> store_weak_taint ~root ~path:[] taint state
-          | None -> state ) )
+          match arguments with
+          | [_; Call.Argument.{ value = object_; _ }] ->
+              analyze_expression ~resolution ~taint ~state ~expression:object_
+          | _ -> (
+              (* Use implicit self *)
+              match FunctionContext.first_parameter () with
+              | Some root -> store_weak_taint ~root ~path:[] taint state
+              | None -> state ) )
       | Some global, _ ->
           let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
           let _, extra_arguments =
@@ -354,8 +353,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
           let taint =
             (* Specially handle super.__init__ calls in constructors for tito *)
-            if FunctionContext.is_constructor () && attribute = "__init__" && is_super receiver
-            then
+            if FunctionContext.is_constructor () && attribute = "__init__" && is_super receiver then
               BackwardState.Tree.create_leaf Domains.local_return_taint
               |> BackwardState.Tree.join taint
             else
@@ -445,8 +443,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let index = AccessPath.get_index argument_value in
           let taint = BackwardState.Tree.prepend [index] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
-      (* Special case x.__next__() as being a random index access (this pattern is the desugaring
-         of `for element in x`). *)
+      (* Special case x.__next__() as being a random index access (this pattern is the desugaring of
+         `for element in x`). *)
       | Call
           {
             callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
@@ -495,25 +493,25 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Name (Name.Identifier identifier) ->
           store_weak_taint ~root:(Root.Variable identifier) ~path:[] taint state
       | Name (Name.Attribute { base; attribute; _ }) -> (
-        match
-          Interprocedural.CallResolution.resolve_property_targets ~resolution ~base ~attribute
-        with
-        | None ->
-            let field = AbstractTreeDomain.Label.Field attribute in
-            let taint =
-              BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
-            in
-            analyze_expression ~resolution ~taint ~state ~expression:base
-        | Some targets ->
-            let arguments = [{ Call.Argument.name = None; value = base }] in
-            apply_call_targets
-              ~resolution
-              ~call_expression:expression
-              location
-              arguments
-              state
-              taint
-              targets )
+          match
+            Interprocedural.CallResolution.resolve_property_targets ~resolution ~base ~attribute
+          with
+          | None ->
+              let field = AbstractTreeDomain.Label.Field attribute in
+              let taint =
+                BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
+              in
+              analyze_expression ~resolution ~taint ~state ~expression:base
+          | Some targets ->
+              let arguments = [{ Call.Argument.name = None; value = base }] in
+              apply_call_targets
+                ~resolution
+                ~call_expression:expression
+                location
+                arguments
+                state
+                taint
+                targets )
       | Set set ->
           let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
           List.fold

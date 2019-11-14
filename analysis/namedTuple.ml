@@ -26,8 +26,7 @@ let field_annotations ~global_resolution annotation =
   let matching_annotation attributes field =
     let annotation_if_name_equals field { Node.value = { name; annotation; _ }; _ } =
       match Node.value field with
-      | Expression.String { StringLiteral.value; _ } when String.equal name value ->
-          Some annotation
+      | Expression.String { StringLiteral.value; _ } when String.equal name value -> Some annotation
       | _ -> None
     in
     List.find_map ~f:(annotation_if_name_equals field) attributes

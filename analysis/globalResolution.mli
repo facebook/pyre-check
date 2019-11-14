@@ -136,20 +136,13 @@ val parse_as_list_variadic : t -> Expression.t -> Type.Variable.Variadic.List.t 
 val parse_as_concatenation
   :  t ->
   Expression.t ->
-  (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t
-  option
+  (Type.t Type.OrderedTypes.Concatenation.Middle.t, Type.t) Type.OrderedTypes.Concatenation.t option
 
 val join : t -> Type.t -> Type.t -> Type.t
 
 val meet : t -> Type.t -> Type.t -> Type.t
 
-val widen
-  :  t ->
-  widening_threshold:int ->
-  previous:Type.t ->
-  next:Type.t ->
-  iteration:int ->
-  Type.t
+val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
 
 val resolve_exports : t -> reference:Reference.t -> Reference.t
 

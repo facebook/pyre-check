@@ -46,8 +46,8 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
               in
               ("shared_memory_path", Path.absolute shared_memory_path) :: changed
           | Some
-              (Configuration.Server.Load
-                (Configuration.Server.LoadFromProject { project_name; _ })) ->
+              (Configuration.Server.Load (Configuration.Server.LoadFromProject { project_name; _ }))
+            ->
               ["saved_state_project", project_name]
           | Some (Configuration.Server.Save project) -> ["save_state_to", project]
           | None -> []

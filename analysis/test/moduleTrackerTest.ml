@@ -82,11 +82,7 @@ let test_creation context =
     Option.iter is_stub ~f:(fun expected_is_stub ->
         assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_stub actual_is_stub);
     Option.iter is_external ~f:(fun expected_is_external ->
-        assert_equal
-          ~cmp:Bool.equal
-          ~printer:Bool.to_string
-          expected_is_external
-          actual_is_external);
+        assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_external actual_is_external);
     Option.iter is_init ~f:(fun expected_is_init ->
         assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_init actual_is_init)
   in
@@ -838,8 +834,7 @@ let test_creation context =
     assert_same_module_greater (create_exn local_root "c.pyi") (create_exn venv_root "c.py")
   in
   let test_root_independence () =
-    (* We want to test that `ModuleTracker` creation is independent of where the root is located
-       at. *)
+    (* We want to test that `ModuleTracker` creation is independent of where the root is located at. *)
     let local_root = bracket_tmpdir context |> Path.create_absolute in
     let external_root0 = bracket_tmpdir context |> Path.create_absolute in
     let external_root1 = bracket_tmpdir context |> Path.create_absolute in
@@ -973,9 +968,8 @@ module IncrementalTest = struct
       (List.sort ~compare:Event.compare expected)
       (List.sort ~compare:Event.compare actual);
 
-    (* Also check that the module tracker is in a consistent state: we should track exactly the
-       same modules and source files after the update as if we build a fresh module tracker from
-       scratch. *)
+    (* Also check that the module tracker is in a consistent state: we should track exactly the same
+       modules and source files after the update as if we build a fresh module tracker from scratch. *)
     let actual_source_paths =
       ModuleTracker.all_source_paths module_tracker |> List.sort ~compare:SourcePath.compare
     in
@@ -1162,8 +1156,7 @@ let test_update context =
     ~expected:[Event.create_new_explicit "a/b.py"; Event.NewImplicit "a"];
   assert_incremental
     [{ handle = "a/b/c.py"; operation = FileOperation.Add }]
-    ~expected:
-      [Event.create_new_explicit "a/b/c.py"; Event.NewImplicit "a"; Event.NewImplicit "a.b"];
+    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.NewImplicit "a"; Event.NewImplicit "a.b"];
   assert_incremental
     [
       { handle = "a/b/c.py"; operation = FileOperation.Add };

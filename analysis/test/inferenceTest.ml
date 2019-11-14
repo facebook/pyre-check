@@ -512,13 +512,10 @@ let test_infer context =
     ];
 
   (* Don't infer Anys. *)
-  assert_infer
-    ~fields:["inference.annotation"]
-    {|
+  assert_infer ~fields:["inference.annotation"] {|
       def foo(a):
           return {}
-      |}
-    [];
+      |} [];
 
   (* Allow Anys on Dict[str, Any] *)
   assert_infer

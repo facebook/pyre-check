@@ -354,9 +354,7 @@ end = struct
               (* The taint analysis creates breadcrumbs for ViaValueOf features dynamically.*)
               breadcrumbs, tito, leaves
           | Breadcrumb breadcrumb ->
-              let breadcrumb_json =
-                Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under
-              in
+              let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb ~on_all_paths:in_under in
               breadcrumb_json :: breadcrumbs, tito, leaves
         in
         let gather_return_access_path leaves = function

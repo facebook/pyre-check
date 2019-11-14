@@ -479,8 +479,7 @@ module ServerCapabilities = struct
       workspace_symbol_provider: bool option; [@key "workspaceSymbolProvider"] [@default None]
       code_action_provider: CodeActionOptions.t option; [@key "codeActionProvider"] [@default None]
       code_lens_provider: CodeLensOptions.t option; [@key "codeLensProvider"] [@default None]
-      document_formatting_provider: bool option;
-          [@key "documentFormattingProvider"] [@default None]
+      document_formatting_provider: bool option; [@key "documentFormattingProvider"] [@default None]
       document_range_formatting_provider: bool option;
           [@key "documentRangeFormattingProvider"] [@default None]
       document_on_type_formatting_provider: DocumentOnTypeFormattingOptions.t option;
@@ -522,8 +521,7 @@ module ClientCapabilities = struct
   end
 
   module CompletionItemKind = struct
-    type t = { value_set: int list option [@key "valueSet"] [@default None] }
-    [@@deriving of_yojson]
+    type t = { value_set: int list option [@key "valueSet"] [@default None] } [@@deriving of_yojson]
   end
 
   module TextDocumentClientCapabilities = struct
@@ -544,8 +542,7 @@ module ClientCapabilities = struct
     type completion = {
       dynamic_registration: bool option; [@key "dynamicRegistration"] [@default None]
       completion_item: completion_item option; [@key "completionItem"] [@default None]
-      completion_item_kind: CompletionItemKind.t option;
-          [@key "completionItemKind"] [@default None]
+      completion_item_kind: CompletionItemKind.t option; [@key "completionItemKind"] [@default None]
       context_support: bool option; [@key "contextSupport"] [@default None]
     }
     [@@deriving of_yojson { strict = false }]

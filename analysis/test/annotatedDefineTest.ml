@@ -64,8 +64,7 @@ let test_parent_definition context =
     ~parent:"test.foo"
     ~expected:None;
   assert_parent
-    ~source:
-      {|
+    ~source:{|
       class superfoo(): ...
       class foo(superfoo):
         def bar(): pass
@@ -79,8 +78,7 @@ let test_decorate context =
   let assert_decorated source ~expected =
     let source, environment =
       let _, ast_environment, environment =
-        ScratchProject.setup ~context ["test.py", source]
-        |> ScratchProject.build_global_environment
+        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
       ( Option.value_exn
           (AstEnvironment.ReadOnly.get_source

@@ -36,9 +36,7 @@ let test_collect _ =
       let module Collector =
         Visit.Collector (ExpressionPredicate) (StatementPredicate) (NodePredicate)
       in
-      let { Collector.expressions; statements; _ } =
-        Collector.collect (Source.create statements)
-      in
+      let { Collector.expressions; statements; _ } = Collector.collect (Source.create statements) in
       expressions, statements
     in
     let equal left right =
@@ -58,10 +56,8 @@ let test_collect _ =
   assert_collect
     [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Float 2.0)]
     ( [+Expression.Float 2.0; +Expression.Float 1.0],
-      [
-        +Statement.Expression (+Expression.Float 2.0);
-        +Statement.Expression (+Expression.Float 1.0);
-      ] );
+      [+Statement.Expression (+Expression.Float 2.0); +Statement.Expression (+Expression.Float 1.0)]
+    );
   assert_collect
     [
       +Statement.If
@@ -163,9 +159,7 @@ let test_collect_location _ =
       List.map ~f:create_location expected_locations
     in
     let equal left right = List.equal Location.equal left right in
-    let printer locations =
-      Format.asprintf "%a" Sexp.pp [%message (locations : Location.t list)]
-    in
+    let printer locations = Format.asprintf "%a" Sexp.pp [%message (locations : Location.t list)] in
     assert_equal ~cmp:equal ~printer expected_locations actual_locations
   in
   assert_collect_location
@@ -177,17 +171,17 @@ let test_collect_location _ =
     |}
     [
       (* Entire if statement. *)
-        2, 0, 5, 3;
+      2, 0, 5, 3;
       (* Integer 2 expression *)
-        5, 2, 5, 3;
+      5, 2, 5, 3;
       (* orelse statement *)
-        5, 2, 5, 3;
+      5, 2, 5, 3;
       (* Integer 1 expression *)
-        3, 2, 3, 3;
+      3, 2, 3, 3;
       (* body statement *)
-        3, 2, 3, 3;
+      3, 2, 3, 3;
       (* test expression *)
-        2, 3, 2, 7;
+      2, 3, 2, 7;
     ]
 
 

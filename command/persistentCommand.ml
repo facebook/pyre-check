@@ -35,9 +35,7 @@ let communicate
             request.InitializeRequest.id
         | Error error ->
             let message =
-              Format.sprintf
-                "Could not parse initialize request message for record field: %s"
-                error
+              Format.sprintf "Could not parse initialize request message for record field: %s" error
             in
             Log.info "%s" message;
             failwith message)
@@ -147,8 +145,8 @@ let run_command expected_version log_identifier perform_autocompletion log_direc
         let server_socket =
           try Server.Operations.connect ~retries:3 ~configuration with
           | Server.Operations.ConnectionFailure -> raise (ClientExit ("connection failure", 1))
-          | Server.Operations.VersionMismatch
-              { Server.Operations.server_version; expected_version } ->
+          | Server.Operations.VersionMismatch { Server.Operations.server_version; expected_version }
+            ->
               Log.error
                 "Exiting due to version mismatch. The server version is %s, but the client was \
                  called with %s"

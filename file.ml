@@ -20,8 +20,8 @@ let content { path; content } =
   match content with
   | Some content -> Some content
   | None -> (
-    try Some (In_channel.read_all (Path.absolute path)) with
-    | Sys_error _ -> None )
+      try Some (In_channel.read_all (Path.absolute path)) with
+      | Sys_error _ -> None )
 
 
 let lines file = content file >>| String.split ~on:'\n'
@@ -38,11 +38,11 @@ let write { path; content } =
       match Core.Sys.is_directory directory with
       | `Yes -> Hashtbl.set existing_directories ~key:directory ~data:()
       | _ -> (
-        try
-          Core.Unix.mkdir_p directory;
-          Hashtbl.set existing_directories ~key:directory ~data:()
-        with
-        | Sys_error _ -> Log.info "Could not create directory `%s`" directory )
+          try
+            Core.Unix.mkdir_p directory;
+            Hashtbl.set existing_directories ~key:directory ~data:()
+          with
+          | Sys_error _ -> Log.info "Could not create directory `%s`" directory )
   in
   make_directories ();
   match content with

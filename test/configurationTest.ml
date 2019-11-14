@@ -60,8 +60,7 @@ let test_search_path _ =
     in
     let local_root = Path.create_absolute ~follow_symbolic_links:false local_root in
     let search_path =
-      Configuration.Analysis.search_path
-        (Configuration.Analysis.create ~search_path ~local_root ())
+      Configuration.Analysis.search_path (Configuration.Analysis.create ~search_path ~local_root ())
       |> List.map ~f:SearchPath.show
     in
     assert_equal ~printer:(List.to_string ~f:ident) expected search_path

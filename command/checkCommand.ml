@@ -100,8 +100,7 @@ let run_check
         errors
         ~f:
           (Error.instantiate
-             ~lookup:
-               (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
+             ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
     in
     Yojson.Safe.to_string
       (`Assoc

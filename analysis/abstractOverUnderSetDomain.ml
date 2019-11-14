@@ -127,17 +127,17 @@ module Make (Element : Set.Elt) = struct
   let transform (type a) (part : a part) ~(f : a -> a) set =
     match set with
     | Bottom -> (
-      match part with
-      | SetAndUnder -> f [] |> List.fold ~f:add_element ~init:bottom
-      | Set -> f [] |> List.fold ~f:add ~init:bottom
-      | Element
-      | ElementAndUnder ->
-          Bottom
-      | _ ->
-          Obj.extension_constructor part
-          |> Obj.extension_name
-          |> Format.sprintf "Unknown part %s in transform"
-          |> failwith )
+        match part with
+        | SetAndUnder -> f [] |> List.fold ~f:add_element ~init:bottom
+        | Set -> f [] |> List.fold ~f:add ~init:bottom
+        | Element
+        | ElementAndUnder ->
+            Bottom
+        | _ ->
+            Obj.extension_constructor part
+            |> Obj.extension_name
+            |> Format.sprintf "Unknown part %s in transform"
+            |> failwith )
     | BiSet { over; under } -> (
         let element_of = element_of under in
         match part with

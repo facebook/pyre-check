@@ -161,8 +161,8 @@ module Metadata = struct
           >>| (fun data -> Int.Map.add_multi ~key:line_index ~data ignore_lines)
           |> Option.value ~default:ignore_lines
         in
-        if String.is_prefix ~prefix:"#" (String.strip line) && Option.is_none current_line_mode
-        then (* Increment ignores applied to current line if it is a comment. *)
+        if String.is_prefix ~prefix:"#" (String.strip line) && Option.is_none current_line_mode then
+          (* Increment ignores applied to current line if it is a comment. *)
           match Int.Map.find ignore_lines line_index with
           | Some ignores -> (
               let ignore_lines = Int.Map.remove ignore_lines line_index in
@@ -254,9 +254,9 @@ let location_sensitive_compare left right =
   match Metadata.compare left.metadata right.metadata with
   | x when x <> 0 -> x
   | _ -> (
-    match SourcePath.compare left.source_path right.source_path with
-    | x when x <> 0 -> x
-    | _ -> List.compare Statement.location_sensitive_compare left.statements right.statements )
+      match SourcePath.compare left.source_path right.source_path with
+      | x when x <> 0 -> x
+      | _ -> List.compare Statement.location_sensitive_compare left.statements right.statements )
 
 
 let show source = Format.asprintf "%a" pp source
@@ -296,12 +296,7 @@ let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
 let statements { statements; _ } = statements
 
 let top_level_define
-    {
-      source_path = { SourcePath.qualifier; _ };
-      statements;
-      metadata = { Metadata.version; _ };
-      _;
-    }
+    { source_path = { SourcePath.qualifier; _ }; statements; metadata = { Metadata.version; _ }; _ }
   =
   let statements =
     if version < 3 then
@@ -369,8 +364,7 @@ let wildcard_exports_of { source_path = { SourcePath.qualifier; _ }; statements;
     in
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
-  Option.value dunder_all ~default:toplevel_public
-  |> List.dedup_and_sort ~compare:Reference.compare
+  Option.value dunder_all ~default:toplevel_public |> List.dedup_and_sort ~compare:Reference.compare
 
 
 let expand_relative_import ~from { source_path = { SourcePath.is_init; qualifier; _ }; _ } =

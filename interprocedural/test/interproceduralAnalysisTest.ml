@@ -188,8 +188,7 @@ let check_meta_data ~step ~is_partial target =
 
 let test_meta_data context =
   let targets =
-    List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"]
-    |> List.map ~f:Callable.create_function
+    List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"] |> List.map ~f:Callable.create_function
   in
   let step1 = Fixpoint.{ epoch = 1; iteration = 0 } in
   let environment =

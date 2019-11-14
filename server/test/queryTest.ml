@@ -145,16 +145,14 @@ let test_parse_query context =
     "decode_ocaml_values(('first_key', 'first_value'))"
     (DecodeOcamlValues
        [
-         TypeQuery.SerializedValue
-           { serialized_key = "first_key"; serialized_value = "first_value" };
+         TypeQuery.SerializedValue { serialized_key = "first_key"; serialized_value = "first_value" };
        ]);
   assert_parses
     "decode_ocaml_values(('first_key', 'first_value'), ('second_key', 'second_value', \
      'third_value'))"
     (DecodeOcamlValues
        [
-         TypeQuery.SerializedValue
-           { serialized_key = "first_key"; serialized_value = "first_value" };
+         TypeQuery.SerializedValue { serialized_key = "first_key"; serialized_value = "first_value" };
          TypeQuery.SerializedPair
            {
              serialized_key = "second_key";

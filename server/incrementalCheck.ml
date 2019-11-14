@@ -14,15 +14,9 @@ open Pyre
 type errors = State.Error.t list [@@deriving show]
 
 let recheck
-    ~state:( {
-               State.module_tracker;
-               ast_environment;
-               environment;
-               errors;
-               scheduler;
-               open_documents;
-               _;
-             } as state )
+    ~state:
+      ( { State.module_tracker; ast_environment; environment; errors; scheduler; open_documents; _ }
+      as state )
     ~configuration:({ debug; incremental_style; _ } as configuration)
     paths
   =

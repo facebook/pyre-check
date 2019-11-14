@@ -13,9 +13,7 @@ let node = Node.create_with_default_location
 
 let test_create _ =
   let assert_create ?prefix input =
-    let expected =
-      prefix >>| (fun prefix -> prefix ^ "." ^ input) |> Option.value ~default:input
-    in
+    let expected = prefix >>| (fun prefix -> prefix ^ "." ^ input) |> Option.value ~default:input in
     let prefix = prefix >>| Reference.create in
     assert_equal expected (Reference.show (Reference.create ?prefix input))
   in

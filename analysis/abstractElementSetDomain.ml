@@ -62,10 +62,7 @@ module Make (Element : ELEMENT_DOMAIN) = struct
   let of_list elements = List.fold elements ~f:add ~init:bottom
 
   let show set =
-    Set.elements set
-    |> List.map ~f:Element.show
-    |> String.concat ~sep:", "
-    |> Format.sprintf "[%s]"
+    Set.elements set |> List.map ~f:Element.show |> String.concat ~sep:", " |> Format.sprintf "[%s]"
 
 
   let pp formatter map = Format.fprintf formatter "%s" (show map)

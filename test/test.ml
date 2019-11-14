@@ -22,9 +22,7 @@ let () = initialize ()
 let trim_extra_indentation source =
   let is_non_empty line = not (String.for_all ~f:Char.is_whitespace line) in
   let minimum_indent lines =
-    let indent line =
-      String.to_list line |> List.take_while ~f:Char.is_whitespace |> List.length
-    in
+    let indent line = String.to_list line |> List.take_while ~f:Char.is_whitespace |> List.length in
     List.filter lines ~f:is_non_empty
     |> List.map ~f:indent
     |> List.fold ~init:Int.max_value ~f:Int.min
@@ -229,8 +227,7 @@ let collect_nodes_as_strings source =
   Collector.collect source
 
 
-let node ?(path = Reference.empty) ~start:(start_line, start_column) ~stop:(stop_line, stop_column)
-  =
+let node ?(path = Reference.empty) ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
   let location =
     {
       Location.path;
@@ -1519,8 +1516,7 @@ module ScratchProject = struct
     in
     ( if not (List.is_empty errors) then
         let relative_paths =
-          List.map errors ~f:(fun { SourcePath.relative; _ } -> relative)
-          |> String.concat ~sep:", "
+          List.map errors ~f:(fun { SourcePath.relative; _ } -> relative) |> String.concat ~sep:", "
         in
         raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
     ast_environment, ast_environment_update_result
@@ -1680,11 +1676,7 @@ let assert_errors
       errors
   in
   Memory.reset_shared_memory ();
-  assert_equal
-    ~cmp:(List.equal String.equal)
-    ~printer:(String.concat ~sep:"\n")
-    errors
-    descriptions
+  assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") errors descriptions
 
 
 let assert_equivalent_attributes ~context source expected =

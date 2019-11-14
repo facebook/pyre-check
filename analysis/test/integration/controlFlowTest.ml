@@ -76,8 +76,8 @@ let test_scheduling context =
     |}
     [
       "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible variable type [9]: variable is declared to have type `int` but is used as \
-       type `str`.";
+      "Incompatible variable type [9]: variable is declared to have type `int` but is used as type \
+       `str`.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
     ];
 
@@ -313,8 +313,8 @@ let test_check_unbound_variables context =
         return unknown
     |}
     [
-      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
-       control flow path that doesn't define `unknown`.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
+       flow path that doesn't define `unknown`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors

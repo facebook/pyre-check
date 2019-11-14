@@ -256,10 +256,7 @@ let select
       | { kind = Positional; _ } :: _, (Parameter.KeywordOnly _ as parameter) :: parameters_tail ->
           (* Unlabeled argument, keyword only parameter *)
           let reasons =
-            arity_mismatch
-              reasons
-              ~unreachable_parameters:(parameter :: parameters_tail)
-              ~arguments
+            arity_mismatch reasons ~unreachable_parameters:(parameter :: parameters_tail) ~arguments
           in
           { signature_match with reasons }
       | ({ kind = Positional; _ } as argument) :: arguments_tail, parameter :: parameters_tail ->
@@ -329,10 +326,10 @@ let select
             let extract { Argument.kind; resolved; expression; _ } =
               match kind with
               | SingleStar -> (
-                match resolved with
-                | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
-                (* We don't support expanding indefinite containers into ListVariadics *)
-                | annotation -> `Snd { expression; annotation } )
+                  match resolved with
+                  | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
+                  (* We don't support expanding indefinite containers into ListVariadics *)
+                  | annotation -> `Snd { expression; annotation } )
               | _ -> `Fst (Type.OrderedTypes.Concrete [resolved])
             in
             List.rev arguments |> List.partition_map ~f:extract
@@ -341,8 +338,7 @@ let select
           | [] -> Ok extracted
           | not_definite_tuple :: _ ->
               Error
-                (MismatchWithListVariadicTypeVariable
-                   (expected, NotDefiniteTuple not_definite_tuple))
+                (MismatchWithListVariadicTypeVariable (expected, NotDefiniteTuple not_definite_tuple))
         in
         let concatenate extracted =
           let concatenated =
@@ -541,8 +537,7 @@ let select
           List.rev arguments |> check signature_match
     in
     let check_if_solution_exists
-        ( { constraints_set; reasons = { annotation; _ } as reasons; callable; _ } as
-        signature_match )
+        ({ constraints_set; reasons = { annotation; _ } as reasons; callable; _ } as signature_match)
       =
       let solutions =
         let variables = Type.Variable.all_free_variables (Type.Callable callable) in
@@ -659,8 +654,8 @@ let select
           TypeConstraints.Solution.instantiate solution annotation
           |> Type.Variable.mark_all_free_variables_as_escaped
           (* We need to do transformations of the form Union[T_escaped, int] => int in order to
-             properly handle some typeshed stubs which only sometimes bind type variables and
-             expect them to fall out in this way (see Mapping.get) *)
+             properly handle some typeshed stubs which only sometimes bind type variables and expect
+             them to fall out in this way (see Mapping.get) *)
           |> Type.Variable.collapse_all_escaped_variable_unions
         in
         Type.Callable.map ~f:instantiate callable
@@ -698,8 +693,8 @@ let select
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_annotation_rank
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_position_rank
-    (* Each get_best_rank reverses the list, because we have an odd number, we need an extra
-       reverse in order to prefer the first defined overload *)
+    (* Each get_best_rank reverses the list, because we have an odd number, we need an extra reverse
+       in order to prefer the first defined overload *)
     |> List.rev
     |> List.hd
     >>| determine_reason
@@ -717,8 +712,8 @@ let select
   else if Type.Callable.Overload.is_undefined implementation then
     get_match overloads
   else
-    (* TODO(T41195241) always ignore implementation when has overloads. Currently put
-       implementation as last resort *)
+    (* TODO(T41195241) always ignore implementation when has overloads. Currently put implementation
+       as last resort *)
     match get_match overloads with
     | Found signature_match -> Found signature_match
     | NotFound _ -> get_match [implementation]

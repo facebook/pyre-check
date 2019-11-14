@@ -69,9 +69,9 @@ exception IncompatibleState of string
 (* Return symlinks for files for a pyre project that are links to a separate project root. *)
 let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
   let new_paths, removed_paths = List.partition_tf ~f:Path.file_exists changed_paths in
-  (* We need to get the deleted paths from shared memory, as the version of the server launched
-     from the saved state will have references to this files, whereas they won't be present in the
-     new project root, meaning that we need to clean up the environment from them. *)
+  (* We need to get the deleted paths from shared memory, as the version of the server launched from
+     the saved state will have references to this files, whereas they won't be present in the new
+     project root, meaning that we need to clean up the environment from them. *)
   let removed_paths = List.filter_map removed_paths ~f:get_old_link_path in
   (* Any member of new_paths might not have existed when the saved state was being created. *)
   let new_paths =
@@ -149,18 +149,19 @@ let compute_locally_changed_paths
 
 
 let load
-    ~server_configuration:{
-                            Configuration.Server.configuration =
-                              {
-                                Configuration.Analysis.expected_version;
-                                project_root;
-                                local_root;
-                                configuration_file_hash;
-                                _;
-                              } as configuration;
-                            saved_state_action;
-                            _;
-                          }
+    ~server_configuration:
+      {
+        Configuration.Server.configuration =
+          {
+            Configuration.Analysis.expected_version;
+            project_root;
+            local_root;
+            configuration_file_hash;
+            _;
+          } as configuration;
+        saved_state_action;
+        _;
+      }
     ~connections
   =
   Log.info "Initializing server from saved state...";

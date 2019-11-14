@@ -123,8 +123,7 @@ module Record : sig
     and 'annotation record_parameters =
       | Defined of 'annotation RecordParameter.t list
       | Undefined
-      | ParameterVariadicTypeVariable of
-          'annotation Variable.RecordVariadic.RecordParameters.record
+      | ParameterVariadicTypeVariable of 'annotation Variable.RecordVariadic.RecordParameters.record
 
     and 'annotation overload = {
       annotation: 'annotation;
@@ -175,8 +174,7 @@ and t =
       name: Identifier.t;
       parameters: t Record.OrderedTypes.record;
     }
-  | ParameterVariadicComponent of
-      Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
+  | ParameterVariadicComponent of Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of Primitive.t
   | Top
   | Tuple of tuple

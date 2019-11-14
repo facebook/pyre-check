@@ -76,12 +76,10 @@ let test_check_tuple context =
         return tuple([1])
     |}
     [];
-  assert_type_errors
-    {|
+  assert_type_errors {|
       def foo() -> typing.Tuple[float, ...]:
         return (1, 2)
-    |}
-    [];
+    |} [];
   assert_type_errors
     {|
       def foo() -> typing.Tuple[float, ...]:
@@ -286,8 +284,8 @@ let test_check_tuple context =
        type that does not contain `Any`.";
     ];
   assert_type_errors
-    (* The parameter `baz` in the __new__ method for NamedTuple will not throw a duplicate error
-       for Any. *)
+    (* The parameter `baz` in the __new__ method for NamedTuple will not throw a duplicate error for
+       Any. *)
     {|
       class Foo(typing.NamedTuple):
         bar: typing.Optional[str] = None
@@ -295,8 +293,8 @@ let test_check_tuple context =
         hello: typing.Dict[str, typing.Any] = {}
     |}
     [
-      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` must have a type that \
-       does not contain `Any`.";
+      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` must have a type that does \
+       not contain `Any`.";
     ];
   assert_type_errors
     (* A __new__ method for a non-NamedTuple will throw error on Any. *)

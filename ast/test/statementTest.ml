@@ -617,10 +617,7 @@ let test_attributes _ =
         def Test.setUp(self):
           self.attribute = value
     |}
-    [
-      attribute ~name:"attribute" ~value:"value" ();
-      attribute ~name:"setUp" ~number_of_defines:1 ();
-    ];
+    [attribute ~name:"attribute" ~value:"value" (); attribute ~name:"setUp" ~number_of_defines:1 ()];
   assert_attributes
     ~in_test:true
     {|

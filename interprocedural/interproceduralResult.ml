@@ -55,9 +55,9 @@ type 'a storable_kind = 'a Kind.storable_kind constraint 'a = ('result, 'model) 
 (* External kind (can't be stored in the shared heap). *)
 type 'a kind = 'a Kind.kind constraint 'a = ('result, 'model) analysis_data
 
-(* Type markers to distinguish model, result parts in generic data structures statically. E.g.
-   model pkg vs. result pkg below. This allows splitting off more distinct parts from the analysis
-   data without having to write new code to package and access the new parts. *)
+(* Type markers to distinguish model, result parts in generic data structures statically. E.g. model
+   pkg vs. result pkg below. This allows splitting off more distinct parts from the analysis data
+   without having to write new code to package and access the new parts. *)
 type model = MK [@@deriving show]
 
 let _ = show_model (* unused *)
@@ -110,8 +110,7 @@ end
 module type ANALYSIS_RESULT_WITH_REGISTRATION = sig
   include ANALYSIS_RESULT
 
-  module Register
-      (Analyzer : ANALYZER with type result := result and type call_model := call_model) : sig
+  module Register (Analyzer : ANALYZER with type result := result and type call_model := call_model) : sig
     val abstract_kind : Kind.abstract
   end
 end
@@ -119,8 +118,8 @@ end
 (* The full signature of an individual analysis. This is what the general framework stores per
    analysis and uses to manipulate its data. NOTE: this gets built in 2 steps, a) from the
    ANALYSIS_DATA provided to create the result kind, and b) from the analyzer function. This split
-   breaks the recursion between analyses and their results, allowing analysis A to refer to
-   ResultB, where ResultB is the result of analysis B, and vice-versa. *)
+   breaks the recursion between analyses and their results, allowing analysis A to refer to ResultB,
+   where ResultB is the result of analysis B, and vice-versa. *)
 module type ANALYSIS = sig
   include ANALYSIS_RESULT
 
@@ -176,9 +175,9 @@ let get_analysis (type a b) (kind_to_find : (a, b) analysis_data Kind.storable_k
   match Kind.Map.find_opt abstract_kind !analyses with
   | None -> failwith ("analysis kind does not exist: " ^ Kind.show abstract_kind)
   | Some (Analysis { kind; analysis; _ }) -> (
-    match Kind.are_equal kind kind_to_find with
-    | Kind.Equal -> (analysis : (a, b) analysis_data analysis_module)
-    | Kind.Distinct -> failwith ("analysis kind mismatch: " ^ Kind.show abstract_kind) )
+      match Kind.are_equal kind kind_to_find with
+      | Kind.Equal -> (analysis : (a, b) analysis_data analysis_module)
+      | Kind.Distinct -> failwith ("analysis kind mismatch: " ^ Kind.show abstract_kind) )
 
 
 let get_abstract_analysis analysis_kind =
@@ -204,13 +203,13 @@ let are_equal (type part a b) (a : (part, a) partial_kind) (b : (part, b) partia
   =
   match a, b with
   | ModelPart k1, ModelPart k2 -> (
-    match Kind.are_equal k1 k2 with
-    | Kind.Equal -> Kind.Equal (* Necessary because the types of these Equal are different. *)
-    | Kind.Distinct -> Kind.Distinct )
+      match Kind.are_equal k1 k2 with
+      | Kind.Equal -> Kind.Equal (* Necessary because the types of these Equal are different. *)
+      | Kind.Distinct -> Kind.Distinct )
   | ResultPart k1, ResultPart k2 -> (
-    match Kind.are_equal k1 k2 with
-    | Kind.Equal -> Kind.Equal
-    | Kind.Distinct -> Kind.Distinct )
+      match Kind.are_equal k1 k2 with
+      | Kind.Equal -> Kind.Equal
+      | Kind.Distinct -> Kind.Distinct )
 
 
 (* Note: no other cases are necessary, because statically, the 'part' makes sure that both kinds
@@ -234,9 +233,9 @@ let get (type part a) (partial_kind : (part, a) partial_kind) (values : part pkg
     match Kind.Map.find_opt (Kind.abstract kind) values, partial_kind with
     | None, _ -> None
     | Some (Pkg { kind = kind1; value }), kind2 -> (
-      match are_equal kind1 kind2 with
-      | Kind.Equal -> Some (value : a)
-      | Kind.Distinct -> failwith "kind mismatch in results." )
+        match are_equal kind1 kind2 with
+        | Kind.Equal -> Some (value : a)
+        | Kind.Distinct -> failwith "kind mismatch in results." )
   in
   apply_to_partial_kind partial_kind { f = get }
 

@@ -22,8 +22,8 @@ let apply_decorators
         | "click.group"
         | "click.pass_context"
         | "click.pass_obj" ->
-            (* Suppress caller/callee parameter matching by altering the click entry point to have
-               a generic parameter list. *)
+            (* Suppress caller/callee parameter matching by altering the click entry point to have a
+               generic parameter list. *)
             let parameters =
               Type.Callable.Defined
                 [
@@ -34,9 +34,7 @@ let apply_decorators
             { overload with Type.Callable.parameters }
         | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
             let joined =
-              try
-                GlobalResolution.join resolution annotation (Type.async_iterator Type.Bottom)
-              with
+              try GlobalResolution.join resolution annotation (Type.async_iterator Type.Bottom) with
               | ClassHierarchy.Untracked _ ->
                   (* Apply_decorators gets called when building the environment, which is unsound
                      and can raise. *)
@@ -57,8 +55,7 @@ let apply_decorators
         | name -> (
             let resolved_decorator =
               match
-                ( GlobalResolution.undecorated_signature resolution (Reference.create name),
-                  arguments )
+                GlobalResolution.undecorated_signature resolution (Reference.create name), arguments
               with
               | Some signature, Some arguments -> (
                   let resolution =
@@ -183,8 +180,7 @@ let create_callable ~resolution ~parent ~name overloads =
     in
     List.fold
       ~init:
-        ( { annotation = Type.Top; parameters = Type.Callable.Undefined; define_location = None },
-          [] )
+        ({ annotation = Type.Top; parameters = Type.Callable.Undefined; define_location = None }, [])
       ~f:to_signature
       overloads
   in

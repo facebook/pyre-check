@@ -69,10 +69,10 @@ let create
             value = { Node.value = Name value; _ };
             _;
           } -> (
-        match name_to_reference value with
-        | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
-            Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
-        | _ -> aliases )
+          match name_to_reference value with
+          | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
+              Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
+          | _ -> aliases )
       | Import { Import.from = Some from; imports } ->
           let from = Source.expand_relative_import source ~from in
           let export aliases { Import.name; alias } =

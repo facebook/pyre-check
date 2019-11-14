@@ -510,8 +510,7 @@ let test_expression _ =
     (Type.Parametric
        {
          name = "foo.Variadic";
-         parameters =
-           Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts"));
+         parameters = Concatenation (create_concatenation (Type.Variable.Variadic.List.create "Ts"));
        })
     "foo.Variadic.__getitem__(Ts)";
   assert_expression
@@ -642,8 +641,7 @@ let test_concise _ =
          (Type.Callable.Defined
             [
               Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = false };
-              Type.Callable.Parameter.Named
-                { name = "y"; annotation = Type.float; default = false };
+              Type.Callable.Parameter.Named { name = "y"; annotation = Type.float; default = false };
             ])
        ())
     "(x: Any, y: float) -> int";
@@ -653,9 +651,7 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
-            [
-              Type.Callable.Parameter.Anonymous { index = 0; annotation = Type.Any; default = true };
-            ])
+            [Type.Callable.Parameter.Anonymous { index = 0; annotation = Type.Any; default = true }])
        ())
     "(Any=...) -> int";
   assert_concise
@@ -697,9 +693,7 @@ let test_concise _ =
   assert_concise (Type.Optional Type.Bottom) "None";
   assert_concise (Type.Optional Type.integer) "Optional[int]";
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.Top]) "parametric[]";
-  assert_concise
-    (Type.parametric "parametric" ![Type.Top; Type.float])
-    "parametric[unknown, float]";
+  assert_concise (Type.parametric "parametric" ![Type.Top; Type.float]) "parametric[unknown, float]";
   assert_concise (Type.Primitive "a.b.c") "c";
   assert_concise (Type.tuple [Type.integer; Type.Any]) "Tuple[int, Any]";
   assert_concise (Type.Tuple (Type.Unbounded Type.integer)) "Tuple[int, ...]";
@@ -866,8 +860,7 @@ let test_exists _ =
   assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
   assert_false (top_exists (Type.Tuple (Type.Unbounded Type.integer)));
   assert_true (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
-  assert_false
-    (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
+  assert_false (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
   assert_true (top_exists (Type.parametric "parametric" ![Type.integer; Type.Top]));
   assert_false (top_exists (Type.parametric "parametric" ![Type.integer; Type.string]));
   assert_true (top_exists (Type.tuple [Type.Top; Type.string]));
@@ -1226,8 +1219,7 @@ let test_parameter_name_compatibility _ =
     (Type.Callable.Parameter.names_compatible (parameter "__argument") (parameter "argument"));
   assert_true
     (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "__argument"));
-  assert_false
-    (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "other"));
+  assert_false (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "other"));
   assert_false
     (Type.Callable.Parameter.names_compatible (parameter "_argument") (parameter "other"))
 
@@ -1342,8 +1334,7 @@ let test_visit _ =
       let new_state, transformed_annotation =
         match annotation with
         | Type.Primitive primitive -> "", Type.Primitive (state ^ primitive)
-        | Type.Parametric { name; parameters } ->
-            state ^ name, Type.Parametric { name; parameters }
+        | Type.Parametric { name; parameters } -> state ^ name, Type.Parametric { name; parameters }
         | _ -> state, annotation
       in
       { Type.Transform.transformed_annotation; new_state }
@@ -1939,8 +1930,7 @@ let test_replace_all _ =
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all
        (fun _ -> Some (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
-       (Tuple
-          (Bounded (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] list_variadic)))))
+       (Tuple (Bounded (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] list_variadic)))))
     (Tuple
        (Bounded
           (Concrete
@@ -2005,8 +1995,7 @@ let test_collect_all _ =
     [Type.Variable.Variadic.List.create "Ts"];
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.collect_all
-       (Tuple
-          (Bounded (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] list_variadic)))))
+       (Tuple (Bounded (Concatenation (create_concatenation ~mappers:["Foo"; "Bar"] list_variadic)))))
     [Type.Variable.Variadic.List.create "Ts"];
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.collect_all

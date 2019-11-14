@@ -268,9 +268,7 @@ module State (Context : Context) = struct
           (* a["b"] = c gets converted to a.__setitem__("b", c). *)
           | ( Name (Name.Attribute { attribute = "__setitem__"; base; _ }),
               [_; { Call.Argument.value; _ }] ) -> (
-              let new_awaitables, state =
-                forward_expression ~resolution ~state ~expression:value
-              in
+              let new_awaitables, state = forward_expression ~resolution ~state ~expression:value in
               match Node.value base with
               | Name name when is_simple_name name && not (List.is_empty new_awaitables) ->
                   let { locals; _ } = state in
@@ -291,8 +289,8 @@ module State (Context : Context) = struct
               | _ -> awaitables, state )
           | _ ->
               let need_to_await = state.need_to_await in
-              (* Don't introduce awaitables for the arguments of a call, as they will be consumed
-                 by the call anyway. *)
+              (* Don't introduce awaitables for the arguments of a call, as they will be consumed by
+                 the call anyway. *)
               let awaitables, state =
                 List.fold
                   arguments
@@ -319,21 +317,21 @@ module State (Context : Context) = struct
           let awaitables = expression :: awaitables in
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) -> (
-            match find_aliases base with
-            | Some locations ->
-                ( awaitables,
-                  {
-                    unawaited;
-                    locals = Map.set locals ~key:(Location location) ~data:locations;
-                    need_to_await;
-                  } )
-            | None ->
-                ( awaitables,
-                  {
-                    unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression);
-                    locals;
-                    need_to_await;
-                  } ) )
+              match find_aliases base with
+              | Some locations ->
+                  ( awaitables,
+                    {
+                      unawaited;
+                      locals = Map.set locals ~key:(Location location) ~data:locations;
+                      need_to_await;
+                    } )
+              | None ->
+                  ( awaitables,
+                    {
+                      unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression);
+                      locals;
+                      need_to_await;
+                    } ) )
           | _ ->
               ( awaitables,
                 {
@@ -344,15 +342,15 @@ module State (Context : Context) = struct
         else
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) -> (
-            match find_aliases base with
-            | Some locations ->
-                ( awaitables,
-                  {
-                    unawaited;
-                    locals = Map.set locals ~key:(Location location) ~data:locations;
-                    need_to_await;
-                  } )
-            | None -> awaitables, state )
+              match find_aliases base with
+              | Some locations ->
+                  ( awaitables,
+                    {
+                      unawaited;
+                      locals = Map.set locals ~key:(Location location) ~data:locations;
+                      need_to_await;
+                    } )
+              | None -> awaitables, state )
           | _ -> awaitables, state )
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let awaitables, state = forward_expression ~resolution ~state ~expression:left in
@@ -456,33 +454,33 @@ module State (Context : Context) = struct
     in
     match Node.value target with
     | Expression.Name target when is_simple_name target -> (
-      match expression with
-      | { Node.value = Expression.Name value; _ } when is_simple_name value ->
-          (* Aliasing. *)
-          let locals =
-            Map.find locals (Reference (name_to_reference_exn value))
-            >>| (fun locations ->
-                  Map.set locals ~key:(Reference (name_to_reference_exn target)) ~data:locations)
-            |> Option.value ~default:locals
-          in
-          { unawaited; locals; need_to_await }
-      | _ ->
-          (* The expression must be analyzed before we call `forward_assign` on it, as that's where
-             unawaitables are introduced. *)
-          let locals =
-            let location = Node.location expression in
-            let key = Reference (name_to_reference_exn target) in
-            if not (List.is_empty awaitables) then
-              let awaitable_locations =
-                List.map awaitables ~f:Node.location |> Location.Reference.Set.of_list
-              in
-              Map.set locals ~key ~data:awaitable_locations
-            else if Map.mem unawaited location then
-              Map.set locals ~key ~data:(Location.Reference.Set.singleton location)
-            else
-              locals
-          in
-          { unawaited; locals; need_to_await } )
+        match expression with
+        | { Node.value = Expression.Name value; _ } when is_simple_name value ->
+            (* Aliasing. *)
+            let locals =
+              Map.find locals (Reference (name_to_reference_exn value))
+              >>| (fun locations ->
+                    Map.set locals ~key:(Reference (name_to_reference_exn target)) ~data:locations)
+              |> Option.value ~default:locals
+            in
+            { unawaited; locals; need_to_await }
+        | _ ->
+            (* The expression must be analyzed before we call `forward_assign` on it, as that's
+               where unawaitables are introduced. *)
+            let locals =
+              let location = Node.location expression in
+              let key = Reference (name_to_reference_exn target) in
+              if not (List.is_empty awaitables) then
+                let awaitable_locations =
+                  List.map awaitables ~f:Node.location |> Location.Reference.Set.of_list
+                in
+                Map.set locals ~key ~data:awaitable_locations
+              else if Map.mem unawaited location then
+                Map.set locals ~key ~data:(Location.Reference.Set.singleton location)
+              else
+                locals
+            in
+            { unawaited; locals; need_to_await } )
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (
@@ -492,9 +490,7 @@ module State (Context : Context) = struct
             | Expression.Starred (Starred.Once _) -> true
             | _ -> false
           in
-          let left, tail =
-            List.split_while elements ~f:(fun element -> not (is_starred element))
-          in
+          let left, tail = List.split_while elements ~f:(fun element -> not (is_starred element)) in
           let starred, right =
             let starred, right = List.split_while tail ~f:is_starred in
             let starred =

@@ -4,10 +4,9 @@
  * LICENSE file in the root directory of this source tree. *)
 
 (* Constructors of this type are used to select parts of composed abstract domains. E.g., a Set
-   domain will add an Element: element constructor for the element type of the set, thereby
-   allowing folding, partitioning, and transforming the abstract domains by Elements. Similarly, a
-   Map domain will add a constructor for the Key part of the map and delegate all other parts to
-   the range. *)
+   domain will add an Element: element constructor for the element type of the set, thereby allowing
+   folding, partitioning, and transforming the abstract domains by Elements. Similarly, a Map domain
+   will add a constructor for the Key part of the map and delegate all other parts to the range. *)
 type _ part = ..
 
 (* Packages a part and a corresponding value. See create function below. *)
@@ -40,8 +39,8 @@ module type S = sig
   val create : value_part list -> t
 end
 
-(* First class abstract domain value. Used e.g., in the product domain. Should not be stored as
-   part of abstract values. *)
+(* First class abstract domain value. Used e.g., in the product domain. Should not be stored as part
+   of abstract values. *)
 type 'a abstract_domain = (module S with type t = 'a)
 
 (* Equality witness used as result of comparing GADTs. *)

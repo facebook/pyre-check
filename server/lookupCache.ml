@@ -134,8 +134,7 @@ let find_all_annotations ~state ~configuration ~path =
   let annotations =
     lookup
     >>| Lookup.get_all_annotations
-    >>| List.map ~f:(fun (location, annotation) ->
-            instantiate_location ~state location, annotation)
+    >>| List.map ~f:(fun (location, annotation) -> instantiate_location ~state location, annotation)
   in
   let _ =
     match source_path, annotations with

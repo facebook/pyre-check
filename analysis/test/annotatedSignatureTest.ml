@@ -153,10 +153,7 @@ let test_select context =
             { callable = parse_callable closest; reason = Some (MissingArgument (Named name)) }
       | `NotFoundMissingAnonymousArgumentWithClosest (closest, index) ->
           NotFound
-            {
-              callable = parse_callable closest;
-              reason = Some (MissingArgument (Anonymous index));
-            }
+            { callable = parse_callable closest; reason = Some (MissingArgument (Anonymous index)) }
       | `NotFoundTooManyArguments (expected, provided) ->
           NotFound { callable; reason = Some (TooManyArguments { expected; provided }) }
       | `NotFoundTooManyArgumentsWithClosest (closest, expected, provided) ->

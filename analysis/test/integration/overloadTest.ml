@@ -87,8 +87,8 @@ let test_check_implementation context =
     [
       "Incompatible overload [43]: The overloaded function `foo` on line 9 will never be matched. \
        The signature of overload on line 5 is the same or broader.";
-      "Incompatible overload [43]: The overloaded function `foo` on line 13 will never be \
-       matched. The signature of overload on line 5 is the same or broader.";
+      "Incompatible overload [43]: The overloaded function `foo` on line 13 will never be matched. \
+       The signature of overload on line 5 is the same or broader.";
     ];
   assert_type_errors
     {|

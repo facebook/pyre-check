@@ -393,8 +393,8 @@ let test_assert_contains_none context =
         reveal_type(x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Optional[int]]` \
-       (inferred: `typing.List[int]`).";
+      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Optional[int]]` (inferred: \
+       `typing.List[int]`).";
     ];
 
   assert_type_errors

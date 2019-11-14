@@ -403,8 +403,8 @@ let test_register_aliases context =
     [
       ( "test.Tparams",
         Type.VariableAlias
-          (Type.Variable.ParameterVariadic
-             (Type.Variable.Variadic.Parameters.create "test.Tparams")) );
+          (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "test.Tparams"))
+      );
       ( "test.Ts",
         Type.VariableAlias
           (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "test.Ts")) );
@@ -418,8 +418,7 @@ let test_register_implicit_submodules context =
   let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   assert_bool
     "Can get the source of a/b/c.py"
-    ( AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a.b.c")
-    |> Option.is_some );
+    (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a.b.c") |> Option.is_some);
   assert_bool
     "Can get the module definition of a/b/c.py"
     ( GlobalResolution.module_definition global_resolution (Reference.create "a.b.c")
@@ -583,8 +582,7 @@ let test_populate context =
 
   (* Check custom class definitions. *)
   let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
-  assert_is_some
-    (GlobalResolution.class_definition global_resolution (Primitive "typing.Optional"));
+  assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "typing.Optional"));
 
   (* Check type aliases. *)
   let environment =
@@ -1125,8 +1123,7 @@ let test_default_class_hierarchy context =
   (* Object *)
   assert_true (less_or_equal order ~left:(Type.optional Type.integer) ~right:Type.object_primitive);
   assert_true (less_or_equal order ~left:(Type.list Type.integer) ~right:Type.object_primitive);
-  assert_false
-    (less_or_equal order ~left:Type.object_primitive ~right:(Type.optional Type.integer));
+  assert_false (less_or_equal order ~left:Type.object_primitive ~right:(Type.optional Type.integer));
 
   (* Mock. *)
   assert_true (less_or_equal order ~left:(Type.Primitive "unittest.mock.Base") ~right:Type.Top);

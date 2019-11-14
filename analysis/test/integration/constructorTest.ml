@@ -186,8 +186,8 @@ let test_check_init context =
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` "
       ^ "has type `int` but is used as type `unknown`.";
-      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
-       control flow path that doesn't define `unknown`.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
+       flow path that doesn't define `unknown`.";
       "Undefined name [18]: Global name `unknown2` is not defined, or there is at least one \
        control flow path that doesn't define `unknown2`.";
     ];
@@ -820,8 +820,8 @@ let test_check_constructors context =
       foo(Class)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st \
-       anonymous parameter to call `foo` but got `typing.Type[Class]`.";
+      "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st anonymous \
+       parameter to call `foo` but got `typing.Type[Class]`.";
     ]
 
 

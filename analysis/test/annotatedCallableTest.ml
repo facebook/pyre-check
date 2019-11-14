@@ -92,9 +92,7 @@ let test_create_overload context =
       Type.Callable.annotation = Type.none;
       parameters =
         Type.Callable.Defined
-          [
-            Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer };
-          ];
+          [Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer }];
       define_location = None;
     }
 

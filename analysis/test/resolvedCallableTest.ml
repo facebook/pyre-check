@@ -290,6 +290,4 @@ let test_create context =
 
 
 let () =
-  "define"
-  >::: ["apply_decorators" >:: test_apply_decorators; "create" >:: test_create]
-  |> Test.run
+  "define" >::: ["apply_decorators" >:: test_apply_decorators; "create" >:: test_create] |> Test.run

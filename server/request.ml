@@ -35,8 +35,9 @@ let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
 
 
 let parse_lsp
-    ~configuration:( { Configuration.Analysis.perform_autocompletion; go_to_definition_enabled; _ }
-                   as configuration )
+    ~configuration:
+      ( { Configuration.Analysis.perform_autocompletion; go_to_definition_enabled; _ } as
+      configuration )
     ~state:{ State.symlink_targets_to_sources; _ }
     ~request
   =
@@ -63,228 +64,229 @@ let parse_lsp
   let process_request request_method =
     match request_method with
     | "textDocument/definition" -> (
-      match TextDocumentDefinitionRequest.of_yojson request with
-      | Ok
-          {
-            TextDocumentDefinitionRequest.parameters =
-              Some
-                {
-                  TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  position;
-                };
-            id;
-            _;
-          }
-        when go_to_definition_enabled ->
-          uri_to_path ~uri
-          >>| fun path ->
-          GetDefinitionRequest { DefinitionRequest.id; path; position = to_pyre_position position }
-      | Ok _ -> None
-      | Error yojson_error ->
-          Log.dump "%s" yojson_error;
-          None )
+        match TextDocumentDefinitionRequest.of_yojson request with
+        | Ok
+            {
+              TextDocumentDefinitionRequest.parameters =
+                Some
+                  {
+                    TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                    position;
+                  };
+              id;
+              _;
+            }
+          when go_to_definition_enabled ->
+            uri_to_path ~uri
+            >>| fun path ->
+            GetDefinitionRequest
+              { DefinitionRequest.id; path; position = to_pyre_position position }
+        | Ok _ -> None
+        | Error yojson_error ->
+            Log.dump "%s" yojson_error;
+            None )
     | "textDocument/didClose" -> (
-      match DidCloseTextDocument.of_yojson request with
-      | Ok
-          {
-            DidCloseTextDocument.parameters =
-              Some
-                {
-                  DidCloseTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  _;
-                };
-            _;
-          } ->
-          uri_to_path ~uri
-          >>| fun path ->
-          Log.log ~section:`Server "Closed file %a" Path.pp path;
-          CloseDocument path
-      | Ok _ ->
-          log_method_error request_method;
-          None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match DidCloseTextDocument.of_yojson request with
+        | Ok
+            {
+              DidCloseTextDocument.parameters =
+                Some
+                  {
+                    DidCloseTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                    _;
+                  };
+              _;
+            } ->
+            uri_to_path ~uri
+            >>| fun path ->
+            Log.log ~section:`Server "Closed file %a" Path.pp path;
+            CloseDocument path
+        | Ok _ ->
+            log_method_error request_method;
+            None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "textDocument/didOpen" -> (
-      match DidOpenTextDocument.of_yojson request with
-      | Ok
-          {
-            DidOpenTextDocument.parameters =
-              Some { DidOpenTextDocumentParameters.textDocument = { TextDocumentItem.uri; _ }; _ };
-            _;
-          } ->
-          uri_to_path ~uri
-          >>| fun path ->
-          Log.log ~section:`Server "Opened file %a" Path.pp path;
-          OpenDocument path
-      | Ok _ ->
-          log_method_error request_method;
-          None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match DidOpenTextDocument.of_yojson request with
+        | Ok
+            {
+              DidOpenTextDocument.parameters =
+                Some { DidOpenTextDocumentParameters.textDocument = { TextDocumentItem.uri; _ }; _ };
+              _;
+            } ->
+            uri_to_path ~uri
+            >>| fun path ->
+            Log.log ~section:`Server "Opened file %a" Path.pp path;
+            OpenDocument path
+        | Ok _ ->
+            log_method_error request_method;
+            None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "textDocument/didChange" -> (
-      match DidChangeTextDocument.of_yojson request with
-      | Ok
-          {
-            DidChangeTextDocument.parameters =
-              Some
-                {
-                  DidChangeTextDocumentParameters.textDocument =
-                    { VersionedTextDocumentIdentifier.uri; _ };
-                  contentChanges = content_changes;
-                };
-            _;
-          } ->
-          (* We only care about the last text update since we receive full text. *)
-          Option.both
-            (uri_to_path ~uri)
-            (content_changes |> List.last >>| fun change -> change.text)
-          >>| (fun (path, content) -> File.create ~content path)
-          >>| fun file -> DocumentChange file
-      | Ok _ ->
-          log_method_error request_method;
-          None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match DidChangeTextDocument.of_yojson request with
+        | Ok
+            {
+              DidChangeTextDocument.parameters =
+                Some
+                  {
+                    DidChangeTextDocumentParameters.textDocument =
+                      { VersionedTextDocumentIdentifier.uri; _ };
+                    contentChanges = content_changes;
+                  };
+              _;
+            } ->
+            (* We only care about the last text update since we receive full text. *)
+            Option.both
+              (uri_to_path ~uri)
+              (content_changes |> List.last >>| fun change -> change.text)
+            >>| (fun (path, content) -> File.create ~content path)
+            >>| fun file -> DocumentChange file
+        | Ok _ ->
+            log_method_error request_method;
+            None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "textDocument/didSave" -> (
-      match DidSaveTextDocument.of_yojson request with
-      | Ok
-          {
-            DidSaveTextDocument.parameters =
-              Some
-                {
-                  DidSaveTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  _;
-                };
-            _;
-          } ->
-          uri_to_path ~uri >>| fun path -> SaveDocument path
-      | Ok _ ->
-          log_method_error request_method;
-          None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match DidSaveTextDocument.of_yojson request with
+        | Ok
+            {
+              DidSaveTextDocument.parameters =
+                Some
+                  {
+                    DidSaveTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                    _;
+                  };
+              _;
+            } ->
+            uri_to_path ~uri >>| fun path -> SaveDocument path
+        | Ok _ ->
+            log_method_error request_method;
+            None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "textDocument/completion" -> (
-      match CompletionRequest.of_yojson request with
-      | Ok
-          {
-            CompletionRequest.parameters =
-              Some { textDocument = { TextDocumentIdentifier.uri; _ }; position; _ };
-            id;
-            _;
-          }
-        when perform_autocompletion ->
-          uri_to_path ~uri
-          >>| fun path ->
-          CompletionRequest
-            { Protocol.CompletionRequest.id; path; position = to_pyre_position position }
-      | Ok _ -> None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match CompletionRequest.of_yojson request with
+        | Ok
+            {
+              CompletionRequest.parameters =
+                Some { textDocument = { TextDocumentIdentifier.uri; _ }; position; _ };
+              id;
+              _;
+            }
+          when perform_autocompletion ->
+            uri_to_path ~uri
+            >>| fun path ->
+            CompletionRequest
+              { Protocol.CompletionRequest.id; path; position = to_pyre_position position }
+        | Ok _ -> None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "textDocument/hover" -> (
-      match HoverRequest.of_yojson request with
-      | Ok
-          {
-            HoverRequest.parameters =
-              Some
-                {
-                  TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  position;
-                };
-            id;
-            _;
-          } ->
-          uri_to_path ~uri
-          >>| fun path ->
-          HoverRequest { DefinitionRequest.id; path; position = to_pyre_position position }
-      | Ok _ -> None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match HoverRequest.of_yojson request with
+        | Ok
+            {
+              HoverRequest.parameters =
+                Some
+                  {
+                    TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                    position;
+                  };
+              id;
+              _;
+            } ->
+            uri_to_path ~uri
+            >>| fun path ->
+            HoverRequest { DefinitionRequest.id; path; position = to_pyre_position position }
+        | Ok _ -> None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "textDocument/codeAction" -> (
-      match CodeActionRequest.of_yojson request with
-      | Ok
-          {
-            CodeActionRequest.parameters =
-              Some
-                {
-                  CodeActionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  context = { diagnostics; _ };
-                  _;
-                };
-            id;
-            _;
-          } ->
-          uri_to_path ~uri >>| fun path -> CodeActionRequest { id; uri; diagnostics; path }
-      | Ok _ -> None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match CodeActionRequest.of_yojson request with
+        | Ok
+            {
+              CodeActionRequest.parameters =
+                Some
+                  {
+                    CodeActionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                    context = { diagnostics; _ };
+                    _;
+                  };
+              id;
+              _;
+            } ->
+            uri_to_path ~uri >>| fun path -> CodeActionRequest { id; uri; diagnostics; path }
+        | Ok _ -> None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "textDocument/typeCoverage" -> (
-      match TypeCoverage.of_yojson request with
-      | Ok
-          {
-            TypeCoverage.parameters =
-              Some { TypeCoverageParameters.textDocument = { TextDocumentIdentifier.uri; _ }; _ };
-            id;
-            _;
-          } ->
-          uri_to_path ~uri >>| fun path -> TypeCoverageRequest { path; id }
-      | Ok _ -> None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match TypeCoverage.of_yojson request with
+        | Ok
+            {
+              TypeCoverage.parameters =
+                Some { TypeCoverageParameters.textDocument = { TextDocumentIdentifier.uri; _ }; _ };
+              id;
+              _;
+            } ->
+            uri_to_path ~uri >>| fun path -> TypeCoverageRequest { path; id }
+        | Ok _ -> None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "workspace/executeCommand" -> (
-      match ExecuteCommandRequest.of_yojson request with
-      | Ok
-          {
-            ExecuteCommandRequest.parameters = Some { ExecuteCommandParameters.arguments; _ };
-            id;
-            _;
-          } ->
-          Some (ExecuteCommandRequest { id; arguments })
-      | Ok _ -> None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match ExecuteCommandRequest.of_yojson request with
+        | Ok
+            {
+              ExecuteCommandRequest.parameters = Some { ExecuteCommandParameters.arguments; _ };
+              id;
+              _;
+            } ->
+            Some (ExecuteCommandRequest { id; arguments })
+        | Ok _ -> None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "updateFiles" -> (
-      match UpdateFiles.of_yojson request with
-      | Ok { UpdateFiles.parameters = Some { files; invalidated = targets; _ }; _ } ->
-          let files = List.map files ~f:string_to_path in
-          if not (List.is_empty targets) then (
-            Log.info "Invalidate %d symlinks" (List.length targets);
-            List.iter targets ~f:(Hashtbl.remove symlink_targets_to_sources) );
-          Some (TypeCheckRequest files)
-      | Ok _ -> None
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match UpdateFiles.of_yojson request with
+        | Ok { UpdateFiles.parameters = Some { files; invalidated = targets; _ }; _ } ->
+            let files = List.map files ~f:string_to_path in
+            if not (List.is_empty targets) then (
+              Log.info "Invalidate %d symlinks" (List.length targets);
+              List.iter targets ~f:(Hashtbl.remove symlink_targets_to_sources) );
+            Some (TypeCheckRequest files)
+        | Ok _ -> None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "displayTypeErrors" -> (
-      match LanguageServer.Types.DisplayTypeErrors.of_yojson request with
-      | Ok { LanguageServer.Types.DisplayTypeErrors.parameters = Some { files }; _ } ->
-          let files = List.map files ~f:string_to_path in
-          Some (DisplayTypeErrors files)
-      | Ok _ -> Some (DisplayTypeErrors [])
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match LanguageServer.Types.DisplayTypeErrors.of_yojson request with
+        | Ok { LanguageServer.Types.DisplayTypeErrors.parameters = Some { files }; _ } ->
+            let files = List.map files ~f:string_to_path in
+            Some (DisplayTypeErrors files)
+        | Ok _ -> Some (DisplayTypeErrors [])
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "shutdown" -> (
-      match ShutdownRequest.of_yojson request with
-      | Ok { ShutdownRequest.id; _ } -> Some (ClientShutdownRequest id)
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match ShutdownRequest.of_yojson request with
+        | Ok { ShutdownRequest.id; _ } -> Some (ClientShutdownRequest id)
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "exit" -> Some (ClientExitRequest Persistent)
     | "telemetry/rage" -> (
-      match RageRequest.of_yojson request with
-      | Ok { RageRequest.id; _ } -> Some (Request.RageRequest id)
-      | Error yojson_error ->
-          Log.log ~section:`Server "Error: %s" yojson_error;
-          None )
+        match RageRequest.of_yojson request with
+        | Ok { RageRequest.id; _ } -> Some (Request.RageRequest id)
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | unmatched_method ->
         Log.log ~section:`Server "Unhandled %s" unmatched_method;
         None
@@ -462,8 +464,7 @@ let process_type_query_request
               Type.Parametric
                 {
                   name = primitive;
-                  parameters =
-                    Type.OrderedTypes.Concrete (List.map generics ~f:(fun _ -> Type.Any));
+                  parameters = Type.OrderedTypes.Concrete (List.map generics ~f:(fun _ -> Type.Any));
                 }
           | _ -> annotation
         else
@@ -607,9 +608,9 @@ let process_type_query_request
           let key, value = Base64.decode key, Base64.decode value in
           match key, value with
           | Ok key, Ok value -> (
-            match Memory.decode ~key ~value with
-            | Ok decoded -> Some decoded
-            | _ -> None )
+              match Memory.decode ~key ~value with
+              | Ok decoded -> Some decoded
+              | _ -> None )
           | _ -> None
         in
         let serialize_decoded decoded =
@@ -660,8 +661,8 @@ let process_type_query_request
                       { serialized_key; kind; actual_key = key; actual_value = value }
                   in
                   { TypeQuery.decoded = decoded_value :: decoded; undecodable_keys }
-              | None ->
-                  { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys } )
+              | None -> { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys }
+              )
           | TypeQuery.SerializedPair
               { serialized_key; first_serialized_value; second_serialized_value } -> (
               let first_decoded = decode serialized_key first_serialized_value in
@@ -707,15 +708,11 @@ let process_type_query_request
                       in
                       { TypeQuery.decoded = value :: decoded; undecodable_keys }
                   | _ ->
-                      { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys }
-                  )
+                      { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys } )
               | _ -> { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys } )
         in
         let decoded =
-          List.fold
-            values
-            ~init:{ TypeQuery.decoded = []; undecodable_keys = [] }
-            ~f:build_response
+          List.fold values ~init:{ TypeQuery.decoded = []; undecodable_keys = [] } ~f:build_response
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
     | TypeQuery.Defines module_names ->
@@ -733,10 +730,7 @@ let process_type_query_request
               let represent
                   {
                     Node.value =
-                      {
-                        Statement.Define.signature = { name; return_annotation; parameters; _ };
-                        _;
-                      };
+                      { Statement.Define.signature = { name; return_annotation; parameters; _ }; _ };
                     _;
                   }
                 =
@@ -919,9 +913,7 @@ let process_type_query_request
         in
         GlobalResolution.class_definition global_resolution parsed_annotation
         >>| Annotated.Class.create
-        >>| Annotated.Class.attributes
-              ~instantiated:parsed_annotation
-              ~resolution:global_resolution
+        >>| Annotated.Class.attributes ~instantiated:parsed_annotation ~resolution:global_resolution
         >>| List.filter_map ~f:to_method
         >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
         |> Option.value
@@ -953,32 +945,32 @@ let process_type_query_request
         in
         match GlobalResolution.global global_resolution function_name with
         | Some { Node.value; _ } -> (
-          match Annotation.annotation value with
-          | Type.Callable { Type.Callable.implementation; overloads; _ } ->
-              let overload_signature { Type.Callable.annotation; parameters; _ } =
-                match parameters with
-                | Type.Callable.Defined parameters ->
-                    let format parameter =
-                      match parameter with
-                      | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                          let name = Identifier.sanitized name in
-                          Some
-                            {
-                              TypeQuery.parameter_name = name;
-                              annotation = keep_known_annotation annotation;
-                            }
-                      | _ -> None
-                    in
-                    let parameters = List.filter_map ~f:format parameters in
-                    Some { TypeQuery.return_type = keep_known_annotation annotation; parameters }
-                | _ -> None
-              in
-              TypeQuery.Response
-                (TypeQuery.FoundSignature
-                   (List.filter_map (implementation :: overloads) ~f:overload_signature))
-          | _ ->
-              TypeQuery.Error
-                (Format.sprintf "%s is not a callable" (Reference.show function_name)) )
+            match Annotation.annotation value with
+            | Type.Callable { Type.Callable.implementation; overloads; _ } ->
+                let overload_signature { Type.Callable.annotation; parameters; _ } =
+                  match parameters with
+                  | Type.Callable.Defined parameters ->
+                      let format parameter =
+                        match parameter with
+                        | Type.Callable.Parameter.Named { name; annotation; _ } ->
+                            let name = Identifier.sanitized name in
+                            Some
+                              {
+                                TypeQuery.parameter_name = name;
+                                annotation = keep_known_annotation annotation;
+                              }
+                        | _ -> None
+                      in
+                      let parameters = List.filter_map ~f:format parameters in
+                      Some { TypeQuery.return_type = keep_known_annotation annotation; parameters }
+                  | _ -> None
+                in
+                TypeQuery.Response
+                  (TypeQuery.FoundSignature
+                     (List.filter_map (implementation :: overloads) ~f:overload_signature))
+            | _ ->
+                TypeQuery.Error
+                  (Format.sprintf "%s is not a callable" (Reference.show function_name)) )
         | None ->
             TypeQuery.Error
               (Format.sprintf "No signature found for %s" (Reference.show function_name)) )
@@ -1063,34 +1055,34 @@ let process_type_query_request
           in
           TypeQuery.Error (Format.asprintf "Not able to get lookups in: %s" paths)
     | TypeQuery.ValidateTaintModels path -> (
-      try
-        let directories =
-          match path with
-          | Some path -> [path]
-          | None -> configuration.Configuration.Analysis.taint_models_directories
-        in
-        let configuration = Taint.TaintConfiguration.create ~rule_filter:None ~directories in
-        let create_models sources =
-          let create_model (path, source) =
-            Taint.Model.parse
-              ~resolution:(TypeCheck.resolution global_resolution ())
-              ~path
-              ~verify:true
-              ~source
-              ~configuration
-              Interprocedural.Callable.Map.empty
-            |> ignore
+        try
+          let directories =
+            match path with
+            | Some path -> [path]
+            | None -> configuration.Configuration.Analysis.taint_models_directories
           in
-          List.iter sources ~f:create_model
-        in
-        Taint.Model.get_model_sources ~directories |> create_models;
-        TypeQuery.Response
-          (TypeQuery.Success
-             (Format.asprintf
-                "Models in `%s` are valid."
-                (directories |> List.map ~f:Path.show |> String.concat ~sep:", ")))
-      with
-      | error -> TypeQuery.Error (Exn.to_string error) )
+          let configuration = Taint.TaintConfiguration.create ~rule_filter:None ~directories in
+          let create_models sources =
+            let create_model (path, source) =
+              Taint.Model.parse
+                ~resolution:(TypeCheck.resolution global_resolution ())
+                ~path
+                ~verify:true
+                ~source
+                ~configuration
+                Interprocedural.Callable.Map.empty
+              |> ignore
+            in
+            List.iter sources ~f:create_model
+          in
+          Taint.Model.get_model_sources ~directories |> create_models;
+          TypeQuery.Response
+            (TypeQuery.Success
+               (Format.asprintf
+                  "Models in `%s` are valid."
+                  (directories |> List.map ~f:Path.show |> String.concat ~sep:", ")))
+        with
+        | error -> TypeQuery.Error (Exn.to_string error) )
   in
   let response =
     try process_request () with
@@ -1137,11 +1129,11 @@ let process_get_definition_request
       match LookupCache.find_definition ~state ~configuration path position with
       | None -> TextDocumentDefinitionResponse.create_empty ~id
       | Some { Location.start; stop; path } -> (
-        match AstEnvironment.ReadOnly.get_source_path ast_environment path with
-        | None -> TextDocumentDefinitionResponse.create_empty ~id
-        | Some source_path ->
-            let path = SourcePath.full_path ~configuration source_path in
-            TextDocumentDefinitionResponse.create ~id ~start ~stop ~path )
+          match AstEnvironment.ReadOnly.get_source_path ast_environment path with
+          | None -> TextDocumentDefinitionResponse.create_empty ~id
+          | Some source_path ->
+              let path = SourcePath.full_path ~configuration source_path in
+              TextDocumentDefinitionResponse.create ~id ~start ~stop ~path )
     in
     TextDocumentDefinitionResponse.to_yojson response
     |> Yojson.Safe.to_string
@@ -1302,8 +1294,8 @@ let rec process
           (* Make sure cache is fresh. We might not have received a close notification. *)
           LookupCache.evict_path ~state ~configuration path;
 
-          (* Make sure the IDE flushes its state about this file, by sending back all the errors
-             for this file. *)
+          (* Make sure the IDE flushes its state about this file, by sending back all the errors for
+             this file. *)
           let { State.open_documents; _ } = state in
           let _ =
             match ModuleTracker.lookup_path ~configuration module_tracker path with
@@ -1319,8 +1311,7 @@ let rec process
              memory. *)
           process_type_check_request
             ~state
-            ~configuration:
-              { configuration with Configuration.Analysis.incremental_style = Shallow }
+            ~configuration:{ configuration with Configuration.Analysis.incremental_style = Shallow }
             [path]
       | CloseDocument path ->
           let { State.open_documents; _ } = state in

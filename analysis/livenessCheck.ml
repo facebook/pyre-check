@@ -84,9 +84,7 @@ module State (Context : Context) = struct
   let widen ~previous ~next ~iteration:_ = join previous next
 
   let errors { used; define; _ } =
-    let { Node.value = { Define.signature = { Define.Signature.parameters; _ }; _ }; _ } =
-      define
-    in
+    let { Node.value = { Define.signature = { Define.Signature.parameters; _ }; _ }; _ } = define in
     let check_parameter { Node.value = { Parameter.name; _ }; location } =
       match Set.find used ~f:(Identifier.equal name) with
       | Some _ -> ()
@@ -103,10 +101,7 @@ module State (Context : Context) = struct
 
   let forward ?key:_ state ~statement:_ = state
 
-  let backward
-      ?key
-      ({ used; define; _ } as state)
-      ~statement:({ Node.location; value } as statement)
+  let backward ?key ({ used; define; _ } as state) ~statement:({ Node.location; value } as statement)
     =
     let resolution =
       let { Node.value = { Define.signature = { name; parent; _ }; _ }; _ } = define in

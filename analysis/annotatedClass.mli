@@ -117,12 +117,7 @@ val has_explicit_constructor : t -> resolution:GlobalResolution.t -> bool
 
 val overrides : t -> resolution:GlobalResolution.t -> name:Identifier.t -> Attribute.t option
 
-val has_method
-  :  ?transitive:bool ->
-  t ->
-  resolution:GlobalResolution.t ->
-  name:Identifier.t ->
-  bool
+val has_method : ?transitive:bool -> t -> resolution:GlobalResolution.t -> name:Identifier.t -> bool
 
 module AttributeCache : sig
   val clear : unit -> unit

@@ -14,8 +14,7 @@ let assert_parsed_equal source statements =
   let handle = "test.py" in
   let parsed_source = parse_untrimmed ~handle source in
   let found_any =
-    Visit.collect_locations parsed_source
-    |> List.for_all ~f:(Location.equal Location.Reference.any)
+    Visit.collect_locations parsed_source |> List.for_all ~f:(Location.equal Location.Reference.any)
   in
   if found_any then
     Printf.printf "\nLocation.any\n  found in parse of %s\n" source;
@@ -775,11 +774,7 @@ let test_define _ =
                name = !&"foo";
                parameters =
                  [
-                   +{
-                      Parameter.name = "a";
-                      value = Some (+Expression.Integer 1);
-                      annotation = None;
-                    };
+                   +{ Parameter.name = "a"; value = Some (+Expression.Integer 1); annotation = None };
                    +{ Parameter.name = "b"; value = None; annotation = None };
                  ];
                decorators = [];
@@ -802,9 +797,7 @@ let test_define _ =
              {
                name = !&"foo";
                parameters =
-                 [
-                   +{ Parameter.name = "a"; value = Some (+Expression.Tuple []); annotation = None };
-                 ];
+                 [+{ Parameter.name = "a"; value = Some (+Expression.Tuple []); annotation = None }];
                decorators = [];
                docstring = None;
                return_annotation = None;
@@ -2101,11 +2094,7 @@ let test_lambda _ =
              {
                Lambda.parameters =
                  [
-                   +{
-                      Parameter.name = "x";
-                      value = Some (+Expression.Integer 1);
-                      annotation = None;
-                    };
+                   +{ Parameter.name = "x"; value = Some (+Expression.Integer 1); annotation = None };
                    +{ Parameter.name = "y"; value = None; annotation = None };
                  ];
                body =
@@ -2849,8 +2838,7 @@ let test_comparison _ =
          (+Expression.ComparisonOperator
              {
                ComparisonOperator.left =
-                 +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                 +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
                operator = ComparisonOperator.LessThan;
                right = +Expression.Integer 2;
              });
@@ -3092,10 +3080,7 @@ let test_call _ =
                  [
                    { Call.Argument.name = None; value = +Expression.Integer 1 };
                    { Call.Argument.name = Some ~+"a"; value = +Expression.Integer 2 };
-                   {
-                     Call.Argument.name = None;
-                     value = +Expression.Starred (Starred.Once !"args");
-                   };
+                   { Call.Argument.name = None; value = +Expression.Starred (Starred.Once !"args") };
                    {
                      Call.Argument.name = None;
                      value = +Expression.Starred (Starred.Twice !"kwargs");
@@ -3163,8 +3148,7 @@ let test_string _ =
     "f'foo' f'bar'"
     [
       +Statement.Expression
-         (+Expression.String
-             (StringLiteral.create_mixed [create_format "foo"; create_format "bar"]));
+         (+Expression.String (StringLiteral.create_mixed [create_format "foo"; create_format "bar"]));
     ];
   assert_parsed_equal
     "f'foo' 'bar'"
@@ -3546,8 +3530,7 @@ let test_class _ =
                     signature =
                       {
                         name = !&"__init__";
-                        parameters =
-                          [+{ Parameter.name = "self"; value = None; annotation = None }];
+                        parameters = [+{ Parameter.name = "self"; value = None; annotation = None }];
                         decorators = [];
                         docstring = None;
                         return_annotation = None;
@@ -3624,9 +3607,7 @@ let test_class _ =
 
 
 let test_return _ =
-  assert_parsed_equal
-    "return"
-    [+Statement.Return { Return.expression = None; is_implicit = false }];
+  assert_parsed_equal "return" [+Statement.Return { Return.expression = None; is_implicit = false }];
   assert_parsed_equal
     "return 1"
     [+Statement.Return { Return.expression = Some (+Expression.Integer 1); is_implicit = false }]
@@ -4313,11 +4294,7 @@ let test_try _ =
            Try.body = [+Statement.Expression !"a"];
            handlers =
              [
-               {
-                 Try.Handler.kind = Some !"a";
-                 name = Some "b";
-                 body = [+Statement.Expression !"b"];
-               };
+               { Try.Handler.kind = Some !"a"; name = Some "b"; body = [+Statement.Expression !"b"] };
              ];
            orelse = [];
            finally = [];
@@ -4381,11 +4358,7 @@ let test_try _ =
            Try.body = [+Statement.Expression !"a"];
            handlers =
              [
-               {
-                 Try.Handler.kind = Some !"a";
-                 name = Some "b";
-                 body = [+Statement.Expression !"b"];
-               };
+               { Try.Handler.kind = Some !"a"; name = Some "b"; body = [+Statement.Expression !"b"] };
              ];
            orelse = [];
            finally = [];
@@ -4417,11 +4390,7 @@ let test_try _ =
            Try.body = [+Statement.Expression !"a"];
            handlers =
              [
-               {
-                 Try.Handler.kind = Some !"a";
-                 name = Some "b";
-                 body = [+Statement.Expression !"b"];
-               };
+               { Try.Handler.kind = Some !"a"; name = Some "b"; body = [+Statement.Expression !"b"] };
                { Try.Handler.kind = Some !"d"; name = None; body = [+Statement.Expression !"e"] };
              ];
            orelse = [];
@@ -4461,8 +4430,7 @@ let test_assert _ =
   assert_parsed_equal
     "assert a, b"
     [
-      +Statement.Assert
-         { Assert.test = !"a"; message = Some !"b"; origin = Assert.Origin.Assertion };
+      +Statement.Assert { Assert.test = !"a"; message = Some !"b"; origin = Assert.Origin.Assertion };
     ];
   assert_parsed_equal
     "assert a is not None, 'b or c'"
@@ -4489,8 +4457,7 @@ let test_import _ =
   assert_parsed_equal
     "import async"
     [
-      +Statement.Import
-         { Import.from = None; imports = [{ Import.name = !&"async"; alias = None }] };
+      +Statement.Import { Import.from = None; imports = [{ Import.name = !&"async"; alias = None }] };
     ];
   assert_parsed_equal
     "import a.async"
@@ -5202,8 +5169,7 @@ let test_byte_order_mark _ =
   (* Ensure that we can parse UTF-8 files with byte order marks properly. *)
   PyreParser.Parser.parse [byte_order_mark ^ "1"] |> ignore;
   assert_raises
-    (PyreParser.Parser.Error
-       "Could not parse file at $invalid_path:2:0-2:0\n  \239\187\1912\n  ^")
+    (PyreParser.Parser.Error "Could not parse file at $invalid_path:2:0-2:0\n  \239\187\1912\n  ^")
     (fun () -> PyreParser.Parser.parse ["1"; byte_order_mark ^ "2"])
 
 

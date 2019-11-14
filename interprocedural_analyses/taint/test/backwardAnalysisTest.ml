@@ -757,10 +757,7 @@ let test_list context =
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_pattern_star_index";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_same_index_assignment";
       outcome ~kind:`Function "qualifier.list_different_index_assignment";
-      outcome
-        ~kind:`Function
-        ~tito_parameters:["arg"]
-        "qualifier.list_index_assignment_return_list";
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_index_assignment_return_list";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_nested_assignment_1";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_nested_assignment_2";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.list_nested_assignment_non_tito";
@@ -1322,18 +1319,12 @@ let test_constructor_argument_tito context =
       outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.apply_deep_tito_some";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.apply_deep_tito_none";
       outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.deep_tito_via_objects";
-      outcome
-        ~kind:`Function
-        ~tito_parameters:["tito"]
-        "qualifier.apply_deep_tito_via_objects_some";
+      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.apply_deep_tito_via_objects_some";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.apply_deep_tito_via_objects_none";
       outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.deep_tito_wrapper";
       outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.deep_tito_via_multiple";
       outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.test_tito_via_multiple_some";
-      outcome
-        ~kind:`Function
-        ~tito_parameters:["tito"]
-        "qualifier.test_tito_via_multiple_some_more";
+      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.test_tito_via_multiple_some_more";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.test_tito_via_multiple_none";
       outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.DerivedData.__init__";
     ]

@@ -35,8 +35,8 @@ end
 module type OrderedConstraintsType = sig
   (* This module defines a system to construct and solve a set of constraints on type variables.
      These constraints are built up in the form of intervals on the type lattice defined by the
-     given order module. The solve system can handle chained constraints of the form X =<= F(Y) &&
-     Y =<= T, but declines to solve cyclic ones, e.g. X =<= Y, Y =<= X. *)
+     given order module. The solve system can handle chained constraints of the form X =<= F(Y) && Y
+     =<= T, but declines to solve cyclic ones, e.g. X =<= Y, Y =<= X. *)
   type order
 
   val add_lower_bound : t -> order:order -> pair:Type.Variable.pair -> t option
@@ -47,8 +47,8 @@ module type OrderedConstraintsType = sig
 
   val solve : t -> order:order -> Solution.t option
 
-  (* This solves the constraints for the given variables, and then substitutes those solution in
-     for those variables in the constraints for the remaining constraints. *)
+  (* This solves the constraints for the given variables, and then substitutes those solution in for
+     those variables in the constraints for the remaining constraints. *)
   val extract_partial_solution
     :  t ->
     order:order ->

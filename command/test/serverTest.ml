@@ -121,9 +121,7 @@ let test_server_stops context =
 
 let test_server_exits_on_directory_removal context =
   let directory = bracket_tmpdir context in
-  let pid =
-    Pid.of_int (CommandTest.start_server ~local_root:(Path.create_absolute directory) ())
-  in
+  let pid = Pid.of_int (CommandTest.start_server ~local_root:(Path.create_absolute directory) ()) in
   Sys_utils.rm_dir_tree directory;
   CommandTest.with_timeout
     ~seconds:6
@@ -175,8 +173,7 @@ let test_json_socket context =
   >>| LanguageServer.Types.HandshakeServer.of_yojson
   |> function
   | Some
-      (Ok
-        { jsonrpc = "2.0"; method_ = "handshake/server"; parameters = Some { version = "1234" } })
+      (Ok { jsonrpc = "2.0"; method_ = "handshake/server"; parameters = Some { version = "1234" } })
     ->
       ()
   | _ -> assert_bool "Handshake received from server is malformed" false );
@@ -1178,8 +1175,7 @@ let test_query_dependencies context =
   let create_path relative = Path.create_relative ~root:local_root ~relative in
   assert_response
     ~request:
-      (Protocol.Request.TypeQueryRequest
-         (Protocol.TypeQuery.DependentDefines [create_path "qa.py"]))
+      (Protocol.Request.TypeQueryRequest (Protocol.TypeQuery.DependentDefines [create_path "qa.py"]))
     (reference_response []);
   assert_response
     ~request:
@@ -1188,8 +1184,7 @@ let test_query_dependencies context =
     (reference_response []);
   assert_response
     ~request:
-      (Protocol.Request.TypeQueryRequest
-         (Protocol.TypeQuery.DependentDefines [create_path "qb.py"]))
+      (Protocol.Request.TypeQueryRequest (Protocol.TypeQuery.DependentDefines [create_path "qb.py"]))
     (reference_response []);
   assert_response
     ~request:
@@ -1198,8 +1193,7 @@ let test_query_dependencies context =
     (reference_response [Reference.create "qa.$toplevel"]);
   assert_response
     ~request:
-      (Protocol.Request.TypeQueryRequest
-         (Protocol.TypeQuery.DependentDefines [create_path "qc.py"]))
+      (Protocol.Request.TypeQueryRequest (Protocol.TypeQuery.DependentDefines [create_path "qc.py"]))
     (reference_response [Reference.create "qa.$toplevel"; Reference.create "qb.$toplevel"])
 
 

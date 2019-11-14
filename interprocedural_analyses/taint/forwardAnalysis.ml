@@ -314,10 +314,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             match target with
             | Sinks.LocalReturn -> state (* This is regular tito which was computed above *)
             | ParameterUpdate n -> (
-              (* Side effect on argument n *)
-              match List.nth arguments n with
-              | None -> state
-              | Some argument -> apply_argument_effect ~argument ~source_tree:taint state )
+                (* Side effect on argument n *)
+                match List.nth arguments n with
+                | None -> state
+                | Some argument -> apply_argument_effect ~argument ~source_tree:taint state )
             | Attach -> state (* These synthetic nodes should be ignored for analysis.*)
             | _ -> failwith "unexpected sink in tito"
           in
@@ -503,8 +503,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> List.map ~f:(fun name -> Type.Primitive name)
           in
           let base_annotation =
-            (* Our model definitions are ambiguous. Models could either refer to a class variable
-               or an instance variable. We explore both. *)
+            (* Our model definitions are ambiguous. Models could either refer to a class variable or
+               an instance variable. We explore both. *)
             if Type.is_meta annotation then
               [Type.single_parameter annotation]
             else
@@ -545,11 +545,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let index = AccessPath.get_index argument_value in
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [index]
-          |>> ForwardState.Tree.transform
-                ForwardTaint.simple_feature_set
-                ~f:(add_first_index index)
-      (* Special case x.__next__() as being a random index access (this pattern is the desugaring
-         of `for element in x`). *)
+          |>> ForwardState.Tree.transform ForwardTaint.simple_feature_set ~f:(add_first_index index)
+      (* Special case x.__next__() as being a random index access (this pattern is the desugaring of
+         `for element in x`). *)
       | Call
           {
             callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
@@ -576,8 +574,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               taint
               state
           in
-          (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body
-             is tainted. *)
+          (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body is
+             tainted. *)
           analyze_call ~resolution ~location ~state callee arguments
       | Call { callee; arguments } -> analyze_call ~resolution ~location ~state callee arguments
       | Complex _ -> ForwardState.Tree.empty, state
@@ -616,13 +614,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Name (Name.Identifier identifier) ->
           ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
       | Name (Name.Attribute { base; attribute; _ }) -> (
-        match
-          Interprocedural.CallResolution.resolve_property_targets ~resolution ~base ~attribute
-        with
-        | None -> analyze_attribute_access ~resolution ~state ~location base attribute
-        | Some targets ->
-            let arguments = [{ Call.Argument.name = None; value = base }] in
-            apply_call_targets ~resolution location arguments state targets )
+          match
+            Interprocedural.CallResolution.resolve_property_targets ~resolution ~base ~attribute
+          with
+          | None -> analyze_attribute_access ~resolution ~state ~location base attribute
+          | Some targets ->
+              let arguments = [{ Call.Argument.name = None; value = base }] in
+              apply_call_targets ~resolution location arguments state targets )
       | Set set ->
           List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
       | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state
@@ -832,9 +830,7 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
 
 
 let run ~environment ~define ~existing_model =
-  let { Node.value = { Define.signature = { parameters; return_annotation; _ }; _ }; _ } =
-    define
-  in
+  let { Node.value = { Define.signature = { parameters; return_annotation; _ }; _ }; _ } = define in
   let module Context = struct
     let definition = define
 
@@ -871,18 +867,12 @@ let run ~environment ~define ~existing_model =
         ~root:AccessPath.Root.LocalResult
         ~path:[]
         existing_model.TaintResult.backward.sink_taint
-      |> BackwardState.Tree.apply_call
-           return_location
-           ~callees:[]
-           ~port:AccessPath.Root.LocalResult
+      |> BackwardState.Tree.apply_call return_location ~callees:[] ~port:AccessPath.Root.LocalResult
   end
   in
   let module AnalysisInstance = AnalysisInstance (Context) in
   let open AnalysisInstance in
-  log
-    "Starting analysis of %a"
-    Interprocedural.Callable.pp
-    (Interprocedural.Callable.create define);
+  log "Starting analysis of %a" Interprocedural.Callable.pp (Interprocedural.Callable.create define);
   let cfg = Cfg.create define.value in
   let initial =
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in

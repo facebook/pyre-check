@@ -83,26 +83,26 @@ let expand_string_annotations ({ Source.source_path = { SourcePath.relative; _ }
                   arguments = List.map ~f:transform_argument arguments;
                 }
           | String { StringLiteral.value; _ } -> (
-            try
-              let parsed =
-                (* Start at column + 1 since parsing begins after the opening quote of the string
-                   literal. *)
-                Parser.parse ~start_line ~start_column:(start_column + 1) [value ^ "\n"] ~relative
-              in
-              match parsed with
-              | [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
-              | [{ Node.value = Expression { Node.value = Call _ as expression; _ }; _ }] ->
-                  expression
-              | _ -> failwith "Invalid annotation"
-            with
-            | Parser.Error _
-            | Failure _ ->
-                Log.debug
-                  "Invalid string annotation `%s` at %a"
-                  value
-                  Location.Reference.pp
-                  location;
-                Name (Name.Identifier "$unparsed_annotation") )
+              try
+                let parsed =
+                  (* Start at column + 1 since parsing begins after the opening quote of the string
+                     literal. *)
+                  Parser.parse ~start_line ~start_column:(start_column + 1) [value ^ "\n"] ~relative
+                in
+                match parsed with
+                | [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
+                | [{ Node.value = Expression { Node.value = Call _ as expression; _ }; _ }] ->
+                    expression
+                | _ -> failwith "Invalid annotation"
+              with
+              | Parser.Error _
+              | Failure _ ->
+                  Log.debug
+                    "Invalid string annotation `%s` at %a"
+                    value
+                    Location.Reference.pp
+                    location;
+                  Name (Name.Identifier "$unparsed_annotation") )
           | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
           | _ -> value
         in
@@ -218,8 +218,7 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
                 }
               =
               let value_length = String.length value in
-              let rec expand_fstring input_string ~line_offset ~column_offset ~index state
-                  : 'a list
+              let rec expand_fstring input_string ~line_offset ~column_offset ~index state : 'a list
                 =
                 if index = value_length then
                   []
@@ -230,8 +229,7 @@ let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ }
                     | '{', Literal -> [], Expression (line_offset, column_offset + 1, "")
                     | '{', Expression (_, _, "") -> [], Literal
                     | '}', Literal -> [], Literal
-                    (* NOTE: this does not account for nested expressions in e.g. format
-                       specifiers. *)
+                    (* NOTE: this does not account for nested expressions in e.g. format specifiers. *)
                     | '}', Expression (fstring_start_line, fstring_start_column, string) ->
                         [(fstring_start_line, fstring_start_column), string], Literal
                     (* Ignore leading whitespace in expressions. *)
@@ -502,8 +500,7 @@ let qualify
            Node.value =
              Call
                {
-                 callee =
-                   { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
+                 callee = { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
                  _;
                };
            _;
@@ -901,8 +898,7 @@ let qualify
           let orelse_scope, orelse = qualify_statements ~scope orelse in
           ( join_scopes body_scope orelse_scope,
             While
-              { While.test = qualify_expression ~qualify_strings:false ~scope test; body; orelse }
-          )
+              { While.test = qualify_expression ~qualify_strings:false ~scope test; body; orelse } )
       | Statement.Yield expression ->
           scope, Statement.Yield (qualify_expression ~qualify_strings:false ~scope expression)
       | Statement.YieldFrom expression ->
@@ -937,14 +933,14 @@ let qualify
     match Reference.as_list reference with
     | [] -> Reference.empty
     | head :: tail -> (
-      match Map.find aliases (Reference.create head) with
-      | Some { name; is_forward_reference; qualifier }
-        when (not is_forward_reference) || use_forward_references ->
-          if Reference.show name |> String.is_prefix ~prefix:"$" && suppress_synthetics then
-            Reference.combine qualifier reference
-          else
-            Reference.combine name (Reference.create_from_list tail)
-      | _ -> reference )
+        match Map.find aliases (Reference.create head) with
+        | Some { name; is_forward_reference; qualifier }
+          when (not is_forward_reference) || use_forward_references ->
+            if Reference.show name |> String.is_prefix ~prefix:"$" && suppress_synthetics then
+              Reference.combine qualifier reference
+            else
+              Reference.combine name (Reference.create_from_list tail)
+        | _ -> reference )
   and qualify_name
       ?(suppress_synthetics = false)
       ~qualify_strings
@@ -952,20 +948,20 @@ let qualify
       ~scope:({ aliases; use_forward_references; _ } as scope)
     = function
     | Name (Name.Identifier identifier) -> (
-      match Map.find aliases (Reference.create identifier) with
-      | Some { name; is_forward_reference; qualifier }
-        when (not is_forward_reference) || use_forward_references ->
-          if Reference.show name |> String.is_prefix ~prefix:"$" && suppress_synthetics then
-            Name
-              (Name.Attribute
-                 {
-                   base = from_reference ~location qualifier;
-                   attribute = identifier;
-                   special = false;
-                 })
-          else
-            Node.value (from_reference ~location name)
-      | _ -> Name (Name.Identifier identifier) )
+        match Map.find aliases (Reference.create identifier) with
+        | Some { name; is_forward_reference; qualifier }
+          when (not is_forward_reference) || use_forward_references ->
+            if Reference.show name |> String.is_prefix ~prefix:"$" && suppress_synthetics then
+              Name
+                (Name.Attribute
+                   {
+                     base = from_reference ~location qualifier;
+                     attribute = identifier;
+                     special = false;
+                   })
+            else
+              Node.value (from_reference ~location name)
+        | _ -> Name (Name.Identifier identifier) )
     | Name (Name.Attribute ({ base; _ } as name)) ->
         Name (Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base })
     | expression -> expression
@@ -1123,10 +1119,7 @@ let qualify
             }
       | UnaryOperator { UnaryOperator.operator; operand } ->
           UnaryOperator
-            {
-              UnaryOperator.operator;
-              operand = qualify_expression ~qualify_strings ~scope operand;
-            }
+            { UnaryOperator.operator; operand = qualify_expression ~qualify_strings ~scope operand }
       | Yield (Some expression) ->
           Yield (Some (qualify_expression ~qualify_strings ~scope expression))
       | Yield None -> Yield None
@@ -1174,15 +1167,15 @@ let replace_version_specific_code source =
           let extract_single_comparison { Node.value; _ } =
             match value with
             | Expression.ComparisonOperator { ComparisonOperator.left; operator; right } -> (
-              match operator with
-              | ComparisonOperator.LessThan
-              | ComparisonOperator.LessThanOrEquals ->
-                  Comparison (left, right)
-              | ComparisonOperator.GreaterThan
-              | ComparisonOperator.GreaterThanOrEquals ->
-                  Comparison (right, left)
-              | ComparisonOperator.Equals -> Equality (left, right)
-              | _ -> Neither )
+                match operator with
+                | ComparisonOperator.LessThan
+                | ComparisonOperator.LessThanOrEquals ->
+                    Comparison (left, right)
+                | ComparisonOperator.GreaterThan
+                | ComparisonOperator.GreaterThanOrEquals ->
+                    Comparison (right, left)
+                | ComparisonOperator.Equals -> Equality (left, right)
+                | _ -> Neither )
             | _ -> Neither
           in
           let add_pass_statement ~location body =
@@ -1194,17 +1187,14 @@ let replace_version_specific_code source =
           match extract_single_comparison test with
           | Comparison
               ( left,
-                {
-                  Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _);
-                  _;
-                } )
+                { Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _); _ }
+              )
             when String.equal (Expression.show left) "sys.version_info" ->
               (), add_pass_statement ~location orelse
           | Comparison (left, { Node.value = Expression.Integer 3; _ })
             when String.equal (Expression.show left) "sys.version_info[0]" ->
               (), add_pass_statement ~location orelse
-          | Comparison
-              ({ Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ }, right)
+          | Comparison ({ Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ }, right)
             when String.equal (Expression.show right) "sys.version_info"
                  && Expression.equal_expression major (Expression.Integer 3) ->
               (), add_pass_statement ~location body
@@ -1249,14 +1239,14 @@ let replace_platform_specific_code source =
               match test with
               | ComparisonOperator { ComparisonOperator.left; operator; right }
                 when matches_removed_platform left right -> (
-                match operator with
-                | ComparisonOperator.Equals
-                | Is ->
-                    orelse
-                | NotEquals
-                | IsNot ->
-                    body
-                | _ -> [statement] )
+                  match operator with
+                  | ComparisonOperator.Equals
+                  | Is ->
+                      orelse
+                  | NotEquals
+                  | IsNot ->
+                      body
+                  | _ -> [statement] )
               | _ -> [statement]
             in
             if not (List.is_empty statements) then
@@ -1316,8 +1306,7 @@ let expand_implicit_returns source =
     let statement state statement =
       match statement with
       (* Insert implicit return statements at the end of function bodies. *)
-      | { Node.value = Statement.Define define; _ } when Define.is_stub define ->
-          state, [statement]
+      | { Node.value = Statement.Define define; _ } when Define.is_stub define -> state, [statement]
       | { Node.location; value = Define define } ->
           let define =
             let has_yield =
@@ -1337,9 +1326,9 @@ let expand_implicit_returns source =
             let has_return_in_finally =
               match List.last define.Define.body with
               | Some { Node.value = Try { Try.finally; _ }; _ } -> (
-                match List.last finally with
-                | Some { Node.value = Return _; _ } -> true
-                | _ -> false )
+                  match List.last finally with
+                  | Some { Node.value = Return _; _ } -> true
+                  | _ -> false )
               | _ -> false
             in
             let loops_forever =
@@ -1416,8 +1405,8 @@ let defines
 
 
     let predicate = function
-      | { Node.location; value = Statement.Class { Class.name; body; _ }; _ }
-        when include_toplevels ->
+      | { Node.location; value = Statement.Class { Class.name; body; _ }; _ } when include_toplevels
+        ->
           Define.create_class_toplevel ~parent:name ~statements:body
           |> Node.create ~location
           |> Option.some
@@ -1558,9 +1547,7 @@ let expand_typed_dictionary_declarations
             let tuple (key, value) = Node.create (Expression.Tuple [key; value]) ~location in
             List.map fields ~f:tuple
           in
-          let total =
-            Node.create (if total then Expression.True else Expression.False) ~location
-          in
+          let total = Node.create (if total then Expression.True else Expression.False) ~location in
           [
             {
               Call.Argument.name = None;
@@ -1620,10 +1607,7 @@ let expand_typed_dictionary_declarations
                                    (Name.Attribute
                                       {
                                         base =
-                                          {
-                                            Node.location;
-                                            value = Name (Name.Identifier "typing");
-                                          };
+                                          { Node.location; value = Name (Name.Identifier "typing") };
                                         attribute = "Type";
                                         special = false;
                                       });
@@ -1851,8 +1835,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                   match value with
                   | Expression.String { StringLiteral.value = name; _ } ->
                       name, any_annotation, None
-                  | Tuple
-                      [{ Node.value = String { StringLiteral.value = name; _ }; _ }; annotation] ->
+                  | Tuple [{ Node.value = String { StringLiteral.value = name; _ }; _ }; annotation]
+                    ->
                       name, annotation, None
                   | _ -> Expression.show expression, any_annotation, None
                 in
@@ -2028,8 +2012,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             let fields_attribute = fields_attribute ~parent:name ~location attributes in
             Class { original with Class.body = constructor :: fields_attribute :: body }
           else
-            let extract_named_tuples (bases, attributes_sofar) ({ Call.Argument.value; _ } as base)
-              =
+            let extract_named_tuples (bases, attributes_sofar) ({ Call.Argument.value; _ } as base) =
               match extract_attributes value with
               | Some attributes ->
                   let constructor =

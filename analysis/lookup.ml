@@ -57,9 +57,9 @@ module NodeVisitor = struct
             let fallback = function
               | Some location -> Some location
               | None -> (
-                match Resolution.resolve_reference resolution reference with
-                | Type.Callable { implementation = { define_location; _ }; _ } -> define_location
-                | _ -> None )
+                  match Resolution.resolve_reference resolution reference with
+                  | Type.Callable { implementation = { define_location; _ }; _ } -> define_location
+                  | _ -> None )
             in
             GlobalResolution.global (Resolution.global_resolution resolution) reference
             >>| Node.location
@@ -137,9 +137,7 @@ module Visit = struct
       let store_annotation annotation =
         let { NodeVisitor.pre_resolution; annotations_lookup; _ } = !state in
         let resolved =
-          GlobalResolution.parse_annotation
-            (Resolution.global_resolution pre_resolution)
-            annotation
+          GlobalResolution.parse_annotation (Resolution.global_resolution pre_resolution) annotation
           |> Type.meta
         in
         let location = Node.location annotation in
@@ -187,19 +185,14 @@ let create_of_source global_resolution source =
           LocalAnnotationMap.get_postcondition annotation_lookup key
           |> Option.value ~default:Reference.Map.empty )
       in
-      let pre_resolution =
-        TypeCheck.resolution global_resolution ~annotations:pre_annotations ()
-      in
+      let pre_resolution = TypeCheck.resolution global_resolution ~annotations:pre_annotations () in
       let post_resolution =
         TypeCheck.resolution global_resolution ~annotations:post_annotations ()
       in
       let statement =
         match Node.value statement with
         | Statement.Class class_statement ->
-            {
-              statement with
-              Node.value = Statement.Class { class_statement with Class.body = [] };
-            }
+            { statement with Node.value = Statement.Class { class_statement with Class.body = [] } }
         | Define define_statement ->
             { statement with Node.value = Define { define_statement with Define.body = [] } }
         | _ -> statement

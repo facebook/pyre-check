@@ -32,8 +32,8 @@ module ReadOnly : sig
 
   val class_exists : t -> ?dependency:dependency -> string -> bool
 
-  (* APIs that start with prefix `all_` are not dependency tracked and are for testing purpose
-     only. DO NOT USE THEM IN PROD. *)
+  (* APIs that start with prefix `all_` are not dependency tracked and are for testing purpose only.
+     DO NOT USE THEM IN PROD. *)
 
   val all_classes : t -> Type.Primitive.t list
 

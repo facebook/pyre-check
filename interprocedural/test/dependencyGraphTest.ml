@@ -27,9 +27,7 @@ let setup ?(update_environment_with = []) ~context ~handle source =
 
 
 let create_call_graph ?(update_environment_with = []) ~context source_text =
-  let source, environment =
-    setup ~update_environment_with ~context ~handle:"test.py" source_text
-  in
+  let source, environment = setup ~update_environment_with ~context ~handle:"test.py" source_text in
   let record_overrides overrides =
     let record_override_edge ~key:member ~data:subtypes =
       DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
@@ -406,11 +404,7 @@ let test_type_collection context =
 
 
 let test_method_overrides context =
-  let assert_method_overrides
-      ?(update_environment_with = [])
-      ?(handle = "test.py")
-      source
-      ~expected
+  let assert_method_overrides ?(update_environment_with = []) ?(handle = "test.py") source ~expected
     =
     let expected =
       let create_callables (member, overriding_types) =
@@ -425,11 +419,7 @@ let test_method_overrides context =
     let printer map =
       map |> Reference.Map.sexp_of_t (List.sexp_of_t Reference.sexp_of_t) |> Sexp.to_string
     in
-    assert_equal
-      ~cmp:(Reference.Map.equal equal_elements)
-      ~printer
-      expected_overrides
-      overrides_map
+    assert_equal ~cmp:(Reference.Map.equal equal_elements) ~printer expected_overrides overrides_map
   in
   assert_method_overrides
     {|

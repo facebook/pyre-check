@@ -47,9 +47,7 @@ module Root = struct
         true, excluded, normalized
       else if String.is_prefix ~prefix:"*" prefixed_name_string then
         let prefixed_variable_name = String.chop_prefix_exn prefixed_name_string ~prefix:"*" in
-        ( true,
-          excluded,
-          (StarParameter { position }, prefixed_variable_name, original) :: normalized )
+        true, excluded, (StarParameter { position }, prefixed_variable_name, original) :: normalized
       else if seen_star then
         let normal_name = prefixed_name_string |> chop_parameter_prefix in
         ( true,
@@ -146,8 +144,8 @@ let match_actuals_to_formals arguments roots =
             actual_path = [];
             formal_path = [AbstractTreeDomain.Label.create_int_field (actual_position - position)];
           }
-    | `Approximate minimal_position, StarParameter { position; _ }
-      when minimal_position <= position ->
+    | `Approximate minimal_position, StarParameter { position; _ } when minimal_position <= position
+      ->
         (* Approximate: can't match up range *)
         Some { root = formal; actual_path = []; formal_path = [AbstractTreeDomain.Label.Any] }
     | `Star _, StarParameter _ ->

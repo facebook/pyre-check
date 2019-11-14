@@ -80,9 +80,9 @@ end = struct
     match Expression.location_sensitive_compare left.left right.left with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match [%compare: operator] left.operator right.operator with
-      | x when not (Int.equal x 0) -> x
-      | _ -> Expression.location_sensitive_compare left.right right.right )
+        match [%compare: operator] left.operator right.operator with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Expression.location_sensitive_compare left.right right.right )
 end
 
 and Call : sig
@@ -278,9 +278,9 @@ end = struct
     match Expression.location_sensitive_compare left.left right.left with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match [%compare: operator] left.operator right.operator with
-      | x when not (Int.equal x 0) -> x
-      | _ -> Expression.location_sensitive_compare left.right right.right )
+        match [%compare: operator] left.operator right.operator with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Expression.location_sensitive_compare left.right right.right )
 end
 
 and Comprehension : sig
@@ -328,14 +328,14 @@ end = struct
       match Expression.location_sensitive_compare left.target right.target with
       | x when not (Int.equal x 0) -> x
       | _ -> (
-        match Expression.location_sensitive_compare left.iterator right.iterator with
-        | x when not (Int.equal x 0) -> x
-        | _ -> (
-          match
-            List.compare Expression.location_sensitive_compare left.conditions right.conditions
-          with
+          match Expression.location_sensitive_compare left.iterator right.iterator with
           | x when not (Int.equal x 0) -> x
-          | _ -> Bool.compare left.async right.async ) )
+          | _ -> (
+              match
+                List.compare Expression.location_sensitive_compare left.conditions right.conditions
+              with
+              | x when not (Int.equal x 0) -> x
+              | _ -> Bool.compare left.async right.async ) )
   end
 
   type 'element t = {
@@ -482,9 +482,9 @@ end = struct
       match Expression.location_sensitive_compare left.base right.base with
       | x when not (Int.equal x 0) -> x
       | _ -> (
-        match [%compare: Identifier.t] left.attribute right.attribute with
-        | x when not (Int.equal x 0) -> x
-        | _ -> Bool.compare left.special right.special )
+          match [%compare: Identifier.t] left.attribute right.attribute with
+          | x when not (Int.equal x 0) -> x
+          | _ -> Bool.compare left.special right.special )
   end
 
   type t =
@@ -565,10 +565,10 @@ end = struct
     match [%compare: Identifier.t] left.name right.name with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match Option.compare Expression.location_sensitive_compare left.value right.value with
-      | x when not (Int.equal x 0) -> x
-      | _ -> Option.compare Expression.location_sensitive_compare left.annotation right.annotation
-      )
+        match Option.compare Expression.location_sensitive_compare left.value right.value with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Option.compare Expression.location_sensitive_compare left.annotation right.annotation
+        )
 
 
   let location_sensitive_hash_fold =
@@ -744,9 +744,9 @@ end = struct
     match Expression.location_sensitive_compare left.target right.target with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match Expression.location_sensitive_compare left.test right.test with
-      | x when not (Int.equal x 0) -> x
-      | _ -> Expression.location_sensitive_compare left.alternative right.alternative )
+        match Expression.location_sensitive_compare left.test right.test with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Expression.location_sensitive_compare left.alternative right.alternative )
 end
 
 and UnaryOperator : sig
@@ -1051,8 +1051,7 @@ end = struct
     | Ternary left, Ternary right -> Ternary.location_sensitive_compare left right
     | True, True -> 0
     | Tuple left, Tuple right -> List.compare location_sensitive_compare left right
-    | UnaryOperator left, UnaryOperator right ->
-        UnaryOperator.location_sensitive_compare left right
+    | UnaryOperator left, UnaryOperator right -> UnaryOperator.location_sensitive_compare left right
     | WalrusOperator left, WalrusOperator right ->
         WalrusOperator.location_sensitive_compare left right
     | Yield left, Yield right -> Option.compare location_sensitive_compare left right
@@ -1233,11 +1232,11 @@ end = struct
             pp_expression_t
             right
       | Call { Call.callee; arguments } -> (
-        match Node.value callee with
-        | Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
-            Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
-        | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
-        )
+          match Node.value callee with
+          | Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
+              Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
+          | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
+          )
       | String { StringLiteral.value; kind } -> (
           let bytes =
             match kind with
@@ -1307,9 +1306,9 @@ end = struct
       | WalrusOperator { target; value } ->
           Format.fprintf formatter "%a := %a" pp_expression_t target pp_expression_t value
       | Yield yield -> (
-        match yield with
-        | Some yield -> Format.fprintf formatter "%a" pp_expression_t yield
-        | None -> Format.fprintf formatter "None" )
+          match yield with
+          | Some yield -> Format.fprintf formatter "%a" pp_expression_t yield
+          | None -> Format.fprintf formatter "None" )
 
 
     let pp = pp_expression_t
@@ -1346,8 +1345,7 @@ let negate ({ Node.location; value } as node) =
       {
         Node.location;
         value =
-          ComparisonOperator
-            { ComparisonOperator.operator = ComparisonOperator.IsNot; left; right };
+          ComparisonOperator { ComparisonOperator.operator = ComparisonOperator.IsNot; left; right };
       }
   | _ ->
       {
@@ -1361,27 +1359,26 @@ let rec normalize { Node.location; value } =
   let normalized =
     match value with
     | BooleanOperator { BooleanOperator.operator; left; right } ->
-        BooleanOperator
-          { BooleanOperator.operator; left = normalize left; right = normalize right }
+        BooleanOperator { BooleanOperator.operator; left = normalize left; right = normalize right }
     | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value; _ } } as
       unary -> (
-      match value with
-      | ComparisonOperator { ComparisonOperator.left; operator; right } ->
-          ComparisonOperator
-            { ComparisonOperator.left; operator = ComparisonOperator.inverse operator; right }
-      | False -> True
-      | True -> False
-      | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value; _ } }
-        ->
-          value
-      | BooleanOperator { BooleanOperator.left; operator; right } ->
-          BooleanOperator
-            {
-              BooleanOperator.operator = BooleanOperator.inverse operator;
-              left = normalize (negate left);
-              right = normalize (negate right);
-            }
-      | _ -> unary )
+        match value with
+        | ComparisonOperator { ComparisonOperator.left; operator; right } ->
+            ComparisonOperator
+              { ComparisonOperator.left; operator = ComparisonOperator.inverse operator; right }
+        | False -> True
+        | True -> False
+        | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value; _ } }
+          ->
+            value
+        | BooleanOperator { BooleanOperator.left; operator; right } ->
+            BooleanOperator
+              {
+                BooleanOperator.operator = BooleanOperator.inverse operator;
+                left = normalize (negate left);
+                right = normalize (negate right);
+              }
+        | _ -> unary )
     | _ -> value
   in
   { Node.location; value = normalized }
@@ -1425,9 +1422,7 @@ let create_name_from_reference ~location reference =
 
 
 let from_reference ~location reference =
-  create_name_from_reference ~location reference
-  |> (fun name -> Name name)
-  |> Node.create ~location
+  create_name_from_reference ~location reference |> (fun name -> Name name) |> Node.create ~location
 
 
 let name_to_identifiers name =
@@ -1445,9 +1440,9 @@ let name_to_reference name =
   let rec get_reversed_identifiers = function
     | Name.Identifier identifier -> Some [identifier]
     | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
-      match get_reversed_identifiers base with
-      | Some sofar -> Some (attribute :: sofar)
-      | None -> None )
+        match get_reversed_identifiers base with
+        | Some sofar -> Some (attribute :: sofar)
+        | None -> None )
     | _ -> None
   in
   get_reversed_identifiers name >>| List.rev >>| Reference.create_from_list
@@ -1633,5 +1628,4 @@ let get_item_call base arguments ~location =
 
 
 let is_private_attribute attribute_name =
-  String.is_prefix ~prefix:"__" attribute_name
-  && not (String.is_suffix ~suffix:"__" attribute_name)
+  String.is_prefix ~prefix:"__" attribute_name && not (String.is_suffix ~suffix:"__" attribute_name)

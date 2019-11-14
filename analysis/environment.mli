@@ -79,10 +79,10 @@ module type S = sig
   val read_only : t -> ReadOnly.t
 end
 
-(* The following is a special form of a shared memory table optimized for incremental type
-   checking. This update function executes a parallelized update of the shared memory tables
-   contained in the environment, based off of the triggers from the previous environment updates.
-   This then generates triggers for further downstream environments. *)
+(* The following is a special form of a shared memory table optimized for incremental type checking.
+   This update function executes a parallelized update of the shared memory tables contained in the
+   environment, based off of the triggers from the previous environment updates. This then generates
+   triggers for further downstream environments. *)
 
 module EnvironmentTable : sig
   module type In = sig
@@ -119,9 +119,9 @@ module EnvironmentTable : sig
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
 
     (* For compatibility with the old dependency mode, we also need a different kind of key
-       discovery that just returns all of the keys under current consideration. For now this
-       usually is just going back to the UnannotatedGlobalEnvironment.UpdateResult.t and returning
-       either current_and_previous_classes or current_and_previous_unannotated_globals *)
+       discovery that just returns all of the keys under current consideration. For now this usually
+       is just going back to the UnannotatedGlobalEnvironment.UpdateResult.t and returning either
+       current_and_previous_classes or current_and_previous_unannotated_globals *)
     val current_and_previous_keys : UpdateResult.upstream -> TriggerSet.t
 
     (* This is the actual main function of the update. *)

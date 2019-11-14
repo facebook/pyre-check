@@ -49,9 +49,7 @@ let test_aliased_export _ =
       "blah", "blah";
       "module", "standard_library_module";
     ];
-  assert_aliased_exports
-    "from some.module import aliased as alias"
-    ["alias", "some.module.aliased"];
+  assert_aliased_exports "from some.module import aliased as alias" ["alias", "some.module.aliased"];
   assert_aliased_exports
     "from some.module import one, two"
     ["one", "some.module.one"; "two", "some.module.two"];

@@ -858,8 +858,8 @@ let test_check_typed_dictionaries context =
         return movie['name']
     |}
     [
-      "Revealed type [-1]: Revealed type for `movie` is `TypedDict `Movie` with fields (name: \
-       str, year: int)` (inferred: `TypedDict with fields (name: str, year: int, bonus: bool)`).";
+      "Revealed type [-1]: Revealed type for `movie` is `TypedDict `Movie` with fields (name: str, \
+       year: int)` (inferred: `TypedDict with fields (name: str, year: int, bonus: bool)`).";
     ];
   assert_test_typed_dictionary
     {|
@@ -899,8 +899,8 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Incompatible variable type [9]: movie is declared to have type `TypedDict (non-total) \
-       `Movie` with fields (name: str, year: int)` but is used as type `TypedDict (non-total) \
-       with fields (name: int, year: int)`.";
+       `Movie` with fields (name: str, year: int)` but is used as type `TypedDict (non-total) with \
+       fields (name: int, year: int)`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -964,8 +964,8 @@ let test_check_typed_dictionaries context =
         optional: str
     |}
     [
-      "Uninitialized attribute [13]: Attribute `optional` is declared in class `ChildTypedDict` \
-       to have type `str` but is never initialized.";
+      "Uninitialized attribute [13]: Attribute `optional` is declared in class `ChildTypedDict` to \
+       have type `str` but is never initialized.";
       "Invalid inheritance [39]: Building TypedDicts up through inheritance is not yet supported.";
       "Invalid type [31]: Expression `False` is not a valid type.";
     ];

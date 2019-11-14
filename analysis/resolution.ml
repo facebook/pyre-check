@@ -86,9 +86,7 @@ let resolve ({ resolve; _ } as resolution) expression =
   resolve ~resolution expression |> Annotation.annotation
 
 
-let resolve_to_annotation ({ resolve; _ } as resolution) expression =
-  resolve ~resolution expression
-
+let resolve_to_annotation ({ resolve; _ } as resolution) expression = resolve ~resolution expression
 
 let resolve_reference ({ resolve; _ } as resolution) reference =
   Expression.from_reference ~location:Location.Reference.any reference
@@ -105,20 +103,20 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
   match expression, expected with
   | Some { Node.value = Expression.List _; _ }, _
   | Some { Node.value = Expression.ListComprehension _; _ }, _ -> (
-    match resolved, expected with
-    | ( Type.Parametric { name = "list"; parameters = Concrete [actual] },
-        Type.Parametric { name = "list"; parameters = Concrete [expected_parameter] } )
-      when comparator ~left:actual ~right:expected_parameter ->
-        expected
-    | _ -> resolved )
+      match resolved, expected with
+      | ( Type.Parametric { name = "list"; parameters = Concrete [actual] },
+          Type.Parametric { name = "list"; parameters = Concrete [expected_parameter] } )
+        when comparator ~left:actual ~right:expected_parameter ->
+          expected
+      | _ -> resolved )
   | Some { Node.value = Expression.Set _; _ }, _
   | Some { Node.value = Expression.SetComprehension _; _ }, _ -> (
-    match resolved, expected with
-    | ( Type.Parametric { name = "set"; parameters = Concrete [actual] },
-        Type.Parametric { name = "set"; parameters = Concrete [expected_parameter] } )
-      when comparator ~left:actual ~right:expected_parameter ->
-        expected
-    | _ -> resolved )
+      match resolved, expected with
+      | ( Type.Parametric { name = "set"; parameters = Concrete [actual] },
+          Type.Parametric { name = "set"; parameters = Concrete [expected_parameter] } )
+        when comparator ~left:actual ~right:expected_parameter ->
+          expected
+      | _ -> resolved )
   | ( Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ },
       Type.TypedDictionary { total; fields; _ } ) ->
       let find_matching_field ~name =
@@ -153,13 +151,13 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
       |> Option.value ~default:resolved
   | Some { Node.value = Expression.Dictionary _; _ }, _
   | Some { Node.value = Expression.DictionaryComprehension _; _ }, _ -> (
-    match resolved, expected with
-    | ( Type.Parametric { name = "dict"; parameters = Concrete [actual_key; actual_value] },
-        Type.Parametric { name = "dict"; parameters = Concrete [expected_key; expected_value] } )
-      when comparator ~left:actual_key ~right:expected_key
-           && comparator ~left:actual_value ~right:expected_value ->
-        expected
-    | _ -> resolved )
+      match resolved, expected with
+      | ( Type.Parametric { name = "dict"; parameters = Concrete [actual_key; actual_value] },
+          Type.Parametric { name = "dict"; parameters = Concrete [expected_key; expected_value] } )
+        when comparator ~left:actual_key ~right:expected_key
+             && comparator ~left:actual_value ~right:expected_value ->
+          expected
+      | _ -> resolved )
   | _ -> resolved
 
 

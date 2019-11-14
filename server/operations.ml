@@ -126,16 +126,14 @@ let start_from_scratch ?old_state ~connections ~configuration () =
 let start
     ?old_state
     ~connections
-    ~configuration:( {
-                       Configuration.Server.configuration =
-                         {
-                           Configuration.Analysis.expected_version;
-                           store_type_check_resolution;
-                           _;
-                         } as configuration;
-                       saved_state_action;
-                       _;
-                     } as server_configuration )
+    ~configuration:
+      ( {
+          Configuration.Server.configuration =
+            { Configuration.Analysis.expected_version; store_type_check_resolution; _ } as
+            configuration;
+          saved_state_action;
+          _;
+        } as server_configuration )
     ()
   =
   let state =
@@ -146,22 +144,22 @@ let start
     | Some (Load (LoadFromProject _)), true
     | Some (Load (LoadFromFiles _)), _
       when not store_type_check_resolution -> (
-      try
-        let timer = Timer.start () in
-        let state = SavedState.load ~server_configuration ~connections in
-        Statistics.event ~name:"saved state success" ();
-        Statistics.performance
-          ~name:"initialization"
-          ~timer
-          ~normals:["initialization method", "saved state"]
-          ();
-        state
-        (* Fall back to starting from scratch if we can't load a saved state. *)
-      with
-      | SavedState.IncompatibleState reason ->
-          Log.warning "Unable to load saved state, falling back to a full start.";
-          Statistics.event ~name:"saved state failure" ~normals:["reason", reason] ();
-          start_from_scratch ?old_state ~connections ~configuration () )
+        try
+          let timer = Timer.start () in
+          let state = SavedState.load ~server_configuration ~connections in
+          Statistics.event ~name:"saved state success" ();
+          Statistics.performance
+            ~name:"initialization"
+            ~timer
+            ~normals:["initialization method", "saved state"]
+            ();
+          state
+          (* Fall back to starting from scratch if we can't load a saved state. *)
+        with
+        | SavedState.IncompatibleState reason ->
+            Log.warning "Unable to load saved state, falling back to a full start.";
+            Statistics.event ~name:"saved state failure" ~normals:["reason", reason] ();
+            start_from_scratch ?old_state ~connections ~configuration () )
     | _ -> start_from_scratch ?old_state ~connections ~configuration ()
   in
   ( match saved_state_action with
@@ -195,12 +193,13 @@ let start
 
 let stop
     ~reason
-    ~configuration:{
-                     Configuration.Server.socket = { path = socket_path; link = socket_link; _ };
-                     json_socket = { path = json_socket_path; link = json_socket_link; _ };
-                     pid_path;
-                     _;
-                   }
+    ~configuration:
+      {
+        Configuration.Server.socket = { path = socket_path; link = socket_link; _ };
+        json_socket = { path = json_socket_path; link = json_socket_link; _ };
+        pid_path;
+        _;
+      }
   =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
 
@@ -214,17 +213,15 @@ let stop
   exit 0
 
 
-let connect
-    ~retries
-    ~configuration:({ Configuration.Analysis.expected_version; _ } as configuration)
+let connect ~retries ~configuration:({ Configuration.Analysis.expected_version; _ } as configuration)
   =
   let rec connect attempt =
     if attempt >= retries then (
       Log.error "Could not connect to server after %d retries" attempt;
       raise ConnectionFailure );
 
-    (* The socket path is computed in each iteration because the server might set up a symlink
-       after a connection attempt - in that case, we want to avoid using the stale file. *)
+    (* The socket path is computed in each iteration because the server might set up a symlink after
+       a connection attempt - in that case, we want to avoid using the stale file. *)
     try
       let path = socket_path configuration in
       if Path.file_exists path then (

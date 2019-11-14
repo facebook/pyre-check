@@ -638,8 +638,8 @@ let test_check_immutable_annotations context =
         constant = "hi"
     |}
     [
-      "Incompatible variable type [9]: constant is declared to have type `int` but is used as \
-       type `str`.";
+      "Incompatible variable type [9]: constant is declared to have type `int` but is used as type \
+       `str`.";
     ];
   assert_type_errors
     {|
@@ -694,8 +694,8 @@ let test_check_immutable_annotations context =
         constant = 1
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `constant` must be specified \
-       as type other than `Any`.";
+      "Missing global annotation [5]: Globally accessible variable `constant` must be specified as \
+       type other than `Any`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
        type `Any` is specified.";
     ];
@@ -818,8 +818,8 @@ let test_check_immutable_annotations context =
     |}
     [
       "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified.";
-      "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but \
-       no type is specified.";
+      "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but no \
+       type is specified.";
     ];
   assert_type_errors
     {|
@@ -883,8 +883,7 @@ let test_check_incomplete_annotations context =
         x: typing.Any = 1
     |}
     [
-      "Prohibited any [33]: Expression `x` has type `int`; "
-      ^ "given explicit type cannot be `Any`.";
+      "Prohibited any [33]: Expression `x` has type `int`; " ^ "given explicit type cannot be `Any`.";
     ];
   assert_type_errors
     {|
@@ -1063,8 +1062,8 @@ let test_check_invalid_type_variables context =
         return T
     |}
     [
-      "Invalid type variable [34]: The type variable `Variable[T]` isn't present in the \
-       function's parameters.";
+      "Invalid type variable [34]: The type variable `Variable[T]` isn't present in the function's \
+       parameters.";
     ];
   assert_type_errors
     {|
@@ -1197,8 +1196,8 @@ let test_check_aliases context =
       "Redefined class [50]: Class `FOO` conflicts with class `BAR`.";
       "Illegal annotation target [35]: Target `test.FOO.x` cannot be annotated.";
       "Undefined attribute [16]: `typing.Type` has no attribute `x`.";
-      "Incompatible variable type [9]: FOO is declared to have type `typing.Type[FOO]` but is \
-       used as type `typing.Type[BAR]`.";
+      "Incompatible variable type [9]: FOO is declared to have type `typing.Type[FOO]` but is used \
+       as type `typing.Type[BAR]`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `BAR` has no attribute `x`.";
       "Incompatible parameter type [6]: Expected `BAR` for 1st anonymous parameter to call `foo` \

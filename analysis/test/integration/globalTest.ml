@@ -299,8 +299,8 @@ let test_check_globals context =
     [
       "Missing global annotation [5]: Globally accessible variable `x` has type `str` but no type \
        is specified.";
-      "Missing global annotation [5]: Globally accessible variable `x` has type `None` but no \
-       type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `x` has type `None` but no type \
+       is specified.";
       "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, add \
        an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
@@ -315,8 +315,8 @@ let test_check_globals context =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
-      "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least one \
-       control flow path that doesn't define `MappBoo`.";
+      "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least one control \
+       flow path that doesn't define `MappBoo`.";
     ];
   assert_type_errors
     {|

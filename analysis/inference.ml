@@ -173,10 +173,7 @@ module State (Context : Context) = struct
         Resolution.with_annotations left_resolution ~annotations
       in
       let combine_errors ~key:_ left_error right_error =
-        Error.join
-          ~resolution:(Resolution.global_resolution left.resolution)
-          left_error
-          right_error
+        Error.join ~resolution:(Resolution.global_resolution left.resolution) left_error right_error
       in
       {
         left with
@@ -373,13 +370,13 @@ module State (Context : Context) = struct
         | 0, Some _ when Define.is_method define && not (Define.is_static_method define) ->
             annotations
         | _ -> (
-          match annotation, value with
-          | None, None ->
-              let reference =
-                name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
-              in
-              Map.set annotations ~key:reference ~data:(Annotation.create Type.Bottom)
-          | _ -> annotations )
+            match annotation, value with
+            | None, None ->
+                let reference =
+                  name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
+                in
+                Map.set annotations ~key:reference ~data:(Annotation.create Type.Bottom)
+            | _ -> annotations )
       in
       List.foldi ~init:(Resolution.annotations resolution) ~f:reset_parameter parameters
     in
@@ -529,15 +526,15 @@ module State (Context : Context) = struct
                             ~annotation:(Annotation.create refined))
                     |> Option.value ~default:resolution
                 | Tuple arguments -> (
-                  match parameter_annotation with
-                  | Type.Tuple (Type.Bounded (Concrete parameter_annotations))
-                    when List.length arguments = List.length parameter_annotations ->
-                      List.fold2_exn
-                        ~init:resolution
-                        ~f:infer_annotation
-                        parameter_annotations
-                        arguments
-                  | _ -> resolution )
+                    match parameter_annotation with
+                    | Type.Tuple (Type.Bounded (Concrete parameter_annotations))
+                      when List.length arguments = List.length parameter_annotations ->
+                        List.fold2_exn
+                          ~init:resolution
+                          ~f:infer_annotation
+                          parameter_annotations
+                          arguments
+                    | _ -> resolution )
                 | _ -> resolution
               in
               match parameters, arguments with
@@ -600,8 +597,7 @@ module State (Context : Context) = struct
                 let parameters =
                   match target_annotation with
                   | Type.Tuple (Type.Bounded (Concrete parameters)) -> parameters
-                  | Type.Tuple (Type.Unbounded parameter) ->
-                      List.map values ~f:(fun _ -> parameter)
+                  | Type.Tuple (Type.Unbounded parameter) -> List.map values ~f:(fun _ -> parameter)
                   | _ -> []
                 in
                 if List.length values = List.length parameters then
@@ -659,11 +655,12 @@ let name = "Inference"
 let run
     ~configuration
     ~environment
-    ~source:( {
-                Source.source_path = { SourcePath.qualifier; relative; is_stub; _ };
-                metadata = { local_mode; ignore_codes; _ };
-                _;
-              } as source )
+    ~source:
+      ( {
+          Source.source_path = { SourcePath.qualifier; relative; is_stub; _ };
+          metadata = { local_mode; ignore_codes; _ };
+          _;
+        } as source )
   =
   Log.debug "Checking %s..." relative;
   let global_resolution = TypeEnvironment.global_resolution environment in
@@ -739,8 +736,7 @@ let run
         Statistics.event
           ~name:"undefined type"
           ~integers:[]
-          ~normals:
-            ["handle", relative; "define", Reference.show name; "type", Type.show annotation]
+          ~normals:["handle", relative; "define", Reference.show name; "type", Type.show annotation]
           ();
         if configuration.debug then
           [Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node]

@@ -409,19 +409,19 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
             (join_option_trees ancestors ~widen_depth (Some left_tree) right_star)
             accumulator
       | Label.Field _ -> (
-        match LabelMap.find right_tree element with
-        | Some right_subtree ->
-            (* f in C *)
-            set_or_remove
-              element
-              (join_trees ancestors ~widen_depth left_tree right_subtree)
-              accumulator
-        | None ->
-            (* f in L *)
-            set_or_remove
-              element
-              (join_option_trees ancestors ~widen_depth (Some left_tree) right_star)
-              accumulator )
+          match LabelMap.find right_tree element with
+          | Some right_subtree ->
+              (* f in C *)
+              set_or_remove
+                element
+                (join_trees ancestors ~widen_depth left_tree right_subtree)
+                accumulator
+          | None ->
+              (* f in L *)
+              set_or_remove
+                element
+                (join_option_trees ancestors ~widen_depth (Some left_tree) right_star)
+                accumulator )
     in
     (* merge_right takes care of R *)
     let merge_right ~key:element ~data:right_subtree accumulator =
@@ -430,15 +430,15 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
           (* pointwise, already done in merge_left. *)
           accumulator
       | None -> (
-        match element with
-        | Label.Field _ ->
-            let join_tree =
-              join_option_trees ancestors ~widen_depth left_star (Some right_subtree)
-            in
-            set_or_remove element join_tree accumulator
-        | Label.Any ->
-            let join_tree = join_option_trees ancestors ~widen_depth None (Some right_subtree) in
-            set_or_remove element join_tree accumulator )
+          match element with
+          | Label.Field _ ->
+              let join_tree =
+                join_option_trees ancestors ~widen_depth left_star (Some right_subtree)
+              in
+              set_or_remove element join_tree accumulator
+          | Label.Any ->
+              let join_tree = join_option_trees ancestors ~widen_depth None (Some right_subtree) in
+              set_or_remove element join_tree accumulator )
     in
     let left_done = LabelMap.fold ~init:LabelMap.empty left_tree ~f:merge_left in
     LabelMap.fold ~init:left_done right_tree ~f:merge_right
@@ -534,20 +534,20 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
             in
             LabelMap.fold ~init:(ancestors, None) ~f:find_index_and_join children
         | Label.Field _ when not use_precise_fields -> (
-          (* read [f] or [*] *)
-          match LabelMap.find children label_element with
-          | None -> (
-            match LabelMap.find children Label.Any with
+            (* read [f] or [*] *)
+            match LabelMap.find children label_element with
+            | None -> (
+                match LabelMap.find children Label.Any with
+                | Some subtree ->
+                    read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree
+                | None -> ancestors, None )
             | Some subtree ->
-                read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree
-            | None -> ancestors, None )
-          | Some subtree ->
-              read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree )
+                read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree )
         | _ -> (
-          match LabelMap.find children label_element with
-          | None -> ancestors, None
-          | Some subtree ->
-              read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree ) )
+            match LabelMap.find children label_element with
+            | None -> ancestors, None
+            | Some subtree ->
+                read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree ) )
 
 
   (** Read the subtree at path p within t. Returns the pair ancestors, tree_at_tip. *)
@@ -653,15 +653,15 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
               less_or_equal_option_tree left_star right_ancestors right_star
               |> Checks.option_construct ~message:(fun () -> "[left *]")
           | Label.Field _ -> (
-            match LabelMap.find right_label_map label_element with
-            | None ->
-                (* in L *)
-                less_or_equal_option_tree (Some left_subtree) right_ancestors right_star
-                |> Checks.option_construct ~message:(fun () -> "[right *]")
-            | Some right_subtree ->
-                (* in common *)
-                less_or_equal_tree left_subtree right_ancestors right_subtree
-                |> Checks.option_construct ~message:(fun () -> Label.show label_element) )
+              match LabelMap.find right_label_map label_element with
+              | None ->
+                  (* in L *)
+                  less_or_equal_option_tree (Some left_subtree) right_ancestors right_star
+                  |> Checks.option_construct ~message:(fun () -> "[right *]")
+              | Some right_subtree ->
+                  (* in common *)
+                  less_or_equal_tree left_subtree right_ancestors right_subtree
+                  |> Checks.option_construct ~message:(fun () -> Label.show label_element) )
       in
       (* Check that all non-star index fields on right are larger than star1, unless they were
          matched directly. *)
@@ -680,9 +680,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
 
 
   let read ?(transform_non_leaves = fun _p element -> element) path tree =
-    let ancestors, tree =
-      read_tree_raw path tree ~use_precise_fields:false ~transform_non_leaves
-    in
+    let ancestors, tree = read_tree_raw path tree ~use_precise_fields:false ~transform_non_leaves in
     let message () = Format.sprintf "read [%s] from %s" (Label.show_path path) (show tree) in
     (* Important to properly join the trees and not just join ancestors and tree.element, as
        otherwise this could result in non-minimal trees. *)
@@ -740,11 +738,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     let message () =
       Format.sprintf "wident trees: previous\n%s\nnext:\n%s\n" (show previous) (show next)
     in
-    join_trees
-      Element.bottom
-      ~widen_depth:(Some Config.max_tree_depth_after_widening)
-      previous
-      next
+    join_trees Element.bottom ~widen_depth:(Some Config.max_tree_depth_after_widening) previous next
     |> option_node_tree ~message
     |> check_join_property previous next
 
@@ -781,9 +775,9 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     let mold_branch ~key ~data result =
       match data with
       | `Both (left_tree, mold) -> (
-        match shape_tree ~ancestors left_tree ~mold with
-        | Some merged -> LabelMap.set result ~key ~data:merged
-        | None -> result )
+          match shape_tree ~ancestors left_tree ~mold with
+          | Some merged -> LabelMap.set result ~key ~data:merged
+          | None -> result )
       | `Right mold -> LabelMap.set result ~key ~data:mold
       | `Left _ -> failwith "Invariant broken. Left branch should have been lifted"
     in
@@ -819,9 +813,9 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     walk_children [] Element.bottom tree init
 
 
-  (** Filter map over tree, where each non-bottom element node is visited. The function ~f is
-      passed the path to the node, the joined ancestor elements, and the non-bottom element at the
-      node and returns a new Element to substitute (possibly bottom). *)
+  (** Filter map over tree, where each non-bottom element node is visited. The function ~f is passed
+      the path to the node, the joined ancestor elements, and the non-bottom element at the node and
+      returns a new Element to substitute (possibly bottom). *)
   let filter_map_tree_paths ~f tree =
     let build ~path ~ancestors ~element access_path_tree =
       let new_path, element = f ~path ~ancestors ~element in
@@ -836,8 +830,8 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
     result
 
 
-  (** Removes all subtrees at depth. Used to limit amount of propagation across function
-      boundaries, in particular for scaling. *)
+  (** Removes all subtrees at depth. Used to limit amount of propagation across function boundaries,
+      in particular for scaling. *)
   let cut_tree_after ~depth tree =
     let filter ~path ~ancestors:_ ~element =
       if List.length path > depth then
@@ -946,9 +940,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
       | AbstractDomain.Part (Path, (path, element)) ->
           create_leaf element |> create_tree path |> join result
       | AbstractDomain.Part (RawPath, info) ->
-          create_leaf (Element.join info.ancestors info.tip)
-          |> create_tree info.path
-          |> join result
+          create_leaf (Element.join info.ancestors info.tip) |> create_tree info.path |> join result
       | _ ->
           (* Assume [] path *)
           Element.create [part] |> create_leaf |> join result

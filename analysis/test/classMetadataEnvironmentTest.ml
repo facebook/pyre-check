@@ -12,9 +12,7 @@ open Test
 
 let test_simple_registration context =
   let assert_registers source name expected =
-    let project =
-      ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context
-    in
+    let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)

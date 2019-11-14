@@ -135,8 +135,7 @@ module Make (Key : KEY) (Element : AbstractDomain.S) = struct
     match part with
     | Key -> Map.fold ~f:(fun ~key ~data:_ result -> f result key) ~init map
     | KeyValue -> Map.fold ~f:(fun ~key ~data result -> f result (key, data)) ~init map
-    | _ ->
-        Map.fold map ~f:(fun ~key:_ ~data result -> Element.fold part ~f ~init:result data) ~init
+    | _ -> Map.fold map ~f:(fun ~key:_ ~data result -> Element.fold part ~f ~init:result data) ~init
 
 
   let partition (type a b) (part : a part) ~(f : a -> b) (map : t) : (b, t) Core.Map.Poly.t =

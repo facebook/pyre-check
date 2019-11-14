@@ -107,8 +107,7 @@ module Make (Transformer : Transformer) = struct
               in
               transform_list arguments ~f:transform_argument
             in
-            Call
-              { callee = transform_expression callee; arguments = transform_arguments arguments }
+            Call { callee = transform_expression callee; arguments = transform_arguments arguments }
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator
               {

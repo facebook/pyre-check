@@ -3,9 +3,9 @@ break-cases=all
 break-fun-decl=fit-or-vertical
 break-infix=fit-or-vertical
 break-infix-before-func
-break-separators=after-and-docked
+break-separators=after
 break-sequences
-break-string-literals=newlines-and-wrap
+dock-collection-brackets=true
 exp-grouping=preserve
 field-space=tight-decl
 if-then-else=fit-or-vertical
@@ -19,6 +19,7 @@ parens-tuple-patterns=multi-line-only
 sequence-style=terminator
 sequence-blank-line=preserve-one
 single-case=sparse
+space-around-lists=false
 space-around-records
 space-around-variants
 type-decl=sparse

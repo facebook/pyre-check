@@ -86,8 +86,7 @@ let should_type_check
 
 
 let create
-    ~configuration:( { Configuration.Analysis.local_root; search_path; excludes; _ } as
-                   configuration )
+    ~configuration:({ Configuration.Analysis.local_root; search_path; excludes; _ } as configuration)
     path
   =
   let absolute_path = Path.absolute path in
@@ -160,12 +159,12 @@ let same_module_compare
   | true, false -> 1
   | false, true -> -1
   | _, _ -> (
-    (* Smaller int means higher priority *)
-    match Int.compare right_priority left_priority with
-    | 0 -> (
-      (* Package takes precedence over file module with the same name *)
-      match left_is_init, right_is_init with
-      | true, false -> 1
-      | false, true -> -1
-      | _, _ -> extension_priority () )
-    | _ as result -> result )
+      (* Smaller int means higher priority *)
+      match Int.compare right_priority left_priority with
+      | 0 -> (
+          (* Package takes precedence over file module with the same name *)
+          match left_is_init, right_is_init with
+          | true, false -> 1
+          | false, true -> -1
+          | _, _ -> extension_priority () )
+      | _ as result -> result )

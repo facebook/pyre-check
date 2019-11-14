@@ -184,9 +184,7 @@ let test_parse_sources context =
     in
     let module_tracker = Analysis.ModuleTracker.create configuration in
     let ast_environment = Analysis.AstEnvironment.create module_tracker in
-    let update_result =
-      AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart
-    in
+    let update_result = AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart in
     let sources =
       AstEnvironment.UpdateResult.reparsed update_result
       |> List.filter_map
@@ -289,11 +287,7 @@ let test_ast_change _ =
       compare_changed;
 
     (* This is not guaranteed to be the case in theory, but collisions should be rare in practice *)
-    assert_equal
-      ~cmp:Bool.equal
-      ~printer:(Format.sprintf "hash changed = %b")
-      expected
-      hash_changed
+    assert_equal ~cmp:Bool.equal ~printer:(Format.sprintf "hash changed = %b") expected hash_changed
   in
   (* Metadata *)
   assert_ast_changed ~old_source:"# pyre-strict" ~new_source:"# pyre-strict" ~expected:false;
@@ -720,9 +714,7 @@ let test_parse_repository context =
         AstEnvironment.UpdateResult.reparsed ast_environment_update_result
         |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
       in
-      List.map
-        sources
-        ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
+      List.map sources ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
           relative, source)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)
@@ -746,11 +738,7 @@ let test_parse_repository context =
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"; "c.py", "from b import *"]
     ~expected:
-      [
-        "a.py", "def a.foo() -> int: ...";
-        "b.pyi", "from a import foo";
-        "c.py", "from b import foo";
-      ]
+      ["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo"; "c.py", "from b import foo"]
 
 
 module IncrementalTest = struct
@@ -852,8 +840,7 @@ module IncrementalTest = struct
         expected
         actual
     in
-    List.iter check_exports ~f:(fun (qualifier, expected) ->
-        assert_new_exports ~expected qualifier);
+    List.iter check_exports ~f:(fun (qualifier, expected) -> assert_new_exports ~expected qualifier);
     Memory.reset_shared_memory ()
 end
 

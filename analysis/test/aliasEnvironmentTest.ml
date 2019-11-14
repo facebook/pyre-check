@@ -12,9 +12,7 @@ open Test
 
 let test_simple_registration context =
   let assert_registers source name expected =
-    let project =
-      ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context
-    in
+    let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
@@ -79,8 +77,7 @@ let test_harder_registrations context =
       |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
     in
     let qualifiers =
-      List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } ->
-          qualifier)
+      List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
       |> Reference.Set.of_list
     in
     let unannotated_global_environment =
@@ -292,8 +289,7 @@ let test_updates context =
       X = Y
     |}
     ~middle_actions:
-      ["test.X", dependency, Some "test.C"]
-      (* Even if the route to the alias changed, no trigger *)
+      ["test.X", dependency, Some "test.C"] (* Even if the route to the alias changed, no trigger *)
     ~expected_triggers:[]
     ~post_actions:["test.X", dependency, Some "test.C"]
     ();

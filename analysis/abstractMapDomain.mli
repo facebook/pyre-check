@@ -8,8 +8,8 @@ module type KEY = sig
 
   val show : t -> string
 
-  (* If true, an absent key and a key mapping to bottom are equivalent. Map won't keep elements
-     that map to bottom. Presence of keys is still observable via fold, transform, and partition. *)
+  (* If true, an absent key and a key mapping to bottom are equivalent. Map won't keep elements that
+     map to bottom. Presence of keys is still observable via fold, transform, and partition. *)
   val absence_implicitly_maps_to_bottom : bool
 end
 

@@ -246,8 +246,8 @@ let test_check_assign context =
        kwargs = {"foo": 1}
     |}
     [
-      "Incompatible variable type [9]: kwargs is declared to have type `typing.Dict[str, str]` \
-       but is used as type `typing.Dict[str, int]`.";
+      "Incompatible variable type [9]: kwargs is declared to have type `typing.Dict[str, str]` but \
+       is used as type `typing.Dict[str, int]`.";
     ]
 
 

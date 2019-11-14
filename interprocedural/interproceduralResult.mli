@@ -56,9 +56,9 @@ type 'a storable_kind = 'a Kind.storable_kind constraint 'a = ('result, 'model) 
 (* External kind (can't be stored in the shared heap). *)
 type 'a kind = 'a Kind.kind constraint 'a = ('result, 'model) analysis_data
 
-(* Type markers to distinguish model, result parts in generic data structures statically. E.g.
-   model pkg vs. result pkg below. This allows splitting off more distinct parts from the analysis
-   data without having to write new code to package and access the new parts. *)
+(* Type markers to distinguish model, result parts in generic data structures statically. E.g. model
+   pkg vs. result pkg below. This allows splitting off more distinct parts from the analysis data
+   without having to write new code to package and access the new parts. *)
 type model = MK
 
 type result = RK
@@ -120,8 +120,7 @@ end
 module type ANALYSIS_RESULT_WITH_REGISTRATION = sig
   include ANALYSIS_RESULT
 
-  module Register
-      (Analyzer : ANALYZER with type result := result and type call_model := call_model) : sig
+  module Register (Analyzer : ANALYZER with type result := result and type call_model := call_model) : sig
     val abstract_kind : Kind.abstract
   end
 end
@@ -129,8 +128,8 @@ end
 (* The full signature of an individual analysis. This is what the general framework stores per
    analysis and uses to manipulate its data. NOTE: this gets built in 2 steps, a) from the
    ANALYSIS_DATA provided to create the result kind, and b) from the analyzer function. This split
-   breaks the recursion between analyses and their results, allowing analysis A to refer to
-   ResultB, where ResultB is the result of analysis B, and vice-versa. *)
+   breaks the recursion between analyses and their results, allowing analysis A to refer to ResultB,
+   where ResultB is the result of analysis B, and vice-versa. *)
 module type ANALYSIS = sig
   include ANALYSIS_RESULT
 

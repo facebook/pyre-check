@@ -657,9 +657,6 @@ let run
   (* Create error. *)
   let { Node.location; value = define } = Source.top_level_define_node source in
   let error =
-    Error.create
-      ~location
-      ~kind:(Error.Deobfuscation source)
-      ~define:(Node.create define ~location)
+    Error.create ~location ~kind:(Error.Deobfuscation source) ~define:(Node.create define ~location)
   in
   TypeEnvironment.set_errors environment qualifier [error]

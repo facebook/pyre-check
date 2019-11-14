@@ -12,8 +12,7 @@ let base_command_line_arguments =
     +> flag
          "-expected-binary-version"
          (optional string)
-         ~doc:
-           "VERSION When connecting to a server, this is version we are expecting to connect to."
+         ~doc:"VERSION When connecting to a server, this is version we are expecting to connect to."
     +> flag
          "-logging-sections"
          (optional_with_default [] (Arg_type.comma_separated string))
@@ -39,8 +38,8 @@ let base_command_line_arguments =
          "-ignore-all-errors"
          (optional string)
          ~doc:
-           "DIRECTORY1;... Ignore all errors originating from under one of the \
-            semicolon-separated directories."
+           "DIRECTORY1;... Ignore all errors originating from under one of the semicolon-separated \
+            directories."
     +> flag
          "-workers"
          (optional_with_default 4 int)

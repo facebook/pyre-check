@@ -97,9 +97,7 @@ let run_analysis
   (fun () ->
     let timer = Timer.start () in
     let bucket_multiplier =
-      try
-        Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> fun value -> Option.value_exn value)
-      with
+      try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> fun value -> Option.value_exn value) with
       | _ -> 10
     in
     let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
@@ -208,8 +206,7 @@ let command =
       +> flag
            "-repository-root"
            (optional string)
-           ~doc:
-             "The repository root to use for path relativization (set to local root if missing)."
+           ~doc:"The repository root to use for path relativization (set to local root if missing)."
       +> flag
            "-rules"
            (optional (Arg_type.comma_separated int))

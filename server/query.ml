@@ -26,8 +26,7 @@ let help () =
         Some
           "callees_with_location(function): calls from a given function, including the locations \
            at which they are called."
-    | Defines _ ->
-        Some "defines(module_name): Returns a JSON with the signature of a given define."
+    | Defines _ -> Some "defines(module_name): Returns a JSON with the signature of a given define."
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
     | ComputeHashesToKeys -> None
@@ -119,8 +118,7 @@ let parse_query
      Node.value =
        Expression
          {
-           Node.value =
-             Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
+           Node.value = Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
            _;
          };
      _;
@@ -137,10 +135,8 @@ let parse_query
         | _ -> raise (InvalidQuery "expected reference")
       in
       let string_of_expression = function
-        | {
-            Node.value = Expression.String { StringLiteral.value; kind = StringLiteral.String };
-            _;
-          } ->
+        | { Node.value = Expression.String { StringLiteral.value; kind = StringLiteral.String }; _ }
+          ->
             value
         | _ -> raise (InvalidQuery "expected string")
       in

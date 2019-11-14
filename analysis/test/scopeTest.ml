@@ -365,8 +365,7 @@ let test_define_local_bindings _ =
     def foo(x):
       return x
   |}
-    ~expected:
-      ["x", Some (ExpectBinding.create Binding.Kind.ParameterName (location (2, 8) (2, 9)))];
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.ParameterName (location (2, 8) (2, 9)))];
   assert_bindings
     {|
     def foo(x: int):
@@ -495,8 +494,7 @@ let test_define_local_bindings _ =
     def foo(flag: bool):
       import bar
   |}
-    ~expected:
-      ["bar", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 2) (3, 12)))];
+    ~expected:["bar", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 2) (3, 12)))];
   assert_bindings
     {|
     def foo(flag: bool):
@@ -628,16 +626,13 @@ let test_expression_local_bindings _ =
   assert_bindings
     "{x: 42 for x in range(10)}"
     ~expected:
-      [
-        "x", Some (ExpectBinding.create Binding.Kind.ComprehensionTarget (location (1, 11) (1, 12)));
-      ];
+      ["x", Some (ExpectBinding.create Binding.Kind.ComprehensionTarget (location (1, 11) (1, 12)))];
   assert_bindings
     "[y for x in foo for y in x]"
     ~expected:
       [
         "x", Some (ExpectBinding.create Binding.Kind.ComprehensionTarget (location (1, 7) (1, 8)));
-        ( "y",
-          Some (ExpectBinding.create Binding.Kind.ComprehensionTarget (location (1, 20) (1, 21))) );
+        "y", Some (ExpectBinding.create Binding.Kind.ComprehensionTarget (location (1, 20) (1, 21)));
       ];
   ()
 

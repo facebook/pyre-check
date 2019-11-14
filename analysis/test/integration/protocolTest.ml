@@ -361,8 +361,8 @@ let test_check_protocol context =
         foo(Alpha)
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` \
-       but got `Alpha`.";
+      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` but \
+       got `Alpha`.";
     ];
   assert_type_errors
     {|

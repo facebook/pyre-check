@@ -255,9 +255,9 @@ let request_handler_thread
       >>| Jsonrpc.Request.format_request ~configuration:analysis_configuration
       |> function
       | request -> (
-        match request, origin with
-        | Some request, Some origin -> queue_request ~origin request
-        | _, _ -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket." )
+          match request, origin with
+          | Some request, Some origin -> queue_request ~origin request
+          | _, _ -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket." )
     with
     | End_of_file
     | Yojson.Json_error _
@@ -555,23 +555,22 @@ let run_start_command
     | None, Some project_name ->
         Some
           (Configuration.Server.Load
-             (Configuration.Server.LoadFromProject
-                { project_name; metadata = saved_state_metadata }))
+             (Configuration.Server.LoadFromProject { project_name; metadata = saved_state_metadata }))
     | None, None -> (
-      match load_state_from, changed_files_path with
-      | Some shared_memory_path, _ ->
-          Some
-            (Load
-               (Configuration.Server.LoadFromFiles
-                  {
-                    Configuration.Server.shared_memory_path =
-                      Path.create_absolute shared_memory_path;
-                    changed_files_path = changed_files_path >>| Path.create_absolute;
-                  }))
-      | None, Some _ ->
-          Log.error "-load-state-from must be set when -changed-files-path is passed in.";
-          exit 1
-      | _ -> None )
+        match load_state_from, changed_files_path with
+        | Some shared_memory_path, _ ->
+            Some
+              (Load
+                 (Configuration.Server.LoadFromFiles
+                    {
+                      Configuration.Server.shared_memory_path =
+                        Path.create_absolute shared_memory_path;
+                      changed_files_path = changed_files_path >>| Path.create_absolute;
+                    }))
+        | None, Some _ ->
+            Log.error "-load-state-from must be set when -changed-files-path is passed in.";
+            exit 1
+        | _ -> None )
   in
   (* TODO(T41488848): This argument is no longer used, so include this line to please the linter.
      Once client-side changes catch up, we should remove the argument. *)

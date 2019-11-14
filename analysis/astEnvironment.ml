@@ -280,15 +280,15 @@ let expand_wildcard_imports
               match Hash_set.strict_add visited_modules qualifier with
               | Error _ -> ()
               | Ok () -> (
-                match Raw.get_wildcard_exports ast_environment qualifier ~dependency with
-                | None -> ()
-                | Some exports -> (
-                    List.iter exports ~f:(fun export ->
-                        if not (String.equal (Reference.show export) "*") then
-                          Hash_set.add transitive_exports export);
-                    match Raw.get_source ast_environment qualifier ~dependency with
-                    | None -> ()
-                    | Some source -> Visitor.visit [] source |> Queue.enqueue_all worklist ) )
+                  match Raw.get_wildcard_exports ast_environment qualifier ~dependency with
+                  | None -> ()
+                  | Some exports -> (
+                      List.iter exports ~f:(fun export ->
+                          if not (String.equal (Reference.show export) "*") then
+                            Hash_set.add transitive_exports export);
+                      match Raw.get_source ast_environment qualifier ~dependency with
+                      | None -> ()
+                      | Some source -> Visitor.visit [] source |> Queue.enqueue_all worklist ) )
             in
             search_wildcard_imports ()
       in
@@ -639,8 +639,8 @@ module ReadOnly = struct
       read_only
       qualifier
     =
-    (* SourcePath.relative refers to the renamed path when search paths are provided with a root
-       and subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
+    (* SourcePath.relative refers to the renamed path when search paths are provided with a root and
+       subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
     get_real_path ~configuration read_only qualifier
     >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path
 
@@ -677,12 +677,12 @@ let read_only ({ module_tracker } as environment) =
     | ["builtins"] ->
         Some (Module.create_implicit ~empty_stub:true ())
     | _ -> (
-      match ModuleMetadata.get ?dependency qualifier with
-      | Some _ as result -> result
-      | None -> (
-        match ModuleTracker.is_module_tracked module_tracker qualifier with
-        | true -> Some (Module.create_implicit ())
-        | false -> None ) )
+        match ModuleMetadata.get ?dependency qualifier with
+        | Some _ as result -> result
+        | None -> (
+            match ModuleTracker.is_module_tracked module_tracker qualifier with
+            | true -> Some (Module.create_implicit ())
+            | false -> None ) )
   in
   {
     ReadOnly.get_source = get_source environment;

@@ -21,8 +21,8 @@ type callable_parameter_interval =
   | Bottom
 [@@deriving show]
 
-(* This approach of making which bounds actually exist explicit allows us to avoid making
-   artificial Top and Bottom members of (Type.t Type.OrderedTypes.t) *)
+(* This approach of making which bounds actually exist explicit allows us to avoid making artificial
+   Top and Bottom members of (Type.t Type.OrderedTypes.t) *)
 type list_variadic_interval =
   | NoBounds
   | OnlyUpperBound of Type.OrderedTypes.t
@@ -47,9 +47,7 @@ let show_map map ~show_key ~show_data ~short_name =
     let show ~key ~data sofar =
       Printf.sprintf "%s => %s" (show_key key) (show_data data) :: sofar
     in
-    Map.fold map ~init:[] ~f:show
-    |> String.concat ~sep:"\n"
-    |> Format.sprintf "%s: [%s]" short_name
+    Map.fold map ~init:[] ~f:show |> String.concat ~sep:"\n" |> Format.sprintf "%s: [%s]" short_name
 
 
 let pp format { unaries; callable_parameters; list_variadics; have_fallbacks } =
@@ -532,11 +530,11 @@ module OrderedConstraints (Order : OrderType) = struct
         | _, Concatenation _ ->
             false
         | Concrete upper_bounds, Concrete lower_bounds -> (
-          match List.zip upper_bounds lower_bounds with
-          | Ok bounds ->
-              List.for_all bounds ~f:(fun (left, right) ->
-                  Order.always_less_or_equal order ~left ~right)
-          | _ -> false )
+            match List.zip upper_bounds lower_bounds with
+            | Ok bounds ->
+                List.for_all bounds ~f:(fun (left, right) ->
+                    Order.always_less_or_equal order ~left ~right)
+            | _ -> false )
 
 
     let narrowest_valid_value interval ~order ~variable:_ =
@@ -560,11 +558,11 @@ module OrderedConstraints (Order : OrderType) = struct
         else
           match left, right with
           | Concrete left, Concrete right -> (
-            match List.zip left right with
-            | Ok zipped ->
-                List.map zipped ~f:(fun (left, right) -> Order.meet order left right)
-                |> fun concrete_list -> Some (Type.OrderedTypes.Concrete concrete_list)
-            | _ -> None )
+              match List.zip left right with
+              | Ok zipped ->
+                  List.map zipped ~f:(fun (left, right) -> Order.meet order left right)
+                  |> fun concrete_list -> Some (Type.OrderedTypes.Concrete concrete_list)
+              | _ -> None )
           | _ -> None
       in
       let join left right =
@@ -577,11 +575,11 @@ module OrderedConstraints (Order : OrderType) = struct
         else
           match left, right with
           | Concrete left, Concrete right -> (
-            match List.zip left right with
-            | Ok zipped ->
-                List.map zipped ~f:(fun (left, right) -> Order.join order left right)
-                |> fun concrete_list -> Some (Type.OrderedTypes.Concrete concrete_list)
-            | _ -> None )
+              match List.zip left right with
+              | Ok zipped ->
+                  List.map zipped ~f:(fun (left, right) -> Order.join order left right)
+                  |> fun concrete_list -> Some (Type.OrderedTypes.Concrete concrete_list)
+              | _ -> None )
           | _ -> None
       in
       match left, right with
@@ -602,9 +600,9 @@ module OrderedConstraints (Order : OrderType) = struct
       | BothBounds both, OnlyLowerBound lower ->
           join lower both.lower >>| fun lower -> BothBounds { both with lower }
       | BothBounds left, BothBounds right -> (
-        match meet left.upper right.upper, join left.lower right.lower with
-        | Some upper, Some lower -> Some (BothBounds { upper; lower })
-        | _ -> None )
+          match meet left.upper right.upper, join left.lower right.lower with
+          | Some upper, Some lower -> Some (BothBounds { upper; lower })
+          | _ -> None )
 
 
     let merge_solution_in interval ~variable ~solution =

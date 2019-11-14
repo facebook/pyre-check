@@ -72,9 +72,7 @@ let map_reduce
             in
             number_of_workers * bucket_multiplier )
     in
-    let map accumulator inputs =
-      (fun () -> map accumulator inputs) |> run_process ~configuration
-    in
+    let map accumulator inputs = (fun () -> map accumulator inputs) |> run_process ~configuration in
     MultiWorker.call
       (Some workers)
       ~job:map

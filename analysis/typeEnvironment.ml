@@ -70,5 +70,4 @@ module ReadOnly = struct
   let get_errors { get_errors; _ } = get_errors
 end
 
-let read_only { global_environment; get_errors; _ } =
-  ReadOnly.create ~get_errors global_environment
+let read_only { global_environment; get_errors; _ } = ReadOnly.create ~get_errors global_environment

@@ -217,13 +217,11 @@ let test_check_method_parameters context =
           return
     |}
     ["Invalid method signature [47]: Non-static method must specify `self` parameter."];
-  assert_type_errors
-    {|
+  assert_type_errors {|
       class Foo:
         def bar(x: Foo) -> None:
           return
-    |}
-    [];
+    |} [];
   assert_type_errors
     {|
       class Foo:

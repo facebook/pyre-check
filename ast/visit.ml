@@ -89,10 +89,10 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression element;
           List.iter generators ~f:(visit_generator ~visit_expression)
       | Starred starred -> (
-        match starred with
-        | Starred.Once expression
-        | Starred.Twice expression ->
-            visit_expression expression )
+          match starred with
+          | Starred.Once expression
+          | Starred.Twice expression ->
+              visit_expression expression )
       | String { StringLiteral.kind = Format expressions; _ } ->
           List.iter expressions ~f:visit_expression
       | String { kind = Mixed substrings; _ } ->

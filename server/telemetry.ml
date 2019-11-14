@@ -22,8 +22,7 @@ module Message = struct
   let to_normals { uuid; message } =
     match message with
     | Base { root; hash } -> ["kind", "base"; "uuid", uuid; "root", root; "hash", hash]
-    | Update { path; content } ->
-        ["kind", "update"; "uuid", uuid; "path", path; "content", content]
+    | Update { path; content } -> ["kind", "update"; "uuid", uuid; "path", path; "content", content]
 end
 
 let budget = ref 0
@@ -34,8 +33,8 @@ let send_telemetry ~f () =
   match !budget with
   | x when x <= 0 -> ()
   | current_budget -> (
-    try
-      f () |> Message.to_normals |> Statistics.server_telemetry;
-      budget := current_budget - 1
-    with
-    | _ -> () )
+      try
+        f () |> Message.to_normals |> Statistics.server_telemetry;
+        budget := current_budget - 1
+      with
+      | _ -> () )

@@ -1618,9 +1618,7 @@ let test_replace_platform_specific_code _ =
 
 let test_expand_type_checking_imports _ =
   let assert_expanded source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_type_checking_imports (parse source))
+    assert_source_equal (parse expected) (Preprocessing.expand_type_checking_imports (parse source))
   in
   assert_expanded {|
       if typing.TYPE_CHECKING:
@@ -1852,9 +1850,9 @@ let test_expand_implicit_returns _ =
     let expanded = Preprocessing.expand_implicit_returns (parse ~handle:"test.py" source) in
     match List.rev (Source.statements expanded) with
     | { Node.value = Define { body; _ }; _ } :: _ -> (
-      match List.rev body with
-      | return :: _ -> assert_equal return.location expected_location
-      | _ -> failwith "Preprocessed source's Define body is empty" )
+        match List.rev body with
+        | return :: _ -> assert_equal return.location expected_location
+        | _ -> failwith "Preprocessed source's Define body is empty" )
     | _ -> failwith "Preprocessed source failed"
   in
   assert_implicit_return_location
@@ -1952,11 +1950,7 @@ let test_defines _ =
     assert_equal
       ~cmp:Int.equal
       ~printer:Int.to_string
-      ( Preprocessing.defines
-          ~include_stubs:true
-          ~include_nested:true
-          ~include_toplevels:true
-          source
+      ( Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
       |> List.length )
       (Preprocessing.count_defines source)
   in

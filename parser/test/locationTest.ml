@@ -86,10 +86,7 @@ let test_assert_locations _ =
                         node ~start:(1, 7) ~stop:(1, 8) (Expression.Name (Name.Identifier "a"));
                       operator = ComparisonOperator.IsNot;
                       right =
-                        node
-                          ~start:(1, 16)
-                          ~stop:(1, 20)
-                          (Expression.Name (Name.Identifier "None"));
+                        node ~start:(1, 16) ~stop:(1, 20) (Expression.Name (Name.Identifier "None"));
                     });
              message =
                Some
@@ -111,8 +108,7 @@ let test_assign_locations _ =
         ~stop:(1, 5)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation = None;
              value = node ~start:(1, 4) ~stop:(1, 5) (Expression.Integer 1);
              parent = None;
@@ -126,8 +122,7 @@ let test_assign_locations _ =
         ~stop:(1, 10)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation =
                Some (node ~start:(1, 3) ~stop:(1, 6) (Expression.Name (Name.Identifier "int")));
              value = node ~start:(1, 9) ~stop:(1, 10) (Expression.Integer 1);
@@ -142,8 +137,7 @@ let test_assign_locations _ =
         ~stop:(1, 5)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation =
                Some
                  (node
@@ -162,8 +156,7 @@ let test_assign_locations _ =
         ~stop:(1, 5)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation =
                Some
                  (node
@@ -182,8 +175,7 @@ let test_assign_locations _ =
         ~stop:(1, 6)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation =
                Some (node ~start:(1, 3) ~stop:(1, 6) (Expression.Name (Name.Identifier "int")));
              value = node ~start:(1, 6) ~stop:(1, 6) Expression.Ellipsis;
@@ -198,8 +190,7 @@ let test_assign_locations _ =
         ~stop:(1, 9)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation = None;
              value = node ~start:(1, 8) ~stop:(1, 9) (Expression.Integer 1);
              parent = None;
@@ -209,8 +200,7 @@ let test_assign_locations _ =
         ~stop:(1, 9)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 4) ~stop:(1, 5) (Expression.Name (Name.Identifier "b"));
+             Assign.target = node ~start:(1, 4) ~stop:(1, 5) (Expression.Name (Name.Identifier "b"));
              annotation = None;
              value = node ~start:(1, 8) ~stop:(1, 9) (Expression.Integer 1);
              parent = None;
@@ -224,8 +214,7 @@ let test_assign_locations _ =
         ~stop:(1, 16)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation = None;
              value =
                node
@@ -245,8 +234,7 @@ let test_assign_locations _ =
         ~stop:(1, 6)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation = None;
              value =
                node
@@ -710,10 +698,7 @@ let test_call_locations _ =
                        {
                          Call.Argument.name = None;
                          value =
-                           node
-                             ~start:(1, 11)
-                             ~stop:(1, 12)
-                             (Expression.Name (Name.Identifier "y"));
+                           node ~start:(1, 11) ~stop:(1, 12) (Expression.Name (Name.Identifier "y"));
                        };
                      ];
                  })));
@@ -1356,10 +1341,7 @@ let test_dictionary_locations _ =
                      [
                        {
                          Comprehension.Generator.target =
-                           node
-                             ~start:(1, 22)
-                             ~stop:(1, 23)
-                             (Expression.Name (Name.Identifier "a"));
+                           node ~start:(1, 22) ~stop:(1, 23) (Expression.Name (Name.Identifier "a"));
                          iterator = node ~start:(1, 27) ~stop:(1, 29) (Expression.List []);
                          conditions = [];
                          async = false;
@@ -1518,10 +1500,7 @@ let test_generator_locations _ =
                      [
                        {
                          Comprehension.Generator.target =
-                           node
-                             ~start:(1, 12)
-                             ~stop:(1, 13)
-                             (Expression.Name (Name.Identifier "a"));
+                           node ~start:(1, 12) ~stop:(1, 13) (Expression.Name (Name.Identifier "a"));
                          iterator = node ~start:(1, 17) ~stop:(1, 19) (Expression.List []);
                          conditions =
                            [
@@ -1869,10 +1848,7 @@ let test_list_locations _ =
                          Comprehension.Generator.target =
                            node ~start:(1, 7) ~stop:(1, 8) (Expression.Name (Name.Identifier "a"));
                          iterator =
-                           node
-                             ~start:(1, 12)
-                             ~stop:(1, 13)
-                             (Expression.Name (Name.Identifier "a"));
+                           node ~start:(1, 12) ~stop:(1, 13) (Expression.Name (Name.Identifier "a"));
                          conditions = [];
                          async = false;
                        };
@@ -1934,8 +1910,7 @@ let test_name_locations _ =
               (Expression.Name
                  (Name.Attribute
                     {
-                      base =
-                        node ~start:(1, 2) ~stop:(1, 3) (Expression.Name (Name.Identifier "a"));
+                      base = node ~start:(1, 2) ~stop:(1, 3) (Expression.Name (Name.Identifier "a"));
                       attribute = "b";
                       special = false;
                     }))));
@@ -1953,8 +1928,7 @@ let test_name_locations _ =
               (Expression.Name
                  (Name.Attribute
                     {
-                      base =
-                        node ~start:(1, 1) ~stop:(1, 2) (Expression.Name (Name.Identifier "a"));
+                      base = node ~start:(1, 1) ~stop:(1, 2) (Expression.Name (Name.Identifier "a"));
                       attribute = "b";
                       special = false;
                     }))));
@@ -1975,8 +1949,7 @@ let test_name_locations _ =
               (Expression.Name
                  (Name.Attribute
                     {
-                      base =
-                        node ~start:(2, 0) ~stop:(2, 1) (Expression.Name (Name.Identifier "a"));
+                      base = node ~start:(2, 0) ~stop:(2, 1) (Expression.Name (Name.Identifier "a"));
                       attribute = "b";
                       special = false;
                     }))));
@@ -1994,8 +1967,7 @@ let test_name_locations _ =
               (Expression.Name
                  (Name.Attribute
                     {
-                      base =
-                        node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+                      base = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
                       attribute = "b";
                       special = false;
                     }))));
@@ -2043,9 +2015,7 @@ let test_name_locations _ =
 
 
 let test_nonlocal_locations _ =
-  assert_source_locations
-    "nonlocal a"
-    [node ~start:(1, 0) ~stop:(1, 10) (Statement.Nonlocal ["a"])];
+  assert_source_locations "nonlocal a" [node ~start:(1, 0) ~stop:(1, 10) (Statement.Nonlocal ["a"])];
   assert_source_locations
     "nonlocal a, b"
     [node ~start:(1, 0) ~stop:(1, 13) (Statement.Nonlocal ["a"; "b"])]
@@ -2248,8 +2218,7 @@ let test_raise_locations _ =
            {
              Raise.expression =
                Some (node ~start:(1, 6) ~stop:(1, 7) (Expression.Name (Name.Identifier "a")));
-             from =
-               Some (node ~start:(1, 13) ~stop:(1, 14) (Expression.Name (Name.Identifier "b")));
+             from = Some (node ~start:(1, 13) ~stop:(1, 14) (Expression.Name (Name.Identifier "b")));
            });
     ]
 
@@ -2456,9 +2425,7 @@ let test_string_locations _ =
               ~stop:(1, 10)
               (Expression.String
                  (StringLiteral.create_mixed
-                    [
-                      node ~start:(1, 2) ~stop:(1, 9) { Substring.kind = Format; value = "foo {x}" };
-                    ]))));
+                    [node ~start:(1, 2) ~stop:(1, 9) { Substring.kind = Format; value = "foo {x}" }]))));
     ];
   assert_source_locations
     "f'foo' f'bar'"
@@ -2567,8 +2534,7 @@ let test_stub_locations _ =
         ~stop:(1, 7)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation = None;
              value = node ~start:(1, 4) ~stop:(1, 7) Expression.Ellipsis;
              parent = None;
@@ -2582,8 +2548,7 @@ let test_stub_locations _ =
         ~stop:(1, 7)
         (Statement.Assign
            {
-             Assign.target =
-               node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
+             Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
              annotation =
                Some
                  (node

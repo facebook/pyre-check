@@ -144,9 +144,7 @@ let test_lookup_pick_narrowest context =
   let assert_annotation = assert_annotation ~lookup ~path:"test" in
   assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:(Some "3:7-3:28/bool");
   assert_annotation ~position:{ Location.line = 3; column = 16 } ~annotation:(Some "3:7-3:28/bool");
-  assert_annotation
-    ~position:{ Location.line = 3; column = 17 }
-    ~annotation:(Some "3:17-3:27/bool");
+  assert_annotation ~position:{ Location.line = 3; column = 17 } ~annotation:(Some "3:17-3:27/bool");
   assert_annotation
     ~position:{ Location.line = 3; column = 21 }
     ~annotation:(Some "3:21-3:27/typing.Optional[bool]");
@@ -217,13 +215,11 @@ let test_lookup_identifier_accesses context =
       "8:4-8:5/test.A";
       "8:8-8:14/test.A";
       (* This is the annotation for `A()` (the function call). *)
-        "8:8-8:9/typing.Type[test.A]";
+      "8:8-8:9/typing.Type[test.A]";
       "9:11-9:12/test.A";
       "9:11-9:14/int";
     ];
-  assert_annotation
-    ~position:{ Location.line = 5; column = 8 }
-    ~annotation:(Some "5:8-5:12/test.A");
+  assert_annotation ~position:{ Location.line = 5; column = 8 } ~annotation:(Some "5:8-5:12/test.A");
   assert_annotation ~position:{ Location.line = 5; column = 13 } ~annotation:(Some "5:8-5:14/int");
   assert_annotation ~position:{ Location.line = 5; column = 14 } ~annotation:None;
   assert_annotation ~position:{ Location.line = 5; column = 17 } ~annotation:(Some "5:17-5:18/int");
@@ -604,15 +600,9 @@ let test_lookup_definitions_instances context =
   assert_definition ~position:{ Location.line = 16; column = 6 } ~definition:(Some "test:8:4-9:18");
   assert_definition ~position:{ Location.line = 16; column = 8 } ~definition:(Some "test:8:4-9:18");
   assert_definition ~position:{ Location.line = 16; column = 9 } ~definition:(Some "test:3:4-4:12");
-  assert_definition
-    ~position:{ Location.line = 16; column = 11 }
-    ~definition:(Some "test:3:4-4:12");
-  assert_definition
-    ~position:{ Location.line = 16; column = 12 }
-    ~definition:(Some "test:3:4-4:12");
-  assert_definition
-    ~position:{ Location.line = 16; column = 14 }
-    ~definition:(Some "test:3:4-4:12");
+  assert_definition ~position:{ Location.line = 16; column = 11 } ~definition:(Some "test:3:4-4:12");
+  assert_definition ~position:{ Location.line = 16; column = 12 } ~definition:(Some "test:3:4-4:12");
+  assert_definition ~position:{ Location.line = 16; column = 14 } ~definition:(Some "test:3:4-4:12");
   assert_definition ~position:{ Location.line = 16; column = 15 } ~definition:None
 
 

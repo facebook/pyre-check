@@ -45,11 +45,7 @@ val normal_index : int
 
 val exit_index : int
 
-val to_dot
-  :  ?precondition:(int -> string) ->
-  ?sort_labels:bool ->
-  (int, Node.t) Hashtbl.t ->
-  string
+val to_dot : ?precondition:(int -> string) -> ?sort_labels:bool -> (int, Node.t) Hashtbl.t -> string
 
 val create : Define.t -> t
 

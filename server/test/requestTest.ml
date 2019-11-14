@@ -32,9 +32,7 @@ let test_generate_lsp_response _ =
     let actual_response =
       MockResponse.create ~id payload |> MockResponse.to_yojson |> Yojson.Safe.to_string
     in
-    let expected_response =
-      expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string
-    in
+    let expected_response = expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string in
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
   in
   assert_response (int_request_id 1) (Some 1337) {|{"jsonrpc":"2.0","id":1,"result":1337}|};
@@ -51,9 +49,7 @@ let test_process_client_shutdown_request context =
           response
       | _ -> failwith "Unexpected response."
     in
-    let expected_response =
-      expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string
-    in
+    let expected_response = expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string in
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
   in
   assert_response (int_request_id 0) {|{"jsonrpc":"2.0","id":0,"result":null}|};
@@ -100,9 +96,7 @@ let test_process_type_query_request context =
           Protocol.TypeQuery.response_to_yojson response |> Yojson.Safe.to_string
       | _ -> failwith "Unexpected response."
     in
-    let expected_response =
-      expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string
-    in
+    let expected_response = expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string in
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
@@ -638,9 +632,7 @@ let test_process_get_definition_request context =
       { Protocol.DefinitionRequest.id = int_request_id 0; path; position }
     in
     let actual_response =
-      let actual_response =
-        Request.process_get_definition_request ~state ~configuration ~request
-      in
+      let actual_response = Request.process_get_definition_request ~state ~configuration ~request in
       match actual_response with
       | { Request.response = Some (Protocol.LanguageServerProtocolResponse response); _ } ->
           Yojson.Safe.from_string response
@@ -719,9 +711,7 @@ let test_create_annotation_edit context =
     { actual = Type.integer; expected = Type.string; due_to_invariance = false }
   in
   let location = { Location.Reference.any with start = { line = 0; column = 0 } } in
-  let instantiated_location =
-    { Location.Instantiated.any with start = { line = 0; column = 0 } }
-  in
+  let instantiated_location = { Location.Instantiated.any with start = { line = 0; column = 0 } } in
   let assert_edit ~source ~error ~expected_text ~expected_range =
     let file =
       let path = Path.create_relative ~root ~relative:"test.py" in

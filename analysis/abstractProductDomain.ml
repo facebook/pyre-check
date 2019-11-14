@@ -20,8 +20,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
      Typically, clients would have to provide this function in the Config, but it is tedious to
      write type-safely, so to make the client interface simpler, we use Obj.magic here. *)
-  let equal_slot (type a b) (left : a Config.slot) (right : b Config.slot)
-      : (a, b) equality_witness
+  let equal_slot (type a b) (left : a Config.slot) (right : b Config.slot) : (a, b) equality_witness
     =
     if left = Obj.magic right then
       Obj.magic AbstractDomain.Equal
@@ -72,75 +71,75 @@ module Make (Config : PRODUCT_CONFIG) = struct
     let join left right =
       match left, right with
       | Element (left_slot, left_value), Element (right_slot, right_value) -> (
-        match equal_slot left_slot right_slot with
-        | Equal ->
-            let module D = (val Config.slot_domain left_slot) in
-            Element (left_slot, D.join left_value right_value)
-        | Distinct -> failwith "unmatched slots" )
+          match equal_slot left_slot right_slot with
+          | Equal ->
+              let module D = (val Config.slot_domain left_slot) in
+              Element (left_slot, D.join left_value right_value)
+          | Distinct -> failwith "unmatched slots" )
 
 
     let widen ~iteration ~previous ~next =
       match previous, next with
       | Element (previous_slot, previous_value), Element (next_slot, next_value) -> (
-        match equal_slot previous_slot next_slot with
-        | Equal ->
-            let module D = (val Config.slot_domain previous_slot) in
-            let value = D.widen ~iteration ~previous:previous_value ~next:next_value in
-            Element (previous_slot, value)
-        | Distinct -> failwith "unmatched slots" )
+          match equal_slot previous_slot next_slot with
+          | Equal ->
+              let module D = (val Config.slot_domain previous_slot) in
+              let value = D.widen ~iteration ~previous:previous_value ~next:next_value in
+              Element (previous_slot, value)
+          | Distinct -> failwith "unmatched slots" )
 
 
     let less_or_equal ~left ~right =
       match left, right with
       | Element (left_slot, left_value), Element (right_slot, right_value) -> (
-        match equal_slot left_slot right_slot with
-        | Equal ->
-            let module D = (val Config.slot_domain left_slot) in
-            D.less_or_equal ~left:left_value ~right:right_value
-        | Distinct -> failwith "unmatched slots" )
+          match equal_slot left_slot right_slot with
+          | Equal ->
+              let module D = (val Config.slot_domain left_slot) in
+              D.less_or_equal ~left:left_value ~right:right_value
+          | Distinct -> failwith "unmatched slots" )
 
 
     let subtract to_remove ~from =
       match to_remove, from with
       | Element (to_remove_slot, to_remove_value), Element (from_slot, from_value) -> (
-        match equal_slot to_remove_slot from_slot with
-        | Equal ->
-            let module D = (val Config.slot_domain to_remove_slot) in
-            Element (to_remove_slot, D.subtract to_remove_value ~from:from_value)
-        | Distinct -> failwith "unmatched slots" )
+          match equal_slot to_remove_slot from_slot with
+          | Equal ->
+              let module D = (val Config.slot_domain to_remove_slot) in
+              Element (to_remove_slot, D.subtract to_remove_value ~from:from_value)
+          | Distinct -> failwith "unmatched slots" )
 
 
     let fold (type a b) (part : a part) ~(f : b -> a -> b) ~(init : b) element =
       match part, element with
       | ProductSlot (desired_slot, nested_part), Element (slot, value) -> (
-        match equal_slot desired_slot slot with
-        | Equal ->
-            let module D = (val Config.slot_domain slot) in
-            D.fold nested_part ~f ~init value
-        | Distinct -> init )
+          match equal_slot desired_slot slot with
+          | Equal ->
+              let module D = (val Config.slot_domain slot) in
+              D.fold nested_part ~f ~init value
+          | Distinct -> init )
       | _ -> failwith "Must use product part"
 
 
     let transform (type a) (part : a part) ~(f : a -> a) element =
       match part, element with
       | ProductSlot (desired_slot, nested_part), Element (slot, value) -> (
-        match equal_slot desired_slot slot with
-        | Equal ->
-            let module D = (val Config.slot_domain slot) in
-            Element (slot, D.transform nested_part ~f value)
-        | Distinct -> element )
+          match equal_slot desired_slot slot with
+          | Equal ->
+              let module D = (val Config.slot_domain slot) in
+              Element (slot, D.transform nested_part ~f value)
+          | Distinct -> element )
       | _ -> failwith "Must use product part"
 
 
     let partition (type a b) (part : a part) ~(f : a -> b) element =
       match part, element with
       | ProductSlot (desired_slot, nested_part), Element (slot, value) -> (
-        match equal_slot desired_slot slot with
-        | Equal ->
-            let module D = (val Config.slot_domain slot) in
-            let partition = D.partition nested_part ~f value in
-            `Fst (Map.Poly.map partition ~f:(fun value -> Element (slot, value)))
-        | Distinct -> `Snd element )
+          match equal_slot desired_slot slot with
+          | Equal ->
+              let module D = (val Config.slot_domain slot) in
+              let partition = D.partition nested_part ~f value in
+              `Fst (Map.Poly.map partition ~f:(fun value -> Element (slot, value)))
+          | Distinct -> `Snd element )
       | _ -> failwith "Must use product part"
   end
 
@@ -278,9 +277,9 @@ module Make (Config : PRODUCT_CONFIG) = struct
     match Map.find product (Config.slot_name wanted) with
     | None -> ProductElement.get_bottom wanted
     | Some (Element (slot, value)) -> (
-      match equal_slot slot wanted with
-      | Equal -> value
-      | Distinct -> failwith "internal invariant broken" )
+        match equal_slot slot wanted with
+        | Equal -> value
+        | Distinct -> failwith "internal invariant broken" )
 
 
   let create parts =

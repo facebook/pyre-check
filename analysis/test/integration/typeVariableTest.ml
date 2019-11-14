@@ -209,8 +209,8 @@ let test_check_variable_bindings context =
         return 1.0
     |}
     [
-      "Invalid type variable [34]: The type variable `Variable[T (bound to int)]` isn't present \
-       in the function's parameters.";
+      "Invalid type variable [34]: The type variable `Variable[T (bound to int)]` isn't present in \
+       the function's parameters.";
     ];
   assert_type_errors
     {|
@@ -248,8 +248,8 @@ let test_check_variable_bindings context =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got `int`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call `f` \
-       but got `None`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call `f` but \
+       got `None`.";
     ];
   assert_type_errors
     {|
@@ -440,8 +440,8 @@ let test_unbound_variables context =
         reveal_type(x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[typing.List[int]]` \
-       (inferred: `typing.List[int]`).";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Optional[typing.List[int]]` (inferred: \
+       `typing.List[int]`).";
     ];
   assert_type_errors
     {|
@@ -1161,9 +1161,8 @@ let test_list_variadics context =
       loop( *tA, *tB)
     |}
     [
-      "Invalid argument [32]: Variadic type variable `test.Ts` cannot be made to contain \
-       `test.Ts, test.TsB`, concatenation of multiple variadic type variables is not yet \
-       implemented.";
+      "Invalid argument [32]: Variadic type variable `test.Ts` cannot be made to contain `test.Ts, \
+       test.TsB`, concatenation of multiple variadic type variables is not yet implemented.";
     ];
   assert_type_errors
     {|
@@ -1510,8 +1509,8 @@ let test_concatenation_operator context =
       unmap_tuple(x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[Concatenate[List[int], \
-       Map[list, test.Ts], List[bool]]]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[Concatenate[List[int], Map[list, \
+       test.Ts], List[bool]]]`.";
       "Incompatible parameter type [6]: Expected `typing.Tuple[Map[list, test.Ts]]` for 1st \
        anonymous parameter to call `unmap_tuple` but got `typing.Tuple[Concatenate[List[int], \
        Map[list, test.Ts], List[bool]]]`.";
@@ -1537,9 +1536,8 @@ let test_concatenation_operator context =
     |}
     [
       "Revealed type [-1]: Revealed type for `el` is `int`.";
-      "Revealed type [-1]: Revealed type for `dims` is \
-       `typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2], \
-       typing_extensions.Literal[3]]`.";
+      "Revealed type [-1]: Revealed type for `dims` is `typing.Tuple[typing_extensions.Literal[1], \
+       typing_extensions.Literal[2], typing_extensions.Literal[3]]`.";
     ];
   assert_type_errors
     {|

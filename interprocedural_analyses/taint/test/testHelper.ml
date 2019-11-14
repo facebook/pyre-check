@@ -147,9 +147,7 @@ let check_expectation
   let extract_sinks_by_parameter_name sink_map (root, sink_tree) =
     match AccessPath.Root.parameter_name root with
     | Some name ->
-        let sinks =
-          Domains.BackwardState.Tree.collapse sink_tree |> Domains.BackwardTaint.leaves
-        in
+        let sinks = Domains.BackwardState.Tree.collapse sink_tree |> Domains.BackwardTaint.leaves in
         let sinks =
           String.Map.find sink_map name
           |> Option.value ~default:[]
@@ -162,9 +160,7 @@ let check_expectation
   let extract_sources_by_parameter_name sink_map (root, source_tree) =
     match AccessPath.Root.parameter_name root with
     | Some name ->
-        let sinks =
-          Domains.ForwardState.Tree.collapse source_tree |> Domains.ForwardTaint.leaves
-        in
+        let sinks = Domains.ForwardState.Tree.collapse source_tree |> Domains.ForwardTaint.leaves in
         let sinks =
           String.Map.find sink_map name
           |> Option.value ~default:[]
@@ -327,8 +323,7 @@ let check_expectation
     (Map.length expected_sinks)
     (Map.length sink_taint_map)
     ~printer:Int.to_string
-    ~msg:
-      (Format.sprintf "Define %s: List of sink tainted parameters differ in length." define_name);
+    ~msg:(Format.sprintf "Define %s: List of sink tainted parameters differ in length." define_name);
   String.Map.iter2 ~f:check_each_sink expected_sinks sink_taint_map;
 
   (* Check parameter sources. *)

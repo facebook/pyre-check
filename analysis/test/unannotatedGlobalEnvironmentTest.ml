@@ -204,8 +204,7 @@ let test_define_registration context =
          x: int
          def bar(self): ...
     |}
-    ~expected:
-      [!&"test.$toplevel"; !&"test.foo"; !&"test.foo.C.$class_toplevel"; !&"test.foo.C.bar"];
+    ~expected:[!&"test.$toplevel"; !&"test.foo"; !&"test.foo.C.$class_toplevel"; !&"test.foo.C.bar"];
   assert_registers
     {|
      def foo():
@@ -375,9 +374,7 @@ let test_updates context =
     let execute_action = function
       | `Get (class_name, dependency, expected_number_of_statements) ->
           let printer number =
-            number
-            >>| Format.sprintf "number of attributes: %d"
-            |> Option.value ~default:"No class"
+            number >>| Format.sprintf "number of attributes: %d" |> Option.value ~default:"No class"
           in
           UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
             read_only
@@ -678,8 +675,7 @@ let test_updates context =
         `Global
           ( Reference.create "test.other_member",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member"))
-          );
+            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member")) );
       ]
       (* Location insensitive *)
     ~expected_triggers:[]
@@ -692,8 +688,7 @@ let test_updates context =
         `Global
           ( Reference.create "test.other_member",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member"))
-          );
+            Some (UnannotatedGlobalEnvironment.Imported (Reference.create "target.other_member")) );
       ]
     ();
 
@@ -1069,20 +1064,20 @@ let test_updates context =
     ~post_actions:
       [
         (* Last define wins *)
-          `DefineBody
-            ( !&"test.foo",
-              dependency,
-              Some
-                (create_simple_define
-                   ~start:(4, 0)
-                   ~stop:(5, 10)
-                   !&"test.foo"
-                   [
-                     create_simple_return
-                       ~start:(5, 2)
-                       ~stop:(5, 10)
-                       (node ~path ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 3));
-                   ]) );
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(4, 0)
+                 ~stop:(5, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(5, 2)
+                     ~stop:(5, 10)
+                     (node ~path ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 3));
+                 ]) );
       ]
     ();
   assert_updates
@@ -1099,20 +1094,20 @@ let test_updates context =
     ~middle_actions:
       [
         (* Last define wins *)
-          `DefineBody
-            ( !&"test.foo",
-              dependency,
-              Some
-                (create_simple_define
-                   ~start:(4, 0)
-                   ~stop:(5, 10)
-                   !&"test.foo"
-                   [
-                     create_simple_return
-                       ~start:(5, 2)
-                       ~stop:(5, 10)
-                       (node ~path ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 2));
-                   ]) );
+        `DefineBody
+          ( !&"test.foo",
+            dependency,
+            Some
+              (create_simple_define
+                 ~start:(4, 0)
+                 ~stop:(5, 10)
+                 !&"test.foo"
+                 [
+                   create_simple_return
+                     ~start:(5, 2)
+                     ~stop:(5, 10)
+                     (node ~path ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 2));
+                 ]) );
       ]
     ~expected_triggers:[dependency]
     ~post_actions:

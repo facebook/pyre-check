@@ -90,8 +90,7 @@ let test_add_bound _ =
     (`Upper (UnaryPair (unconstrained, right_parent)));
   assert_add_bound_fails (`Lower (UnaryPair (variable (Type.Variable.Bound child), left_parent)));
   assert_add_bound_succeeds (`Lower (UnaryPair (variable (Type.Variable.Bound child), child)));
-  assert_add_bound_succeeds
-    (`Upper (UnaryPair (variable (Type.Variable.Bound child), left_parent)));
+  assert_add_bound_succeeds (`Upper (UnaryPair (variable (Type.Variable.Bound child), left_parent)));
   let explicit_parent_a_parent_b = variable (Type.Variable.Explicit [left_parent; right_parent]) in
   assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent)));
   assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, right_parent)));
@@ -221,15 +220,14 @@ let test_single_variable_solution _ =
   let one_named_parameter =
     Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
   in
-  (* The simplest case for parameter variadics: adding a single lower bound of empty parameters to
-     a variable yields a solution of a replacement of that variable with empty parameters *)
+  (* The simplest case for parameter variadics: adding a single lower bound of empty parameters to a
+     variable yields a solution of a replacement of that variable with empty parameters *)
   assert_solution
     ~sequentially_applied_bounds:
       [`Lower (ParameterVariadicPair (parameter_variadic, empty_parameters))]
     (Some [ParameterVariadicPair (parameter_variadic, empty_parameters)]);
 
-  (* Attempting to bound a parameter variadic by more than one set of non-identical parameters
-     fails *)
+  (* Attempting to bound a parameter variadic by more than one set of non-identical parameters fails *)
   assert_solution
     ~sequentially_applied_bounds:
       [
@@ -344,8 +342,8 @@ let test_multiple_variable_solution _ =
          ParameterVariadicPair (parameters_b, empty_parameters);
        ]);
 
-  (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with
-     this yet *)
+  (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with this
+     yet *)
   assert_solution
     ~sequentially_applied_bounds:
       [
@@ -378,8 +376,8 @@ let test_multiple_variable_solution _ =
          UnaryPair (unconstrained_a, Type.integer);
        ]);
 
-  (* This is truly unsolvable, because A is supposed to be greater than [T], but T is supposed to
-     be greater than typing.Callable[A, int]. *)
+  (* This is truly unsolvable, because A is supposed to be greater than [T], but T is supposed to be
+     greater than typing.Callable[A, int]. *)
   assert_solution
     ~sequentially_applied_bounds:
       [
@@ -401,8 +399,7 @@ let test_multiple_variable_solution _ =
         `Lower
           (ListVariadicPair (list_variadic_a, Concatenation (create_concatenation list_variadic_b)));
         `Lower
-          (ListVariadicPair
-             (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+          (ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
       ]
     (Some
        [
@@ -410,8 +407,8 @@ let test_multiple_variable_solution _ =
          ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]);
        ]);
 
-  (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with
-     this yet *)
+  (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with this
+     yet *)
   assert_solution
     ~sequentially_applied_bounds:
       [
@@ -439,11 +436,9 @@ let test_multiple_variable_solution _ =
       [
         `Lower
           (ListVariadicPair
-             ( list_variadic_a,
-               Concatenation (create_concatenation ~mappers:["Foo"] list_variadic_b) ));
+             (list_variadic_a, Concatenation (create_concatenation ~mappers:["Foo"] list_variadic_b)));
         `Lower
-          (ListVariadicPair
-             (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
+          (ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string]));
       ]
     (Some
        [
@@ -467,11 +462,7 @@ let test_multiple_variable_solution _ =
 
 
 let test_partial_solution _ =
-  let expect_split_solution
-      ~bounds
-      ~variables
-      expected_partial_solution
-      expected_remainder_solution
+  let expect_split_solution ~bounds ~variables expected_partial_solution expected_remainder_solution
     =
     let partial_result, remainder_solution =
       List.fold bounds ~init:(Some empty) ~f:add_bound
@@ -554,8 +545,7 @@ let test_partial_solution _ =
         `Lower
           (ListVariadicPair (list_variadic_b, Concatenation (create_concatenation list_variadic_a)));
       ]
-    (Some
-       [ListVariadicPair (list_variadic_a, Concatenation (create_concatenation list_variadic_b))])
+    (Some [ListVariadicPair (list_variadic_a, Concatenation (create_concatenation list_variadic_b))])
     (Some []);
   ()
 

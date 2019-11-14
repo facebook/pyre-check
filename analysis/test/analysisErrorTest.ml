@@ -137,11 +137,7 @@ let test_due_to_analysis_limitations _ =
          name = "";
          parent = mock_parent;
          mismatch =
-           {
-             Error.actual = Type.Top;
-             expected = Type.Optional Type.Top;
-             due_to_invariance = false;
-           };
+           { Error.actual = Type.Top; expected = Type.Optional Type.Top; due_to_invariance = false };
          kind = Class;
        });
   assert_not_due_to_analysis_limitations
@@ -622,17 +618,14 @@ let test_less_or_equal context =
     (Error.less_or_equal
        ~resolution
        (error
-          (Error.Unpack
-             { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer }))
+          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer }))
        (error
-          (Error.Unpack
-             { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
+          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
   assert_true
     (Error.less_or_equal
        ~resolution
        (error
-          (Error.Unpack
-             { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer }))
+          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer }))
        (error
           (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.float })));
   assert_false
@@ -641,17 +634,14 @@ let test_less_or_equal context =
        (error
           (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.float }))
        (error
-          (Error.Unpack
-             { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
+          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
   assert_false
     (Error.less_or_equal
        ~resolution
        (error
-          (Error.Unpack
-             { expected_count = 3; unpack_problem = Error.UnacceptableType Type.integer }))
+          (Error.Unpack { expected_count = 3; unpack_problem = Error.UnacceptableType Type.integer }))
        (error
-          (Error.Unpack
-             { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
+          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
   assert_true
     (Error.less_or_equal
        ~resolution
@@ -667,8 +657,7 @@ let test_less_or_equal context =
        ~resolution
        (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 2 }))
        (error
-          (Error.Unpack
-             { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
+          (Error.Unpack { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
   assert_true
     (Error.less_or_equal
        ~resolution

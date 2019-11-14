@@ -70,9 +70,9 @@ let test_check_variance context =
       class B(A[CV], Generic[CV]):pass
     |}
     [
-      "Invalid type variance [46]: The type variable `Variable[CV](contravariant)` is \
-       incompatible with parent class type variable `Variable[IV]` because subclasses cannot use \
-       more permissive type variables than their superclasses.";
+      "Invalid type variance [46]: The type variable `Variable[CV](contravariant)` is incompatible \
+       with parent class type variable `Variable[IV]` because subclasses cannot use more \
+       permissive type variables than their superclasses.";
     ];
   assert_type_errors
     {|

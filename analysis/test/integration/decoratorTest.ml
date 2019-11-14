@@ -49,7 +49,7 @@ let test_check_contextmanager context =
     |}
     [
       (* TODO(T27138096): Iterable should have attribute `__enter__`. *)
-        "Undefined attribute [16]: `typing.Iterable` has no attribute `__enter__`.";
+      "Undefined attribute [16]: `typing.Iterable` has no attribute `__enter__`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
@@ -142,7 +142,7 @@ let test_check_asynccontextmanager context =
     |}
     [
       (* TODO(T41786660): AsyncIterable should have attribute `__aenter__` ? *)
-        "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
       "Undefined attribute [16]: `typing.AsyncIterable` has no attribute `__aenter__`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
@@ -473,8 +473,8 @@ let test_check_user_decorators context =
 
 let test_check_callable_class_decorators context =
   let assert_type_errors = assert_type_errors ~context in
-  (* This should not work because that's a __call__ on the *instance* not the class. In principle
-     we could support metaclass __call__ methods, but we're not now *)
+  (* This should not work because that's a __call__ on the *instance* not the class. In principle we
+     could support metaclass __call__ methods, but we're not now *)
   assert_type_errors
     {|
       import typing
@@ -588,8 +588,8 @@ let test_decorator_factories context =
     |}
     [
       (* We don't handle non-literal expressions as arguments *)
-        "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
-         str)], int]`.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
+       str)], int]`.";
     ];
   assert_type_errors
     {|
@@ -607,8 +607,8 @@ let test_decorator_factories context =
     |}
     [
       (* We don't handle globals as arguments *)
-        "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
-         str)], int]`.";
+      "Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[Named(name, \
+       str)], int]`.";
     ];
   ()
 

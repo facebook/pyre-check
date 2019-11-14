@@ -68,13 +68,14 @@ let callables ~resolution ~source =
 let analyze
     ~scheduler
     ~analysis_kind
-    ~configuration:( {
-                       Configuration.StaticAnalysis.configuration;
-                       dump_call_graph;
-                       verify_models;
-                       rule_filter;
-                       _;
-                     } as analysis_configuration )
+    ~configuration:
+      ( {
+          Configuration.StaticAnalysis.configuration;
+          dump_call_graph;
+          verify_models;
+          rule_filter;
+          _;
+        } as analysis_configuration )
     ~filename_lookup
     ~environment
     ~qualifiers
@@ -169,9 +170,7 @@ let analyze
       AstEnvironment.ReadOnly.get_source ast_environment qualifier
       >>| (fun source ->
             if
-              GlobalResolution.source_is_unit_test
-                (Resolution.global_resolution resolution)
-                ~source
+              GlobalResolution.source_is_unit_test (Resolution.global_resolution resolution) ~source
             then
               List.fold
                 (unfiltered_callables ~resolution:(Resolution.global_resolution resolution) ~source)
@@ -191,8 +190,7 @@ let analyze
     in
     let rule_settings =
       match rule_filter with
-      | Some rule_filter ->
-          ["rule_filter", `List (List.map rule_filter ~f:(fun rule -> `Int rule))]
+      | Some rule_filter -> ["rule_filter", `List (List.map rule_filter ~f:(fun rule -> `Int rule))]
       | None -> []
     in
     `Assoc
@@ -209,11 +207,7 @@ let analyze
   let analyses = [analysis_kind] in
   (* Initialize and add initial models of analyses to shared mem. *)
   let () =
-    Analysis.initialize
-      analyses
-      ~configuration:configuration_json
-      ~environment
-      ~functions:callables
+    Analysis.initialize analyses ~configuration:configuration_json ~environment ~functions:callables
     |> Analysis.record_initial_models ~functions:callables ~stubs
   in
   let override_dependencies = DependencyGraph.from_overrides overrides in

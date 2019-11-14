@@ -23,16 +23,16 @@ let insert_source_path ~configuration ~inserted existing_files =
   let rec insert sofar = function
     | [] -> List.rev_append sofar [inserted]
     | current_file :: rest as existing -> (
-      match SourcePath.same_module_compare ~configuration inserted current_file with
-      | 0 ->
-          (* We have the following precondition for files that are in the same module: *)
-          (* `same_module_compare a b = 0` implies `equal a b` *)
-          assert (SourcePath.equal inserted current_file);
+        match SourcePath.same_module_compare ~configuration inserted current_file with
+        | 0 ->
+            (* We have the following precondition for files that are in the same module: *)
+            (* `same_module_compare a b = 0` implies `equal a b` *)
+            assert (SourcePath.equal inserted current_file);
 
-          (* Duplicate entry detected. Do nothing *)
-          existing_files
-      | x when x > 0 -> List.rev_append sofar (inserted :: existing)
-      | _ -> insert (current_file :: sofar) rest )
+            (* Duplicate entry detected. Do nothing *)
+            existing_files
+        | x when x > 0 -> List.rev_append sofar (inserted :: existing)
+        | _ -> insert (current_file :: sofar) rest )
   in
   insert [] existing_files
 
@@ -41,23 +41,23 @@ let remove_source_path ~configuration ~removed existing_files =
   let rec remove sofar = function
     | [] -> existing_files
     | current_file :: rest -> (
-      match SourcePath.same_module_compare ~configuration removed current_file with
-      | 0 ->
-          let () =
-            (* For removed files, we only check for equality on relative path & priority. *)
-            (* There's a corner case (where symlink is involved) that may cause `removed` to have a
-               different `is_external` flag. *)
-            let partially_equal
-                { SourcePath.relative = left_relative; priority = left_priority; _ }
-                { SourcePath.relative = right_relative; priority = right_priority; _ }
-              =
-              String.equal left_relative right_relative && Int.equal left_priority right_priority
+        match SourcePath.same_module_compare ~configuration removed current_file with
+        | 0 ->
+            let () =
+              (* For removed files, we only check for equality on relative path & priority. *)
+              (* There's a corner case (where symlink is involved) that may cause `removed` to have
+                 a different `is_external` flag. *)
+              let partially_equal
+                  { SourcePath.relative = left_relative; priority = left_priority; _ }
+                  { SourcePath.relative = right_relative; priority = right_priority; _ }
+                =
+                String.equal left_relative right_relative && Int.equal left_priority right_priority
+              in
+              assert (partially_equal removed current_file)
             in
-            assert (partially_equal removed current_file)
-          in
-          List.rev_append sofar rest
-      | x when x > 0 -> existing_files
-      | _ -> remove (current_file :: sofar) rest )
+            List.rev_append sofar rest
+        | x when x > 0 -> existing_files
+        | _ -> remove (current_file :: sofar) rest )
   in
   remove [] existing_files
 
@@ -144,8 +144,8 @@ let lookup_path ~configuration tracker path =
   SourcePath.create ~configuration path
   >>= fun { SourcePath.relative; priority; qualifier; _ } ->
   lookup_source_path tracker qualifier
-  >>= fun ( { SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as
-          source_path ) ->
+  >>= fun ({ SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as source_path)
+          ->
   if String.equal relative tracked_relative && Int.equal priority tracked_priority then
     Some source_path
   else
@@ -156,14 +156,12 @@ let lookup { module_to_files; submodule_refcounts } module_name =
   match Hashtbl.find module_to_files module_name with
   | Some (source_path :: _) -> Some (Lookup.Explicit source_path)
   | _ -> (
-    match Hashtbl.mem submodule_refcounts module_name with
-    | true -> Some (Lookup.Implicit module_name)
-    | false -> None )
+      match Hashtbl.mem submodule_refcounts module_name with
+      | true -> Some (Lookup.Implicit module_name)
+      | false -> None )
 
 
-let source_paths { module_to_files; _ } =
-  Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
-
+let source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
 
 let all_source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.concat
 
@@ -214,53 +212,53 @@ let update_explicit_modules ~configuration ~paths module_to_files =
   (* Process a single filesystem event *)
   let process_filesystem_event ~configuration tracker = function
     | FileSystemEvent.Update path -> (
-      match SourcePath.create ~configuration path with
-      | None ->
-          Log.warning "`%a` not found in search path." Path.pp path;
-          None
-      | Some ({ SourcePath.qualifier; _ } as source_path) -> (
-        match Hashtbl.find tracker qualifier with
+        match SourcePath.create ~configuration path with
         | None ->
-            (* New file for a new module *)
-            Hashtbl.set tracker ~key:qualifier ~data:[source_path];
-            Some (IncrementalExplicitUpdate.New source_path)
-        | Some source_paths ->
-            let new_source_paths =
-              insert_source_path ~configuration ~inserted:source_path source_paths
-            in
-            let new_source_path = List.hd_exn new_source_paths in
-            Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
-            if SourcePath.equal new_source_path source_path then
-              (* Updating a shadowing file means the module gets changed *)
-              Some (IncrementalExplicitUpdate.Changed source_path)
-            else (* Updating a shadowed file should not trigger any reanalysis *)
-              None ) )
-    | FileSystemEvent.Remove path -> (
-      match SourcePath.create ~configuration path with
-      | None ->
-          Log.warning "`%a` not found in search path." Path.pp path;
-          None
-      | Some ({ SourcePath.qualifier; _ } as source_path) -> (
-          Hashtbl.find tracker qualifier
-          >>= fun source_paths ->
-          match source_paths with
-          | [] ->
-              (* This should never happen but handle it just in case *)
-              Hashtbl.remove tracker qualifier;
-              None
-          | old_source_path :: _ -> (
-            match remove_source_path ~configuration ~removed:source_path source_paths with
-            | [] ->
-                (* Last remaining file for the module gets removed. *)
-                Hashtbl.remove tracker qualifier;
-                Some (IncrementalExplicitUpdate.Delete qualifier)
-            | new_source_path :: _ as new_source_paths ->
+            Log.warning "`%a` not found in search path." Path.pp path;
+            None
+        | Some ({ SourcePath.qualifier; _ } as source_path) -> (
+            match Hashtbl.find tracker qualifier with
+            | None ->
+                (* New file for a new module *)
+                Hashtbl.set tracker ~key:qualifier ~data:[source_path];
+                Some (IncrementalExplicitUpdate.New source_path)
+            | Some source_paths ->
+                let new_source_paths =
+                  insert_source_path ~configuration ~inserted:source_path source_paths
+                in
+                let new_source_path = List.hd_exn new_source_paths in
                 Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
-                if SourcePath.equal old_source_path new_source_path then
-                  (* Removing a shadowed file should not trigger any reanalysis *)
-                  None
-                else (* Removing source_path un-shadows another source file. *)
-                  Some (IncrementalExplicitUpdate.Changed new_source_path) ) ) )
+                if SourcePath.equal new_source_path source_path then
+                  (* Updating a shadowing file means the module gets changed *)
+                  Some (IncrementalExplicitUpdate.Changed source_path)
+                else (* Updating a shadowed file should not trigger any reanalysis *)
+                  None ) )
+    | FileSystemEvent.Remove path -> (
+        match SourcePath.create ~configuration path with
+        | None ->
+            Log.warning "`%a` not found in search path." Path.pp path;
+            None
+        | Some ({ SourcePath.qualifier; _ } as source_path) -> (
+            Hashtbl.find tracker qualifier
+            >>= fun source_paths ->
+            match source_paths with
+            | [] ->
+                (* This should never happen but handle it just in case *)
+                Hashtbl.remove tracker qualifier;
+                None
+            | old_source_path :: _ -> (
+                match remove_source_path ~configuration ~removed:source_path source_paths with
+                | [] ->
+                    (* Last remaining file for the module gets removed. *)
+                    Hashtbl.remove tracker qualifier;
+                    Some (IncrementalExplicitUpdate.Delete qualifier)
+                | new_source_path :: _ as new_source_paths ->
+                    Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
+                    if SourcePath.equal old_source_path new_source_path then
+                      (* Removing a shadowed file should not trigger any reanalysis *)
+                      None
+                    else (* Removing source_path un-shadows another source file. *)
+                      Some (IncrementalExplicitUpdate.Changed new_source_path) ) ) )
   in
   (* Make sure we have only one update per module *)
   let merge_updates updates =
@@ -310,10 +308,7 @@ let update_explicit_modules ~configuration ~paths module_to_files =
                 Some update
             | Some (IncrementalExplicitUpdate.New _) ->
                 let message =
-                  Format.asprintf
-                    "Illegal state: delete after new module %a"
-                    Reference.pp
-                    qualifier
+                  Format.asprintf "Illegal state: delete after new module %a" Reference.pp qualifier
                 in
                 failwith message
             | Some (IncrementalExplicitUpdate.Delete _) ->
@@ -362,9 +357,7 @@ let update_submodules ~events submodule_refcounts =
       match data with
       | 0 -> List.rev sofar
       | delta -> (
-          let original_refcount =
-            Hashtbl.find submodule_refcounts key |> Option.value ~default:0
-          in
+          let original_refcount = Hashtbl.find submodule_refcounts key |> Option.value ~default:0 in
           let new_refcount = original_refcount + delta in
           match new_refcount with
           | 0 ->

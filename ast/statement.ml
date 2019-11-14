@@ -33,14 +33,14 @@ module Assign = struct
     match Expression.location_sensitive_compare left.target right.target with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match
-        Option.compare Expression.location_sensitive_compare left.annotation right.annotation
-      with
-      | x when not (Int.equal x 0) -> x
-      | _ -> (
-        match Expression.location_sensitive_compare left.value right.value with
+        match
+          Option.compare Expression.location_sensitive_compare left.annotation right.annotation
+        with
         | x when not (Int.equal x 0) -> x
-        | _ -> [%compare: Reference.t option] left.parent right.parent ) )
+        | _ -> (
+            match Expression.location_sensitive_compare left.value right.value with
+            | x when not (Int.equal x 0) -> x
+            | _ -> [%compare: Reference.t option] left.parent right.parent ) )
 end
 
 module Import = struct
@@ -76,9 +76,7 @@ module Raise = struct
 
 
   let location_sensitive_compare left right =
-    match
-      Option.compare Expression.location_sensitive_compare left.expression right.expression
-    with
+    match Option.compare Expression.location_sensitive_compare left.expression right.expression with
     | x when not (Int.equal x 0) -> x
     | _ -> Option.compare Expression.location_sensitive_compare left.from right.from
 end
@@ -153,9 +151,9 @@ end = struct
       match left, right with
       | Assertion, Assertion -> 0
       | If left, If right -> (
-        match Statement.location_sensitive_compare left.statement right.statement with
-        | x when not (Int.equal x 0) -> x
-        | _ -> Bool.compare left.true_branch right.true_branch )
+          match Statement.location_sensitive_compare left.statement right.statement with
+          | x when not (Int.equal x 0) -> x
+          | _ -> Bool.compare left.true_branch right.true_branch )
       | While, While -> 0
       | Assertion, _ -> -1
       | If _, _ -> -1
@@ -183,9 +181,9 @@ end = struct
     match Expression.location_sensitive_compare left.test right.test with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match Option.compare Expression.location_sensitive_compare left.message right.message with
-      | x when not (Int.equal x 0) -> x
-      | _ -> Origin.location_sensitive_compare left.origin right.origin )
+        match Option.compare Expression.location_sensitive_compare left.message right.message with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Origin.location_sensitive_compare left.origin right.origin )
 end
 
 and Attribute : sig
@@ -375,19 +373,22 @@ end = struct
     match [%compare: Reference.t] left.name right.name with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match
-        List.compare Expression.Call.Argument.location_sensitive_compare left.bases right.bases
-      with
-      | x when not (Int.equal x 0) -> x
-      | _ -> (
-        match List.compare Statement.location_sensitive_compare left.body right.body with
+        match
+          List.compare Expression.Call.Argument.location_sensitive_compare left.bases right.bases
+        with
         | x when not (Int.equal x 0) -> x
         | _ -> (
-          match
-            List.compare Expression.location_sensitive_compare left.decorators right.decorators
-          with
-          | x when not (Int.equal x 0) -> x
-          | _ -> [%compare: string option] left.docstring right.docstring ) ) )
+            match List.compare Statement.location_sensitive_compare left.body right.body with
+            | x when not (Int.equal x 0) -> x
+            | _ -> (
+                match
+                  List.compare
+                    Expression.location_sensitive_compare
+                    left.decorators
+                    right.decorators
+                with
+                | x when not (Int.equal x 0) -> x
+                | _ -> [%compare: string option] left.docstring right.docstring ) ) )
 
 
   let constructors ?(in_test = false) { body; _ } =
@@ -476,9 +477,7 @@ end = struct
             Attribute.name ~parent:name target
             |> function
             | Some name ->
-                let attribute =
-                  Attribute.create_simple ~location ~name ~value ~primitive:true ()
-                in
+                let attribute = Attribute.create_simple ~location ~name ~value ~primitive:true () in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute
             | _ -> map
           in
@@ -520,8 +519,7 @@ end = struct
                   | _ -> None
                 in
                 value
-                >>| (fun value ->
-                      Attribute.create_simple ~location ~name ~value ~primitive:true ())
+                >>| (fun value -> Attribute.create_simple ~location ~name ~value ~primitive:true ())
                 >>| (fun data -> Identifier.SerializableMap.set map ~key:name ~data)
                 |> Option.value ~default:map
             | _ -> map
@@ -582,8 +580,7 @@ end = struct
           String.Set.exists Recognized.classproperty_decorators ~f:(Define.has_decorator define)
         in
         let getter ~is_class_property =
-          Some
-            (Getter { name; annotation = return_annotation; is_class_property; async; location })
+          Some (Getter { name; annotation = return_annotation; is_class_property; async; location })
         in
         if is_instance_property () then
           getter ~is_class_property:false
@@ -630,19 +627,19 @@ end = struct
         let property_attributes =
           let property_attributes map = function
             | { Node.location; value = Statement.Define define } -> (
-              match PropertyDefine.create ~location define with
-              | Some (Setter { name; _ } as kind)
-              | Some (Getter { name; _ } as kind) ->
-                  let data =
-                    Identifier.SerializableMap.find_opt name map
-                    |> Option.value ~default:(None, None)
-                    |> fun (existing_getter, existing_setter) ->
-                    match kind with
-                    | Setter setter -> existing_getter, Some setter
-                    | Getter getter -> Some getter, existing_setter
-                  in
-                  Identifier.SerializableMap.set map ~key:name ~data
-              | None -> map )
+                match PropertyDefine.create ~location define with
+                | Some (Setter { name; _ } as kind)
+                | Some (Getter { name; _ } as kind) ->
+                    let data =
+                      Identifier.SerializableMap.find_opt name map
+                      |> Option.value ~default:(None, None)
+                      |> fun (existing_getter, existing_setter) ->
+                      match kind with
+                      | Setter setter -> existing_getter, Some setter
+                      | Getter getter -> Some getter, existing_setter
+                    in
+                    Identifier.SerializableMap.set map ~key:name ~data
+                | None -> map )
             | _ -> map
           in
           let consolidate = function
@@ -1110,36 +1107,37 @@ end = struct
       match [%compare: Reference.t] left.name right.name with
       | x when not (Int.equal x 0) -> x
       | _ -> (
-        match
-          List.compare
-            Expression.Parameter.location_sensitive_compare
-            left.parameters
-            right.parameters
-        with
-        | x when not (Int.equal x 0) -> x
-        | _ -> (
           match
-            List.compare Expression.location_sensitive_compare left.decorators right.decorators
+            List.compare
+              Expression.Parameter.location_sensitive_compare
+              left.parameters
+              right.parameters
           with
           | x when not (Int.equal x 0) -> x
           | _ -> (
-            match [%compare: string option] left.docstring right.docstring with
-            | x when not (Int.equal x 0) -> x
-            | _ -> (
               match
-                Option.compare
-                  Expression.location_sensitive_compare
-                  left.return_annotation
-                  right.return_annotation
+                List.compare Expression.location_sensitive_compare left.decorators right.decorators
               with
               | x when not (Int.equal x 0) -> x
               | _ -> (
-                match Bool.compare left.async right.async with
-                | x when not (Int.equal x 0) -> x
-                | _ -> (
-                  match Bool.compare left.generator right.generator with
+                  match [%compare: string option] left.docstring right.docstring with
                   | x when not (Int.equal x 0) -> x
-                  | _ -> [%compare: Reference.t option] left.parent right.parent ) ) ) ) ) )
+                  | _ -> (
+                      match
+                        Option.compare
+                          Expression.location_sensitive_compare
+                          left.return_annotation
+                          right.return_annotation
+                      with
+                      | x when not (Int.equal x 0) -> x
+                      | _ -> (
+                          match Bool.compare left.async right.async with
+                          | x when not (Int.equal x 0) -> x
+                          | _ -> (
+                              match Bool.compare left.generator right.generator with
+                              | x when not (Int.equal x 0) -> x
+                              | _ -> [%compare: Reference.t option] left.parent right.parent ) ) ) )
+              ) )
 
 
     let create_toplevel ~qualifier =
@@ -1342,10 +1340,7 @@ end = struct
               {
                 Node.value =
                   Expression.Call
-                    {
-                      callee = { Node.value = Expression.Name (Name.Identifier identifier); _ };
-                      _;
-                    };
+                    { callee = { Node.value = Expression.Name (Name.Identifier identifier); _ }; _ };
                 _;
               };
           _;
@@ -1461,8 +1456,7 @@ end = struct
       | ({ Node.location; value = simple } as head), tail ->
           let annotation =
             let annotation = function
-              | { Node.value = { Attribute.annotation = Some annotation; _ }; _ } ->
-                  Some annotation
+              | { Node.value = { Attribute.annotation = Some annotation; _ }; _ } -> Some annotation
               | _ -> None
             in
             match List.filter_map ~f:annotation (head :: tail) with
@@ -1672,15 +1666,17 @@ end = struct
     match Expression.location_sensitive_compare left.target right.target with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match Expression.location_sensitive_compare left.iterator right.iterator with
-      | x when not (Int.equal x 0) -> x
-      | _ -> (
-        match List.compare Statement.location_sensitive_compare left.body right.body with
+        match Expression.location_sensitive_compare left.iterator right.iterator with
         | x when not (Int.equal x 0) -> x
         | _ -> (
-          match List.compare Statement.location_sensitive_compare left.orelse right.orelse with
-          | x when not (Int.equal x 0) -> x
-          | _ -> Bool.compare left.async right.async ) ) )
+            match List.compare Statement.location_sensitive_compare left.body right.body with
+            | x when not (Int.equal x 0) -> x
+            | _ -> (
+                match
+                  List.compare Statement.location_sensitive_compare left.orelse right.orelse
+                with
+                | x when not (Int.equal x 0) -> x
+                | _ -> Bool.compare left.async right.async ) ) )
 end
 
 and If : sig
@@ -1712,9 +1708,9 @@ end = struct
     match Expression.location_sensitive_compare left.test right.test with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match List.compare Statement.location_sensitive_compare left.body right.body with
-      | x when not (Int.equal x 0) -> x
-      | _ -> List.compare Statement.location_sensitive_compare left.orelse right.orelse )
+        match List.compare Statement.location_sensitive_compare left.body right.body with
+        | x when not (Int.equal x 0) -> x
+        | _ -> List.compare Statement.location_sensitive_compare left.orelse right.orelse )
 end
 
 and Try : sig
@@ -1767,9 +1763,9 @@ end = struct
       match Option.compare Expression.location_sensitive_compare left.kind right.kind with
       | x when not (Int.equal x 0) -> x
       | _ -> (
-        match [%compare: Identifier.t option] left.name right.name with
-        | x when not (Int.equal x 0) -> x
-        | _ -> List.compare Statement.location_sensitive_compare left.body right.body )
+          match [%compare: Identifier.t option] left.name right.name with
+          | x when not (Int.equal x 0) -> x
+          | _ -> List.compare Statement.location_sensitive_compare left.body right.body )
   end
 
   type t = {
@@ -1858,9 +1854,7 @@ end = struct
                              });
                     };
                   arguments =
-                    [
-                      { Call.Argument.name = None; value = { Node.location; value = Tuple values } };
-                    ];
+                    [{ Call.Argument.name = None; value = { Node.location; value = Tuple values } }];
                 };
           }
         in
@@ -1882,12 +1876,12 @@ end = struct
     match List.compare Statement.location_sensitive_compare left.body right.body with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match List.compare Handler.location_sensitive_compare left.handlers right.handlers with
-      | x when not (Int.equal x 0) -> x
-      | _ -> (
-        match List.compare Statement.location_sensitive_compare left.orelse right.orelse with
+        match List.compare Handler.location_sensitive_compare left.handlers right.handlers with
         | x when not (Int.equal x 0) -> x
-        | _ -> List.compare Statement.location_sensitive_compare left.finally right.finally ) )
+        | _ -> (
+            match List.compare Statement.location_sensitive_compare left.orelse right.orelse with
+            | x when not (Int.equal x 0) -> x
+            | _ -> List.compare Statement.location_sensitive_compare left.finally right.finally ) )
 end
 
 and While : sig
@@ -1919,9 +1913,9 @@ end = struct
     match Expression.location_sensitive_compare left.test right.test with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match List.compare Statement.location_sensitive_compare left.body right.body with
-      | x when not (Int.equal x 0) -> x
-      | _ -> List.compare Statement.location_sensitive_compare left.orelse right.orelse )
+        match List.compare Statement.location_sensitive_compare left.body right.body with
+        | x when not (Int.equal x 0) -> x
+        | _ -> List.compare Statement.location_sensitive_compare left.orelse right.orelse )
 end
 
 and With : sig
@@ -1968,9 +1962,9 @@ end = struct
     match List.compare location_sensitive_compare_item left.items right.items with
     | x when not (Int.equal x 0) -> x
     | _ -> (
-      match List.compare Statement.location_sensitive_compare left.body right.body with
-      | x when not (Int.equal x 0) -> x
-      | _ -> Bool.compare left.async right.async )
+        match List.compare Statement.location_sensitive_compare left.body right.body with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Bool.compare left.async right.async )
 
 
   let preamble { items; async; _ } =
@@ -2483,13 +2477,8 @@ module PrettyPrinter = struct
         match from with
         | None -> Format.fprintf formatter "@[<v>import %a@]" pp_imports imports
         | Some from ->
-            Format.fprintf
-              formatter
-              "@[<v>from %a import %a@]"
-              Reference.pp
-              from
-              pp_imports
-              imports )
+            Format.fprintf formatter "@[<v>from %a import %a@]" Reference.pp from pp_imports imports
+        )
     | Nonlocal nonlocal_list -> pp_list formatter String.pp "," nonlocal_list
     | Pass -> Format.fprintf formatter "%s" "pass"
     | Raise { Raise.expression; _ } ->

@@ -151,8 +151,8 @@ let test_incremental_check context =
       |}]
     ~expected:
       [
-        "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-         `foo` but got `A`.";
+        "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` \
+         but got `A`.";
       ];
 
   assert_incremental_check_errors

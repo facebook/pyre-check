@@ -786,8 +786,7 @@ let test_less_or_equal context =
     (less_or_equal
        order
        ~left:(Type.variable ~constraints:(Type.Variable.Bound !!"A") "T")
-       ~right:
-         (Type.union [Type.variable ~constraints:(Type.Variable.Bound !!"A") "T"; Type.string]));
+       ~right:(Type.union [Type.variable ~constraints:(Type.Variable.Bound !!"A") "T"; Type.string]));
   assert_true
     (less_or_equal
        order
@@ -819,8 +818,7 @@ let test_less_or_equal context =
     (less_or_equal
        order
        ~left:(Type.variable ~constraints:Type.Variable.Unconstrained "T")
-       ~right:
-         (Type.union [Type.variable ~constraints:Type.Variable.Unconstrained "T"; Type.string]));
+       ~right:(Type.union [Type.variable ~constraints:Type.Variable.Unconstrained "T"; Type.string]));
   assert_true
     (less_or_equal
        order
@@ -896,9 +894,9 @@ let test_less_or_equal context =
                ~class_name:"MatchesProtocol"
                ["__call__", callable])
       | annotation -> (
-        match attributes with
-        | Some attributes -> attributes annotation
-        | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation) )
+          match attributes with
+          | Some attributes -> attributes annotation
+          | None -> failwith ("getting attributes for wrong class" ^ Type.show annotation) )
     in
     let aliases = create_type_alias_table aliases in
     less_or_equal
@@ -1102,14 +1100,12 @@ let test_less_or_equal context =
   assert_true
     (less_or_equal
        order
-       ~left:
-         "mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]"
+       ~left:"mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]"
        ~right:"mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int))]");
   assert_false
     (less_or_equal
        order
-       ~left:
-         "mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]"
+       ~left:"mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]"
        ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
   assert_false
     (less_or_equal
@@ -2335,11 +2331,7 @@ let test_meet _ =
     assert_meet ~order:multiplane_variance_order "B[int, float]" "A[int, float]" "B[int, float]";
     assert_meet ~order:multiplane_variance_order "B[int, int]" "A[int, float]" "B[int, int]";
     assert_meet ~order:multiplane_variance_order "B[float, int]" "A[int, float]" "B[float, int]";
-    assert_meet
-      ~order:multiplane_variance_order
-      "B[float, float]"
-      "A[int, float]"
-      "B[float, float]";
+    assert_meet ~order:multiplane_variance_order "B[float, float]" "A[int, float]" "B[float, float]";
     assert_meet ~order:multiplane_variance_order "B[int, float]" "A[float, float]" "B[int, float]";
     assert_meet ~order:multiplane_variance_order "B[int, int]" "A[float, float]" "B[int, int]";
     assert_meet ~order:multiplane_variance_order "B[float, int]" "A[float, float]" "B[float, int]";
@@ -2942,8 +2934,8 @@ let test_solve_less_or_equal context =
     ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
     [["V", "[int, int]"]];
 
-  (* We currently do not find a way to take both [int, int] and [int, str]. A correct solution
-     would be [int, Intersection[int, str]]. This is probably not desired *)
+  (* We currently do not find a way to take both [int, int] and [int, str]. A correct solution would
+     be [int, Intersection[int, str]]. This is probably not desired *)
   assert_solve
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, str], int]]"
     ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
@@ -3099,10 +3091,7 @@ let test_solve_less_or_equal context =
     ~left:"UserDefinedVariadic[int, str]"
     ~right:"UserDefinedVariadic[int, T]"
     [["T", "str"]];
-  assert_solve
-    ~left:"UserDefinedVariadic[int, str]"
-    ~right:"UserDefinedVariadic[int, str, bool]"
-    [];
+  assert_solve ~left:"UserDefinedVariadic[int, str]" ~right:"UserDefinedVariadic[int, str, bool]" [];
 
   (* All variadics are invariant for now *)
   assert_solve ~left:"UserDefinedVariadic[int, str]" ~right:"UserDefinedVariadic[float, str]" [];
@@ -3177,9 +3166,7 @@ let test_instantiate_protocol_parameters context =
            ~allow_invalid_type_parameters:true
     in
     let optional_ordered_types_printer optional =
-      optional
-      >>| Format.asprintf "%a" Type.OrderedTypes.pp_concise
-      |> Option.value ~default:"None"
+      optional >>| Format.asprintf "%a" Type.OrderedTypes.pp_concise |> Option.value ~default:"None"
     in
     let parse_attributes =
       let parse_class (class_name, attributes) =
@@ -3270,9 +3257,7 @@ let test_instantiate_protocol_parameters context =
     ~source:"class P(): pass"
     ~classes:["A", ["method", "typing.Callable[[int], str]"]]
     ~protocols:
-      [
-        "P", ["method", "typing.Callable[[int], str]"; "othermethod", "typing.Callable[[int], str]"];
-      ]
+      ["P", ["method", "typing.Callable[[int], str]"; "othermethod", "typing.Callable[[int], str]"]]
     ~candidate:"A"
     ~protocol:"P"
     None;
@@ -3384,8 +3369,7 @@ let test_mark_escaped_as_escaped context =
   in
   let result =
     let handler =
-      AnnotatedGlobalEnvironment.ReadOnly.resolution environment
-      |> GlobalResolution.class_hierarchy
+      AnnotatedGlobalEnvironment.ReadOnly.resolution environment |> GlobalResolution.class_hierarchy
     in
     let handler =
       {

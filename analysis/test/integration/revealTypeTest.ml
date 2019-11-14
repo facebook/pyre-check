@@ -108,9 +108,7 @@ let test_reveal_type context =
     {|
       reveal_type(typing.List[int])
     |}
-    [
-      "Revealed type [-1]: Revealed type for `typing.List[int]` is `typing.Type[typing.List[int]]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `typing.List[int]` is `typing.Type[typing.List[int]]`."];
   assert_type_errors
     {|
        x = 1.0

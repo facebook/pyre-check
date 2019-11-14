@@ -364,8 +364,7 @@ let test_constructors context =
         def __init__(self, x:_K, y:_V) -> None: pass
     |}
     "Foo[int, str]"
-    (Some
-       "typing.Callable('test.Foo.__init__')[[Named(x, int), Named(y, str)], test.Foo[int, str]]");
+    (Some "typing.Callable('test.Foo.__init__')[[Named(x, int), Named(y, str)], test.Foo[int, str]]");
 
   (* Constructors, both __init__ and __new__, are inherited from parents. *)
   assert_constructor
@@ -429,9 +428,7 @@ let test_has_method context =
     | _ -> false
   in
   let assert_has_method source target_method = assert_true (get_actual source target_method) in
-  let assert_not_has_method source target_method =
-    assert_false (get_actual source target_method)
-  in
+  let assert_not_has_method source target_method = assert_false (get_actual source target_method) in
   assert_not_has_method "class A: pass" "foo";
   assert_has_method
     {|
@@ -526,8 +523,7 @@ let test_class_attributes context =
       name
     =
     +{
-       StatementAttribute.kind =
-         Simple { annotation; frozen; implicit; primitive; toplevel; value };
+       StatementAttribute.kind = Simple { annotation; frozen; implicit; primitive; toplevel; value };
        name;
      }
   in

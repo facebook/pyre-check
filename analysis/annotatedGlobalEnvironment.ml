@@ -176,10 +176,7 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
     let current_and_previous_unannotated_globals =
       UnannotatedGlobalEnvironment.UpdateResult.current_and_previous_unannotated_globals upstream
     in
-    List.fold
-      ~init:current_and_previous_unannotated_globals
-      ~f:Set.add
-      current_and_previous_classes
+    List.fold ~init:current_and_previous_unannotated_globals ~f:Set.add current_and_previous_classes
 
 
   let all_keys class_metadata_environment =

@@ -30,8 +30,8 @@ type issue = {
 }
 [@@deriving sexp]
 
-(* Compute all flows from paths in ~source tree to corresponding paths in ~sink tree, while
-   avoiding duplication as much as possible.
+(* Compute all flows from paths in ~source tree to corresponding paths in ~sink tree, while avoiding
+   duplication as much as possible.
 
    Strategy:
 
@@ -191,9 +191,7 @@ let to_json ~filename_lookup callable issue =
   let source_traces =
     Domains.ForwardTaint.to_external_json ~filename_lookup issue.flow.source_taint
   in
-  let sink_traces =
-    Domains.BackwardTaint.to_external_json ~filename_lookup issue.flow.sink_taint
-  in
+  let sink_traces = Domains.BackwardTaint.to_external_json ~filename_lookup issue.flow.sink_taint in
   let traces =
     `List
       [

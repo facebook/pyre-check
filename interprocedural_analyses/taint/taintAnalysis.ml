@@ -48,15 +48,15 @@ include TaintResult.Register (struct
     match model_directories with
     | [] -> Callable.Map.empty
     | _ -> (
-      try
-        let directories = List.map model_directories ~f:Path.create_absolute in
-        let configuration = Configuration.create ~rule_filter ~directories in
-        Configuration.register configuration;
-        Model.get_model_sources ~directories |> create_models ~configuration
-      with
-      | exn ->
-          Log.error "Error getting taint models: %s" (Exn.to_string exn);
-          raise exn )
+        try
+          let directories = List.map model_directories ~f:Path.create_absolute in
+          let configuration = Configuration.create ~rule_filter ~directories in
+          Configuration.register configuration;
+          Model.get_model_sources ~directories |> create_models ~configuration
+        with
+        | exn ->
+            Log.error "Error getting taint models: %s" (Exn.to_string exn);
+            raise exn )
 
 
   let analyze ~callable:_ ~environment ~define ~mode existing_model =

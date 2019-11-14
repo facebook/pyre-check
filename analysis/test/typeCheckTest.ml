@@ -137,9 +137,7 @@ let test_initial context =
     ~annotations:["x", Type.integer];
   assert_initial
     ~errors:
-      [
-        "Missing parameter annotation [2]: Parameter `x` has type `float` but no type is specified.";
-      ]
+      ["Missing parameter annotation [2]: Parameter `x` has type `float` but no type is specified."]
     ~annotations:["x", Type.float]
     "def foo(x = 1.0) -> None: ...";
   assert_initial
@@ -777,9 +775,7 @@ let test_forward_expression context =
   assert_forward
     "((element, independent) for element in [1] for independent in ['string'])"
     (Type.generator (Type.tuple [Type.integer; Type.string]));
-  assert_forward
-    "(nested for element in [[1]] for nested in element)"
-    (Type.generator Type.integer);
+  assert_forward "(nested for element in [[1]] for nested in element)" (Type.generator Type.integer);
   assert_forward ~errors:(`Undefined 1) "(undefined for element in [1])" (Type.generator Type.Top);
   assert_forward
     ~errors:(`Undefined 1)
@@ -1398,9 +1394,8 @@ let test_forward_statement context =
       (`Specific
         [
           "Incompatible parameter type [6]: "
-          ^ "Expected `typing.Union[typing.Type[typing.Any], \
-             typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd anonymous parameter to call \
-             `isinstance` "
+          ^ "Expected `typing.Union[typing.Type[typing.Any], typing.Tuple[typing.Type[typing.Any], \
+             ...]]` for 2nd anonymous parameter to call `isinstance` "
           ^ "but got `int`.";
         ])
     ["x", Type.integer]
@@ -1461,11 +1456,7 @@ let test_forward_statement context =
     ["x", Type.integer]
     "assert not isinstance(x + 1, int)"
     ["x", Type.integer];
-  assert_forward
-    ~bottom:false
-    ["x", Type.Bottom]
-    "assert not isinstance(x, int)"
-    ["x", Type.Bottom];
+  assert_forward ~bottom:false ["x", Type.Bottom] "assert not isinstance(x, int)" ["x", Type.Bottom];
   assert_forward ~bottom:true [] "assert False" [];
   assert_forward ~bottom:false [] "assert (not True)" [];
 
@@ -1474,8 +1465,8 @@ let test_forward_statement context =
     ~errors:
       (`Specific
         [
-          "Invalid Exception [48]: Expression `1` has type `typing_extensions.Literal[1]` but \
-           must extend BaseException.";
+          "Invalid Exception [48]: Expression `1` has type `typing_extensions.Literal[1]` but must \
+           extend BaseException.";
         ])
     []
     "raise 1"
@@ -1572,9 +1563,7 @@ let test_coverage context =
     in
     assert_equal ~printer:Coverage.show expected coverage
   in
-  assert_coverage
-    {| def foo(): pass |}
-    { Coverage.full = 0; partial = 0; untyped = 0; crashes = 0 };
+  assert_coverage {| def foo(): pass |} { Coverage.full = 0; partial = 0; untyped = 0; crashes = 0 };
   assert_coverage
     {|
       def foo(y: int):
@@ -1647,9 +1636,7 @@ let test_calls context =
         |> String.Set.of_list
       in
       let actual_callees =
-        let show { Dependencies.Callgraph.callee; _ } =
-          Dependencies.Callgraph.show_callee callee
-        in
+        let show { Dependencies.Callgraph.callee; _ } = Dependencies.Callgraph.show_callee callee in
         Dependencies.Callgraph.get ~caller:(Reference.create caller)
         |> List.map ~f:show
         |> String.Set.of_list

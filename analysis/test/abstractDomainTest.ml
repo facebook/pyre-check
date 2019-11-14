@@ -42,9 +42,7 @@ module TestAbstractDomain (Domain : AbstractDomainUnderTest) = struct
 
   let test_cartesian ~title ~f values =
     let test_values index (v1, v2) =
-      let name =
-        Format.sprintf "%s@%d: %s with %s" title index (Domain.show v1) (Domain.show v2)
-      in
+      let name = Format.sprintf "%s@%d: %s with %s" title index (Domain.show v1) (Domain.show v2) in
       name >:: fun _ -> f v1 v2
     in
     List.mapi (List.cartesian_product values values) ~f:test_values
@@ -756,12 +754,7 @@ module AbstractElementSet = struct
 
   let values =
     let open AbstractElement in
-    [
-      singleton (C ("x", 0));
-      singleton (C ("x", 6));
-      singleton (C ("y", 0));
-      singleton (C ("y", 6));
-    ]
+    [singleton (C ("x", 0)); singleton (C ("x", 6)); singleton (C ("y", 0)); singleton (C ("y", 6))]
 
 
   let accumulate_elements_as_strings list element = AbstractElement.show_short element :: list
@@ -910,10 +903,7 @@ module PairStringString = struct
 
   let build left right =
     product
-      [
-        Element (Slots.Left, StringSet.of_list left);
-        Element (Slots.Right, StringSet.of_list right);
-      ]
+      [Element (Slots.Left, StringSet.of_list left); Element (Slots.Right, StringSet.of_list right)]
 
 
   let unrelated = [build ["a"; "b"] ["c"; "d"]; build ["c"; "d"] []; build [] ["e"]]
@@ -978,14 +968,12 @@ module PairStringString = struct
       ~initial:(["a"; "b"], ["b"; "c"])
       ~by:(ProductSlot (Left, StringSet.Element))
       ~f:Fn.id
-      ~expected:
-        ["a", "left: (set(a)), right: (set(b c))"; "b", "left: (set(b)), right: (set(b c))"];
+      ~expected:["a", "left: (set(a)), right: (set(b c))"; "b", "left: (set(b)), right: (set(b c))"];
     test
       ~initial:(["a"; "b"], ["b"; "c"])
       ~by:(ProductSlot (Right, StringSet.Element))
       ~f:Fn.id
-      ~expected:
-        ["b", "left: (set(a b)), right: (set(b))"; "c", "left: (set(a b)), right: (set(c))"]
+      ~expected:["b", "left: (set(a b)), right: (set(b))"; "c", "left: (set(a b)), right: (set(c))"]
 
 
   let compare left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
@@ -1462,11 +1450,7 @@ module OverUnderStringSet = struct
       assert_equal expected actual ~printer:(fun elements ->
           Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
     in
-    test
-      ~initial:["a"; "b"]
-      ~by:Element
-      ~f:(fun element -> "t." ^ element)
-      ~expected:["t.a"; "t.b"];
+    test ~initial:["a"; "b"] ~by:Element ~f:(fun element -> "t." ^ element) ~expected:["t.a"; "t.b"];
     test ~initial:["a"; "b"] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["a"; "b"; "c"];
     test ~initial:[] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["c"];
     test_elements

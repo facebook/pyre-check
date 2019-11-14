@@ -306,9 +306,9 @@ let code = function
   | IncompatibleAwaitableType _ -> 12
   | UninitializedAttribute _ -> 13
   | InconsistentOverride { override; _ } -> (
-    match override with
-    | StrengthenedPrecondition _ -> 14
-    | WeakenedPostcondition _ -> 15 )
+      match override with
+      | StrengthenedPrecondition _ -> 14
+      | WeakenedPostcondition _ -> 15 )
   | UndefinedAttribute _ -> 16
   | IncompatibleConstructorAnnotation _ -> 17
   | UndefinedName _ -> 18
@@ -436,10 +436,7 @@ let weaken_literals kind =
   | InconsistentOverride
       ({ override = StrengthenedPrecondition (Found mismatch); _ } as inconsistent) ->
       InconsistentOverride
-        {
-          inconsistent with
-          override = StrengthenedPrecondition (Found (weaken_mismatch mismatch));
-        }
+        { inconsistent with override = StrengthenedPrecondition (Found (weaken_mismatch mismatch)) }
   | IncompatibleParameterType ({ mismatch; _ } as incompatible) ->
       IncompatibleParameterType { incompatible with mismatch = weaken_mismatch mismatch }
   | IncompatibleReturnType ({ mismatch; _ } as incompatible) ->
@@ -459,8 +456,7 @@ let weaken_literals kind =
       ProhibitedAny
         { is_type_alias; missing_annotation = weaken_missing_annotation missing_annotation }
   | Unpack { expected_count; unpack_problem = UnacceptableType annotation } ->
-      Unpack
-        { expected_count; unpack_problem = UnacceptableType (Type.weaken_literals annotation) }
+      Unpack { expected_count; unpack_problem = UnacceptableType (Type.weaken_literals annotation) }
   | IncompatibleAwaitableType annotation ->
       IncompatibleAwaitableType (Type.weaken_literals annotation)
   | NotCallable annotation -> NotCallable (Type.weaken_literals annotation)
@@ -565,45 +561,45 @@ let messages ~concise ~signature location kind =
   | IncompatibleAwaitableType actual ->
       [Format.asprintf "Expected an awaitable but got `%a`." pp_type actual]
   | IncompatibleOverload kind -> (
-    match kind with
-    | ReturnType { implementation_annotation; name; overload_annotation } ->
-        [
-          Format.asprintf
-            "The return type of overloaded function `%a` (`%a`) is incompatible with the return \
-             type of the implementation (`%a`)."
-            pp_reference
-            name
-            pp_type
-            overload_annotation
-            pp_type
-            implementation_annotation;
-        ]
-    | Unmatchable { name; _ } when concise ->
-        [
-          Format.asprintf
-            "Signature of overloaded function `%a` will never be matched."
-            pp_reference
-            name;
-        ]
-    | Unmatchable { name; matched_location; unmatched_location } ->
-        [
-          Format.asprintf
-            "The overloaded function `%a` on line %d will never be matched. The signature of \
-             overload on line %d is the same or broader."
-            pp_reference
-            name
-            (Location.line unmatched_location)
-            (Location.line matched_location);
-        ]
-    | Parameters { name; location } ->
-        [
-          Format.asprintf
-            "The implementation of `%a` does not accept all possible arguments of overload \
-             defined on line `%d`."
-            pp_reference
-            name
-            (Location.line location);
-        ] )
+      match kind with
+      | ReturnType { implementation_annotation; name; overload_annotation } ->
+          [
+            Format.asprintf
+              "The return type of overloaded function `%a` (`%a`) is incompatible with the return \
+               type of the implementation (`%a`)."
+              pp_reference
+              name
+              pp_type
+              overload_annotation
+              pp_type
+              implementation_annotation;
+          ]
+      | Unmatchable { name; _ } when concise ->
+          [
+            Format.asprintf
+              "Signature of overloaded function `%a` will never be matched."
+              pp_reference
+              name;
+          ]
+      | Unmatchable { name; matched_location; unmatched_location } ->
+          [
+            Format.asprintf
+              "The overloaded function `%a` on line %d will never be matched. The signature of \
+               overload on line %d is the same or broader."
+              pp_reference
+              name
+              (Location.line unmatched_location)
+              (Location.line matched_location);
+          ]
+      | Parameters { name; location } ->
+          [
+            Format.asprintf
+              "The implementation of `%a` does not accept all possible arguments of overload \
+               defined on line `%d`."
+              pp_reference
+              name
+              (Location.line location);
+          ] )
   | IncompatibleParameterType
       { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } ->
       let trace =
@@ -638,8 +634,8 @@ let messages ~concise ~signature location kind =
           pp_type
           annotation;
       ]
-  | IncompatibleReturnType
-      { mismatch = { actual; expected; due_to_invariance; _ }; is_implicit; _ } ->
+  | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance; _ }; is_implicit; _ }
+    ->
       let trace =
         Format.asprintf
           "Type `%a` expected on line %d, specified on line %d.%s"
@@ -787,83 +783,83 @@ let messages ~concise ~signature location kind =
           (if concise then "" else " " ^ detail);
       ]
   | InvalidArgument argument when concise -> (
-    match argument with
-    | Keyword _ -> ["Keyword argument must be a mapping with string keys."]
-    | ConcreteVariable _ -> ["Variable argument must be an iterable."]
-    | ListVariadicVariable { variable; mismatch = ConstraintFailure _ } ->
-        [
-          Format.asprintf
-            "Variable argument conflicts with constraints on `%a`."
-            Type.OrderedTypes.pp_concise
-            variable;
-        ]
-    | ListVariadicVariable { variable; mismatch = NotDefiniteTuple _ } ->
-        [
-          Format.asprintf
-            "Variable argument for `%a` must be a definite tuple."
-            Type.OrderedTypes.pp_concise
-            variable;
-        ]
-    | ListVariadicVariable { variable; mismatch = CantConcatenate _ } ->
-        [
-          Format.asprintf
-            "Concatenating multiple ListVariadics for variable `%a` is not yet supported."
-            Type.OrderedTypes.pp_concise
-            variable;
-        ] )
+      match argument with
+      | Keyword _ -> ["Keyword argument must be a mapping with string keys."]
+      | ConcreteVariable _ -> ["Variable argument must be an iterable."]
+      | ListVariadicVariable { variable; mismatch = ConstraintFailure _ } ->
+          [
+            Format.asprintf
+              "Variable argument conflicts with constraints on `%a`."
+              Type.OrderedTypes.pp_concise
+              variable;
+          ]
+      | ListVariadicVariable { variable; mismatch = NotDefiniteTuple _ } ->
+          [
+            Format.asprintf
+              "Variable argument for `%a` must be a definite tuple."
+              Type.OrderedTypes.pp_concise
+              variable;
+          ]
+      | ListVariadicVariable { variable; mismatch = CantConcatenate _ } ->
+          [
+            Format.asprintf
+              "Concatenating multiple ListVariadics for variable `%a` is not yet supported."
+              Type.OrderedTypes.pp_concise
+              variable;
+          ] )
   | InvalidArgument argument -> (
-    match argument with
-    | Keyword { expression; annotation } ->
-        [
-          Format.asprintf
-            "Keyword argument `%s` has type `%a` but must be a mapping with string keys."
-            (show_sanitized_expression expression)
-            pp_type
-            annotation;
-        ]
-    | ConcreteVariable { expression; annotation } ->
-        [
-          Format.asprintf
-            "Variable argument `%s` has type `%a` but must be an iterable."
-            (show_sanitized_expression expression)
-            pp_type
-            annotation;
-        ]
-    | ListVariadicVariable { variable; mismatch = ConstraintFailure ordered_types } ->
-        [
-          Format.asprintf
-            "Types `%a` conflict with existing constraints on `%a`."
-            (Type.Record.OrderedTypes.pp_concise ~pp_type)
-            ordered_types
-            (Type.Record.OrderedTypes.pp_concise ~pp_type)
-            variable;
-        ]
-    | ListVariadicVariable { variable; mismatch = NotDefiniteTuple { expression; annotation } } ->
-        [
-          Format.asprintf
-            "Variable argument `%s` has type `%a` but must be a definite tuple to be included in \
-             variadic type variable `%a`."
-            (show_sanitized_expression expression)
-            pp_type
-            annotation
-            (Type.Record.OrderedTypes.pp_concise ~pp_type)
-            variable;
-        ]
-    | ListVariadicVariable { variable; mismatch = CantConcatenate unconcatenatable } ->
-        let unconcatenatable =
-          List.map
-            unconcatenatable
-            ~f:(Format.asprintf "%a" (Type.Record.OrderedTypes.pp_concise ~pp_type))
-          |> String.concat ~sep:", "
-        in
-        [
-          Format.asprintf
-            "Variadic type variable `%a` cannot be made to contain `%s`, concatenation of \
-             multiple variadic type variables is not yet implemented."
-            (Type.Record.OrderedTypes.pp_concise ~pp_type)
-            variable
-            unconcatenatable;
-        ] )
+      match argument with
+      | Keyword { expression; annotation } ->
+          [
+            Format.asprintf
+              "Keyword argument `%s` has type `%a` but must be a mapping with string keys."
+              (show_sanitized_expression expression)
+              pp_type
+              annotation;
+          ]
+      | ConcreteVariable { expression; annotation } ->
+          [
+            Format.asprintf
+              "Variable argument `%s` has type `%a` but must be an iterable."
+              (show_sanitized_expression expression)
+              pp_type
+              annotation;
+          ]
+      | ListVariadicVariable { variable; mismatch = ConstraintFailure ordered_types } ->
+          [
+            Format.asprintf
+              "Types `%a` conflict with existing constraints on `%a`."
+              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              ordered_types
+              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              variable;
+          ]
+      | ListVariadicVariable { variable; mismatch = NotDefiniteTuple { expression; annotation } } ->
+          [
+            Format.asprintf
+              "Variable argument `%s` has type `%a` but must be a definite tuple to be included in \
+               variadic type variable `%a`."
+              (show_sanitized_expression expression)
+              pp_type
+              annotation
+              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              variable;
+          ]
+      | ListVariadicVariable { variable; mismatch = CantConcatenate unconcatenatable } ->
+          let unconcatenatable =
+            List.map
+              unconcatenatable
+              ~f:(Format.asprintf "%a" (Type.Record.OrderedTypes.pp_concise ~pp_type))
+            |> String.concat ~sep:", "
+          in
+          [
+            Format.asprintf
+              "Variadic type variable `%a` cannot be made to contain `%s`, concatenation of \
+               multiple variadic type variables is not yet implemented."
+              (Type.Record.OrderedTypes.pp_concise ~pp_type)
+              variable
+              unconcatenatable;
+          ] )
   | InvalidException { expression; annotation } ->
       [
         Format.asprintf
@@ -877,26 +873,26 @@ let messages ~concise ~signature location kind =
   | InvalidMethodSignature { name; _ } ->
       [Format.asprintf "Non-static method must specify `%a` parameter." pp_identifier name]
   | InvalidType kind -> (
-    match kind with
-    | FinalNested annotation ->
-        [
-          Format.asprintf
-            "Expression `%a` is not a valid type. Final cannot be nested."
-            pp_type
-            annotation;
-        ]
-    | FinalParameter name ->
-        [Format.asprintf "Parameter `%a` cannot be annotated with Final." pp_identifier name]
-    | InvalidType annotation ->
-        [Format.asprintf "Expression `%a` is not a valid type." pp_type annotation]
-    | NestedTypeVariables variable ->
-        [
-          Format.asprintf
-            "Expression `%a` is not a valid type. Type variables cannot contain other type \
-             variables in their constraints."
-            Type.Variable.pp_concise
-            variable;
-        ] )
+      match kind with
+      | FinalNested annotation ->
+          [
+            Format.asprintf
+              "Expression `%a` is not a valid type. Final cannot be nested."
+              pp_type
+              annotation;
+          ]
+      | FinalParameter name ->
+          [Format.asprintf "Parameter `%a` cannot be annotated with Final." pp_identifier name]
+      | InvalidType annotation ->
+          [Format.asprintf "Expression `%a` is not a valid type." pp_type annotation]
+      | NestedTypeVariables variable ->
+          [
+            Format.asprintf
+              "Expression `%a` is not a valid type. Type variables cannot contain other type \
+               variables in their constraints."
+              Type.Variable.pp_concise
+              variable;
+          ] )
   | InvalidTypeParameters
       { name; kind = GlobalResolution.IncorrectNumberOfParameters { expected; actual } } ->
       let additional =
@@ -990,8 +986,7 @@ let messages ~concise ~signature location kind =
       (* The explicit annotation is necessary to appease the compiler. *)
       let format : ('b, Format.formatter, unit, string) format4 =
         match origin with
-        | ClassToplevel ->
-            "The current class isn't generic with respect to the type variable `%s`."
+        | ClassToplevel -> "The current class isn't generic with respect to the type variable `%s`."
         | Define -> "The type variable `%s` isn't present in the function's parameters."
         | Toplevel ->
             "The type variable `%s` can only be used to annotate generic classes or functions."
@@ -1015,18 +1010,18 @@ let messages ~concise ~signature location kind =
           if equal_type_variable_origin origin ClassToplevel then
             [
               Format.asprintf
-                "Cannot propagate list variadic `%s`.  Classes parameterized by list variadics \
-                 are not supported at this time."
+                "Cannot propagate list variadic `%s`.  Classes parameterized by list variadics are \
+                 not supported at this time."
                 name;
             ]
           else
             [Format.asprintf format name] )
   | InvalidTypeVariance { origin; _ } when concise -> (
-    match origin with
-    | Parameter -> ["Parameter type cannot be covariant."]
-    | Return -> ["Return type cannot be contravariant."]
-    | Inheritance _ ->
-        ["Subclasses cannot use more permissive type variables than their superclasses."] )
+      match origin with
+      | Parameter -> ["Parameter type cannot be covariant."]
+      | Return -> ["Return type cannot be contravariant."]
+      | Inheritance _ ->
+          ["Subclasses cannot use more permissive type variables than their superclasses."] )
   | InvalidTypeVariance { annotation; origin } ->
       let formatted =
         match origin with
@@ -1042,9 +1037,8 @@ let messages ~concise ~signature location kind =
               annotation
         | Inheritance parent ->
             Format.asprintf
-              "The type variable `%a` is incompatible with parent class type variable `%a` \
-               because subclasses cannot use more permissive type variables than their \
-               superclasses."
+              "The type variable `%a` is incompatible with parent class type variable `%a` because \
+               subclasses cannot use more permissive type variables than their superclasses."
               pp_type
               annotation
               pp_type
@@ -1055,20 +1049,20 @@ let messages ~concise ~signature location kind =
         "See `https://pyre-check.org/docs/error-types.html#35-invalid-type-variance` for details.";
       ]
   | InvalidInheritance invalid_inheritance -> (
-    match invalid_inheritance with
-    | ClassName class_name ->
-        [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
-    | NonMethodFunction decorator_name ->
-        [
-          Format.asprintf
-            "`%a` cannot be used with non-method functions."
-            pp_identifier
-            decorator_name;
-        ]
-    | UninheritableType (TypedDictionary _) ->
-        [Format.asprintf "Building TypedDicts up through inheritance is not yet supported."]
-    | UninheritableType annotation ->
-        [Format.asprintf "`%a` is not a valid parent class." pp_type annotation] )
+      match invalid_inheritance with
+      | ClassName class_name ->
+          [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
+      | NonMethodFunction decorator_name ->
+          [
+            Format.asprintf
+              "`%a` cannot be used with non-method functions."
+              pp_identifier
+              decorator_name;
+          ]
+      | UninheritableType (TypedDictionary _) ->
+          [Format.asprintf "Building TypedDicts up through inheritance is not yet supported."]
+      | UninheritableType annotation ->
+          [Format.asprintf "`%a` is not a valid parent class." pp_type annotation] )
   | InvalidOverride { parent; decorator } ->
       let preamble, message =
         match decorator with
@@ -1087,53 +1081,57 @@ let messages ~concise ~signature location kind =
           parent;
       ]
   | InvalidAssignment kind -> (
-    match kind with
-    | FinalAttribute name ->
-        [Format.asprintf "Cannot reassign final attribute `%a`." pp_reference name]
-    | ClassVariable _ when concise -> ["Assigning to class variable through instance."]
-    | ClassVariable { class_variable; class_name } ->
-        [
-          Format.asprintf
-            "Assigning to class variable through instance, did you mean to assign to `%a.%a` \
-             instead?"
-            pp_identifier
-            class_name
-            pp_identifier
-            class_variable;
-        ]
-    | ReadOnly name ->
-        [
-          Format.asprintf "`%a` cannot be reassigned. It is a read-only property." pp_reference name;
-        ] )
-  | InvalidClassInstantiation kind -> (
-    match kind with
-    | ProtocolInstantiation class_name ->
-        [Format.asprintf "Cannot instantiate protocol `%a`." pp_reference class_name]
-    | AbstractClassInstantiation { class_name; abstract_methods } ->
-        let method_message =
-          let to_string methods =
-            List.map methods ~f:(fun name -> Format.sprintf "`%s`" name) |> String.concat ~sep:", "
-          in
-          let number_to_keep = 3 in
-          if List.length abstract_methods <= number_to_keep then
+      match kind with
+      | FinalAttribute name ->
+          [Format.asprintf "Cannot reassign final attribute `%a`." pp_reference name]
+      | ClassVariable _ when concise -> ["Assigning to class variable through instance."]
+      | ClassVariable { class_variable; class_name } ->
+          [
             Format.asprintf
-              " with abstract method%s %s."
-              (if List.length abstract_methods > 1 then "s" else "")
-              (to_string abstract_methods)
-          else
-            let examples = List.take abstract_methods number_to_keep |> to_string in
-            Format.sprintf
-              " with %s and %d additional abstract methods."
-              examples
-              (List.length abstract_methods - number_to_keep)
-        in
-        [
-          Format.asprintf
-            "Cannot instantiate abstract class `%a`%s"
-            pp_reference
-            class_name
-            (if concise then "." else method_message);
-        ] )
+              "Assigning to class variable through instance, did you mean to assign to `%a.%a` \
+               instead?"
+              pp_identifier
+              class_name
+              pp_identifier
+              class_variable;
+          ]
+      | ReadOnly name ->
+          [
+            Format.asprintf
+              "`%a` cannot be reassigned. It is a read-only property."
+              pp_reference
+              name;
+          ] )
+  | InvalidClassInstantiation kind -> (
+      match kind with
+      | ProtocolInstantiation class_name ->
+          [Format.asprintf "Cannot instantiate protocol `%a`." pp_reference class_name]
+      | AbstractClassInstantiation { class_name; abstract_methods } ->
+          let method_message =
+            let to_string methods =
+              List.map methods ~f:(fun name -> Format.sprintf "`%s`" name)
+              |> String.concat ~sep:", "
+            in
+            let number_to_keep = 3 in
+            if List.length abstract_methods <= number_to_keep then
+              Format.asprintf
+                " with abstract method%s %s."
+                (if List.length abstract_methods > 1 then "s" else "")
+                (to_string abstract_methods)
+            else
+              let examples = List.take abstract_methods number_to_keep |> to_string in
+              Format.sprintf
+                " with %s and %d additional abstract methods."
+                examples
+                (List.length abstract_methods - number_to_keep)
+          in
+          [
+            Format.asprintf
+              "Cannot instantiate abstract class `%a`%s"
+              pp_reference
+              class_name
+              (if concise then "." else method_message);
+          ] )
   | MissingArgument { parameter = AnnotatedSignature.Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { parameter = AnnotatedSignature.Anonymous index; _ } when concise ->
@@ -1158,29 +1156,92 @@ let messages ~concise ~signature location kind =
       else
         ["Attribute must be annotated."]
   | MissingAttributeAnnotation { parent; missing_annotation } -> (
-    match missing_annotation with
-    | { name; annotation = Some annotation; given_annotation; _ }
-      when not (Type.is_concrete annotation) -> (
-      match given_annotation with
-      | Some given_annotation when Type.is_any given_annotation ->
-          [
+      match missing_annotation with
+      | { name; annotation = Some annotation; given_annotation; _ }
+        when not (Type.is_concrete annotation) -> (
+          match given_annotation with
+          | Some given_annotation when Type.is_any given_annotation ->
+              [
+                Format.asprintf
+                  "Attribute `%a` of class `%a` must have a type other than `Any`."
+                  pp_reference
+                  name
+                  pp_type
+                  parent;
+              ]
+          | Some given_annotation when Type.contains_any given_annotation ->
+              [
+                Format.asprintf
+                  "Attribute `%a` of class `%a` must have a type that does not contain `Any`."
+                  pp_reference
+                  name
+                  pp_type
+                  parent;
+              ]
+          | _ ->
+              [
+                Format.asprintf
+                  "Attribute `%a` of class `%a` has no type specified."
+                  pp_reference
+                  name
+                  pp_type
+                  parent;
+              ] )
+      | { name; annotation = Some annotation; evidence_locations; given_annotation; _ } -> (
+          let trace =
+            let evidence_string =
+              evidence_locations
+              |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+              |> String.concat ~sep:", "
+            in
             Format.asprintf
-              "Attribute `%a` of class `%a` must have a type other than `Any`."
+              "Attribute `%a` declared on line %d, type `%a` deduced from %s."
               pp_reference
               name
+              start_line
               pp_type
-              parent;
-          ]
-      | Some given_annotation when Type.contains_any given_annotation ->
-          [
-            Format.asprintf
-              "Attribute `%a` of class `%a` must have a type that does not contain `Any`."
-              pp_reference
-              name
-              pp_type
-              parent;
-          ]
-      | _ ->
+              annotation
+              evidence_string
+          in
+          match given_annotation with
+          | Some given_annotation when Type.is_any given_annotation ->
+              [
+                Format.asprintf
+                  "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
+                  pp_reference
+                  name
+                  pp_type
+                  parent
+                  pp_type
+                  annotation;
+                trace;
+              ]
+          | Some given_annotation when Type.contains_any given_annotation ->
+              [
+                Format.asprintf
+                  "Attribute `%a` of class `%a` is used as type `%a` and must have a type that \
+                   does not contain `Any`."
+                  pp_reference
+                  name
+                  pp_type
+                  parent
+                  pp_type
+                  annotation;
+                trace;
+              ]
+          | _ ->
+              [
+                Format.asprintf
+                  "Attribute `%a` of class `%a` has type `%a` but no type is specified."
+                  pp_reference
+                  name
+                  pp_type
+                  parent
+                  pp_type
+                  annotation;
+                trace;
+              ] )
+      | { name; annotation = None; _ } ->
           [
             Format.asprintf
               "Attribute `%a` of class `%a` has no type specified."
@@ -1189,69 +1250,6 @@ let messages ~concise ~signature location kind =
               pp_type
               parent;
           ] )
-    | { name; annotation = Some annotation; evidence_locations; given_annotation; _ } -> (
-        let trace =
-          let evidence_string =
-            evidence_locations
-            |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
-            |> String.concat ~sep:", "
-          in
-          Format.asprintf
-            "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-            pp_reference
-            name
-            start_line
-            pp_type
-            annotation
-            evidence_string
-        in
-        match given_annotation with
-        | Some given_annotation when Type.is_any given_annotation ->
-            [
-              Format.asprintf
-                "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
-                pp_reference
-                name
-                pp_type
-                parent
-                pp_type
-                annotation;
-              trace;
-            ]
-        | Some given_annotation when Type.contains_any given_annotation ->
-            [
-              Format.asprintf
-                "Attribute `%a` of class `%a` is used as type `%a` and must have a type that does \
-                 not contain `Any`."
-                pp_reference
-                name
-                pp_type
-                parent
-                pp_type
-                annotation;
-              trace;
-            ]
-        | _ ->
-            [
-              Format.asprintf
-                "Attribute `%a` of class `%a` has type `%a` but no type is specified."
-                pp_reference
-                name
-                pp_type
-                parent
-                pp_type
-                annotation;
-              trace;
-            ] )
-    | { name; annotation = None; _ } ->
-        [
-          Format.asprintf
-            "Attribute `%a` of class `%a` has no type specified."
-            pp_reference
-            name
-            pp_type
-            parent;
-        ] )
   | MissingGlobalAnnotation { given_annotation; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Global annotation cannot be `Any`."]
@@ -1321,29 +1319,29 @@ let messages ~concise ~signature location kind =
               evidence_string;
           ] )
   | MissingGlobalAnnotation { name; given_annotation; _ } -> (
-    match given_annotation with
-    | Some given_annotation when Type.is_any given_annotation ->
-        [
-          Format.asprintf
-            "Globally accessible variable `%a` must be specified as type other than `Any`."
-            pp_reference
-            name;
-        ]
-    | Some given_annotation when Type.contains_any given_annotation ->
-        [
-          Format.asprintf
-            "Globally accessible variable `%a` must be specified as type that does not contain \
-             `Any`."
-            pp_reference
-            name;
-        ]
-    | _ ->
-        [
-          Format.asprintf
-            "Globally accessible variable `%a` has no type specified."
-            pp_reference
-            name;
-        ] )
+      match given_annotation with
+      | Some given_annotation when Type.is_any given_annotation ->
+          [
+            Format.asprintf
+              "Globally accessible variable `%a` must be specified as type other than `Any`."
+              pp_reference
+              name;
+          ]
+      | Some given_annotation when Type.contains_any given_annotation ->
+          [
+            Format.asprintf
+              "Globally accessible variable `%a` must be specified as type that does not contain \
+               `Any`."
+              pp_reference
+              name;
+          ]
+      | _ ->
+          [
+            Format.asprintf
+              "Globally accessible variable `%a` has no type specified."
+              pp_reference
+              name;
+          ] )
   | MissingOverloadImplementation name ->
       [Format.asprintf "Overloaded function `%a` must have an implementation." pp_reference name]
   | MissingParameterAnnotation { given_annotation; _ } when concise ->
@@ -1355,46 +1353,47 @@ let messages ~concise ~signature location kind =
         ["Parameter must be annotated."]
   | MissingParameterAnnotation { name; annotation = Some annotation; given_annotation; _ }
     when Type.is_concrete annotation -> (
-    match given_annotation with
-    | Some given_annotation when Type.is_any given_annotation ->
-        [
-          Format.asprintf
-            "Parameter `%a` has type `%a` but type `Any` is specified."
-            pp_reference
-            name
-            pp_type
-            annotation;
-        ]
-    | Some given_annotation when Type.contains_any given_annotation ->
-        [
-          Format.asprintf
-            "Parameter `%a` is used as type `%a` and must have a type that does not contain `Any`."
-            pp_reference
-            name
-            pp_type
-            annotation;
-        ]
-    | _ ->
-        [
-          Format.asprintf
-            "Parameter `%a` has type `%a` but no type is specified."
-            pp_reference
-            name
-            pp_type
-            annotation;
-        ] )
+      match given_annotation with
+      | Some given_annotation when Type.is_any given_annotation ->
+          [
+            Format.asprintf
+              "Parameter `%a` has type `%a` but type `Any` is specified."
+              pp_reference
+              name
+              pp_type
+              annotation;
+          ]
+      | Some given_annotation when Type.contains_any given_annotation ->
+          [
+            Format.asprintf
+              "Parameter `%a` is used as type `%a` and must have a type that does not contain \
+               `Any`."
+              pp_reference
+              name
+              pp_type
+              annotation;
+          ]
+      | _ ->
+          [
+            Format.asprintf
+              "Parameter `%a` has type `%a` but no type is specified."
+              pp_reference
+              name
+              pp_type
+              annotation;
+          ] )
   | MissingParameterAnnotation { name; given_annotation; _ } -> (
-    match given_annotation with
-    | Some given_annotation when Type.is_any given_annotation ->
-        [Format.asprintf "Parameter `%a` must have a type other than `Any`." pp_reference name]
-    | Some given_annotation when Type.contains_any given_annotation ->
-        [
-          Format.asprintf
-            "Parameter `%a` must have a type that does not contain `Any`."
-            pp_reference
-            name;
-        ]
-    | _ -> [Format.asprintf "Parameter `%a` has no type specified." pp_reference name] )
+      match given_annotation with
+      | Some given_annotation when Type.is_any given_annotation ->
+          [Format.asprintf "Parameter `%a` must have a type other than `Any`." pp_reference name]
+      | Some given_annotation when Type.contains_any given_annotation ->
+          [
+            Format.asprintf
+              "Parameter `%a` must have a type that does not contain `Any`."
+              pp_reference
+              name;
+          ]
+      | _ -> [Format.asprintf "Parameter `%a` has no type specified." pp_reference name] )
   | MissingReturnAnnotation { given_annotation; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Return annotation cannot be `Any`."]
@@ -1437,12 +1436,12 @@ let messages ~concise ~signature location kind =
             trace;
           ] )
   | MissingReturnAnnotation { given_annotation; _ } -> (
-    match given_annotation with
-    | Some given_annotation when Type.is_any given_annotation ->
-        ["Return type must be specified as type other than `Any`."]
-    | Some given_annotation when Type.contains_any given_annotation ->
-        ["Return type must be specified as type that does not contain `Any`."]
-    | _ -> ["Return type is not specified."] )
+      match given_annotation with
+      | Some given_annotation when Type.is_any given_annotation ->
+          ["Return type must be specified as type other than `Any`."]
+      | Some given_annotation when Type.contains_any given_annotation ->
+          ["Return type must be specified as type that does not contain `Any`."]
+      | _ -> ["Return type is not specified."] )
   | MutuallyRecursiveTypeVariables callee ->
       let callee =
         match callee with
@@ -1451,8 +1450,8 @@ let messages ~concise ~signature location kind =
       in
       [Format.asprintf "Solving type variables for %s led to infinite recursion." callee]
   | NotCallable
-      ( Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ }
-      as annotation ) ->
+      ( Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ } as
+      annotation ) ->
       [
         Format.asprintf
           "`%a` cannot be safely called because the types and kinds of its parameters depend on a \
@@ -1470,36 +1469,35 @@ let messages ~concise ~signature location kind =
   | ProhibitedAny
       { missing_annotation = { name; annotation = Some annotation; given_annotation; _ }; _ }
     when Type.is_concrete annotation -> (
-    match given_annotation with
-    | Some given_annotation when Type.is_any given_annotation ->
-        [
-          Format.asprintf
-            "Expression `%a` has type `%a`; given explicit type cannot be `Any`."
-            pp_reference
-            name
-            pp_type
-            annotation;
-        ]
-    | _ ->
-        [
-          Format.asprintf
-            "Expression `%a` is used as type `%a`; given explicit type cannot contain `Any`."
-            pp_reference
-            name
-            pp_type
-            annotation;
-        ] )
-  | ProhibitedAny { is_type_alias = false; missing_annotation = { name; given_annotation; _ } }
-    -> (
-    match given_annotation with
-    | Some given_annotation when Type.is_any given_annotation ->
-        [Format.asprintf "Explicit annotation for `%a` cannot be `Any`." pp_reference name]
-    | _ -> [Format.asprintf "Explicit annotation for `%a` cannot contain `Any`." pp_reference name]
-    )
+      match given_annotation with
+      | Some given_annotation when Type.is_any given_annotation ->
+          [
+            Format.asprintf
+              "Expression `%a` has type `%a`; given explicit type cannot be `Any`."
+              pp_reference
+              name
+              pp_type
+              annotation;
+          ]
+      | _ ->
+          [
+            Format.asprintf
+              "Expression `%a` is used as type `%a`; given explicit type cannot contain `Any`."
+              pp_reference
+              name
+              pp_type
+              annotation;
+          ] )
+  | ProhibitedAny { is_type_alias = false; missing_annotation = { name; given_annotation; _ } } -> (
+      match given_annotation with
+      | Some given_annotation when Type.is_any given_annotation ->
+          [Format.asprintf "Explicit annotation for `%a` cannot be `Any`." pp_reference name]
+      | _ ->
+          [Format.asprintf "Explicit annotation for `%a` cannot contain `Any`." pp_reference name] )
   | ProhibitedAny { is_type_alias = true; missing_annotation = { name; given_annotation; _ } } -> (
-    match given_annotation with
-    | Some Type.Any -> [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
-    | _ -> [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name] )
+      match given_annotation with
+      | Some Type.Any -> [Format.asprintf "`%a` cannot alias to `Any`." pp_reference name]
+      | _ -> [Format.asprintf "`%a` cannot alias to a type containing `Any`." pp_reference name] )
   | RedefinedClass { shadowed_class; _ } when concise ->
       [Format.asprintf "Class `%a` redefined" pp_reference shadowed_class]
   | RedefinedClass { current_class; shadowed_class; is_shadowed_class_imported } ->
@@ -1600,17 +1598,17 @@ let messages ~concise ~signature location kind =
             missing_key;
         ]
   | Unpack { expected_count; unpack_problem } -> (
-    match unpack_problem with
-    | UnacceptableType bad_type ->
-        [Format.asprintf "Unable to unpack `%a` into %d values." pp_type bad_type expected_count]
-    | CountMismatch actual_count ->
-        let value_message =
-          if actual_count = 1 then
-            "single value"
-          else
-            Format.sprintf "%d values" actual_count
-        in
-        [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count] )
+      match unpack_problem with
+      | UnacceptableType bad_type ->
+          [Format.asprintf "Unable to unpack `%a` into %d values." pp_type bad_type expected_count]
+      | CountMismatch actual_count ->
+          let value_message =
+            if actual_count = 1 then
+              "single value"
+            else
+              Format.sprintf "%d values" actual_count
+          in
+          [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count] )
   | UnawaitedAwaitable { references = []; expression } ->
       [
         Format.asprintf "`%s` is never awaited." (show_sanitized_expression expression);
@@ -1690,9 +1688,7 @@ let messages ~concise ~signature location kind =
         | Some name -> Format.asprintf "call `%a`" pp_reference name
         | _ -> "anonymous call"
       in
-      [
-        Format.asprintf "Unexpected keyword argument `%s` to %s." (Identifier.sanitized name) callee;
-      ]
+      [Format.asprintf "Unexpected keyword argument `%s` to %s." (Identifier.sanitized name) callee]
   | UninitializedAttribute { name; parent; mismatch = { expected; _ }; kind } ->
       let message =
         if concise then
@@ -1764,19 +1760,13 @@ let messages ~concise ~signature location kind =
 
 
 let inference_information
-    ~signature:{
-                 Node.value =
-                   {
-                     Define.Signature.name;
-                     parameters;
-                     return_annotation;
-                     decorators;
-                     parent;
-                     async;
-                     _;
-                   } as signature;
-                 _;
-               }
+    ~signature:
+      {
+        Node.value =
+          { Define.Signature.name; parameters; return_annotation; decorators; parent; async; _ } as
+          signature;
+        _;
+      }
     kind
   =
   let print_annotation annotation =
@@ -2009,13 +1999,13 @@ let less_or_equal ~resolution left right =
   | IncompatibleReturnType left, IncompatibleReturnType right ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | IncompatibleOverload left, IncompatibleOverload right -> (
-    match left, right with
-    | ReturnType left, ReturnType right ->
-        Type.equal left.implementation_annotation right.implementation_annotation
-        && Type.equal left.overload_annotation right.overload_annotation
-        && Reference.equal left.name right.name
-    | Unmatchable left, Unmatchable right -> Reference.equal left.name right.name
-    | _, _ -> false )
+      match left, right with
+      | ReturnType left, ReturnType right ->
+          Type.equal left.implementation_annotation right.implementation_annotation
+          && Type.equal left.overload_annotation right.overload_annotation
+          && Reference.equal left.name right.name
+      | Unmatchable left, Unmatchable right -> Reference.equal left.name right.name
+      | _, _ -> false )
   | ( IncompleteType
         { target = left_target; annotation = left; attempted_action = left_attempted_action },
       IncompleteType
@@ -2031,15 +2021,15 @@ let less_or_equal ~resolution left right =
     when Reference.equal left.name right.name ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | InconsistentOverride left, InconsistentOverride right -> (
-    match left.override, right.override with
-    | ( StrengthenedPrecondition (NotFound left_parameter),
-        StrengthenedPrecondition (NotFound right_parameter) ) ->
-        Type.Callable.Parameter.equal Type.equal left_parameter right_parameter
-    | ( StrengthenedPrecondition (Found left_mismatch),
-        StrengthenedPrecondition (Found right_mismatch) )
-    | WeakenedPostcondition left_mismatch, WeakenedPostcondition right_mismatch ->
-        less_or_equal_mismatch left_mismatch right_mismatch
-    | _ -> false )
+      match left.override, right.override with
+      | ( StrengthenedPrecondition (NotFound left_parameter),
+          StrengthenedPrecondition (NotFound right_parameter) ) ->
+          Type.Callable.Parameter.equal Type.equal left_parameter right_parameter
+      | ( StrengthenedPrecondition (Found left_mismatch),
+          StrengthenedPrecondition (Found right_mismatch) )
+      | WeakenedPostcondition left_mismatch, WeakenedPostcondition right_mismatch ->
+          less_or_equal_mismatch left_mismatch right_mismatch
+      | _ -> false )
   | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
     when Expression.equal left.expression right.expression ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
@@ -2047,10 +2037,10 @@ let less_or_equal ~resolution left right =
     when Expression.equal left.expression right.expression ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidMethodSignature left, InvalidMethodSignature right -> (
-    match left.annotation, right.annotation with
-    | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
-    | None, None -> true
-    | _ -> false )
+      match left.annotation, right.annotation with
+      | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
+      | None, None -> true
+      | _ -> false )
   | InvalidType (FinalParameter left), InvalidType (FinalParameter right) ->
       Identifier.equal left right
   | InvalidType (InvalidType left), InvalidType (InvalidType right)
@@ -2066,28 +2056,28 @@ let less_or_equal ~resolution left right =
       GlobalResolution.less_or_equal resolution ~left ~right
       && equal_type_variance_origin left_origin right_origin
   | InvalidInheritance left, InvalidInheritance right -> (
-    match left, right with
-    | ClassName left, ClassName right
-    | NonMethodFunction left, NonMethodFunction right ->
-        Identifier.equal_sanitized left right
-    | _, _ -> false )
+      match left, right with
+      | ClassName left, ClassName right
+      | NonMethodFunction left, NonMethodFunction right ->
+          Identifier.equal_sanitized left right
+      | _, _ -> false )
   | ( InvalidOverride { parent = left_parent; decorator = left_decorator },
       InvalidOverride { parent = right_parent; decorator = right_decorator } ) -> (
-    match left_decorator, right_decorator with
-    | Final, Final
-    | StaticSuper, StaticSuper
-    | StaticOverride, StaticOverride ->
-        Identifier.equal_sanitized left_parent right_parent
-    | _, _ -> false )
+      match left_decorator, right_decorator with
+      | Final, Final
+      | StaticSuper, StaticSuper
+      | StaticOverride, StaticOverride ->
+          Identifier.equal_sanitized left_parent right_parent
+      | _, _ -> false )
   | InvalidAssignment left, InvalidAssignment right -> (
-    match left, right with
-    | ReadOnly left, ReadOnly right
-    | FinalAttribute left, FinalAttribute right ->
-        Reference.equal left right
-    | ClassVariable left, ClassVariable right ->
-        Identifier.equal left.class_variable right.class_variable
-        && Identifier.equal left.class_name right.class_name
-    | _, _ -> false )
+      match left, right with
+      | ReadOnly left, ReadOnly right
+      | FinalAttribute left, FinalAttribute right ->
+          Reference.equal left right
+      | ClassVariable left, ClassVariable right ->
+          Identifier.equal left.class_variable right.class_variable
+          && Identifier.equal left.class_name right.class_name
+      | _, _ -> false )
   | ( MissingArgument { callee = left_callee; parameter = Named left_name },
       MissingArgument { callee = right_callee; parameter = Named right_name } ) ->
       Option.equal Reference.equal_sanitized left_callee right_callee
@@ -2098,11 +2088,12 @@ let less_or_equal ~resolution left right =
   | InvalidException left, InvalidException right ->
       GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidClassInstantiation left, InvalidClassInstantiation right -> (
-    match left, right with
-    | ProtocolInstantiation left_name, ProtocolInstantiation right_name
-    | AbstractClassInstantiation { class_name = left_name; _ }, ProtocolInstantiation right_name ->
-        Reference.equal left_name right_name
-    | _, _ -> false )
+      match left, right with
+      | ProtocolInstantiation left_name, ProtocolInstantiation right_name
+      | AbstractClassInstantiation { class_name = left_name; _ }, ProtocolInstantiation right_name
+        ->
+          Reference.equal left_name right_name
+      | _, _ -> false )
   | ProhibitedAny { missing_annotation = left; _ }, ProhibitedAny { missing_annotation = right; _ }
   | MissingParameterAnnotation left, MissingParameterAnnotation right
   | MissingReturnAnnotation left, MissingReturnAnnotation right
@@ -2110,10 +2101,10 @@ let less_or_equal ~resolution left right =
       MissingAttributeAnnotation { missing_annotation = right; _ } )
   | MissingGlobalAnnotation left, MissingGlobalAnnotation right
     when Reference.equal_sanitized left.name right.name -> (
-    match left.annotation, right.annotation with
-    | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
-    | None, None -> true
-    | _ -> false )
+      match left.annotation, right.annotation with
+      | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
+      | None, None -> true
+      | _ -> false )
   | MissingOverloadImplementation left, MissingOverloadImplementation right ->
       Reference.equal left right
   | NotCallable left, NotCallable right -> GlobalResolution.less_or_equal resolution ~left ~right
@@ -2133,17 +2124,17 @@ let less_or_equal ~resolution left right =
       Option.equal Reference.equal_sanitized left.callee right.callee
       && left.expected = right.expected
       && left.provided = right.provided
-  | UninitializedAttribute left, UninitializedAttribute right
-    when String.equal left.name right.name ->
+  | UninitializedAttribute left, UninitializedAttribute right when String.equal left.name right.name
+    ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | UnawaitedAwaitable left, UnawaitedAwaitable right -> equal_unawaited_awaitable left right
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
-    match left.origin, right.origin with
-    | Class left, Class right when Bool.equal left.class_attribute right.class_attribute ->
-        GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
-    | Module left, Module right -> Reference.equal_sanitized left right
-    | _ -> false )
+      match left.origin, right.origin with
+      | Class left, Class right when Bool.equal left.class_attribute right.class_attribute ->
+          GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+      | Module left, Module right -> Reference.equal_sanitized left right
+      | _ -> false )
   | UndefinedName left, UndefinedName right when Reference.equal_sanitized left right -> true
   | UndefinedType left, UndefinedType right -> Type.equal left right
   | UnexpectedKeyword left, UnexpectedKeyword right ->
@@ -2259,8 +2250,7 @@ let join ~resolution left right =
     | ( IncompleteType
           { target = left_target; annotation = left; attempted_action = left_attempted_action },
         IncompleteType
-          { target = right_target; annotation = right; attempted_action = right_attempted_action }
-      )
+          { target = right_target; annotation = right; attempted_action = right_attempted_action } )
       when Expression.equal left_target right_target
            && equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action
       ->
@@ -2322,8 +2312,7 @@ let join ~resolution left right =
           },
         RevealedType
           {
-            annotation =
-              { Annotation.annotation = right_annotation; mutability = right_mutability };
+            annotation = { Annotation.annotation = right_annotation; mutability = right_mutability };
             expression = right_expression;
           } )
       when Expression.equal left_expression right_expression
@@ -2364,17 +2353,16 @@ let join ~resolution left right =
           { parent = left.parent; incompatible_type = { left.incompatible_type with mismatch } }
     | IncompatibleVariableType left, IncompatibleVariableType right
       when Reference.equal left.name right.name ->
-        IncompatibleVariableType
-          { left with mismatch = join_mismatch left.mismatch right.mismatch }
+        IncompatibleVariableType { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | ( InconsistentOverride ({ override = StrengthenedPrecondition left_issue; _ } as left),
         InconsistentOverride ({ override = StrengthenedPrecondition right_issue; _ } as right) )
       -> (
-      match left_issue, right_issue with
-      | Found left_mismatch, Found right_mismatch ->
-          let mismatch = join_mismatch left_mismatch right_mismatch in
-          InconsistentOverride { left with override = StrengthenedPrecondition (Found mismatch) }
-      | NotFound _, _ -> InconsistentOverride left
-      | _, NotFound _ -> InconsistentOverride right )
+        match left_issue, right_issue with
+        | Found left_mismatch, Found right_mismatch ->
+            let mismatch = join_mismatch left_mismatch right_mismatch in
+            InconsistentOverride { left with override = StrengthenedPrecondition (Found mismatch) }
+        | NotFound _, _ -> InconsistentOverride left
+        | _, NotFound _ -> InconsistentOverride right )
     | ( InconsistentOverride ({ override = WeakenedPostcondition left_mismatch; _ } as left),
         InconsistentOverride { override = WeakenedPostcondition right_mismatch; _ } ) ->
         let mismatch = join_mismatch left_mismatch right_mismatch in
@@ -2431,8 +2419,7 @@ let join ~resolution left right =
     | UninitializedAttribute left, UninitializedAttribute right
       when String.equal left.name right.name && Type.equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
-    | UnawaitedAwaitable left, UnawaitedAwaitable right when equal_unawaited_awaitable left right
-      ->
+    | UnawaitedAwaitable left, UnawaitedAwaitable right when equal_unawaited_awaitable left right ->
         UnawaitedAwaitable left
     | ( UndefinedAttribute { origin = Class left; attribute = left_attribute },
         UndefinedAttribute { origin = Class right; attribute = right_attribute } )
@@ -2646,10 +2633,10 @@ let filter ~configuration ~resolution errors =
                      ~left:annotation
                      ~right:(Type.Primitive "unittest.mock.Base")
                  || (* Special-case mypy's workaround for mocks. *)
-                    GlobalResolution.less_or_equal
-                      resolution
-                      ~left:annotation
-                      ~right:(Type.Primitive "unittest.mock.NonCallableMock") )
+                 GlobalResolution.less_or_equal
+                   resolution
+                   ~left:annotation
+                   ~right:(Type.Primitive "unittest.mock.NonCallableMock") )
             with
             | ClassHierarchy.Untracked _ -> false
           in
@@ -2675,9 +2662,9 @@ let filter ~configuration ~resolution errors =
       | InconsistentOverride { overridden_method; override; _ }
         when String.is_prefix ~prefix:"__" overridden_method
              && String.is_suffix ~suffix:"__" overridden_method -> (
-        match override with
-        | StrengthenedPrecondition (NotFound _) -> true
-        | _ -> false )
+          match override with
+          | StrengthenedPrecondition (NotFound _) -> true
+          | _ -> false )
       | _ -> false
     in
     let is_unnecessary_missing_annotation_error { kind; _ } =
@@ -2700,13 +2687,13 @@ let filter ~configuration ~resolution errors =
       | IncompatibleAttributeType
           { incompatible_type = { mismatch = { expected; actual; _ }; _ }; _ }
       | IncompatibleVariableType { mismatch = { expected; actual; _ }; _ } -> (
-        match actual with
-        | Type.Callable _ ->
-            GlobalResolution.less_or_equal
-              resolution
-              ~left:(Type.Callable.create ~annotation:Type.Top ())
-              ~right:expected
-        | _ -> false )
+          match actual with
+          | Type.Callable _ ->
+              GlobalResolution.less_or_equal
+                resolution
+                ~left:(Type.Callable.create ~annotation:Type.Top ())
+                ~right:expected
+          | _ -> false )
       | _ -> false
     in
     let is_callable_attribute_error { kind; _ } =
@@ -2738,12 +2725,12 @@ let filter ~configuration ~resolution errors =
     let is_invalid_abstract_error { kind; _ } =
       match kind with
       | InvalidClassInstantiation (AbstractClassInstantiation { class_name; _ }) -> (
-        match Reference.show class_name with
-        | "int"
-        | "float"
-        | "bool" ->
-            true
-        | _ -> false )
+          match Reference.show class_name with
+          | "int"
+          | "float"
+          | "bool" ->
+              true
+          | _ -> false )
       | _ -> false
     in
     Location.equal Location.Reference.synthetic location
@@ -2776,8 +2763,7 @@ let suppress ~mode ~ignore_codes error =
   in
   let suppress_in_default ({ kind; signature = { Node.value = signature; _ }; _ } as error) =
     match kind with
-    | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
-        false
+    | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } -> false
     | InconsistentOverride
         { override = StrengthenedPrecondition (Found { expected = Type.Variable _; _ }); _ } ->
         true
@@ -2861,8 +2847,7 @@ let dequalify
   let dequalify_invalid_class_instantiation = function
     | ProtocolInstantiation reference -> ProtocolInstantiation (dequalify_reference reference)
     | AbstractClassInstantiation { class_name; abstract_methods } ->
-        AbstractClassInstantiation
-          { class_name = dequalify_reference class_name; abstract_methods }
+        AbstractClassInstantiation { class_name = dequalify_reference class_name; abstract_methods }
   in
   let dequalify_invalid_inheritance = function
     | ClassName name -> ClassName (dequalify_identifier name)
@@ -2971,8 +2956,7 @@ let dequalify
         TooManyArguments { extra_argument with callee = Option.map ~f:dequalify_reference callee }
     | Top -> Top
     | MissingParameterAnnotation ({ annotation; _ } as missing_annotation) ->
-        MissingParameterAnnotation
-          { missing_annotation with annotation = annotation >>| dequalify }
+        MissingParameterAnnotation { missing_annotation with annotation = annotation >>| dequalify }
     | MissingReturnAnnotation ({ annotation; _ } as missing_return) ->
         MissingReturnAnnotation { missing_return with annotation = annotation >>| dequalify }
     | MissingAttributeAnnotation
@@ -2984,8 +2968,7 @@ let dequalify
           }
     | MissingGlobalAnnotation ({ annotation; _ } as immutable_type) ->
         MissingGlobalAnnotation { immutable_type with annotation = annotation >>| dequalify }
-    | MissingOverloadImplementation name ->
-        MissingOverloadImplementation (dequalify_reference name)
+    | MissingOverloadImplementation name -> MissingOverloadImplementation (dequalify_reference name)
     | MutuallyRecursiveTypeVariables callee ->
         MutuallyRecursiveTypeVariables (Option.map callee ~f:dequalify_reference)
     | NotCallable annotation -> NotCallable (dequalify annotation)
@@ -3018,8 +3001,8 @@ let dequalify
           }
     | IncompatibleReturnType ({ mismatch; _ } as return) ->
         IncompatibleReturnType { return with mismatch = dequalify_mismatch mismatch }
-    | IncompatibleAttributeType
-        { parent; incompatible_type = { mismatch; _ } as incompatible_type } ->
+    | IncompatibleAttributeType { parent; incompatible_type = { mismatch; _ } as incompatible_type }
+      ->
         IncompatibleAttributeType
           {
             parent = dequalify parent;
@@ -3038,8 +3021,8 @@ let dequalify
             override = StrengthenedPrecondition (Found (dequalify_mismatch mismatch));
           }
     | InconsistentOverride
-        ( { override = StrengthenedPrecondition (NotFound access); parent; overridden_method; _ }
-        as inconsistent_override ) ->
+        ( { override = StrengthenedPrecondition (NotFound access); parent; overridden_method; _ } as
+        inconsistent_override ) ->
         InconsistentOverride
           {
             inconsistent_override with

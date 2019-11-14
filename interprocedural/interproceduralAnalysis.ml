@@ -75,9 +75,9 @@ let non_fixpoint_witness ~iteration _kind left right =
       non_fixpoint_witness kind ~iteration ~previous ~next:empty
   | ( Some (Pkg { kind = ModelPart k1; value = previous }),
       Some (Pkg { kind = ModelPart k2; value = next }) ) -> (
-    match Kind.are_equal k1 k2 with
-    | Kind.Equal -> non_fixpoint_witness k1 ~iteration ~previous ~next
-    | Kind.Distinct -> failwith "Wrong kind matched up in fixpoint test." )
+      match Kind.are_equal k1 k2 with
+      | Kind.Equal -> non_fixpoint_witness k1 ~iteration ~previous ~next
+      | Kind.Distinct -> failwith "Wrong kind matched up in fixpoint test." )
 
 
 let reached_fixpoint_model_only ~iteration ~previous ~next =
@@ -264,9 +264,7 @@ let analyze_define
       let akind = Kind.abstract kind in
       let module Analysis = (val analysis) in
       let existing = Result.get (ModelPart kind) old_model.models in
-      let method_result, method_model =
-        Analysis.analyze ~callable ~environment ~define ~existing
-      in
+      let method_result, method_model = Analysis.analyze ~callable ~environment ~define ~existing in
       ( akind,
         Pkg { kind = ModelPart kind; value = method_model },
         Pkg { kind = ResultPart kind; value = method_result } )
@@ -382,26 +380,30 @@ let analyze_callable analyses step callable environment =
   in
   match callable with
   | #Callable.real_target as callable -> (
-    match Callable.get_definition callable ~resolution with
-    | None ->
-        let () = Log.error "Found no definition for %s" (Callable.show callable) in
-        let () =
-          if not (Fixpoint.is_initial_iteration step) then (
-            let message =
-              Format.sprintf
-                "Fixpoint inconsistency: Callable %s without body analyzed past initial step: %s"
-                (Callable.show callable)
-                (Fixpoint.show_step step)
-            in
-            Log.error "%s" message;
-            failwith message )
-        in
-        Fixpoint.
-          { is_partial = false; model = get_obscure_models analyses; result = Result.empty_result }
-    | Some ({ Node.value; _ } as define) ->
-        if Define.dump value then
-          callables_to_dump := Callable.Set.add callable !callables_to_dump;
-        analyze_define step analyses callable environment define )
+      match Callable.get_definition callable ~resolution with
+      | None ->
+          let () = Log.error "Found no definition for %s" (Callable.show callable) in
+          let () =
+            if not (Fixpoint.is_initial_iteration step) then (
+              let message =
+                Format.sprintf
+                  "Fixpoint inconsistency: Callable %s without body analyzed past initial step: %s"
+                  (Callable.show callable)
+                  (Fixpoint.show_step step)
+              in
+              Log.error "%s" message;
+              failwith message )
+          in
+          Fixpoint.
+            {
+              is_partial = false;
+              model = get_obscure_models analyses;
+              result = Result.empty_result;
+            }
+      | Some ({ Node.value; _ } as define) ->
+          if Define.dump value then
+            callables_to_dump := Callable.Set.add callable !callables_to_dump;
+          analyze_define step analyses callable environment define )
   | #Callable.override_target as callable -> analyze_overrides step callable
   | #Callable.object_target as path ->
       Format.asprintf "Found object %a in fixpoint analysis" Callable.pp path |> failwith
@@ -440,11 +442,11 @@ let externalize_analysis ~filename_lookup kind callable models results =
         let module Analysis = (val Result.get_analysis kind1) in
         Analysis.externalize ~filename_lookup callable None model
     | Some (Pkg { kind = ResultPart kind2; value = result }) -> (
-      match Result.Kind.are_equal kind1 kind2 with
-      | Kind.Equal ->
-          let module Analysis = (val Result.get_analysis kind1) in
-          Analysis.externalize ~filename_lookup callable (Some result) model
-      | Kind.Distinct -> failwith "kind mismatch" )
+        match Result.Kind.are_equal kind1 kind2 with
+        | Kind.Equal ->
+            let module Analysis = (val Result.get_analysis kind1) in
+            Analysis.externalize ~filename_lookup callable (Some result) model
+        | Kind.Distinct -> failwith "kind mismatch" )
   in
   Kind.Map.bindings merged |> List.concat_map ~f:get_summaries
 

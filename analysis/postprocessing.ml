@@ -11,8 +11,8 @@ module Error = AnalysisError
 (* General idea: Keep two hash tables - one for unused ignores, and one from ignored lines -> list
    of ignores affecting the line. For each error, process the ignores on that line one by one, and
    remove the used codes from the map of unused ignores. Since the hash tables are initialized with
-   only the sources we're considering, this is sufficient to determine all ignored errors and
-   unused ignores. *)
+   only the sources we're considering, this is sufficient to determine all ignored errors and unused
+   ignores. *)
 let ignore { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
   let unused_ignores, ignore_lookup =
     let unused_ignores = Location.Reference.Table.create () in

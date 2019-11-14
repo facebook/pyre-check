@@ -123,8 +123,8 @@ let test_show_error_traces context =
        test.py:7:4.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`.";
-      "Incompatible return type [7]: Expected `str` but got `unknown`. Type `str` expected on \
-       line 8, specified on line 5.";
+      "Incompatible return type [7]: Expected `str` but got `unknown`. Type `str` expected on line \
+       8, specified on line 5.";
     ];
   assert_type_errors
     {|
@@ -167,9 +167,9 @@ let test_show_error_traces context =
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has no type \
        specified.";
-      "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type `int` \
-       but no type is specified. Attribute `attribute` declared on line 3, type `int` deduced \
-       from test.py:5:4.";
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type `int` but \
+       no type is specified. Attribute `attribute` declared on line 3, type `int` deduced from \
+       test.py:5:4.";
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
        path that doesn't define `x`.";
     ];
@@ -181,9 +181,9 @@ let test_show_error_traces context =
         a = b
     |}
     [
-      "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is \
-       used as type `typing.List[int]`. Redeclare `a` on line 5 if you wish to override the \
-       previously declared type. See \
+      "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is used \
+       as type `typing.List[int]`. Redeclare `a` on line 5 if you wish to override the previously \
+       declared type. See \
        https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches-with-subclassing \
        for mutable container errors.";
     ];

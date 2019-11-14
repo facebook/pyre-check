@@ -130,17 +130,17 @@ let resolve_class ~resolution annotation =
     | annotation when Type.is_meta annotation ->
         Type.single_parameter annotation |> extract ~is_meta:true
     | _ -> (
-      match GlobalResolution.class_definition resolution annotation with
-      | Some class_definition ->
-          Some
-            [
-              {
-                instantiated = original_annotation;
-                class_attributes = is_meta;
-                class_definition = create class_definition;
-              };
-            ]
-      | None -> None )
+        match GlobalResolution.class_definition resolution annotation with
+        | Some class_definition ->
+            Some
+              [
+                {
+                  instantiated = original_annotation;
+                  class_attributes = is_meta;
+                  class_definition = create class_definition;
+                };
+              ]
+        | None -> None )
   in
   extract ~is_meta:false annotation
 
@@ -224,8 +224,7 @@ let rec metaclass ({ Node.value = { ClassSummary.bases; _ }; _ } as original) ~r
         |> List.filter ~f:(fun base_class -> not (equal base_class original))
       in
       let filter_generic_meta base_metaclasses =
-        (* We only want a class directly inheriting from Generic to have a metaclass of
-           GenericMeta. *)
+        (* We only want a class directly inheriting from Generic to have a metaclass of GenericMeta. *)
         if
           List.exists
             ~f:(fun base -> Reference.equal (Reference.create "typing.Generic") (name base))
@@ -360,8 +359,7 @@ let create_attribute
                 else if Define.Signature.is_class_method define then
                   Some (Type.meta instantiated)
                 else if default_class_attribute then
-                  (* Keep first argument around when calling instance methods from class
-                     attributes. *)
+                  (* Keep first argument around when calling instance methods from class attributes. *)
                   None
                 else
                   Some instantiated
@@ -428,14 +426,12 @@ let create_attribute
                 | Concrete generics ->
                     let parameters =
                       let create_parameter annotation =
-                        Type.Callable.Parameter.Anonymous
-                          { index = 0; annotation; default = false }
+                        Type.Callable.Parameter.Anonymous { index = 0; annotation; default = false }
                       in
                       match generics with
                       | [] -> []
                       | [generic] -> [create_parameter (Type.meta generic)]
-                      | generics ->
-                          [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
+                      | generics -> [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
                     in
                     {
                       Type.Callable.annotation =
@@ -444,8 +440,8 @@ let create_attribute
                       define_location = None;
                     }
                 | _ ->
-                    (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and ignore
-                       the others *)
+                    (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and ignore the
+                       others *)
                     {
                       Type.Callable.annotation =
                         Type.meta (Type.Parametric { name; parameters = generics });
@@ -600,10 +596,8 @@ module ClassDecorators = struct
           | _ -> default
         in
         match argument with
-        | {
-         Call.Argument.name = Some { Node.value = argument_name; _ };
-         value = { Node.value; _ };
-        } ->
+        | { Call.Argument.name = Some { Node.value = argument_name; _ }; value = { Node.value; _ } }
+          ->
             let argument_name = Identifier.sanitized argument_name in
             (* We need to check each keyword sequentially because different keywords may correspond
                to the same string. *)
@@ -739,8 +733,7 @@ module ClassDecorators = struct
                     | _ -> true
                   in
                   let extract_init_value
-                      ( { Node.value = { AnnotatedAttribute.initialized; value; _ }; _ } as
-                      attribute )
+                      ({ Node.value = { AnnotatedAttribute.initialized; value; _ }; _ } as attribute)
                     =
                     let get_default_value { Call.Argument.name; value } =
                       match name with
@@ -753,8 +746,7 @@ module ClassDecorators = struct
                             let { Node.location; _ } = value in
                             Some
                               {
-                                Node.value =
-                                  Expression.Call { Call.callee = value; arguments = [] };
+                                Node.value = Expression.Call { Call.callee = value; arguments = [] };
                                 location;
                               }
                           else
@@ -764,9 +756,9 @@ module ClassDecorators = struct
                     match initialized with
                     | false -> None
                     | true -> (
-                      match extract_dataclass_field_arguments attribute with
-                      | Some arguments -> List.find_map arguments ~f:get_default_value
-                      | _ -> Some value )
+                        match extract_dataclass_field_arguments attribute with
+                        | Some arguments -> List.find_map arguments ~f:get_default_value
+                        | _ -> Some value )
                   in
                   let collect_parameters parameters attribute =
                     (* Parameters must be annotated attributes *)
@@ -775,10 +767,8 @@ module ClassDecorators = struct
                       |> Annotation.original
                       |> function
                       | Type.Parametric
-                          {
-                            name = "dataclasses.InitVar";
-                            parameters = Concrete [single_parameter];
-                          } ->
+                          { name = "dataclasses.InitVar"; parameters = Concrete [single_parameter] }
+                        ->
                           single_parameter
                       | annotation -> annotation
                     in

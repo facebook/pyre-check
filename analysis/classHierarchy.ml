@@ -280,14 +280,14 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
     match Queue.dequeue worklist with
     | None -> false
     | Some { Target.target = current; _ } -> (
-      match Hash_set.strict_add visited current with
-      | Error _ -> iterate worklist
-      | Ok () ->
-          if IndexTracker.equal current (index_of target) then
-            true
-          else (
-            Option.iter (Handler.edges current) ~f:(Queue.enqueue_all worklist);
-            iterate worklist ) )
+        match Hash_set.strict_add visited current with
+        | Error _ -> iterate worklist
+        | Ok () ->
+            if IndexTracker.equal current (index_of target) then
+              true
+            else (
+              Option.iter (Handler.edges current) ~f:(Queue.enqueue_all worklist);
+              iterate worklist ) )
   in
   iterate worklist
 
@@ -324,10 +324,10 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
           match Queue.dequeue worklist with
           | Some { Target.target = target_index; parameters } ->
               let instantiated_successors =
-                (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has
-                   concrete parameters, all occurrences of _T1, _T2, etc. in other supertypes need
-                   to be replaced with the concrete parameter corresponding to the type variable.
-                   This function takes a target with concrete parameters and its supertypes, and
+                (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has concrete
+                   parameters, all occurrences of _T1, _T2, etc. in other supertypes need to be
+                   replaced with the concrete parameter corresponding to the type variable. This
+                   function takes a target with concrete parameters and its supertypes, and
                    instantiates the supertypes accordingly. *)
                 let get_instantiated_successors ~generic_index ~parameters successors =
                   let variables =
@@ -341,9 +341,9 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                         let zipped =
                           match parameters with
                           | Type.OrderedTypes.Concrete parameters -> (
-                            match List.zip variables parameters with
-                            | Ok zipped -> Some zipped
-                            | _ -> None )
+                              match List.zip variables parameters with
+                              | Ok zipped -> Some zipped
+                              | _ -> None )
                           | Concatenation _
                           | Any ->
                               None
@@ -392,8 +392,8 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                                 Type.Variable.ListVariadicPair
                                   (Type.OrderedTypes.Concatenation.middle concatenation, Any);
                               ]
-                            @ pair_all_with_any
-                                (Type.OrderedTypes.Concatenation.tail concatenation) )
+                            @ pair_all_with_any (Type.OrderedTypes.Concatenation.tail concatenation)
+                        )
                   in
                   let replacement = TypeConstraints.Solution.create replacement in
                   let instantiate_parameters { Target.target; parameters } =

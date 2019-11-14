@@ -121,10 +121,7 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
         (* case c *)
         let keep_subtypes candidate =
           let candidate_type = get_class_type candidate in
-          GlobalResolution.less_or_equal
-            global_resolution
-            ~left:candidate_type
-            ~right:receiver_type
+          GlobalResolution.less_or_equal global_resolution ~left:candidate_type ~right:receiver_type
         in
         let override_targets =
           let create_override_target class_name =

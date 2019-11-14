@@ -25,8 +25,7 @@ type real_target =
   ]
 [@@deriving show, sexp, compare, hash, eq]
 
-type override_target = [ `OverrideTarget of method_name ]
-[@@deriving show, sexp, compare, hash, eq]
+type override_target = [ `OverrideTarget of method_name ] [@@deriving show, sexp, compare, hash, eq]
 
 (* Technically not a callable, but we store models of some fields/globals, E.g. os.environ, or
    HttpRequest.GET *)

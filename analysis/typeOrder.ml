@@ -156,10 +156,7 @@ module OrderImplementation = struct
                 Some annotation
             | _ -> None
           in
-          attributes
-            annotation
-            ~protocol_assumptions
-            ~callable_assumptions:new_callable_assumptions
+          attributes annotation ~protocol_assumptions ~callable_assumptions:new_callable_assumptions
           >>= List.find_map ~f:find_call
 
 
@@ -173,8 +170,7 @@ module OrderImplementation = struct
       let open Callable in
       let solve implementation ~initial_constraints =
         try
-          let rec solve_parameters_against_list_variadic ~is_lower_bound ~concretes ~variable ~tail
-            =
+          let rec solve_parameters_against_list_variadic ~is_lower_bound ~concretes ~variable ~tail =
             let before_first_keyword, after_first_keyword_inclusive =
               let is_not_keyword_only = function
                 | Type.Callable.Parameter.Keywords _
@@ -230,21 +226,13 @@ module OrderImplementation = struct
                 Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters )
             | ( Parameter.Named { annotation = left_annotation; _ } :: left_parameters,
                 Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters ) ->
-                solve_less_or_equal
-                  order
-                  ~constraints
-                  ~left:right_annotation
-                  ~right:left_annotation
+                solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | ( Parameter.Variable (Concrete left_annotation) :: left_parameters,
                 Parameter.Variable (Concrete right_annotation) :: right_parameters )
             | ( Parameter.Keywords left_annotation :: left_parameters,
                 Parameter.Keywords right_annotation :: right_parameters ) ->
-                solve_less_or_equal
-                  order
-                  ~constraints
-                  ~left:right_annotation
-                  ~right:left_annotation
+                solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | ( Parameter.KeywordOnly ({ annotation = left_annotation; _ } as left)
                 :: left_parameters,
@@ -264,11 +252,7 @@ module OrderImplementation = struct
                   []
             | ( Parameter.Variable (Concrete left_annotation) :: _,
                 Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters ) ->
-                solve_less_or_equal
-                  order
-                  ~constraints
-                  ~left:right_annotation
-                  ~right:left_annotation
+                solve_less_or_equal order ~constraints ~left:right_annotation ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | ( Parameter.Variable (Concatenation left_variable) :: left_parameters,
                 Parameter.Variable (Concatenation right_variable) :: right_parameters ) ->
@@ -367,8 +351,7 @@ module OrderImplementation = struct
         in
         solve overload ~initial_constraints:constraints
         |> List.map
-             ~f:
-               (OrderedConstraints.extract_partial_solution ~order ~variables:namespaced_variables)
+             ~f:(OrderedConstraints.extract_partial_solution ~order ~variables:namespaced_variables)
         |> List.concat_map ~f:Option.to_list
         |> List.filter ~f:does_not_leak_namespaced_variables
         |> List.map ~f:instantiate_return
@@ -413,10 +396,10 @@ module OrderImplementation = struct
 
        The general strategy undertaken to achieve this behavior is to pairwise recursively break up
        the types in the same way, e.g. we expect to get a tuple on the right if we have a tuple on
-       the left, and to handle that by enforcing that each of the contained types be less than
-       their pair on the other side (as tuples are covariant). Certain pairs, such as X =<=
-       Union[...] or comparing callables with overloads naturally create multiple disjoint
-       possibilities which give rise to the list of constraints that we end up returning.
+       the left, and to handle that by enforcing that each of the contained types be less than their
+       pair on the other side (as tuples are covariant). Certain pairs, such as X =<= Union[...] or
+       comparing callables with overloads naturally create multiple disjoint possibilities which
+       give rise to the list of constraints that we end up returning.
 
        Once you have enforced all of the statements you would like to ensure are true, you can
        extract possible solutions to the constraints set you have built up with List.filter_map
@@ -448,8 +431,8 @@ module OrderImplementation = struct
       | _, Type.Annotated right -> solve_less_or_equal order ~constraints ~left ~right
       | Type.Any, other -> [add_fallbacks other]
       | Type.Variable left_variable, Type.Variable right_variable
-        when Type.Variable.Unary.is_free left_variable
-             && Type.Variable.Unary.is_free right_variable ->
+        when Type.Variable.Unary.is_free left_variable && Type.Variable.Unary.is_free right_variable
+        ->
           (* Either works because constraining V1 to be less or equal to V2 implies that V2 is
              greater than or equal to V1. Therefore either constraint is sufficient, and we should
              consider both. This approach simplifies things downstream for the constraint solver *)
@@ -485,8 +468,7 @@ module OrderImplementation = struct
             [constraints]
           else
             []
-      | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ~protocol_assumptions
-        ->
+      | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ~protocol_assumptions ->
           instantiate_protocol_parameters order ~protocol:name ~candidate:left
           >>| Type.parametric name
           >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
@@ -562,9 +544,9 @@ module OrderImplementation = struct
                     match List.zip left_parameters right_parameters with
                     | Unequal_lengths -> None
                     | Ok zipped -> (
-                      match List.zip variables zipped with
-                      | Unequal_lengths -> None
-                      | Ok zipped -> Some zipped )
+                        match List.zip variables zipped with
+                        | Unequal_lengths -> None
+                        | Ok zipped -> Some zipped )
                   in
                   variables
                   |> zip_on_parameters
@@ -624,8 +606,7 @@ module OrderImplementation = struct
             [constraints]
           else
             []
-      (* We have to consider both the variables' constraint and its full value against the
-         optional. *)
+      (* We have to consider both the variables' constraint and its full value against the optional. *)
       | Type.Variable variable, Type.Optional optional ->
           solve_less_or_equal order ~constraints ~left ~right:optional
           @ solve_less_or_equal
@@ -771,10 +752,7 @@ module OrderImplementation = struct
                      *)
                     let synthetic_variables, synthetic_variable_constraints_set =
                       let namespace = Type.Variable.Namespace.create_fresh () in
-                      let synthetic_solve
-                          index
-                          (synthetics_created_sofar, constraints_set)
-                          concrete
+                      let synthetic_solve index (synthetics_created_sofar, constraints_set) concrete
                         =
                         let new_synthetic_variable =
                           Type.Variable.Unary.create (Int.to_string index)
@@ -838,9 +816,7 @@ module OrderImplementation = struct
               List.fold ~init:constraints ~f:solve_pair pairs
             in
             let middle, middle_bound = Type.OrderedTypes.Concatenation.middle paired in
-            concrete_vs_concretes
-              ~pairs:(Type.OrderedTypes.Concatenation.head paired)
-              [constraints]
+            concrete_vs_concretes ~pairs:(Type.OrderedTypes.Concatenation.head paired) [constraints]
             |> middle_vs_concrete ~concrete:middle_bound ~middle
             |> concrete_vs_concretes ~pairs:(Type.OrderedTypes.Concatenation.tail paired)
           in
@@ -906,55 +882,57 @@ module OrderImplementation = struct
         match left.parameters, right.parameters with
         | Undefined, Undefined -> Some Undefined
         | Defined left, Defined right -> (
-          try
-            let join_parameter sofar left right =
-              match sofar with
-              | Some sofar ->
-                  let joined =
-                    if Type.Callable.Parameter.names_compatible left right then
-                      match left, right with
-                      | Parameter.Anonymous left, Parameter.Anonymous right
-                        when Bool.equal left.default right.default ->
-                          Some
-                            (Parameter.Anonymous
-                               {
-                                 left with
-                                 annotation = parameter_join order left.annotation right.annotation;
-                               })
-                      | Parameter.Anonymous anonymous, Parameter.Named named
-                      | Parameter.Named named, Parameter.Anonymous anonymous
-                        when Bool.equal named.default anonymous.default ->
-                          Some
-                            (Parameter.Anonymous
-                               {
-                                 anonymous with
-                                 annotation =
-                                   parameter_join order named.annotation anonymous.annotation;
-                               })
-                      | Parameter.Named left, Parameter.Named right
-                        when Bool.equal left.default right.default ->
-                          Some
-                            (Parameter.Named
-                               {
-                                 left with
-                                 annotation = parameter_join order left.annotation right.annotation;
-                               })
-                      | Parameter.Variable (Concrete left), Parameter.Variable (Concrete right) ->
-                          Some (Parameter.Variable (Concrete (parameter_join order left right)))
-                      | Parameter.Keywords left, Parameter.Keywords right ->
-                          Some (Parameter.Keywords (parameter_join order left right))
-                      | _ -> None
-                    else
-                      None
-                  in
-                  joined >>| fun joined -> joined :: sofar
-              | None -> None
-            in
-            List.fold2_exn ~init:(Some []) ~f:join_parameter left right
-            >>| List.rev
-            >>| fun parameters -> Defined parameters
-          with
-          | _ -> None )
+            try
+              let join_parameter sofar left right =
+                match sofar with
+                | Some sofar ->
+                    let joined =
+                      if Type.Callable.Parameter.names_compatible left right then
+                        match left, right with
+                        | Parameter.Anonymous left, Parameter.Anonymous right
+                          when Bool.equal left.default right.default ->
+                            Some
+                              (Parameter.Anonymous
+                                 {
+                                   left with
+                                   annotation =
+                                     parameter_join order left.annotation right.annotation;
+                                 })
+                        | Parameter.Anonymous anonymous, Parameter.Named named
+                        | Parameter.Named named, Parameter.Anonymous anonymous
+                          when Bool.equal named.default anonymous.default ->
+                            Some
+                              (Parameter.Anonymous
+                                 {
+                                   anonymous with
+                                   annotation =
+                                     parameter_join order named.annotation anonymous.annotation;
+                                 })
+                        | Parameter.Named left, Parameter.Named right
+                          when Bool.equal left.default right.default ->
+                            Some
+                              (Parameter.Named
+                                 {
+                                   left with
+                                   annotation =
+                                     parameter_join order left.annotation right.annotation;
+                                 })
+                        | Parameter.Variable (Concrete left), Parameter.Variable (Concrete right) ->
+                            Some (Parameter.Variable (Concrete (parameter_join order left right)))
+                        | Parameter.Keywords left, Parameter.Keywords right ->
+                            Some (Parameter.Keywords (parameter_join order left right))
+                        | _ -> None
+                      else
+                        None
+                    in
+                    joined >>| fun joined -> joined :: sofar
+                | None -> None
+              in
+              List.fold2_exn ~init:(Some []) ~f:join_parameter left right
+              >>| List.rev
+              >>| fun parameters -> Defined parameters
+            with
+            | _ -> None )
         | Undefined, Defined right -> Some (Defined right)
         | Defined left, Undefined -> Some (Defined left)
         | _ -> None
@@ -1114,8 +1092,8 @@ module OrderImplementation = struct
               target >>| handle_target |> Option.value ~default:union
         (* Special case joins of optional collections with their uninstantated counterparts. *)
         | ( Type.Parametric ({ parameters = Concrete [Type.Bottom]; _ } as other),
-            Type.Optional
-              (Type.Parametric ({ parameters = Concrete [parameter]; _ } as collection)) )
+            Type.Optional (Type.Parametric ({ parameters = Concrete [parameter]; _ } as collection))
+          )
         | ( Type.Optional (Type.Parametric ({ parameters = Concrete [parameter]; _ } as collection)),
             Type.Parametric ({ parameters = Concrete [Type.Bottom]; _ } as other) )
           when Identifier.equal other.name collection.name ->
@@ -1227,15 +1205,15 @@ module OrderImplementation = struct
                && always_less_or_equal order ~left:right ~right:left ->
             left
         | Primitive left, Primitive right -> (
-          match List.hd (ClassHierarchy.least_upper_bound handler left right) with
-          | Some joined ->
-              if Type.Primitive.equal joined left then
-                Type.Primitive left
-              else if Type.Primitive.equal joined right then
-                Type.Primitive right
-              else
-                union
-          | None -> union )
+            match List.hd (ClassHierarchy.least_upper_bound handler left right) with
+            | Some joined ->
+                if Type.Primitive.equal joined left then
+                  Type.Primitive left
+                else if Type.Primitive.equal joined right then
+                  Type.Primitive right
+                else
+                  union
+            | None -> union )
 
 
     and meet
@@ -1275,9 +1253,7 @@ module OrderImplementation = struct
             else
               Type.Bottom
         | Type.Union left, Type.Union right ->
-            let union =
-              Set.inter (Type.Set.of_list left) (Type.Set.of_list right) |> Set.to_list
-            in
+            let union = Set.inter (Type.Set.of_list left) (Type.Set.of_list right) |> Set.to_list in
             Type.union union
         | (Type.Union elements as union), other
         | other, (Type.Union elements as union) ->
@@ -1588,9 +1564,7 @@ module OrderImplementation = struct
   end
 end
 
-module rec Constraints : OrderedConstraintsType =
-  TypeConstraints.OrderedConstraints (Implementation)
-
+module rec Constraints : OrderedConstraintsType = TypeConstraints.OrderedConstraints (Implementation)
 and Implementation : FullOrderType = OrderImplementation.Make (Constraints)
 
 module OrderedConstraints = Constraints

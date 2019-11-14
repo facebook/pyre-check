@@ -29,8 +29,8 @@ let return_annotation
     Type.coroutine (Concrete [Type.Any; Type.Any; annotation])
   else if Define.Signature.is_coroutine signature then
     match annotation with
-    | Type.Parametric
-        { name = "typing.Generator"; parameters = Concrete [_; _; return_annotation] } ->
+    | Type.Parametric { name = "typing.Generator"; parameters = Concrete [_; _; return_annotation] }
+      ->
         Type.awaitable return_annotation
     | _ -> Type.Top
   else
@@ -38,12 +38,13 @@ let return_annotation
 
 
 let create_overload
-    ~parser:( {
-                parse_annotation;
-                parse_as_concatenation;
-                parse_as_parameter_specification_instance_annotation;
-                _;
-              } as parser )
+    ~parser:
+      ( {
+          parse_annotation;
+          parse_as_concatenation;
+          parse_as_parameter_specification_instance_annotation;
+          _;
+        } as parser )
     { Node.value = { Define.Signature.parameters; _ } as signature; location }
   =
   let open Type.Callable in
@@ -77,19 +78,15 @@ let create_overload
        Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation));
        Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation);
       ] -> (
-        match
-          parse_as_parameter_specification_instance_annotation
-            ~variable_parameter_annotation
-            ~keywords_parameter_annotation
-        with
-        | Some variable -> ParameterVariadicTypeVariable variable
-        | None -> Defined (List.map parameters ~f:parse) )
+          match
+            parse_as_parameter_specification_instance_annotation
+              ~variable_parameter_annotation
+              ~keywords_parameter_annotation
+          with
+          | Some variable -> ParameterVariadicTypeVariable variable
+          | None -> Defined (List.map parameters ~f:parse) )
       | _ -> Defined (List.map parameters ~f:parse)
     in
     List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
   in
-  {
-    annotation = return_annotation ~signature ~parser;
-    parameters;
-    define_location = Some location;
-  }
+  { annotation = return_annotation ~signature ~parser; parameters; define_location = Some location }

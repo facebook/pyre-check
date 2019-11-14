@@ -584,8 +584,7 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
   let { required_anonymous_parameters_count; required_parameter_set; _ } = left_over in
   let errors =
     if required_anonymous_parameters_count > 0 then
-      Format.sprintf "missing %d anonymous parameters" required_anonymous_parameters_count
-      :: errors
+      Format.sprintf "missing %d anonymous parameters" required_anonymous_parameters_count :: errors
     else
       errors
   in
@@ -869,8 +868,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
         else if Define.Signature.is_property_setter define then
           get_matching_method ~predicate:Define.is_property_setter
         else if not (List.is_empty decorators) then
-          (* Ensure that models don't declare decorators that our taint analyses doesn't
-             understand. *)
+          (* Ensure that models don't declare decorators that our taint analyses doesn't understand. *)
           raise_invalid_model
             (Format.sprintf
                "Unexpected decorators found when parsing model: `%s`"

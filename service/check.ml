@@ -15,8 +15,8 @@ type result = {
 
 let check
     ~scheduler:original_scheduler
-    ~configuration:( { Configuration.Analysis.project_root; local_root; search_path; debug; _ } as
-                   configuration )
+    ~configuration:
+      ({ Configuration.Analysis.project_root; local_root; search_path; debug; _ } as configuration)
     ~build_legacy_dependency_graph
   =
   (* Sanity check environment. *)
@@ -29,9 +29,7 @@ let check
   search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   let scheduler =
     let bucket_multiplier =
-      try
-        Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> fun value -> Option.value_exn value)
-      with
+      try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> fun value -> Option.value_exn value) with
       | _ -> 10
     in
     match original_scheduler with
