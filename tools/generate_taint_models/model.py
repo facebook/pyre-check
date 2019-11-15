@@ -24,7 +24,9 @@ class RawCallableModel(NamedTuple):
     parameters: List[Tuple[str, Optional[str]]]
     returns: Optional[str] = None
 
-    def generate(self) -> str:
+    def generate(self) -> Optional[str]:
+        if "-" in self.callable_name:
+            return None
         serialized_parameters = []
         for parameter_name, taint in self.parameters:
             if taint:
@@ -36,6 +38,7 @@ class RawCallableModel(NamedTuple):
             return_annotation = f" -> {returns}"
         else:
             return_annotation = ""
+
         return (
             f"def {self.callable_name}({', '.join(serialized_parameters)})"
             f"{return_annotation}: ..."
@@ -134,5 +137,9 @@ class AssignmentModel(NamedTuple):
     annotation: str
     target: str
 
-    def generate(self) -> str:
+    def generate(self) -> Optional[str]:
+        # Ensure that we don't attempt to generate models which originate from module
+        # names with a `-` in them.
+        if "-" in self.target:
+            return None
         return f"{self.target}: {self.annotation} = ..."
