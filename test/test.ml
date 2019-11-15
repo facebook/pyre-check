@@ -1560,12 +1560,9 @@ module ScratchProject = struct
         AnnotatedGlobalEnvironment.create
           (ClassMetadataEnvironment.read_only class_metadata_environment)
       in
-      let resolution =
-        AnnotatedGlobalEnvironment.ReadOnly.resolution
-          (AnnotatedGlobalEnvironment.read_only environment)
-      in
       if configuration.debug then
-        GlobalResolution.check_class_hierarchy_integrity resolution;
+        ClassHierarchyEnvironment.ReadOnly.check_integrity
+          (ClassHierarchyEnvironment.read_only class_hierarchy_environment);
       let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
         AnnotatedGlobalEnvironment.update
           environment

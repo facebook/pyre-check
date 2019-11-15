@@ -44,12 +44,11 @@ let populate
     environment
     ~update_result
   =
-  let resolution =
-    AnnotatedGlobalEnvironment.ReadOnly.resolution
-      (AnnotatedGlobalEnvironment.read_only environment)
-  in
   if debug then
-    GlobalResolution.check_class_hierarchy_integrity resolution;
+    AnnotatedGlobalEnvironment.read_only environment
+    |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
+    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+    |> ClassHierarchyEnvironment.ReadOnly.check_integrity;
   let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
     AnnotatedGlobalEnvironment.update
       environment

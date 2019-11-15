@@ -102,11 +102,9 @@ let recheck
       |> ClassMetadataEnvironment.update class_metadata_environment ~scheduler ~configuration
     in
     let validate_hierarchy () =
-      let resolution =
-        AnnotatedGlobalEnvironment.ReadOnly.resolution
-          (AnnotatedGlobalEnvironment.read_only annotated_global_environment)
-      in
-      GlobalResolution.check_class_hierarchy_integrity resolution
+      if debug then
+        ClassHierarchyEnvironment.ReadOnly.check_integrity
+          (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
     in
     if debug then
       validate_hierarchy ();

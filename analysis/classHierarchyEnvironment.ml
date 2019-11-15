@@ -315,6 +315,27 @@ module ReadOnly = struct
     match Edges.ReadOnly.decoded_equal edges_read_only left right with
     | Some result -> Some result
     | None -> UndecoratedFunctions.ReadOnly.decoded_equal undecorated_function_read_only left right
+
+
+  let check_integrity read_only =
+    let unannotated_global_environment =
+      alias_environment read_only |> AliasEnvironment.ReadOnly.unannotated_global_environment
+    in
+    let indices =
+      unannotated_global_environment |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+    in
+    let class_hierarchy =
+      ( module struct
+        let edges = get_edges read_only ?dependency:None
+
+        let contains key =
+          UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+            unannotated_global_environment
+            key
+          |> Option.is_some
+      end : ClassHierarchy.Handler )
+    in
+    ClassHierarchy.check_integrity class_hierarchy ~indices
 end
 
 module HierarchyReadOnly = ReadOnly

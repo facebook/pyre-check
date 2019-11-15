@@ -200,8 +200,6 @@ val attribute : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option
 
 val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
-val check_class_hierarchy_integrity : t -> unit
-
 val class_definitions : t -> Reference.t -> Class.t Node.t list option
 
 module AnnotationCache : sig

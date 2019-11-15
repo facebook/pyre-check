@@ -89,10 +89,6 @@ let check
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let resolution =
-      AnnotatedGlobalEnvironment.ReadOnly.resolution
-        (AnnotatedGlobalEnvironment.read_only global_environment)
-    in
     let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
       let unannotated_global_environment_update =
         UnannotatedGlobalEnvironment.update
@@ -116,6 +112,9 @@ let check
           ~configuration
           alias_environment_update
       in
+      if debug then
+        ClassHierarchyEnvironment.ReadOnly.check_integrity
+          (ClassHierarchyEnvironment.read_only class_hierarchy_environment);
       let class_metadata_environment_update =
         ClassMetadataEnvironment.update
           class_metadata_environment
@@ -123,8 +122,6 @@ let check
           ~configuration
           class_hierarchy_environment_update
       in
-      if debug then
-        GlobalResolution.check_class_hierarchy_integrity resolution;
       AnnotatedGlobalEnvironment.update
         global_environment
         ~configuration
@@ -133,6 +130,10 @@ let check
     in
     Annotated.Class.AttributeCache.clear ();
     Statistics.performance ~name:"full environment built" ~timer ();
+    let resolution =
+      AnnotatedGlobalEnvironment.ReadOnly.resolution
+        (AnnotatedGlobalEnvironment.read_only global_environment)
+    in
     let indices () =
       UnannotatedGlobalEnvironment.read_only unannotated_global_environment
       |> UnannotatedGlobalEnvironment.ReadOnly.all_indices

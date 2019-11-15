@@ -21,6 +21,8 @@ module HierarchyReadOnly : sig
     Type.t Type.Callable.overload option
 
   val alias_environment : t -> AliasEnvironment.ReadOnly.t
+
+  val check_integrity : t -> unit
 end
 
 include
