@@ -594,11 +594,6 @@ def run_fixme_targets_file(
         if len(errors) > 0:
             # Note: We are not linting here yet.
             fix(arguments, sort_errors(errors))
-            try:
-                if not arguments.no_commit:
-                    _submit_changes(arguments, _commit_message(path + "/TARGETS"))
-            except subprocess.CalledProcessError:
-                LOG.info("Error while running hg.")
     else:
         LOG.error(
             "Failed to run buck test command:\n\t%s\n\n%s",
@@ -663,6 +658,13 @@ def run_fixme_targets(arguments: argparse.Namespace) -> None:
     )
     for path, target_names in target_names.items():
         run_fixme_targets_file(arguments, project_directory, path, target_names)
+    try:
+        if not arguments.no_commit:
+            _submit_changes(
+                arguments, _commit_message("{} (TARGETS)".format(search_root))
+            )
+    except subprocess.CalledProcessError:
+        LOG.info("Error while running hg.")
 
 
 def path_exists(filename: str) -> Path:

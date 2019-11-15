@@ -1031,15 +1031,20 @@ class FixmeTargetsTest(unittest.TestCase):
         return_value=Path(".pyre_configuration"),
     )
     @patch("%s.run_fixme_targets_file" % upgrade.__name__)
-    def test_run_fixme_targets(self, fix_file, find_configuration, subprocess) -> None:
+    @patch("%s._submit_changes" % upgrade.__name__)
+    def test_run_fixme_targets(
+        self, submit_changes, fix_file, find_configuration, subprocess
+    ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
+        arguments.no_commit = False
         grep_return = MagicMock()
         grep_return.returncode = 1
         grep_return.stderr = b"stderr"
         subprocess.return_value = grep_return
         upgrade.run_fixme_targets(arguments)
         fix_file.assert_not_called()
+        submit_changes.assert_not_called()
 
         grep_return.returncode = 0
         grep_return.stdout = b"""
@@ -1061,10 +1066,14 @@ class FixmeTargetsTest(unittest.TestCase):
         fix_file.assert_called_once_with(
             arguments, Path("."), "a/b", ["derp", "herp", "merp"]
         )
+        submit_changes.assert_called_once_with(
+            arguments, upgrade._commit_message(". (TARGETS)")
+        )
 
         # Test subdirectory
         subprocess.reset_mock()
         fix_file.reset_mock()
+        submit_changes.reset_mock()
         arguments.subdirectory = "derp"
         upgrade.run_fixme_targets(arguments)
         subprocess.assert_called_once_with(
@@ -1082,14 +1091,14 @@ class FixmeTargetsTest(unittest.TestCase):
         fix_file.assert_called_once_with(
             arguments, Path("."), "a/b", ["derp", "herp", "merp"]
         )
+        submit_changes.assert_called_once_with(
+            arguments, upgrade._commit_message("derp (TARGETS)")
+        )
 
     @patch("%s.sort_errors" % upgrade.__name__, side_effect=lambda errors: errors)
     @patch("subprocess.run")
     @patch("%s.fix" % upgrade.__name__)
-    @patch("%s._submit_changes" % upgrade.__name__)
-    def test_run_fixme_targets_file(
-        self, submit_changes, fix, subprocess, sort_errors
-    ) -> None:
+    def test_run_fixme_targets_file(self, fix, subprocess, sort_errors) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
         arguments.no_commit = False
@@ -1099,13 +1108,11 @@ class FixmeTargetsTest(unittest.TestCase):
         subprocess.return_value = buck_return
         upgrade.run_fixme_targets_file(arguments, Path("."), "a/b", ["derp", "herp"])
         fix.assert_not_called()
-        submit_changes.assert_not_called()
 
         buck_return.returncode = 0
         subprocess.return_value = buck_return
         upgrade.run_fixme_targets_file(arguments, Path("."), "a/b", ["derp", "herp"])
         fix.assert_not_called()
-        submit_changes.assert_not_called()
 
         buck_return.returncode = 32
         buck_return.stdout = b"""
@@ -1169,9 +1176,6 @@ anonymous parameter to call `merp` but got `Optional[str]`.
         ]
         upgrade.run_fixme_targets_file(arguments, Path("."), "a/b", ["derp", "herp"])
         fix.assert_called_once_with(arguments, expected_errors)
-        submit_changes.assert_called_once_with(
-            arguments, upgrade._commit_message("a/b/y.py/TARGETS")
-        )
 
 
 class DecodeTest(unittest.TestCase):
