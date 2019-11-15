@@ -162,6 +162,7 @@ class FixmeAllTest(unittest.TestCase):
         assert call.call_count == 1
         assert run.call_count == 1
 
+    @patch("%s.sort_errors" % upgrade.__name__, side_effect=lambda errors: errors)
     @patch("subprocess.call")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
@@ -178,6 +179,7 @@ class FixmeAllTest(unittest.TestCase):
         get_errors,
         remove_version,
         subprocess,
+        sort_errors,
     ) -> None:
         arguments = MagicMock()
         arguments.sandcastle = None
@@ -208,7 +210,7 @@ class FixmeAllTest(unittest.TestCase):
         configuration.get_path()
         upgrade._upgrade_project(arguments, configuration, Path("/root"))
         run_global_version_update.assert_not_called()
-        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
+        fix.assert_called_once_with(arguments, pyre_errors)
         subprocess.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
@@ -221,7 +223,8 @@ class FixmeAllTest(unittest.TestCase):
         upgrade._upgrade_project(arguments, configuration, Path("/root"))
         errors_from_stdin.assert_not_called()
         run_global_version_update.assert_not_called()
-        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
+        calls = [call(arguments, pyre_errors), call(arguments, pyre_errors)]
+        fix.assert_has_calls(calls)
         calls = [
             call(
                 [
@@ -253,7 +256,8 @@ class FixmeAllTest(unittest.TestCase):
         # Called in the second round to get new errors after applying lint.
         get_errors.assert_called_once()
         run_global_version_update.assert_not_called()
-        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
+        calls = [call(arguments, pyre_errors), call(arguments, pyre_errors)]
+        fix.assert_has_calls(calls)
         calls = [
             call(
                 [
@@ -271,6 +275,7 @@ class FixmeAllTest(unittest.TestCase):
         ]
         subprocess.assert_has_calls(calls)
 
+    @patch("%s.sort_errors" % upgrade.__name__, side_effect=lambda errors: errors)
     @patch("subprocess.call")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch.object(
@@ -289,10 +294,12 @@ class FixmeAllTest(unittest.TestCase):
         find_configuration,
         gather,
         subprocess,
+        sort_errors,
     ) -> None:
         arguments = MagicMock()
         arguments.lint = False
         arguments.sandcastle = None
+        arguments.from_stdin = False
         gather.return_value = [
             upgrade.Configuration(
                 Path("local/.pyre_configuration.local"), {"version": 123}
@@ -324,7 +331,7 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         upgrade.run_fixme_all(arguments)
         run_global_version_update.assert_not_called()
-        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
+        fix.assert_called_once_with(arguments, pyre_errors)
         subprocess.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
@@ -351,7 +358,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.submit = True
         upgrade.run_fixme_all(arguments)
         run_global_version_update.assert_called_once_with(arguments)
-        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
+        fix.assert_called_once_with(arguments, pyre_errors)
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
             call(["jf", "submit", "--update-fields"]),
@@ -365,7 +372,8 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = True
         upgrade.run_fixme_all(arguments)
         run_global_version_update.assert_called_once_with(arguments)
-        fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
+        calls = [call(arguments, pyre_errors), call(arguments, pyre_errors)]
+        fix.assert_has_calls(calls)
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
             call(["jf", "submit", "--update-fields"]),
@@ -480,6 +488,7 @@ def bar(x: str) -> str:
 
 
 class FixmeSingleTest(unittest.TestCase):
+    @patch("%s.sort_errors" % upgrade.__name__, side_effect=lambda errors: errors)
     @patch("subprocess.call")
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value=Path(".")
@@ -488,12 +497,20 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "get_errors")
     @patch("%s.fix" % upgrade.__name__)
     def test_run_fixme_single(
-        self, fix, get_errors, remove_version, find_configuration, subprocess
+        self,
+        fix,
+        get_errors,
+        remove_version,
+        find_configuration,
+        subprocess,
+        sort_errors,
     ) -> None:
         arguments = MagicMock()
         arguments.sandcastle = None
         arguments.submit = True
         arguments.path = Path("local")
+        arguments.from_stdin = False
+        arguments.lint = False
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
@@ -529,7 +546,7 @@ class FixmeSingleTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade.run_fixme_single(arguments)
-            fix.called_once_with(arguments, errors.sort_errors(pyre_errors))
+            fix.assert_called_once_with(arguments, pyre_errors)
             calls = [
                 call(["hg", "commit", "--message", upgrade._commit_message("local")]),
                 call(["jf", "submit", "--update-fields"]),
@@ -1066,12 +1083,16 @@ class FixmeTargetsTest(unittest.TestCase):
             arguments, Path("."), "a/b", ["derp", "herp", "merp"]
         )
 
+    @patch("%s.sort_errors" % upgrade.__name__, side_effect=lambda errors: errors)
     @patch("subprocess.run")
     @patch("%s.fix" % upgrade.__name__)
     @patch("%s._submit_changes" % upgrade.__name__)
-    def test_run_fixme_targets_file(self, submit_changes, fix, subprocess) -> None:
+    def test_run_fixme_targets_file(
+        self, submit_changes, fix, subprocess, sort_errors
+    ) -> None:
         arguments = MagicMock()
         arguments.subdirectory = None
+        arguments.no_commit = False
         buck_return = MagicMock()
         buck_return.returncode = 1
         buck_return.stderr = b"stderr"
@@ -1117,37 +1138,40 @@ anonymous parameter to call `merp` but got `Optional[str]`.
             {
                 "line": 278,
                 "column": 28,
-                "path": "a/b/x.py",
-                "code": 16,
-                "concise_description": "Undefined attribute [16]: `Optional` has "
-                + "no attribute `derp`.",
+                "path": Path("a/b/x.py"),
+                "code": "16",
                 "description": "Undefined attribute [16]: `Optional` has no "
                 + "attribute `derp`.",
+                "concise_description": "Undefined attribute [16]: `Optional` has "
+                + "no attribute `derp`.",
             },
             {
                 "line": 325,
                 "column": 41,
-                "path": "a/b/x.py",
-                "code": 16,
-                "concise_description": "Undefined attribute [16]: `Optional` has "
-                + "no attribute `herp`.",
+                "path": Path("a/b/x.py"),
+                "code": "16",
                 "description": "Undefined attribute [16]: `Optional` has no "
                 + "attribute `herp`.",
+                "concise_description": "Undefined attribute [16]: `Optional` has "
+                + "no attribute `herp`.",
             },
             {
                 "line": 86,
                 "column": 26,
-                "path": "a/b/y.py",
-                "code": 6,
-                "concise_description": "Expected `str` for 1st anonymous parameter "
-                + "to call `merp` but got `Optional[str]`.",
-                "description": "Expected `str` for 1st anonymous parameter to "
-                + "call `merp` but got `Optional[str]`.",
+                "path": Path("a/b/y.py"),
+                "code": "6",
+                "description": "Incompatible parameter type [6]: Expected `str` "
+                + "for 1st anonymous parameter to call `merp` but got `Optional[str]`.",
+                "concise_description": "Incompatible parameter type [6]: Expected "
+                + "`str` for 1st anonymous parameter to call `merp` but got "
+                + "`Optional[str]`.",
             },
         ]
         upgrade.run_fixme_targets_file(arguments, Path("."), "a/b", ["derp", "herp"])
-        fix.called_once_with(arguments, errors.sort_errors(expected_errors))
-        submit_changes.called_once_with(arguments, upgrade._commit_message("./TARGETS"))
+        fix.assert_called_once_with(arguments, expected_errors)
+        submit_changes.assert_called_once_with(
+            arguments, upgrade._commit_message("a/b/y.py/TARGETS")
+        )
 
 
 class DecodeTest(unittest.TestCase):
