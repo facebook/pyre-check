@@ -254,6 +254,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             callinfo["leaves"],  # sources
             callinfo["type_interval"],
             titos=titos,
+            features=callinfo.get("features", []),
         )
         keys = [(call_tf.callee_id, callee_port)]
         while len(keys) > 0:
@@ -290,6 +291,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             sources=entry["sources"],
             type_interval=entry["type_interval"],
             titos=titos,
+            features=entry.get("features", []),
         )
 
     def _generate_raw_postcondition(
@@ -304,6 +306,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         sources,
         type_interval,
         titos,
+        features,
     ):
         lb, ub, preserves_type_context = self._get_interval(type_interval)
 
@@ -336,6 +339,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             self.graph.add_trace_frame_leaf_assoc(trace_frame, source_record, depth)
 
         self.graph.add_trace_frame(trace_frame)
+        self._generate_trace_annotations(trace_frame.id, features)
         return trace_frame
 
     def _generate_issue_precondition(self, run, issue, callinfo):
