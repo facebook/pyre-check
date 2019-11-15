@@ -149,12 +149,7 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
     | _ -> None
 
 
-  let legacy_invalidated_keys upstream_update =
-    let upstream =
-      ClassMetadataEnvironment.UpdateResult.upstream upstream_update
-      |> ClassHierarchyEnvironment.UpdateResult.upstream
-      |> AliasEnvironment.UpdateResult.upstream
-    in
+  let legacy_invalidated_keys upstream =
     let previous_classes =
       UnannotatedGlobalEnvironment.UpdateResult.previous_classes upstream
       |> Type.Primitive.Set.to_list

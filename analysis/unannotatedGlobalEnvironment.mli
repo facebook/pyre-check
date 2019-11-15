@@ -6,6 +6,7 @@
 open Ast
 open Statement
 open SharedMemoryKeys
+open Core
 
 type unannotated_global =
   | SimpleAssign of {
@@ -24,7 +25,13 @@ type unannotated_global =
 [@@deriving compare, show]
 
 module ReadOnly : sig
-  include Environment.ReadOnly
+  type t
+
+  val hash_to_key_map : t -> string String.Map.t
+
+  val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
+
+  val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 

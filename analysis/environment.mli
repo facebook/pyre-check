@@ -25,6 +25,10 @@ module type PreviousUpdateResult = sig
   val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.KeySet.t list
 
   val read_only : t -> read_only
+
+  val unannotated_global_environment_update_result
+    :  t ->
+    UnannotatedGlobalEnvironment.UpdateResult.t
 end
 
 module type PreviousEnvironment = sig
@@ -113,7 +117,7 @@ module EnvironmentTable : sig
     (* For compatibility with the old dependency mode, we also need a different kind of key
        discovery that just returns all of the keys that possibly could have been affected by the
        update *)
-    val legacy_invalidated_keys : PreviousEnvironment.UpdateResult.t -> TriggerSet.t
+    val legacy_invalidated_keys : UnannotatedGlobalEnvironment.UpdateResult.t -> TriggerSet.t
 
     (* This is the actual main function of the update. *)
     val produce_value

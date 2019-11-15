@@ -187,10 +187,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
     | _ -> None
 
 
-  let legacy_invalidated_keys upstream_update =
-    AliasEnvironment.UpdateResult.upstream upstream_update
-    |> UnannotatedGlobalEnvironment.UpdateResult.previous_classes
-
+  let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
 
   let all_keys alias_environment =
     unannotated_global_environment alias_environment
@@ -237,9 +234,8 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
     | _ -> None
 
 
-  let legacy_invalidated_keys upstream_update =
-    AliasEnvironment.UpdateResult.upstream upstream_update
-    |> UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals
+  let legacy_invalidated_keys =
+    UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals
 
 
   let all_keys alias_environment =

@@ -26,6 +26,10 @@ module type PreviousUpdateResult = sig
   val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.KeySet.t list
 
   val read_only : t -> read_only
+
+  val unannotated_global_environment_update_result
+    :  t ->
+    UnannotatedGlobalEnvironment.UpdateResult.t
 end
 
 module type PreviousEnvironment = sig
@@ -67,6 +71,9 @@ module UpdateResult = struct
 
 
     let read_only { read_only; _ } = read_only
+
+    let unannotated_global_environment_update_result { upstream; _ } =
+      PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result upstream
   end
 
   module type Private = sig
@@ -119,7 +126,7 @@ module EnvironmentTable = struct
 
     val filter_upstream_dependency : SharedMemoryKeys.dependency -> trigger option
 
-    val legacy_invalidated_keys : PreviousEnvironment.UpdateResult.t -> TriggerSet.t
+    val legacy_invalidated_keys : UnannotatedGlobalEnvironment.UpdateResult.t -> TriggerSet.t
 
     val produce_value
       :  PreviousEnvironment.ReadOnly.t ->
@@ -304,7 +311,9 @@ module EnvironmentTable = struct
               name
               ~tags:["phase_name", In.Value.description]
               ~f:(fun _ ->
-                In.legacy_invalidated_keys upstream_update
+                In.PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result
+                  upstream_update
+                |> In.legacy_invalidated_keys
                 |> Set.to_list
                 |> List.map ~f:In.convert_trigger
                 |> Table.KeySet.of_list
