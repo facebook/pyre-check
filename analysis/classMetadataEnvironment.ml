@@ -112,11 +112,7 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
 
-  let all_keys class_hierarchy_environment =
-    ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
-    |> AliasEnvironment.ReadOnly.unannotated_global_environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
-
+  let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_classes
 
   let serialize_value = function
     | Some { successors; is_test; is_final; extends_placeholder_stub_class } ->

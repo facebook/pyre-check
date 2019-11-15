@@ -134,7 +134,7 @@ module EnvironmentTable = struct
       track_dependencies:bool ->
       Value.t
 
-    val all_keys : PreviousEnvironment.ReadOnly.t -> Key.t list
+    val all_keys : UnannotatedGlobalEnvironment.ReadOnly.t -> Key.t list
 
     val serialize_value : Value.t -> string
 
@@ -203,7 +203,7 @@ module EnvironmentTable = struct
       type t = {
         upstream_environment: In.PreviousEnvironment.ReadOnly.t;
         get: ?dependency:SharedMemoryKeys.dependency -> In.Key.t -> In.Value.t;
-        hash_to_key_map: In.PreviousEnvironment.ReadOnly.t -> string String.Map.t;
+        hash_to_key_map: unit -> string String.Map.t;
         serialize_decoded: Memory.decodable -> (string * string * string option) option;
         decoded_equal: Memory.decodable -> Memory.decodable -> bool option;
       }
@@ -212,9 +212,7 @@ module EnvironmentTable = struct
 
       let get { get; _ } = get
 
-      let hash_to_key_map { hash_to_key_map; upstream_environment; _ } =
-        hash_to_key_map upstream_environment
-
+      let hash_to_key_map { hash_to_key_map; _ } = hash_to_key_map ()
 
       let serialize_decoded { serialize_decoded; _ } = serialize_decoded
 
@@ -238,7 +236,12 @@ module EnvironmentTable = struct
             Option.iter dependency ~f:(Table.add_dependency key);
             value
       in
-      let hash_to_key_map environment =
+      let hash_to_key_map () =
+        let environment =
+          In.PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result
+            previous_update_result
+          |> UnannotatedGlobalEnvironment.UpdateResult.read_only
+        in
         Table.compute_hashes_to_keys ~keys:(In.all_keys environment)
       in
       let serialize_decoded decoded =

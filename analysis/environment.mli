@@ -126,7 +126,7 @@ module EnvironmentTable : sig
       track_dependencies:bool ->
       Value.t
 
-    val all_keys : PreviousEnvironment.ReadOnly.t -> Key.t list
+    val all_keys : UnannotatedGlobalEnvironment.ReadOnly.t -> Key.t list
 
     val serialize_value : Value.t -> string
 

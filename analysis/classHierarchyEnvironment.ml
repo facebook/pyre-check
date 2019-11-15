@@ -189,9 +189,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
 
-  let all_keys alias_environment =
-    unannotated_global_environment alias_environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+  let all_keys unannotated_global_environment =
+    UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
     |> List.map ~f:IndexTracker.index
 
 
@@ -238,10 +237,7 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
     UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals
 
 
-  let all_keys alias_environment =
-    unannotated_global_environment alias_environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
-
+  let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
 
   let serialize_value = function
     | Some overload -> Type.Callable.show_overload Type.pp overload

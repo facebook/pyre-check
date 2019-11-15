@@ -161,10 +161,7 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
     List.fold ~init:previous_unannotated_globals ~f:Set.add previous_classes
 
 
-  let all_keys class_metadata_environment =
-    UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
-      (unannotated_global_environment class_metadata_environment)
-
+  let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
 
   let serialize_value = function
     | Some annotation -> Node.value annotation |> Annotation.sexp_of_t |> Sexp.to_string
