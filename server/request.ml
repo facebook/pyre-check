@@ -1101,7 +1101,7 @@ let process_type_query_request
 
 
 let process_type_check_request ~state ~configuration paths =
-  let state, response = IncrementalCheck.recheck ~state ~configuration paths in
+  let state, response = IncrementalCheck.recheck_with_state ~state ~configuration paths in
   let response = List.map response ~f:(instantiate_error ~configuration ~state) in
   { state; response = Some (TypeCheckResponse response) }
 

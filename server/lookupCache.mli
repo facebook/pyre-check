@@ -5,13 +5,14 @@
 
 open Ast
 open Analysis
+open Core
 
 type types_by_path = {
   path: PyrePath.t;
   types_by_location: (Location.Instantiated.t * Type.t) list option;
 }
 
-val evict : state:State.t -> Reference.t -> unit
+val evict : lookups:Analysis.Lookup.t String.Table.t -> Reference.t -> unit
 
 val evict_path : state:State.t -> configuration:Configuration.Analysis.t -> PyrePath.t -> unit
 

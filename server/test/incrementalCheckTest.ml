@@ -40,7 +40,7 @@ let assert_incremental_check_errors ~context ~initial_sources ~updated_sources ~
              (AstEnvironment.read_only ast_environment))
       |> Error.Instantiated.description ~show_error_traces:false ~concise:false
     in
-    Server.IncrementalCheck.recheck ~state ~configuration paths
+    Server.IncrementalCheck.recheck_with_state ~state ~configuration paths
     |> fst
     |> (fun { Server.State.errors; _ } -> errors)
     |> Reference.Table.data

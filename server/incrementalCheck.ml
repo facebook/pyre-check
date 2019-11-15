@@ -14,9 +14,13 @@ open Pyre
 type errors = State.Error.t list [@@deriving show]
 
 let recheck
-    ~state:
-      ( { State.module_tracker; ast_environment; environment; errors; scheduler; open_documents; _ }
-      as state )
+    ~module_tracker
+    ~ast_environment
+    ~errors
+    ~scheduler
+    ~connections
+    ~open_documents
+    ~lookups
     ~configuration:({ debug; incremental_style; _ } as configuration)
     paths
   =
@@ -30,10 +34,11 @@ let recheck
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
   SharedMem.invalidate_caches ();
   Log.info "Parsing %d updated modules..." (List.length module_updates);
-  StatusUpdate.warning
+  StatusUpdate.write
     ~message:"Reparsing updated modules..."
     ~short_message:(Some "[Reparsing]")
-    ~state;
+    ~connections
+    ~message_type:WarningMessage;
   Log.log
     ~section:`Server
     "Incremental Module Update %a"
@@ -61,11 +66,12 @@ let recheck
   Log.info
     "Repopulating the environment for %d modules."
     (Set.length invalidated_environment_qualifiers);
-  StatusUpdate.warning
+  StatusUpdate.write
     ~message:"Repopulating the environment"
     ~short_message:(Some "[Repopulating]")
-    ~state;
-  let recheck_modules =
+    ~connections
+    ~message_type:WarningMessage;
+  let annotated_global_environment, recheck_modules =
     let unannotated_global_environment =
       UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
     in
@@ -139,7 +145,7 @@ let recheck
           ~section:`Server
           "Incremental Environment Builder Update %s"
           (List.to_string ~f:Reference.show invalidated_type_checking_keys);
-        recheck_modules
+        annotated_global_environment, recheck_modules
     | _ ->
         let () =
           Dependencies.purge legacy_dependency_tracker invalidated_environment_qualifiers;
@@ -157,7 +163,7 @@ let recheck
           ~section:`Server
           "(Old) Incremental Environment Builder Update %s"
           (List.to_string ~f:Reference.show invalidated_environment_qualifiers);
-        invalidated_environment_qualifiers
+        annotated_global_environment, invalidated_environment_qualifiers
   in
   Statistics.event
     ~section:`Memory
@@ -167,12 +173,15 @@ let recheck
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
+  let environment =
+    TypeEnvironment.create (AnnotatedGlobalEnvironment.read_only annotated_global_environment)
+  in
   TypeEnvironment.invalidate environment recheck_modules;
   ResolutionSharedMemory.remove recheck_modules;
   Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list recheck_modules);
 
   (* Clean up all lookup data related to updated files. *)
-  List.iter recheck_modules ~f:(LookupCache.evict ~state);
+  List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
   let new_errors =
     Analysis.Check.analyze_and_postprocess
       ~open_documents:(Reference.Table.mem open_documents)
@@ -219,5 +228,39 @@ let recheck
         "number of re-checked functions", total_rechecked_functions;
       ]
     ();
-  StatusUpdate.information ~message:"Done recheck." ~short_message:(Some "Done recheck.") ~state;
+  StatusUpdate.write
+    ~message:"Done recheck."
+    ~short_message:(Some "Done recheck.")
+    ~connections
+    ~message_type:InfoMessage;
+  environment, new_errors
+
+
+let recheck_with_state
+    ~state:
+      ( {
+          State.module_tracker;
+          ast_environment;
+          errors;
+          scheduler;
+          connections;
+          open_documents;
+          lookups;
+          _;
+        } as state )
+    ~configuration
+    paths
+  =
+  let _, new_errors =
+    recheck
+      ~module_tracker
+      ~ast_environment
+      ~errors
+      ~scheduler
+      ~connections
+      ~open_documents
+      ~lookups
+      ~configuration
+      paths
+  in
   state, new_errors

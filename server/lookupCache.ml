@@ -80,12 +80,12 @@ let get_lookups
   nonexistents @ cache_hits @ generate_lookups cache_misses
 
 
-let evict ~state:{ lookups; _ } reference = String.Table.remove lookups (Reference.show reference)
+let evict ~lookups reference = String.Table.remove lookups (Reference.show reference)
 
-let evict_path ~state:({ State.module_tracker; _ } as state) ~configuration path =
+let evict_path ~state:{ State.module_tracker; lookups; _ } ~configuration path =
   match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
   | None -> ()
-  | Some { SourcePath.qualifier; _ } -> evict ~state qualifier
+  | Some { SourcePath.qualifier; _ } -> evict ~lookups qualifier
 
 
 let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) () =

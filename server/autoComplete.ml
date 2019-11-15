@@ -156,7 +156,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             let run () =
               (* Update server state with the newly added dummy file *)
               let state, _ =
-                IncrementalCheck.recheck
+                IncrementalCheck.recheck_with_state
                   ~state
                   ~configuration:
                     { configuration with Configuration.Analysis.incremental_style = Shallow }
@@ -171,7 +171,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
                 Sys.remove (Path.absolute (File.path dummy_file));
 
                 (* Trigger another incremental check to revert server state *)
-                IncrementalCheck.recheck
+                IncrementalCheck.recheck_with_state
                   ~state
                   ~configuration:
                     { configuration with Configuration.Analysis.incremental_style = Shallow }

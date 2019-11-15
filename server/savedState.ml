@@ -208,29 +208,6 @@ let load
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
   let module_tracker = ModuleTracker.SharedMemory.load () in
   let ast_environment = AstEnvironment.load module_tracker in
-  let unannotated_global_environment =
-    Analysis.UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-  in
-  let alias_environment =
-    Analysis.AliasEnvironment.create
-      (Analysis.UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let class_hierarchy_environment =
-    Analysis.ClassHierarchyEnvironment.create
-      (Analysis.AliasEnvironment.read_only alias_environment)
-  in
-  let class_metadata_environment =
-    Analysis.ClassMetadataEnvironment.create
-      (Analysis.ClassHierarchyEnvironment.read_only class_hierarchy_environment)
-  in
-  let global_environment =
-    Analysis.AnnotatedGlobalEnvironment.create
-      (Analysis.ClassMetadataEnvironment.read_only class_metadata_environment)
-  in
-  let environment =
-    Analysis.TypeEnvironment.create
-      (Analysis.AnnotatedGlobalEnvironment.read_only global_environment)
-  in
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
@@ -248,6 +225,19 @@ let load
           ~ast_environment:(AstEnvironment.read_only ast_environment)
   in
   let errors = ServerErrors.load () in
+  Log.info "Reanalyzing %d files and their dependencies." (List.length changed_paths);
+  let environment, _ =
+    IncrementalCheck.recheck
+      ~module_tracker
+      ~ast_environment
+      ~errors
+      ~scheduler
+      ~connections
+      ~open_documents:(Reference.Table.create ())
+      ~lookups:(String.Table.create ())
+      ~configuration
+      changed_paths
+  in
   let state =
     {
       State.module_tracker;
@@ -263,8 +253,6 @@ let load
       open_documents = Reference.Table.create ();
     }
   in
-  Log.info "Reanalyzing %d files and their dependencies." (List.length changed_paths);
-  let state, _ = IncrementalCheck.recheck ~state ~configuration changed_paths in
   state
 
 

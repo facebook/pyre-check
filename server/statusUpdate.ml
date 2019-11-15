@@ -6,7 +6,7 @@
 open Core
 module Connections = Connections.Unix
 
-let write ~state:{ State.connections; _ } ~content ~message_type ~short_message =
+let write ~connections ~message:content ~message_type ~short_message =
   LanguageServer.Protocol.ShowStatus.create ~content ~message_type ~progress:None ~short_message
   |> LanguageServer.Protocol.ShowStatus.to_yojson
   |> Yojson.Safe.to_string
@@ -14,25 +14,25 @@ let write ~state:{ State.connections; _ } ~content ~message_type ~short_message 
   |> fun response -> Connections.broadcast_response ~connections ~response
 
 
-let information ~message ~short_message ~state =
+let information ~message ~short_message ~state:{ State.connections; _ } =
   write
     ~short_message
-    ~content:message
+    ~message
     ~message_type:LanguageServer.Types.ShowMessageParameters.InfoMessage
-    ~state
+    ~connections
 
 
-let warning ~message ~short_message ~state =
+let warning ~message ~short_message ~state:{ State.connections; _ } =
   write
     ~short_message
-    ~content:message
+    ~message
     ~message_type:LanguageServer.Types.ShowMessageParameters.WarningMessage
-    ~state
+    ~connections
 
 
-let error ~message ~short_message ~state =
+let error ~message ~short_message ~state:{ State.connections; _ } =
   write
     ~short_message
-    ~content:message
+    ~message
     ~message_type:LanguageServer.Types.ShowMessageParameters.ErrorMessage
-    ~state
+    ~connections
