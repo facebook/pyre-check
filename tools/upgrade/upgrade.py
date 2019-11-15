@@ -821,8 +821,6 @@ def main() -> None:
     fixme_targets.add_argument(
         "--no-commit", action="store_true", help="Keep changes in working state."
     )
-    fixme_targets.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
-
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):
