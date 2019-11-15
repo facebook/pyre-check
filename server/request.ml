@@ -943,34 +943,36 @@ let process_type_query_request
           | Type.Top -> None
           | _ -> Some annotation
         in
-        match GlobalResolution.global global_resolution function_name with
-        | Some { Node.value; _ } -> (
-            match Annotation.annotation value with
-            | Type.Callable { Type.Callable.implementation; overloads; _ } ->
-                let overload_signature { Type.Callable.annotation; parameters; _ } =
-                  match parameters with
-                  | Type.Callable.Defined parameters ->
-                      let format parameter =
-                        match parameter with
-                        | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                            let name = Identifier.sanitized name in
-                            Some
-                              {
-                                TypeQuery.parameter_name = name;
-                                annotation = keep_known_annotation annotation;
-                              }
-                        | _ -> None
-                      in
-                      let parameters = List.filter_map ~f:format parameters in
-                      Some { TypeQuery.return_type = keep_known_annotation annotation; parameters }
+        match
+          UnannotatedGlobalEnvironment.ReadOnly.get_define_body
+            unannotated_global_environment
+            function_name
+        with
+        | Some { Node.location; value = { Statement.Define.signature; _ } } -> (
+            let parser = GlobalResolution.annotation_parser global_resolution in
+            let { Type.Callable.annotation; parameters; _ } =
+              Node.create signature ~location |> Analysis.Annotated.Callable.create_overload ~parser
+            in
+            match parameters with
+            | Type.Callable.Defined parameters ->
+                let format parameter =
+                  match parameter with
+                  | Type.Callable.Parameter.Named { name; annotation; _ } ->
+                      let name = Identifier.sanitized name in
+                      Some
+                        {
+                          TypeQuery.parameter_name = name;
+                          annotation = keep_known_annotation annotation;
+                        }
                   | _ -> None
                 in
+                let parameters = List.filter_map ~f:format parameters in
                 TypeQuery.Response
                   (TypeQuery.FoundSignature
-                     (List.filter_map (implementation :: overloads) ~f:overload_signature))
+                     [{ TypeQuery.return_type = keep_known_annotation annotation; parameters }])
             | _ ->
                 TypeQuery.Error
-                  (Format.sprintf "%s is not a callable" (Reference.show function_name)) )
+                  (Format.sprintf "No signature found for %s" (Reference.show function_name)) )
         | None ->
             TypeQuery.Error
               (Format.sprintf "No signature found for %s" (Reference.show function_name)) )

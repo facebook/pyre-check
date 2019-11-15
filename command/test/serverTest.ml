@@ -966,11 +966,69 @@ let test_query context =
       x = 1
     |}
     ~query:"signature(test.x)"
-    (Protocol.TypeQuery.Error "test.x is not a callable");
+    (Protocol.TypeQuery.Error "No signature found for test.x");
   assert_type_query_response
     ~source:""
     ~query:"signature(unknown)"
     (Protocol.TypeQuery.Error "No signature found for unknown");
+  assert_type_query_response
+    ~source:{|
+      class C:
+        def foo(self, x: int) -> str:
+          return ""
+    |}
+    ~query:"signature(test.C.foo)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundSignature
+          [
+            {
+              Protocol.TypeQuery.return_type = Some Type.string;
+              Protocol.TypeQuery.parameters =
+                [
+                  {
+                    Protocol.TypeQuery.parameter_name = "self";
+                    Protocol.TypeQuery.annotation = None;
+                  };
+                  {
+                    Protocol.TypeQuery.parameter_name = "x";
+                    Protocol.TypeQuery.annotation = Some Type.integer;
+                  };
+                ];
+            };
+          ]));
+  (* We ignore overloads for now. *)
+  assert_type_query_response
+    ~source:
+      {|
+      from typing import Union
+      class C:
+        @overload
+        def foo(self, x: int) -> int: ...
+        @overload
+        def foo(self, x: str) -> str: ...
+        def foo(self, x: Union[int, str]) -> Union[int, str]:
+          return x
+    |}
+    ~query:"signature(test.C.foo)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundSignature
+          [
+            {
+              Protocol.TypeQuery.return_type = Some (Type.union [Type.integer; Type.string]);
+              Protocol.TypeQuery.parameters =
+                [
+                  {
+                    Protocol.TypeQuery.parameter_name = "self";
+                    Protocol.TypeQuery.annotation = None;
+                  };
+                  {
+                    Protocol.TypeQuery.parameter_name = "x";
+                    Protocol.TypeQuery.annotation = Some (Type.union [Type.integer; Type.string]);
+                  };
+                ];
+            };
+          ]));
+
   assert_type_query_response
     ~source:{|
       foo: str = "bar"
