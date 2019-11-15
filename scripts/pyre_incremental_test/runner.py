@@ -108,7 +108,10 @@ class PyreRunner:
     def run_stop(self) -> None:
         self._environment.checked_run(
             working_directory=self._working_directory,
-            command=f"{self._pyre_invocation} stop",
+            command=(
+                f"{self._pyre_invocation} {self._specification.pyre_stop_pyre_options} "
+                f"stop {self._specification.pyre_stop_options}"
+            ),
         )
 
     def run_incremental(self) -> List[PyreError]:

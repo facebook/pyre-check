@@ -47,6 +47,8 @@ class RunnerTest(unittest.TestCase):
                 "pyre_check_pyre_options": "--option1",
                 "pyre_start_pyre_options": "--option2",
                 "pyre_incremental_pyre_options": "--option3",
+                "pyre_stop_pyre_options": "--option4",
+                "pyre_stop_options": "--option5",
             }
         )
 
@@ -65,7 +67,7 @@ class RunnerTest(unittest.TestCase):
                 Path("old_root"),
                 "pyre --option3 --output=json --noninteractive incremental",
             ),
-            CommandInput(Path("old_root"), "pyre stop"),
+            CommandInput(Path("old_root"), "pyre --option4 stop --option5"),
             CommandInput(
                 Path("old_root"), "pyre --option1 --output=json --noninteractive check"
             ),
@@ -224,7 +226,8 @@ class RunnerTest(unittest.TestCase):
                 "--output=json --noninteractive incremental",
             ),
             CommandInput(
-                Path("old_root"), "client --binary bin --typeshed bikeshed stop"
+                Path("old_root"),
+                "client --binary bin --typeshed bikeshed --option4 stop --option5",
             ),
             CommandInput(
                 Path("old_root"),
@@ -285,7 +288,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
-            CommandInput(Path("old_root"), "pyre stop"),
+            CommandInput(Path("old_root"), "pyre  stop "),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive check"
             ),
@@ -343,7 +346,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
-            CommandInput(Path("old_root"), "pyre stop"),
+            CommandInput(Path("old_root"), "pyre  stop "),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive check"
             ),
@@ -398,7 +401,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
-            CommandInput(Path("old_root"), "pyre stop"),
+            CommandInput(Path("old_root"), "pyre  stop "),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive check"
             ),
@@ -455,7 +458,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("/mock/tmp"), "pyre  --output=json --noninteractive incremental"
             ),
-            CommandInput(Path("/mock/tmp"), "pyre stop"),
+            CommandInput(Path("/mock/tmp"), "pyre  stop "),
             CommandInput(
                 Path("/mock/tmp"), "pyre  --output=json --noninteractive check"
             ),
@@ -511,7 +514,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
-            CommandInput(Path("old_root"), "pyre stop"),
+            CommandInput(Path("old_root"), "pyre  stop "),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive check"
             ),

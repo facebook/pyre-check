@@ -305,6 +305,8 @@ class Specification:
     pyre_check_options: str = ""
     pyre_start_pyre_options: str = ""
     pyre_start_options: str = ""
+    pyre_stop_pyre_options: str = ""
+    pyre_stop_options: str = ""
     pyre_incremental_pyre_options: str = ""
     pyre_incremental_options: str = ""
 
@@ -321,6 +323,10 @@ class Specification:
             result["pyre_start_pyre_options"] = self.pyre_start_pyre_options
         if len(self.pyre_start_options) > 0:
             result["pyre_start_options"] = self.pyre_start_options
+        if len(self.pyre_stop_pyre_options) > 0:
+            result["pyre_stop_pyre_options"] = self.pyre_stop_pyre_options
+        if len(self.pyre_stop_options) > 0:
+            result["pyre_stop_options"] = self.pyre_stop_options
         if len(self.pyre_incremental_pyre_options) > 0:
             result["pyre_incremental_pyre_options"] = self.pyre_incremental_pyre_options
         if len(self.pyre_incremental_options) > 0:
@@ -337,6 +343,8 @@ class Specification:
                 pyre_check_options=input_json.get("pyre_check_options", ""),
                 pyre_start_pyre_options=input_json.get("pyre_start_pyre_options", ""),
                 pyre_start_options=input_json.get("pyre_start_options", ""),
+                pyre_stop_pyre_options=input_json.get("pyre_stop_pyre_options", ""),
+                pyre_stop_options=input_json.get("pyre_stop_options", ""),
                 pyre_incremental_pyre_options=input_json.get(
                     "pyre_incremental_pyre_options", ""
                 ),
