@@ -9,10 +9,6 @@ open Pyre
 open Expression
 module PreviousEnvironment = UnannotatedGlobalEnvironment
 
-type t = { unannotated_global_environment: UnannotatedGlobalEnvironment.ReadOnly.t }
-
-let create unannotated_global_environment = { unannotated_global_environment }
-
 module AliasValue = struct
   type t = Type.alias option
 
@@ -25,7 +21,7 @@ module AliasValue = struct
   let compare = Option.compare Type.compare_alias
 end
 
-let ast_environment { unannotated_global_environment } =
+let ast_environment unannotated_global_environment =
   UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
 
 
@@ -52,12 +48,7 @@ module UnresolvedAlias = struct
         dependencies: string list;
       }
 
-  let checked_resolve
-      ({ unannotated_global_environment } as environment)
-      { value; target }
-      ~dependency
-      ()
-    =
+  let checked_resolve unannotated_global_environment { value; target } ~dependency () =
     let value_annotation = unchecked_resolve ~unparsed:value ~target String.Map.empty in
     let dependencies = String.Hash_set.create () in
     let module TrackedTransform = Type.Transform.Make (struct
@@ -80,7 +71,7 @@ module UnresolvedAlias = struct
                 | Expression.Name name when is_simple_name name -> name_to_reference_exn name
                 | _ -> Reference.create "typing.Any"
               in
-              let ast_environment = ast_environment environment in
+              let ast_environment = ast_environment unannotated_global_environment in
               if AstEnvironment.ReadOnly.from_empty_stub ast_environment ?dependency reference then
                 (), Type.Any
               else if
@@ -114,7 +105,7 @@ type extracted =
   | VariableAlias of Type.Variable.t
   | TypeAlias of UnresolvedAlias.t
 
-let extract_alias { unannotated_global_environment } name ~dependency =
+let extract_alias unannotated_global_environment name ~dependency =
   let extract_alias = function
     | UnannotatedGlobalEnvironment.SimpleAssign { explicit_annotation; value; _ } -> (
         let target_annotation =
@@ -277,7 +268,6 @@ let extract_alias { unannotated_global_environment } name ~dependency =
 
 
 let produce_alias unannotated_global_environment global_name ~track_dependencies =
-  let environment = { unannotated_global_environment } in
   (* TODO(T53786399): Optimize this function. Theres a lot of perf potentially to be gained here,
      currently biasing towards simplicity *)
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AliasRegister global_name) in
@@ -290,7 +280,13 @@ let produce_alias unannotated_global_environment global_name ~track_dependencies
       let handle_extracted = function
         | VariableAlias variable -> Some (Type.VariableAlias variable)
         | TypeAlias unresolved -> (
-            match UnresolvedAlias.checked_resolve environment unresolved ~dependency () with
+            match
+              UnresolvedAlias.checked_resolve
+                unannotated_global_environment
+                unresolved
+                ~dependency
+                ()
+            with
             | Resolved alias -> Some alias
             | HasDependents { unparsed; dependencies } ->
                 let solve_pair dependency =
@@ -303,16 +299,13 @@ let produce_alias unannotated_global_environment global_name ~track_dependencies
                 >>| UnresolvedAlias.unchecked_resolve ~target:current ~unparsed
                 >>| fun alias -> Type.TypeAlias alias )
       in
-      extract_alias environment current ~dependency >>= handle_extracted
+      extract_alias unannotated_global_environment current ~dependency >>= handle_extracted
   in
   get_aliased_type_for global_name ~visited:Reference.Set.empty
 
 
-module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
-
 module Aliases = Environment.EnvironmentTable.NoCache (struct
   module PreviousEnvironment = PreviousEnvironment
-  module UpdateResult = UpdateResult
   module Key = SharedMemoryKeys.StringKey
   module Value = AliasValue
 
@@ -321,8 +314,6 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
   let convert_trigger = Reference.show
 
   let key_to_trigger = Reference.create ?prefix:None
-
-  type nonrec t = t
 
   module TriggerSet = Reference.Set
 
@@ -352,9 +343,7 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
   let equal_value = Option.equal Type.equal_alias
 end)
 
-let update { unannotated_global_environment } = Aliases.update unannotated_global_environment
-
-let read_only { unannotated_global_environment } = Aliases.read_only unannotated_global_environment
+let update = Aliases.update
 
 module ReadOnly = struct
   include Aliases.ReadOnly
@@ -434,3 +423,4 @@ module ReadOnly = struct
 end
 
 module AliasReadOnly = ReadOnly
+module UpdateResult = Aliases.UpdateResult

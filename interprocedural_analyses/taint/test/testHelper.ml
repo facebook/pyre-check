@@ -39,22 +39,13 @@ type expectation = {
   obscure: bool option;
 }
 
-let populate
-    ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
-    environment
-    ~update_result
-  =
+let populate ~configuration:({ Configuration.Analysis.debug; _ } as configuration) ~update_result =
   if debug then
-    AnnotatedGlobalEnvironment.read_only environment
-    |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
+    ClassMetadataEnvironment.UpdateResult.read_only update_result
     |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
     |> ClassHierarchyEnvironment.ReadOnly.check_integrity;
   let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
-    AnnotatedGlobalEnvironment.update
-      environment
-      ~configuration
-      ~scheduler:(Scheduler.mock ())
-      update_result
+    AnnotatedGlobalEnvironment.update ~configuration ~scheduler:(Scheduler.mock ()) update_result
   in
   Annotated.Class.AttributeCache.clear ()
 
@@ -70,7 +61,7 @@ let environment
     List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
         qualifier)
   in
-  let class_metadata_environment, update_result =
+  let update_result =
     Test.update_environments
       ~ast_environment
       ~configuration
@@ -78,12 +69,8 @@ let environment
       ~ast_environment_update_result
       ()
   in
-  let environment =
-    AnnotatedGlobalEnvironment.create
-      (ClassMetadataEnvironment.read_only class_metadata_environment)
-  in
-  populate ~configuration ~update_result environment;
-  environment
+  populate ~configuration ~update_result;
+  ast_environment
 
 
 let outcome

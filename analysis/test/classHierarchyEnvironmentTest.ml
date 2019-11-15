@@ -14,33 +14,22 @@ let test_simple_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
-    let class_hierarchy_environment =
-      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-    in
-    let _ =
+    let update_result =
+      let ast_environment = AstEnvironment.read_only ast_environment in
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
       |> AliasEnvironment.update
-           alias_environment
            ~scheduler:(mock_scheduler ())
            ~configuration:(Configuration.Analysis.create ())
       |> ClassHierarchyEnvironment.update
-           class_hierarchy_environment
            ~scheduler:(mock_scheduler ())
            ~configuration:(Configuration.Analysis.create ())
     in
-    let read_only = ClassHierarchyEnvironment.read_only class_hierarchy_environment in
+    let read_only = ClassHierarchyEnvironment.UpdateResult.read_only update_result in
     let expected =
       expected
       >>| List.map ~f:(fun name ->
@@ -82,22 +71,12 @@ let test_inferred_generic_base context =
       AstEnvironment.UpdateResult.reparsed ast_environment_update_result
       |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
     in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
-    let class_hierarchy_environment =
-      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-    in
     let qualifiers =
       List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
           qualifier)
     in
     let configuration = ScratchProject.configuration_of project in
-    let _ =
+    let update_result =
       Test.update_environments
         ~ast_environment:(AstEnvironment.read_only ast_environment)
         ~configuration
@@ -105,7 +84,10 @@ let test_inferred_generic_base context =
         ~qualifiers:(Reference.Set.of_list qualifiers)
         ()
     in
-    let read_only = ClassHierarchyEnvironment.read_only class_hierarchy_environment in
+    let read_only =
+      ClassMetadataEnvironment.UpdateResult.read_only update_result
+      |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+    in
     let expected =
       expected
       >>| List.map ~f:(fun (name, concretes) ->
@@ -206,30 +188,20 @@ let test_updates context =
     in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let configuration = ScratchProject.configuration_of project in
-    let unannotated_global_environment =
-      let ast_environment = AstEnvironment.read_only ast_environment in
-      UnannotatedGlobalEnvironment.create ast_environment
-    in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
-    let class_hierarchy_environment =
-      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-    in
     let update ~ast_environment_update_result () =
       let scheduler = Test.mock_scheduler () in
+      let ast_environment = AstEnvironment.read_only ast_environment in
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler
         ~configuration
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
-      |> AliasEnvironment.update alias_environment ~scheduler ~configuration
-      |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
+      |> AliasEnvironment.update ~scheduler ~configuration
+      |> ClassHierarchyEnvironment.update ~scheduler ~configuration
     in
-    let _ = update ~ast_environment_update_result () in
-    let read_only = ClassHierarchyEnvironment.read_only class_hierarchy_environment in
+    let update_result = update ~ast_environment_update_result () in
+    let read_only = ClassHierarchyEnvironment.UpdateResult.read_only update_result in
     let execute_action = function
       | `Edges (class_name, dependency, expectation) ->
           let printer v =

@@ -67,75 +67,36 @@ let check
   let environment =
     let open Analysis in
     let ast_environment = AstEnvironment.read_only ast_environment in
-    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
-    let class_hierarchy_environment =
-      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-    in
-    let class_metadata_environment =
-      ClassMetadataEnvironment.create
-        (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
-    in
-    let global_environment =
-      AnnotatedGlobalEnvironment.create
-        (ClassMetadataEnvironment.read_only class_metadata_environment)
-    in
-    let environment =
-      TypeEnvironment.create (AnnotatedGlobalEnvironment.read_only global_environment)
-    in
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
-      let unannotated_global_environment_update =
+    let update_result =
+      let class_hierarchy_environment_update =
         UnannotatedGlobalEnvironment.update
-          unannotated_global_environment
+          ast_environment
           ~scheduler
           ~configuration
           ~ast_environment_update_result
           (Ast.Reference.Set.of_list qualifiers)
-      in
-      let alias_environment_update =
-        AliasEnvironment.update
-          alias_environment
-          ~scheduler
-          ~configuration
-          unannotated_global_environment_update
-      in
-      let class_hierarchy_environment_update =
-        ClassHierarchyEnvironment.update
-          class_hierarchy_environment
-          ~scheduler
-          ~configuration
-          alias_environment_update
+        |> AliasEnvironment.update ~scheduler ~configuration
+        |> ClassHierarchyEnvironment.update ~scheduler ~configuration
       in
       if debug then
         ClassHierarchyEnvironment.ReadOnly.check_integrity
-          (ClassHierarchyEnvironment.read_only class_hierarchy_environment);
-      let class_metadata_environment_update =
-        ClassMetadataEnvironment.update
-          class_metadata_environment
-          ~scheduler
-          ~configuration
-          class_hierarchy_environment_update
-      in
-      AnnotatedGlobalEnvironment.update
-        global_environment
-        ~configuration
-        ~scheduler
-        class_metadata_environment_update
+          (ClassHierarchyEnvironment.UpdateResult.read_only class_hierarchy_environment_update);
+      ClassMetadataEnvironment.update ~scheduler ~configuration class_hierarchy_environment_update
+      |> AnnotatedGlobalEnvironment.update ~configuration ~scheduler
     in
+    let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
+    let environment = TypeEnvironment.create global_environment in
+    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution global_environment in
     Annotated.Class.AttributeCache.clear ();
     Statistics.performance ~name:"full environment built" ~timer ();
-    let resolution =
-      AnnotatedGlobalEnvironment.ReadOnly.resolution
-        (AnnotatedGlobalEnvironment.read_only global_environment)
-    in
     let indices () =
-      UnannotatedGlobalEnvironment.read_only unannotated_global_environment
+      AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment global_environment
+      |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+      |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+      |> AliasEnvironment.ReadOnly.unannotated_global_environment
       |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
     in
     if Log.is_enabled `Dotty then (

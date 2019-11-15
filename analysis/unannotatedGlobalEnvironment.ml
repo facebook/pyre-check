@@ -10,10 +10,6 @@ open Statement
 open Expression
 open SharedMemoryKeys
 
-type t = { ast_environment: AstEnvironment.ReadOnly.t }
-
-let create ast_environment = { ast_environment }
-
 type unannotated_global =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
@@ -639,7 +635,10 @@ module UpdateResult = struct
     previous_defines: Reference.Set.t;
     triggered_dependencies: DependencyKey.KeySet.t;
     upstream: AstEnvironment.UpdateResult.t;
+    read_only: ReadOnly.t;
   }
+
+  type read_only = ReadOnly.t
 
   let previous_unannotated_globals { previous_unannotated_globals; _ } =
     previous_unannotated_globals
@@ -658,10 +657,12 @@ module UpdateResult = struct
 
 
   let unannotated_global_environment_update_result = Fn.id
+
+  let read_only { read_only; _ } = read_only
 end
 
 let update
-    { ast_environment; _ }
+    ast_environment
     ~scheduler
     ~configuration
     ~ast_environment_update_result:upstream
@@ -735,6 +736,7 @@ let update
         previous_defines;
         triggered_dependencies;
         upstream;
+        read_only = WriteOnly.read_only ~ast_environment;
       }
   | _ ->
       let triggered_dependencies =
@@ -755,7 +757,5 @@ let update
         previous_defines;
         triggered_dependencies;
         upstream;
+        read_only = WriteOnly.read_only ~ast_environment;
       }
-
-
-let read_only { ast_environment; _ } = WriteOnly.read_only ~ast_environment

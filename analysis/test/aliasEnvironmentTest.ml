@@ -14,26 +14,19 @@ let test_simple_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
-    let _ =
+    let ast_environment = AstEnvironment.read_only ast_environment in
+    let update_result =
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
       |> AliasEnvironment.update
-           alias_environment
            ~scheduler:(mock_scheduler ())
            ~configuration:(Configuration.Analysis.create ())
     in
-    let read_only = AliasEnvironment.read_only alias_environment in
+    let read_only = AliasEnvironment.UpdateResult.read_only update_result in
     let expected = expected >>| fun expected -> Type.TypeAlias (Type.Primitive expected) in
     let printer v = v >>| Type.show_alias |> Option.value ~default:"none" in
     assert_equal ~printer expected (AliasEnvironment.ReadOnly.get_alias read_only name)
@@ -80,26 +73,19 @@ let test_harder_registrations context =
       List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
       |> Reference.Set.of_list
     in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
-    let _ =
+    let ast_environment = AstEnvironment.read_only ast_environment in
+    let update_result =
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         qualifiers
       |> AliasEnvironment.update
-           alias_environment
            ~scheduler:(mock_scheduler ())
            ~configuration:(Configuration.Analysis.create ())
     in
-    let read_only = AliasEnvironment.read_only alias_environment in
+    let read_only = AliasEnvironment.UpdateResult.read_only update_result in
     let expected = expected >>| parser >>| fun alias -> Type.TypeAlias alias in
     let printer v =
       v >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
@@ -164,30 +150,22 @@ let test_updates context =
     in
     let configuration = ScratchProject.configuration_of project in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
+    let read_only_ast_environment = AstEnvironment.read_only ast_environment in
     let update ~ast_environment_update_result () =
       let qualifiers =
         AstEnvironment.UpdateResult.reparsed ast_environment_update_result |> Reference.Set.of_list
       in
       let scheduler = Test.mock_scheduler () in
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        read_only_ast_environment
         ~scheduler
         ~configuration
         ~ast_environment_update_result
         qualifiers
-      |> AliasEnvironment.update alias_environment ~scheduler ~configuration
+      |> AliasEnvironment.update ~scheduler ~configuration
     in
-    let _update_result : AliasEnvironment.UpdateResult.t =
-      update ~ast_environment_update_result ()
-    in
-    let read_only = AliasEnvironment.read_only alias_environment in
+    let update_result = update ~ast_environment_update_result () in
+    let read_only = AliasEnvironment.UpdateResult.read_only update_result in
     let execute_action (alias_name, dependency, expectation) =
       let printer v =
         v >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"

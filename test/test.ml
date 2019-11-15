@@ -1370,29 +1370,18 @@ let update_environments
     ~qualifiers
     ()
   =
-  let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-  let alias_environment =
-    AliasEnvironment.create (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-  in
-  let class_hierarchy_environment =
-    ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-  in
-  let class_metadata_environment =
-    ClassMetadataEnvironment.create
-      (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
-  in
   let result =
     UnannotatedGlobalEnvironment.update
-      unannotated_global_environment
+      ast_environment
       ~scheduler
       ~configuration
       ~ast_environment_update_result
       qualifiers
-    |> AliasEnvironment.update alias_environment ~scheduler ~configuration
-    |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
-    |> ClassMetadataEnvironment.update class_metadata_environment ~scheduler ~configuration
+    |> AliasEnvironment.update ~scheduler ~configuration
+    |> ClassHierarchyEnvironment.update ~scheduler ~configuration
+    |> ClassMetadataEnvironment.update ~scheduler ~configuration
   in
-  class_metadata_environment, result
+  result
 
 
 module ScratchProject = struct
@@ -1530,25 +1519,11 @@ module ScratchProject = struct
       |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
     in
     let environment =
-      let unannotated_global_environment =
-        UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-      in
-      let alias_environment =
-        AliasEnvironment.create
-          (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-      in
-      let class_hierarchy_environment =
-        ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-      in
-      let class_metadata_environment =
-        ClassMetadataEnvironment.create
-          (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
-      in
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
             qualifier)
       in
-      let _, update_result =
+      let update_result =
         update_environments
           ~ast_environment:(AstEnvironment.read_only ast_environment)
           ~configuration
@@ -1556,24 +1531,20 @@ module ScratchProject = struct
           ~qualifiers:(Reference.Set.of_list qualifiers)
           ()
       in
-      let environment =
-        AnnotatedGlobalEnvironment.create
-          (ClassMetadataEnvironment.read_only class_metadata_environment)
-      in
       if configuration.debug then
-        ClassHierarchyEnvironment.ReadOnly.check_integrity
-          (ClassHierarchyEnvironment.read_only class_hierarchy_environment);
-      let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
+        ClassMetadataEnvironment.UpdateResult.read_only update_result
+        |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+        |> ClassHierarchyEnvironment.ReadOnly.check_integrity;
+      let update_result =
         AnnotatedGlobalEnvironment.update
-          environment
           ~configuration
           ~scheduler:(Scheduler.mock ())
           update_result
       in
       Annotated.Class.AttributeCache.clear ();
-      environment
+      AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
     in
-    sources, ast_environment, AnnotatedGlobalEnvironment.read_only environment
+    sources, ast_environment, environment
 
 
   let build_type_environment project =

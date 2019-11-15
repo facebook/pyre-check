@@ -71,49 +71,29 @@ let recheck
     ~short_message:(Some "[Repopulating]")
     ~connections
     ~message_type:WarningMessage;
-  let annotated_global_environment, recheck_modules =
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let alias_environment =
-      AliasEnvironment.create
-        (UnannotatedGlobalEnvironment.read_only unannotated_global_environment)
-    in
-    let class_hierarchy_environment =
-      ClassHierarchyEnvironment.create (AliasEnvironment.read_only alias_environment)
-    in
-    let class_metadata_environment =
-      ClassMetadataEnvironment.create
-        (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
-    in
-    let annotated_global_environment =
-      AnnotatedGlobalEnvironment.create
-        (ClassMetadataEnvironment.read_only class_metadata_environment)
-    in
+  let annotated_global_environment_update_result, recheck_modules =
+    let ast_environment = AstEnvironment.read_only ast_environment in
     let class_metadata_update_result =
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler
         ~configuration
         ~ast_environment_update_result
         invalidated_environment_qualifiers
-      |> AliasEnvironment.update alias_environment ~scheduler ~configuration
-      |> ClassHierarchyEnvironment.update class_hierarchy_environment ~scheduler ~configuration
-      |> ClassMetadataEnvironment.update class_metadata_environment ~scheduler ~configuration
+      |> AliasEnvironment.update ~scheduler ~configuration
+      |> ClassHierarchyEnvironment.update ~scheduler ~configuration
+      |> ClassMetadataEnvironment.update ~scheduler ~configuration
     in
     let validate_hierarchy () =
       if debug then
-        ClassHierarchyEnvironment.ReadOnly.check_integrity
-          (ClassHierarchyEnvironment.read_only class_hierarchy_environment)
+        ClassMetadataEnvironment.UpdateResult.read_only class_metadata_update_result
+        |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+        |> ClassHierarchyEnvironment.ReadOnly.check_integrity
     in
     if debug then
       validate_hierarchy ();
     let annotated_global_environment_update_result =
-      AnnotatedGlobalEnvironment.update
-        annotated_global_environment
-        ~configuration
-        ~scheduler
-        class_metadata_update_result
+      AnnotatedGlobalEnvironment.update ~configuration ~scheduler class_metadata_update_result
     in
     Annotated.Class.AttributeCache.clear ();
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
@@ -143,12 +123,11 @@ let recheck
           ~section:`Server
           "Incremental Environment Builder Update %s"
           (List.to_string ~f:Reference.show invalidated_type_checking_keys);
-        annotated_global_environment, recheck_modules
+        annotated_global_environment_update_result, recheck_modules
     | _ ->
         let () =
           Dependencies.purge legacy_dependency_tracker invalidated_environment_qualifiers;
           let re_environment_build_sources =
-            let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
             List.filter_map
               invalidated_environment_qualifiers
               ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
@@ -161,7 +140,7 @@ let recheck
           ~section:`Server
           "(Old) Incremental Environment Builder Update %s"
           (List.to_string ~f:Reference.show invalidated_environment_qualifiers);
-        annotated_global_environment, invalidated_environment_qualifiers
+        annotated_global_environment_update_result, invalidated_environment_qualifiers
   in
   Statistics.event
     ~section:`Memory
@@ -172,7 +151,8 @@ let recheck
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
   let environment =
-    TypeEnvironment.create (AnnotatedGlobalEnvironment.read_only annotated_global_environment)
+    TypeEnvironment.create
+      (AnnotatedGlobalEnvironment.UpdateResult.read_only annotated_global_environment_update_result)
   in
   TypeEnvironment.invalidate environment recheck_modules;
   ResolutionSharedMemory.remove recheck_modules;

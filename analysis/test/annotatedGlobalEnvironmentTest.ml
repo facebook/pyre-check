@@ -38,26 +38,22 @@ let test_simple_registration context =
   let assert_registers source name ?original expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let class_metadata_environment, update_result =
+    let ast_environment = AstEnvironment.read_only ast_environment in
+    let update_result =
       update_environments
-        ~ast_environment:(AstEnvironment.read_only ast_environment)
+        ~ast_environment
         ~configuration:(ScratchProject.configuration_of project)
         ~ast_environment_update_result
         ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
         ()
     in
-    let annotated_global_environment =
-      AnnotatedGlobalEnvironment.create
-        (ClassMetadataEnvironment.read_only class_metadata_environment)
-    in
-    let _ =
+    let update_result =
       AnnotatedGlobalEnvironment.update
-        annotated_global_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         update_result
     in
-    let read_only = AnnotatedGlobalEnvironment.read_only annotated_global_environment in
+    let read_only = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let printer global =
       global
       >>| GlobalResolution.sexp_of_global
@@ -129,27 +125,20 @@ let test_updates context =
         ~context
     in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let class_metadata_environment, update_result =
+    let read_only_ast_environment = AstEnvironment.read_only ast_environment in
+    let update_result =
       update_environments
-        ~ast_environment:(AstEnvironment.read_only ast_environment)
+        ~ast_environment:read_only_ast_environment
         ~configuration:(ScratchProject.configuration_of project)
         ~ast_environment_update_result
         ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
         ()
     in
-    let annotated_global_environment =
-      AnnotatedGlobalEnvironment.create
-        (ClassMetadataEnvironment.read_only class_metadata_environment)
-    in
     let configuration = ScratchProject.configuration_of project in
-    let _ =
-      AnnotatedGlobalEnvironment.update
-        annotated_global_environment
-        ~scheduler:(mock_scheduler ())
-        ~configuration
-        update_result
+    let update_result =
+      AnnotatedGlobalEnvironment.update ~scheduler:(mock_scheduler ()) ~configuration update_result
     in
-    let read_only = AnnotatedGlobalEnvironment.read_only annotated_global_environment in
+    let read_only = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let execute_action = function
       | global_name, dependency, expectation ->
           let location_insensitive_compare left right =
@@ -207,9 +196,7 @@ let test_updates context =
         ~ast_environment_update_result
         ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
         ()
-      |> snd
       |> AnnotatedGlobalEnvironment.update
-           annotated_global_environment
            ~scheduler:(mock_scheduler ())
            ~configuration:(ScratchProject.configuration_of project)
     in

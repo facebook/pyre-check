@@ -7,8 +7,6 @@ open Ast
 open Statement
 open SharedMemoryKeys
 
-type t
-
 type unannotated_global =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
@@ -56,12 +54,12 @@ module ReadOnly : sig
   val get_define_body : t -> ?dependency:dependency -> Reference.t -> Define.t Node.t option
 end
 
-val create : AstEnvironment.ReadOnly.t -> t
-
 module UpdateResult : sig
   (* This type is sealed to reify that Environment updates must follow and be based off of
      preenvironment updates *)
   type t
+
+  type read_only = ReadOnly.t
 
   val previous_unannotated_globals : t -> Reference.Set.t
 
@@ -76,14 +74,14 @@ module UpdateResult : sig
   val all_triggered_dependencies : t -> DependencyKey.KeySet.t list
 
   val unannotated_global_environment_update_result : t -> t
+
+  val read_only : t -> read_only
 end
 
 val update
-  :  t ->
+  :  AstEnvironment.ReadOnly.t ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   ast_environment_update_result:AstEnvironment.UpdateResult.t ->
   Reference.Set.t ->
   UpdateResult.t
-
-val read_only : t -> ReadOnly.t

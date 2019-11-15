@@ -9,15 +9,8 @@ open Pyre
 open Statement
 module PreviousEnvironment = ClassMetadataEnvironment
 
-type t = { class_metadata_environment: ClassMetadataEnvironment.ReadOnly.t }
-
-let create class_metadata_environment = { class_metadata_environment }
-
-let class_metadata_environment { class_metadata_environment } = class_metadata_environment
-
-let class_hierarchy_environment environment =
-  class_metadata_environment environment
-  |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+let class_hierarchy_environment class_metadata_environment =
+  ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
 
 
 let alias_environment environment =
@@ -40,10 +33,7 @@ module GlobalValue = struct
   let compare = Option.compare GlobalResolution.compare_global
 end
 
-module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
-
 let produce_global_annotation class_metadata_environment name ~track_dependencies =
-  let environment = { class_metadata_environment } in
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
   let resolution =
     GlobalResolution.create
@@ -126,14 +116,14 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
   let class_lookup =
     Reference.show name
     |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-         (unannotated_global_environment environment)
+         (unannotated_global_environment class_metadata_environment)
          ?dependency
   in
   match class_lookup with
   | Some retrieved_class -> produce_class_meta_annotation retrieved_class |> Option.some
   | None ->
       UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-        (unannotated_global_environment environment)
+        (unannotated_global_environment class_metadata_environment)
         ?dependency
         name
       >>= process_unannotated_global
@@ -141,11 +131,8 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
 
 module GlobalTable = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
-  module UpdateResult = UpdateResult
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = GlobalValue
-
-  type nonrec t = t
 
   type trigger = Reference.t
 
@@ -181,7 +168,7 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
 
   let all_keys class_metadata_environment =
     UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
-      (unannotated_global_environment { class_metadata_environment })
+      (unannotated_global_environment class_metadata_environment)
 
 
   let serialize_value = function
@@ -195,12 +182,10 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
     Option.equal (fun first second -> Annotation.equal (Node.value first) (Node.value second))
 end)
 
-let update { class_metadata_environment } ~scheduler ~configuration upstream_update =
+let update ~scheduler ~configuration upstream_update =
   GlobalResolution.AnnotationCache.clear ~scheduler ~configuration;
-  GlobalTable.update class_metadata_environment ~scheduler ~configuration upstream_update
+  GlobalTable.update ~scheduler ~configuration upstream_update
 
-
-let read_only { class_metadata_environment } = GlobalTable.read_only class_metadata_environment
 
 module ReadOnly = struct
   include GlobalTable.ReadOnly
@@ -232,4 +217,5 @@ module ReadOnly = struct
     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 end
 
+module UpdateResult = GlobalTable.UpdateResult
 module AnnotatedReadOnly = ReadOnly

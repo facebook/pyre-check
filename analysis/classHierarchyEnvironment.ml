@@ -10,15 +10,9 @@ open Expression
 open Statement
 module PreviousEnvironment = AliasEnvironment
 
-type t = { alias_environment: AliasEnvironment.ReadOnly.t }
-
-let create alias_environment = { alias_environment }
-
-let unannotated_global_environment { alias_environment } =
+let unannotated_global_environment alias_environment =
   AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
 
-
-module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 module EdgeValue = struct
   type t = ClassHierarchy.Target.t list option [@@deriving compare]
@@ -68,7 +62,7 @@ let get_parents alias_environment name ~track_dependencies =
           when not
                  (UnannotatedGlobalEnvironment.ReadOnly.class_exists
                     ?dependency
-                    (unannotated_global_environment { alias_environment })
+                    (unannotated_global_environment alias_environment)
                     primitive) ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype;
             None
@@ -114,7 +108,7 @@ let get_parents alias_environment name ~track_dependencies =
   in
   UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
     ?dependency
-    (unannotated_global_environment { alias_environment })
+    (unannotated_global_environment alias_environment)
     name
   >>| bases
   (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
@@ -128,14 +122,13 @@ let get_parents alias_environment name ~track_dependencies =
 
 
 let produce_undecorated_function alias_environment name ~track_dependencies =
-  let environment = { alias_environment } in
   let global =
     let dependency =
       Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
     in
     UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
       ?dependency
-      (unannotated_global_environment environment)
+      (unannotated_global_environment alias_environment)
       name
   in
   let handle = function
@@ -176,7 +169,6 @@ let produce_undecorated_function alias_environment name ~track_dependencies =
 
 module Edges = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
-  module UpdateResult = UpdateResult
   module Key = IndexTracker.IndexKey
   module Value = EdgeValue
 
@@ -185,8 +177,6 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
   let convert_trigger = IndexTracker.index
 
   let key_to_trigger = IndexTracker.annotation
-
-  type nonrec t = t
 
   module TriggerSet = Type.Primitive.Set
 
@@ -203,7 +193,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
 
   let all_keys alias_environment =
-    unannotated_global_environment { alias_environment }
+    unannotated_global_environment alias_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
     |> List.map ~f:IndexTracker.index
 
@@ -232,8 +222,6 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = UndecoratedFunctionValue
 
-  type nonrec t = t
-
   type trigger = Reference.t
 
   let convert_trigger = Fn.id
@@ -255,7 +243,7 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
 
 
   let all_keys alias_environment =
-    unannotated_global_environment { alias_environment }
+    unannotated_global_environment alias_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
 
 
@@ -268,19 +256,6 @@ module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
 
   let equal_value = Option.equal (Type.Callable.equal_overload Type.equal)
 end)
-
-let update { alias_environment } ~scheduler ~configuration upstream_update =
-  let edge_result = Edges.update alias_environment ~scheduler ~configuration upstream_update in
-  let undecorated_functions_result =
-    UndecoratedFunctions.update alias_environment ~scheduler ~configuration upstream_update
-  in
-  let triggered_dependencies =
-    SharedMemoryKeys.DependencyKey.KeySet.union
-      (UpdateResult.locally_triggered_dependencies edge_result)
-      (UpdateResult.locally_triggered_dependencies undecorated_functions_result)
-  in
-  UpdateResult.create ~triggered_dependencies ~upstream:upstream_update
-
 
 module ReadOnly = struct
   type t = {
@@ -338,11 +313,29 @@ module ReadOnly = struct
     ClassHierarchy.check_integrity class_hierarchy ~indices
 end
 
-module HierarchyReadOnly = ReadOnly
+module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment) (ReadOnly)
 
-let read_only { alias_environment } =
-  {
-    ReadOnly.edges_read_only = Edges.read_only alias_environment;
-    undecorated_function_read_only = UndecoratedFunctions.read_only alias_environment;
-    alias_environment;
-  }
+let update ~scheduler ~configuration upstream_update =
+  let edge_result = Edges.update ~scheduler ~configuration upstream_update in
+  let undecorated_functions_result =
+    UndecoratedFunctions.update ~scheduler ~configuration upstream_update
+  in
+  let triggered_dependencies =
+    SharedMemoryKeys.DependencyKey.KeySet.union
+      (Edges.UpdateResult.locally_triggered_dependencies edge_result)
+      (UndecoratedFunctions.UpdateResult.locally_triggered_dependencies
+         undecorated_functions_result)
+  in
+  let read_only =
+    let edges_read_only = Edges.UpdateResult.read_only edge_result in
+    {
+      ReadOnly.edges_read_only;
+      undecorated_function_read_only =
+        UndecoratedFunctions.UpdateResult.read_only undecorated_functions_result;
+      alias_environment = Edges.ReadOnly.upstream_environment edges_read_only;
+    }
+  in
+  UpdateResult.create ~triggered_dependencies ~upstream:upstream_update ~read_only
+
+
+module HierarchyReadOnly = ReadOnly

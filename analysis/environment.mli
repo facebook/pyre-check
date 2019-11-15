@@ -18,17 +18,19 @@ end
 module type PreviousUpdateResult = sig
   type t
 
+  type read_only
+
   val locally_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.KeySet.t
 
   val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.KeySet.t list
+
+  val read_only : t -> read_only
 end
 
 module type PreviousEnvironment = sig
-  type t
-
   module ReadOnly : ReadOnly
 
-  module UpdateResult : PreviousUpdateResult
+  module UpdateResult : PreviousUpdateResult with type read_only := ReadOnly.t
 end
 
 module UpdateResult : sig
@@ -45,38 +47,38 @@ module UpdateResult : sig
 
     type upstream
 
+    type read_only
+
     val create
       :  triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.t ->
       upstream:upstream ->
+      read_only:read_only ->
       t
   end
 
-  module Make (PreviousEnvironment : PreviousEnvironment) : sig
-    include S with type upstream = PreviousEnvironment.UpdateResult.t
+  module Make (PreviousEnvironment : PreviousEnvironment) (ReadOnly : ReadOnly) : sig
+    include
+      S with type upstream = PreviousEnvironment.UpdateResult.t and type read_only = ReadOnly.t
 
-    include Private with type upstream := upstream and type t := t
+    include Private with type upstream := upstream and type t := t and type read_only := read_only
   end
 end
 
 module type S = sig
-  type t
-
   module ReadOnly : ReadOnly
 
   module PreviousEnvironment : PreviousEnvironment
 
-  module UpdateResult : UpdateResult.S with type upstream = PreviousEnvironment.UpdateResult.t
-
-  val create : PreviousEnvironment.ReadOnly.t -> t
+  module UpdateResult :
+    UpdateResult.S
+      with type upstream = PreviousEnvironment.UpdateResult.t
+       and type read_only = ReadOnly.t
 
   val update
-    :  t ->
-    scheduler:Scheduler.t ->
+    :  scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
     PreviousEnvironment.UpdateResult.t ->
     UpdateResult.t
-
-  val read_only : t -> ReadOnly.t
 end
 
 (* The following is a special form of a shared memory table optimized for incremental type checking.
@@ -89,19 +91,9 @@ module EnvironmentTable : sig
     (* This refers to the immediately preceding environment *)
     module PreviousEnvironment : PreviousEnvironment
 
-    (* This should have been most likely produced by UpdateResult.Make(PreviousEnvironment) *)
-    module UpdateResult : sig
-      include UpdateResult.S with type upstream = PreviousEnvironment.UpdateResult.t
-
-      include UpdateResult.Private with type upstream := upstream and type t := t
-    end
-
     module Key : Memory.KeyType
 
     module Value : Memory.ComparableValueType
-
-    (* This is the environment's internal data type, only used for the actual update function *)
-    type t
 
     (* This is the data type of the key that we are being told to compute. This sometimes
        unfortunately has to differ from the actual key of the table, but the difference should be
@@ -121,7 +113,7 @@ module EnvironmentTable : sig
     (* For compatibility with the old dependency mode, we also need a different kind of key
        discovery that just returns all of the keys that possibly could have been affected by the
        update *)
-    val legacy_invalidated_keys : UpdateResult.upstream -> TriggerSet.t
+    val legacy_invalidated_keys : PreviousEnvironment.UpdateResult.t -> TriggerSet.t
 
     (* This is the actual main function of the update. *)
     val produce_value
@@ -142,13 +134,6 @@ module EnvironmentTable : sig
   module type S = sig
     module In : In
 
-    val update
-      :  In.PreviousEnvironment.ReadOnly.t ->
-      scheduler:Scheduler.t ->
-      configuration:Configuration.Analysis.t ->
-      In.PreviousEnvironment.UpdateResult.t ->
-      In.UpdateResult.t
-
     module ReadOnly : sig
       type t
 
@@ -163,7 +148,24 @@ module EnvironmentTable : sig
       val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
     end
 
-    val read_only : In.PreviousEnvironment.ReadOnly.t -> ReadOnly.t
+    module UpdateResult : sig
+      include
+        UpdateResult.S
+          with type upstream = In.PreviousEnvironment.UpdateResult.t
+           and type read_only = ReadOnly.t
+
+      include
+        UpdateResult.Private
+          with type upstream := upstream
+           and type t := t
+           and type read_only := read_only
+    end
+
+    val update
+      :  scheduler:Scheduler.t ->
+      configuration:Configuration.Analysis.t ->
+      In.PreviousEnvironment.UpdateResult.t ->
+      UpdateResult.t
   end
 
   module WithCache (In : In) : S with module In = In

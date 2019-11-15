@@ -14,18 +14,16 @@ let test_global_registration context =
   let assert_registers ?(expected = true) source name =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let _ =
+    let ast_environment = AstEnvironment.read_only ast_environment in
+    let update_result =
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
     in
-    let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
+    let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
     assert_equal (UnannotatedGlobalEnvironment.ReadOnly.class_exists read_only name) expected
   in
   assert_registers {|
@@ -43,18 +41,16 @@ let test_define_registration context =
   let assert_registers ~expected source =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let _ =
+    let ast_environment = AstEnvironment.read_only ast_environment in
+    let update_result =
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
     in
-    let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
+    let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let actual = UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module read_only !&"test" in
     let expected = List.sort expected ~compare:Reference.compare in
     assert_equal
@@ -77,7 +73,7 @@ let test_define_registration context =
   assert_registers
     {|
      from typing import overload
-     
+
      @overload
      def foo(x: int) -> int: ...
      @overload
@@ -230,18 +226,16 @@ let test_simple_global_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
-    let _ =
+    let ast_environment = AstEnvironment.read_only ast_environment in
+    let update_result =
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
     in
-    let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
+    let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let printer global =
       global
       >>| UnannotatedGlobalEnvironment.show_unannotated_global
@@ -358,19 +352,17 @@ let test_updates context =
         ~context
     in
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-    let unannotated_global_environment =
-      UnannotatedGlobalEnvironment.create (AstEnvironment.read_only ast_environment)
-    in
     let configuration = ScratchProject.configuration_of project in
-    let _ =
+    let update_result =
+      let ast_environment = AstEnvironment.read_only ast_environment in
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
     in
-    let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
+    let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let execute_action = function
       | `Get (class_name, dependency, expected_number_of_statements) ->
           let printer number =
@@ -466,7 +458,7 @@ let test_updates context =
       |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
       |> fun ast_environment_update_result ->
       UnannotatedGlobalEnvironment.update
-        unannotated_global_environment
+        (AstEnvironment.read_only ast_environment)
         ~scheduler:(mock_scheduler ())
         ~configuration
         ~ast_environment_update_result
@@ -947,7 +939,7 @@ let test_updates context =
     |}
     ~new_source:{|
       def foo():
-        return 1 
+        return 1
     |}
     ~middle_actions:
       [

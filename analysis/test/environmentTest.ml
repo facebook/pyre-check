@@ -535,19 +535,18 @@ let test_connect_type_order context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let class_metadata_environment, _ =
+  let update_result =
     update_environments
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
       ~ast_environment_update_result
       ()
+    |> AnnotatedGlobalEnvironment.update
+         ~configuration:(ScratchProject.configuration_of project)
+         ~scheduler:(Test.mock_scheduler ())
   in
-  let environment =
-    AnnotatedGlobalEnvironment.create
-      (ClassMetadataEnvironment.read_only class_metadata_environment)
-    |> AnnotatedGlobalEnvironment.read_only
-  in
+  let environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
   let order = class_hierarchy environment in
   let assert_successors annotation successors =
     assert_equal
@@ -1186,7 +1185,7 @@ let test_connect_annotations_to_top context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let class_metadata_environment, update_result =
+  let update_result =
     update_environments
       ~ast_environment:(AstEnvironment.read_only ast_environment)
       ~configuration:(ScratchProject.configuration_of project)
@@ -1194,17 +1193,13 @@ let test_connect_annotations_to_top context =
       ~ast_environment_update_result
       ()
   in
-  let environment =
-    AnnotatedGlobalEnvironment.create
-      (ClassMetadataEnvironment.read_only class_metadata_environment)
+  let update_result =
+    AnnotatedGlobalEnvironment.update
+      ~configuration:(ScratchProject.configuration_of project)
+      ~scheduler:(Test.mock_scheduler ())
+      update_result
   in
-  AnnotatedGlobalEnvironment.update
-    environment
-    ~configuration:(ScratchProject.configuration_of project)
-    ~scheduler:(Test.mock_scheduler ())
-    update_result
-  |> ignore;
-  let order = class_hierarchy (AnnotatedGlobalEnvironment.read_only environment) in
+  let order = class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result) in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
 
 
@@ -1226,25 +1221,24 @@ let test_deduplicate context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let class_metadata_environment, update_result =
+  let ast_environment = AstEnvironment.read_only ast_environment in
+  let update_result =
     update_environments
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
+      ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
       ~ast_environment_update_result
       ()
   in
-  let environment =
-    AnnotatedGlobalEnvironment.create
-      (ClassMetadataEnvironment.read_only class_metadata_environment)
+  let update_result =
+    AnnotatedGlobalEnvironment.update
+      ~configuration:(ScratchProject.configuration_of project)
+      ~scheduler:(Test.mock_scheduler ())
+      update_result
   in
-  AnnotatedGlobalEnvironment.update
-    environment
-    ~configuration:(ScratchProject.configuration_of project)
-    ~scheduler:(Test.mock_scheduler ())
-    update_result
-  |> ignore;
-  let (module Handler) = class_hierarchy (AnnotatedGlobalEnvironment.read_only environment) in
+  let (module Handler) =
+    class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
+  in
   let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
     let assert_targets edges from target parameters create =
@@ -1289,25 +1283,24 @@ let test_remove_extra_edges_to_object context =
       ]
   in
   let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
-  let class_metadata_environment, update_result =
+  let ast_environment = AstEnvironment.read_only ast_environment in
+  let update_result =
     update_environments
-      ~ast_environment:(AstEnvironment.read_only ast_environment)
+      ~ast_environment
       ~configuration:(ScratchProject.configuration_of project)
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
       ~ast_environment_update_result
       ()
   in
-  let environment =
-    AnnotatedGlobalEnvironment.create
-      (ClassMetadataEnvironment.read_only class_metadata_environment)
+  let update_result =
+    AnnotatedGlobalEnvironment.update
+      ~configuration:(ScratchProject.configuration_of project)
+      ~scheduler:(Test.mock_scheduler ())
+      update_result
   in
-  AnnotatedGlobalEnvironment.update
-    environment
-    ~configuration:(ScratchProject.configuration_of project)
-    ~scheduler:(Test.mock_scheduler ())
-    update_result
-  |> ignore;
-  let (module Handler) = class_hierarchy (AnnotatedGlobalEnvironment.read_only environment) in
+  let (module Handler) =
+    class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
+  in
   let zero_index = IndexTracker.index "test.Zero" in
   let one_index = IndexTracker.index "test.One" in
   let printer = List.to_string ~f:ClassHierarchy.Target.show in
@@ -1391,15 +1384,8 @@ let test_update_and_compute_dependencies context =
           ~qualifiers:(Reference.Set.singleton (Reference.create "source"))
           ~ast_environment_update_result
           ()
-        |> snd
-      in
-      let environment =
-        (* hack to get to the non-read only environment. Shhh... *)
-        AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment environment
-        |> AnnotatedGlobalEnvironment.create
       in
       AnnotatedGlobalEnvironment.update
-        environment
         ~configuration:(ScratchProject.configuration_of project)
         ~scheduler:(Test.mock_scheduler ())
         update_result

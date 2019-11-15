@@ -8,10 +8,6 @@ open Ast
 open Pyre
 module PreviousEnvironment = ClassHierarchyEnvironment
 
-type t = { class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t }
-
-let create class_hierarchy_environment = { class_hierarchy_environment }
-
 type class_metadata = {
   successors: Type.Primitive.t list;
   is_test: bool;
@@ -31,8 +27,6 @@ module ClassMetadataValue = struct
 
   let compare = Option.compare compare_class_metadata
 end
-
-module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment)
 
 let produce_class_metadata class_hierarchy_environment class_name ~track_dependencies =
   let unannotated_global_environment_dependency =
@@ -98,11 +92,8 @@ let produce_class_metadata class_hierarchy_environment class_name ~track_depende
 
 module MetadataTable = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
-  module UpdateResult = UpdateResult
   module Key = SharedMemoryKeys.StringKey
   module Value = ClassMetadataValue
-
-  type nonrec t = t
 
   type trigger = string
 
@@ -149,9 +140,7 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
   let equal_value = Option.equal equal_class_metadata
 end)
 
-let update { class_hierarchy_environment } = MetadataTable.update class_hierarchy_environment
-
-let read_only { class_hierarchy_environment } = MetadataTable.read_only class_hierarchy_environment
+let update = MetadataTable.update
 
 module ReadOnly = struct
   include MetadataTable.ReadOnly
@@ -161,4 +150,5 @@ module ReadOnly = struct
   let class_hierarchy_environment = upstream_environment
 end
 
+module UpdateResult = MetadataTable.UpdateResult
 module MetadataReadOnly = ReadOnly
