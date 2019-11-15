@@ -562,44 +562,64 @@ def run_fixme_targets_file(
     LOG.info("Processing %s/TARGETS...", path)
     targets = [path + ":" + name + "-typecheck" for name in target_names]
     buck_test_command = ["buck", "test", "--show-full-json-output"] + targets
-    buck_test = subprocess.run(
-        buck_test_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    if buck_test.returncode == 0:
-        # Successful run with no type errors
-        LOG.info("No errors in %s/TARGETS...", path)
-    elif buck_test.returncode == 32:
-        buck_test_output = buck_test.stdout.decode().split("\n")
-        pyre_error_pattern = re.compile(r"\W*(.*\.pyi?):(\d*):(\d*) (.* \[(\d*)\]: .*)")
-        errors = {}
-        for output_line in buck_test_output:
-            matched = pyre_error_pattern.match(output_line)
-            if matched:
-                path = matched.group(1)
-                line = int(matched.group(2))
-                column = int(matched.group(3))
-                description = matched.group(4)
-                code = matched.group(5)
-                error = {
-                    "line": line,
-                    "column": column,
-                    "path": project_directory / path,
-                    "code": code,
-                    "description": description,
-                    "concise_description": description,
-                }
-                errors[(line, column, path, code)] = error
-        errors = list(errors.values())
-        LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
-        if len(errors) > 0:
-            # Note: We are not linting here yet.
-            fix(arguments, sort_errors(errors))
-    else:
-        LOG.error(
-            "Failed to run buck test command:\n\t%s\n\n%s",
-            " ".join(buck_test_command),
-            buck_test.stderr.decode(),
+
+    def get_errors(path: str) -> Optional[List[Dict[str, Any]]]:
+        buck_test = subprocess.run(
+            buck_test_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
+        if buck_test.returncode == 0:
+            # Successful run with no type errors
+            LOG.info("No errors in %s/TARGETS...", path)
+        elif buck_test.returncode == 32:
+            buck_test_output = buck_test.stdout.decode().split("\n")
+            pyre_error_pattern = re.compile(
+                r"\W*(.*\.pyi?):(\d*):(\d*) (.* \[(\d*)\]: .*)"
+            )
+            errors = {}
+            for output_line in buck_test_output:
+                matched = pyre_error_pattern.match(output_line)
+                if matched:
+                    path = matched.group(1)
+                    line = int(matched.group(2))
+                    column = int(matched.group(3))
+                    description = matched.group(4)
+                    code = matched.group(5)
+                    error = {
+                        "line": line,
+                        "column": column,
+                        "path": project_directory / path,
+                        "code": code,
+                        "description": description,
+                        "concise_description": description,
+                    }
+                    errors[(line, column, path, code)] = error
+            return list(errors.values())
+        else:
+            LOG.error(
+                "Failed to run buck test command:\n\t%s\n\n%s",
+                " ".join(buck_test_command),
+                buck_test.stderr.decode(),
+            )
+
+    errors = get_errors(path)
+    if not errors:
+        return
+    LOG.info("Found %d type errors in %s/TARGETS.", len(errors), path)
+    if not errors:
+        return
+    fix(arguments, sort_errors(errors))
+    if not arguments.lint:
+        return
+    lint_status = get_lint_status()
+    if lint_status:
+        LOG.info("Linting...")
+        apply_lint()
+        errors = get_errors(path)
+        if not errors:
+            LOG.info("Errors unchanged after linting.")
+            return
+        LOG.info("Found %d type errors after linting.", len(errors))
+        fix(arguments, sort_errors(errors))
 
 
 def run_fixme_targets(arguments: argparse.Namespace) -> None:
