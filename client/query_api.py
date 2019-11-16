@@ -1,4 +1,3 @@
-from collections import ChainMap
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional
 
 from .connection_api import PyreConnection
@@ -59,7 +58,12 @@ def get_class_hierarchy(
     result = pyre_connection.query_server("dump_class_hierarchy()")
     if result is None or "response" not in result:
         return None
-    return dict(ChainMap(*result["response"]))
+    hierarchy = {
+        key: edges
+        for annotation_and_edges in result["response"]
+        for key, edges in annotation_and_edges.items()
+    }
+    return hierarchy
 
 
 def get_call_graph(

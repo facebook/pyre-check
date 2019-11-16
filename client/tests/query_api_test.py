@@ -40,15 +40,15 @@ class QueryAPITest(unittest.TestCase):
             "response": [
                 {"Foo": ["object"]},
                 {"object": []},
-                # This should never happen in practice, but unfortunately can happen
-                # due to the type of the JSON returned. The first entry wins.
+                # This should never happen in practice, but unfortunately is something
+                # to consider due to the type of the JSON returned. The last entry wins.
                 {"Foo": ["Bar"]},
                 {"Bar": ["object"]},
             ]
         }
         self.assertEqual(
             query_api.get_class_hierarchy(pyre_connection),
-            {"Foo": ["object"], "Bar": ["object"], "object": []},
+            {"Foo": ["Bar"], "Bar": ["object"], "object": []},
         )
         pyre_connection.query_server.return_value = {"error": "Found an issue"}
         self.assertEqual(query_api.get_class_hierarchy(pyre_connection), None)
