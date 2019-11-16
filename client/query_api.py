@@ -65,7 +65,7 @@ def get_class_hierarchy(
 def get_call_graph(
     pyre_connection: PyreConnection
 ) -> Optional[Dict[str, List[CallGraphTarget]]]:
-    result = pyre_connection.query_server("dump_class_hierarchy()")
+    result = pyre_connection.query_server("dump_call_graph()")
     if result is None or "response" not in result:
         return None
     call_graph = {}
