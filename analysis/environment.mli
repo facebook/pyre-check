@@ -45,27 +45,6 @@ module UpdateResult : sig
 
     val upstream : t -> upstream
   end
-
-  module type Private = sig
-    type t
-
-    type upstream
-
-    type read_only
-
-    val create
-      :  triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.t ->
-      upstream:upstream ->
-      read_only:read_only ->
-      t
-  end
-
-  module Make (PreviousEnvironment : PreviousEnvironment) (ReadOnly : ReadOnly) : sig
-    include
-      S with type upstream = PreviousEnvironment.UpdateResult.t and type read_only = ReadOnly.t
-
-    include Private with type upstream := upstream and type t := t and type read_only := read_only
-  end
 end
 
 module type S = sig
@@ -152,18 +131,10 @@ module EnvironmentTable : sig
       val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
     end
 
-    module UpdateResult : sig
-      include
-        UpdateResult.S
-          with type upstream = In.PreviousEnvironment.UpdateResult.t
-           and type read_only = ReadOnly.t
-
-      include
-        UpdateResult.Private
-          with type upstream := upstream
-           and type t := t
-           and type read_only := read_only
-    end
+    module UpdateResult :
+      UpdateResult.S
+        with type upstream = In.PreviousEnvironment.UpdateResult.t
+         and type read_only = ReadOnly.t
 
     val update
       :  scheduler:Scheduler.t ->

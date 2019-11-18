@@ -66,28 +66,10 @@ module UpdateResult = struct
       triggered_dependencies :: PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
 
 
-    let create ~triggered_dependencies ~upstream ~read_only =
-      { triggered_dependencies; upstream; read_only }
-
-
     let read_only { read_only; _ } = read_only
 
     let unannotated_global_environment_update_result { upstream; _ } =
       PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result upstream
-  end
-
-  module type Private = sig
-    type upstream
-
-    type t
-
-    type read_only
-
-    val create
-      :  triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.t ->
-      upstream:upstream ->
-      read_only:read_only ->
-      t
   end
 end
 
@@ -173,18 +155,10 @@ module EnvironmentTable = struct
       val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
     end
 
-    module UpdateResult : sig
-      include
-        UpdateResult.S
-          with type upstream = In.PreviousEnvironment.UpdateResult.t
-           and type read_only = ReadOnly.t
-
-      include
-        UpdateResult.Private
-          with type upstream := upstream
-           and type t := t
-           and type read_only := read_only
-    end
+    module UpdateResult :
+      UpdateResult.S
+        with type upstream = In.PreviousEnvironment.UpdateResult.t
+         and type read_only = ReadOnly.t
 
     val update
       :  scheduler:Scheduler.t ->
@@ -303,10 +277,11 @@ module EnvironmentTable = struct
                 in
                 triggered_dependencies)
           in
-          UpdateResult.create
-            ~triggered_dependencies
-            ~upstream:upstream_update
-            ~read_only:(read_only upstream_update)
+          {
+            UpdateResult.triggered_dependencies;
+            upstream = upstream_update;
+            read_only = read_only upstream_update;
+          }
       | _ ->
           let _ =
             let name = Format.sprintf "LegacyTableUpdate(%s)" In.Value.description in
@@ -322,10 +297,11 @@ module EnvironmentTable = struct
                 |> Table.KeySet.of_list
                 |> Table.remove_batch)
           in
-          UpdateResult.create
-            ~triggered_dependencies:SharedMemoryKeys.DependencyKey.KeySet.empty
-            ~upstream:upstream_update
-            ~read_only:(read_only upstream_update)
+          {
+            UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.KeySet.empty;
+            upstream = upstream_update;
+            read_only = read_only upstream_update;
+          }
   end
 
   module WithCache (In : In) =
