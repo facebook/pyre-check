@@ -73,20 +73,13 @@ let recheck
     ~message_type:WarningMessage;
   let annotated_global_environment_update_result, recheck_modules =
     let ast_environment = AstEnvironment.read_only ast_environment in
-    let class_metadata_update_result =
-      UnannotatedGlobalEnvironment.update
+    let annotated_global_environment_update_result =
+      AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
         ast_environment
-        ~scheduler
         ~configuration
+        ~scheduler
         ~ast_environment_update_result
         invalidated_environment_qualifiers
-      |> AliasEnvironment.update ~scheduler ~configuration
-      |> ClassHierarchyEnvironment.update ~scheduler ~configuration
-      |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
-      |> ClassMetadataEnvironment.update ~scheduler ~configuration
-    in
-    let annotated_global_environment_update_result =
-      AnnotatedGlobalEnvironment.update ~configuration ~scheduler class_metadata_update_result
     in
     Annotated.Class.AttributeCache.clear ();
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in

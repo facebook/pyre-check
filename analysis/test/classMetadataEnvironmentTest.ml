@@ -16,24 +16,12 @@ let test_simple_registration context =
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
-      UnannotatedGlobalEnvironment.update
+      ClassMetadataEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
-      |> AliasEnvironment.update
-           ~scheduler:(mock_scheduler ())
-           ~configuration:(Configuration.Analysis.create ())
-      |> ClassHierarchyEnvironment.update
-           ~scheduler:(mock_scheduler ())
-           ~configuration:(Configuration.Analysis.create ())
-      |> UndecoratedFunctionEnvironment.update
-           ~scheduler:(mock_scheduler ())
-           ~configuration:(Configuration.Analysis.create ())
-      |> ClassMetadataEnvironment.update
-           ~scheduler:(mock_scheduler ())
-           ~configuration:(Configuration.Analysis.create ())
     in
     let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in
     let printer v =
@@ -98,16 +86,12 @@ let test_updates context =
       let scheduler = Test.mock_scheduler () in
       let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
       let ast_environment = AstEnvironment.read_only ast_environment in
-      UnannotatedGlobalEnvironment.update
+      ClassMetadataEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler
         ~configuration
         ~ast_environment_update_result
         (Reference.Set.of_list qualifiers)
-      |> AliasEnvironment.update ~scheduler ~configuration
-      |> ClassHierarchyEnvironment.update ~scheduler ~configuration
-      |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
-      |> ClassMetadataEnvironment.update ~scheduler ~configuration
     in
     let update_result = update ~ast_environment_update_result () in
     let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in

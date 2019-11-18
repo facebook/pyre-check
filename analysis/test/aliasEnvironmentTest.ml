@@ -16,15 +16,12 @@ let test_simple_registration context =
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
-      UnannotatedGlobalEnvironment.update
+      AliasEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         (Reference.Set.singleton (Reference.create "test"))
-      |> AliasEnvironment.update
-           ~scheduler:(mock_scheduler ())
-           ~configuration:(Configuration.Analysis.create ())
     in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in
     let expected = expected >>| fun expected -> Type.TypeAlias (Type.Primitive expected) in
@@ -75,15 +72,12 @@ let test_harder_registrations context =
     in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
-      UnannotatedGlobalEnvironment.update
+      AliasEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
         ~ast_environment_update_result
         qualifiers
-      |> AliasEnvironment.update
-           ~scheduler:(mock_scheduler ())
-           ~configuration:(Configuration.Analysis.create ())
     in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in
     let expected = expected >>| parser >>| fun alias -> Type.TypeAlias alias in
@@ -156,13 +150,12 @@ let test_updates context =
         AstEnvironment.UpdateResult.reparsed ast_environment_update_result |> Reference.Set.of_list
       in
       let scheduler = Test.mock_scheduler () in
-      UnannotatedGlobalEnvironment.update
+      AliasEnvironment.update_this_and_all_preceding_environments
         read_only_ast_environment
         ~scheduler
         ~configuration
         ~ast_environment_update_result
         qualifiers
-      |> AliasEnvironment.update ~scheduler ~configuration
     in
     let update_result = update ~ast_environment_update_result () in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in

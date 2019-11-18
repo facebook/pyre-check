@@ -47,12 +47,6 @@ let test_simple_registration context =
         ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
         ()
     in
-    let update_result =
-      AnnotatedGlobalEnvironment.update
-        ~scheduler:(mock_scheduler ())
-        ~configuration:(Configuration.Analysis.create ())
-        update_result
-    in
     let read_only = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let printer global =
       global
@@ -135,9 +129,6 @@ let test_updates context =
         ()
     in
     let configuration = ScratchProject.configuration_of project in
-    let update_result =
-      AnnotatedGlobalEnvironment.update ~scheduler:(mock_scheduler ()) ~configuration update_result
-    in
     let read_only = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let execute_action = function
       | global_name, dependency, expectation ->
@@ -196,9 +187,6 @@ let test_updates context =
         ~ast_environment_update_result
         ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
         ()
-      |> AnnotatedGlobalEnvironment.update
-           ~scheduler:(mock_scheduler ())
-           ~configuration:(ScratchProject.configuration_of project)
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.KeySet.elements set

@@ -343,7 +343,7 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
   let equal_value = Option.equal Type.equal_alias
 end)
 
-let update = Aliases.update
+include Aliases
 
 module ReadOnly = struct
   include Aliases.ReadOnly

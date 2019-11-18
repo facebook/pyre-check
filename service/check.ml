@@ -71,17 +71,12 @@ let check
 
     let timer = Timer.start () in
     let update_result =
-      UnannotatedGlobalEnvironment.update
+      AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler
         ~configuration
         ~ast_environment_update_result
         (Ast.Reference.Set.of_list qualifiers)
-      |> AliasEnvironment.update ~scheduler ~configuration
-      |> ClassHierarchyEnvironment.update ~scheduler ~configuration
-      |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
-      |> ClassMetadataEnvironment.update ~configuration ~scheduler
-      |> AnnotatedGlobalEnvironment.update ~configuration ~scheduler
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let environment = TypeEnvironment.create global_environment in

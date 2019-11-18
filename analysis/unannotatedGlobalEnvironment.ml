@@ -661,7 +661,7 @@ module UpdateResult = struct
   let read_only { read_only; _ } = read_only
 end
 
-let update
+let update_this_and_all_preceding_environments
     ast_environment
     ~scheduler
     ~configuration

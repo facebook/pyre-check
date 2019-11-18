@@ -16,7 +16,7 @@ let test_global_registration context =
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
-      UnannotatedGlobalEnvironment.update
+      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
@@ -43,7 +43,7 @@ let test_define_registration context =
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
-      UnannotatedGlobalEnvironment.update
+      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
@@ -228,7 +228,7 @@ let test_simple_global_registration context =
     let ast_environment, ast_environment_update_result = ScratchProject.parse_sources project in
     let ast_environment = AstEnvironment.read_only ast_environment in
     let update_result =
-      UnannotatedGlobalEnvironment.update
+      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration:(Configuration.Analysis.create ())
@@ -355,7 +355,7 @@ let test_updates context =
     let configuration = ScratchProject.configuration_of project in
     let update_result =
       let ast_environment = AstEnvironment.read_only ast_environment in
-      UnannotatedGlobalEnvironment.update
+      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         ast_environment
         ~scheduler:(mock_scheduler ())
         ~configuration
@@ -457,7 +457,7 @@ let test_updates context =
       |> (fun updates -> AstEnvironment.Update updates)
       |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
       |> fun ast_environment_update_result ->
-      UnannotatedGlobalEnvironment.update
+      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         (AstEnvironment.read_only ast_environment)
         ~scheduler:(mock_scheduler ())
         ~configuration

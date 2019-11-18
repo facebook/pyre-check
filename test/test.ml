@@ -1370,19 +1370,12 @@ let update_environments
     ~qualifiers
     ()
   =
-  let result =
-    UnannotatedGlobalEnvironment.update
-      ast_environment
-      ~scheduler
-      ~configuration
-      ~ast_environment_update_result
-      qualifiers
-    |> AliasEnvironment.update ~scheduler ~configuration
-    |> ClassHierarchyEnvironment.update ~scheduler ~configuration
-    |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
-    |> ClassMetadataEnvironment.update ~scheduler ~configuration
-  in
-  result
+  AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
+    ast_environment
+    ~scheduler
+    ~configuration
+    ~ast_environment_update_result
+    qualifiers
 
 
 module ScratchProject = struct
@@ -1531,12 +1524,6 @@ module ScratchProject = struct
           ~ast_environment_update_result
           ~qualifiers:(Reference.Set.of_list qualifiers)
           ()
-      in
-      let update_result =
-        AnnotatedGlobalEnvironment.update
-          ~configuration
-          ~scheduler:(Scheduler.mock ())
-          update_result
       in
       Annotated.Class.AttributeCache.clear ();
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result

@@ -36,6 +36,14 @@ module type PreviousEnvironment = sig
   module ReadOnly : ReadOnly
 
   module UpdateResult : PreviousUpdateResult with type read_only := ReadOnly.t
+
+  val update_this_and_all_preceding_environments
+    :  AstEnvironment.ReadOnly.t ->
+    scheduler:Scheduler.t ->
+    configuration:Configuration.Analysis.t ->
+    ast_environment_update_result:AstEnvironment.UpdateResult.t ->
+    Ast.Reference.Set.t ->
+    UpdateResult.t
 end
 
 module UpdateResult = struct
@@ -83,10 +91,12 @@ module type S = sig
       with type upstream = PreviousEnvironment.UpdateResult.t
        and type read_only = ReadOnly.t
 
-  val update
-    :  scheduler:Scheduler.t ->
+  val update_this_and_all_preceding_environments
+    :  AstEnvironment.ReadOnly.t ->
+    scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
-    PreviousEnvironment.UpdateResult.t ->
+    ast_environment_update_result:AstEnvironment.UpdateResult.t ->
+    Ast.Reference.Set.t ->
     UpdateResult.t
 end
 
@@ -160,10 +170,12 @@ module EnvironmentTable = struct
         with type upstream = In.PreviousEnvironment.UpdateResult.t
          and type read_only = ReadOnly.t
 
-    val update
-      :  scheduler:Scheduler.t ->
+    val update_this_and_all_preceding_environments
+      :  AstEnvironment.ReadOnly.t ->
+      scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
-      In.PreviousEnvironment.UpdateResult.t ->
+      ast_environment_update_result:AstEnvironment.UpdateResult.t ->
+      Ast.Reference.Set.t ->
       UpdateResult.t
   end
 
@@ -235,7 +247,7 @@ module EnvironmentTable = struct
       { ReadOnly.upstream_environment; get; hash_to_key_map; serialize_decoded; decoded_equal }
 
 
-    let update ~scheduler ~configuration upstream_update =
+    let update_only_this_environment ~scheduler ~configuration upstream_update =
       let update ~names_to_update ~track_dependencies () =
         let register =
           let set name =
@@ -302,6 +314,22 @@ module EnvironmentTable = struct
             upstream = upstream_update;
             read_only = read_only upstream_update;
           }
+
+
+    let update_this_and_all_preceding_environments
+        ast_environment
+        ~scheduler
+        ~configuration
+        ~ast_environment_update_result
+        modified_qualifiers
+      =
+      In.PreviousEnvironment.update_this_and_all_preceding_environments
+        ast_environment
+        ~scheduler
+        ~configuration
+        ~ast_environment_update_result
+        modified_qualifiers
+      |> update_only_this_environment ~scheduler ~configuration
   end
 
   module WithCache (In : In) =

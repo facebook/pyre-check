@@ -85,7 +85,7 @@ module UpdateResult : sig
   val read_only : t -> read_only
 end
 
-val update
+val update_this_and_all_preceding_environments
   :  AstEnvironment.ReadOnly.t ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->

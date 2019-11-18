@@ -39,13 +39,6 @@ type expectation = {
   obscure: bool option;
 }
 
-let populate ~configuration ~update_result =
-  let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
-    AnnotatedGlobalEnvironment.update ~configuration ~scheduler:(Scheduler.mock ()) update_result
-  in
-  Annotated.Class.AttributeCache.clear ()
-
-
 let environment
     ~sources
     ?(configuration = Configuration.Analysis.create ())
@@ -57,7 +50,7 @@ let environment
     List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
         qualifier)
   in
-  let update_result =
+  let _update_result =
     Test.update_environments
       ~ast_environment
       ~configuration
@@ -65,7 +58,7 @@ let environment
       ~ast_environment_update_result
       ()
   in
-  populate ~configuration ~update_result;
+  Annotated.Class.AttributeCache.clear ();
   ast_environment
 
 

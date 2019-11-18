@@ -542,9 +542,6 @@ let test_connect_type_order context =
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
       ~ast_environment_update_result
       ()
-    |> AnnotatedGlobalEnvironment.update
-         ~configuration:(ScratchProject.configuration_of project)
-         ~scheduler:(Test.mock_scheduler ())
   in
   let environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
   let order = class_hierarchy environment in
@@ -1193,12 +1190,6 @@ let test_connect_annotations_to_top context =
       ~ast_environment_update_result
       ()
   in
-  let update_result =
-    AnnotatedGlobalEnvironment.update
-      ~configuration:(ScratchProject.configuration_of project)
-      ~scheduler:(Test.mock_scheduler ())
-      update_result
-  in
   let order = class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result) in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
 
@@ -1229,12 +1220,6 @@ let test_deduplicate context =
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
       ~ast_environment_update_result
       ()
-  in
-  let update_result =
-    AnnotatedGlobalEnvironment.update
-      ~configuration:(ScratchProject.configuration_of project)
-      ~scheduler:(Test.mock_scheduler ())
-      update_result
   in
   let (module Handler) =
     class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
@@ -1291,12 +1276,6 @@ let test_remove_extra_edges_to_object context =
       ~qualifiers:(Reference.Set.singleton (Reference.create "test"))
       ~ast_environment_update_result
       ()
-  in
-  let update_result =
-    AnnotatedGlobalEnvironment.update
-      ~configuration:(ScratchProject.configuration_of project)
-      ~scheduler:(Test.mock_scheduler ())
-      update_result
   in
   let (module Handler) =
     class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
@@ -1385,11 +1364,7 @@ let test_update_and_compute_dependencies context =
           ~ast_environment_update_result
           ()
       in
-      AnnotatedGlobalEnvironment.update
-        ~configuration:(ScratchProject.configuration_of project)
-        ~scheduler:(Test.mock_scheduler ())
-        update_result
-      |> AnnotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies
+      AnnotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result
     in
     assert_equal
       ~printer:(List.to_string ~f:SharedMemoryKeys.show_dependency)

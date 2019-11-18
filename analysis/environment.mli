@@ -35,6 +35,14 @@ module type PreviousEnvironment = sig
   module ReadOnly : ReadOnly
 
   module UpdateResult : PreviousUpdateResult with type read_only := ReadOnly.t
+
+  val update_this_and_all_preceding_environments
+    :  AstEnvironment.ReadOnly.t ->
+    scheduler:Scheduler.t ->
+    configuration:Configuration.Analysis.t ->
+    ast_environment_update_result:AstEnvironment.UpdateResult.t ->
+    Ast.Reference.Set.t ->
+    UpdateResult.t
 end
 
 module UpdateResult : sig
@@ -57,10 +65,12 @@ module type S = sig
       with type upstream = PreviousEnvironment.UpdateResult.t
        and type read_only = ReadOnly.t
 
-  val update
-    :  scheduler:Scheduler.t ->
+  val update_this_and_all_preceding_environments
+    :  AstEnvironment.ReadOnly.t ->
+    scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
-    PreviousEnvironment.UpdateResult.t ->
+    ast_environment_update_result:AstEnvironment.UpdateResult.t ->
+    Ast.Reference.Set.t ->
     UpdateResult.t
 end
 
@@ -136,10 +146,12 @@ module EnvironmentTable : sig
         with type upstream = In.PreviousEnvironment.UpdateResult.t
          and type read_only = ReadOnly.t
 
-    val update
-      :  scheduler:Scheduler.t ->
+    val update_this_and_all_preceding_environments
+      :  AstEnvironment.ReadOnly.t ->
+      scheduler:Scheduler.t ->
       configuration:Configuration.Analysis.t ->
-      In.PreviousEnvironment.UpdateResult.t ->
+      ast_environment_update_result:AstEnvironment.UpdateResult.t ->
+      Ast.Reference.Set.t ->
       UpdateResult.t
   end
 

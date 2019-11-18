@@ -136,7 +136,7 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
   let equal_value = Option.equal equal_class_metadata
 end)
 
-let update = MetadataTable.update
+include MetadataTable
 
 module ReadOnly = struct
   include MetadataTable.ReadOnly
@@ -150,5 +150,4 @@ module ReadOnly = struct
     |> UndecoratedFunctionEnvironment.ReadOnly.class_hierarchy_environment
 end
 
-module UpdateResult = MetadataTable.UpdateResult
 module MetadataReadOnly = ReadOnly
