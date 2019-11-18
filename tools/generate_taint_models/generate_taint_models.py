@@ -106,6 +106,7 @@ def main() -> None:
             url_resolver_type=RegexURLResolver,
             # pyre-ignore[16]: The django stubs are for another version.
             url_pattern_type=RegexURLPattern,
+            classes_to_taint=[],
             root=os.path.dirname(os.path.abspath(arguments.urls_path)),
             stub_root=stub_root,
             graphql_object_type=object,

@@ -6,37 +6,13 @@
 # pyre-strict
 
 
-import inspect
-import types
-from typing import Callable, Iterable
-
-from .inspect_parser import extract_annotation, extract_name, extract_view_name
-from .model import CallableModel
-from .model_generator import Configuration, Registry
+from .function_tainter import FunctionTainter
+from .model_generator import Registry
 from .view_generator import ViewGenerator
 
 
-class RESTApiSourceGenerator(ViewGenerator):
-    def compute_models(
-        self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[str]:
-        entry_points = set()
-
-        for view_function in functions_to_model:
-            view_name = extract_view_name(view_function)
-            if view_name in Configuration.whitelisted_views:
-                continue
-            model = CallableModel(
-                callable=view_function,
-                arg="TaintSource[UserControlled]",
-                vararg="TaintSource[UserControlled]",
-                kwarg="TaintSource[UserControlled]",
-                whitelisted_parameters=Configuration.whitelisted_classes,
-            ).generate()
-            if model is not None:
-                entry_points.add(model)
-
-        return sorted(entry_points)
+class RESTApiSourceGenerator(FunctionTainter, ViewGenerator):
+    pass
 
 
 Registry.register(

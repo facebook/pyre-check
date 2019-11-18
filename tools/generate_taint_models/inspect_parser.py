@@ -10,7 +10,7 @@ import inspect
 from typing import Callable, Optional
 
 
-def extract_view_name(view_func: Callable[..., object]) -> Optional[str]:
+def extract_qualified_name(view_func: Callable[..., object]) -> Optional[str]:
     method_name = None
     self_class = getattr(view_func, "__self__", None)
     if self_class and inspect.ismethod(view_func):

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any, List, Optional, Set, Type
 
 from . import get_annotated_free_functions_with_decorator  # noqa
+from . import get_class_sources  # noqa
 from . import get_exit_nodes  # noqa
 from . import get_globals  # noqa
 from . import get_graphql_sources  # noqa
@@ -32,6 +33,7 @@ class ConfigurationArguments:
     stub_root: Optional[str]
     # pyre-ignore[4]: Too dynamic.
     graphql_object_type: Type[Any]
+    classes_to_taint: List[str]
     urls_module: Optional[str]
     graphql_module: List[str]
     blacklisted_global_directories: Set[str]
@@ -65,6 +67,8 @@ def run_from_global_state(
     )
     Configuration.blacklisted_globals = configuration_arguments.blacklisted_globals
     Configuration.logger = configuration_arguments.logger
+
+    Configuration.classes_to_taint = configuration_arguments.classes_to_taint
 
     modes = generation_arguments.mode or Registry.default_generators
 

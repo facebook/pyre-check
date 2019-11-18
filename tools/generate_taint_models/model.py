@@ -12,7 +12,7 @@ from typing import Callable, Iterable, List, NamedTuple, Optional, Set, Tuple, U
 
 import _ast
 
-from .inspect_parser import extract_annotation, extract_name, extract_view_name
+from .inspect_parser import extract_annotation, extract_name, extract_qualified_name
 
 
 FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
@@ -56,10 +56,10 @@ class CallableModel(NamedTuple):
 
     def generate(self) -> Optional[str]:
         modeled_object = self.callable
-        view_name = extract_view_name(modeled_object)
+        qualified_name = extract_qualified_name(modeled_object)
         # Don't attempt to generate models for local functions that our static analysis
         # can't handle.
-        if view_name is None:
+        if qualified_name is None:
             return None
         parameters = []
         if isinstance(modeled_object, types.FunctionType):
@@ -74,7 +74,7 @@ class CallableModel(NamedTuple):
             parameter = view_parameters[parameter_name]
             whitelist = self.whitelisted_parameters
             should_annotate = True
-            if name_whitelist is not None and parameter_name not in name_whitelist:
+            if name_whitelist is not None and parameter_name in name_whitelist:
                 should_annotate = False
             if whitelist is not None and extract_annotation(parameter) in whitelist:
                 should_annotate = False
@@ -89,7 +89,7 @@ class CallableModel(NamedTuple):
                 taint = None
             parameters.append((extract_name(parameter), taint))
         return RawCallableModel(
-            callable_name=view_name, parameters=parameters, returns=self.returns
+            callable_name=qualified_name, parameters=parameters, returns=self.returns
         ).generate()
 
 

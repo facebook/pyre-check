@@ -78,6 +78,7 @@ class Configuration:
     blacklisted_global_directories: ClassVar[Set[str]] = set()
     annotation_specs: ClassVar[List[DecoratorAnnotationSpec]] = []
     logger: ClassVar[Optional[str]] = None
+    classes_to_taint: ClassVar[List[str]] = []
 
 
 class Registry:

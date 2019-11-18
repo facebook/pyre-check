@@ -27,10 +27,27 @@ def testE(x: int, **kwargs: str) -> None:
 
 
 class TestClass:
+    def __init__(self):
+        ...
+
     def methodA(self, x: int):
         ...
 
     def methodB(self, *args: str):
+        ...
+
+
+class TestChildClassA(TestClass):
+    pass
+
+
+class TestGrandChildClassA(TestChildClassA):
+    def __init__(self, x: int):
+        ...
+
+
+class TestChildClassB(TestClass):
+    def __init__(self, x: int):
         ...
 
 
