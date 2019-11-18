@@ -84,7 +84,11 @@ let check
       if debug then
         ClassHierarchyEnvironment.ReadOnly.check_integrity
           (ClassHierarchyEnvironment.UpdateResult.read_only class_hierarchy_environment_update);
-      ClassMetadataEnvironment.update ~scheduler ~configuration class_hierarchy_environment_update
+      UndecoratedFunctionEnvironment.update
+        ~scheduler
+        ~configuration
+        class_hierarchy_environment_update
+      |> ClassMetadataEnvironment.update ~configuration ~scheduler
       |> AnnotatedGlobalEnvironment.update ~configuration ~scheduler
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in

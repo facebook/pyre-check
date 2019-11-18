@@ -226,24 +226,6 @@ let test_updates context =
             ~dependency
             (IndexTracker.index class_name)
           |> assert_equal ~printer expectation
-      | `Undecorated (function_name, dependency, expectation) ->
-          let parse expectation =
-            match Type.create (parse_single_expression expectation) ~aliases:(fun _ -> None) with
-            | Type.Callable { implementation; _ } -> implementation
-            | _ -> failwith (expectation ^ "not a callable")
-          in
-          let printer implementation =
-            implementation >>| Type.Callable.show_overload Type.pp |> Option.value ~default:"none"
-          in
-          let remove_define_location overload =
-            { overload with Type.Record.Callable.define_location = None }
-          in
-          ClassHierarchyEnvironment.ReadOnly.get_undecorated_function
-            read_only
-            ~dependency
-            (Reference.create function_name)
-          >>| remove_define_location
-          |> assert_equal ~printer (expectation >>| parse >>| remove_define_location)
     in
     List.iter middle_actions ~f:execute_action;
     let delete_file
@@ -370,41 +352,6 @@ let test_updates context =
     ~middle_actions:[`Edges ("test.C", dependency, Some ["test.First"])]
     ~expected_triggers:[dependency]
     ~post_actions:[`Edges ("test.C", dependency, Some ["test.Second"])]
-    ();
-
-  (* Undecorated functions *)
-  assert_updates
-    ~original_source:
-      {|
-      class First:
-        pass
-      class Second:
-        pass
-      Alias = First
-      def decorator(__x: Alias) -> Second:
-       pass
-    |}
-    ~new_source:
-      {|
-      class First:
-        pass
-      class Second:
-        pass
-      Alias = Second
-      def decorator(__x: Alias) -> Second:
-       pass
-    |}
-    ~middle_actions:
-      [
-        `Undecorated
-          ("test.decorator", dependency, Some "typing.Callable[[test.First], test.Second]");
-      ]
-    ~expected_triggers:[dependency]
-    ~post_actions:
-      [
-        `Undecorated
-          ("test.decorator", dependency, Some "typing.Callable[[test.Second], test.Second]");
-      ]
     ();
 
   (* Addition should trigger previous failed reads *)

@@ -1379,6 +1379,7 @@ let update_environments
       qualifiers
     |> AliasEnvironment.update ~scheduler ~configuration
     |> ClassHierarchyEnvironment.update ~scheduler ~configuration
+    |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
     |> ClassMetadataEnvironment.update ~scheduler ~configuration
   in
   result

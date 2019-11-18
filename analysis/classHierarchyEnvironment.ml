@@ -7,7 +7,6 @@ open Core
 open Ast
 open Pyre
 open Expression
-open Statement
 module PreviousEnvironment = AliasEnvironment
 
 let unannotated_global_environment alias_environment =
@@ -20,16 +19,6 @@ module EdgeValue = struct
   let prefix = Prefix.make ()
 
   let description = "Edges"
-
-  let unmarshall value = Marshal.from_string value 0
-end
-
-module UndecoratedFunctionValue = struct
-  type t = Type.t Type.Callable.overload option [@@deriving compare]
-
-  let prefix = Prefix.make ()
-
-  let description = "Undecorated functions"
 
   let unmarshall value = Marshal.from_string value 0
 end
@@ -121,52 +110,6 @@ let get_parents alias_environment name ~track_dependencies =
   >>| remove_extra_edges_to_object
 
 
-let produce_undecorated_function alias_environment name ~track_dependencies =
-  let global =
-    let dependency =
-      Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
-    in
-    UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-      ?dependency
-      (unannotated_global_environment alias_environment)
-      name
-  in
-  let handle = function
-    | UnannotatedGlobalEnvironment.Define signatures ->
-        let handle { Node.value = signature; location } =
-          let dependency =
-            Option.some_if track_dependencies (SharedMemoryKeys.UndecoratedFunction name)
-          in
-          let parse_annotation =
-            AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
-              ?dependency
-              alias_environment
-          in
-          let parse_as_concatenation =
-            AliasEnvironment.ReadOnly.parse_as_concatenation ?dependency alias_environment
-          in
-          let parse_as_parameter_specification_instance_annotation =
-            AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
-              ?dependency
-              alias_environment
-          in
-          let parser =
-            {
-              AnnotatedCallable.parse_annotation;
-              parse_as_concatenation;
-              parse_as_parameter_specification_instance_annotation;
-            }
-          in
-          Node.create signature ~location |> AnnotatedCallable.create_overload ~parser
-        in
-        List.find signatures ~f:(fun signature ->
-            not (Define.Signature.is_overloaded_function (Node.value signature)))
-        >>| handle
-    | _ -> None
-  in
-  global >>= handle
-
-
 module Edges = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
   module Key = IndexTracker.IndexKey
@@ -212,77 +155,12 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
   let equal_value = Option.equal (List.equal ClassHierarchy.Target.equal)
 end)
 
-module UndecoratedFunctions = Environment.EnvironmentTable.WithCache (struct
-  module PreviousEnvironment = PreviousEnvironment
-  module UpdateResult = UpdateResult
-  module Key = SharedMemoryKeys.ReferenceKey
-  module Value = UndecoratedFunctionValue
-
-  type trigger = Reference.t
-
-  let convert_trigger = Fn.id
-
-  let key_to_trigger = Fn.id
-
-  module TriggerSet = Reference.Set
-
-  let produce_value = produce_undecorated_function
-
-  let filter_upstream_dependency = function
-    | SharedMemoryKeys.UndecoratedFunction name -> Some name
-    | _ -> None
-
-
-  let legacy_invalidated_keys =
-    UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals
-
-
-  let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
-
-  let serialize_value = function
-    | Some overload -> Type.Callable.show_overload Type.pp overload
-    | None -> "None"
-
-
-  let show_key = Reference.show
-
-  let equal_value = Option.equal (Type.Callable.equal_overload Type.equal)
-end)
-
 module ReadOnly = struct
-  type t = {
-    edges_read_only: Edges.ReadOnly.t;
-    undecorated_function_read_only: UndecoratedFunctions.ReadOnly.t;
-    alias_environment: AliasEnvironment.ReadOnly.t;
-  }
+  include Edges.ReadOnly
 
-  let get_edges { edges_read_only; _ } = Edges.ReadOnly.get edges_read_only
+  let alias_environment = upstream_environment
 
-  let get_undecorated_function { undecorated_function_read_only; _ } =
-    UndecoratedFunctions.ReadOnly.get undecorated_function_read_only
-
-
-  let alias_environment { alias_environment; _ } = alias_environment
-
-  let hash_to_key_map { edges_read_only; undecorated_function_read_only; _ } =
-    Map.merge_skewed
-      (Edges.ReadOnly.hash_to_key_map edges_read_only)
-      (UndecoratedFunctions.ReadOnly.hash_to_key_map undecorated_function_read_only)
-      ~combine:(fun ~key:_ value _ -> value)
-
-
-  let serialize_decoded { edges_read_only; undecorated_function_read_only; _ } decodable =
-    match Edges.ReadOnly.serialize_decoded edges_read_only decodable with
-    | Some decoded -> Some decoded
-    | None ->
-        UndecoratedFunctions.ReadOnly.serialize_decoded undecorated_function_read_only decodable
-
-
-  let decoded_equal { edges_read_only; undecorated_function_read_only; _ } left right =
-    match Edges.ReadOnly.decoded_equal edges_read_only left right with
-    | Some result -> Some result
-    | None -> UndecoratedFunctions.ReadOnly.decoded_equal undecorated_function_read_only left right
-
+  let get_edges = get
 
   let check_integrity read_only =
     let unannotated_global_environment =
@@ -305,29 +183,7 @@ module ReadOnly = struct
     ClassHierarchy.check_integrity class_hierarchy ~indices
 end
 
-module UpdateResult = Environment.UpdateResult.Make (PreviousEnvironment) (ReadOnly)
-
-let update ~scheduler ~configuration upstream_update =
-  let edge_result = Edges.update ~scheduler ~configuration upstream_update in
-  let undecorated_functions_result =
-    UndecoratedFunctions.update ~scheduler ~configuration upstream_update
-  in
-  let triggered_dependencies =
-    SharedMemoryKeys.DependencyKey.KeySet.union
-      (Edges.UpdateResult.locally_triggered_dependencies edge_result)
-      (UndecoratedFunctions.UpdateResult.locally_triggered_dependencies
-         undecorated_functions_result)
-  in
-  let read_only =
-    let edges_read_only = Edges.UpdateResult.read_only edge_result in
-    {
-      ReadOnly.edges_read_only;
-      undecorated_function_read_only =
-        UndecoratedFunctions.UpdateResult.read_only undecorated_functions_result;
-      alias_environment = Edges.ReadOnly.upstream_environment edges_read_only;
-    }
-  in
-  UpdateResult.create ~triggered_dependencies ~upstream:upstream_update ~read_only
-
+let update = Edges.update
 
 module HierarchyReadOnly = ReadOnly
+module UpdateResult = Edges.UpdateResult

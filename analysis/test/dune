@@ -40,7 +40,8 @@
   typeConstraintsTest
   typeOrderTest
   typeTest
-  unannotatedGlobalEnvironmentTest)
+  unannotatedGlobalEnvironmentTest
+  undecoratedFunctionEnvironmentTest)
  (preprocess
   (pps
    ppx_deriving.eq

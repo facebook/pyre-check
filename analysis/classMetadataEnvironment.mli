@@ -18,9 +18,11 @@ module MetadataReadOnly : sig
   val get_class_metadata : t -> ?dependency:dependency -> Type.Primitive.t -> class_metadata option
 
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
+
+  val undecorated_function_environment : t -> UndecoratedFunctionEnvironment.ReadOnly.t
 end
 
 include
   Environment.S
     with module ReadOnly = MetadataReadOnly
-     and module PreviousEnvironment = ClassHierarchyEnvironment
+     and module PreviousEnvironment = UndecoratedFunctionEnvironment

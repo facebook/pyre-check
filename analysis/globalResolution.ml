@@ -174,9 +174,10 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
     ClassMetadataEnvironment.ReadOnly.get_class_metadata ?dependency class_metadata_environment
   in
   let undecorated_signature =
-    ClassHierarchyEnvironment.ReadOnly.get_undecorated_function
+    UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
       ?dependency
-      class_hierarchy_environment
+      (ClassMetadataEnvironment.ReadOnly.undecorated_function_environment
+         class_metadata_environment)
   in
   {
     dependency;

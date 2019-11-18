@@ -6,7 +6,7 @@
 open Core
 open Ast
 open Pyre
-module PreviousEnvironment = ClassHierarchyEnvironment
+module PreviousEnvironment = UndecoratedFunctionEnvironment
 
 type class_metadata = {
   successors: Type.Primitive.t list;
@@ -28,9 +28,13 @@ module ClassMetadataValue = struct
   let compare = Option.compare compare_class_metadata
 end
 
-let produce_class_metadata class_hierarchy_environment class_name ~track_dependencies =
+let produce_class_metadata undecorated_function_environment class_name ~track_dependencies =
   let unannotated_global_environment_dependency =
     Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
+  in
+  let class_hierarchy_environment =
+    UndecoratedFunctionEnvironment.ReadOnly.class_hierarchy_environment
+      undecorated_function_environment
   in
   let alias_environment =
     ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
@@ -139,7 +143,11 @@ module ReadOnly = struct
 
   let get_class_metadata = get
 
-  let class_hierarchy_environment = upstream_environment
+  let undecorated_function_environment = upstream_environment
+
+  let class_hierarchy_environment read_only =
+    upstream_environment read_only
+    |> UndecoratedFunctionEnvironment.ReadOnly.class_hierarchy_environment
 end
 
 module UpdateResult = MetadataTable.UpdateResult

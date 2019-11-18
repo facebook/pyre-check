@@ -28,6 +28,9 @@ let test_simple_registration context =
       |> ClassHierarchyEnvironment.update
            ~scheduler:(mock_scheduler ())
            ~configuration:(Configuration.Analysis.create ())
+      |> UndecoratedFunctionEnvironment.update
+           ~scheduler:(mock_scheduler ())
+           ~configuration:(Configuration.Analysis.create ())
       |> ClassMetadataEnvironment.update
            ~scheduler:(mock_scheduler ())
            ~configuration:(Configuration.Analysis.create ())
@@ -103,6 +106,7 @@ let test_updates context =
         (Reference.Set.of_list qualifiers)
       |> AliasEnvironment.update ~scheduler ~configuration
       |> ClassHierarchyEnvironment.update ~scheduler ~configuration
+      |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
       |> ClassMetadataEnvironment.update ~scheduler ~configuration
     in
     let update_result = update ~ast_environment_update_result () in

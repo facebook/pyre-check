@@ -82,6 +82,7 @@ let recheck
         invalidated_environment_qualifiers
       |> AliasEnvironment.update ~scheduler ~configuration
       |> ClassHierarchyEnvironment.update ~scheduler ~configuration
+      |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
       |> ClassMetadataEnvironment.update ~scheduler ~configuration
     in
     let validate_hierarchy () =

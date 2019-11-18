@@ -54,3 +54,4 @@ module ResolvedCallable = ResolvedCallable
 module EnvironmentSharedMemory = EnvironmentSharedMemory
 module IndexTracker = IndexTracker
 module UnannotatedGlobalEnvironment = UnannotatedGlobalEnvironment
+module UndecoratedFunctionEnvironment = UndecoratedFunctionEnvironment
