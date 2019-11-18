@@ -183,7 +183,14 @@ module ReadOnly = struct
     ClassHierarchy.check_integrity class_hierarchy ~indices
 end
 
-let update = Edges.update
+let update ~scheduler ~configuration:({ Configuration.Analysis.debug; _ } as configuration) upstream
+  =
+  let result = Edges.update ~scheduler ~configuration upstream in
+  let read_only = Edges.UpdateResult.read_only result in
+  if debug then
+    ReadOnly.check_integrity read_only;
+  result
+
 
 module HierarchyReadOnly = ReadOnly
 module UpdateResult = Edges.UpdateResult

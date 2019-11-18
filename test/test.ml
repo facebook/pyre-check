@@ -1532,10 +1532,6 @@ module ScratchProject = struct
           ~qualifiers:(Reference.Set.of_list qualifiers)
           ()
       in
-      if configuration.debug then
-        ClassMetadataEnvironment.UpdateResult.read_only update_result
-        |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-        |> ClassHierarchyEnvironment.ReadOnly.check_integrity;
       let update_result =
         AnnotatedGlobalEnvironment.update
           ~configuration

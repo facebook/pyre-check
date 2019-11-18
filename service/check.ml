@@ -71,23 +71,15 @@ let check
 
     let timer = Timer.start () in
     let update_result =
-      let class_hierarchy_environment_update =
-        UnannotatedGlobalEnvironment.update
-          ast_environment
-          ~scheduler
-          ~configuration
-          ~ast_environment_update_result
-          (Ast.Reference.Set.of_list qualifiers)
-        |> AliasEnvironment.update ~scheduler ~configuration
-        |> ClassHierarchyEnvironment.update ~scheduler ~configuration
-      in
-      if debug then
-        ClassHierarchyEnvironment.ReadOnly.check_integrity
-          (ClassHierarchyEnvironment.UpdateResult.read_only class_hierarchy_environment_update);
-      UndecoratedFunctionEnvironment.update
+      UnannotatedGlobalEnvironment.update
+        ast_environment
         ~scheduler
         ~configuration
-        class_hierarchy_environment_update
+        ~ast_environment_update_result
+        (Ast.Reference.Set.of_list qualifiers)
+      |> AliasEnvironment.update ~scheduler ~configuration
+      |> ClassHierarchyEnvironment.update ~scheduler ~configuration
+      |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
       |> ClassMetadataEnvironment.update ~configuration ~scheduler
       |> AnnotatedGlobalEnvironment.update ~configuration ~scheduler
     in

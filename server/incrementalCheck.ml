@@ -21,7 +21,7 @@ let recheck
     ~connections
     ~open_documents
     ~lookups
-    ~configuration:({ debug; incremental_style; _ } as configuration)
+    ~configuration:({ incremental_style; _ } as configuration)
     paths
   =
   let timer = Timer.start () in
@@ -85,14 +85,6 @@ let recheck
       |> UndecoratedFunctionEnvironment.update ~scheduler ~configuration
       |> ClassMetadataEnvironment.update ~scheduler ~configuration
     in
-    let validate_hierarchy () =
-      if debug then
-        ClassMetadataEnvironment.UpdateResult.read_only class_metadata_update_result
-        |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-        |> ClassHierarchyEnvironment.ReadOnly.check_integrity
-    in
-    if debug then
-      validate_hierarchy ();
     let annotated_global_environment_update_result =
       AnnotatedGlobalEnvironment.update ~configuration ~scheduler class_metadata_update_result
     in

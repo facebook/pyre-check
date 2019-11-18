@@ -14,8 +14,6 @@ module HierarchyReadOnly : sig
     ClassHierarchy.Target.t list option
 
   val alias_environment : t -> AliasEnvironment.ReadOnly.t
-
-  val check_integrity : t -> unit
 end
 
 include

@@ -39,11 +39,7 @@ type expectation = {
   obscure: bool option;
 }
 
-let populate ~configuration:({ Configuration.Analysis.debug; _ } as configuration) ~update_result =
-  if debug then
-    ClassMetadataEnvironment.UpdateResult.read_only update_result
-    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-    |> ClassHierarchyEnvironment.ReadOnly.check_integrity;
+let populate ~configuration ~update_result =
   let _update_result : AnnotatedGlobalEnvironment.UpdateResult.t =
     AnnotatedGlobalEnvironment.update ~configuration ~scheduler:(Scheduler.mock ()) update_result
   in
