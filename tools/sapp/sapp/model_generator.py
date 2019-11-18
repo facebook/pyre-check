@@ -476,6 +476,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                         location=SourceLocation(
                             location["line"], location["start"], location["end"]
                         ),
+                        kind=annotation["kind"],
                         message=annotation["msg"],
                         link=annotation.get("link", None),
                         trace_key=annotation.get("trace", None),

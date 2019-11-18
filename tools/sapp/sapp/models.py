@@ -1247,6 +1247,8 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
         SourceLocationType, nullable=False, doc="The location for the message"
     )
 
+    kind = Column(String(length=255), nullable=True, index=True)
+
     message: str = Column(
         String(length=4096),
         doc="Message describing info about the trace",
