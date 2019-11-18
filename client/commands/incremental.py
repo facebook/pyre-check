@@ -50,7 +50,7 @@ class Incremental(Reporting):
         self._nonblocking = arguments.nonblocking  # type: bool
         self._incremental_style = arguments.incremental_style  # type: bool
         self._version_hash = configuration.version_hash
-        self._use_json_sockets: bool = arguments.use_json_sockets
+        self._use_json_sockets: bool = configuration._use_json_sockets
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

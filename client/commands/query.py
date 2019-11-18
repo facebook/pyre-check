@@ -48,7 +48,7 @@ class Query(Command):
         super(Query, self).__init__(arguments, configuration, analysis_directory)
         self.query = self._rewrite_paths(arguments.query)
         self._version_hash = configuration.version_hash
-        self._use_json_sockets = arguments.use_json_sockets
+        self._use_json_sockets = configuration._use_json_sockets
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
