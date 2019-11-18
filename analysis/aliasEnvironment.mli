@@ -12,6 +12,8 @@ module AliasReadOnly : sig
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
+  val empty_stub_environment : t -> EmptyStubEnvironment.ReadOnly.t
+
   val parse_annotation_without_validating_type_parameters
     :  t ->
     ?modify_aliases:(Type.alias -> Type.alias) ->
@@ -39,4 +41,4 @@ end
 include
   Environment.S
     with module ReadOnly = AliasReadOnly
-     and module PreviousEnvironment = UnannotatedGlobalEnvironment
+     and module PreviousEnvironment = EmptyStubEnvironment

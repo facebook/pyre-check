@@ -26,7 +26,6 @@ let recheck
   =
   let timer = Timer.start () in
   Annotated.Class.AttributeCache.clear ();
-  AstEnvironment.FromEmptyStubCache.clear ();
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
   let scheduler =
     Scheduler.with_parallel scheduler ~is_parallel:(List.length module_updates > 10)

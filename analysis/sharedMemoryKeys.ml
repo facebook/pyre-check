@@ -51,6 +51,7 @@ type dependency =
   | RegisterClassMetadata of Type.Primitive.t
   | UndecoratedFunction of Reference.t
   | AnnotateGlobal of Reference.t
+  | FromEmptyStub of Reference.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct

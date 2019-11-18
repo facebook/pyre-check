@@ -7,7 +7,7 @@ open Core
 open Ast
 open Pyre
 open Expression
-module PreviousEnvironment = UnannotatedGlobalEnvironment
+module PreviousEnvironment = EmptyStubEnvironment
 
 module AliasValue = struct
   type t = Type.alias option
@@ -20,10 +20,6 @@ module AliasValue = struct
 
   let compare = Option.compare Type.compare_alias
 end
-
-let ast_environment unannotated_global_environment =
-  UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
-
 
 module UnresolvedAlias = struct
   type t = {
@@ -48,7 +44,7 @@ module UnresolvedAlias = struct
         dependencies: string list;
       }
 
-  let checked_resolve unannotated_global_environment { value; target } ~dependency () =
+  let checked_resolve empty_stub_environment { value; target } ~dependency () =
     let value_annotation = unchecked_resolve ~unparsed:value ~target String.Map.empty in
     let dependencies = String.Hash_set.create () in
     let module TrackedTransform = Type.Transform.Make (struct
@@ -71,17 +67,24 @@ module UnresolvedAlias = struct
                 | Expression.Name name when is_simple_name name -> name_to_reference_exn name
                 | _ -> Reference.create "typing.Any"
               in
-              let ast_environment = ast_environment unannotated_global_environment in
-              if AstEnvironment.ReadOnly.from_empty_stub ast_environment ?dependency reference then
+              if
+                EmptyStubEnvironment.ReadOnly.from_empty_stub
+                  empty_stub_environment
+                  ?dependency
+                  reference
+              then
                 (), Type.Any
               else if
                 UnannotatedGlobalEnvironment.ReadOnly.class_exists
                   ?dependency
-                  unannotated_global_environment
+                  (EmptyStubEnvironment.ReadOnly.unannotated_global_environment
+                     empty_stub_environment)
                   primitive
                 || Option.is_some
                      (AstEnvironment.ReadOnly.get_module_metadata
-                        ast_environment
+                        ( EmptyStubEnvironment.ReadOnly.unannotated_global_environment
+                            empty_stub_environment
+                        |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment )
                         ?dependency
                         (Reference.create primitive))
               then
@@ -267,7 +270,7 @@ let extract_alias unannotated_global_environment name ~dependency =
   >>= extract_alias
 
 
-let produce_alias unannotated_global_environment global_name ~track_dependencies =
+let produce_alias empty_stub_environment global_name ~track_dependencies =
   (* TODO(T53786399): Optimize this function. Theres a lot of perf potentially to be gained here,
      currently biasing towards simplicity *)
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AliasRegister global_name) in
@@ -281,11 +284,7 @@ let produce_alias unannotated_global_environment global_name ~track_dependencies
         | VariableAlias variable -> Some (Type.VariableAlias variable)
         | TypeAlias unresolved -> (
             match
-              UnresolvedAlias.checked_resolve
-                unannotated_global_environment
-                unresolved
-                ~dependency
-                ()
+              UnresolvedAlias.checked_resolve empty_stub_environment unresolved ~dependency ()
             with
             | Resolved alias -> Some alias
             | HasDependents { unparsed; dependencies } ->
@@ -299,7 +298,11 @@ let produce_alias unannotated_global_environment global_name ~track_dependencies
                 >>| UnresolvedAlias.unchecked_resolve ~target:current ~unparsed
                 >>| fun alias -> Type.TypeAlias alias )
       in
-      extract_alias unannotated_global_environment current ~dependency >>= handle_extracted
+      extract_alias
+        (EmptyStubEnvironment.ReadOnly.unannotated_global_environment empty_stub_environment)
+        current
+        ~dependency
+      >>= handle_extracted
   in
   get_aliased_type_for global_name ~visited:Reference.Set.empty
 
@@ -350,7 +353,11 @@ module ReadOnly = struct
 
   let get_alias = get
 
-  let unannotated_global_environment = upstream_environment
+  let empty_stub_environment = upstream_environment
+
+  let unannotated_global_environment read_only =
+    empty_stub_environment read_only |> EmptyStubEnvironment.ReadOnly.unannotated_global_environment
+
 
   let parse_annotation_without_validating_type_parameters
       environment
@@ -373,12 +380,11 @@ module ReadOnly = struct
         let constraints = function
           | Type.Primitive name ->
               let originates_from_empty_stub =
-                let ast_environment =
-                  UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-                    (unannotated_global_environment environment)
-                in
                 let reference = Reference.create name in
-                AstEnvironment.ReadOnly.from_empty_stub ?dependency ast_environment reference
+                EmptyStubEnvironment.ReadOnly.from_empty_stub
+                  ?dependency
+                  (empty_stub_environment environment)
+                  reference
               in
               if originates_from_empty_stub then
                 Some Type.Any

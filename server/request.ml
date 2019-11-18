@@ -491,8 +491,11 @@ let process_type_query_request
     let alias_environment =
       ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
     in
+    let empty_stub_environment =
+      AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
+    in
     let unannotated_global_environment =
-      AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
+      EmptyStubEnvironment.ReadOnly.unannotated_global_environment empty_stub_environment
     in
     match request with
     | TypeQuery.RunCheck { check_name; paths } ->
@@ -808,12 +811,8 @@ let process_type_query_request
         let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution global_environment in
         let class_hierarchy_json =
           let indices =
-            Analysis.AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
-              global_environment
-            |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-            |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-            |> AliasEnvironment.ReadOnly.unannotated_global_environment
-            |> Analysis.UnannotatedGlobalEnvironment.ReadOnly.all_indices
+            Analysis.UnannotatedGlobalEnvironment.ReadOnly.all_indices
+              unannotated_global_environment
           in
           ClassHierarchy.to_json (GlobalResolution.class_hierarchy resolution) ~indices
         in

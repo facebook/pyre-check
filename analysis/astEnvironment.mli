@@ -8,10 +8,6 @@ open SharedMemoryKeys
 
 type t
 
-module FromEmptyStubCache : sig
-  val clear : unit -> unit
-end
-
 module ReadOnly : sig
   type t
 
@@ -50,8 +46,6 @@ module ReadOnly : sig
   val all_explicit_modules : t -> Reference.t list
 
   val get_module_metadata : t -> ?dependency:dependency -> Reference.t -> Module.t option
-
-  val from_empty_stub : t -> ?dependency:dependency -> Reference.t -> bool
 end
 
 (* Store the environment to saved-state *)

@@ -28,6 +28,7 @@ module Coverage = Coverage
 module CustomAnalysis = CustomAnalysis
 module DeobfuscationCheck = DeobfuscationCheck
 module Dependencies = Dependencies
+module EmptyStubEnvironment = EmptyStubEnvironment
 module Environment = Environment
 module Error = AnalysisError
 module Fixpoint = Fixpoint

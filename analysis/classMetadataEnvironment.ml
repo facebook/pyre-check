@@ -57,9 +57,6 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
       | _ :: successors -> successors
       | [] -> []
     in
-    let ast_environment =
-      unannotated_global_environment |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-    in
     let successors = successors class_name in
     let is_final =
       definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
@@ -80,10 +77,14 @@ let produce_class_metadata undecorated_function_environment class_name ~track_de
       let dependency =
         Option.some_if track_dependencies (SharedMemoryKeys.RegisterClassMetadata class_name)
       in
+      let empty_stub_environment =
+        AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
+      in
       definition
       |> AnnotatedBases.extends_placeholder_stub_class
            ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment ?dependency)
-           ~from_empty_stub:(AstEnvironment.ReadOnly.from_empty_stub ast_environment ?dependency)
+           ~from_empty_stub:
+             (EmptyStubEnvironment.ReadOnly.from_empty_stub empty_stub_environment ?dependency)
     in
     { is_test = in_test; successors; is_final; extends_placeholder_stub_class }
   in

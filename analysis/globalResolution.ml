@@ -203,6 +203,10 @@ let alias_environment { class_hierarchy_environment; _ } =
   ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
 
 
+let empty_stub_environment resolution =
+  alias_environment resolution |> AliasEnvironment.ReadOnly.empty_stub_environment
+
+
 let unannotated_global_environment resolution =
   alias_environment resolution |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
@@ -613,7 +617,7 @@ let class_definitions resolution reference =
 
 
 let is_suppressed_module resolution reference =
-  AstEnvironment.ReadOnly.from_empty_stub (ast_environment resolution) reference
+  EmptyStubEnvironment.ReadOnly.from_empty_stub (empty_stub_environment resolution) reference
 
 
 let solve_less_or_equal resolution ~constraints ~left ~right =
@@ -768,7 +772,7 @@ let class_extends_placeholder_stub_class resolution { ClassSummary.bases; _ } =
     | Parametric { name = primitive; _ } ->
         Reference.create primitive
         |> fun reference ->
-        AstEnvironment.ReadOnly.from_empty_stub (ast_environment resolution) reference
+        EmptyStubEnvironment.ReadOnly.from_empty_stub (empty_stub_environment resolution) reference
     | _ -> false
   in
   List.exists bases ~f:is_from_placeholder_stub
