@@ -2182,6 +2182,263 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
   { source with Source.statements = transform_statements ~nesting_define:None statements }
 
 
+let populate_captures ({ Source.statements; _ } as source) =
+  let open Scope in
+  let collect_accesses ~decorators statements =
+    let rec collect_from_expression collected { Node.value; _ } =
+      let open Expression in
+      let collect_from_entry collected { Dictionary.Entry.key; value } =
+        let collected = collect_from_expression collected key in
+        collect_from_expression collected value
+      in
+      match value with
+      (* Lambdas are speical -- they bind their own names, which we want to exclude *)
+      | Lambda { Lambda.parameters; body } ->
+          let collected =
+            let collect_from_parameter collected { Node.value = { Parameter.value; _ }; _ } =
+              Option.value_map value ~f:(collect_from_expression collected) ~default:collected
+            in
+            List.fold parameters ~init:collected ~f:collect_from_parameter
+          in
+          let bound_names =
+            List.map parameters ~f:(fun { Node.value = { Parameter.name; _ }; _ } -> name)
+            |> Identifier.Set.of_list
+          in
+          let names_in_body = collect_from_expression Identifier.Set.empty body in
+          let unbound_names_in_body = Set.diff names_in_body bound_names in
+          Set.union unbound_names_in_body collected
+      | Name (Name.Identifier identifier) ->
+          (* For simple names, add them to the result *)
+          Set.add collected identifier
+      | Name (Name.Attribute { Name.Attribute.base; _ }) ->
+          (* For attribute access, only count the base *)
+          collect_from_expression collected base
+      (* The rest is boilerplates to make sure that expressions are visited recursively *)
+      | Await await -> collect_from_expression collected await
+      | BooleanOperator { BooleanOperator.left; right; _ }
+      | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+          let collected = collect_from_expression collected left in
+          collect_from_expression collected right
+      | Call { Call.callee; arguments } ->
+          let collected = collect_from_expression collected callee in
+          List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.name; value } ->
+              let collected =
+                Option.value_map
+                  name
+                  ~f:(fun { Node.value; _ } -> Set.add collected value)
+                  ~default:collected
+              in
+              collect_from_expression collected value)
+      | Dictionary { Dictionary.entries; keywords } ->
+          let collected = List.fold entries ~init:collected ~f:collect_from_entry in
+          List.fold keywords ~init:collected ~f:collect_from_expression
+      | DictionaryComprehension comprehension ->
+          collect_from_comprehension collect_from_entry collected comprehension
+      | Generator comprehension
+      | ListComprehension comprehension
+      | SetComprehension comprehension ->
+          collect_from_comprehension collect_from_expression collected comprehension
+      | List expressions
+      | Set expressions
+      | Tuple expressions
+      | String { kind = StringLiteral.Format expressions; _ } ->
+          List.fold expressions ~init:collected ~f:collect_from_expression
+      | Starred (Starred.Once expression)
+      | Starred (Starred.Twice expression) ->
+          collect_from_expression collected expression
+      | Ternary { Ternary.target; test; alternative } ->
+          let collected = collect_from_expression collected target in
+          let collected = collect_from_expression collected test in
+          collect_from_expression collected alternative
+      | UnaryOperator { UnaryOperator.operand; _ } -> collect_from_expression collected operand
+      | WalrusOperator { WalrusOperator.target; value } ->
+          let collected = collect_from_expression collected target in
+          collect_from_expression collected value
+      | Yield yield ->
+          Option.value_map yield ~default:collected ~f:(collect_from_expression collected)
+      | String _
+      | Complex _
+      | Ellipsis
+      | False
+      | Float _
+      | Integer _
+      | True ->
+          collected
+    (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
+    and collect_from_comprehension
+          : 'a. (Identifier.Set.t -> 'a -> Identifier.Set.t) -> Identifier.Set.t ->
+            'a Comprehension.t -> Identifier.Set.t
+      =
+     fun collect_from_element collected { Comprehension.element; generators } ->
+      let collected =
+        let collect_from_generator collected { Comprehension.Generator.iterator; _ } =
+          collect_from_expression collected iterator
+        in
+        List.fold generators ~init:collected ~f:collect_from_generator
+      in
+      let bound_names =
+        List.fold
+          generators
+          ~init:Identifier.Set.empty
+          ~f:(fun sofar { Comprehension.Generator.target; _ } ->
+            collect_from_expression sofar target)
+      in
+      let names =
+        collect_from_element Identifier.Set.empty element
+        |> fun init ->
+        List.fold generators ~init ~f:(fun init { Comprehension.Generator.conditions; _ } ->
+            List.fold conditions ~init ~f:collect_from_expression)
+      in
+      let unbound_names = Set.diff names bound_names in
+      Set.union unbound_names collected
+    in
+    let rec collect_from_statement collected { Node.value; _ } =
+      (* Boilerplates to visit all statements that may contain accesses *)
+      match value with
+      | Statement.Assign { Assign.target; value; _ } ->
+          let collected = collect_from_expression collected target in
+          collect_from_expression collected value
+      | Assert { Assert.test; message; _ } ->
+          let collected = collect_from_expression collected test in
+          Option.value_map message ~f:(collect_from_expression collected) ~default:collected
+      | Delete expression
+      | Expression expression
+      | Yield expression
+      | YieldFrom expression ->
+          collect_from_expression collected expression
+      | For { For.target; iterator; body; orelse; _ } ->
+          let collected = collect_from_expression collected target in
+          let collected = collect_from_expression collected iterator in
+          let collected = collect_from_statements collected body in
+          collect_from_statements collected orelse
+      | If { If.test; body; orelse }
+      | While { While.test; body; orelse } ->
+          let collected = collect_from_expression collected test in
+          let collected = collect_from_statements collected body in
+          collect_from_statements collected orelse
+      | Raise { Raise.expression; from } ->
+          let collected =
+            Option.value_map expression ~f:(collect_from_expression collected) ~default:collected
+          in
+          Option.value_map from ~f:(collect_from_expression collected) ~default:collected
+      | Return { Return.expression; _ } ->
+          Option.value_map expression ~f:(collect_from_expression collected) ~default:collected
+      | Try { Try.body; handlers; orelse; finally } ->
+          let collected = collect_from_statements collected body in
+          let collected =
+            List.fold handlers ~init:collected ~f:(fun collected { Try.Handler.kind; name; body } ->
+                let collected =
+                  Option.value_map kind ~f:(collect_from_expression collected) ~default:collected
+                in
+                let collected = Option.value_map name ~f:(Set.add collected) ~default:collected in
+                collect_from_statements collected body)
+          in
+          let collected = collect_from_statements collected orelse in
+          collect_from_statements collected finally
+      | With { With.items; body; _ } ->
+          let collected =
+            List.fold items ~init:collected ~f:(fun collected (value, target) ->
+                let collected = collect_from_expression collected value in
+                Option.value_map target ~f:(collect_from_expression collected) ~default:collected)
+          in
+          collect_from_statements collected body
+      | Break
+      | Continue
+      | Global _
+      | Import _
+      | Nonlocal _
+      | Pass
+      (* Nested classes and defines are not part of the visit because their accesses belong to
+         themselves. *)
+      | Class _
+      | Define _ ->
+          collected
+    and collect_from_statements init statements =
+      List.fold statements ~init ~f:collect_from_statement
+    in
+    let collected = List.fold decorators ~init:Identifier.Set.empty ~f:collect_from_expression in
+    let collected = collect_from_statements collected statements in
+    Set.to_list collected
+  in
+  let to_capture ~scopes name =
+    match ScopeStack.lookup scopes name with
+    | None -> None
+    | Some
+        {
+          Access.kind = access_kind;
+          scope = { Scope.kind = scope_kind; _ };
+          binding = { Binding.kind = binding_kind; name; annotation; _ };
+        } -> (
+        match access_kind with
+        | Access.Kind.CurrentScope ->
+            (* We don't care about bindings that can be found in the current scope *)
+            None
+        | _ -> (
+            match scope_kind with
+            | Scope.Kind.(Module | Lambda | Comprehension) ->
+                (* We don't care about module-level and expression-level bindings *)
+                None
+            | Scope.Kind.Define -> (
+                match binding_kind with
+                | Binding.Kind.(ClassName | ImportName) ->
+                    (* Judgement call: these bindings are (supposedly) not useful for type checking *)
+                    None
+                | Binding.Kind.(
+                    ( AssignTarget | ComprehensionTarget | DefineName | ExceptTarget | ForTarget
+                    | ParameterName | WithTarget )) ->
+                    Some { Define.Capture.name; annotation } ) ) )
+  in
+  let rec transform_statement ~scopes statement =
+    match statement with
+    (* Process each defines *)
+    | {
+     Node.location;
+     value =
+       Statement.Define
+         ({ signature = { Define.Signature.decorators; _ } as signature; body; _ } as define);
+    } ->
+        let accesses = collect_accesses ~decorators body in
+        let scopes = ScopeStack.extend scopes ~with_:(Scope.of_define_exn define) in
+        let captures = List.filter_map accesses ~f:(to_capture ~scopes) in
+        let body = transform_statements ~scopes body in
+        { Node.location; value = Statement.Define { signature; body; captures } }
+    (* The rest is just boilerplates to make sure every nested define gets visited *)
+    | { Node.location; value = Class class_ } ->
+        let body = transform_statements ~scopes class_.body in
+        { Node.location; value = Class { class_ with body } }
+    | { Node.location; value = For for_ } ->
+        let body = transform_statements ~scopes for_.body in
+        let orelse = transform_statements ~scopes for_.orelse in
+        { Node.location; value = For { for_ with body; orelse } }
+    | { Node.location; value = If if_ } ->
+        let body = transform_statements ~scopes if_.body in
+        let orelse = transform_statements ~scopes if_.orelse in
+        { Node.location; value = If { if_ with body; orelse } }
+    | { Node.location; value = Try { Try.body; orelse; finally; handlers } } ->
+        let body = transform_statements ~scopes body in
+        let orelse = transform_statements ~scopes orelse in
+        let finally = transform_statements ~scopes finally in
+        let handlers =
+          List.map handlers ~f:(fun ({ Try.Handler.body; _ } as handler) ->
+              let body = transform_statements ~scopes body in
+              { handler with body })
+        in
+        { Node.location; value = Try { Try.body; orelse; finally; handlers } }
+    | { Node.location; value = With with_ } ->
+        let body = transform_statements ~scopes with_.body in
+        { Node.location; value = With { with_ with body } }
+    | { Node.location; value = While while_ } ->
+        let body = transform_statements ~scopes while_.body in
+        let orelse = transform_statements ~scopes while_.orelse in
+        { Node.location; value = While { while_ with body; orelse } }
+    | statement -> statement
+  and transform_statements ~scopes statements =
+    List.map statements ~f:(transform_statement ~scopes)
+  in
+  let scopes = ScopeStack.create source in
+  { source with Source.statements = transform_statements ~scopes statements }
+
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports
@@ -2201,6 +2458,7 @@ let preprocess_phase1 source =
   |> expand_named_tuples
   |> expand_new_types
   |> populate_nesting_defines
+  |> populate_captures
 
 
 let preprocess source = preprocess_phase0 source |> preprocess_phase1

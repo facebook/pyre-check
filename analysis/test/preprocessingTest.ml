@@ -3125,6 +3125,316 @@ let test_populate_nesting_define _ =
   ()
 
 
+let test_populate_captures _ =
+  let assert_captures ~expected source_text =
+    let source =
+      Test.parse ~handle:"test.py" source_text
+      |> Preprocessing.expand_format_string
+      |> Preprocessing.populate_captures
+    in
+    let defines =
+      Preprocessing.defines
+        ~include_toplevels:true
+        ~include_nested:true
+        ~include_methods:true
+        source
+    in
+    let capture_map =
+      let build_capture_map
+          sofar
+          { Node.value = { Define.signature = { Define.Signature.name; _ }; captures; _ }; _ }
+        =
+        Reference.Map.set sofar ~key:name ~data:captures
+      in
+      List.fold defines ~init:Reference.Map.empty ~f:build_capture_map
+    in
+    let assert_captures name expected =
+      let expected =
+        List.map expected ~f:(fun (name, annotation) -> { Define.Capture.name; annotation })
+      in
+      let actual = Reference.Map.find capture_map name |> Option.value ~default:[] in
+      assert_equal
+        ~cmp:[%compare.equal: Define.Capture.t list]
+        ~printer:(fun captures -> Sexp.to_string_hum [%message (captures : Define.Capture.t list)])
+        expected
+        actual
+    in
+    List.iter expected ~f:(fun (name, captures) -> assert_captures name captures)
+  in
+  let int_annotation = +Expression.Name (Name.Identifier "int") in
+  assert_captures
+    {|
+     def foo():
+       pass
+  |}
+    ~expected:[!&"foo", []; !&"test.$toplevel", []];
+  assert_captures
+    {|
+     def foo(x: int):
+       def bar():
+         y = x
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation]];
+  (* TODO: Capture `bar` as having a Callable annotation *)
+  assert_captures
+    {|
+     def foo(x: int):
+       def bar(y: int) -> int:
+         return y
+       def baz():
+         return bar()
+  |}
+    ~expected:[!&"baz", ["bar", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       def bar():
+         nonlocal x
+         x = 1
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation]];
+  (* x in `bar` will shadow x in `foo` *)
+  assert_captures
+    {|
+     def foo(x: int):
+       def bar():
+         x = 1
+  |}
+    ~expected:[!&"bar", []];
+  assert_captures
+    {|
+     def foo(x: int):
+       def bar():
+         print(x)
+         x = 2
+  |}
+    ~expected:[!&"bar", []];
+  (* Do not capture global variables *)
+  assert_captures
+    {|
+     x: int = 1
+     def foo():
+       def bar():
+         x = 1
+  |}
+    ~expected:[!&"bar", []];
+  assert_captures
+    {|
+     x: int = 1
+     def foo():
+       def bar():
+         global x
+         x = 1
+  |}
+    ~expected:[!&"bar", []];
+  (* Do not capture unused bindings *)
+  assert_captures
+    {|
+     def foo(x: int):
+       def bar():
+         pass
+  |}
+    ~expected:[!&"foo", []; !&"bar", []];
+  (* Do not capture imported names *)
+  assert_captures
+    {|
+     def foo():
+       import bar
+       def baz():
+         return bar.derp()
+  |}
+    ~expected:[!&"bar", []];
+
+  (* Nesting functions should be correctly detected *)
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         def baz():
+           return x
+         def qux():
+           return y
+  |}
+    ~expected:[!&"baz", ["x", Some int_annotation]; !&"qux", ["y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       class Bar:
+         z: int = 2
+         def baz(self):
+           return x + self.z
+         def qux(self):
+           return y + self.z
+  |}
+    ~expected:[!&"baz", ["x", Some int_annotation]; !&"qux", ["y", None]];
+
+  (* Test accesses collection *)
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         assert (x == y)
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         x
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         yield x
+         return y
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         for i in range(x):
+           print(y)
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar(flag: bool):
+         if flag:
+           return x
+         else:
+           return y
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         while x > 1:
+           print(y)
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         raise ValueError(x + y)
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         try:
+           return x
+         except:
+           return y
+         finally:
+           return x + y
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         with open('test.txt', 'r' if x > 1 else 'w') as f:
+           print(y)
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       async def bar():
+         await baz(x, y)
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         return [x, y]
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         return x, y
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         return {x, y}
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         return {x: y}
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         return f"x = {x}, y = {y}"
+  |}
+    ~expected:[!&"bar", ["x", Some int_annotation; "y", None]];
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         @decorator(x)
+         def baz():
+           return 42
+         return y
+  |}
+    ~expected:[!&"bar", ["y", None]; !&"baz", ["x", Some int_annotation]];
+  (* Lambda bounds are excluded *)
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         return (lambda x: x + y) 
+  |}
+    ~expected:[!&"bar", ["y", None]];
+  (* Comprehension bounds are excluded *)
+  assert_captures
+    {|
+     def foo(x: int):
+       y = 1
+       def bar():
+         return [x for x in range(y) if x < 9]
+  |}
+    ~expected:[!&"bar", ["y", None]];
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -3142,5 +3452,6 @@ let () =
          "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
          "typed_dictionaries" >:: test_expand_typed_dictionaries;
          "nesting_define" >:: test_populate_nesting_define;
+         "captures" >:: test_populate_captures;
        ]
   |> Test.run
