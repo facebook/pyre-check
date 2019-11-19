@@ -28,7 +28,7 @@ class Kill(Command):
     def __init__(
         self,
         arguments: argparse.Namespace,
-        configuration: Configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Kill, self).__init__(arguments, configuration, analysis_directory)

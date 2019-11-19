@@ -84,7 +84,6 @@ def main() -> int:
             arguments.command = commands.Check
 
     command = None
-    configuration = None
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
@@ -112,24 +111,8 @@ def main() -> int:
                     )
                 )
                 return ExitCode.SUCCESS
-            configuration = Configuration(
-                local_configuration=arguments.local_configuration,
-                search_path=arguments.search_path,
-                binary=arguments.binary,
-                typeshed=arguments.typeshed,
-                preserve_pythonpath=arguments.preserve_pythonpath,
-                excludes=arguments.exclude,
-                logger=arguments.logger,
-                formatter=arguments.formatter,
-                log_directory=arguments.log_directory,
-            )
-            if configuration.disabled:
-                LOG.log(
-                    log.SUCCESS, "Pyre will not run due to being explicitly disabled"
-                )
-                return ExitCode.SUCCESS
 
-        command = arguments.command(arguments, configuration)
+        command = arguments.command(arguments)
         exit_code = command.run().exit_code()
     except buck.BuckException as error:
         LOG.error(str(error))
@@ -154,19 +137,20 @@ def main() -> int:
         exit_code = ExitCode.SUCCESS
     finally:
         log.cleanup(arguments)
-        if command:
+        if command and isinstance(command, Command):
             command.analysis_directory.cleanup()
-        if configuration and configuration.logger:
-            log_statistics(
-                "perfpipe_pyre_usage",
-                arguments=arguments,
-                configuration=configuration,
-                integers={
-                    "exit_code": exit_code,
-                    "runtime": int((time.time() - start) * 1000),
-                },
-                normals={"cwd": os.getcwd(), "client_version": __version__},
-            )
+            configuration = command._configuration
+            if configuration and configuration.logger:
+                log_statistics(
+                    "perfpipe_pyre_usage",
+                    arguments=arguments,
+                    configuration=configuration,
+                    integers={
+                        "exit_code": exit_code,
+                        "runtime": int((time.time() - start) * 1000),
+                    },
+                    normals={"cwd": os.getcwd(), "client_version": __version__},
+                )
 
     return exit_code
 

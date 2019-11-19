@@ -14,6 +14,7 @@ from typing import Dict, List, Optional
 
 from .. import json_rpc, log
 from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from .command import Command
 
 
@@ -42,13 +43,13 @@ class Query(Command):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Query, self).__init__(arguments, configuration, analysis_directory)
         self.query = self._rewrite_paths(arguments.query)
-        self._version_hash = configuration.version_hash
-        self._use_json_sockets = configuration._use_json_sockets
+        self._version_hash = self._configuration.version_hash
+        self._use_json_sockets = self._configuration._use_json_sockets
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

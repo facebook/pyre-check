@@ -11,7 +11,6 @@ from typing import (
     List,
     NamedTuple,
     Optional,
-    Pattern,
     Sequence,
     Set,
     Tuple,
@@ -486,8 +485,7 @@ class TypeTransformer(cst.CSTTransformer):
         )
 
 
-# pyre-fixme[2]: Parameter annotation cannot contain `Any`.
-def _parse(file: IO[Any]) -> cst.Module:
+def _parse(file: IO[Any]) -> cst.Module:  # pyre-fixme[2]
     contents = file.read()
     return cst.parse_module(contents)
 

@@ -9,6 +9,7 @@ from typing import List, Optional
 
 from .. import get_binary_version
 from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from ..version import __version__
 from .command import Command
 
@@ -19,13 +20,12 @@ class Rage(Command):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Rage, self).__init__(arguments, configuration, analysis_directory)
         # pyre-fixme[16]: `Namespace` has no attribute `command`.
         self._arguments.command = self.NAME
-        self._configuration = configuration
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

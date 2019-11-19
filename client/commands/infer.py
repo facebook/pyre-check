@@ -20,6 +20,7 @@ from typing import Any, List, Optional, Set, Union  # noqa
 
 from .. import apply_annotations, log
 from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from .check import Check
 from .command import JSON, Command, Result, typeshed_search_path
 from .reporting import Reporting
@@ -397,7 +398,7 @@ class Infer(Reporting):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         arguments.show_error_traces = True
@@ -407,7 +408,7 @@ class Infer(Reporting):
         self._local_configuration = arguments.local_configuration
         self._json = arguments.json
         self._annotate_from_existing_stubs = arguments.annotate_from_existing_stubs
-        self._formatter = configuration.formatter
+        self._formatter = self._configuration.formatter
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

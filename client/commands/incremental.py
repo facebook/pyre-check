@@ -16,6 +16,7 @@ from typing import IO, List, Optional, cast
 
 from .. import json_rpc
 from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from ..project_files_monitor import MonitorException, ProjectFilesMonitor
 from .command import (
     ClientException,
@@ -43,14 +44,14 @@ class Incremental(Reporting):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Incremental, self).__init__(arguments, configuration, analysis_directory)
         self._nonblocking = arguments.nonblocking  # type: bool
         self._incremental_style = arguments.incremental_style  # type: bool
-        self._version_hash = configuration.version_hash
-        self._use_json_sockets: bool = configuration._use_json_sockets
+        self._version_hash = self._configuration.version_hash
+        self._use_json_sockets: bool = arguments._use_json_sockets
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

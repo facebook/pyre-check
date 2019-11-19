@@ -13,6 +13,7 @@ from logging import Logger
 from typing import List, Optional
 
 from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from ..project_files_monitor import ProjectFilesMonitor
 from .command import ClientException, Command, State
 from .kill import Kill
@@ -27,7 +28,7 @@ class Stop(Command):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Stop, self).__init__(arguments, configuration, analysis_directory)

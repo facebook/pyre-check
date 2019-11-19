@@ -27,13 +27,14 @@ from .stop import Stop as Stop
 from .command import (  # noqa; noqa; noqa
     ClientException as ClientException,
     Command as Command,
+    CommandParser as CommandParser,
     ExitCode as ExitCode,
     ProfileOutput as ProfileOutput,
     typeshed_search_path as typeshed_search_path,
     IncrementalStyle as IncrementalStyle,
 )
 
-COMMANDS: List[Type[Command]] = [
+COMMANDS: List[Type[CommandParser]] = [
     Analyze,
     Check,
     Color,

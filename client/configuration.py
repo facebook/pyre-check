@@ -174,7 +174,7 @@ class Configuration:
         self.logger = logger
         self.formatter = formatter
         self.ignore_all_errors = []
-        self.number_of_workers = None
+        self.number_of_workers = None  # type: int # pyre-fixme
         self.local_configuration = None  # type: Optional[str]
         self.taint_models_path = []  # type: List[str]
         self.file_hash = None  # type: Optional[str]

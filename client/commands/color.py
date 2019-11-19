@@ -11,6 +11,7 @@ from typing import List, Optional
 
 from .. import log
 from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from .command import Command
 
 
@@ -115,7 +116,7 @@ class Color(Command):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         self.path = arguments.path

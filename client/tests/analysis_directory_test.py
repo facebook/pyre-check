@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, List
 from unittest.mock import MagicMock, call, patch
 
-from .. import analysis_directory, buck, commands, filesystem
+from .. import analysis_directory, buck, filesystem
 from ..analysis_directory import (
     AnalysisDirectory,
     SharedAnalysisDirectory,
@@ -439,8 +439,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         Path(root, "first", "b", "z.py").touch()
         Path(root, "second", "a.py").touch()
 
-        # pyre-fixme[2]: Parameter `stderr` has type `None` but no type is specified.
-        def side_effect(path: str, stderr=None) -> bytes:
+        def side_effect(path: str, stderr=None) -> bytes:  # pyre-fixme[2]
             if path[1].endswith("first"):
                 serialized = "\n".join(
                     [

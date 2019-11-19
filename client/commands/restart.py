@@ -9,6 +9,7 @@ import argparse
 from typing import Optional
 
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
+from ..configuration import Configuration
 from .command import Command, IncrementalStyle
 from .incremental import Incremental
 from .start import Start
@@ -21,7 +22,7 @@ class Restart(Command):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Restart, self).__init__(arguments, configuration, analysis_directory)

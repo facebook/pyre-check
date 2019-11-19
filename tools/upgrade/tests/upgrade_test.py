@@ -1102,6 +1102,7 @@ class FixmeTargetsTest(unittest.TestCase):
         arguments = MagicMock()
         arguments.subdirectory = None
         arguments.no_commit = False
+        arguments.lint = False
         buck_return = MagicMock()
         buck_return.returncode = 1
         buck_return.stderr = b"stderr"

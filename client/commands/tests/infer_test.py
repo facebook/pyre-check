@@ -593,7 +593,6 @@ class InferTest(unittest.TestCase):
         configuration.get_typeshed.return_value = "stub"
 
         with patch.object(commands.Command, "_call_client") as call_client:
-            # pyre-fixme[45]: Cannot instantiate abstract class `Infer`.
             command = Infer(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),
@@ -613,7 +612,6 @@ class InferTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
 
-            # pyre-fixme[45]: Cannot instantiate abstract class `Infer`.
             command = Infer(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),
@@ -633,7 +631,6 @@ class InferTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.json = True
-            # pyre-fixme[45]: Cannot instantiate abstract class `Infer`.
             command = Infer(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),

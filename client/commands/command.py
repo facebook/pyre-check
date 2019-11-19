@@ -14,7 +14,7 @@ import resource
 import signal
 import subprocess
 import threading
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Iterable, List, Optional, Set  # noqa
 
 from .. import json_rpc, log, readable_directory
@@ -124,32 +124,25 @@ def executable_file(file_path: str) -> str:
     return file_path
 
 
-class Command:
+class CommandParser(ABC):
     NAME = ""  # type: str
-
-    _buffer = []  # type: List[str]
-    _call_client_terminated = False  # type: bool
-
     _exit_code = ExitCode.SUCCESS  # type: ExitCode
 
-    _local_root = ""  # type: str
-
-    def __init__(
-        self,
-        arguments: argparse.Namespace,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> None:
+    def __init__(self, arguments: argparse.Namespace) -> None:
         self._arguments = arguments
-        self._configuration = configuration
 
+        self._local_configuration: str = arguments.local_configuration
+        self._search_path: List[str] = arguments.search_path
+        self._binary: str = arguments.binary
+        self._typeshed: str = arguments.typeshed
+        self._preserve_pythonpath: bool = arguments.preserve_pythonpath
+        self._exclude: List[str] = arguments.exclude
+        self._logger: str = arguments.logger
+        self._formatter: List[str] = arguments.formatter
         self._debug = arguments.debug  # type: bool
         self._enable_profiling = arguments.enable_profiling  # type: bool
         self._enable_memory_profiling = arguments.enable_memory_profiling  # type: bool
         self._sequential = arguments.sequential  # type: bool
-        self._strict = arguments.strict or (
-            configuration and configuration.strict
-        )  # type: bool
         self._additional_checks = arguments.additional_check  # type: List[str]
         self._show_error_traces = arguments.show_error_traces  # type: bool
         self._verbose = arguments.verbose  # type: bool
@@ -157,25 +150,9 @@ class Command:
         self._logging_sections = arguments.logging_sections  # type: str
         self._capable_terminal = arguments.capable_terminal  # type: bool
         self._log_identifier = arguments.log_identifier  # type: str
-        self._logger = arguments.logger or (
-            configuration and configuration.logger
-        )  # type: str
         self._log_directory = arguments.log_directory  # type: str
-
         self._original_directory = arguments.original_directory  # type: str
         self._current_directory = arguments.current_directory  # type: str
-        if arguments.local_configuration:
-            self._local_root = (
-                arguments.local_configuration
-                if os.path.isdir(arguments.local_configuration)
-                else os.path.dirname(arguments.local_configuration)
-            )
-        else:
-            self._local_root = arguments.original_directory
-
-        self._analysis_directory: AnalysisDirectory = (
-            analysis_directory or self.generate_analysis_directory()
-        )
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
@@ -366,22 +343,88 @@ class Command:
         )
 
     @classmethod
+    @abstractmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         pass
 
-    def generate_analysis_directory(self) -> AnalysisDirectory:
-        return resolve_analysis_directory(self._arguments, self._configuration)
+    @abstractmethod
+    def _run(self) -> None:
+        """ Abstract method expected to be overridden by subclasses. """
+        pass
 
-    def run(self) -> "Command":
+    def run(self) -> "CommandParser":
         self._run()
         return self
 
     def exit_code(self) -> int:
         return self._exit_code
 
-    @abstractmethod
+
+class Command(CommandParser):
+    _buffer = []  # type: List[str]
+    _call_client_terminated = False  # type: bool
+
+    _local_root = ""  # type: str
+
+    def __init__(
+        self,
+        arguments: argparse.Namespace,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
+        super(Command, self).__init__(arguments)
+        if arguments.local_configuration:
+            self._local_root = (
+                arguments.local_configuration
+                if os.path.isdir(arguments.local_configuration)
+                else os.path.dirname(arguments.local_configuration)
+            )
+        else:
+            self._local_root = arguments.original_directory
+
+        self._configuration: Configuration = configuration or self.generate_configuration()
+        self._strict = arguments.strict or self._configuration.strict  # type: bool
+        self._logger = arguments.logger or (
+            configuration and configuration.logger
+        )  # type: str
+
+        self._analysis_directory: AnalysisDirectory = (
+            analysis_directory or self.generate_analysis_directory()
+        )
+
+    @classmethod
+    def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
+        pass
+
+    def generate_configuration(self) -> Configuration:
+        return Configuration(
+            local_configuration=self._local_configuration,
+            search_path=self._search_path,
+            binary=self._binary,
+            typeshed=self._typeshed,
+            preserve_pythonpath=self._preserve_pythonpath,
+            excludes=self._exclude,
+            logger=self._logger,
+            formatter=self._formatter,
+            log_directory=self._log_directory,
+        )
+
+    def generate_analysis_directory(self) -> AnalysisDirectory:
+        configuration = self._configuration
+        if not configuration:
+            return AnalysisDirectory(".")
+        else:
+            return resolve_analysis_directory(self._arguments, configuration)
+
+    def run(self) -> "Command":
+        configuration = self._configuration
+        if configuration and configuration.disabled:
+            LOG.log(log.SUCCESS, "Pyre will not run due to being explicitly disabled")
+        else:
+            self._run()
+        return self
+
     def _run(self) -> None:
-        """ Abstract method expected to be overridden by subclasses. """
         pass
 
     def _flags(self) -> List[str]:
@@ -535,9 +578,7 @@ class Command:
         self, request: json_rpc.Request, version_hash: str
     ) -> None:
         try:
-            with SocketConnection(
-                self._configuration.log_directory
-            ) as socket_connection:
+            with SocketConnection(self._log_directory) as socket_connection:
                 socket_connection.perform_handshake(version_hash)
                 socket_connection.send_request(request)
                 response = json_rpc.read_response(socket_connection.input)

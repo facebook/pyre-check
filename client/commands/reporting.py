@@ -28,14 +28,14 @@ class Reporting(Command):
     def __init__(
         self,
         arguments: argparse.Namespace,
-        configuration: Configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super().__init__(arguments, configuration, analysis_directory)
         self._verbose = arguments.verbose  # type: bool
         self._output = arguments.output  # type: str
         self._ignore_all_errors_paths = (
-            configuration.ignore_all_errors
+            self._configuration.ignore_all_errors
         )  # type: Iterable[str]
 
     def _print(self, errors: Sequence[Error]) -> None:

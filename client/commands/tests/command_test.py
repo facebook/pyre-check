@@ -92,6 +92,7 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.autocomplete = False
     configuration.log_directory = ".pyre"
     configuration._use_json_sockets = False
+    configuration.disabled = False
     return configuration
 
 

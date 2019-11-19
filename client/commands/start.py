@@ -14,6 +14,7 @@ from typing import List, Optional
 
 from .. import configuration_monitor, filesystem, project_files_monitor
 from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from .command import ExitCode, IncrementalStyle, typeshed_search_path
 from .reporting import Reporting
 
@@ -27,17 +28,21 @@ class Start(Reporting):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Start, self).__init__(arguments, configuration, analysis_directory)
-        self._taint_models_path = configuration.taint_models_path  # type: List[str]
+        self._taint_models_path = (
+            self._configuration.taint_models_path
+        )  # type: List[str]
         self._terminal = arguments.terminal  # type: bool
         self._store_type_check_resolution = arguments.store_type_check_resolution
         self._use_watchman = not arguments.no_watchman  # type: bool
         self._incremental_style = arguments.incremental_style  # type: bool
-        self._number_of_workers = configuration.number_of_workers  # type: int
-        self._configuration_file_hash = configuration.file_hash  # type: Optional[str]
+        self._number_of_workers = self._configuration.number_of_workers  # type: int
+        self._configuration_file_hash = (
+            self._configuration.file_hash
+        )  # type: Optional[str]
         self._file_monitor = (
             None
         )  # type: Optional[project_files_monitor.ProjectFilesMonitor]

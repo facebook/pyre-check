@@ -11,6 +11,7 @@ from logging import Logger
 from typing import List, Optional
 
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
+from ..configuration import Configuration
 from .command import ExitCode, typeshed_search_path
 from .reporting import Reporting
 
@@ -24,11 +25,11 @@ class Check(Reporting):
     def __init__(
         self,
         arguments,
-        configuration,
+        configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Check, self).__init__(arguments, configuration, analysis_directory)
-        self._number_of_workers = configuration.number_of_workers
+        self._number_of_workers = self._configuration.number_of_workers
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
