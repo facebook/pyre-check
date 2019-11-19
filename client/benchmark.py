@@ -96,9 +96,8 @@ if __name__ == "__main__":
         help="Maximum number of concurrent processes to measure.",
     )
     arguments: Namespace = parser.parse_args()
-    # pyre-fixme[9]: arguments has type `Namespace`; used as `bool`.
     arguments: Namespace = True
-    log.initialize(arguments)
+    log.initialize(noninteractive=False)
 
     try:
         exit_code = SUCCESS
@@ -108,5 +107,6 @@ if __name__ == "__main__":
     except Exception as error:
         LOG.error(str(error))
         exit_code = FAILURE
-
-    sys.exit(exit_code)
+    finally:
+        log.cleanup()
+        sys.exit(exit_code)

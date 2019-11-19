@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import argparse
 import copy
 import io
 import logging
@@ -14,8 +13,6 @@ import sys
 import threading
 import time
 from typing import List, Optional, Sequence  # noqa
-
-from . import find_log_directory
 
 
 PERFORMANCE: int = 15
@@ -27,6 +24,7 @@ LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
 stdout = io.StringIO(newline="")  # type: io.StringIO
+__handler: Optional["TimedStreamHandler"] = None
 
 
 class Color:
@@ -171,25 +169,23 @@ class TimedStreamHandler(logging.StreamHandler):
         self._terminate = True
 
 
-def initialize(arguments: argparse.Namespace) -> None:
-    if arguments.noninteractive:
+def initialize(noninteractive: bool, log_directory: str = "/tmp/.pyre") -> None:
+    global __handler
+    if noninteractive:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(SectionFormatter())
         stream_handler.setLevel(logging.DEBUG)
-        # pyre-fixme[16]: `Namespace` has no attribute `timed_stream_handler`.
-        arguments.timed_stream_handler = None
+        __handler = None
     else:
         stream_handler = TimedStreamHandler()
-        arguments.timed_stream_handler = stream_handler
+        __handler = stream_handler
 
     handlers = [stream_handler]  # type: List[logging.Handler]
 
-    if not arguments.noninteractive:
-        if not hasattr(arguments, "log_directory") or not arguments.log_directory:
-            find_log_directory(arguments)
-        file_handler = logging.FileHandler(
-            os.path.join(arguments.log_directory, "pyre.stderr")
-        )
+    if not noninteractive:
+        if not os.path.exists(log_directory):
+            os.makedirs(log_directory)
+        file_handler = logging.FileHandler(os.path.join(log_directory, "pyre.stderr"))
         file_handler.setFormatter(SectionFormatter())
         file_handler.setLevel(logging.DEBUG)
         handlers.append(file_handler)
@@ -199,9 +195,10 @@ def initialize(arguments: argparse.Namespace) -> None:
     logging.basicConfig(level=logging.DEBUG, handlers=handlers)
 
 
-def cleanup(arguments: argparse.Namespace) -> None:
-    if arguments.timed_stream_handler:
-        arguments.timed_stream_handler.terminate()
+def cleanup() -> None:
+    handler = __handler
+    if handler:
+        handler.terminate()
 
     output = stdout.getvalue()
     if output:

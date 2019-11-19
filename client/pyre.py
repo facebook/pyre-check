@@ -91,7 +91,7 @@ def main() -> int:
         switch_root(arguments)
         translate_arguments(commands, arguments)
         find_log_directory(arguments)
-        log.initialize(arguments)
+        log.initialize(arguments.noninteractive, arguments.log_directory)
 
         if arguments.version:
             binary_version = get_binary_version_from_file(arguments.local_configuration)
@@ -126,7 +126,7 @@ def main() -> int:
         LOG.debug(traceback.format_exc())
         exit_code = ExitCode.SUCCESS
     finally:
-        log.cleanup(arguments)
+        log.cleanup()
         if command and isinstance(command, Command):
             command.analysis_directory.cleanup()
             configuration = command._configuration
