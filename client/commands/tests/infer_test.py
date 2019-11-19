@@ -598,6 +598,8 @@ class InferTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-show-error-traces",
+                    "-logging-sections",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -617,6 +619,8 @@ class InferTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-show-error-traces",
+                    "-logging-sections",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -636,6 +640,8 @@ class InferTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-show-error-traces",
+                    "-logging-sections",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",

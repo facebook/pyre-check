@@ -47,7 +47,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -77,7 +77,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -121,7 +121,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -156,7 +156,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -195,7 +195,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -224,7 +224,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -245,7 +245,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -270,7 +270,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -296,7 +296,7 @@ class StartTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -322,7 +322,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -348,7 +348,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -371,7 +371,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -392,7 +392,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -412,7 +412,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -436,7 +436,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -459,7 +459,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -478,7 +478,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -504,7 +504,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -529,7 +529,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -553,7 +553,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -577,7 +577,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -599,7 +599,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-profiling-output",
                 ".pyre/profiling.log",
                 "-project-root",
@@ -622,7 +622,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-memory-profiling-output",
                 ".pyre/profiling.log",
                 "-project-root",
@@ -646,7 +646,7 @@ class StartTest(unittest.TestCase):
             command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-profiling-output",
                 ".pyre/profiling.log",
                 "-memory-profiling-output",

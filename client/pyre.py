@@ -31,7 +31,6 @@ from .commands import (  # noqa
     ProfileOutput,
     reporting,
 )
-from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .version import __version__
 
@@ -89,28 +88,19 @@ def main() -> int:
     exit_code = ExitCode.FAILURE
     start = time.time()
     try:
-        # pyre-fixme[16]: `Namespace` has no attribute `capable_terminal`.
-        arguments.capable_terminal = is_capable_terminal()
-        if arguments.debug or not arguments.capable_terminal:
-            # pyre-fixme[16]: `Namespace` has no attribute `noninteractive`.
-            arguments.noninteractive = True
-
         switch_root(arguments)
         translate_arguments(commands, arguments)
         find_log_directory(arguments)
         log.initialize(arguments)
 
-        if arguments.command not in [commands.Initialize]:
-            if arguments.version:
-                binary_version = get_binary_version_from_file(
-                    arguments.local_configuration
+        if arguments.version:
+            binary_version = get_binary_version_from_file(arguments.local_configuration)
+            log.stdout.write(
+                "Binary version: {}\nClient version: {}".format(
+                    binary_version, __version__
                 )
-                log.stdout.write(
-                    "binary version: {}\nclient version: {}".format(
-                        binary_version, __version__
-                    )
-                )
-                return ExitCode.SUCCESS
+            )
+            return ExitCode.SUCCESS
 
         command = arguments.command(arguments)
         exit_code = command.run().exit_code()

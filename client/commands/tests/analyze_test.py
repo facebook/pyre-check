@@ -41,7 +41,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -67,7 +67,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -95,7 +95,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -126,7 +126,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -156,7 +156,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -187,7 +187,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -218,7 +218,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -250,7 +250,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -283,7 +283,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -314,7 +314,7 @@ class AnalyzeTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",

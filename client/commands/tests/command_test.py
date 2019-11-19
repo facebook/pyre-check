@@ -146,7 +146,7 @@ class CommandTest(unittest.TestCase):
             test_command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-log-directory",
@@ -160,7 +160,7 @@ class CommandTest(unittest.TestCase):
             test_command._flags(),
             [
                 "-logging-sections",
-                "parser",
+                "parser,-progress",
                 "-project-root",
                 ".",
                 "-logger",

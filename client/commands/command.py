@@ -17,7 +17,7 @@ import threading
 from abc import ABC, abstractmethod
 from typing import Iterable, List, Optional, Set  # noqa
 
-from .. import json_rpc, log, readable_directory
+from .. import is_capable_terminal, json_rpc, log, readable_directory
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
@@ -174,9 +174,11 @@ class CommandParser(ABC):
         self._use_json_sockets: bool = arguments.use_json_sockets
 
         # Derived arguments
-        self._capable_terminal: bool = arguments.capable_terminal
+        self._capable_terminal: bool = is_capable_terminal()
         self._original_directory: str = arguments.original_directory
         self._current_directory: str = arguments.current_directory
+        if self._debug or not self._capable_terminal:
+            self._noninteractive = True
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:

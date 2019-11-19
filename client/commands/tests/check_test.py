@@ -36,7 +36,7 @@ class CheckTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -84,7 +84,7 @@ class CheckTest(unittest.TestCase):
                 [
                     "-sequential",
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -122,7 +122,7 @@ class CheckTest(unittest.TestCase):
                 [
                     "-sequential",
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -194,6 +194,8 @@ class CheckTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
@@ -227,7 +229,7 @@ class CheckTest(unittest.TestCase):
                 [
                     "-strict",
                     "-logging-sections",
-                    "parser",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-log-directory",
