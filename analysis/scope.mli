@@ -9,6 +9,13 @@ open Ast
     intentionally -- The [Scope] class is supposed to do the creation in batch. *)
 module Binding : sig
   module Kind : sig
+    module Star : sig
+      type t =
+        | Once
+        | Twice
+      [@@deriving sexp, compare, hash]
+    end
+
     type t =
       | AssignTarget
       | ClassName
@@ -17,7 +24,7 @@ module Binding : sig
       | ExceptTarget
       | ForTarget
       | ImportName
-      | ParameterName
+      | ParameterName of Star.t option
       | WithTarget
     [@@deriving sexp, compare, hash]
   end

@@ -2367,7 +2367,7 @@ let populate_captures ({ Source.statements; _ } as source) =
         {
           Access.kind = access_kind;
           scope = { Scope.kind = scope_kind; _ };
-          binding = { Binding.kind = binding_kind; name; annotation; _ };
+          binding = { Binding.kind = binding_kind; name; annotation; location };
         } -> (
         match access_kind with
         | Access.Kind.CurrentScope ->
@@ -2383,9 +2383,165 @@ let populate_captures ({ Source.statements; _ } as source) =
                 | Binding.Kind.(ClassName | ImportName) ->
                     (* Judgement call: these bindings are (supposedly) not useful for type checking *)
                     None
+                | Binding.Kind.(ParameterName (Some Star.Twice)) ->
+                    let dictionary_annotation value_annotation =
+                      {
+                        Node.location;
+                        value =
+                          Expression.Call
+                            {
+                              callee =
+                                {
+                                  Node.location;
+                                  value =
+                                    Name
+                                      (Name.Attribute
+                                         {
+                                           base =
+                                             {
+                                               Node.location;
+                                               value =
+                                                 Name
+                                                   (Name.Attribute
+                                                      {
+                                                        base =
+                                                          {
+                                                            Node.location;
+                                                            value = Name (Name.Identifier "typing");
+                                                          };
+                                                        attribute = "Dict";
+                                                        special = false;
+                                                      });
+                                             };
+                                           attribute = "__getitem__";
+                                           special = true;
+                                         });
+                                };
+                              arguments =
+                                [
+                                  {
+                                    Call.Argument.name = None;
+                                    value =
+                                      {
+                                        Node.location;
+                                        value =
+                                          Expression.Tuple
+                                            [
+                                              {
+                                                Node.location;
+                                                value = Expression.Name (Name.Identifier "str");
+                                              };
+                                              value_annotation;
+                                            ];
+                                      };
+                                  };
+                                ];
+                            };
+                      }
+                    in
+                    let annotation =
+                      match annotation with
+                      | None ->
+                          Some
+                            (dictionary_annotation
+                               {
+                                 Node.location;
+                                 value =
+                                   Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base =
+                                            {
+                                              Node.location;
+                                              value = Name (Name.Identifier "typing");
+                                            };
+                                          attribute = "Any";
+                                          special = false;
+                                        });
+                               })
+                      | Some value_annotation -> Some (dictionary_annotation value_annotation)
+                    in
+                    Some { Define.Capture.name; annotation }
+                | Binding.Kind.(ParameterName (Some Star.Once)) ->
+                    let tuple_annotation value_annotation =
+                      {
+                        Node.location;
+                        value =
+                          Expression.Call
+                            {
+                              callee =
+                                {
+                                  Node.location;
+                                  value =
+                                    Name
+                                      (Name.Attribute
+                                         {
+                                           base =
+                                             {
+                                               Node.location;
+                                               value =
+                                                 Name
+                                                   (Name.Attribute
+                                                      {
+                                                        base =
+                                                          {
+                                                            Node.location;
+                                                            value = Name (Name.Identifier "typing");
+                                                          };
+                                                        attribute = "Tuple";
+                                                        special = false;
+                                                      });
+                                             };
+                                           attribute = "__getitem__";
+                                           special = true;
+                                         });
+                                };
+                              arguments =
+                                [
+                                  {
+                                    Call.Argument.name = None;
+                                    value =
+                                      {
+                                        Node.location;
+                                        value =
+                                          Expression.Tuple
+                                            [
+                                              value_annotation;
+                                              { Node.location; value = Expression.Ellipsis };
+                                            ];
+                                      };
+                                  };
+                                ];
+                            };
+                      }
+                    in
+                    let annotation =
+                      match annotation with
+                      | None ->
+                          Some
+                            (tuple_annotation
+                               {
+                                 Node.location;
+                                 value =
+                                   Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base =
+                                            {
+                                              Node.location;
+                                              value = Name (Name.Identifier "typing");
+                                            };
+                                          attribute = "Any";
+                                          special = false;
+                                        });
+                               })
+                      | Some value_annotation -> Some (tuple_annotation value_annotation)
+                    in
+                    Some { Define.Capture.name; annotation }
                 | Binding.Kind.(
                     ( AssignTarget | ComprehensionTarget | DefineName | ExceptTarget | ForTarget
-                    | ParameterName | WithTarget )) ->
+                    | ParameterName None
+                    | WithTarget )) ->
                     Some { Define.Capture.name; annotation } ) ) )
   in
   let rec transform_statement ~scopes statement =

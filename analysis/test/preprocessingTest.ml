@@ -3161,7 +3161,37 @@ let test_populate_captures _ =
     in
     List.iter expected ~f:(fun (name, captures) -> assert_captures name captures)
   in
-  let int_annotation = +Expression.Name (Name.Identifier "int") in
+  let tuple_annotation value_annotation =
+    +Expression.Call
+       {
+         callee =
+           +Expression.Name
+              (Name.Attribute { base = !"typing.Tuple"; attribute = "__getitem__"; special = true });
+         arguments =
+           [
+             {
+               Call.Argument.name = None;
+               value = +Expression.Tuple [value_annotation; +Expression.Ellipsis];
+             };
+           ];
+       }
+  in
+  let dict_annotation value_annotation =
+    +Expression.Call
+       {
+         callee =
+           +Expression.Name
+              (Name.Attribute { base = !"typing.Dict"; attribute = "__getitem__"; special = true });
+         arguments =
+           [{ Call.Argument.name = None; value = +Expression.Tuple [!"str"; value_annotation] }];
+       }
+  in
+  let int_annotation = !"int" in
+  let any_annotation = !"typing.Any" in
+  let tuple_int_annotation = tuple_annotation int_annotation in
+  let tuple_any_annotation = tuple_annotation any_annotation in
+  let dict_int_annotation = dict_annotation int_annotation in
+  let dict_any_annotation = dict_annotation any_annotation in
   assert_captures
     {|
      def foo():
@@ -3432,6 +3462,66 @@ let test_populate_captures _ =
          return [x for x in range(y) if x < 9]
   |}
     ~expected:[!&"bar", ["y", None]];
+
+  (* Capture *args *)
+  assert_captures
+    {|
+     def foo( *args):
+       def bar():
+         return args[0]
+  |}
+    ~expected:[!&"bar", ["args", Some tuple_any_annotation]];
+  assert_captures
+    {|
+     def foo( *args: int):
+       def bar():
+         return args[0]
+  |}
+    ~expected:[!&"bar", ["args", Some tuple_int_annotation]];
+  assert_captures
+    {|
+     def foo( *derp: int):
+       def bar():
+         return derp[0]
+  |}
+    ~expected:[!&"bar", ["derp", Some tuple_int_annotation]];
+  assert_captures
+    {|
+     def foo( *args: int):
+       def bar( *args: str):
+         return args[0]
+  |}
+    ~expected:[!&"bar", []];
+
+  (* Capture **kwargs *)
+  assert_captures
+    {|
+     def foo( **kwargs):
+       def bar():
+         return kwargs["derp"]
+  |}
+    ~expected:[!&"bar", ["kwargs", Some dict_any_annotation]];
+  assert_captures
+    {|
+     def foo( **kwargs: int):
+       def bar():
+         return kwargs["derp"]
+  |}
+    ~expected:[!&"bar", ["kwargs", Some dict_int_annotation]];
+  assert_captures
+    {|
+     def foo( **durp):
+       def bar():
+         return durp["derp"]
+  |}
+    ~expected:[!&"bar", ["durp", Some dict_any_annotation]];
+  assert_captures
+    {|
+     def foo( **kwargs: int):
+       def bar( **kwargs: str):
+         return kwargs["derp"]
+  |}
+    ~expected:[!&"bar", []];
   ()
 
 

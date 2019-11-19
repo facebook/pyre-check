@@ -9,6 +9,13 @@ open Pyre
 
 module Binding = struct
   module Kind = struct
+    module Star = struct
+      type t =
+        | Once
+        | Twice
+      [@@deriving sexp, compare, hash]
+    end
+
     type t =
       | AssignTarget
       | ClassName
@@ -17,7 +24,7 @@ module Binding = struct
       | ExceptTarget
       | ForTarget
       | ImportName
-      | ParameterName
+      | ParameterName of Star.t option
       | WithTarget
     [@@deriving sexp, compare, hash]
   end
@@ -115,7 +122,17 @@ module Binding = struct
   and of_statements statements = List.concat_map statements ~f:of_statement
 
   let of_parameter { Node.value = { Expression.Parameter.name; annotation; _ }; location } =
-    { kind = Kind.ParameterName; name; location; annotation }
+    let star, name =
+      let star, name = Identifier.split_star name in
+      let star =
+        match star with
+        | "**" -> Some Kind.Star.Twice
+        | "*" -> Some Kind.Star.Once
+        | _ -> None
+      in
+      star, name
+    in
+    { kind = Kind.ParameterName star; name; location; annotation }
 
 
   let of_generator { Expression.Comprehension.Generator.target; _ } =

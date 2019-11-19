@@ -365,7 +365,8 @@ let test_define_local_bindings _ =
     def foo(x):
       return x
   |}
-    ~expected:["x", Some (ExpectBinding.create Binding.Kind.ParameterName (location (2, 8) (2, 9)))];
+    ~expected:
+      ["x", Some (ExpectBinding.create Binding.Kind.(ParameterName None) (location (2, 8) (2, 9)))];
   assert_bindings
     {|
     def foo(x: int):
@@ -376,8 +377,36 @@ let test_define_local_bindings _ =
         ( "x",
           Some
             (ExpectBinding.create
-               Binding.Kind.ParameterName
+               Binding.Kind.(ParameterName None)
                (location (2, 8) (2, 9))
+               ~annotation:int_annotation) );
+      ];
+  assert_bindings
+    {|
+    def foo( *args: int):
+      return args[0]
+  |}
+    ~expected:
+      [
+        ( "args",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ParameterName (Some Star.Once))
+               (location (2, 9) (2, 14))
+               ~annotation:int_annotation) );
+      ];
+  assert_bindings
+    {|
+    def foo( **kwargs: int):
+      return kwargs["derp"]
+  |}
+    ~expected:
+      [
+        ( "kwargs",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ParameterName (Some Star.Twice))
+               (location (2, 9) (2, 17))
                ~annotation:int_annotation) );
       ];
   assert_bindings
@@ -390,13 +419,13 @@ let test_define_local_bindings _ =
         ( "x",
           Some
             (ExpectBinding.create
-               Binding.Kind.ParameterName
+               Binding.Kind.(ParameterName None)
                (location (2, 8) (2, 9))
                ~annotation:int_annotation) );
         ( "y",
           Some
             (ExpectBinding.create
-               Binding.Kind.ParameterName
+               Binding.Kind.(ParameterName None)
                (location (2, 16) (2, 17))
                ~annotation:str_annotation) );
       ];
@@ -601,15 +630,31 @@ let test_expression_local_bindings _ =
     "lambda x: x"
     ~expected:
       [
-        "x", Some (ExpectBinding.create Binding.Kind.ParameterName (location (1, 7) (1, 8)));
+        "x", Some (ExpectBinding.create Binding.Kind.(ParameterName None) (location (1, 7) (1, 8)));
         "y", None;
       ];
   assert_bindings
     "lambda x, y: x"
     ~expected:
       [
-        "x", Some (ExpectBinding.create Binding.Kind.ParameterName (location (1, 7) (1, 8)));
-        "y", Some (ExpectBinding.create Binding.Kind.ParameterName (location (1, 10) (1, 11)));
+        "x", Some (ExpectBinding.create Binding.Kind.(ParameterName None) (location (1, 7) (1, 8)));
+        ( "y",
+          Some (ExpectBinding.create Binding.Kind.(ParameterName None) (location (1, 10) (1, 11))) );
+      ];
+  assert_bindings
+    "lambda *args, **kwargs: x"
+    ~expected:
+      [
+        ( "args",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ParameterName (Some Star.Once))
+               (location (1, 7) (1, 12))) );
+        ( "kwargs",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ParameterName (Some Star.Twice))
+               (location (1, 14) (1, 22))) );
       ];
   assert_bindings
     "(x for x in range(10))"
@@ -994,7 +1039,7 @@ let test_scope_stack_lookup _ =
         ( "y",
           Some
             ( ExpectBinding.create
-                Binding.Kind.ParameterName
+                Binding.Kind.(ParameterName None)
                 (location (4, 10) (4, 11))
                 ~annotation:int_annotation
             |> ExpectAccess.create Access.Kind.CurrentScope ) );
@@ -1014,14 +1059,14 @@ let test_scope_stack_lookup _ =
         ( "x",
           Some
             ( ExpectBinding.create
-                Binding.Kind.ParameterName
+                Binding.Kind.(ParameterName None)
                 (location (2, 8) (2, 9))
                 ~annotation:int_annotation
             |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
         ( "y",
           Some
             ( ExpectBinding.create
-                Binding.Kind.ParameterName
+                Binding.Kind.(ParameterName None)
                 (location (3, 10) (3, 11))
                 ~annotation:int_annotation
             |> ExpectAccess.create Access.Kind.CurrentScope ) );
