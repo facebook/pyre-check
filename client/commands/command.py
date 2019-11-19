@@ -204,11 +204,6 @@ class CommandParser(ABC):
             help="Hide detailed information about parse errors",
         )
         parser.add_argument(
-            "--show-parse-errors",
-            action="store_true",
-            help="[DEPRECATED] Show detailed information about parse errors",
-        )
-        parser.add_argument(
             "--logging-sections", help=argparse.SUPPRESS  # Enable sectional logging.
         )
         parser.add_argument(

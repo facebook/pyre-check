@@ -86,7 +86,7 @@ The Pyre command line flags can be summarized by running `pyre --help` or `pyre 
 $ pyre --help
 usage: pyre [-h] [-l LOCAL_CONFIGURATION] [--version] [--binary-version]
             [--show-error-traces] [--output {text,json}] [--verbose] [-n]
-            [--hide-parse-errors] [--show-parse-errors] [--target TARGETS]
+            [--hide-parse-errors] [--target TARGETS]
             [--build] [--source-directory SOURCE_DIRECTORIES]
             [--search-path SEARCH_PATH] [--preserve-pythonpath]
             [--binary BINARY] [--exclude EXCLUDE] [--typeshed TYPESHED]
@@ -107,7 +107,6 @@ optional arguments:
   --output {text,json}  How to format output
   --verbose             Enable verbose logging
   -n, --noninteractive  Disable interactive logging
-  --show-parse-errors   Display detailed information about parse errors
   --search-path SEARCH_PATH
                         Add an additional directory of modules and stubs to include in the type environment
   --preserve-pythonpath
