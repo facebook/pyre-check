@@ -34,17 +34,12 @@ type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
 type t = {
   dependency: SharedMemoryKeys.dependency option;
   class_hierarchy_environment: ClassHierarchyEnvironment.ReadOnly.t;
-  class_hierarchy: (module ClassHierarchy.Handler);
-  aliases: Type.Primitive.t -> Type.alias option;
-  module_definition: Reference.t -> Module.t option;
+  class_metadata_environment: ClassMetadataEnvironment.ReadOnly.t;
   class_definition: Type.Primitive.t -> ClassSummary.t Node.t option;
-  define_body: Reference.t -> Define.t Node.t option;
-  class_metadata: Type.Primitive.t -> ClassMetadataEnvironment.class_metadata option;
   constructor: resolution:t -> Type.Primitive.t -> Type.t option;
   attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
   attribute: resolution:t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option;
   is_protocol: Type.t -> bool;
-  undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
   protocol_assumptions: TypeOrder.ProtocolAssumptions.t;
   callable_assumptions: TypeOrder.CallableAssumptions.t;
   global: Reference.t -> global option;
@@ -99,21 +94,10 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
   let unannotated_global_environment =
     AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
   in
-  let ast_environment =
-    UnannotatedGlobalEnvironment.ReadOnly.ast_environment unannotated_global_environment
-  in
   let class_definition =
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
       unannotated_global_environment
       ?dependency
-  in
-  let module_definition = AstEnvironment.ReadOnly.get_module_metadata ?dependency ast_environment in
-  let define_body =
-    UnannotatedGlobalEnvironment.ReadOnly.get_define_body ?dependency unannotated_global_environment
-  in
-  let aliases = AliasEnvironment.ReadOnly.get_alias ?dependency alias_environment in
-  let edges =
-    ClassHierarchyEnvironment.ReadOnly.get_edges ?dependency class_hierarchy_environment
   in
   let constructor ~resolution class_name =
     let instantiated = Type.Primitive class_name in
@@ -163,33 +147,12 @@ let create ?dependency ~class_metadata_environment ~global (module AnnotatedClas
         |> fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
     | Some (_ :: _) -> None
   in
-  let class_hierarchy =
-    ( module struct
-      let edges = edges
-
-      let contains key = class_definition key |> Option.is_some
-    end : ClassHierarchy.Handler )
-  in
-  let class_metadata =
-    ClassMetadataEnvironment.ReadOnly.get_class_metadata ?dependency class_metadata_environment
-  in
-  let undecorated_signature =
-    UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
-      ?dependency
-      (ClassMetadataEnvironment.ReadOnly.undecorated_function_environment
-         class_metadata_environment)
-  in
   {
     dependency;
     class_hierarchy_environment;
-    class_hierarchy;
-    aliases;
-    module_definition;
-    define_body;
+    class_metadata_environment;
     class_definition;
-    class_metadata;
     constructor;
-    undecorated_signature;
     attributes;
     attribute;
     is_protocol;
@@ -215,7 +178,18 @@ let ast_environment resolution =
   unannotated_global_environment resolution |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 
 
-let is_tracked { class_hierarchy; _ } = ClassHierarchy.contains class_hierarchy
+let class_hierarchy { class_hierarchy_environment; class_definition; dependency; _ } =
+  let edges =
+    ClassHierarchyEnvironment.ReadOnly.get_edges ?dependency class_hierarchy_environment
+  in
+  ( module struct
+    let edges = edges
+
+    let contains key = class_definition key |> Option.is_some
+  end : ClassHierarchy.Handler )
+
+
+let is_tracked resolution = ClassHierarchy.contains (class_hierarchy resolution)
 
 let contains_untracked resolution annotation =
   List.exists
@@ -236,18 +210,19 @@ let class_definition { class_definition; _ } annotation =
   primitive_name annotation >>= class_definition
 
 
-let define_body { define_body; _ } name = define_body name
+let define_body ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.get_define_body
+    ?dependency
+    (unannotated_global_environment resolution)
 
-let class_metadata { class_metadata; _ } annotation = primitive_name annotation >>= class_metadata
+
+let class_metadata { dependency; class_metadata_environment; _ } annotation =
+  primitive_name annotation
+  >>= ClassMetadataEnvironment.ReadOnly.get_class_metadata ?dependency class_metadata_environment
+
 
 let full_order
-    ( {
-        class_hierarchy;
-        attributes = attributes_lookup;
-        protocol_assumptions;
-        callable_assumptions;
-        _;
-      } as resolution )
+    ({ attributes = attributes_lookup; protocol_assumptions; callable_assumptions; _ } as resolution)
   =
   let constructor instantiated ~protocol_assumptions =
     instantiated |> Type.primitive_name >>= constructor { resolution with protocol_assumptions }
@@ -261,7 +236,7 @@ let full_order
     is_protocol { resolution with protocol_assumptions } annotation
   in
   {
-    TypeOrder.handler = class_hierarchy;
+    TypeOrder.handler = class_hierarchy resolution;
     constructor;
     attributes;
     is_protocol;
@@ -270,8 +245,8 @@ let full_order
   }
 
 
-let variables ?(default = None) { class_hierarchy; _ } =
-  ClassHierarchy.variables ~default class_hierarchy
+let variables ?(default = None) resolution =
+  ClassHierarchy.variables ~default (class_hierarchy resolution)
 
 
 let check_invalid_type_parameters resolution annotation =
@@ -531,11 +506,19 @@ let rec resolve_literal ({ class_definition; _ } as resolution) expression =
   | _ -> Type.Any
 
 
-let undecorated_signature { undecorated_signature; _ } = undecorated_signature
+let undecorated_signature { dependency; class_metadata_environment; _ } =
+  UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
+    ?dependency
+    (ClassMetadataEnvironment.ReadOnly.undecorated_function_environment class_metadata_environment)
 
-let aliases { aliases; _ } = aliases
 
-let module_definition { module_definition; _ } = module_definition
+let aliases ({ dependency; _ } as resolution) =
+  AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment resolution)
+
+
+let module_definition ({ dependency; _ } as resolution) =
+  AstEnvironment.ReadOnly.get_module_metadata ?dependency (ast_environment resolution)
+
 
 module DefinitionsCache (Type : sig
   type t
@@ -644,16 +627,18 @@ let less_or_equal resolution = full_order resolution |> TypeOrder.always_less_or
 
 let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compatible_with
 
-let is_instantiated { class_hierarchy; _ } = ClassHierarchy.is_instantiated class_hierarchy
+let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
 
 let parse_reference ?(allow_untracked = false) resolution reference =
   Expression.from_reference ~location:Location.Reference.any reference
   |> parse_annotation ~allow_untracked ~allow_invalid_type_parameters:true resolution
 
 
-let parse_as_list_variadic ({ aliases; _ } as resolution) name =
+let parse_as_list_variadic resolution name =
   let parsed_as_type_variable =
-    parse_annotation resolution name ~allow_untracked:true |> Type.primitive_name >>= aliases
+    parse_annotation resolution name ~allow_untracked:true
+    |> Type.primitive_name
+    >>= aliases resolution
   in
   match parsed_as_type_variable with
   | Some (VariableAlias (ListVariadic variable)) -> Some variable
@@ -670,14 +655,16 @@ let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as r
     ?dependency
 
 
-let is_invariance_mismatch ({ class_hierarchy; _ } as resolution) ~left ~right =
+let is_invariance_mismatch resolution ~left ~right =
   match left, right with
   | ( Type.Parametric { name = left_name; parameters = left_parameters },
       Type.Parametric { name = right_name; parameters = right_parameters } )
     when Identifier.equal left_name right_name ->
       let zipped =
         match
-          ClassHierarchy.variables class_hierarchy left_name, left_parameters, right_parameters
+          ( ClassHierarchy.variables (class_hierarchy resolution) left_name,
+            left_parameters,
+            right_parameters )
         with
         | Some (Unaries variables), Concrete left_parameters, Concrete right_parameters -> (
             List.map3
@@ -798,8 +785,6 @@ let global { global; _ } reference =
       Some annotation
   | _ -> global reference
 
-
-let class_hierarchy { class_hierarchy; _ } = class_hierarchy
 
 let attribute ({ attribute; _ } as resolution) = attribute ~resolution
 
