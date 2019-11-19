@@ -9,7 +9,7 @@ import fnmatch
 import json
 import logging
 import os
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set  # noqa
+from typing import Any, Dict, List, Optional, Sequence, Set  # noqa
 
 from .. import log
 from ..analysis_directory import AnalysisDirectory
@@ -32,11 +32,6 @@ class Reporting(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super().__init__(arguments, configuration, analysis_directory)
-        self._verbose = arguments.verbose  # type: bool
-        self._output = arguments.output  # type: str
-        self._ignore_all_errors_paths = (
-            self._configuration.ignore_all_errors
-        )  # type: Iterable[str]
 
     def _print(self, errors: Sequence[Error]) -> None:
         if errors:

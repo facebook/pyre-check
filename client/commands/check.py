@@ -29,7 +29,6 @@ class Check(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Check, self).__init__(arguments, configuration, analysis_directory)
-        self._number_of_workers = self._configuration.number_of_workers
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

@@ -165,7 +165,7 @@ class Configuration:
         typeshed: Optional[str] = None,
         preserve_pythonpath: bool = False,
         excludes: Optional[List[str]] = None,
-        formatter: Optional[List[str]] = None,
+        formatter: Optional[str] = None,
         logger: Optional[str] = None,
         log_directory: Optional[str] = None,
     ) -> None:

@@ -35,10 +35,10 @@ class Analyze(Check):
     ) -> None:
         super(Analyze, self).__init__(arguments, configuration, analysis_directory)
         self._analysis = arguments.analysis  # type: str
-        self._no_verify = arguments.no_verify  # type: bool
         self._taint_models_path = (
             arguments.taint_models_path or self._configuration.taint_models_path
         )  # type: List[str]
+        self._no_verify = arguments.no_verify  # type: bool
         self._save_results_to = arguments.save_results_to  # type: Optional[str]
         self._dump_call_graph = arguments.dump_call_graph  # type: bool
         self._repository_root = arguments.repository_root  # type: Optional[str]

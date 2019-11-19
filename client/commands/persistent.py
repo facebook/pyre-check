@@ -29,6 +29,7 @@ class Persistent(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Persistent, self).__init__(arguments, configuration, analysis_directory)
+        self._no_watchman: bool = arguments.no_watchman
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

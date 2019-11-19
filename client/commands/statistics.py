@@ -212,7 +212,6 @@ class Statistics(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Statistics, self).__init__(arguments, configuration, analysis_directory)
-        self._local_configuration: str = arguments.local_configuration
         self._filter_paths: List[str] = arguments.filter_paths
 
     @classmethod

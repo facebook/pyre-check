@@ -404,11 +404,13 @@ class Infer(Reporting):
         arguments.show_error_traces = True
         arguments.output = JSON
         super(Infer, self).__init__(arguments, configuration, analysis_directory)
-        self._print_errors = arguments.print_only
-        self._local_configuration = arguments.local_configuration
-        self._json = arguments.json
-        self._annotate_from_existing_stubs = arguments.annotate_from_existing_stubs
-        self._formatter = self._configuration.formatter
+        self._print_errors: bool = arguments.print_only
+        self._full_only: bool = arguments.full_only
+        self._recursive: bool = arguments.recursive
+        self._in_place: bool = arguments.in_place
+        self._json: bool = arguments.json
+        self._annotate_from_existing_stubs: bool = arguments.annotate_from_existing_stubs
+        self._debug_infer: bool = arguments.debug_infer
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

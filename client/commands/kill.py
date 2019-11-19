@@ -32,6 +32,7 @@ class Kill(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Kill, self).__init__(arguments, configuration, analysis_directory)
+        self._with_fire: bool = arguments.with_fire
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

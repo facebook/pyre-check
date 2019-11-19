@@ -119,8 +119,8 @@ class Color(Command):
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        self.path = arguments.path
         super(Color, self).__init__(arguments, configuration, analysis_directory)
+        self.path = arguments.path
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

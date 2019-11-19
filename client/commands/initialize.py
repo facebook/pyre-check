@@ -34,8 +34,8 @@ class Initialize(CommandParser):
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        self._local = arguments.local  # type: bool
         super(Initialize, self).__init__(arguments)
+        self._local: bool = arguments.local
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

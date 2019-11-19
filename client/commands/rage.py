@@ -24,8 +24,6 @@ class Rage(Command):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Rage, self).__init__(arguments, configuration, analysis_directory)
-        # pyre-fixme[16]: `Namespace` has no attribute `command`.
-        self._arguments.command = self.NAME
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

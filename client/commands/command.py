@@ -130,29 +130,53 @@ class CommandParser(ABC):
 
     def __init__(self, arguments: argparse.Namespace) -> None:
         self._arguments = arguments
-
         self._local_configuration: str = arguments.local_configuration
-        self._search_path: List[str] = arguments.search_path
-        self._binary: str = arguments.binary
-        self._typeshed: str = arguments.typeshed
-        self._preserve_pythonpath: bool = arguments.preserve_pythonpath
-        self._exclude: List[str] = arguments.exclude
+        self._version: bool = arguments.version
+        self._debug: bool = arguments.debug
+        self._sequential: bool = arguments.sequential
+        self._strict: bool = arguments.strict
+        self._additional_checks: List[str] = arguments.additional_check
+        self._show_error_traces: bool = arguments.show_error_traces
+        self._output: str = arguments.output
+        self._verbose: bool = arguments.verbose
+        self._enable_profiling: bool = arguments.enable_profiling
+        self._enable_memory_profiling: bool = arguments.enable_memory_profiling
+        self._noninteractive: bool = arguments.noninteractive
+        self._hide_parse_errors: bool = arguments.hide_parse_errors
+        self._logging_sections: str = arguments.logging_sections
+        self._log_identifier: str = arguments.log_identifier
+        self._log_directory: str = arguments.log_directory
         self._logger: str = arguments.logger
         self._formatter: List[str] = arguments.formatter
-        self._debug = arguments.debug  # type: bool
-        self._enable_profiling = arguments.enable_profiling  # type: bool
-        self._enable_memory_profiling = arguments.enable_memory_profiling  # type: bool
-        self._sequential = arguments.sequential  # type: bool
-        self._additional_checks = arguments.additional_check  # type: List[str]
-        self._show_error_traces = arguments.show_error_traces  # type: bool
-        self._verbose = arguments.verbose  # type: bool
-        self._hide_parse_errors = arguments.hide_parse_errors  # type: bool
-        self._logging_sections = arguments.logging_sections  # type: str
-        self._capable_terminal = arguments.capable_terminal  # type: bool
-        self._log_identifier = arguments.log_identifier  # type: str
-        self._log_directory = arguments.log_directory  # type: str
-        self._original_directory = arguments.original_directory  # type: str
-        self._current_directory = arguments.current_directory  # type: str
+
+        self._targets: List[str] = arguments.targets
+        self._build: bool = arguments.build
+        self._use_buck_builder: bool = arguments.use_buck_builder
+        self._use_legacy_builder: bool = arguments.use_legacy_builder
+        self._buck_builder_debug: bool = arguments.buck_builder_debug
+
+        self._source_directories: List[str] = arguments.source_directories
+        self._filter_directory: List[str] = arguments.filter_directory
+        self._use_global_shared_analysis_directory: bool = arguments.use_global_shared_analysis_directory
+        self._no_saved_state: bool = arguments.no_saved_state
+
+        self._search_path: List[str] = arguments.search_path
+        self._preserve_pythonpath: bool = arguments.preserve_pythonpath
+        self._binary: str = arguments.binary
+        self._buck_builder_binary: Optional[str] = arguments.buck_builder_binary
+        self._buck_builder_target: Optional[str] = arguments.buck_builder_target
+        self._exclude: List[str] = arguments.exclude
+        self._typeshed: str = arguments.typeshed
+        self._save_initial_state_to: Optional[str] = arguments.save_initial_state_to
+        self._load_initial_state_from: Optional[str] = arguments.load_initial_state_from
+        self._changed_files_path: Optional[str] = arguments.changed_files_path
+        self._saved_state_project: Optional[str] = arguments.saved_state_project
+        self._use_json_sockets: bool = arguments.use_json_sockets
+
+        # Derived arguments
+        self._capable_terminal: bool = arguments.capable_terminal
+        self._original_directory: str = arguments.original_directory
+        self._current_directory: str = arguments.current_directory
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
@@ -354,6 +378,10 @@ class CommandParser(ABC):
     def exit_code(self) -> int:
         return self._exit_code
 
+    @property
+    def local_configuration(self) -> str:
+        return self._local_configuration
+
 
 class Command(CommandParser):
     _buffer = []  # type: List[str]
@@ -368,20 +396,24 @@ class Command(CommandParser):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Command, self).__init__(arguments)
-        if arguments.local_configuration:
+        if self.local_configuration:
             self._local_root = (
-                arguments.local_configuration
-                if os.path.isdir(arguments.local_configuration)
-                else os.path.dirname(arguments.local_configuration)
+                self.local_configuration
+                if os.path.isdir(self.local_configuration)
+                else os.path.dirname(self.local_configuration)
             )
         else:
             self._local_root = arguments.original_directory
 
         self._configuration: Configuration = configuration or self.generate_configuration()
-        self._strict = arguments.strict or self._configuration.strict  # type: bool
-        self._logger = arguments.logger or (
-            configuration and configuration.logger
-        )  # type: str
+        self._strict: bool = arguments.strict or self._configuration.strict
+        self._logger: str = arguments.logger or (configuration and configuration.logger)
+        self._ignore_all_errors_paths: Iterable[str] = (
+            self._configuration.ignore_all_errors
+        )
+        self._number_of_workers: int = self._configuration.number_of_workers
+        self._version_hash: str = self._configuration.version_hash
+        self._formatter: Optional[str] = self._configuration.formatter
 
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
