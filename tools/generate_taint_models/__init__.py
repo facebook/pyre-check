@@ -22,6 +22,12 @@ from .model_generator import Configuration, Registry
 
 @dataclass
 class ConfigurationArguments:
+    """
+    When adding new configuration options, make sure to add a default value for
+    them for backwards compatibility. We construct ConfigurationArguments objects
+    outside the current directory, and adding a non-optional argument will break those.
+    """
+
     annotation_specs: List[DecoratorAnnotationSpec]
     whitelisted_views: List[str]
     whitelisted_classes: List[str]
@@ -33,16 +39,22 @@ class ConfigurationArguments:
     stub_root: Optional[str]
     # pyre-ignore[4]: Too dynamic.
     graphql_object_type: Type[Any]
-    classes_to_taint: List[str]
     urls_module: Optional[str]
     graphql_module: List[str]
     blacklisted_global_directories: Set[str]
     blacklisted_globals: Set[str]
     logger: Optional[str] = None
+    classes_to_taint: Optional[List[str]] = None
 
 
 @dataclass
 class GenerationArguments:
+    """
+    When adding new generation options, make sure to add a default value for
+    them for backwards compatibility. We construct GenerationArguments objects
+    outside the current directory, and adding a non-optional argument will break those.
+    """
+
     mode: Optional[List[str]]
     verbose: bool
     output_directory: Optional[str]
