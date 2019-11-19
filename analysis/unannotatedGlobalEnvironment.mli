@@ -24,6 +24,16 @@ type unannotated_global =
   | Define of Define.Signature.t Node.t list
 [@@deriving compare, show]
 
+module FunctionDefinition : sig
+  type t = {
+    body: Define.t Node.t option;
+    overloads: Define.t Node.t list;
+  }
+  [@@deriving sexp, compare]
+
+  val location_sensitive_compare : t -> t -> int
+end
+
 module ReadOnly : sig
   type t
 
@@ -57,6 +67,8 @@ module ReadOnly : sig
     ?dependency:dependency ->
     Reference.t ->
     unannotated_global option
+
+  val get_define : t -> ?dependency:dependency -> Reference.t -> FunctionDefinition.t option
 
   val get_define_body : t -> ?dependency:dependency -> Reference.t -> Define.t Node.t option
 end

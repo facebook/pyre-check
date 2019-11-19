@@ -26,9 +26,21 @@ type unannotated_global =
   | Define of Define.Signature.t Node.t list
 [@@deriving compare, show, equal]
 
-let location_sensitive_define_node_compare =
-  Node.location_sensitive_compare Define.location_sensitive_compare
+module FunctionDefinition = struct
+  type t = {
+    body: Define.t Node.t option;
+    overloads: Define.t Node.t list;
+  }
+  [@@deriving sexp, compare]
 
+  let location_sensitive_compare left right =
+    let location_sensitive_define_node_compare =
+      Node.location_sensitive_compare Define.location_sensitive_compare
+    in
+    match Option.compare location_sensitive_define_node_compare left.body right.body with
+    | x when not (Int.equal x 0) -> x
+    | _ -> List.compare location_sensitive_define_node_compare left.overloads right.overloads
+end
 
 module ReadOnly = struct
   type t = {
@@ -41,6 +53,7 @@ module ReadOnly = struct
     all_defines_in_module: Reference.t -> Reference.t list;
     get_class_definition: ?dependency:dependency -> string -> ClassSummary.t Node.t option;
     get_unannotated_global: ?dependency:dependency -> Reference.t -> unannotated_global option;
+    get_define: ?dependency:dependency -> Reference.t -> FunctionDefinition.t option;
     get_define_body: ?dependency:dependency -> Reference.t -> Define.t Node.t option;
     hash_to_key_map: unit -> string String.Map.t;
     serialize_decoded: Memory.decodable -> (string * string * string option) option;
@@ -62,6 +75,8 @@ module ReadOnly = struct
   let get_class_definition { get_class_definition; _ } = get_class_definition
 
   let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
+
+  let get_define { get_define; _ } = get_define
 
   let get_define_body { get_define_body; _ } = get_define_body
 
@@ -166,7 +181,7 @@ module WriteOnly : sig
 
   val set_unannotated_global : target:Reference.t -> unannotated_global -> unit
 
-  val set_define : name:Reference.t -> Define.t Node.t -> unit
+  val set_define : name:Reference.t -> FunctionDefinition.t -> unit
 
   val read_only : ast_environment:AstEnvironment.ReadOnly.t -> ReadOnly.t
 end = struct
@@ -202,7 +217,7 @@ end = struct
       (UnannotatedGlobalValue)
 
   module FunctionDefinitionValue = struct
-    type t = Define.t Node.t
+    type t = FunctionDefinition.t
 
     let description = "Define"
 
@@ -210,7 +225,7 @@ end = struct
 
     let unmarshall value = Marshal.from_string value 0
 
-    let compare = location_sensitive_define_node_compare
+    let compare = FunctionDefinition.location_sensitive_compare
   end
 
   module FunctionDefinitions =
@@ -221,7 +236,7 @@ end = struct
 
   let set_class_definition ~name ~definition = ClassDefinitions.write_through name definition
 
-  let set_define ~name define_nodes = FunctionDefinitions.write_through name define_nodes
+  let set_define ~name definitions = FunctionDefinitions.write_through name definitions
 
   let add_to_transaction
       txn
@@ -303,7 +318,7 @@ end = struct
           Some (UnannotatedGlobalValue.description, Reference.show key, value)
       | FunctionDefinitions.Decoded (key, value) ->
           let value =
-            value >>| fun value -> Sexp.to_string_hum [%message (value : Define.t Node.t)]
+            value >>| fun value -> Sexp.to_string_hum [%message (value : FunctionDefinition.t)]
           in
           Some (FunctionDefinitionValue.description, Reference.show key, value)
       | _ -> None
@@ -315,13 +330,14 @@ end = struct
       | UnannotatedGlobals.Decoded (_, first), UnannotatedGlobals.Decoded (_, second) ->
           Some (Option.equal equal_unannotated_global first second)
       | FunctionDefinitions.Decoded (_, first), FunctionDefinitions.Decoded (_, second) ->
-          let node_equal left right =
-            Int.equal 0 (location_sensitive_define_node_compare left right)
-          in
+          let node_equal left right = Int.equal 0 (FunctionDefinitionValue.compare left right) in
           Some (Option.equal node_equal first second)
       | _ -> None
     in
-    let get_define_body = FunctionDefinitions.get in
+    let get_define = FunctionDefinitions.get in
+    let get_define_body ?dependency key =
+      FunctionDefinitions.get ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
+    in
     let all_defines_in_module qualifier = KeyTracker.get_define_body_keys [qualifier] in
     {
       ast_environment;
@@ -331,6 +347,7 @@ end = struct
       all_defines;
       class_exists;
       get_unannotated_global = UnannotatedGlobals.get;
+      get_define;
       get_define_body;
       all_defines_in_module;
       all_unannotated_globals;
@@ -610,22 +627,47 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as 
     in
     Collector.collect source
   in
-  let name_of { Node.value; _ } = Define.name value in
-  let defines =
-    let compare_name left right = Reference.compare (name_of left) (name_of right) in
-    let equal_name left right = Int.equal 0 (compare_name left right) in
-    (* Do not count the bodies of overloaded functions *)
-    List.filter all_defines ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value))
-    (* Take into account module toplevel *)
-    |> fun defines ->
-    Source.top_level_define_node source :: defines
-    (* Original order is important *)
-    |> List.stable_sort ~compare:compare_name
-    (* Last definition wins -- collector returns functions in reverse order *)
-    |> List.remove_consecutive_duplicates ~which_to_keep:`First ~equal:equal_name
+  let definitions =
+    let table = Reference.Table.create () in
+    let process_define ({ Node.value = define; _ } as define_node) =
+      let define_name = Define.name define in
+      let is_overload = Define.is_overloaded_function define in
+      let update = function
+        | None ->
+            if is_overload then
+              None, [define_node]
+            else
+              Some define_node, []
+        | Some (body, overloads) ->
+            if is_overload then
+              body, define_node :: overloads
+            else if Option.is_some body then
+              (* Last definition wins -- collector returns functions in reverse order *)
+              body, overloads
+            else
+              Some define_node, overloads
+      in
+      Hashtbl.update table define_name ~f:update
+    in
+    let collect_definition ~key ~data:(body, overloads) collected =
+      let overloads =
+        List.sort
+          overloads
+          ~compare:(Node.location_sensitive_compare Define.location_sensitive_compare)
+      in
+      (key, { FunctionDefinition.body; overloads }) :: collected
+    in
+    let all_defines =
+      (* Take into account module toplevel *)
+      Source.top_level_define_node source :: all_defines
+    in
+    List.iter all_defines ~f:process_define;
+    Hashtbl.fold table ~init:[] ~f:collect_definition
   in
-  List.iter defines ~f:(fun data -> WriteOnly.set_define ~name:(name_of data) data);
-  KeyTracker.FunctionKeys.add qualifier (List.map defines ~f:name_of)
+  List.iter definitions ~f:(fun (name, definition) -> WriteOnly.set_define ~name definition);
+  KeyTracker.FunctionKeys.add
+    qualifier
+    (List.map definitions ~f:fst |> List.sort ~compare:Reference.compare)
 
 
 module UpdateResult = struct

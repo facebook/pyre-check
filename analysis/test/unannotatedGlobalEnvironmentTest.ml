@@ -408,6 +408,22 @@ let test_updates context =
             ~dependency
           >>| remove_target_location
           |> assert_equal ~cmp ~printer expectation
+      | `Define (define_name, dependency, expectation) ->
+          let actual =
+            UnannotatedGlobalEnvironment.ReadOnly.get_define read_only define_name ~dependency
+          in
+          let cmp left right =
+            Int.equal
+              0
+              (Option.compare UnannotatedGlobalEnvironment.FunctionDefinition.compare left right)
+          in
+          assert_equal
+            ~cmp
+            ~printer:(fun definition ->
+              Sexp.to_string_hum
+                [%message (definition : UnannotatedGlobalEnvironment.FunctionDefinition.t option)])
+            expectation
+            actual
       | `DefineBody (define_name, dependency, expectation) ->
           let actual =
             UnannotatedGlobalEnvironment.ReadOnly.get_define_body read_only define_name ~dependency
@@ -1122,7 +1138,6 @@ let test_updates context =
       ]
     ();
 
-  (* Overloads doesn't count *)
   assert_updates
     ~original_source:
       {|
@@ -1232,6 +1247,224 @@ let test_updates context =
          `DefineBody (!&"test.foo", dependency, Some body));
       ]
     ();
+  let () =
+    let body =
+      node
+        ~path
+        ~start:(5, 0)
+        ~stop:(6, 10)
+        {
+          Define.signature =
+            {
+              Define.Signature.name = !&"test.foo";
+              parameters =
+                [
+                  node
+                    ~path
+                    ~start:(5, 8)
+                    ~stop:(5, 9)
+                    { Parameter.name = "$parameter$x"; value = None; annotation = None };
+                ];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            };
+          captures = [];
+          body =
+            [
+              create_simple_return
+                ~start:(6, 2)
+                ~stop:(6, 10)
+                (node
+                   ~path
+                   ~start:(6, 9)
+                   ~stop:(6, 10)
+                   (Expression.Name (Name.Identifier "$parameter$x")));
+            ];
+        }
+    in
+    let first_overload =
+      node
+        ~path
+        ~start:(4, 0)
+        ~stop:(4, 27)
+        {
+          Define.signature =
+            {
+              Define.Signature.name = !&"test.foo";
+              parameters =
+                [
+                  node
+                    ~path
+                    ~start:(4, 8)
+                    ~stop:(4, 9)
+                    {
+                      Parameter.name = "$parameter$x";
+                      value = None;
+                      annotation =
+                        Some
+                          (node
+                             ~path
+                             ~start:(4, 11)
+                             ~stop:(4, 14)
+                             (Expression.Name (Name.Identifier "int")));
+                    };
+                ];
+              decorators =
+                [
+                  node
+                    ~path
+                    ~start:(3, 1)
+                    ~stop:(3, 9)
+                    (Expression.Name
+                       (Name.Attribute
+                          {
+                            Name.Attribute.base =
+                              node
+                                ~path
+                                ~start:(3, 1)
+                                ~stop:(3, 9)
+                                (Expression.Name (Name.Identifier "typing"));
+                            attribute = "overload";
+                            special = false;
+                          }));
+                ];
+              docstring = None;
+              return_annotation =
+                Some
+                  (node
+                     ~path
+                     ~start:(4, 19)
+                     ~stop:(4, 22)
+                     (Expression.Name (Name.Identifier "int")));
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            };
+          captures = [];
+          body =
+            [
+              node
+                ~path
+                ~start:(4, 24)
+                ~stop:(4, 27)
+                (Statement.Expression (node ~path ~start:(4, 24) ~stop:(4, 27) Expression.Ellipsis));
+            ];
+        }
+    in
+    let second_overload =
+      node
+        ~path
+        ~start:(8, 0)
+        ~stop:(8, 27)
+        {
+          Define.signature =
+            {
+              Define.Signature.name = !&"test.foo";
+              parameters =
+                [
+                  node
+                    ~path
+                    ~start:(8, 8)
+                    ~stop:(8, 9)
+                    {
+                      Parameter.name = "$parameter$x";
+                      value = None;
+                      annotation =
+                        Some
+                          (node
+                             ~path
+                             ~start:(8, 11)
+                             ~stop:(8, 14)
+                             (Expression.Name (Name.Identifier "str")));
+                    };
+                ];
+              decorators =
+                [
+                  node
+                    ~path
+                    ~start:(7, 1)
+                    ~stop:(7, 9)
+                    (Expression.Name
+                       (Name.Attribute
+                          {
+                            Name.Attribute.base =
+                              node
+                                ~path
+                                ~start:(7, 1)
+                                ~stop:(7, 9)
+                                (Expression.Name (Name.Identifier "typing"));
+                            attribute = "overload";
+                            special = false;
+                          }));
+                ];
+              docstring = None;
+              return_annotation =
+                Some
+                  (node
+                     ~path
+                     ~start:(7, 19)
+                     ~stop:(7, 22)
+                     (Expression.Name (Name.Identifier "str")));
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            };
+          captures = [];
+          body =
+            [
+              node
+                ~path
+                ~start:(8, 24)
+                ~stop:(8, 27)
+                (Statement.Expression (node ~path ~start:(8, 24) ~stop:(8, 27) Expression.Ellipsis));
+            ];
+        }
+    in
+    assert_updates
+      ~original_source:
+        {|
+      from typing import overload
+      @overload
+      def foo(x: int) -> int: ...
+      def foo(x):
+        return x
+    |}
+      ~new_source:
+        {|
+      from typing import overload
+      @overload
+      def foo(x: int) -> int: ...
+      def foo(x):
+        return x
+      @overload
+      def foo(x: str) -> str: ...
+    |}
+      ~middle_actions:
+        [
+          (let definition =
+             let overloads = [first_overload] in
+             { UnannotatedGlobalEnvironment.FunctionDefinition.body = Some body; overloads }
+           in
+           `Define (!&"test.foo", dependency, Some definition));
+        ]
+      ~expected_triggers:[dependency]
+      ~post_actions:
+        [
+          (let definition =
+             let overloads = [first_overload; second_overload] in
+             { UnannotatedGlobalEnvironment.FunctionDefinition.body = Some body; overloads }
+           in
+           `Define (!&"test.foo", dependency, Some definition));
+        ]
+      ()
+  in
 
   (* Location-only change *)
   assert_updates
