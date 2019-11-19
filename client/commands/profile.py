@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from ..analysis_directory import AnalysisDirectory
+from ..configuration import Configuration
 from .command import Command, ProfileOutput
 
 
@@ -175,12 +177,21 @@ def to_incremental_updates(events: Sequence[Event]) -> List[Dict[str, int]]:
 class Profile(Command):
     NAME = "profile"
 
+    def __init__(
+        self,
+        arguments: argparse.Namespace,
+        configuration: Optional[Configuration] = None,
+        analysis_directory: Optional[AnalysisDirectory] = None,
+    ) -> None:
+        super(Profile, self).__init__(arguments, configuration, analysis_directory)
+        self._profile_output: ProfileOutput = arguments.profile_output
+
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
         profile = parser.add_parser(cls.NAME)
         profile.set_defaults(command=cls)
         profile.add_argument(
-            "--output",
+            "--profile-output",
             type=ProfileOutput,
             choices=ProfileOutput,
             help="Specify what to output.",
@@ -197,7 +208,7 @@ class Profile(Command):
                     "`--enable-memory-profiling` option first.".format(profiling_output)
                 )
             events = parse_events(profiling_output.read_text())
-            output = self._arguments.output
+            output = self._profile_output
             if output == ProfileOutput.TRACE_EVENT:
                 print(json.dumps(to_traceevents(events)))
             elif output == ProfileOutput.COLD_START_PHASES:

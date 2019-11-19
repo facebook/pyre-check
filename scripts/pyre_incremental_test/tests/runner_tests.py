@@ -60,9 +60,13 @@ class RunnerTest(unittest.TestCase):
                 Path("old_root"),
                 "pyre --option2 --no-saved-state --enable-profiling restart",
             ),
-            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=cold_start_phases"
+            ),
             CommandInput(Path("old_root"), "hg update --clean new_hash"),
-            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=incremental_updates"
+            ),
             CommandInput(
                 Path("old_root"),
                 "pyre --option3 --output=json --noninteractive incremental",
@@ -212,13 +216,13 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"),
                 "client --binary bin --typeshed bikeshed profile "
-                "--output=cold_start_phases",
+                "--profile-output=cold_start_phases",
             ),
             CommandInput(Path("old_root"), "hg update --clean new_hash"),
             CommandInput(
                 Path("old_root"),
                 "client --binary bin --typeshed bikeshed profile "
-                "--output=incremental_updates",
+                "--profile-output=incremental_updates",
             ),
             CommandInput(
                 Path("old_root"),
@@ -282,9 +286,13 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
             ),
-            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=cold_start_phases"
+            ),
             CommandInput(Path("old_root"), "patch -p1", patch_content),
-            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=incremental_updates"
+            ),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -337,12 +345,16 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
             ),
-            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=cold_start_phases"
+            ),
             CommandInput(Path("old_root"), f"tee {handle_a}", content_a),
             CommandInput(Path("old_root"), f"tee {handle_b}", content_b),
             CommandInput(Path("old_root"), f"rm -f {handle_c}"),
             CommandInput(Path("old_root"), f"rm -f {handle_d}"),
-            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=incremental_updates"
+            ),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -393,11 +405,17 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
             ),
-            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=cold_start_phases"
+            ),
             CommandInput(Path("old_root"), "hg update --clean new_hashA"),
-            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=incremental_updates"
+            ),
             CommandInput(Path("old_root"), "hg update --clean new_hashB"),
-            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=incremental_updates"
+            ),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
@@ -450,10 +468,12 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("/mock/tmp"), "pyre  --no-saved-state --enable-profiling restart"
             ),
-            CommandInput(Path("/mock/tmp"), "pyre profile --output=cold_start_phases"),
+            CommandInput(
+                Path("/mock/tmp"), "pyre profile --profile-output=cold_start_phases"
+            ),
             CommandInput(Path("/mock/tmp"), f"rm -f {handle_a}"),
             CommandInput(
-                Path("/mock/tmp"), "pyre profile --output=incremental_updates"
+                Path("/mock/tmp"), "pyre profile --profile-output=incremental_updates"
             ),
             CommandInput(
                 Path("/mock/tmp"), "pyre  --output=json --noninteractive incremental"
@@ -508,9 +528,13 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
             ),
-            CommandInput(Path("old_root"), "pyre profile --output=cold_start_phases"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=cold_start_phases"
+            ),
             CommandInput(Path("old_root"), "hg update --clean new_hashC"),
-            CommandInput(Path("old_root"), "pyre profile --output=incremental_updates"),
+            CommandInput(
+                Path("old_root"), "pyre profile --profile-output=incremental_updates"
+            ),
             CommandInput(
                 Path("old_root"), "pyre  --output=json --noninteractive incremental"
             ),
