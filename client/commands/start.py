@@ -32,39 +32,16 @@ class Start(Reporting):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Start, self).__init__(arguments, configuration, analysis_directory)
-        self._taint_models_path = (
-            self._configuration.taint_models_path
-        )  # type: List[str]
-        self._terminal = arguments.terminal  # type: bool
-        self._store_type_check_resolution = arguments.store_type_check_resolution
-        self._use_watchman = not arguments.no_watchman  # type: bool
-        self._incremental_style = arguments.incremental_style  # type: bool
-        self._number_of_workers = self._configuration.number_of_workers  # type: int
-        self._configuration_file_hash = (
-            self._configuration.file_hash
-        )  # type: Optional[str]
-        self._file_monitor = (
-            None
-        )  # type: Optional[project_files_monitor.ProjectFilesMonitor]
-        if not arguments.no_saved_state:
-            # Saved state.
-            self._save_initial_state_to = (
-                arguments.save_initial_state_to
-            )  # type: Optional[str]
-            self._changed_files_path = (
-                arguments.changed_files_path
-            )  # type: Optional[str]
-            self._load_initial_state_from = (
-                arguments.load_initial_state_from
-            )  # type: Optional[str]
-            self._saved_state_project = (
-                arguments.saved_state_project
-            )  # type: Optional[str]
-        else:
-            self._save_initial_state_to = None
-            self._changed_files_path = None
-            self._load_initial_state_from = None
-            self._saved_state_project = None
+        self._terminal: bool = arguments.terminal
+        self._store_type_check_resolution: bool = arguments.store_type_check_resolution
+        self._use_watchman: bool = not arguments.no_watchman
+        self._incremental_style: IncrementalStyle = arguments.incremental_style
+
+        if self._no_saved_state:
+            self._save_initial_state_to: Optional[str] = None
+            self._changed_files_path: Optional[str] = None
+            self._load_initial_state_from: Optional[str] = None
+            self._saved_state_project: Optional[str] = None
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -126,13 +103,12 @@ class Start(Reporting):
 
                     if self._use_watchman:
                         try:
-                            self._file_monitor = project_files_monitor.ProjectFilesMonitor(  # noqa
+                            file_monitor = project_files_monitor.ProjectFilesMonitor(  # noqa
                                 self._arguments,
                                 self._configuration,
                                 self._analysis_directory,
                             )
-                            # pyre-fixme[16]: `Optional` has no attribute `daemonize`.
-                            self._file_monitor.daemonize()
+                            file_monitor.daemonize()
                             LOG.info("Initialized file monitor.")
                         except project_files_monitor.MonitorException as error:
                             LOG.warning("Failed to initialize file monitor: %s", error)
@@ -176,7 +152,7 @@ class Start(Reporting):
             if local_configuration_root is not None:
                 relative = os.path.relpath(local_configuration_root)
                 flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
-        configuration_file_hash = self._configuration_file_hash
+        configuration_file_hash = self._configuration.file_hash
         if configuration_file_hash:
             flags.extend(["-configuration-file-hash", configuration_file_hash])
         load_initial_state_from = self._load_initial_state_from

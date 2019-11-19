@@ -28,7 +28,7 @@ class Restart(Command):
         super(Restart, self).__init__(arguments, configuration, analysis_directory)
         self._terminal: bool = arguments.terminal
         self._store_type_check_resolution: bool = arguments.store_type_check_resolution
-        self._no_watchman: bool = arguments.no_watchman
+        self._use_watchman: bool = not arguments.no_watchman
         self._incremental_style: IncrementalStyle = arguments.incremental_style
 
     @classmethod

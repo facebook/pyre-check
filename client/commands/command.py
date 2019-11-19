@@ -414,6 +414,7 @@ class Command(CommandParser):
         self._number_of_workers: int = self._configuration.number_of_workers
         self._version_hash: str = self._configuration.version_hash
         self._formatter: Optional[str] = self._configuration.formatter
+        self._taint_models_path: List[str] = self._configuration.taint_models_path
 
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
