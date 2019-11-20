@@ -24,7 +24,10 @@ module Binding = struct
       | ExceptTarget
       | ForTarget
       | ImportName
-      | ParameterName of Star.t option
+      | ParameterName of {
+          index: int;
+          star: Star.t option;
+        }
       | WithTarget
     [@@deriving sexp, compare, hash]
   end
@@ -121,7 +124,7 @@ module Binding = struct
 
   and of_statements statements = List.concat_map statements ~f:of_statement
 
-  let of_parameter { Node.value = { Expression.Parameter.name; annotation; _ }; location } =
+  let of_parameter index { Node.value = { Expression.Parameter.name; annotation; _ }; location } =
     let star, name =
       let star, name = Identifier.split_star name in
       let star =
@@ -132,7 +135,7 @@ module Binding = struct
       in
       star, name
     in
-    { kind = Kind.ParameterName star; name; location; annotation }
+    { kind = Kind.ParameterName { index; star }; name; location; annotation }
 
 
   let of_generator { Expression.Comprehension.Generator.target; _ } =
@@ -253,7 +256,7 @@ module Scope = struct
       let nonlocals = nonlocals_of_statements body |> Identifier.Set.of_list in
       let parameter_bindings =
         let { Define.Signature.parameters; _ } = signature in
-        List.map parameters ~f:Binding.of_parameter
+        List.mapi parameters ~f:Binding.of_parameter
       in
       let body_bindings = Binding.of_statements body in
       Some
@@ -290,7 +293,8 @@ module Scope = struct
             kind = Kind.Lambda;
             globals;
             nonlocals;
-            bindings = List.map parameters ~f:Binding.of_parameter |> create_map ~globals ~nonlocals;
+            bindings =
+              List.mapi parameters ~f:Binding.of_parameter |> create_map ~globals ~nonlocals;
           }
     | DictionaryComprehension { Comprehension.generators; _ }
     | Generator { Comprehension.generators; _ }

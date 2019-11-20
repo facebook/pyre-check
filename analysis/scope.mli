@@ -24,7 +24,10 @@ module Binding : sig
       | ExceptTarget
       | ForTarget
       | ImportName
-      | ParameterName of Star.t option
+      | ParameterName of {
+          index: int;
+          star: Star.t option;
+        }
       | WithTarget
     [@@deriving sexp, compare, hash]
   end

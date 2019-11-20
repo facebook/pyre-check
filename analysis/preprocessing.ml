@@ -2383,7 +2383,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                 | Binding.Kind.(ClassName | ImportName) ->
                     (* Judgement call: these bindings are (supposedly) not useful for type checking *)
                     None
-                | Binding.Kind.(ParameterName (Some Star.Twice)) ->
+                | Binding.Kind.(ParameterName { star = Some Star.Twice; _ }) ->
                     let dictionary_annotation value_annotation =
                       {
                         Node.location;
@@ -2462,7 +2462,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                       | Some value_annotation -> Some (dictionary_annotation value_annotation)
                     in
                     Some { Define.Capture.name; annotation }
-                | Binding.Kind.(ParameterName (Some Star.Once)) ->
+                | Binding.Kind.(ParameterName { star = Some Star.Once; _ }) ->
                     let tuple_annotation value_annotation =
                       {
                         Node.location;
@@ -2540,7 +2540,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                     Some { Define.Capture.name; annotation }
                 | Binding.Kind.(
                     ( AssignTarget | ComprehensionTarget | DefineName | ExceptTarget | ForTarget
-                    | ParameterName None
+                    | ParameterName { star = None; _ }
                     | WithTarget )) ->
                     Some { Define.Capture.name; annotation } ) ) )
   in
