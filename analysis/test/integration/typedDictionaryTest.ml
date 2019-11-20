@@ -859,7 +859,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Revealed type [-1]: Revealed type for `movie` is `TypedDict `Movie` with fields (name: str, \
-       year: int)` (inferred: `TypedDict with fields (name: str, year: int, bonus: bool)`).";
+       year: int)`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -985,15 +985,97 @@ let test_check_typed_dictionaries context =
       foo = NotTotalTypedDict()
     |}
     [];
+  ()
+
+
+let test_check_typed_dictionary_inference context =
+  let assert_test_typed_dictionary source =
+    let mypy_extensions_stub =
+      {
+        handle = "mypy_extensions.pyi";
+        source =
+          {|
+            import typing
+            def TypedDict(
+                typename: str,
+                fields: typing.Dict[str, typing.Type[_T]],
+                total: bool = ...,
+            ) -> typing.Type[dict]: ...
+          |};
+      }
+    in
+    assert_type_errors ~context ~update_environment_with:[mypy_extensions_stub] source
+  in
   assert_test_typed_dictionary
     {|
-      import typing_extensions
-      class NotTotalTypedDict(typing_extensions.TypedDict, total=False):
-        required: int
-      foo = NotTotalTypedDict()
+      from typing import Dict
+      import mypy_extensions
+      class FooTypedDict(mypy_extensions.TypedDict):
+        foo: int
+        bar: str
+      def baz(data: Dict[str, FooTypedDict]) -> None:
+        pass
+      baz(data={'hello': {'foo': 3, 'bar': 'hello'}})
     |}
-    []
+    [];
+  assert_test_typed_dictionary
+    {|
+      from typing import Dict
+      import mypy_extensions
+      class FooTypedDict(mypy_extensions.TypedDict):
+        foo: int
+        bar: str
+      data: Dict[str, FooTypedDict] = {'hello': {'foo': 3, 'bar': 'hello'}}
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      from typing import Dict
+      import mypy_extensions
+      class FooTypedDict(mypy_extensions.TypedDict):
+        foo: int
+        bar: str
+      data: Dict[str, Dict[str, FooTypedDict]] = {'hello': {'nested_dictionary': {'foo': 3, 'bar': 'hello'}}}
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      from typing import Dict
+      import mypy_extensions
+      class FooTypedDict(mypy_extensions.TypedDict):
+        dict_within_typed_dict: Dict[str, int]
+        bar: str
+      data: Dict[str, FooTypedDict] = {'hello': {'dict_within_typed_dict': {'x': 3, 'y': 7}, 'bar': 'hello'}}
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      from typing import Dict, Mapping, Union
+      def baz(data: Dict[str, Union[Mapping[str, int], bool, int]]) -> None:
+        pass
+      baz(data={'hello': 3})
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      from typing import Dict
+      import mypy_extensions
+      class FooTypedDict(mypy_extensions.TypedDict):
+        foo: int
+        bar: str
+      class NestedTypedDict(mypy_extensions.TypedDict):
+        foo: FooTypedDict
+        bar: str
+      data: Dict[str, NestedTypedDict] = {'hello': {'foo': {'foo': 3, 'bar': 'hello'}, 'bar': 'hello'}}
+    |}
+    [];
+  ()
 
 
 let () =
-  "typed_dictionary" >::: ["check_typed_dictionarys" >:: test_check_typed_dictionaries] |> Test.run
+  "typed_dictionary"
+  >::: [
+         "check_typed_dictionaries" >:: test_check_typed_dictionaries;
+         "check_typed_dictionary_inference" >:: test_check_typed_dictionary_inference;
+       ]
+  |> Test.run

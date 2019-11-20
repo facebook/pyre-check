@@ -28,7 +28,53 @@ let test_check_method_returns context =
       def foo() -> int:
           return ''.upper()
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."]
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> typing.Optional[typing.List[int]]:
+          return [3]
+    |}
+    [];
+
+  (* TODO(T57500485). *)
+  assert_type_errors
+    ~context
+    {|
+      class C:
+          pass
+      class D(C):
+          pass
+      def foo() -> typing.Optional[typing.List[C]]:
+          return [D()]
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Optional[typing.List[C]]` but got \
+       `typing.List[D]`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> typing.Dict[int, typing.Optional[bool]]:
+        return {
+          **{1: True},
+          **{3: False},
+        }
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      def foo() -> typing.Dict[int, typing.Optional[bool]]:
+        d1 = {1: True}
+        d2 = {3: False}
+        return {
+          **d1,
+          **d2,
+        }
+    |}
+    [];
+  ()
 
 
 let test_check_method_parameters context =

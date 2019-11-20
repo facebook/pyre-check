@@ -98,59 +98,114 @@ let resolve_assignment ({ resolve_assignment; _ } as resolution) assignment =
   resolve_assignment ~resolution assignment
 
 
-let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparator =
+let rec weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparator =
   let open Expression in
-  match expression, expected with
-  | Some { Node.value = Expression.List _; _ }, _
-  | Some { Node.value = Expression.ListComprehension _; _ }, _ -> (
+  match expression with
+  | Some { Node.value = Expression.List items; _ } -> (
+      match resolved, expected with
+      | ( Type.Parametric { name = "list"; parameters = Concrete [actual_item_type] },
+          Type.Parametric { name = "list"; parameters = Concrete [expected_item_type] } ) ->
+          let weakened_item_type =
+            Type.union
+              (List.map
+                 ~f:(fun item ->
+                   weaken_mutable_literals
+                     resolution
+                     ~expression:(Some item)
+                     ~resolved:actual_item_type
+                     ~expected:expected_item_type
+                     ~comparator)
+                 items)
+          in
+          if comparator ~left:weakened_item_type ~right:expected_item_type then
+            expected
+          else
+            Type.list weakened_item_type
+      | _ -> resolved )
+  | Some { Node.value = Expression.ListComprehension _; _ } -> (
       match resolved, expected with
       | ( Type.Parametric { name = "list"; parameters = Concrete [actual] },
           Type.Parametric { name = "list"; parameters = Concrete [expected_parameter] } )
         when comparator ~left:actual ~right:expected_parameter ->
           expected
       | _ -> resolved )
-  | Some { Node.value = Expression.Set _; _ }, _
-  | Some { Node.value = Expression.SetComprehension _; _ }, _ -> (
+  | Some { Node.value = Expression.Set items; _ } -> (
+      match resolved, expected with
+      | ( Type.Parametric { name = "set"; parameters = Concrete [actual_item_type] },
+          Type.Parametric { name = "set"; parameters = Concrete [expected_item_type] } ) ->
+          let weakened_item_type =
+            Type.union
+              (List.map
+                 ~f:(fun item ->
+                   weaken_mutable_literals
+                     resolution
+                     ~expression:(Some item)
+                     ~resolved:actual_item_type
+                     ~expected:expected_item_type
+                     ~comparator)
+                 items)
+          in
+          if comparator ~left:weakened_item_type ~right:expected_item_type then
+            expected
+          else
+            Type.set weakened_item_type
+      | _ -> resolved )
+  | Some { Node.value = Expression.SetComprehension _; _ } -> (
       match resolved, expected with
       | ( Type.Parametric { name = "set"; parameters = Concrete [actual] },
           Type.Parametric { name = "set"; parameters = Concrete [expected_parameter] } )
         when comparator ~left:actual ~right:expected_parameter ->
           expected
       | _ -> resolved )
-  | ( Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ },
-      Type.TypedDictionary { total; fields; _ } ) ->
-      let find_matching_field ~name =
-        let matching_name { Type.name = expected_name; _ } = String.equal name expected_name in
-        List.find ~f:matching_name
-      in
-      let resolve_entry { Dictionary.Entry.key; value } =
-        let key = resolve resolution key in
-        match key with
-        | Type.Literal (Type.String name) ->
-            let annotation =
-              let resolved = resolve resolution value in
-              let relax { Type.annotation; _ } =
-                if comparator ~left:resolved ~right:annotation then
-                  annotation
-                else
-                  resolved
-              in
-              find_matching_field fields ~name >>| relax |> Option.value ~default:resolved
-            in
-            Some { Type.name; annotation }
-        | _ -> None
-      in
-      let add_missing_fields sofar =
-        let is_missing { Type.name; _ } = Option.is_none (find_matching_field sofar ~name) in
-        sofar @ List.filter fields ~f:is_missing
-      in
-      List.map entries ~f:resolve_entry
-      |> Option.all
-      >>| (if total then Fn.id else add_missing_fields)
-      >>| Type.TypedDictionary.anonymous ~total
-      |> Option.value ~default:resolved
-  | Some { Node.value = Expression.Dictionary _; _ }, _
-  | Some { Node.value = Expression.DictionaryComprehension _; _ }, _ -> (
+  | Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ }
+    when Type.is_typed_dictionary expected -> (
+      match expected with
+      | Type.TypedDictionary { total; fields; _ } ->
+          let find_matching_field ~name =
+            let matching_name { Type.name = expected_name; _ } = String.equal name expected_name in
+            List.find ~f:matching_name
+          in
+          let resolve_entry { Dictionary.Entry.key; value } =
+            let key = resolve resolution key in
+            match key with
+            | Type.Literal (Type.String name) ->
+                let annotation =
+                  let resolved = resolve resolution value in
+                  let relax { Type.annotation; _ } =
+                    if Type.is_dictionary resolved || Type.is_typed_dictionary resolved then
+                      weaken_mutable_literals
+                        resolution
+                        ~expression:(Some value)
+                        ~resolved
+                        ~expected:annotation
+                        ~comparator
+                    else if comparator ~left:resolved ~right:annotation then
+                      annotation
+                    else
+                      resolved
+                  in
+                  find_matching_field fields ~name >>| relax |> Option.value ~default:resolved
+                in
+                Some { Type.name; annotation }
+            | _ -> None
+          in
+          let add_missing_fields sofar =
+            let is_missing { Type.name; _ } = Option.is_none (find_matching_field sofar ~name) in
+            sofar @ List.filter fields ~f:is_missing
+          in
+          List.map entries ~f:resolve_entry
+          |> Option.all
+          >>| (if total then Fn.id else add_missing_fields)
+          >>| Type.TypedDictionary.anonymous ~total
+          |> Option.value_map ~default:resolved ~f:(fun typed_dictionary ->
+                 if comparator ~left:typed_dictionary ~right:expected then
+                   expected
+                 else
+                   typed_dictionary)
+      | _ -> resolved )
+  | Some { Node.value = Expression.Dictionary { entries; _ }; _ } ->
+      weaken_dictionary_entries resolution ~resolved ~expected ~comparator ~entries
+  | Some { Node.value = Expression.DictionaryComprehension _; _ } -> (
       match resolved, expected with
       | ( Type.Parametric { name = "dict"; parameters = Concrete [actual_key; actual_value] },
           Type.Parametric { name = "dict"; parameters = Concrete [expected_key; expected_value] } )
@@ -159,6 +214,55 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
           expected
       | _ -> resolved )
   | _ -> resolved
+
+
+and weaken_dictionary_entries resolution ~resolved ~expected ~comparator ~entries =
+  match entries with
+  | _ -> (
+      match resolved, expected with
+      | ( Type.Parametric
+            { name = "dict"; parameters = Concrete [actual_key_type; actual_value_type] },
+          Type.Parametric
+            { name = "dict"; parameters = Concrete [expected_key_type; expected_value_type] } ) ->
+          let weakened_key_type =
+            Type.union
+              (List.map
+                 ~f:(fun { key; _ } ->
+                   weaken_mutable_literals
+                     resolution
+                     ~expression:(Some key)
+                     ~resolved:actual_key_type
+                     ~expected:expected_key_type
+                     ~comparator)
+                 entries)
+          in
+          let weakened_value_type =
+            Type.union
+              (List.map
+                 ~f:(fun { value; _ } ->
+                   weaken_mutable_literals
+                     resolution
+                     ~expression:(Some value)
+                     ~resolved:actual_value_type
+                     ~expected:expected_value_type
+                     ~comparator)
+                 entries)
+          in
+
+          (* Note: We don't check for variance because we want {1: 1} to be ok for Dict[float,
+             float] even though it gets resolved as Dict[Literal[1], Literal[1]].
+
+             Also, we check the parameter types manually because (comparator
+             ~left:weakened_dictionary_type ~right:expected) fails for `Dict[int, A]` and `Dict[int,
+             B]. *)
+          if
+            comparator ~left:weakened_key_type ~right:expected_key_type
+            && comparator ~left:weakened_value_type ~right:expected_value_type
+          then
+            expected
+          else
+            Type.dictionary ~key:weakened_key_type ~value:weakened_value_type
+      | _ -> resolved )
 
 
 let resolve_mutable_literals ({ global_resolution; _ } as resolution) =

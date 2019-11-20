@@ -283,13 +283,177 @@ let test_resolve_mutable_literals context =
     ~against:"typing.Set[test.C]"
     "typing.Set[test.Q]";
   assert_resolve_mutable_literals
-    "{ y for y in [test.D()] }"
-    ~source:"typing.Set[test.C]"
-    ~against:"typing.Set[testg.C]";
+    ~source:"{ y for y in [test.D()] }"
+    ~against:"typing.Set[test.C]"
+    "typing.Set[test.C]";
   assert_resolve_mutable_literals
-    "{ y for y in [test.Q()] }"
-    ~source:"typing.Set[test.C]"
-    ~against:"typing.Set[test.Q]"
+    ~source:"{ y for y in [test.Q()] }"
+    ~against:"typing.Set[test.C]"
+    "typing.Set[test.Q]";
+  assert_resolve_mutable_literals
+    ~source:"{}"
+    ~against:"typing.Dict[str, int]"
+    "typing.Dict[str, int]";
+  assert_resolve_mutable_literals
+    ~source:"{test.D(): 2}"
+    ~against:"typing.Dict[test.C, int]"
+    "typing.Dict[test.C, int]";
+  assert_resolve_mutable_literals
+    ~source:"{test.D(): 3}"
+    ~against:"typing.Dict[test.C, typing.Any]"
+    "typing.Dict[test.C, typing.Any]";
+  assert_resolve_mutable_literals
+    ~source:"{'foo': []}"
+    ~against:"typing.Dict[int, typing.List[int]]"
+    "typing.Dict[str, typing.List[int]]";
+  assert_resolve_mutable_literals
+    ~source:"{'foo': {}}"
+    ~against:"typing.Dict[str, typing.Dict[str, int]]"
+    "typing.Dict[str, typing.Dict[str, int]]";
+  assert_resolve_mutable_literals
+    ~source:"1"
+    ~against:"typing.Union[int, str]"
+    "typing_extensions.Literal[1]";
+  assert_resolve_mutable_literals
+    ~source:"{test.C: 1, test.D: 2}"
+    ~against:"typing.Dict[typing.Type[test.C], int]"
+    "typing.Dict[typing.Type[test.C], int]";
+  assert_resolve_mutable_literals
+    ~source:"{'foo': (1, 2, 3, 4)}"
+    ~against:"typing.Dict[str, typing.Iterable[int]]"
+    "typing.Dict[str, typing.Iterable[int]]";
+
+  assert_resolve_mutable_literals
+    ~source:"{'x': {'s': test.D()}}"
+    ~against:"typing.Dict[str, typing.Dict[str, test.C]]"
+    "typing.Dict[str, typing.Dict[str, test.C]]";
+  assert_resolve_mutable_literals
+    ~source:"{'x': {'s': test.D()}}"
+    ~against:"typing.Dict[str, typing.Dict[str, test.Q]]"
+    "typing.Dict[str, typing.Dict[str, test.D]]";
+
+  assert_resolve_mutable_literals
+    ~source:"[[D()]]"
+    ~against:"typing.List[typing.List[C]]"
+    "typing.List[typing.List[C]]";
+  assert_resolve_mutable_literals
+    ~source:"[[D()]]"
+    ~against:"typing.List[typing.List[Q]]"
+    "typing.List[typing.List[D]]";
+
+  assert_resolve_mutable_literals
+    ~source:"{{D()}}"
+    ~against:"typing.Set[typing.Set[C]]"
+    "typing.Set[typing.Set[C]]";
+  assert_resolve_mutable_literals
+    ~source:"{{D()}}"
+    ~against:"typing.Set[typing.Set[Q]]"
+    "typing.Set[typing.Set[D]]";
+
+  assert_resolve_mutable_literals
+    ~source:"{'foo': 3}"
+    ~against:"typing.Dict[str, typing.Union[typing.Dict[str, int], int]]"
+    "typing.Dict[str, typing.Union[typing.Dict[str, int], int]]";
+  assert_resolve_mutable_literals
+    ~source:"{**{1: True}, **{2: False}}"
+    ~against:"typing.Dict[typing.Union[int, str], bool]"
+    "typing.Dict[typing.Union[int, str], bool]";
+  assert_resolve_mutable_literals
+    ~source:"{**{1: True}, **{2: False}}"
+    ~against:"typing.Dict[str, typing.Optional[bool]]"
+    "typing.Dict[str, typing.Optional[bool]]";
+  ()
+
+
+let test_resolve_mutable_literals_typed_dictionary context =
+  let resolution = make_resolution ~context "" in
+  let assert_resolve_mutable_literals ~source ~against_type expected_output_type =
+    let expression =
+      match parse_single_statement source with
+      | { Node.value = Statement.Expression expression; _ } -> expression
+      | _ -> failwith "No Assign to parse"
+    in
+    let resolved = Resolution.resolve resolution expression in
+    let expression = Some expression in
+    assert_equal
+      ~printer:Type.show
+      expected_output_type
+      (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected:against_type)
+  in
+  let movie_type =
+    Type.TypedDictionary
+      {
+        name = "Movie";
+        fields =
+          [
+            { name = "name"; annotation = Type.string }; { name = "year"; annotation = Type.integer };
+          ];
+        total = true;
+      }
+  in
+  let nested_typed_dictionary_type =
+    Type.TypedDictionary
+      {
+        name = "OuterTypedDict";
+        fields = [{ name = "outer_foo"; annotation = movie_type }];
+        total = true;
+      }
+  in
+  let slightly_wrong_movie_type =
+    Type.TypedDictionary.anonymous
+      ~total:true
+      [
+        { name = "name"; annotation = Type.literal_integer 37 };
+        { name = "year"; annotation = Type.integer };
+      ]
+  in
+  let slightly_wrong_nested_type =
+    Type.TypedDictionary.anonymous
+      ~total:true
+      [{ name = "outer_foo"; annotation = slightly_wrong_movie_type }]
+  in
+  assert_resolve_mutable_literals
+    ~source:"{}"
+    ~against_type:movie_type
+    (Type.TypedDictionary.anonymous ~total:true []);
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
+    ~against_type:movie_type
+    movie_type;
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix', 'year': 1999, 'extra_key': 1 }"
+    ~against_type:movie_type
+    movie_type;
+  assert_resolve_mutable_literals
+    ~source:"{'hello': { 'name': 'The Matrix', 'year': 1999 }}"
+    ~against_type:(Type.dictionary ~key:Type.string ~value:movie_type)
+    (Type.dictionary ~key:Type.string ~value:movie_type);
+  assert_resolve_mutable_literals
+    ~source:"{'outer_foo': { 'name': 'The Matrix', 'year': 1999 }}"
+    ~against_type:nested_typed_dictionary_type
+    nested_typed_dictionary_type;
+  assert_resolve_mutable_literals
+    ~source:"{'hello': { 'name': 37, 'year': 1999 }}"
+    ~against_type:(Type.dictionary ~key:Type.string ~value:movie_type)
+    (Type.dictionary ~key:Type.string ~value:slightly_wrong_movie_type);
+  assert_resolve_mutable_literals
+    ~source:"{'outer_foo': { 'name': 37, 'year': 1999 }}"
+    ~against_type:nested_typed_dictionary_type
+    slightly_wrong_nested_type;
+  assert_resolve_mutable_literals
+    ~source:"{'outer_dict': {'outer_foo': { 'name': 37, 'year': 1999 }}}"
+    ~against_type:(Type.dictionary ~key:Type.string ~value:nested_typed_dictionary_type)
+    (Type.dictionary ~key:Type.string ~value:slightly_wrong_nested_type);
+  assert_resolve_mutable_literals
+    ~source:"{'outer_dict': {'outer_foo': {}}}"
+    ~against_type:(Type.dictionary ~key:Type.string ~value:nested_typed_dictionary_type)
+    (Type.dictionary
+       ~key:Type.string
+       ~value:
+         (Type.TypedDictionary.anonymous
+            ~total:true
+            [{ name = "outer_foo"; annotation = Type.TypedDictionary.anonymous ~total:true [] }]));
+  ()
 
 
 let test_function_definitions context =
@@ -462,6 +626,8 @@ let () =
          "resolve_literal" >:: test_resolve_literal;
          "resolve_exports" >:: test_resolve_exports;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;
+         "resolve_mutable_literals_typed_dictionary"
+         >:: test_resolve_mutable_literals_typed_dictionary;
          "function_definitions" >:: test_function_definitions;
          "class_definitions" >:: test_class_definitions;
          "resolve_shared_memory" >:: test_resolution_shared_memory;

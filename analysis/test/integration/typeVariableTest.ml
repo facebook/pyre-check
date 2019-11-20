@@ -452,12 +452,30 @@ let test_unbound_variables context =
   assert_type_errors
     {|
       def foo() -> None:
+        x: typing.List[int] = {}
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `typing.List[int]` but is used \
+       as type `typing.Dict[Variable[_KT], Variable[_VT]]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Dict[int, str] = []
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `typing.Dict[int, str]` but is \
+       used as type `typing.List[Variable[_T]]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
         x: typing.Dict[int, typing.List[int]] = { "A" : [] }
     |}
     [
       "Incompatible variable type [9]: x is declared to have type "
       ^ "`typing.Dict[int, typing.List[int]]` but is used as type "
-      ^ "`typing.Dict[str, typing.List[Variable[_T]]]`.";
+      ^ "`typing.Dict[str, typing.List[int]]`.";
     ];
   assert_type_errors {|
       def foo() -> typing.List[int]:

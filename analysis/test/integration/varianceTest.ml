@@ -214,12 +214,11 @@ let test_check_literal_variance context =
         return a
     |}
     ["Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`."];
-  assert_type_errors
-    {|
-      def foo() -> typing.Dict[float, float]:
-        return {1: 1}
-    |}
-    [];
+
+  assert_type_errors {|
+    def foo() -> typing.Dict[float, float]:
+      return {1: 1}
+    |} [];
   assert_type_errors
     {|
       def foo() -> typing.Dict[float, float]:
