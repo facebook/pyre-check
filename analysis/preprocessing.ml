@@ -2378,7 +2378,7 @@ let populate_captures ({ Source.statements; _ } as source) =
             | Scope.Kind.(Module | Lambda | Comprehension) ->
                 (* We don't care about module-level and expression-level bindings *)
                 None
-            | Scope.Kind.Define -> (
+            | Scope.Kind.Define ({ Define.Signature.parent; _ } as signature) -> (
                 match binding_kind with
                 | Binding.Kind.(ClassName | ImportName) ->
                     (* Judgement call: these bindings are (supposedly) not useful for type checking *)
@@ -2538,6 +2538,58 @@ let populate_captures ({ Source.statements; _ } as source) =
                       | Some value_annotation -> Some (tuple_annotation value_annotation)
                     in
                     Some { Define.Capture.name; annotation }
+                | Binding.Kind.(ParameterName { star = None; index = 0 })
+                  when Option.is_some parent
+                       && Option.is_none annotation
+                       && not (Define.Signature.is_static_method signature) ->
+                    let parent = Option.value_exn parent in
+                    let parent_annotation = from_reference ~location parent in
+                    if
+                      Define.Signature.is_class_method signature
+                      || Define.Signature.is_class_property signature
+                    then
+                      let parent_type_annotation =
+                        {
+                          Node.location;
+                          value =
+                            Expression.Call
+                              {
+                                callee =
+                                  {
+                                    Node.location;
+                                    value =
+                                      Name
+                                        (Name.Attribute
+                                           {
+                                             base =
+                                               {
+                                                 Node.location;
+                                                 value =
+                                                   Name
+                                                     (Name.Attribute
+                                                        {
+                                                          base =
+                                                            {
+                                                              Node.location;
+                                                              value =
+                                                                Name (Name.Identifier "typing");
+                                                            };
+                                                          attribute = "Type";
+                                                          special = false;
+                                                        });
+                                               };
+                                             attribute = "__getitem__";
+                                             special = true;
+                                           });
+                                  };
+                                arguments =
+                                  [{ Call.Argument.name = None; value = parent_annotation }];
+                              };
+                        }
+                      in
+                      Some { Define.Capture.name; annotation = Some parent_type_annotation }
+                    else
+                      Some { Define.Capture.name; annotation = Some parent_annotation }
                 | Binding.Kind.(
                     ( AssignTarget | ComprehensionTarget | DefineName | ExceptTarget | ForTarget
                     | ParameterName { star = None; _ }

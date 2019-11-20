@@ -3186,6 +3186,15 @@ let test_populate_captures _ =
            [{ Call.Argument.name = None; value = +Expression.Tuple [!"str"; value_annotation] }];
        }
   in
+  let meta_annotation value_annotation =
+    +Expression.Call
+       {
+         callee =
+           +Expression.Name
+              (Name.Attribute { base = !"typing.Type"; attribute = "__getitem__"; special = true });
+         arguments = [{ Call.Argument.name = None; value = value_annotation }];
+       }
+  in
   let int_annotation = !"int" in
   let any_annotation = !"typing.Any" in
   let tuple_int_annotation = tuple_annotation int_annotation in
@@ -3522,6 +3531,142 @@ let test_populate_captures _ =
          return kwargs["derp"]
   |}
     ~expected:[!&"bar", []];
+
+  (* Capture self *)
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       def foo(self) -> None:
+         def bar() -> int:
+           return self.x
+  |}
+    ~expected:[!&"bar", ["self", Some !"Foo"]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       def foo(self) -> None:
+         def bar(self) -> int:
+           return self.x
+  |}
+    ~expected:[!&"bar", []];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       def foo(this) -> None:
+         def bar() -> int:
+           return this.x
+  |}
+    ~expected:[!&"bar", ["this", Some !"Foo"]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       def foo(self) -> None:
+         def bar() -> None:
+           nonlocal self
+           def baz() -> int:
+             return self.x
+  |}
+    ~expected:[!&"baz", ["self", Some !"Foo"]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       def foo(self: T) -> T:
+         def bar() -> T:
+           return self
+  |}
+    ~expected:[!&"bar", ["self", Some !"T"]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       @staticmethod
+       def foo(self) -> None:
+         def bar() -> int:
+           return self.x
+  |}
+    ~expected:[!&"bar", ["self", None]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       class Bar:
+         y: int
+         def foo(self) -> None:
+           def bar() -> int:
+             return self.y
+  |}
+    ~expected:[!&"bar", ["self", Some !"Bar"]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       def foo(self) -> None:
+         class Bar:
+           y: int
+           def bar(self) -> None:
+             def baz() -> int:
+               return self.y
+  |}
+    ~expected:[!&"baz", ["self", Some !"Bar"]];
+
+  (* Capture cls *)
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       @classmethod
+       def foo(cls) -> None:
+         def bar() -> "Foo":
+           return cls
+  |}
+    ~expected:[!&"bar", ["cls", Some (meta_annotation !"Foo")]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       @classmethod
+       def foo(cls) -> None:
+         def bar(cls):
+           return cls
+  |}
+    ~expected:[!&"bar", []];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       @classmethod
+       def foo(clazz) -> None:
+         def bar() -> "Foo":
+           return clazz
+  |}
+    ~expected:[!&"bar", ["clazz", Some (meta_annotation !"Foo")]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       @classmethod
+       def foo(cls) -> None:
+         def bar() -> None:
+           nonlocal cls
+           def baz() -> "Foo":
+             return cls
+  |}
+    ~expected:[!&"baz", ["cls", Some (meta_annotation !"Foo")]];
+  assert_captures
+    {|
+     class Foo:
+       x: int
+       @classmethod
+       def foo(cls: T) -> T:
+         def bar() -> T:
+           return cls
+  |}
+    ~expected:[!&"bar", ["cls", Some !"T"]];
   ()
 
 

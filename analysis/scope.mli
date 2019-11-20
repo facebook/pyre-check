@@ -47,7 +47,7 @@ module Scope : sig
   module Kind : sig
     type t =
       | Module
-      | Define
+      | Define of Statement.Define.Signature.t
       | Lambda
       | Comprehension
     [@@deriving sexp, compare, hash]

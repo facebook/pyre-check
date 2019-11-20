@@ -220,7 +220,7 @@ module Scope = struct
   module Kind = struct
     type t =
       | Module
-      | Define
+      | Define of Statement.Define.Signature.t
       | Lambda
       | Comprehension
     [@@deriving sexp, compare, hash]
@@ -261,7 +261,7 @@ module Scope = struct
       let body_bindings = Binding.of_statements body in
       Some
         {
-          kind = Kind.Define;
+          kind = Kind.Define signature;
           globals;
           nonlocals;
           bindings = create_map ~globals ~nonlocals (List.append parameter_bindings body_bindings);
