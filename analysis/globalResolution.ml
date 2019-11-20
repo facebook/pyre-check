@@ -36,27 +36,14 @@ let unannotated_global_environment resolution =
   alias_environment resolution |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-let class_definition ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-    (unannotated_global_environment resolution)
-    ?dependency
-
-
 let ast_environment resolution =
   unannotated_global_environment resolution |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 
 
 let class_hierarchy ({ dependency; _ } as resolution) =
-  let edges =
-    ClassHierarchyEnvironment.ReadOnly.get_edges
-      ?dependency
-      (class_hierarchy_environment resolution)
-  in
-  ( module struct
-    let edges = edges
-
-    let contains key = class_definition resolution key |> Option.is_some
-  end : ClassHierarchy.Handler )
+  ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+    ?dependency
+    (class_hierarchy_environment resolution)
 
 
 let is_tracked resolution = ClassHierarchy.contains (class_hierarchy resolution)
