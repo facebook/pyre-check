@@ -96,8 +96,8 @@ let get_class_attributes_list ~resolution ~cursor_position:{ Location.line; colu
     =
     get_completion_item ~range:text_edit_range ~item_name ~item_type
   in
-  let get_attributes_name_and_type { Annotated.Class.class_definition; _ } =
-    let attributes = Annotated.Class.attributes class_definition ~resolution in
+  let get_attributes_name_and_type { UnannotatedGlobalEnvironment.class_definition; _ } =
+    let attributes = GlobalResolution.attributes class_definition ~resolution in
     attributes |> List.filter_map ~f:filter_name_and_type
   in
   class_data_list |> List.map ~f:get_attributes_name_and_type |> List.concat
@@ -197,7 +197,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
                 ~position:item_position
               >>| (fun (_, class_type) ->
                     class_type
-                    |> Annotated.Class.resolve_class ~resolution:global_resolution
+                    |> GlobalResolution.resolve_class global_resolution
                     |> Option.value ~default:[]
                     |> get_class_attributes_list ~resolution:global_resolution ~cursor_position)
               |> Option.value ~default:[]

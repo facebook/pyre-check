@@ -163,7 +163,7 @@ let resolve_method ~resolution ~class_type ~method_name =
     GlobalResolution.class_definition resolution class_type
     >>| Annotated.Class.create
     >>| fun definition ->
-    Annotated.Class.attribute
+    GlobalResolution.c_attribute
       ~transitive:true
       definition
       ~resolution

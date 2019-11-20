@@ -48,7 +48,7 @@ let test_generics context =
           ( Node.create_with_default_location definition
           |> Node.map ~f:ClassSummary.create
           |> Class.create
-          |> Class.generics ~resolution )
+          |> GlobalResolution.generics ~resolution )
           generics
     | _ -> assert_unreached ()
   in
@@ -133,7 +133,7 @@ let test_superclasses context =
   in
   let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
   let assert_successors target expected =
-    let actual = Class.successors ~resolution target in
+    let actual = GlobalResolution.successors ~resolution target in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
       ~cmp:(List.equal Type.Primitive.equal)
@@ -141,7 +141,7 @@ let test_superclasses context =
       actual
   in
   let assert_superclasses target expected =
-    let actual = Class.superclasses ~resolution target in
+    let actual = GlobalResolution.superclasses ~resolution target in
     let equal left right = Reference.equal (Class.name left) (Class.name right) in
     assert_equal
       ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes : Class.t list)])
@@ -179,11 +179,13 @@ let test_get_decorator context =
             Node.create_with_default_location definition
             |> Node.map ~f:ClassSummary.create
             |> Class.create
-            |> Class.get_decorator ~resolution ~decorator
+            |> AstEnvironment.ReadOnly.get_decorator
+                 (GlobalResolution.ast_environment resolution)
+                 ~decorator
           in
           assert_equal
-            ~printer:(List.to_string ~f:Class.show_decorator)
-            ~cmp:(List.equal Class.equal_decorator)
+            ~printer:(List.to_string ~f:AstEnvironment.ReadOnly.show_decorator)
+            ~cmp:(List.equal AstEnvironment.ReadOnly.equal_decorator)
             expected
             actual
       | _ -> assert_true (List.is_empty expected)
@@ -282,7 +284,7 @@ let test_get_decorator context =
 let test_constructors context =
   let assert_constructor source instantiated constructors =
     let instantiated = "test." ^ instantiated in
-    Class.AttributeCache.clear ();
+    AttributeResolution.AttributeCache.clear ();
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -309,7 +311,7 @@ let test_constructors context =
           Node.create_with_default_location definition
           |> Node.map ~f:ClassSummary.create
           |> Class.create
-          |> Class.constructor ~resolution ~instantiated
+          |> GlobalResolution.constructor ~resolution ~instantiated
         in
         assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
     | _ -> assert_unreached ()
@@ -454,10 +456,8 @@ let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol bases =
       { StatementClass.name = !&"Derp"; bases; body = []; decorators = []; docstring = None }
-      |> Node.create_with_default_location
-      |> Node.map ~f:ClassSummary.create
-      |> Class.create
-      |> Class.is_protocol
+      |> ClassSummary.create
+      |> ClassSummary.is_protocol
     in
     assert_equal expected (is_protocol bases)
   in
@@ -529,7 +529,7 @@ let test_class_attributes context =
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
-    Annotated.Class.AttributeCache.clear ();
+    AttributeResolution.AttributeCache.clear ();
     let attribute_list_equal =
       let equal left right =
         Attribute.name left = Attribute.name right
@@ -544,18 +544,21 @@ let test_class_attributes context =
     assert_equal
       ~cmp:attribute_list_equal
       ~printer:print_attributes
-      (Class.attributes ~resolution definition)
+      (GlobalResolution.attributes ~resolution definition)
       attributes
   in
   assert_attributes
     parent
     [
-      Class.create_attribute ~resolution ~parent (create_simple_attribute "__init__");
-      Class.create_attribute ~resolution ~parent (create_simple_attribute "class_attribute");
-      Class.create_attribute ~resolution ~parent (create_simple_attribute "first");
-      Class.create_attribute ~resolution ~parent (create_simple_attribute "implicit");
-      Class.create_attribute ~resolution ~parent (create_simple_attribute "second");
-      Class.create_attribute
+      GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "__init__");
+      GlobalResolution.create_attribute
+        ~resolution
+        ~parent
+        (create_simple_attribute "class_attribute");
+      GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "first");
+      GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "implicit");
+      GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "second");
+      GlobalResolution.create_attribute
         ~resolution
         ~parent
         (create_simple_attribute "third" ~value:(+Expression.Integer 1));
@@ -563,7 +566,7 @@ let test_class_attributes context =
 
   (* Test `Attribute`. *)
   let attribute =
-    Class.create_attribute
+    GlobalResolution.create_attribute
       ~resolution
       ~parent
       (create_simple_attribute ~annotation:(Some !"int") "first")
@@ -574,7 +577,7 @@ let test_class_attributes context =
     (Annotation.create_immutable ~global:true (Type.Primitive "int"));
   assert_false (Attribute.class_attribute attribute);
   let attribute =
-    Class.create_attribute
+    GlobalResolution.create_attribute
       ~resolution
       ~parent
       (create_simple_attribute
@@ -585,7 +588,7 @@ let test_class_attributes context =
 
   (* Test `attribute_fold`. *)
   let assert_fold ?(class_attributes = false) source fold =
-    Annotated.Class.AttributeCache.clear ();
+    AttributeResolution.AttributeCache.clear ();
     let callback names attribute = Attribute.name attribute :: names in
     let resolution, parent = setup source in
     let actual =
@@ -708,7 +711,7 @@ let test_class_attributes context =
         parent_instantiated_type, false
     in
     let actual_attribute =
-      Class.attribute
+      GlobalResolution.c_attribute
         parent
         ~transitive:true
         ~class_attributes
@@ -787,7 +790,7 @@ let test_class_attributes context =
 
 let test_fallback_attribute context =
   let assert_fallback_attribute ~name source annotation =
-    Class.AttributeCache.clear ();
+    AttributeResolution.AttributeCache.clear ();
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -940,7 +943,7 @@ let test_constraints context =
            | { Node.location; value = Statement.Class definition; _ } ->
                Node.create ~location definition |> Node.map ~f:ClassSummary.create |> Class.create
            | _ -> failwith "Last statement was not a class")
-      |> Class.constraints ~target ~resolution ?parameters ~instantiated
+      |> GlobalResolution.constraints ~target ~resolution ?parameters ~instantiated
     in
     let expected =
       List.map expected ~f:(fun (variable, value) -> Type.Variable.UnaryPair (variable, value))
@@ -1219,7 +1222,7 @@ let test_metaclasses context =
     let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
     match target with
     | Some target ->
-        assert_equal (Type.Primitive metaclass) (Annotated.Class.metaclass ~resolution target)
+        assert_equal (Type.Primitive metaclass) (GlobalResolution.metaclass ~resolution target)
     | None -> assert_unreached ()
   in
   assert_metaclass ~source:{|

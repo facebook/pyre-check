@@ -36,7 +36,7 @@ let test_apply_decorators context =
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =
     let applied_return_annotation =
-      ResolvedCallable.apply_decorators ~resolution define
+      GlobalResolution.apply_decorators ~resolution define
       |> fun { Type.Callable.annotation; _ } -> annotation
     in
     assert_equal
@@ -47,7 +47,7 @@ let test_apply_decorators context =
 
     (* Test decorators with old AST. *)
     let applied_return_annotation =
-      ResolvedCallable.apply_decorators ~resolution define
+      GlobalResolution.apply_decorators ~resolution define
       |> fun { Type.Callable.annotation; _ } -> annotation
     in
     assert_equal
@@ -82,7 +82,7 @@ let test_apply_decorators context =
         in
         AnnotatedGlobalEnvironment.ReadOnly.resolution environment
       in
-      ResolvedCallable.apply_decorators ~resolution define
+      GlobalResolution.apply_decorators ~resolution define
       |> fun { Type.Callable.parameters; _ } ->
       match parameters with
       | Undefined -> 0
@@ -115,7 +115,7 @@ let test_apply_decorators context =
     ~decorators:["$strip_first_parameter"]
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
     ~return_annotation:None
-  |> (fun define -> ResolvedCallable.apply_decorators ~resolution define)
+  |> (fun define -> GlobalResolution.apply_decorators ~resolution define)
   |> fun { Type.Callable.parameters; _ } ->
   assert_equal
     ~printer:Type.Callable.show_parameters
@@ -175,7 +175,7 @@ let test_create context =
       |> List.map ~f:Node.value
       |> List.map ~f:(fun define -> { define.Define.signature with parent })
       |> (fun defines -> List.map defines ~f:to_overload)
-      |> ResolvedCallable.create_callable
+      |> GlobalResolution.create_callable
            ~resolution
            ~parent:parent_annotation
            ~name:(Reference.show name)

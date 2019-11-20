@@ -1,0 +1,2844 @@
+(* Copyright (c) 2016-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree. *)
+
+open Core
+open Pyre
+open Ast
+open Statement
+
+type assumptions = {
+  protocol_assumptions: TypeOrder.ProtocolAssumptions.t;
+  callable_assumptions: TypeOrder.CallableAssumptions.t;
+}
+
+(* These modules get included at the bottom of this file, they're just here for aesthetic purposes *)
+module TypeParameterValidationTypes = struct
+  type generic_type_problems =
+    | IncorrectNumberOfParameters of {
+        actual: int;
+        expected: int;
+      }
+    | ViolateConstraints of {
+        actual: Type.t;
+        expected: Type.Variable.Unary.t;
+      }
+    | UnexpectedVariadic of {
+        actual: Type.OrderedTypes.t;
+        expected: Type.Variable.Unary.t list;
+      }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type type_parameters_mismatch = {
+    name: string;
+    kind: generic_type_problems;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+module SignatureSelectionTypes = struct
+  type mismatch = {
+    actual: Type.t;
+    expected: Type.t;
+    name: Identifier.t option;
+    position: int;
+  }
+  [@@deriving eq, show, compare]
+
+  type invalid_argument = {
+    expression: Expression.t;
+    annotation: Type.t;
+  }
+  [@@deriving compare, eq, show, sexp, hash]
+
+  type missing_argument =
+    | Named of Identifier.t
+    | Anonymous of int
+  [@@deriving eq, show, compare, sexp, hash]
+
+  type mismatch_with_list_variadic_type_variable =
+    | NotDefiniteTuple of invalid_argument
+    | CantConcatenate of Type.OrderedTypes.t list
+    | ConstraintFailure of Type.OrderedTypes.t
+  [@@deriving compare, eq, show, sexp, hash]
+
+  type reason =
+    | AbstractClassInstantiation of {
+        class_name: Reference.t;
+        abstract_methods: string list;
+      }
+    | CallingParameterVariadicTypeVariable
+    | InvalidKeywordArgument of invalid_argument Node.t
+    | InvalidVariableArgument of invalid_argument Node.t
+    | Mismatch of mismatch Node.t
+    | MismatchWithListVariadicTypeVariable of
+        Type.OrderedTypes.t * mismatch_with_list_variadic_type_variable
+    | MissingArgument of missing_argument
+    | MutuallyRecursiveTypeVariables
+    | ProtocolInstantiation of Reference.t
+    | TooManyArguments of {
+        expected: int;
+        provided: int;
+      }
+    | UnexpectedKeyword of Identifier.t
+  [@@deriving eq, show, compare]
+
+  type closest = {
+    callable: Type.Callable.t;
+    reason: reason option;
+  }
+  [@@deriving show]
+
+  let equal_closest (left : closest) (right : closest) =
+    (* Ignore rank. *)
+    Type.Callable.equal left.callable right.callable
+    && Option.equal equal_reason left.reason right.reason
+
+
+  type sig_t =
+    | Found of Type.Callable.t
+    | NotFound of closest
+  [@@deriving eq, show]
+
+  module Argument = struct
+    type kind =
+      | SingleStar
+      | DoubleStar
+      | Named of string Node.t
+      | Positional
+
+    type t = {
+      expression: Expression.t;
+      full_expression: Expression.t;
+      position: int;
+      kind: kind;
+      resolved: Type.t;
+    }
+  end
+
+  type argument =
+    | Argument of Argument.t
+    | Default
+
+  type ranks = {
+    arity: int;
+    annotation: int;
+    position: int;
+  }
+
+  type reasons = {
+    arity: reason list;
+    annotation: reason list;
+  }
+
+  type signature_match = {
+    callable: Type.Callable.t;
+    argument_mapping: argument list Type.Callable.Parameter.Map.t;
+    constraints_set: TypeConstraints.t list;
+    ranks: ranks;
+    reasons: reasons;
+  }
+end
+
+let class_hierarchy_environment class_metadata_environment =
+  ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
+
+
+let alias_environment class_metadata_environment =
+  ClassHierarchyEnvironment.ReadOnly.alias_environment
+    (class_hierarchy_environment class_metadata_environment)
+
+
+let empty_stub_environment class_metadata_environment =
+  alias_environment class_metadata_environment |> AliasEnvironment.ReadOnly.empty_stub_environment
+
+
+let unannotated_global_environment class_metadata_environment =
+  alias_environment class_metadata_environment
+  |> AliasEnvironment.ReadOnly.unannotated_global_environment
+
+
+let ast_environment class_metadata_environment =
+  unannotated_global_environment class_metadata_environment
+  |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+
+
+let class_definition class_metadata_environment annotation ~dependency =
+  Type.split annotation
+  |> fst
+  |> Type.primitive_name
+  >>= UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+        (unannotated_global_environment class_metadata_environment)
+        ?dependency
+
+
+let aliases class_metadata_environment ~dependency =
+  AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment class_metadata_environment)
+
+
+let is_suppressed_module class_metadata_environment ~dependency reference =
+  EmptyStubEnvironment.ReadOnly.from_empty_stub
+    (empty_stub_environment class_metadata_environment)
+    ?dependency
+    reference
+
+
+let undecorated_signature class_metadata_environment ~dependency =
+  UndecoratedFunctionEnvironment.ReadOnly.get_undecorated_function
+    ?dependency
+    (ClassMetadataEnvironment.ReadOnly.undecorated_function_environment class_metadata_environment)
+
+
+let class_name { Node.value = { ClassSummary.name; _ }; _ } = name
+
+let class_annotation { Node.value = { ClassSummary.name; _ }; _ } =
+  Type.Primitive (Reference.show name)
+
+
+module AnnotationCache = struct
+  type t = {
+    allow_untracked: bool;
+    allow_invalid_type_parameters: bool;
+    allow_primitives_from_empty_stubs: bool;
+    expression: Expression.t;
+  }
+  [@@deriving compare, sexp, hash]
+
+  include Hashable.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let hash = Hashtbl.hash
+
+    let hash_fold_t = hash_fold_t
+
+    let sexp_of_t = sexp_of_t
+
+    let t_of_sexp = t_of_sexp
+  end)
+
+  let cache = Table.create ~size:1023 ()
+
+  let clear ~scheduler ~configuration =
+    (* We need to clear the cache in each of the workers :( *)
+    Scheduler.once_per_worker scheduler ~configuration ~f:(fun () -> Hashtbl.clear cache);
+    Hashtbl.clear cache
+end
+
+module AttributeCache = struct
+  type t = {
+    transitive: bool;
+    class_attributes: bool;
+    include_generated_attributes: bool;
+    special_method: bool;
+    name: Reference.t;
+    instantiated: Type.t option;
+  }
+  [@@deriving compare, sexp, hash]
+
+  include Hashable.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let hash = Hashtbl.hash
+
+    let hash_fold_t = hash_fold_t
+
+    let sexp_of_t = sexp_of_t
+
+    let t_of_sexp = t_of_sexp
+  end)
+
+  let cache : AnnotatedAttribute.Table.t Table.t = Table.create ~size:1023 ()
+
+  let clear () = Table.clear cache
+end
+
+module Implementation = struct
+  module ClassDecorators = struct
+    type options = {
+      init: bool;
+      repr: bool;
+      eq: bool;
+      order: bool;
+    }
+
+    let extract_options
+        ~class_metadata_environment
+        ~names
+        ~default
+        ~init
+        ~repr
+        ~eq
+        ~order
+        ?dependency
+        { Node.value = { ClassSummary.decorators; _ }; _ }
+      =
+      let open Expression in
+      let get_decorators ~names =
+        let get_decorator decorator =
+          List.filter_map
+            ~f:
+              (AstEnvironment.ReadOnly.matches_decorator
+                 (ast_environment class_metadata_environment)
+                 ?dependency
+                 ~target:decorator)
+            decorators
+        in
+        names |> List.map ~f:get_decorator |> List.concat
+      in
+      let extract_options_from_arguments =
+        let apply_arguments default argument =
+          let recognize_value ~default = function
+            | Expression.False -> false
+            | True -> true
+            | _ -> default
+          in
+          match argument with
+          | {
+           Call.Argument.name = Some { Node.value = argument_name; _ };
+           value = { Node.value; _ };
+          } ->
+              let argument_name = Identifier.sanitized argument_name in
+              (* We need to check each keyword sequentially because different keywords may
+                 correspond to the same string. *)
+              let default =
+                if String.equal argument_name init then
+                  { default with init = recognize_value value ~default:default.init }
+                else
+                  default
+              in
+              let default =
+                if String.equal argument_name repr then
+                  { default with repr = recognize_value value ~default:default.repr }
+                else
+                  default
+              in
+              let default =
+                if String.equal argument_name eq then
+                  { default with eq = recognize_value value ~default:default.eq }
+                else
+                  default
+              in
+              let default =
+                if String.equal argument_name order then
+                  { default with order = recognize_value value ~default:default.order }
+                else
+                  default
+              in
+              default
+          | _ -> default
+        in
+        List.fold ~init:default ~f:apply_arguments
+      in
+      match get_decorators ~names with
+      | [] -> None
+      | { arguments = Some arguments; _ } :: _ -> Some (extract_options_from_arguments arguments)
+      | _ -> Some default
+
+
+    let dataclass_options =
+      extract_options
+        ~names:["dataclasses.dataclass"; "dataclass"]
+        ~default:{ init = true; repr = true; eq = true; order = false }
+        ~init:"init"
+        ~repr:"repr"
+        ~eq:"eq"
+        ~order:"order"
+
+
+    let attrs_attributes =
+      extract_options
+        ~names:["attr.s"; "attr.attrs"]
+        ~default:{ init = true; repr = true; eq = true; order = true }
+        ~init:"init"
+        ~repr:"repr"
+        ~eq:"cmp"
+        ~order:"cmp"
+
+
+    let apply ~definition ~class_metadata_environment ~class_attributes ~get_table ?dependency table
+      =
+      let open Expression in
+      let parent_dataclasses =
+        ClassMetadataEnvironment.ReadOnly.superclasses
+          class_metadata_environment
+          ?dependency
+          definition
+      in
+      let { Node.value = { ClassSummary.name; _ }; _ } = definition in
+      let generate_attributes ~options =
+        let already_in_table name =
+          AnnotatedAttribute.Table.lookup_name table name |> Option.is_some
+        in
+        let make_callable ~parameters ~annotation ~attribute_name =
+          let parameters =
+            if class_attributes then
+              { Type.Callable.Parameter.name = "self"; annotation = Type.Top; default = false }
+              :: parameters
+            else
+              parameters
+          in
+          ( attribute_name,
+            Type.Callable.create
+              ~implicit:
+                { implicit_annotation = Primitive (Reference.show name); name = "$parameter$self" }
+              ~name:(Reference.combine name (Reference.create attribute_name))
+              ~parameters:(Defined (Type.Callable.Parameter.create parameters))
+              ~annotation
+              () )
+        in
+        match options definition with
+        | None -> []
+        | Some { init; repr; eq; order } ->
+            let generated_methods =
+              let methods =
+                if init && not (already_in_table "__init__") then
+                  let parameters =
+                    let extract_dataclass_field_arguments
+                        { Node.value = { AnnotatedAttribute.value; _ }; _ }
+                      =
+                      match value with
+                      | {
+                       Node.value =
+                         Expression.Call
+                           {
+                             callee =
+                               {
+                                 Node.value =
+                                   Expression.Name
+                                     (Name.Attribute
+                                       {
+                                         base =
+                                           {
+                                             Node.value =
+                                               Expression.Name (Name.Identifier "dataclasses");
+                                             _;
+                                           };
+                                         attribute = "field";
+                                         _;
+                                       });
+                                 _;
+                               };
+                             arguments;
+                             _;
+                           };
+                       _;
+                      } ->
+                          Some arguments
+                      | _ -> None
+                    in
+                    let init_not_disabled attribute =
+                      let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
+                        match name, value with
+                        | Some { Node.value = parameter_name; _ }, Expression.False
+                          when String.equal "init" (Identifier.sanitized parameter_name) ->
+                            true
+                        | _ -> false
+                      in
+                      match extract_dataclass_field_arguments attribute with
+                      | Some arguments -> not (List.exists arguments ~f:is_disable_init)
+                      | _ -> true
+                    in
+                    let extract_init_value
+                        ( { Node.value = { AnnotatedAttribute.initialized; value; _ }; _ } as
+                        attribute )
+                      =
+                      let get_default_value { Call.Argument.name; value } =
+                        match name with
+                        | Some { Node.value = parameter_name; _ } ->
+                            if String.equal "default" (Identifier.sanitized parameter_name) then
+                              Some value
+                            else if
+                              String.equal "default_factory" (Identifier.sanitized parameter_name)
+                            then
+                              let { Node.location; _ } = value in
+                              Some
+                                {
+                                  Node.value =
+                                    Expression.Call { Call.callee = value; arguments = [] };
+                                  location;
+                                }
+                            else
+                              None
+                        | _ -> None
+                      in
+                      match initialized with
+                      | false -> None
+                      | true -> (
+                          match extract_dataclass_field_arguments attribute with
+                          | Some arguments -> List.find_map arguments ~f:get_default_value
+                          | _ -> Some value )
+                    in
+                    let collect_parameters parameters attribute =
+                      (* Parameters must be annotated attributes *)
+                      let annotation =
+                        AnnotatedAttribute.annotation attribute
+                        |> Annotation.original
+                        |> function
+                        | Type.Parametric
+                            {
+                              name = "dataclasses.InitVar";
+                              parameters = Concrete [single_parameter];
+                            } ->
+                            single_parameter
+                        | annotation -> annotation
+                      in
+                      match AnnotatedAttribute.name attribute with
+                      | name when not (Type.is_unknown annotation) ->
+                          let name = "$parameter$" ^ name in
+                          let value = extract_init_value attribute in
+                          let rec override_existing_parameters unchecked_parameters =
+                            match unchecked_parameters with
+                            | [] ->
+                                [
+                                  {
+                                    Type.Callable.Parameter.name;
+                                    annotation;
+                                    default = Option.is_some value;
+                                  };
+                                ]
+                            | { Type.Callable.Parameter.name = old_name; default = old_default; _ }
+                              :: tail
+                              when Identifier.equal old_name name ->
+                                { name; annotation; default = Option.is_some value || old_default }
+                                :: tail
+                            | head :: tail -> head :: override_existing_parameters tail
+                          in
+                          override_existing_parameters parameters
+                      | _ -> parameters
+                    in
+                    let parent_attribute_tables =
+                      parent_dataclasses
+                      |> List.filter ~f:(fun definition -> options definition |> Option.is_some)
+                      |> List.rev
+                      |> List.map ~f:get_table
+                    in
+                    let parent_attributes parent =
+                      let compare_by_location left right =
+                        Ast.Location.compare (Node.location left) (Node.location right)
+                      in
+                      AnnotatedAttribute.Table.to_list parent
+                      |> List.sort ~compare:compare_by_location
+                    in
+                    parent_attribute_tables @ [get_table definition]
+                    |> List.map ~f:parent_attributes
+                    |> List.map ~f:(List.filter ~f:init_not_disabled)
+                    |> List.fold ~init:[] ~f:(fun parameters ->
+                           List.fold ~init:parameters ~f:collect_parameters)
+                  in
+                  [make_callable ~parameters ~annotation:Type.none ~attribute_name:"__init__"]
+                else
+                  []
+              in
+              let methods =
+                if repr && not (already_in_table "__repr__") then
+                  let new_method =
+                    make_callable ~parameters:[] ~annotation:Type.string ~attribute_name:"__repr__"
+                  in
+                  new_method :: methods
+                else
+                  methods
+              in
+              let add_order_method methods name =
+                let annotation = Type.object_primitive in
+                if not (already_in_table name) then
+                  make_callable
+                    ~parameters:[{ name = "$parameter$o"; annotation; default = false }]
+                    ~annotation:Type.bool
+                    ~attribute_name:name
+                  :: methods
+                else
+                  methods
+              in
+              let methods =
+                if eq then
+                  add_order_method methods "__eq__"
+                else
+                  methods
+              in
+              let methods =
+                if order then
+                  ["__lt__"; "__le__"; "__gt__"; "__ge__"]
+                  |> List.fold ~init:methods ~f:add_order_method
+                else
+                  methods
+              in
+              methods
+            in
+            let make_attribute (attribute_name, annotation) =
+              Node.create_with_default_location
+                {
+                  AnnotatedAttribute.annotation;
+                  original_annotation = annotation;
+                  abstract = false;
+                  async = false;
+                  class_attribute = false;
+                  defined = true;
+                  initialized = true;
+                  name = attribute_name;
+                  parent = Type.Primitive (Reference.show name);
+                  visibility = ReadWrite;
+                  static = false;
+                  property = false;
+                  value = Node.create_with_default_location Expression.Ellipsis;
+                }
+            in
+            List.map generated_methods ~f:make_attribute
+      in
+      let dataclass_attributes () =
+        (* TODO (T43210531): Warn about inconsistent annotations *)
+        generate_attributes ~options:(dataclass_options ~class_metadata_environment ?dependency)
+      in
+      let attrs_attributes () =
+        (* TODO (T41039225): Add support for other methods *)
+        generate_attributes ~options:(attrs_attributes ~class_metadata_environment ?dependency)
+      in
+      dataclass_attributes () @ attrs_attributes ()
+      |> List.iter ~f:(AnnotatedAttribute.Table.add table)
+  end
+
+  let rec full_order
+      ~assumptions:({ protocol_assumptions; callable_assumptions } as assumptions)
+      ?dependency
+      class_metadata_environment
+    =
+    let constructor instantiated ~protocol_assumptions =
+      let constructor assumptions class_name =
+        let instantiated = Type.Primitive class_name in
+        class_definition class_metadata_environment ~dependency instantiated
+        >>| constructor ?dependency ~instantiated ~assumptions ~class_metadata_environment
+      in
+
+      instantiated |> Type.primitive_name >>= constructor { assumptions with protocol_assumptions }
+    in
+    let attributes class_type ~protocol_assumptions ~callable_assumptions =
+      let assumptions = { assumptions with protocol_assumptions; callable_assumptions } in
+      match
+        UnannotatedGlobalEnvironment.ReadOnly.resolve_class
+          ?dependency
+          (unannotated_global_environment class_metadata_environment)
+          class_type
+      with
+      | None -> None
+      | Some [] -> None
+      | Some [{ instantiated; class_attributes; class_definition }] ->
+          attributes
+            class_definition
+            ?dependency
+            ~class_metadata_environment
+            ~assumptions
+            ~transitive:true
+            ~instantiated
+            ~class_attributes
+          |> Option.some
+      | Some (_ :: _) ->
+          (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
+             indirectly by breaking apart the union before doing the
+             instantiate_protocol_parameters. Therefore, there is no reason to deal with joining the
+             attributes together here *)
+          None
+    in
+    let is_protocol annotation ~protocol_assumptions:_ =
+      UnannotatedGlobalEnvironment.ReadOnly.is_protocol
+        (unannotated_global_environment class_metadata_environment)
+        ?dependency
+        annotation
+    in
+    {
+      TypeOrder.handler =
+        ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+          ?dependency
+          (class_hierarchy_environment class_metadata_environment);
+      constructor;
+      attributes;
+      is_protocol;
+      protocol_assumptions;
+      callable_assumptions;
+    }
+
+
+  and check_invalid_type_parameters ~assumptions class_metadata_environment ?dependency annotation =
+    let open TypeParameterValidationTypes in
+    let module InvalidTypeParametersTransform = Type.Transform.Make (struct
+      type state = type_parameters_mismatch list
+
+      let visit_children_before _ _ = false
+
+      let visit_children_after = true
+
+      let visit sofar annotation =
+        let transformed_annotation, new_state =
+          let generics_for_name name =
+            match name with
+            | "type"
+            | "typing.Type"
+            | "typing.ClassVar"
+            | "typing.Iterator"
+            | "Optional"
+            | "typing.Final"
+            | "typing_extensions.Final"
+            | "typing.Optional" ->
+                ClassHierarchy.Unaries [Type.Variable.Unary.create "T"]
+            | _ ->
+                ClassHierarchyEnvironment.ReadOnly.variables
+                  (class_hierarchy_environment class_metadata_environment)
+                  ?dependency
+                  name
+                |> Option.value ~default:(ClassHierarchy.Unaries [])
+          in
+          let invalid_type_parameters ~name ~given =
+            let generics = generics_for_name name in
+            let open ClassHierarchy in
+            match generics, given with
+            | Unaries generics, Type.OrderedTypes.Concrete given -> (
+                match List.zip generics given with
+                | Ok [] -> Type.Primitive name, sofar
+                | Ok paired ->
+                    let check_parameter (generic, given) =
+                      let invalid =
+                        let order =
+                          full_order ?dependency class_metadata_environment ~assumptions
+                        in
+                        let pair = Type.Variable.UnaryPair (generic, given) in
+                        TypeOrder.OrderedConstraints.add_lower_bound
+                          TypeConstraints.empty
+                          ~order
+                          ~pair
+                        >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                        |> Option.is_none
+                      in
+                      if invalid then
+                        ( Type.Any,
+                          Some
+                            {
+                              name;
+                              kind = ViolateConstraints { actual = given; expected = generic };
+                            } )
+                      else
+                        given, None
+                    in
+                    List.map paired ~f:check_parameter
+                    |> List.unzip
+                    |> fun (parameters, errors) ->
+                    ( Type.parametric name (Concrete parameters),
+                      List.filter_map errors ~f:Fn.id @ sofar )
+                | Unequal_lengths ->
+                    let mismatch =
+                      {
+                        name;
+                        kind =
+                          IncorrectNumberOfParameters
+                            { actual = List.length given; expected = List.length generics };
+                      }
+                    in
+                    ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),
+                      mismatch :: sofar ) )
+            | Concatenation _, Any -> Type.parametric name given, sofar
+            | Unaries generics, Concatenation _
+            | Unaries generics, Any ->
+                let mismatch =
+                  { name; kind = UnexpectedVariadic { expected = generics; actual = given } }
+                in
+                Type.parametric name given, mismatch :: sofar
+            | Concatenation _, Concatenation _
+            | Concatenation _, Concrete _ ->
+                (* TODO(T47346673): accept w/ new kind of validation *)
+                Type.parametric name given, sofar
+          in
+          match annotation with
+          | Type.Primitive ("typing.Final" | "typing_extensions.Final") -> annotation, sofar
+          | Type.Primitive name -> invalid_type_parameters ~name ~given:(Concrete [])
+          (* natural variadics *)
+          | Type.Parametric { name = "typing.Protocol"; _ }
+          | Type.Parametric { name = "typing.Generic"; _ } ->
+              annotation, sofar
+          | Type.Parametric { name; parameters } -> invalid_type_parameters ~name ~given:parameters
+          | _ -> annotation, sofar
+        in
+        { Type.Transform.transformed_annotation; new_state }
+    end)
+    in
+    InvalidTypeParametersTransform.visit [] annotation
+
+
+  and parse_annotation
+      ~assumptions
+      ?(allow_untracked = false)
+      ?(allow_invalid_type_parameters = false)
+      ?(allow_primitives_from_empty_stubs = false)
+      ?dependency
+      ~class_metadata_environment
+      expression
+    =
+    let key =
+      {
+        AnnotationCache.allow_untracked;
+        allow_invalid_type_parameters;
+        allow_primitives_from_empty_stubs;
+        expression;
+      }
+    in
+    match Hashtbl.find AnnotationCache.cache key with
+    | Some result -> result
+    | None ->
+        let modify_aliases = function
+          | Type.TypeAlias alias ->
+              check_invalid_type_parameters
+                class_metadata_environment
+                ?dependency
+                alias
+                ~assumptions
+              |> snd
+              |> fun alias -> Type.TypeAlias alias
+          | result -> result
+        in
+        let annotation =
+          AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+            (alias_environment class_metadata_environment)
+            ~modify_aliases
+            ?dependency
+            ~allow_untracked
+            ~allow_primitives_from_empty_stubs
+            expression
+        in
+        let result =
+          if not allow_invalid_type_parameters then
+            check_invalid_type_parameters
+              class_metadata_environment
+              ?dependency
+              annotation
+              ~assumptions
+            |> snd
+          else
+            annotation
+        in
+        Hashtbl.set ~key ~data:result AnnotationCache.cache;
+        result
+
+
+  and attribute_table
+      ~assumptions
+      ~transitive
+      ~class_attributes
+      ~include_generated_attributes
+      ?(special_method = false)
+      ?instantiated
+      ?dependency
+      ({ Node.value = { ClassSummary.name; _ }; _ } as definition)
+      ~class_metadata_environment
+    =
+    let key =
+      {
+        AttributeCache.transitive;
+        class_attributes;
+        special_method;
+        include_generated_attributes;
+        name;
+        instantiated;
+      }
+    in
+    match Hashtbl.find AttributeCache.cache key with
+    | Some result -> result
+    | None ->
+        let original_instantiated = instantiated in
+        let instantiated = Option.value instantiated ~default:(class_annotation definition) in
+        let definition_attributes
+            ~in_test
+            ~instantiated
+            ~class_attributes
+            ~table
+            ( { Node.value = { ClassSummary.name = parent_name; attribute_components; _ }; _ } as
+            parent )
+          =
+          let add_actual () =
+            let collect_attributes attribute =
+              create_attribute
+                attribute
+                ?dependency
+                ~class_metadata_environment
+                ~assumptions
+                ~parent
+                ~instantiated
+                ~inherited:(not (Reference.equal name parent_name))
+                ~default_class_attribute:class_attributes
+              |> AnnotatedAttribute.Table.add table
+            in
+            Class.attributes ~include_generated_attributes ~in_test attribute_components
+            |> fun attribute_map ->
+            Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
+          in
+          let add_placeholder_stub_inheritances () =
+            if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__init__") then (
+              let annotation = Type.Callable.create ~annotation:Type.none () in
+              AnnotatedAttribute.Table.add
+                table
+                (Node.create_with_default_location
+                   {
+                     AnnotatedAttribute.annotation;
+                     original_annotation = annotation;
+                     abstract = false;
+                     async = false;
+                     class_attribute = false;
+                     defined = true;
+                     initialized = true;
+                     name = "__init__";
+                     parent = Primitive (Reference.show name);
+                     visibility = ReadWrite;
+                     static = true;
+                     property = false;
+                     value = Node.create_with_default_location Expression.Expression.Ellipsis;
+                   });
+              if Option.is_none (AnnotatedAttribute.Table.lookup_name table "__getattr__") then
+                let annotation = Type.Callable.create ~annotation:Type.Any () in
+                AnnotatedAttribute.Table.add
+                  table
+                  (Node.create_with_default_location
+                     {
+                       AnnotatedAttribute.annotation;
+                       original_annotation = annotation;
+                       abstract = false;
+                       async = false;
+                       class_attribute = false;
+                       defined = true;
+                       initialized = true;
+                       name = "__getattr__";
+                       parent = Primitive (Reference.show name);
+                       visibility = ReadWrite;
+                       static = true;
+                       property = false;
+                       value = Node.create_with_default_location Expression.Expression.Ellipsis;
+                     }) )
+          in
+          add_actual ();
+          if
+            AnnotatedBases.extends_placeholder_stub_class
+              parent
+              ~aliases:(aliases class_metadata_environment ~dependency)
+              ~from_empty_stub:(is_suppressed_module class_metadata_environment ~dependency)
+          then
+            add_placeholder_stub_inheritances ();
+          let get_table =
+            attribute_table
+              ~transitive:false
+              ~class_attributes:false
+              ~include_generated_attributes:false
+              ~special_method:false
+              ?instantiated:None
+              ?dependency
+              ~class_metadata_environment
+              ~assumptions
+          in
+          if include_generated_attributes then
+            ClassDecorators.apply
+              ~definition:parent
+              ~class_metadata_environment
+              ~class_attributes
+              ~get_table
+              ?dependency
+              table
+        in
+        let superclasses =
+          ClassMetadataEnvironment.ReadOnly.superclasses class_metadata_environment ?dependency
+        in
+        let superclass_definitions = superclasses definition in
+        let in_test =
+          List.exists (definition :: superclass_definitions) ~f:(fun { Node.value; _ } ->
+              ClassSummary.is_unit_test value)
+        in
+        let table = AnnotatedAttribute.Table.create () in
+        (* Pass over normal class hierarchy. *)
+        let definitions =
+          if class_attributes && special_method then
+            []
+          else if transitive then
+            definition :: superclass_definitions
+          else
+            [definition]
+        in
+        List.iter
+          definitions
+          ~f:(definition_attributes ~in_test ~instantiated ~class_attributes ~table);
+
+        (* Class over meta hierarchy if necessary. *)
+        let meta_definitions =
+          if class_attributes then
+            metaclass ?dependency ~class_metadata_environment ~assumptions definition
+            |> class_definition class_metadata_environment ~dependency
+            >>| (fun definition -> definition :: superclasses definition)
+            |> Option.value ~default:[]
+          else
+            []
+        in
+        List.iter
+          meta_definitions
+          ~f:
+            (definition_attributes
+               ~in_test
+               ~instantiated:(Type.meta instantiated)
+               ~class_attributes:false
+               ~table);
+        let instantiate ~instantiated attribute =
+          AnnotatedAttribute.parent attribute
+          |> class_definition class_metadata_environment ~dependency
+          >>| fun target ->
+          let solution =
+            constraints
+              ?dependency
+              ~target
+              ~instantiated
+              ~class_metadata_environment
+              ~assumptions
+              definition
+          in
+          AnnotatedAttribute.instantiate
+            ~constraints:(fun annotation ->
+              Some (TypeConstraints.Solution.instantiate solution annotation))
+            attribute
+        in
+        Option.iter original_instantiated ~f:(fun instantiated ->
+            AnnotatedAttribute.Table.filter_map table ~f:(instantiate ~instantiated));
+        Hashtbl.set ~key ~data:table AttributeCache.cache;
+        table
+
+
+  and attributes
+      ~assumptions
+      ?(transitive = false)
+      ?(class_attributes = false)
+      ?(include_generated_attributes = true)
+      ?instantiated
+      definition
+      ?dependency
+      ~class_metadata_environment
+    =
+    attribute_table
+      ~transitive
+      ~class_attributes
+      ~include_generated_attributes
+      ?instantiated
+      definition
+      ?dependency
+      ~assumptions
+      ~class_metadata_environment
+    |> AnnotatedAttribute.Table.to_list
+
+
+  and create_attribute
+      ~assumptions
+      ?dependency
+      ~class_metadata_environment
+      ~parent
+      ?instantiated
+      ?(defined = true)
+      ?(inherited = false)
+      ?(default_class_attribute = false)
+      { Node.location; value = { Attribute.name = attribute_name; kind } }
+    =
+    let class_annotation = class_annotation parent in
+    let annotation, original_annotation, value, class_attribute, visibility =
+      match kind with
+      | Simple { annotation; value; frozen; toplevel; implicit; primitive } ->
+          let parsed_annotation =
+            annotation >>| parse_annotation ?dependency ~assumptions ~class_metadata_environment
+          in
+          (* Account for class attributes. *)
+          let annotation, final, class_attribute =
+            parsed_annotation
+            >>| (fun annotation ->
+                  let is_final, annotation =
+                    match Type.final_value annotation with
+                    | Some annotation -> true, annotation
+                    | None -> false, annotation
+                  in
+                  let is_class_variable, annotation =
+                    match Type.class_variable_value annotation with
+                    | Some annotation -> true, annotation
+                    | None -> false, annotation
+                  in
+                  Some annotation, is_final, is_class_variable)
+            |> Option.value ~default:(None, false, default_class_attribute)
+          in
+          (* Handle enumeration attributes. *)
+          let annotation, value, class_attribute =
+            let superclasses =
+              ClassMetadataEnvironment.ReadOnly.superclasses
+                class_metadata_environment
+                ?dependency
+                parent
+              |> List.map ~f:(fun definition -> class_name definition |> Reference.show)
+              |> String.Set.of_list
+            in
+            if
+              (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
+              && (not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
+              && (not inherited)
+              && primitive
+              && defined
+              && not implicit
+            then
+              Some class_annotation, None, true (* Enums override values. *)
+            else
+              annotation, value, class_attribute
+          in
+          let annotation, original =
+            match annotation, value with
+            | Some annotation, Some _ -> annotation, annotation
+            | Some annotation, None -> annotation, annotation
+            | None, Some value ->
+                let literal_value_annotation =
+                  resolve_literal ?dependency ~class_metadata_environment ~assumptions value
+                in
+                let is_dataclass_attribute =
+                  let get_decorator =
+                    AstEnvironment.ReadOnly.get_decorator
+                      (ast_environment class_metadata_environment)
+                      ?dependency
+                  in
+                  let get_dataclass_decorator annotated =
+                    get_decorator annotated ~decorator:"dataclasses.dataclass"
+                    @ get_decorator annotated ~decorator:"dataclass"
+                  in
+                  not (List.is_empty (get_dataclass_decorator parent))
+                in
+                if
+                  (not (Type.is_partially_typed literal_value_annotation))
+                  && (not is_dataclass_attribute)
+                  && toplevel
+                then (* Treat literal attributes as having been explicitly annotated. *)
+                  literal_value_annotation, literal_value_annotation
+                else
+                  ( parse_annotation ?dependency ~class_metadata_environment ~assumptions value,
+                    Type.Top )
+            | _ -> Type.Top, Type.Top
+          in
+          let visibility =
+            if final then
+              AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
+            else if frozen then
+              ReadOnly (Refinable { overridable = true })
+            else
+              ReadWrite
+          in
+          annotation, original, value, class_attribute, visibility
+      | Method { signatures; final; _ } ->
+          (* Handle Callables *)
+          let annotation =
+            let instantiated =
+              match instantiated with
+              | Some instantiated -> instantiated
+              | None -> class_annotation
+            in
+            match signatures with
+            | ({ Define.Signature.name; _ } as define) :: _ as defines ->
+                let parent =
+                  (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't
+                     play well with our logic here - we should clean up the call logic to handle
+                     passing the extra argument, and eliminate the special fields from here. *)
+                  if
+                    Define.Signature.is_static_method define
+                    && not (String.equal (Define.Signature.unqualified_name define) "__new__")
+                  then
+                    None
+                  else if Define.Signature.is_class_method define then
+                    Some (Type.meta instantiated)
+                  else if default_class_attribute then
+                    (* Keep first argument around when calling instance methods from class
+                       attributes. *)
+                    None
+                  else
+                    Some instantiated
+                in
+                let apply_decorators define =
+                  ( Define.Signature.is_overloaded_function define,
+                    apply_decorators
+                      ~class_metadata_environment
+                      ~assumptions
+                      ?dependency
+                      (Node.create define ~location) )
+                in
+                List.map defines ~f:apply_decorators
+                |> create_callable
+                     ~class_metadata_environment
+                     ~assumptions
+                     ?dependency
+                     ~parent
+                     ~name:(Reference.show name)
+                |> fun callable -> Some (Type.Callable callable)
+            | [] -> failwith "impossible"
+          in
+          (* Special cases *)
+          let annotation =
+            match instantiated, attribute_name, annotation with
+            | ( Some (Type.TypedDictionary { fields; total; _ }),
+                method_name,
+                Some (Type.Callable callable) ) ->
+                Type.TypedDictionary.special_overloads ~fields ~method_name ~total
+                >>| (fun overloads ->
+                      Some
+                        (Type.Callable
+                           {
+                             callable with
+                             implementation =
+                               {
+                                 annotation = Type.Top;
+                                 parameters = Undefined;
+                                 define_location = None;
+                               };
+                             overloads;
+                           }))
+                |> Option.value ~default:annotation
+            | ( Some (Type.Tuple (Bounded (Concrete members))),
+                "__getitem__",
+                Some (Type.Callable ({ overloads; _ } as callable)) ) ->
+                let overload index member =
+                  {
+                    Type.Callable.annotation = member;
+                    parameters =
+                      Defined
+                        [
+                          Named
+                            { name = "x"; annotation = Type.literal_integer index; default = false };
+                        ];
+                    define_location = None;
+                  }
+                in
+                let overloads = List.mapi ~f:overload members @ overloads in
+                Some (Type.Callable { callable with overloads })
+            | ( Some (Parametric { name = "type"; parameters = Concrete [Type.Primitive name] }),
+                "__getitem__",
+                Some (Type.Callable ({ kind = Named callable_name; _ } as callable)) )
+              when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
+                let implementation =
+                  let generics =
+                    class_definition class_metadata_environment (Type.Primitive name) ~dependency
+                    >>| generics ?dependency ~class_metadata_environment ~assumptions
+                    |> Option.value ~default:(Type.OrderedTypes.Concrete [])
+                  in
+                  match generics with
+                  | Concrete generics ->
+                      let parameters =
+                        let create_parameter annotation =
+                          Type.Callable.Parameter.Anonymous
+                            { index = 0; annotation; default = false }
+                        in
+                        match generics with
+                        | [] -> []
+                        | [generic] -> [create_parameter (Type.meta generic)]
+                        | generics ->
+                            [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
+                      in
+                      {
+                        Type.Callable.annotation =
+                          Type.meta (Type.Parametric { name; parameters = Concrete generics });
+                        parameters = Defined parameters;
+                        define_location = None;
+                      }
+                  | _ ->
+                      (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and ignore
+                         the others *)
+                      {
+                        Type.Callable.annotation =
+                          Type.meta (Type.Parametric { name; parameters = generics });
+                        parameters = Undefined;
+                        define_location = None;
+                      }
+                in
+                Some (Type.Callable { callable with implementation; overloads = [] })
+            | _ -> annotation
+          in
+          let annotation = Option.value annotation ~default:Type.Top in
+          let visibility =
+            if final then
+              AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
+            else
+              ReadWrite
+          in
+          annotation, annotation, None, default_class_attribute, visibility
+      | Property { kind; class_property; _ } ->
+          let annotation, original, visibility =
+            match kind with
+            | ReadWrite { setter_annotation; getter_annotation } ->
+                let current =
+                  getter_annotation
+                  >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
+                  |> Option.value ~default:Type.Top
+                in
+                let original =
+                  setter_annotation
+                  >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
+                  |> Option.value ~default:Type.Top
+                in
+                current, original, AnnotatedAttribute.ReadWrite
+            | ReadOnly { getter_annotation } ->
+                let annotation =
+                  getter_annotation
+                  >>| parse_annotation ?dependency ~class_metadata_environment ~assumptions
+                  |> Option.value ~default:Type.Top
+                in
+                annotation, annotation, AnnotatedAttribute.ReadOnly Unrefinable
+          in
+          (* Special case properties with type variables. *)
+          (* TODO(T44676629): handle this correctly *)
+          let annotation, original =
+            let free_variables =
+              let variables =
+                annotation
+                |> Type.Variable.all_free_variables
+                |> List.filter_map ~f:(function
+                       | Type.Variable.Unary variable -> Some (Type.Variable variable)
+                       | _ -> None)
+                |> Type.Set.of_list
+              in
+              let generics =
+                match generics parent ?dependency ~class_metadata_environment ~assumptions with
+                | Concrete generics -> Type.Set.of_list generics
+                | _ ->
+                    (* TODO(T44676629): This case should be handled when we re-do this handling *)
+                    Type.Set.empty
+              in
+              Set.diff variables generics |> Set.to_list
+            in
+            if not (List.is_empty free_variables) then
+              let constraints =
+                let instantiated = Option.value instantiated ~default:class_annotation in
+                List.fold free_variables ~init:Type.Map.empty ~f:(fun map variable ->
+                    Map.set map ~key:variable ~data:instantiated)
+                |> Map.find
+              in
+              let annotation = Type.instantiate ~constraints annotation in
+              annotation, annotation
+            else
+              annotation, original
+          in
+          annotation, original, None, class_property, visibility
+    in
+    {
+      Node.location;
+      value =
+        {
+          AnnotatedAttribute.annotation;
+          original_annotation;
+          visibility;
+          abstract =
+            ( match kind with
+            | Method { signatures; _ } ->
+                List.exists signatures ~f:Define.Signature.is_abstract_method
+            | _ -> false );
+          async =
+            ( match kind with
+            | Property { async; _ } -> async
+            | _ -> false );
+          class_attribute;
+          defined;
+          initialized =
+            ( match kind with
+            | Simple { value = Some { Node.value = Ellipsis; _ }; _ }
+            | Simple { value = None; _ } ->
+                false
+            | Simple { value = Some _; _ }
+            | Method _
+            | Property _ ->
+                true );
+          name = attribute_name;
+          parent = class_annotation;
+          static =
+            ( match kind with
+            | Method { static; _ } -> static
+            | _ -> false );
+          property =
+            ( match kind with
+            | Property _ -> true
+            | _ -> false );
+          value = Option.value value ~default:(Node.create Expression.Expression.Ellipsis ~location);
+        };
+    }
+
+
+  and metaclass
+      ~assumptions
+      ?dependency
+      ({ Node.value = { ClassSummary.bases; _ }; _ } as original)
+      ~class_metadata_environment
+    =
+    (* See https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
+       for why we need to consider all metaclasses. *)
+    let open Expression in
+    let parse_annotation = parse_annotation ?dependency ~class_metadata_environment ~assumptions in
+    let metaclass_candidates =
+      let explicit_metaclass =
+        let find_explicit_metaclass = function
+          | { Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
+              Some (parse_annotation value)
+          | _ -> None
+        in
+        List.find_map ~f:find_explicit_metaclass bases
+      in
+      let metaclass_of_bases =
+        let explicit_bases =
+          let base_to_class { Call.Argument.value; _ } =
+            delocalize value |> parse_annotation |> Type.split |> fst
+          in
+          List.filter
+            ~f:(function
+              | { Call.Argument.name = None; _ } -> true
+              | _ -> false)
+            bases
+          |> List.map ~f:base_to_class
+          |> List.filter_map ~f:(class_definition class_metadata_environment ~dependency)
+          |> List.filter ~f:(fun base_class ->
+                 not (Node.equal ClassSummary.equal base_class original))
+        in
+        let filter_generic_meta base_metaclasses =
+          (* We only want a class directly inheriting from Generic to have a metaclass of
+             GenericMeta. *)
+          if
+            List.exists
+              ~f:(fun base -> Reference.equal (Reference.create "typing.Generic") (class_name base))
+              explicit_bases
+          then
+            base_metaclasses
+          else
+            List.filter
+              ~f:(fun metaclass -> not (Type.equal (Type.Primitive "typing.GenericMeta") metaclass))
+              base_metaclasses
+        in
+        explicit_bases
+        |> List.map ~f:(metaclass ?dependency ~class_metadata_environment ~assumptions)
+        |> filter_generic_meta
+      in
+      match explicit_metaclass with
+      | Some metaclass -> metaclass :: metaclass_of_bases
+      | None -> metaclass_of_bases
+    in
+    match metaclass_candidates with
+    | [] -> Type.Primitive "type"
+    | first :: candidates -> (
+        let order = full_order ?dependency class_metadata_environment ~assumptions in
+        let candidate = List.fold candidates ~init:first ~f:(TypeOrder.meet order) in
+        match candidate with
+        | Type.Bottom ->
+            (* If we get Bottom here, we don't have a "most derived metaclass", so default to one. *)
+            first
+        | _ -> candidate )
+
+
+  and constraints
+      ~assumptions
+      ?target
+      ?parameters
+      definition
+      ?dependency
+      ~instantiated
+      ~class_metadata_environment
+    =
+    let target = Option.value ~default:definition target in
+    let parameters =
+      match parameters with
+      | None -> generics ?dependency ~class_metadata_environment ~assumptions target
+      | Some parameters -> parameters
+    in
+    let right =
+      let target = class_annotation target in
+      match target with
+      | Primitive name -> Type.parametric name parameters
+      | _ -> target
+    in
+    match instantiated, right with
+    | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name ->
+        (* TODO(T42259381) This special case is only necessary because constructor calls attributes
+           with an "instantiated" type of a bare parametric, which will fill with Anys *)
+        TypeConstraints.Solution.empty
+    | _ ->
+        let order = full_order ?dependency class_metadata_environment ~assumptions in
+        TypeOrder.solve_less_or_equal
+          order
+          ~constraints:TypeConstraints.empty
+          ~left:instantiated
+          ~right
+        |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
+        |> List.hd
+        (* TODO(T39598018): error in this case somehow, something must be wrong *)
+        |> Option.value ~default:TypeConstraints.Solution.empty
+
+
+  and generics
+      ~assumptions
+      ?dependency
+      { Node.value = { ClassSummary.bases; _ }; _ }
+      ~class_metadata_environment
+    =
+    let parse_annotation =
+      parse_annotation
+        ~allow_invalid_type_parameters:true
+        ?dependency
+        ~class_metadata_environment
+        ~assumptions
+    in
+    let generic { Expression.Call.Argument.value; _ } =
+      match parse_annotation value with
+      | Type.Parametric { name = "typing.Generic"; parameters } -> Some parameters
+      | Type.Parametric { name = "typing.Protocol"; parameters } -> Some parameters
+      | _ -> None
+    in
+    match List.find_map ~f:generic bases with
+    | None -> AnnotatedBases.find_propagated_type_variables bases ~parse_annotation
+    | Some parameters -> parameters
+
+
+  (* In general, python expressions can be self-referential. This resolution only checks literals
+     and annotations found in the resolution map, without resolving expressions. *)
+  and resolve_literal ~assumptions ?dependency ~class_metadata_environment expression =
+    let open Ast.Expression in
+    let is_concrete_constructable class_type =
+      class_type
+      |> class_definition class_metadata_environment ~dependency
+      >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
+      >>= ClassHierarchyEnvironment.ReadOnly.variables
+            (class_hierarchy_environment class_metadata_environment)
+            ?dependency
+            ~default:(Some (ClassHierarchy.Unaries []))
+      >>| ClassHierarchy.equal_variables (ClassHierarchy.Unaries [])
+      |> Option.value ~default:false
+    in
+    let order = full_order ?dependency class_metadata_environment ~assumptions in
+    match Node.value expression with
+    | Expression.Await expression ->
+        resolve_literal ?dependency ~class_metadata_environment ~assumptions expression
+        |> Type.awaitable_value
+        |> Option.value ~default:Type.Top
+    | BooleanOperator { BooleanOperator.left; right; _ } ->
+        let annotation =
+          TypeOrder.join
+            order
+            (resolve_literal ?dependency ~class_metadata_environment ~assumptions left)
+            (resolve_literal ?dependency ~class_metadata_environment ~assumptions right)
+        in
+        if Type.is_concrete annotation then annotation else Type.Any
+    | Call { callee = { Node.value = Name name; _ } as callee; _ } when is_simple_name name ->
+        let class_type =
+          parse_annotation ?dependency ~assumptions ~class_metadata_environment callee
+        in
+        if is_concrete_constructable class_type then
+          class_type
+        else
+          Type.Top
+    | Call _
+    | Name _
+      when has_identifier_base expression ->
+        let class_type =
+          parse_annotation ?dependency ~assumptions ~class_metadata_environment expression
+        in
+        (* None is a special type that doesn't have a constructor. *)
+        if Type.is_none class_type then
+          Type.none
+        else if is_concrete_constructable class_type then
+          Type.meta class_type
+        else
+          Type.Top
+    | Complex _ -> Type.complex
+    | Dictionary { Dictionary.entries; keywords = [] } ->
+        let key_annotation, value_annotation =
+          let join_entry (key_annotation, value_annotation) { Dictionary.Entry.key; value } =
+            ( TypeOrder.join
+                order
+                key_annotation
+                (resolve_literal ?dependency ~class_metadata_environment ~assumptions key),
+              TypeOrder.join
+                order
+                value_annotation
+                (resolve_literal ?dependency ~class_metadata_environment ~assumptions value) )
+          in
+          List.fold ~init:(Type.Bottom, Type.Bottom) ~f:join_entry entries
+        in
+        if Type.is_concrete key_annotation && Type.is_concrete value_annotation then
+          Type.dictionary ~key:key_annotation ~value:value_annotation
+        else
+          Type.Any
+    | False -> Type.bool
+    | Float _ -> Type.float
+    | Integer _ -> Type.integer
+    | List elements ->
+        let parameter =
+          let join sofar element =
+            TypeOrder.join
+              order
+              sofar
+              (resolve_literal ?dependency ~class_metadata_environment ~assumptions element)
+          in
+          List.fold ~init:Type.Bottom ~f:join elements
+        in
+        if Type.is_concrete parameter then Type.list parameter else Type.Any
+    | Set elements ->
+        let parameter =
+          let join sofar element =
+            TypeOrder.join
+              order
+              sofar
+              (resolve_literal ?dependency ~class_metadata_environment ~assumptions element)
+          in
+          List.fold ~init:Type.Bottom ~f:join elements
+        in
+        if Type.is_concrete parameter then Type.set parameter else Type.Any
+    | String { StringLiteral.kind; _ } -> (
+        match kind with
+        | StringLiteral.Bytes -> Type.bytes
+        | _ -> Type.string )
+    | Ternary { Ternary.target; alternative; _ } ->
+        let annotation =
+          TypeOrder.join
+            order
+            (resolve_literal ?dependency ~class_metadata_environment ~assumptions target)
+            (resolve_literal ?dependency ~class_metadata_environment ~assumptions alternative)
+        in
+        if Type.is_concrete annotation then annotation else Type.Any
+    | True -> Type.bool
+    | Tuple elements ->
+        Type.tuple
+          (List.map
+             elements
+             ~f:(resolve_literal ?dependency ~class_metadata_environment ~assumptions))
+    | Expression.Yield _ -> Type.yield Type.Any
+    | _ -> Type.Any
+
+
+  and apply_decorators
+      ~assumptions
+      ?dependency
+      ~class_metadata_environment
+      { Node.value = { Define.Signature.decorators; _ } as signature; location }
+    =
+    let apply_decorator
+        ({ Type.Callable.annotation; parameters; _ } as overload)
+        { Node.value = decorator; _ }
+      =
+      let resolve_decorators name ~arguments =
+        let handle = function
+          | "click.command"
+          | "click.group"
+          | "click.pass_context"
+          | "click.pass_obj" ->
+              (* Suppress caller/callee parameter matching by altering the click entry point to have
+                 a generic parameter list. *)
+              let parameters =
+                Type.Callable.Defined
+                  [
+                    Type.Callable.Parameter.Variable (Concrete Type.Any);
+                    Type.Callable.Parameter.Keywords Type.Any;
+                  ]
+              in
+              { overload with Type.Callable.parameters }
+          | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
+              let joined =
+                let order = full_order ?dependency class_metadata_environment ~assumptions in
+                try TypeOrder.join order annotation (Type.async_iterator Type.Bottom) with
+                | ClassHierarchy.Untracked _ ->
+                    (* Apply_decorators gets called when building the environment, which is unsound
+                       and can raise. *)
+                    Type.Any
+              in
+              if Type.is_async_iterator joined then
+                {
+                  overload with
+                  Type.Callable.annotation =
+                    Type.parametric
+                      "typing.AsyncContextManager"
+                      (Concrete [Type.single_parameter joined]);
+                }
+              else
+                overload
+          | name when Set.mem Decorators.special_decorators name ->
+              Decorators.apply ~overload ~resolution:() ~name
+          | name -> (
+              let resolved_decorator =
+                match
+                  ( undecorated_signature
+                      class_metadata_environment
+                      (Reference.create name)
+                      ~dependency,
+                    arguments )
+                with
+                | Some signature, Some arguments -> (
+                    let resolve expression =
+                      let resolved =
+                        resolve_literal
+                          ?dependency
+                          ~class_metadata_environment
+                          ~assumptions
+                          expression
+                      in
+                      if Type.is_partially_typed resolved then
+                        Type.Top
+                      else
+                        resolved
+                    in
+                    let callable =
+                      {
+                        Type.Callable.kind = Anonymous;
+                        implementation = signature;
+                        overloads = [];
+                        implicit = None;
+                      }
+                    in
+                    match
+                      signature_select
+                        ?dependency
+                        ~class_metadata_environment
+                        ~assumptions
+                        ~resolve
+                        ~arguments
+                        ~callable
+                    with
+                    | SignatureSelectionTypes.Found
+                        {
+                          implementation = { annotation = Type.Callable { implementation; _ }; _ };
+                          _;
+                        } ->
+                        Some implementation
+                    | _ -> None )
+                | Some signature, None -> Some signature
+                | None, _ -> None
+              in
+              match resolved_decorator with
+              | Some
+                  {
+                    Type.Callable.annotation = return_annotation;
+                    parameters =
+                      Type.Callable.Defined
+                        [Type.Callable.Parameter.Anonymous { annotation = parameter_annotation; _ }];
+                    _;
+                  }
+              | Some
+                  {
+                    Type.Callable.annotation = return_annotation;
+                    parameters =
+                      Type.Callable.Defined
+                        [Type.Callable.Parameter.Named { annotation = parameter_annotation; _ }];
+                    _;
+                  } -> (
+                  let order = full_order ?dependency class_metadata_environment ~assumptions in
+                  let decorated_annotation =
+                    TypeOrder.solve_less_or_equal
+                      order
+                      ~constraints:TypeConstraints.empty
+                      ~left:(Type.Callable.create ~parameters ~annotation ())
+                      ~right:parameter_annotation
+                    |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
+                    |> List.hd
+                    >>| fun solution ->
+                    TypeConstraints.Solution.instantiate solution return_annotation
+                    (* If we failed, just default to the old annotation. *)
+                  in
+                  let decorated_annotation =
+                    decorated_annotation |> Option.value ~default:annotation
+                  in
+                  match decorated_annotation with
+                  (* Note that @property decorators can't properly be handled in this fashion. The
+                     problem stems from the need to use `apply_decorators` to individual overloaded
+                     defines - if an overloaded define could become Not An Overload, it's not clear
+                     what we should do. Defer the problem by now by only inferring a limited set of
+                     decorators. *)
+                  | Type.Callable
+                      {
+                        Type.Callable.implementation =
+                          {
+                            Type.Callable.parameters = decorated_parameters;
+                            annotation = decorated_annotation;
+                            define_location;
+                          };
+                        _;
+                      } ->
+                      {
+                        Type.Callable.annotation = decorated_annotation;
+                        parameters = decorated_parameters;
+                        define_location;
+                      }
+                  | _ -> overload )
+              | _ -> overload )
+        in
+        Expression.name_to_identifiers name
+        >>| String.concat ~sep:"."
+        >>| handle
+        |> Option.value ~default:overload
+      in
+      let open Expression in
+      match decorator with
+      | Expression.Call { callee = { Node.value = Expression.Name name; _ }; arguments } ->
+          resolve_decorators name ~arguments:(Some arguments)
+      | Expression.Name name -> resolve_decorators name ~arguments:None
+      | _ -> overload
+    in
+    let parser =
+      {
+        AnnotatedCallable.parse_annotation =
+          parse_annotation ?dependency ~class_metadata_environment ~assumptions;
+        parse_as_concatenation =
+          AliasEnvironment.ReadOnly.parse_as_concatenation
+            (alias_environment class_metadata_environment)
+            ?dependency;
+        parse_as_parameter_specification_instance_annotation =
+          AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+            (alias_environment class_metadata_environment)
+            ?dependency;
+      }
+    in
+    let init = Node.create signature ~location |> AnnotatedCallable.create_overload ~parser in
+    decorators |> List.rev |> List.fold ~init ~f:apply_decorator
+
+
+  and create_callable ~assumptions ?dependency ~class_metadata_environment ~parent ~name overloads =
+    let open Type.Callable in
+    let implementation, overloads =
+      let to_signature (implementation, overloads) (is_overload, signature) =
+        if is_overload then
+          implementation, signature :: overloads
+        else
+          signature, overloads
+      in
+      List.fold
+        ~init:
+          ( { annotation = Type.Top; parameters = Type.Callable.Undefined; define_location = None },
+            [] )
+        ~f:to_signature
+        overloads
+    in
+    let callable =
+      { kind = Named (Reference.create name); implementation; overloads; implicit = None }
+    in
+    match parent with
+    | Some parent ->
+        let { Type.Callable.kind; implementation; overloads; implicit } =
+          match implementation, overloads with
+          | { parameters = Defined (Named { name; annotation; _ } :: _); _ }, _ -> (
+              let callable =
+                let implicit = { implicit_annotation = parent; name } in
+                { callable with implicit = Some implicit }
+              in
+              let order = full_order ?dependency class_metadata_environment ~assumptions in
+              let solution =
+                try
+                  TypeOrder.solve_less_or_equal
+                    order
+                    ~left:parent
+                    ~right:annotation
+                    ~constraints:TypeConstraints.empty
+                  |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
+                  |> List.hd
+                  |> Option.value ~default:TypeConstraints.Solution.empty
+                with
+                | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
+              in
+              let instantiated =
+                TypeConstraints.Solution.instantiate solution (Type.Callable callable)
+              in
+              match instantiated with
+              | Type.Callable callable -> callable
+              | _ -> callable )
+          (* We also need to set the implicit up correctly for overload-only methods. *)
+          | _, { parameters = Defined (Named { name; _ } :: _); _ } :: _ ->
+              let implicit = { implicit_annotation = parent; name } in
+              { callable with implicit = Some implicit }
+          | _ -> callable
+        in
+        let drop_self { Type.Callable.annotation; parameters; define_location } =
+          let parameters =
+            match parameters with
+            | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
+            | _ -> parameters
+          in
+          { Type.Callable.annotation; parameters; define_location }
+        in
+        {
+          Type.Callable.kind;
+          implementation = drop_self implementation;
+          overloads = List.map overloads ~f:drop_self;
+          implicit;
+        }
+    | None -> callable
+
+
+  and signature_select
+      ~assumptions
+      ?dependency
+      ~class_metadata_environment
+      ~resolve
+      ~arguments
+      ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
+    =
+    let open SignatureSelectionTypes in
+    let order = full_order ?dependency class_metadata_environment ~assumptions in
+    let open Expression in
+    let open Type.Callable in
+    let match_arity ({ parameters = all_parameters; _ } as implementation) =
+      let all_arguments = arguments in
+      let base_signature_match =
+        {
+          callable = { callable with Type.Callable.implementation; overloads = [] };
+          argument_mapping = Parameter.Map.empty;
+          constraints_set = [TypeConstraints.empty];
+          ranks = { arity = 0; annotation = 0; position = 0 };
+          reasons = { arity = []; annotation = [] };
+        }
+      in
+      let rec consume
+          ({ argument_mapping; reasons = { arity; _ } as reasons; _ } as signature_match)
+          ~arguments
+          ~parameters
+        =
+        let update_mapping parameter argument =
+          Map.add_multi argument_mapping ~key:parameter ~data:argument
+        in
+        let arity_mismatch ?(unreachable_parameters = []) ~arguments reasons =
+          match all_parameters with
+          | Defined all_parameters ->
+              let matched_keyword_arguments =
+                let is_keyword_argument = function
+                  | { Call.Argument.name = Some _; _ } -> true
+                  | _ -> false
+                in
+                List.filter ~f:is_keyword_argument all_arguments
+              in
+              let positional_parameter_count =
+                List.length all_parameters
+                - List.length unreachable_parameters
+                - List.length matched_keyword_arguments
+              in
+              let error =
+                TooManyArguments
+                  {
+                    expected = positional_parameter_count;
+                    provided = positional_parameter_count + List.length arguments;
+                  }
+              in
+              { reasons with arity = error :: arity }
+          | _ -> reasons
+        in
+        match arguments, parameters with
+        | [], [] ->
+            (* Both empty *)
+            signature_match
+        | { Argument.kind = Argument.SingleStar; _ } :: arguments_tail, []
+        | { kind = DoubleStar; _ } :: arguments_tail, [] ->
+            (* Starred or double starred arguments; parameters empty *)
+            consume ~arguments:arguments_tail ~parameters signature_match
+        | { kind = Named name; _ } :: _, [] ->
+            (* Named argument; parameters empty *)
+            let reasons = { reasons with arity = UnexpectedKeyword name.value :: arity } in
+            { signature_match with reasons }
+        | _, [] ->
+            (* Positional argument; parameters empty *)
+            { signature_match with reasons = arity_mismatch ~arguments reasons }
+        | [], (Parameter.KeywordOnly { default = true; _ } as parameter) :: parameters_tail
+        | [], (Parameter.Anonymous { default = true; _ } as parameter) :: parameters_tail
+        | [], (Parameter.Named { default = true; _ } as parameter) :: parameters_tail ->
+            (* Arguments empty, default parameter *)
+            let argument_mapping = update_mapping parameter Default in
+            consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
+        | [], parameter :: parameters_tail ->
+            (* Arguments empty, parameter *)
+            let argument_mapping =
+              match Map.find argument_mapping parameter with
+              | Some _ -> argument_mapping
+              | None -> Map.set ~key:parameter ~data:[] argument_mapping
+            in
+            consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
+        | ( ({ kind = Named _; _ } as argument) :: arguments_tail,
+            (Parameter.Keywords _ as parameter) :: _ ) ->
+            (* Labeled argument, keywords parameter *)
+            let argument_mapping = update_mapping parameter (Argument argument) in
+            consume ~arguments:arguments_tail ~parameters { signature_match with argument_mapping }
+        | ({ kind = Named name; _ } as argument) :: arguments_tail, parameters ->
+            (* Labeled argument *)
+            let rec extract_matching_name searched to_search =
+              match to_search with
+              | [] -> None, List.rev searched
+              | (Parameter.KeywordOnly { name = parameter_name; _ } as head) :: tail
+              | (Parameter.Named { name = parameter_name; _ } as head) :: tail
+                when Identifier.equal_sanitized parameter_name name.value ->
+                  Some head, List.rev searched @ tail
+              | (Parameter.Keywords _ as head) :: tail ->
+                  let matching, parameters = extract_matching_name (head :: searched) tail in
+                  let matching = Some (Option.value matching ~default:head) in
+                  matching, parameters
+              | head :: tail -> extract_matching_name (head :: searched) tail
+            in
+            let matching_parameter, remaining_parameters = extract_matching_name [] parameters in
+            let argument_mapping, reasons =
+              match matching_parameter with
+              | Some matching_parameter ->
+                  update_mapping matching_parameter (Argument argument), reasons
+              | None ->
+                  argument_mapping, { reasons with arity = UnexpectedKeyword name.value :: arity }
+            in
+            consume
+              ~arguments:arguments_tail
+              ~parameters:remaining_parameters
+              { signature_match with argument_mapping; reasons }
+        | ( ({ kind = DoubleStar; _ } as argument) :: arguments_tail,
+            (Parameter.Keywords _ as parameter) :: _ )
+        | ( ({ kind = SingleStar; _ } as argument) :: arguments_tail,
+            (Parameter.Variable _ as parameter) :: _ ) ->
+            (* (Double) starred argument, (double) starred parameter *)
+            let argument_mapping = update_mapping parameter (Argument argument) in
+            consume ~arguments:arguments_tail ~parameters { signature_match with argument_mapping }
+        | { kind = SingleStar; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
+            (* Starred argument, double starred parameter *)
+            consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
+        | { kind = Positional; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
+            (* Unlabeled argument, double starred parameter *)
+            consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
+        | { kind = DoubleStar; _ } :: _, Parameter.Variable _ :: parameters_tail ->
+            (* Double starred argument, starred parameter *)
+            consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
+        | ( ({ kind = Positional; _ } as argument) :: arguments_tail,
+            (Parameter.Variable _ as parameter) :: _ ) ->
+            (* Unlabeled argument, starred parameter *)
+            let signature_match =
+              let argument_mapping = update_mapping parameter (Argument argument) in
+              { signature_match with argument_mapping }
+            in
+            consume ~arguments:arguments_tail ~parameters signature_match
+        | { kind = SingleStar; _ } :: arguments_tail, Type.Callable.Parameter.KeywordOnly _ :: _ ->
+            (* Starred argument, keyword only parameter *)
+            consume ~arguments:arguments_tail ~parameters signature_match
+        | ({ kind = DoubleStar; _ } as argument) :: _, parameter :: parameters_tail
+        | ({ kind = SingleStar; _ } as argument) :: _, parameter :: parameters_tail ->
+            (* Double starred or starred argument, parameter *)
+            let argument_mapping = update_mapping parameter (Argument argument) in
+            consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
+        | { kind = Positional; _ } :: _, (Parameter.KeywordOnly _ as parameter) :: parameters_tail
+          ->
+            (* Unlabeled argument, keyword only parameter *)
+            let reasons =
+              arity_mismatch
+                reasons
+                ~unreachable_parameters:(parameter :: parameters_tail)
+                ~arguments
+            in
+            { signature_match with reasons }
+        | ({ kind = Positional; _ } as argument) :: arguments_tail, parameter :: parameters_tail ->
+            (* Unlabeled argument, parameter *)
+            let argument_mapping = update_mapping parameter (Argument argument) in
+            consume
+              ~arguments:arguments_tail
+              ~parameters:parameters_tail
+              { signature_match with argument_mapping }
+      in
+      let ordered_arguments () =
+        let create_argument index { Call.Argument.name; value } =
+          let expression, kind =
+            match value, name with
+            | { Node.value = Starred (Starred.Once expression); _ }, _ ->
+                expression, Argument.SingleStar
+            | { Node.value = Starred (Starred.Twice expression); _ }, _ -> expression, DoubleStar
+            | expression, Some name -> expression, Named name
+            | expression, None -> expression, Positional
+          in
+          let resolved = resolve expression in
+          { Argument.position = index + 1; expression; full_expression = value; kind; resolved }
+        in
+        let is_labeled = function
+          | { Argument.kind = Named _; _ } -> true
+          | _ -> false
+        in
+        let labeled_arguments, unlabeled_arguments =
+          arguments |> List.mapi ~f:create_argument |> List.partition_tf ~f:is_labeled
+        in
+        labeled_arguments @ unlabeled_arguments
+      in
+      match all_parameters with
+      | Defined parameters ->
+          consume base_signature_match ~arguments:(ordered_arguments ()) ~parameters
+      | Undefined -> base_signature_match
+      | ParameterVariadicTypeVariable variable -> (
+          let combines_into_variable ~positional_component ~keyword_component =
+            Type.Variable.Variadic.Parameters.Components.combine
+              { positional_component; keyword_component }
+            >>| Type.Variable.Variadic.Parameters.equal variable
+            |> Option.value ~default:false
+          in
+          match ordered_arguments () with
+          | [
+           { kind = SingleStar; resolved = positional_component; _ };
+           { kind = DoubleStar; resolved = keyword_component; _ };
+          ]
+            when combines_into_variable ~positional_component ~keyword_component ->
+              base_signature_match
+          | _ ->
+              {
+                base_signature_match with
+                reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] };
+              } )
+    in
+    let check_annotations ({ argument_mapping; _ } as signature_match) =
+      let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
+        let bind_arguments_to_variadic ~expected ~arguments =
+          let extract arguments =
+            let extracted, errors =
+              let arguments =
+                List.map arguments ~f:(function
+                    | Argument argument -> argument
+                    | Default -> failwith "Variable parameters do not have defaults")
+              in
+              let extract { Argument.kind; resolved; expression; _ } =
+                match kind with
+                | SingleStar -> (
+                    match resolved with
+                    | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
+                    (* We don't support expanding indefinite containers into ListVariadics *)
+                    | annotation -> `Snd { expression; annotation } )
+                | _ -> `Fst (Type.OrderedTypes.Concrete [resolved])
+              in
+              List.rev arguments |> List.partition_map ~f:extract
+            in
+            match errors with
+            | [] -> Ok extracted
+            | not_definite_tuple :: _ ->
+                Error
+                  (MismatchWithListVariadicTypeVariable
+                     (expected, NotDefiniteTuple not_definite_tuple))
+          in
+          let concatenate extracted =
+            let concatenated =
+              match extracted with
+              | [] -> Some (Type.OrderedTypes.Concrete [])
+              | head :: tail ->
+                  let concatenate sofar next =
+                    sofar >>= fun left -> Type.OrderedTypes.concatenate ~left ~right:next
+                  in
+                  List.fold tail ~f:concatenate ~init:(Some head)
+            in
+            match concatenated with
+            | Some concatenated -> Ok concatenated
+            | None ->
+                Error (MismatchWithListVariadicTypeVariable (expected, CantConcatenate extracted))
+          in
+          let solve concatenated =
+            match
+              List.concat_map signature_match.constraints_set ~f:(fun constraints ->
+                  TypeOrder.solve_ordered_types_less_or_equal
+                    order
+                    ~left:concatenated
+                    ~right:expected
+                    ~constraints)
+            with
+            | [] ->
+                Error
+                  (MismatchWithListVariadicTypeVariable (expected, ConstraintFailure concatenated))
+            | updated_constraints_set -> Ok updated_constraints_set
+          in
+          let make_signature_match = function
+            | Ok constraints_set -> { signature_match with constraints_set }
+            | Error error ->
+                { signature_match with reasons = { reasons with arity = error :: arity } }
+          in
+          let open Result in
+          extract arguments >>= concatenate >>= solve |> make_signature_match
+        in
+        match key, data with
+        | Parameter.Variable (Concatenation concatenation), arguments ->
+            bind_arguments_to_variadic
+              ~expected:(Type.OrderedTypes.Concatenation concatenation)
+              ~arguments
+        | Parameter.Variable _, []
+        | Parameter.Keywords _, [] ->
+            (* Parameter was not matched, but empty is acceptable for variable arguments and keyword
+               arguments. *)
+            signature_match
+        | Parameter.KeywordOnly { name; _ }, []
+        | Parameter.Named { name; _ }, [] ->
+            (* Parameter was not matched *)
+            let reasons = { reasons with arity = MissingArgument (Named name) :: arity } in
+            { signature_match with reasons }
+        | Parameter.Anonymous { index; _ }, [] ->
+            (* Parameter was not matched *)
+            let reasons = { reasons with arity = MissingArgument (Anonymous index) :: arity } in
+            { signature_match with reasons }
+        | Anonymous { annotation = parameter_annotation; _ }, arguments
+        | KeywordOnly { annotation = parameter_annotation; _ }, arguments
+        | Named { annotation = parameter_annotation; _ }, arguments
+        | Variable (Concrete parameter_annotation), arguments
+        | Keywords parameter_annotation, arguments ->
+            let rec set_constraints_and_reasons
+                ~position
+                ~argument
+                ~name
+                ~argument_annotation
+                ({ constraints_set; reasons = { annotation; _ }; _ } as signature_match)
+              =
+              let reasons_with_mismatch =
+                let mismatch =
+                  let location =
+                    name >>| Node.location |> Option.value ~default:argument.Node.location
+                  in
+                  {
+                    actual = argument_annotation;
+                    expected = parameter_annotation;
+                    name = Option.map name ~f:Node.value;
+                    position;
+                  }
+                  |> Node.create ~location
+                  |> fun mismatch -> Mismatch mismatch
+                in
+                { reasons with annotation = mismatch :: annotation }
+              in
+              match
+                List.concat_map constraints_set ~f:(fun constraints ->
+                    TypeOrder.solve_less_or_equal
+                      order
+                      ~constraints
+                      ~left:argument_annotation
+                      ~right:parameter_annotation)
+              with
+              | [] -> { signature_match with constraints_set; reasons = reasons_with_mismatch }
+              | updated_constraints_set ->
+                  { signature_match with constraints_set = updated_constraints_set }
+            in
+            let rec check signature_match = function
+              | [] -> signature_match
+              | Default :: tail ->
+                  (* Parameter default value was used. Assume it is correct. *)
+                  check signature_match tail
+              | Argument { expression; full_expression; position; kind; resolved } :: tail -> (
+                  let set_constraints_and_reasons argument_annotation =
+                    let name =
+                      match kind with
+                      | Named name -> Some name
+                      | _ -> None
+                    in
+                    set_constraints_and_reasons
+                      ~position
+                      ~argument:full_expression
+                      ~argument_annotation
+                      ~name
+                      signature_match
+                    |> fun signature_match -> check signature_match tail
+                  in
+                  let add_annotation_error
+                      ({ reasons = { annotation; _ }; _ } as signature_match)
+                      error
+                    =
+                    {
+                      signature_match with
+                      reasons = { reasons with annotation = error :: annotation };
+                    }
+                  in
+                  let solution_based_extraction ~create_error ~synthetic_variable ~solve_against =
+                    let signature_with_error =
+                      { expression; annotation = resolved }
+                      |> Node.create ~location:expression.location
+                      |> create_error
+                      |> add_annotation_error signature_match
+                    in
+                    let iterable_constraints =
+                      if Type.is_unbound resolved then
+                        []
+                      else
+                        TypeOrder.solve_less_or_equal
+                          order
+                          ~constraints:TypeConstraints.empty
+                          ~left:resolved
+                          ~right:solve_against
+                    in
+                    match iterable_constraints with
+                    | [] -> signature_with_error
+                    | iterable_constraint :: _ ->
+                        TypeOrder.OrderedConstraints.solve ~order iterable_constraint
+                        >>| (fun solution ->
+                              TypeConstraints.Solution.instantiate_single_variable
+                                solution
+                                synthetic_variable
+                              |> Option.value ~default:Type.Any)
+                        >>| set_constraints_and_reasons
+                        |> Option.value ~default:signature_with_error
+                  in
+                  match kind with
+                  | DoubleStar ->
+                      let create_error error = InvalidKeywordArgument error in
+                      let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                      let solve_against =
+                        Type.parametric
+                          "typing.Mapping"
+                          (Concrete [Type.string; Type.Variable synthetic_variable])
+                      in
+                      solution_based_extraction ~create_error ~synthetic_variable ~solve_against
+                  | SingleStar ->
+                      let create_error error = InvalidVariableArgument error in
+                      let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                      let solve_against = Type.iterable (Type.Variable synthetic_variable) in
+                      solution_based_extraction ~create_error ~synthetic_variable ~solve_against
+                  | Named _
+                  | Positional ->
+                      let argument_annotation =
+                        if Type.Variable.all_variables_are_resolved parameter_annotation then
+                          resolve_mutable_literals
+                            ?dependency
+                            ~class_metadata_environment
+                            ~assumptions
+                            ~resolve
+                            ~expression:(Some expression)
+                            ~resolved
+                            ~expected:parameter_annotation
+                        else
+                          resolved
+                      in
+                      if Type.is_meta parameter_annotation && Type.is_top argument_annotation then
+                        parse_annotation
+                          ?dependency
+                          ~class_metadata_environment
+                          ~assumptions
+                          expression
+                        |> Type.meta
+                        |> set_constraints_and_reasons
+                      else
+                        argument_annotation |> set_constraints_and_reasons )
+            in
+            List.rev arguments |> check signature_match
+      in
+      let check_if_solution_exists
+          ( { constraints_set; reasons = { annotation; _ } as reasons; callable; _ } as
+          signature_match )
+        =
+        let solutions =
+          let variables = Type.Variable.all_free_variables (Type.Callable callable) in
+          List.filter_map
+            constraints_set
+            ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
+        in
+        if not (List.is_empty solutions) then
+          signature_match
+        else
+          (* All other cases should have been able to been blamed on a specefic argument, this is
+             the only global failure. *)
+          {
+            signature_match with
+            reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation };
+          }
+      in
+      let special_case_dictionary_constructor
+          ({ argument_mapping; callable; constraints_set; _ } as signature_match)
+        =
+        let open Type.Record.Callable in
+        let has_matched_keyword_parameter parameters =
+          List.find parameters ~f:(function
+              | RecordParameter.Keywords _ -> true
+              | _ -> false)
+          >>= Type.Callable.Parameter.Map.find argument_mapping
+          >>| List.is_empty
+          >>| not
+          |> Option.value ~default:false
+        in
+        match callable with
+        | {
+         kind = Named name;
+         implementation =
+           {
+             parameters = Defined parameters;
+             annotation = Type.Parametric { parameters = Concrete [key_type; _]; _ };
+             _;
+           };
+         _;
+        }
+          when String.equal (Reference.show name) "dict.__init__"
+               && has_matched_keyword_parameter parameters ->
+            let updated_constraints =
+              List.concat_map constraints_set ~f:(fun constraints ->
+                  TypeOrder.solve_less_or_equal order ~constraints ~left:Type.string ~right:key_type)
+            in
+            if List.is_empty updated_constraints then (* TODO(T41074174): Error here *)
+              signature_match
+            else
+              { signature_match with constraints_set = updated_constraints }
+        | _ -> signature_match
+      in
+      Map.fold ~init:signature_match ~f:update argument_mapping
+      |> special_case_dictionary_constructor
+      |> check_if_solution_exists
+    in
+    let calculate_rank ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
+      let arity_rank = List.length arity in
+      let positions, annotation_rank =
+        let count_unique (positions, count) = function
+          | Mismatch { Node.value = { position; _ }; _ } when not (Set.mem positions position) ->
+              Set.add positions position, count + 1
+          | Mismatch _ -> positions, count
+          | _ -> positions, count + 1
+        in
+        List.fold ~init:(Int.Set.empty, 0) ~f:count_unique annotation
+      in
+      let position_rank =
+        Int.Set.min_elt positions >>| Int.neg |> Option.value ~default:Int.min_value
+      in
+      {
+        signature_match with
+        ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank };
+      }
+    in
+    let find_closest signature_matches =
+      let get_arity_rank { ranks = { arity; _ }; _ } = arity in
+      let get_annotation_rank { ranks = { annotation; _ }; _ } = annotation in
+      let get_position_rank { ranks = { position; _ }; _ } = position in
+      let rec get_best_rank ~best_matches ~best_rank ~getter = function
+        | [] -> best_matches
+        | head :: tail ->
+            let rank = getter head in
+            if rank < best_rank then
+              get_best_rank ~best_matches:[head] ~best_rank:rank ~getter tail
+            else if rank = best_rank then
+              get_best_rank ~best_matches:(head :: best_matches) ~best_rank ~getter tail
+            else
+              get_best_rank ~best_matches ~best_rank ~getter tail
+      in
+      let determine_reason { callable; constraints_set; reasons = { arity; annotation; _ }; _ } =
+        let callable =
+          let instantiate annotation =
+            let solution =
+              let variables = Type.Variable.all_free_variables (Type.Callable callable) in
+              List.filter_map
+                constraints_set
+                ~f:(TypeOrder.OrderedConstraints.extract_partial_solution ~order ~variables)
+              |> List.map ~f:snd
+              |> List.hd
+              |> Option.value ~default:TypeConstraints.Solution.empty
+            in
+            TypeConstraints.Solution.instantiate solution annotation
+            |> Type.Variable.mark_all_free_variables_as_escaped
+            (* We need to do transformations of the form Union[T_escaped, int] => int in order to
+               properly handle some typeshed stubs which only sometimes bind type variables and
+               expect them to fall out in this way (see Mapping.get) *)
+            |> Type.Variable.collapse_all_escaped_variable_unions
+          in
+          Type.Callable.map ~f:instantiate callable
+          |> function
+          | Some callable -> callable
+          | _ -> failwith "Instantiate did not return a callable"
+        in
+        match List.rev arity, List.rev annotation with
+        | [], [] -> Found callable
+        | reason :: reasons, _
+        | [], reason :: reasons ->
+            let importance = function
+              | AbstractClassInstantiation _ -> 1
+              | CallingParameterVariadicTypeVariable -> 1
+              | InvalidKeywordArgument _ -> 0
+              | InvalidVariableArgument _ -> 0
+              | Mismatch { Node.value = { position; _ }; _ } -> 0 - position
+              | MissingArgument _ -> 1
+              | MismatchWithListVariadicTypeVariable _ -> 1
+              | MutuallyRecursiveTypeVariables -> 1
+              | ProtocolInstantiation _ -> 1
+              | TooManyArguments _ -> 1
+              | UnexpectedKeyword _ -> 1
+            in
+            let get_most_important best_reason reason =
+              if importance reason > importance best_reason then
+                reason
+              else
+                best_reason
+            in
+            let reason = Some (List.fold ~init:reason ~f:get_most_important reasons) in
+            NotFound { callable; reason }
+      in
+      signature_matches
+      |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank
+      |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_annotation_rank
+      |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_position_rank
+      (* Each get_best_rank reverses the list, because we have an odd number, we need an extra
+         reverse in order to prefer the first defined overload *)
+      |> List.rev
+      |> List.hd
+      >>| determine_reason
+      |> Option.value ~default:(NotFound { callable; reason = None })
+    in
+    let get_match signatures =
+      signatures
+      |> List.map ~f:match_arity
+      |> List.map ~f:check_annotations
+      |> List.map ~f:calculate_rank
+      |> find_closest
+    in
+    if List.is_empty overloads then
+      get_match [implementation]
+    else if Type.Callable.Overload.is_undefined implementation then
+      get_match overloads
+    else
+      (* TODO(T41195241) always ignore implementation when has overloads. Currently put
+         implementation as last resort *)
+      match get_match overloads with
+      | Found signature_match -> Found signature_match
+      | NotFound _ -> get_match [implementation]
+
+
+  and weaken_mutable_literals resolve ~expression ~resolved ~expected ~comparator =
+    let open Expression in
+    match expression with
+    | Some { Node.value = Expression.List items; _ } -> (
+        match resolved, expected with
+        | ( Type.Parametric { name = "list"; parameters = Concrete [actual_item_type] },
+            Type.Parametric { name = "list"; parameters = Concrete [expected_item_type] } ) ->
+            let weakened_item_type =
+              Type.union
+                (List.map
+                   ~f:(fun item ->
+                     weaken_mutable_literals
+                       resolve
+                       ~expression:(Some item)
+                       ~resolved:actual_item_type
+                       ~expected:expected_item_type
+                       ~comparator)
+                   items)
+            in
+            if comparator ~left:weakened_item_type ~right:expected_item_type then
+              expected
+            else
+              Type.list weakened_item_type
+        | _ -> resolved )
+    | Some { Node.value = Expression.ListComprehension _; _ } -> (
+        match resolved, expected with
+        | ( Type.Parametric { name = "list"; parameters = Concrete [actual] },
+            Type.Parametric { name = "list"; parameters = Concrete [expected_parameter] } )
+          when comparator ~left:actual ~right:expected_parameter ->
+            expected
+        | _ -> resolved )
+    | Some { Node.value = Expression.Set items; _ } -> (
+        match resolved, expected with
+        | ( Type.Parametric { name = "set"; parameters = Concrete [actual_item_type] },
+            Type.Parametric { name = "set"; parameters = Concrete [expected_item_type] } ) ->
+            let weakened_item_type =
+              Type.union
+                (List.map
+                   ~f:(fun item ->
+                     weaken_mutable_literals
+                       resolve
+                       ~expression:(Some item)
+                       ~resolved:actual_item_type
+                       ~expected:expected_item_type
+                       ~comparator)
+                   items)
+            in
+            if comparator ~left:weakened_item_type ~right:expected_item_type then
+              expected
+            else
+              Type.set weakened_item_type
+        | _ -> resolved )
+    | Some { Node.value = Expression.SetComprehension _; _ } -> (
+        match resolved, expected with
+        | ( Type.Parametric { name = "set"; parameters = Concrete [actual] },
+            Type.Parametric { name = "set"; parameters = Concrete [expected_parameter] } )
+          when comparator ~left:actual ~right:expected_parameter ->
+            expected
+        | _ -> resolved )
+    | Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ }
+      when Type.is_typed_dictionary expected -> (
+        match expected with
+        | Type.TypedDictionary { total; fields; _ } ->
+            let find_matching_field ~name =
+              let matching_name { Type.name = expected_name; _ } =
+                String.equal name expected_name
+              in
+              List.find ~f:matching_name
+            in
+            let resolve_entry { Dictionary.Entry.key; value } =
+              let key = resolve key in
+              match key with
+              | Type.Literal (Type.String name) ->
+                  let annotation =
+                    let resolved = resolve value in
+                    let relax { Type.annotation; _ } =
+                      if Type.is_dictionary resolved || Type.is_typed_dictionary resolved then
+                        weaken_mutable_literals
+                          resolve
+                          ~expression:(Some value)
+                          ~resolved
+                          ~expected:annotation
+                          ~comparator
+                      else if comparator ~left:resolved ~right:annotation then
+                        annotation
+                      else
+                        resolved
+                    in
+                    find_matching_field fields ~name >>| relax |> Option.value ~default:resolved
+                  in
+                  Some { Type.name; annotation }
+              | _ -> None
+            in
+            let add_missing_fields sofar =
+              let is_missing { Type.name; _ } = Option.is_none (find_matching_field sofar ~name) in
+              sofar @ List.filter fields ~f:is_missing
+            in
+            List.map entries ~f:resolve_entry
+            |> Option.all
+            >>| (if total then Fn.id else add_missing_fields)
+            >>| Type.TypedDictionary.anonymous ~total
+            |> Option.value_map ~default:resolved ~f:(fun typed_dictionary ->
+                   if comparator ~left:typed_dictionary ~right:expected then
+                     expected
+                   else
+                     typed_dictionary)
+        | _ -> resolved )
+    | Some { Node.value = Expression.Dictionary { entries; _ }; _ } ->
+        weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries
+    | Some { Node.value = Expression.DictionaryComprehension _; _ } -> (
+        match resolved, expected with
+        | ( Type.Parametric { name = "dict"; parameters = Concrete [actual_key; actual_value] },
+            Type.Parametric { name = "dict"; parameters = Concrete [expected_key; expected_value] }
+          )
+          when comparator ~left:actual_key ~right:expected_key
+               && comparator ~left:actual_value ~right:expected_value ->
+            expected
+        | _ -> resolved )
+    | _ -> resolved
+
+
+  and weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries =
+    match entries with
+    | _ -> (
+        match resolved, expected with
+        | ( Type.Parametric
+              { name = "dict"; parameters = Concrete [actual_key_type; actual_value_type] },
+            Type.Parametric
+              { name = "dict"; parameters = Concrete [expected_key_type; expected_value_type] } ) ->
+            let weakened_key_type =
+              Type.union
+                (List.map
+                   ~f:(fun { key; _ } ->
+                     weaken_mutable_literals
+                       resolve
+                       ~expression:(Some key)
+                       ~resolved:actual_key_type
+                       ~expected:expected_key_type
+                       ~comparator)
+                   entries)
+            in
+            let weakened_value_type =
+              Type.union
+                (List.map
+                   ~f:(fun { value; _ } ->
+                     weaken_mutable_literals
+                       resolve
+                       ~expression:(Some value)
+                       ~resolved:actual_value_type
+                       ~expected:expected_value_type
+                       ~comparator)
+                   entries)
+            in
+
+            (* Note: We don't check for variance because we want {1: 1} to be ok for Dict[float,
+               float] even though it gets resolved as Dict[Literal[1], Literal[1]].
+
+               Also, we check the parameter types manually because (comparator
+               ~left:weakened_dictionary_type ~right:expected) fails for `Dict[int, A]` and
+               `Dict[int, B]. *)
+            if
+              comparator ~left:weakened_key_type ~right:expected_key_type
+              && comparator ~left:weakened_value_type ~right:expected_value_type
+            then
+              expected
+            else
+              Type.dictionary ~key:weakened_key_type ~value:weakened_value_type
+        | _ -> resolved )
+
+
+  and resolve_mutable_literals ~assumptions ?dependency ~class_metadata_environment ~resolve =
+    weaken_mutable_literals
+      resolve
+      ~comparator:(constraints_solution_exists ?dependency ~class_metadata_environment ~assumptions)
+
+
+  and constraints_solution_exists ~assumptions ?dependency ~class_metadata_environment ~left ~right =
+    let order = full_order ?dependency class_metadata_environment ~assumptions in
+    not
+      ( TypeOrder.solve_less_or_equal order ~left ~right ~constraints:TypeConstraints.empty
+      |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
+      |> List.is_empty )
+
+
+  and constructor
+      ~assumptions
+      ?dependency
+      (definition : ClassSummary.t Node.t)
+      ~instantiated
+      ~class_metadata_environment
+    =
+    let return_annotation =
+      let class_annotation = class_annotation definition in
+      match class_annotation with
+      | Type.Primitive name
+      | Type.Parametric { name; _ } -> (
+          let generics = generics ?dependency ~class_metadata_environment ~assumptions definition in
+          (* Tuples are special. *)
+          if String.equal name "tuple" then
+            match generics with
+            | Concrete [tuple_variable] -> Type.Tuple (Type.Unbounded tuple_variable)
+            | _ -> Type.Tuple (Type.Unbounded Type.Any)
+          else
+            let backup = Type.Parametric { name; parameters = generics } in
+            match instantiated, generics with
+            | _, Concrete [] -> instantiated
+            | Type.Primitive instantiated_name, _ when String.equal instantiated_name name -> backup
+            | ( Type.Parametric { parameters = Concrete parameters; name = instantiated_name },
+                Concrete generics )
+              when String.equal instantiated_name name
+                   && List.length parameters <> List.length generics ->
+                backup
+            | _ -> instantiated )
+      | _ -> instantiated
+    in
+    let definitions =
+      definition
+      :: ClassMetadataEnvironment.ReadOnly.superclasses
+           class_metadata_environment
+           ?dependency
+           definition
+      |> List.map ~f:(fun definition -> class_annotation definition)
+    in
+    let definition_index attribute =
+      attribute
+      |> AnnotatedAttribute.parent
+      |> (fun class_annotation ->
+           List.findi definitions ~f:(fun _ annotation -> Type.equal annotation class_annotation))
+      >>| fst
+      |> Option.value ~default:Int.max_value
+    in
+    let constructor_signature, constructor_index =
+      let attribute =
+        attribute
+          definition
+          ~transitive:true
+          ?dependency
+          ~class_metadata_environment
+          ~assumptions
+          ~name:"__init__"
+          ~instantiated
+      in
+      let signature = attribute |> AnnotatedAttribute.annotation |> Annotation.annotation in
+      signature, definition_index attribute
+    in
+    let new_signature, new_index =
+      let attribute =
+        attribute
+          definition
+          ~transitive:true
+          ?dependency
+          ~class_metadata_environment
+          ~assumptions
+          ~name:"__new__"
+          ~instantiated
+      in
+      let signature = attribute |> AnnotatedAttribute.annotation |> Annotation.annotation in
+      signature, definition_index attribute
+    in
+    let signature =
+      if new_index < constructor_index then
+        new_signature
+      else
+        constructor_signature
+    in
+    match signature with
+    | Type.Callable callable ->
+        Type.Callable (Type.Callable.with_return_annotation ~annotation:return_annotation callable)
+    | _ -> signature
+
+
+  and attribute
+      ~assumptions
+      ?(transitive = false)
+      ?(class_attributes = false)
+      ?(special_method = false)
+      ({ Node.location; _ } as definition)
+      ?dependency
+      ~class_metadata_environment
+      ~name
+      ~instantiated
+    =
+    let table =
+      attribute_table
+        ~instantiated
+        ~transitive
+        ~class_attributes
+        ~special_method
+        ~include_generated_attributes:true
+        ?dependency
+        ~class_metadata_environment
+        ~assumptions
+        definition
+    in
+    match AnnotatedAttribute.Table.lookup_name table name with
+    | Some attribute -> attribute
+    | None ->
+        create_attribute
+          ?dependency
+          ~class_metadata_environment
+          ~assumptions
+          ~parent:definition
+          ~defined:false
+          ~default_class_attribute:class_attributes
+          {
+            Node.location;
+            value =
+              {
+                Attribute.name;
+                kind =
+                  Simple
+                    {
+                      annotation = None;
+                      value = None;
+                      primitive = true;
+                      toplevel = true;
+                      frozen = false;
+                      implicit = false;
+                    };
+              };
+          }
+end
+
+let assume_nothing f =
+  f
+    ~assumptions:
+      {
+        protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
+        callable_assumptions = TypeOrder.CallableAssumptions.empty;
+      }
+
+
+let full_order = assume_nothing Implementation.full_order
+
+let check_invalid_type_parameters = assume_nothing Implementation.check_invalid_type_parameters
+
+let parse_annotation = assume_nothing Implementation.parse_annotation
+
+let attribute_table = assume_nothing Implementation.attribute_table
+
+let attributes = assume_nothing Implementation.attributes
+
+let create_attribute = assume_nothing Implementation.create_attribute
+
+let metaclass = assume_nothing Implementation.metaclass
+
+let constraints = assume_nothing Implementation.constraints
+
+let generics = assume_nothing Implementation.generics
+
+let resolve_literal = assume_nothing Implementation.resolve_literal
+
+let apply_decorators = assume_nothing Implementation.apply_decorators
+
+let create_callable = assume_nothing Implementation.create_callable
+
+let signature_select = assume_nothing Implementation.signature_select
+
+let weaken_mutable_literals = Implementation.weaken_mutable_literals
+
+let resolve_mutable_literals = assume_nothing Implementation.resolve_mutable_literals
+
+let constraints_solution_exists = assume_nothing Implementation.constraints_solution_exists
+
+let constructor = assume_nothing Implementation.constructor
+
+let attribute = assume_nothing Implementation.attribute
+
+include TypeParameterValidationTypes
+include SignatureSelectionTypes

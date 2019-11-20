@@ -347,7 +347,7 @@ and stripped =
       callable: string;
       callees: string list;
     }
-  | SignatureNotFound of Annotated.Signature.reason option
+  | SignatureNotFound of AttributeResolution.reason option
   | NotCallable of Type.t
   | Value
 

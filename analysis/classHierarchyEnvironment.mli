@@ -14,6 +14,15 @@ module HierarchyReadOnly : sig
     ClassHierarchy.Target.t list option
 
   val alias_environment : t -> AliasEnvironment.ReadOnly.t
+
+  val class_hierarchy : ?dependency:dependency -> t -> (module ClassHierarchy.Handler)
+
+  val variables
+    :  ?default:ClassHierarchy.variables option ->
+    t ->
+    ?dependency:dependency ->
+    Type.Primitive.t ->
+    ClassHierarchy.variables option
 end
 
 include

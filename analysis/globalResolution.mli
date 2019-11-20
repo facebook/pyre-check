@@ -6,84 +6,23 @@
 open Ast
 open Statement
 
-type generic_type_problems =
-  | IncorrectNumberOfParameters of {
-      actual: int;
-      expected: int;
-    }
-  | ViolateConstraints of {
-      actual: Type.t;
-      expected: Type.Variable.Unary.t;
-    }
-  | UnexpectedVariadic of {
-      actual: Type.OrderedTypes.t;
-      expected: Type.Variable.Unary.t list;
-    }
-[@@deriving compare, eq, sexp, show, hash]
-
-type type_parameters_mismatch = {
-  name: string;
-  kind: generic_type_problems;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
 type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
 
 type t
-
-type global_resolution_t = t
-
-module type AnnotatedClass = sig
-  type t
-
-  type class_data = {
-    instantiated: Type.t;
-    class_attributes: bool;
-    class_definition: t;
-  }
-
-  val create : ClassSummary.t Node.t -> t
-
-  val constructor : t -> instantiated:Type.t -> resolution:global_resolution_t -> Type.t
-
-  val is_protocol : t -> bool
-
-  val resolve_class : resolution:global_resolution_t -> Type.t -> class_data list option
-
-  val attributes
-    :  ?transitive:bool ->
-    ?class_attributes:bool ->
-    ?include_generated_attributes:bool ->
-    ?instantiated:Type.t ->
-    t ->
-    resolution:global_resolution_t ->
-    AnnotatedAttribute.t list
-
-  val attribute
-    :  ?transitive:bool ->
-    ?class_attributes:bool ->
-    ?special_method:bool ->
-    t ->
-    resolution:global_resolution_t ->
-    name:Identifier.t ->
-    instantiated:Type.t ->
-    AnnotatedAttribute.t
-end
 
 val create
   :  ?dependency:SharedMemoryKeys.dependency ->
   class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
   global:(Reference.t -> global option) ->
-  (module AnnotatedClass) ->
   t
 
 val resolve_literal : t -> Expression.t -> Type.t
 
 val parse_annotation
-  :  ?allow_untracked:bool ->
+  :  t ->
+  ?allow_untracked:bool ->
   ?allow_invalid_type_parameters:bool ->
   ?allow_primitives_from_empty_stubs:bool ->
-  t ->
   Expression.t ->
   Type.t
 
@@ -110,7 +49,7 @@ val partial_solve_constraints
   variables:Type.Variable.t list ->
   (TypeConstraints.t * TypeConstraints.Solution.t) option
 
-val constraints_solution_exists : left:Type.t -> right:Type.t -> t -> bool
+val constraints_solution_exists : t -> left:Type.t -> right:Type.t -> bool
 
 val solve_less_or_equal
   :  t ->
@@ -127,7 +66,10 @@ val variables
   Type.Primitive.t ->
   ClassHierarchy.variables option
 
-val check_invalid_type_parameters : t -> Type.t -> type_parameters_mismatch list * Type.t
+val check_invalid_type_parameters
+  :  t ->
+  Type.t ->
+  AttributeResolution.type_parameters_mismatch list * Type.t
 
 val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
 
@@ -202,6 +144,93 @@ val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
 val class_definitions : t -> Reference.t -> Class.t Node.t list option
 
-module AnnotationCache : sig
-  val clear : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> unit
-end
+val resolve_mutable_literals
+  :  t ->
+  resolve:(Expression.expression Node.t -> Type.t) ->
+  expression:Ast.Expression.t option ->
+  resolved:Type.t ->
+  expected:Type.t ->
+  Type.t
+
+val is_consistent_with
+  :  t ->
+  resolve:(Expression.expression Node.t -> Type.t) ->
+  Type.t ->
+  Type.t ->
+  expression:Ast.Expression.t option ->
+  bool
+
+val resolve_class : t -> Type.t -> UnannotatedGlobalEnvironment.class_data list option
+
+val attributes
+  :  resolution:t ->
+  ?transitive:bool ->
+  ?class_attributes:bool ->
+  ?include_generated_attributes:bool ->
+  ?instantiated:Type.t ->
+  ClassSummary.t Node.t ->
+  AnnotatedAttribute.t list
+
+val metaclass : resolution:t -> ClassSummary.t Node.t -> Type.t
+
+val c_attribute
+  :  resolution:t ->
+  ?transitive:bool ->
+  ?class_attributes:bool ->
+  ?special_method:bool ->
+  ClassSummary.t Node.t ->
+  name:Identifier.t ->
+  instantiated:Type.t ->
+  AnnotatedAttribute.t
+
+val attribute_table
+  :  resolution:t ->
+  transitive:bool ->
+  class_attributes:bool ->
+  include_generated_attributes:bool ->
+  ?special_method:bool ->
+  ?instantiated:Type.t ->
+  ClassSummary.t Node.t ->
+  AnnotatedAttribute.Table.t
+
+val generics : resolution:t -> ClassSummary.t Node.t -> Type.OrderedTypes.t
+
+val superclasses : resolution:t -> ClassSummary.t Node.t -> ClassSummary.t Node.t list
+
+val successors : resolution:t -> ClassSummary.t Node.t -> string list
+
+val create_attribute
+  :  resolution:t ->
+  parent:ClassSummary.t Node.t ->
+  ?instantiated:Type.t ->
+  ?defined:bool ->
+  ?inherited:bool ->
+  ?default_class_attribute:bool ->
+  Attribute.t ->
+  AnnotatedAttribute.t
+
+val constraints
+  :  resolution:t ->
+  ?target:ClassSummary.t Node.t ->
+  ?parameters:Type.OrderedTypes.t ->
+  ClassSummary.t Node.t ->
+  instantiated:Type.t ->
+  TypeConstraints.Solution.t
+
+val signature_select
+  :  global_resolution:t ->
+  resolve:(Expression.expression Node.t -> Type.t) ->
+  arguments:Expression.Call.Argument.t list ->
+  callable:Type.Callable.t ->
+  AttributeResolution.sig_t
+
+val create_callable
+  :  resolution:t ->
+  parent:Type.t option ->
+  name:Identifier.t ->
+  (bool * Type.t Type.Callable.overload) list ->
+  Type.Callable.t
+
+val apply_decorators : resolution:t -> Define.Signature.t Node.t -> Type.t Type.Callable.overload
+
+val constructor : resolution:t -> ClassSummary.t Node.t -> instantiated:Type.t -> Type.t

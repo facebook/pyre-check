@@ -20,6 +20,14 @@ module MetadataReadOnly : sig
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 
   val undecorated_function_environment : t -> UndecoratedFunctionEnvironment.ReadOnly.t
+
+  val successors : t -> ?dependency:dependency -> ClassSummary.t Ast.Node.t -> string list
+
+  val superclasses
+    :  t ->
+    ?dependency:dependency ->
+    ClassSummary.t Ast.Node.t ->
+    ClassSummary.t Ast.Node.t list
 end
 
 include

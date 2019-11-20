@@ -642,6 +642,77 @@ module ReadOnly = struct
   let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
 
   let get_module_metadata { get_module_metadata; _ } = get_module_metadata
+
+  let resolve_exports read_only ?dependency reference =
+    (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
+    let widening_threshold = 25 in
+    let rec resolve_exports_fixpoint ~reference ~visited ~count =
+      if Set.mem visited reference || count > widening_threshold then
+        reference
+      else
+        let rec resolve_exports ~lead ~tail =
+          match tail with
+          | head :: tail ->
+              let incremented_lead = lead @ [head] in
+              if
+                Option.is_some
+                  (get_module_metadata
+                     ?dependency
+                     read_only
+                     (Reference.create_from_list incremented_lead))
+              then
+                resolve_exports ~lead:incremented_lead ~tail
+              else
+                get_module_metadata ?dependency read_only (Reference.create_from_list lead)
+                >>| (fun definition ->
+                      match Module.aliased_export definition (Reference.create head) with
+                      | Some export -> Reference.combine export (Reference.create_from_list tail)
+                      | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
+                |> Option.value ~default:reference
+          | _ -> reference
+        in
+        match Reference.as_list reference with
+        | head :: tail ->
+            let exported_reference = resolve_exports ~lead:[head] ~tail in
+            if Reference.is_strict_prefix ~prefix:reference exported_reference then
+              reference
+            else
+              resolve_exports_fixpoint
+                ~reference:exported_reference
+                ~visited:(Set.add visited reference)
+                ~count:(count + 1)
+        | _ -> reference
+    in
+    resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
+
+
+  type decorator = {
+    name: string;
+    arguments: Expression.Call.Argument.t list option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  let matches_decorator read_only ?dependency decorator ~target =
+    let name_resolves_to_target ~name =
+      let name = resolve_exports read_only ?dependency (Reference.create name) |> Reference.show in
+      String.equal name target
+    in
+    match decorator with
+    | { Node.value = Expression.Expression.Call { callee; arguments }; _ }
+      when name_resolves_to_target ~name:(Expression.show callee) ->
+        Some { name = target; arguments = Some arguments }
+    | { Node.value = Name _; _ } when name_resolves_to_target ~name:(Expression.show decorator) ->
+        Some { name = target; arguments = None }
+    | _ -> None
+
+
+  let get_decorator
+      read_only
+      ?dependency
+      { Node.value = { ClassSummary.decorators; _ }; _ }
+      ~decorator
+    =
+    List.filter_map ~f:(matches_decorator read_only ?dependency ~target:decorator) decorators
 end
 
 let read_only ({ module_tracker } as environment) =

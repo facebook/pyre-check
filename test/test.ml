@@ -1525,7 +1525,7 @@ module ScratchProject = struct
           ~qualifiers:(Reference.Set.of_list qualifiers)
           ()
       in
-      Annotated.Class.AttributeCache.clear ();
+      AttributeResolution.AttributeCache.clear ();
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
     in
     sources, ast_environment, environment
@@ -1576,7 +1576,7 @@ let assert_errors
           handle
       in
       failwith message );
-  Annotated.Class.AttributeCache.clear ();
+  AttributeResolution.AttributeCache.clear ();
 
   let descriptions =
     let errors =
@@ -1635,7 +1635,7 @@ let assert_equivalent_attributes ~context source expected =
   let handle = "test.py" in
   let attributes class_type source =
     Memory.reset_shared_memory ();
-    Annotated.Class.AttributeCache.clear ();
+    AttributeResolution.AttributeCache.clear ();
     let _, _, environment =
       ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
     in
@@ -1667,7 +1667,7 @@ let assert_equivalent_attributes ~context source expected =
     in
     Option.value_exn (GlobalResolution.class_definition global_resolution class_type)
     |> Annotated.Class.create
-    |> Annotated.Class.attributes ~transitive:false ~resolution:global_resolution
+    |> GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
     |> List.sort ~compare:compare_by_name
     |> List.map ~f:Node.value
     |> List.map ~f:ignore_value_location

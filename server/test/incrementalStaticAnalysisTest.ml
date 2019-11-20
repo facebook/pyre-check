@@ -9,7 +9,7 @@ open Analysis
 open OUnit2
 
 let assert_static_analysis_errors ~context ~source ~check ~expected ~include_typeshed_stubs =
-  Annotated.Class.AttributeCache.clear ();
+  AttributeResolution.AttributeCache.clear ();
   let descriptions =
     let errors =
       let configuration, source_paths, environment =

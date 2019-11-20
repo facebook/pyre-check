@@ -36,11 +36,7 @@ end
 let produce_global_annotation class_metadata_environment name ~track_dependencies =
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
   let resolution =
-    GlobalResolution.create
-      ?dependency
-      ~class_metadata_environment
-      ~global:(fun _ -> None)
-      (module Annotated.Class)
+    GlobalResolution.create ?dependency ~class_metadata_environment ~global:(fun _ -> None)
   in
   let produce_class_meta_annotation { Node.location; _ } =
     let primitive = Type.Primitive (Reference.show name) in
@@ -74,9 +70,9 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
               None
           in
           Node.create ~location signature
-          |> ResolvedCallable.apply_decorators ~resolution
+          |> GlobalResolution.apply_decorators ~resolution
           |> (fun overload -> [Define.Signature.is_overloaded_function signature, overload])
-          |> ResolvedCallable.create_callable ~resolution ~parent ~name:(Reference.show name)
+          |> GlobalResolution.create_callable ~resolution ~parent ~name:(Reference.show name)
         in
         List.map defines ~f:create_overload
         |> Type.Callable.from_overloads
@@ -181,7 +177,7 @@ let update_this_and_all_preceding_environments
     ~ast_environment_update_result
     modified_qualifiers
   =
-  GlobalResolution.AnnotationCache.clear ~scheduler ~configuration;
+  AttributeResolution.AnnotationCache.clear ~scheduler ~configuration;
   GlobalTable.update_this_and_all_preceding_environments
     ast_environment
     ~scheduler
@@ -203,7 +199,6 @@ module ReadOnly = struct
       ?dependency
       ~class_metadata_environment
       ~global:(get_global environment ?dependency)
-      (module AnnotatedClass)
 
 
   let resolution = resolution_implementation ?dependency:None

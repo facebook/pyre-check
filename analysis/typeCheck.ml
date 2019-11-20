@@ -1618,7 +1618,7 @@ module State (Context : Context) = struct
         parent
         |> GlobalResolution.class_definition global_resolution
         >>| Annotated.Class.create
-        >>| Annotated.Class.attribute
+        >>| GlobalResolution.c_attribute
               ~resolution:global_resolution
               ~name
               ~instantiated:parent
@@ -1652,8 +1652,7 @@ module State (Context : Context) = struct
                       | _ -> meta_parameter
                     in
                     GlobalResolution.class_definition global_resolution parent
-                    >>| Annotated.Class.create
-                    >>| Annotated.Class.constructor
+                    >>| GlobalResolution.constructor
                           ~instantiated:meta_parameter
                           ~resolution:global_resolution
                     >>= function
@@ -1668,9 +1667,15 @@ module State (Context : Context) = struct
         in
         Context.Builder.add_callee ~global_resolution ~target ~callables ~dynamic ~callee;
         let signature callable =
-          let signature = Annotated.Signature.select ~arguments ~resolution ~callable in
+          let signature =
+            GlobalResolution.signature_select
+              ~arguments
+              ~global_resolution:(Resolution.global_resolution resolution)
+              ~resolve:(Resolution.resolve resolution)
+              ~callable
+          in
           match signature with
-          | Annotated.Signature.NotFound _ -> (
+          | AttributeResolution.NotFound _ -> (
               match Node.value callee, callable, arguments with
               | ( Name (Name.Attribute { base; _ }),
                   { Type.Callable.kind = Type.Callable.Named name; _ },
@@ -1697,10 +1702,15 @@ module State (Context : Context) = struct
                   let arguments = [{ Call.Argument.value = base; name = None }] in
                   backup_name
                   >>= (fun name -> find_method ~parent:(Resolution.resolve resolution value) ~name)
-                  >>| (fun callable -> Annotated.Signature.select ~arguments ~resolution ~callable)
+                  >>| (fun callable ->
+                        GlobalResolution.signature_select
+                          ~arguments
+                          ~global_resolution:(Resolution.global_resolution resolution)
+                          ~resolve:(Resolution.resolve resolution)
+                          ~callable)
                   |> Option.value ~default:signature
               | _ -> signature )
-          | Annotated.Signature.Found
+          | AttributeResolution.Found
               ({ kind = Type.Callable.Named access; implementation; _ } as callable)
             when String.equal "__init__" (Reference.last access) ->
               GlobalResolution.class_definition global_resolution implementation.annotation
@@ -1714,14 +1724,14 @@ module State (Context : Context) = struct
                           |> List.map ~f:Annotated.Attribute.name
                         in
                         if not (List.is_empty abstract_methods) then
-                          Annotated.Signature.NotFound
+                          AttributeResolution.NotFound
                             {
                               callable;
                               reason =
                                 Some (AbstractClassInstantiation { class_name; abstract_methods });
                             }
                         else if ClassSummary.is_protocol summary then
-                          Annotated.Signature.NotFound
+                          AttributeResolution.NotFound
                             { callable; reason = Some (ProtocolInstantiation class_name) }
                         else
                           signature)
@@ -1732,16 +1742,16 @@ module State (Context : Context) = struct
       in
       let signature =
         let not_found = function
-          | Annotated.Signature.NotFound _ -> true
+          | AttributeResolution.NotFound _ -> true
           | _ -> false
         in
         match signatures >>| List.partition_tf ~f:not_found with
         (* Prioritize missing signatures for union type checking. *)
         | Some (not_found :: _, _) -> Some not_found
-        | Some ([], Annotated.Signature.Found callable :: found) ->
+        | Some ([], AttributeResolution.Found callable :: found) ->
             let callables =
               let extract = function
-                | Annotated.Signature.Found callable -> callable
+                | AttributeResolution.Found callable -> callable
                 | _ -> failwith "Not all signatures were found."
               in
               List.map found ~f:extract
@@ -1754,23 +1764,22 @@ module State (Context : Context) = struct
                      ~f:(GlobalResolution.join global_resolution)
               in
               match joined_callable with
-              | Type.Callable callable -> Annotated.Signature.Found callable
-              | _ -> Annotated.Signature.NotFound { callable; reason = None }
+              | Type.Callable callable -> AttributeResolution.Found callable
+              | _ -> AttributeResolution.NotFound { callable; reason = None }
             in
             Some signature
         | _ -> None
       in
       match signature with
-      | Some (Annotated.Signature.Found { implementation = { annotation; _ }; _ }) ->
+      | Some (AttributeResolution.Found { implementation = { annotation; _ }; _ }) ->
           { state; resolved = annotation; resolved_annotation = None; base = None }
       | Some
-          (Annotated.Signature.NotFound
+          (AttributeResolution.NotFound
             {
               callable = { implementation = { annotation; _ }; kind; implicit; _ } as callable;
               reason = Some reason;
             }) ->
           let state =
-            let open Annotated.Signature in
             let error =
               let callee =
                 match kind with
@@ -1799,7 +1808,7 @@ module State (Context : Context) = struct
                   in
                   Error.create ~location ~kind ~define:Context.define
               | Mismatch mismatch ->
-                  let { Annotated.Signature.actual; expected; name; position } =
+                  let { AttributeResolution.actual; expected; name; position } =
                     Node.value mismatch
                   in
                   let mismatch, name, position, location =
@@ -2251,7 +2260,7 @@ module State (Context : Context) = struct
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
         let resolve_in_call
             (state, joined_annotation)
-            { Annotated.Class.instantiated; class_definition; class_attributes }
+            { UnannotatedGlobalEnvironment.instantiated; class_definition; class_attributes }
           =
           let resolve_method
               ?(class_attributes = false)
@@ -2260,7 +2269,7 @@ module State (Context : Context) = struct
               instantiated
               name
             =
-            Annotated.Class.attribute
+            GlobalResolution.c_attribute
               ~transitive:true
               ~class_attributes
               class_definition
@@ -2400,7 +2409,7 @@ module State (Context : Context) = struct
         in
         let { state; resolved; _ } = forward_expression ~state ~expression:right in
         let state, resolved =
-          Annotated.Class.resolve_class ~resolution:global_resolution resolved
+          GlobalResolution.resolve_class global_resolution resolved
           >>| List.fold ~f:resolve_in_call ~init:(state, Type.Bottom)
           |> Option.value ~default:(state, Type.Bottom)
         in
@@ -2583,7 +2592,7 @@ module State (Context : Context) = struct
                 in
                 { state; resolved = Type.Top; resolved_annotation = None; base = None }
           else (* Attribute access. *)
-            match Annotated.Class.resolve_class ~resolution:global_resolution resolved_base with
+            match GlobalResolution.resolve_class global_resolution resolved_base with
             | None ->
                 let state =
                   Error.UndefinedAttribute
@@ -2599,10 +2608,14 @@ module State (Context : Context) = struct
             | Some (head :: tail) ->
                 let name = attribute in
                 let rec find_attribute
-                    { Annotated.Class.instantiated; class_attributes; class_definition }
+                    {
+                      UnannotatedGlobalEnvironment.instantiated;
+                      class_attributes;
+                      class_definition;
+                    }
                   =
                   let attribute =
-                    Annotated.Class.attribute
+                    GlobalResolution.c_attribute
                       class_definition
                       ~transitive:(not (is_private_attribute attribute))
                       ~class_attributes
@@ -2637,8 +2650,9 @@ module State (Context : Context) = struct
                     |> fun definitions ->
                     List.zip_exn
                       definitions
-                      (List.map (head :: tail) ~f:(fun { Annotated.Class.instantiated; _ } ->
-                           instantiated))
+                      (List.map
+                         (head :: tail)
+                         ~f:(fun { UnannotatedGlobalEnvironment.instantiated; _ } -> instantiated))
                   in
                   Context.Builder.add_property_callees
                     ~global_resolution
@@ -3121,7 +3135,7 @@ module State (Context : Context) = struct
                     in
                     let attribute =
                       parent_class
-                      >>| Annotated.Class.attribute
+                      >>| GlobalResolution.c_attribute
                             ~resolution:global_resolution
                             ~name:attribute
                             ~instantiated:parent
@@ -3391,7 +3405,7 @@ module State (Context : Context) = struct
                   match name with
                   | Name.Attribute { base; _ } ->
                       Resolution.resolve resolution base
-                      |> Annotated.Class.resolve_class ~resolution:global_resolution
+                      |> GlobalResolution.resolve_class global_resolution
                   | _ -> None
                 in
                 match name, parent_class with
@@ -3490,12 +3504,17 @@ module State (Context : Context) = struct
                     else
                       None
                 | ( Name.Attribute { attribute; _ },
-                    Some ({ Annotated.Class.instantiated; class_attributes; class_definition } :: _)
-                  ) ->
+                    Some
+                      ({
+                         UnannotatedGlobalEnvironment.instantiated;
+                         class_attributes;
+                         class_definition;
+                       }
+                      :: _) ) ->
                     (* Instance *)
                     let reference = Reference.create attribute in
                     let attribute =
-                      Annotated.Class.attribute
+                      GlobalResolution.c_attribute
                         ~resolution:global_resolution
                         ~name:attribute
                         ~instantiated
@@ -3783,7 +3802,7 @@ module State (Context : Context) = struct
                 >>= fun parent ->
                 GlobalResolution.class_definition global_resolution parent
                 >>| Annotated.Class.create
-                >>| Annotated.Class.attribute
+                >>| GlobalResolution.c_attribute
                       ~resolution:global_resolution
                       ~name:attribute
                       ~instantiated:parent
@@ -4301,9 +4320,9 @@ module State (Context : Context) = struct
     in
     let class_initialization_errors errors =
       let check_protocol_properties definition errors =
-        if AnnotatedClass.is_protocol definition then
+        if Node.value definition |> ClassSummary.is_protocol then
           let private_protocol_property_errors =
-            Annotated.Class.attributes
+            GlobalResolution.attributes
               ~transitive:false
               ~include_generated_attributes:true
               ~resolution:global_resolution
@@ -4327,7 +4346,7 @@ module State (Context : Context) = struct
          exist, this function is triggered in the toplevel. *)
       let check_attribute_initialization ~is_dynamically_initialized definition errors =
         if
-          (not (AnnotatedClass.is_protocol definition))
+          (not (ClassSummary.is_protocol (Node.value definition)))
           && not (AnnotatedClass.has_abstract_base definition)
         then
           let unimplemented_errors =
@@ -4335,7 +4354,7 @@ module State (Context : Context) = struct
               let add_uninitialized definition attribute_map =
                 let implicit_attributes = AnnotatedClass.implicit_attributes definition in
                 let attributes =
-                  Annotated.Class.attributes
+                  GlobalResolution.attributes
                     ~include_generated_attributes:true
                     ~resolution:global_resolution
                     definition
@@ -4360,7 +4379,7 @@ module State (Context : Context) = struct
               in
               let remove_initialized definition attribute_map =
                 let attributes =
-                  Annotated.Class.attributes
+                  GlobalResolution.attributes
                     ~transitive:true
                     ~include_generated_attributes:true
                     ~resolution:global_resolution
@@ -4384,9 +4403,9 @@ module State (Context : Context) = struct
                 let abstract_superclasses, concrete_superclasses =
                   List.partition_tf
                     ~f:(fun superclass ->
-                      AnnotatedClass.is_protocol superclass
+                      ClassSummary.is_protocol (Node.value superclass)
                       || AnnotatedClass.has_abstract_base superclass)
-                    (AnnotatedClass.superclasses definition ~resolution:global_resolution)
+                    (GlobalResolution.superclasses definition ~resolution:global_resolution)
                 in
                 List.cons definition abstract_superclasses
                 |> List.fold_right ~init:String.Map.empty ~f:add_uninitialized
@@ -4404,7 +4423,7 @@ module State (Context : Context) = struct
                      None
                    else
                      let error_kind =
-                       if AnnotatedClass.is_protocol original_definition then
+                       if ClassSummary.is_protocol (Node.value original_definition) then
                          Error.Protocol (AnnotatedClass.name original_definition)
                        else if AnnotatedClass.has_abstract_base original_definition then
                          Error.Abstract (AnnotatedClass.name original_definition)
@@ -4496,7 +4515,7 @@ module State (Context : Context) = struct
         let check_overrides definition errors =
           let override_errors =
             let open Annotated in
-            Annotated.Class.attributes
+            GlobalResolution.attributes
               ~include_generated_attributes:false
               ~resolution:global_resolution
               definition

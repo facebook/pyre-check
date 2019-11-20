@@ -46,6 +46,28 @@ module ReadOnly : sig
   val all_explicit_modules : t -> Reference.t list
 
   val get_module_metadata : t -> ?dependency:dependency -> Reference.t -> Module.t option
+
+  val resolve_exports : t -> ?dependency:dependency -> Reference.t -> Reference.t
+
+  type decorator = {
+    name: string;
+    arguments: Expression.Call.Argument.t list option;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  val matches_decorator
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    Expression.expression Node.t ->
+    target:string ->
+    decorator option
+
+  val get_decorator
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    ClassSummary.t Node.t ->
+    decorator:string ->
+    decorator list
 end
 
 (* Store the environment to saved-state *)

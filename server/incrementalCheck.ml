@@ -25,7 +25,7 @@ let recheck
     paths
   =
   let timer = Timer.start () in
-  Annotated.Class.AttributeCache.clear ();
+  AttributeResolution.AttributeCache.clear ();
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
   let scheduler =
     Scheduler.with_parallel scheduler ~is_parallel:(List.length module_updates > 10)
@@ -80,7 +80,7 @@ let recheck
         ~ast_environment_update_result
         invalidated_environment_qualifiers
     in
-    Annotated.Class.AttributeCache.clear ();
+    AttributeResolution.AttributeCache.clear ();
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     match incremental_style with
     | FineGrained ->

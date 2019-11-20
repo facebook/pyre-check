@@ -55,7 +55,7 @@ let decorate
   | [] -> define_node
   | _ ->
       let { Type.Callable.parameters; annotation; _ } =
-        Node.create signature ~location |> ResolvedCallable.apply_decorators ~resolution
+        Node.create signature ~location |> GlobalResolution.apply_decorators ~resolution
       in
       let parameters =
         match parameters with
@@ -122,7 +122,7 @@ let is_constructor definition ~resolution =
   match parent_definition definition ~resolution with
   | Some parent_class ->
       let in_test =
-        let superclasses = Class.superclasses ~resolution parent_class in
+        let superclasses = GlobalResolution.superclasses ~resolution parent_class in
         List.exists ~f:Class.is_unit_test (parent_class :: superclasses)
       in
       Define.is_constructor ~in_test (Node.value definition)

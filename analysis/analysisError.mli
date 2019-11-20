@@ -60,7 +60,7 @@ and invalid_argument =
     }
   | ListVariadicVariable of {
       variable: Type.OrderedTypes.t;
-      mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable;
+      mismatch: AttributeResolution.mismatch_with_list_variadic_type_variable;
     }
 
 and precondition_mismatch =
@@ -190,7 +190,7 @@ type kind =
       name: Identifier.t;
     }
   | InvalidType of invalid_type_kind
-  | InvalidTypeParameters of GlobalResolution.type_parameters_mismatch
+  | InvalidTypeParameters of AttributeResolution.type_parameters_mismatch
   | InvalidTypeVariable of {
       annotation: Type.Variable.t;
       origin: type_variable_origin;
@@ -207,7 +207,7 @@ type kind =
   | InvalidAssignment of invalid_assignment_kind
   | MissingArgument of {
       callee: Reference.t option;
-      parameter: AnnotatedSignature.missing_argument;
+      parameter: AttributeResolution.missing_argument;
     }
   | MissingAttributeAnnotation of {
       parent: Type.t;

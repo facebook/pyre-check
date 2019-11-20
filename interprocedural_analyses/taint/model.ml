@@ -1011,7 +1011,7 @@ let get_global_model ~resolution ~expression =
             GlobalResolution.class_definition global_resolution annotation
             >>| Annotated.Class.create
             >>| fun definition ->
-            Annotated.Class.attribute
+            GlobalResolution.c_attribute
               ~transitive:true
               definition
               ~resolution:global_resolution

@@ -427,11 +427,11 @@ module Callgraph = struct
         else
           match resolved_base with
           | Type.Optional base -> (
-              Annotated.Class.resolve_class ~resolution:global_resolution base
+              GlobalResolution.resolve_class global_resolution base
               |> function
-              | Some [{ Annotated.Class.instantiated; class_attributes; class_definition }] ->
+              | Some [{ instantiated; class_attributes; class_definition }] ->
                   let attribute =
-                    Annotated.Class.attribute
+                    GlobalResolution.c_attribute
                       class_definition
                       ~transitive:true
                       ~class_attributes

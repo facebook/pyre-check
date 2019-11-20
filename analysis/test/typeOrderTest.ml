@@ -2510,7 +2510,7 @@ let test_solve_less_or_equal context =
       let constructor instantiated ~protocol_assumptions:_ =
         GlobalResolution.class_definition resolution instantiated
         >>| Class.create
-        >>| Class.constructor ~instantiated ~resolution
+        >>| GlobalResolution.constructor ~instantiated ~resolution
       in
       let handler =
         AnnotatedGlobalEnvironment.ReadOnly.resolution environment

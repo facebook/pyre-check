@@ -69,7 +69,7 @@ and invalid_argument =
     }
   | ListVariadicVariable of {
       variable: Type.OrderedTypes.t;
-      mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable;
+      mismatch: AttributeResolution.mismatch_with_list_variadic_type_variable;
     }
 
 and precondition_mismatch =
@@ -199,7 +199,7 @@ type kind =
       name: Identifier.t;
     }
   | InvalidType of invalid_type_kind
-  | InvalidTypeParameters of GlobalResolution.type_parameters_mismatch
+  | InvalidTypeParameters of AttributeResolution.type_parameters_mismatch
   | InvalidTypeVariable of {
       annotation: Type.Variable.t;
       origin: type_variable_origin;
@@ -216,7 +216,7 @@ type kind =
   | InvalidAssignment of invalid_assignment_kind
   | MissingArgument of {
       callee: Reference.t option;
-      parameter: AnnotatedSignature.missing_argument;
+      parameter: AttributeResolution.missing_argument;
     }
   | MissingAttributeAnnotation of {
       parent: Type.t;
@@ -900,7 +900,7 @@ let messages ~concise ~signature location kind =
               variable;
           ] )
   | InvalidTypeParameters
-      { name; kind = GlobalResolution.IncorrectNumberOfParameters { expected; actual } } ->
+      { name; kind = AttributeResolution.IncorrectNumberOfParameters { expected; actual } } ->
       let additional =
         let replacement =
           match name with
@@ -931,8 +931,8 @@ let messages ~concise ~signature location kind =
         ]
       else
         [Format.asprintf "Non-generic type `%s` cannot take parameters." name]
-  | InvalidTypeParameters { name; kind = GlobalResolution.ViolateConstraints { expected; actual } }
-    ->
+  | InvalidTypeParameters
+      { name; kind = AttributeResolution.ViolateConstraints { expected; actual } } ->
       [
         Format.asprintf
           "Type parameter `%a` violates constraints on `%a` in generic type `%s`."
@@ -942,8 +942,8 @@ let messages ~concise ~signature location kind =
           (Type.Variable expected)
           name;
       ]
-  | InvalidTypeParameters { name; kind = GlobalResolution.UnexpectedVariadic { expected; actual } }
-    ->
+  | InvalidTypeParameters
+      { name; kind = AttributeResolution.UnexpectedVariadic { expected; actual } } ->
       let parameter_pluralization =
         match expected with
         | [_] -> "parameter"
@@ -1138,9 +1138,9 @@ let messages ~concise ~signature location kind =
               class_name
               (if concise then "." else method_message);
           ] )
-  | MissingArgument { parameter = AnnotatedSignature.Named name; _ } when concise ->
+  | MissingArgument { parameter = AttributeResolution.Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
-  | MissingArgument { parameter = AnnotatedSignature.Anonymous index; _ } when concise ->
+  | MissingArgument { parameter = AttributeResolution.Anonymous index; _ } when concise ->
       [Format.asprintf "Argument `%d` expected." index]
   | MissingArgument { callee; parameter } ->
       let callee =
@@ -1467,9 +1467,7 @@ let messages ~concise ~signature location kind =
       ]
   | NotCallable annotation -> [Format.asprintf "`%a` is not a function." pp_type annotation]
   | PrivateProtocolProperty { name; parent } ->
-      [
-        Format.asprintf "Protocol `%a` has private property `%a`." pp_type parent pp_identifier name;
-      ]
+      [Format.asprintf "Protocol `%a` has private property `%a`." pp_type parent pp_identifier name]
   | ProhibitedAny { is_type_alias; missing_annotation = { given_annotation; _ } } when concise ->
       let annotation_kind = if is_type_alias then "Aliased" else "Given" in
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
@@ -2058,7 +2056,7 @@ let less_or_equal ~resolution left right =
   | InvalidType (FinalNested left), InvalidType (FinalNested right) ->
       GlobalResolution.less_or_equal resolution ~left ~right
   | InvalidTypeParameters left, InvalidTypeParameters right ->
-      GlobalResolution.equal_type_parameters_mismatch left right
+      AttributeResolution.equal_type_parameters_mismatch left right
   | ( InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ) ->
       Type.Variable.equal left right && equal_type_variable_origin left_origin right_origin
@@ -2273,7 +2271,7 @@ let join ~resolution left right =
             attempted_action = left_attempted_action;
           }
     | InvalidTypeParameters left, InvalidTypeParameters right
-      when GlobalResolution.equal_type_parameters_mismatch left right ->
+      when AttributeResolution.equal_type_parameters_mismatch left right ->
         InvalidTypeParameters left
     | ( MissingArgument { callee = left_callee; parameter = Named left_name },
         MissingArgument { callee = right_callee; parameter = Named right_name } )
@@ -2781,7 +2779,7 @@ let suppress ~mode ~ignore_codes error =
         { override = StrengthenedPrecondition (Found { expected = Type.Variable _; _ }); _ } ->
         true
     | InvalidTypeParameters
-        { kind = GlobalResolution.IncorrectNumberOfParameters { actual = 0; _ }; _ } ->
+        { kind = AttributeResolution.IncorrectNumberOfParameters { actual = 0; _ }; _ } ->
         true
     | IncompleteType _ ->
         (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
@@ -2890,24 +2888,24 @@ let dequalify
         Unmatchable { name = dequalify_reference name; matched_location; unmatched_location }
     | Parameters { name; location } -> Parameters { name = dequalify_reference name; location }
   in
-  let dequalify_invalid_type_parameters { GlobalResolution.name; kind } =
+  let dequalify_invalid_type_parameters { AttributeResolution.name; kind } =
     let dequalify_generic_type_problems = function
-      | GlobalResolution.ViolateConstraints { actual; expected } ->
-          GlobalResolution.ViolateConstraints
+      | AttributeResolution.ViolateConstraints { actual; expected } ->
+          AttributeResolution.ViolateConstraints
             {
               actual = dequalify actual;
               expected = Type.Variable.Unary.dequalify ~dequalify_map expected;
             }
-      | GlobalResolution.UnexpectedVariadic { actual; expected } ->
-          GlobalResolution.UnexpectedVariadic
+      | AttributeResolution.UnexpectedVariadic { actual; expected } ->
+          AttributeResolution.UnexpectedVariadic
             {
               actual;
               expected = List.map expected ~f:(Type.Variable.Unary.dequalify ~dequalify_map);
             }
-      | GlobalResolution.IncorrectNumberOfParameters _ as problem -> problem
+      | AttributeResolution.IncorrectNumberOfParameters _ as problem -> problem
     in
     {
-      GlobalResolution.name = dequalify_identifier name;
+      AttributeResolution.name = dequalify_identifier name;
       kind = dequalify_generic_type_problems kind;
     }
   in
@@ -2935,8 +2933,8 @@ let dequalify
     | InvalidArgument (ListVariadicVariable { variable; mismatch }) ->
         let mismatch =
           match mismatch with
-          | AnnotatedSignature.NotDefiniteTuple { expression; annotation } ->
-              AnnotatedSignature.NotDefiniteTuple { expression; annotation = dequalify annotation }
+          | AttributeResolution.NotDefiniteTuple { expression; annotation } ->
+              AttributeResolution.NotDefiniteTuple { expression; annotation = dequalify annotation }
           | _ ->
               (* TODO(T45656387): implement dequalify ordered_types *)
               mismatch

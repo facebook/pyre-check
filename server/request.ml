@@ -456,7 +456,7 @@ let process_type_query_request
           let generics =
             GlobalResolution.class_definition global_resolution annotation
             >>| Annotated.Class.create
-            >>| Annotated.Class.generics ~resolution:global_resolution
+            >>| GlobalResolution.generics ~resolution:global_resolution
           in
           match generics, annotation with
           | Some (Type.OrderedTypes.Concrete generics), Type.Primitive primitive
@@ -521,7 +521,7 @@ let process_type_query_request
         |> GlobalResolution.class_definition global_resolution
         >>| Annotated.Class.create
         >>| (fun annotated_class ->
-              Annotated.Class.attributes ~resolution:global_resolution annotated_class)
+              GlobalResolution.attributes ~resolution:global_resolution annotated_class)
         >>| List.map ~f:to_attribute
         >>| (fun attributes -> TypeQuery.Response (TypeQuery.FoundAttributes attributes))
         |> Option.value
@@ -912,7 +912,9 @@ let process_type_query_request
         in
         GlobalResolution.class_definition global_resolution parsed_annotation
         >>| Annotated.Class.create
-        >>| Annotated.Class.attributes ~instantiated:parsed_annotation ~resolution:global_resolution
+        >>| GlobalResolution.attributes
+              ~instantiated:parsed_annotation
+              ~resolution:global_resolution
         >>| List.filter_map ~f:to_method
         >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
         |> Option.value
@@ -979,7 +981,7 @@ let process_type_query_request
         parse_and_validate annotation
         |> GlobalResolution.class_definition global_resolution
         >>| Annotated.Class.create
-        >>| Annotated.Class.superclasses ~resolution:global_resolution
+        >>| GlobalResolution.superclasses ~resolution:global_resolution
         >>| List.map ~f:Annotated.Class.annotation
         >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
         |> Option.value

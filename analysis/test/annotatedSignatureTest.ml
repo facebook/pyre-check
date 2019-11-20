@@ -11,8 +11,6 @@ open Expression
 open Pyre
 open Test
 module Resolution = Analysis.Resolution
-module Signature = Annotated.Signature
-open Signature
 
 let test_select context =
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
@@ -113,7 +111,12 @@ let test_select context =
                (Resolution.global_resolution resolution)
           |> enforce_callable
         in
-        callable, Signature.select ~arguments ~resolution ~callable
+        ( callable,
+          GlobalResolution.signature_select
+            ~arguments
+            ~global_resolution
+            ~callable
+            ~resolve:(Resolution.resolve resolution) )
       in
       callable, signature
     in
@@ -127,6 +130,7 @@ let test_select context =
       |> fun callable -> Option.value_exn callable
     in
     let expected =
+      let open AttributeResolution in
       match expected with
       | `Found expected -> Found (parse_callable expected)
       | `NotFoundNoReason -> NotFound { callable; reason = None }
@@ -186,7 +190,11 @@ let test_select context =
           NotFound { callable = parse_callable closest; reason }
       | `NotFound (closest, reason) -> NotFound { callable = parse_callable closest; reason }
     in
-    assert_equal ~printer:Signature.show ~cmp:Signature.equal expected signature
+    assert_equal
+      ~printer:AttributeResolution.show_sig_t
+      ~cmp:AttributeResolution.equal_sig_t
+      expected
+      signature
   in
   (* Undefined callables always match. *)
   assert_select ~allow_undefined:true "[..., int]" "()" (`Found "[..., int]");
@@ -632,7 +640,7 @@ let test_select context =
   assert_select
     "[Tparams, int]"
     "(a=1)"
-    (`NotFound ("[Tparams, int]", Some CallingParameterVariadicTypeVariable));
+    (`NotFound ("[Tparams, int]", Some AttributeResolution.CallingParameterVariadicTypeVariable));
   assert_select
     "[[Ts], int]"
     "(1, 'string', 1, 'string')"
@@ -648,7 +656,7 @@ let test_select context =
     (`NotFound
       ( "[[Variable(Ts)], int]",
         Some
-          (MismatchWithListVariadicTypeVariable
+          (AttributeResolution.MismatchWithListVariadicTypeVariable
              ( Concatenation
                  (Type.OrderedTypes.Concatenation.create
                     (Type.OrderedTypes.Concatenation.Middle.create_bare
@@ -664,7 +672,7 @@ let test_select context =
     (`NotFound
       ( "[[typing.Tuple[$literal_one, $literal_string], $literal_one, $literal_string], int]",
         Some
-          (MismatchWithListVariadicTypeVariable
+          (AttributeResolution.MismatchWithListVariadicTypeVariable
              ( Concatenation
                  (Type.OrderedTypes.Concatenation.create
                     (Type.OrderedTypes.Concatenation.Middle.create_bare

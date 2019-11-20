@@ -181,6 +181,27 @@ module ReadOnly = struct
       end : ClassHierarchy.Handler )
     in
     ClassHierarchy.check_integrity class_hierarchy ~indices
+
+
+  let class_hierarchy ?dependency read_only =
+    let edges = get_edges ?dependency read_only in
+    let unannotated_global_environment =
+      AliasEnvironment.ReadOnly.unannotated_global_environment (alias_environment read_only)
+    in
+
+    ( module struct
+      let edges = edges
+
+      let contains key =
+        UnannotatedGlobalEnvironment.ReadOnly.class_exists
+          unannotated_global_environment
+          ?dependency
+          key
+    end : ClassHierarchy.Handler )
+
+
+  let variables ?(default = None) read_only ?dependency class_name =
+    ClassHierarchy.variables ~default (class_hierarchy ?dependency read_only) class_name
 end
 
 let update_this_and_all_preceding_environments

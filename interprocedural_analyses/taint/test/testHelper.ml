@@ -58,7 +58,7 @@ let environment
       ~ast_environment_update_result
       ()
   in
-  Annotated.Class.AttributeCache.clear ();
+  AttributeResolution.AttributeCache.clear ();
   ast_environment
 
 

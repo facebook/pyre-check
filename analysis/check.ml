@@ -71,7 +71,7 @@ let run_check
   Log.info "Running check `%s`..." Check.name;
   let timer = Timer.start () in
   let map _ qualifiers =
-    Annotated.Class.AttributeCache.clear ();
+    AttributeResolution.AttributeCache.clear ();
     let analyze_source
         number_files
         ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
@@ -123,7 +123,7 @@ let analyze_sources
     sources
   =
   let ast_environment = TypeEnvironment.ast_environment environment in
-  Annotated.Class.AttributeCache.clear ();
+  AttributeResolution.AttributeCache.clear ();
   let checked_sources =
     if filter_external_sources then
       let is_not_external qualifier =

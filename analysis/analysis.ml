@@ -13,6 +13,7 @@ module AbstractProductDomain = AbstractProductDomain
 module AbstractTreeDomain = AbstractTreeDomain
 module AliasEnvironment = AliasEnvironment
 module AnnotatedGlobalEnvironment = AnnotatedGlobalEnvironment
+module AttributeResolution = AttributeResolution
 module AstEnvironment = AstEnvironment
 module AwaitableCheck = AwaitableCheck
 module Annotated = Annotated
