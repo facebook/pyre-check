@@ -567,11 +567,20 @@ module State (Context : Context) = struct
         in
         let type_variables_of_define signature =
           let parser = GlobalResolution.annotation_parser global_resolution in
-          Node.create signature ~location
-          |> AnnotatedCallable.create_overload ~parser
-          |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
-          |> Type.Variable.all_free_variables
-          |> List.dedup_and_sort ~compare:Type.Variable.compare
+          let define_variables =
+            Node.create signature ~location
+            |> AnnotatedCallable.create_overload ~parser
+            |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
+            |> Type.Variable.all_free_variables
+            |> List.dedup_and_sort ~compare:Type.Variable.compare
+          in
+          let parent_variables =
+            let { Define.Signature.parent; _ } = signature in
+            (* PEP484 specifies that scope of the type variables of the outer class doesn't cover
+               the inner one. We are able to inspect only 1 level of nesting class as a result. *)
+            Option.value_map parent ~f:type_variables_of_class ~default:[]
+          in
+          List.append parent_variables define_variables
         in
         match Define.is_class_toplevel define with
         | true ->
@@ -601,12 +610,7 @@ module State (Context : Context) = struct
               in
               walk_nesting_define [] nesting_define
             in
-            let parent_variables =
-              (* PEP484 specifies that scope of the type variables of the outer class doesn't cover
-                 the inner one. We are able to inspect only 1 level of nesting class as a result. *)
-              Option.value_map parent ~f:type_variables_of_class ~default:[]
-            in
-            List.concat_no_order [define_variables; nesting_define_variables; parent_variables]
+            List.append define_variables nesting_define_variables
       in
       List.fold variables ~init:resolution ~f:(fun resolution variable ->
           Resolution.add_type_variable resolution ~variable)
