@@ -13,7 +13,7 @@ open Test
 let value option = Option.value_exn option
 
 let class_hierarchy environment =
-  AnnotatedGlobalEnvironment.ReadOnly.resolution environment |> GlobalResolution.class_hierarchy
+  GlobalResolution.create environment |> GlobalResolution.class_hierarchy
 
 
 let find_unsafe getter value = getter value |> fun optional -> Option.value_exn optional
@@ -58,7 +58,7 @@ let populate ?include_typeshed_stubs ?include_helpers sources =
 
 let order_and_environment ~context source =
   let environment = populate ~context source in
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let global_resolution = GlobalResolution.create environment in
   ( {
       TypeOrder.handler = GlobalResolution.class_hierarchy global_resolution;
       constructor = (fun _ ~protocol_assumptions:_ -> None);
@@ -71,13 +71,12 @@ let order_and_environment ~context source =
 
 
 let class_definition environment =
-  AnnotatedGlobalEnvironment.ReadOnly.resolution environment |> GlobalResolution.class_definition
+  GlobalResolution.create environment |> GlobalResolution.class_definition
 
 
 let parse_annotation environment =
   (* Allow untracked because we're not calling all of populate *)
-  AnnotatedGlobalEnvironment.ReadOnly.resolution environment
-  |> GlobalResolution.parse_annotation ~allow_untracked:true
+  GlobalResolution.create environment |> GlobalResolution.parse_annotation ~allow_untracked:true
 
 
 let create_location path start_line start_column end_line end_column =
@@ -383,7 +382,7 @@ let test_register_aliases context =
 
   let assert_resolved sources aliases =
     let environment = register_all sources in
-    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let global_resolution = GlobalResolution.create environment in
     let assert_alias (alias, target) =
       match GlobalResolution.aliases global_resolution alias with
       | Some alias -> assert_equal ~printer:Type.show_alias target alias
@@ -415,7 +414,7 @@ let test_register_aliases context =
 let test_register_implicit_submodules context =
   let environment = create_environment ~context ~additional_sources:["a/b/c.py", ""] () in
   let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let global_resolution = GlobalResolution.create environment in
   assert_bool
     "Can get the source of a/b/c.py"
     (AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "a.b.c") |> Option.is_some);
@@ -432,7 +431,7 @@ let test_register_implicit_submodules context =
 
 let test_register_globals context =
   let environment = create_environment ~context () in
-  let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let resolution = GlobalResolution.create environment in
   let assert_global reference expected =
     let actual =
       !&reference |> GlobalResolution.global resolution >>| Node.value >>| Annotation.annotation
@@ -577,7 +576,7 @@ let test_populate context =
     (Type.parametric "collections.defaultdict" (Concrete [Type.Any; Type.Any]));
 
   (* Check custom class definitions. *)
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let global_resolution = GlobalResolution.create environment in
   assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "typing.Optional"));
 
   (* Check type aliases. *)
@@ -655,11 +654,11 @@ let test_populate context =
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =
-    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let global_resolution = GlobalResolution.create environment in
     assert_equal
       ~cmp:(Option.equal (Node.equal Annotation.equal))
       ~printer:(function
-        | Some global -> GlobalResolution.show_global global
+        | Some global -> AnnotatedGlobalEnvironment.show_global global
         | None -> "None")
       (expected >>| Node.create_with_default_location)
       (GlobalResolution.global global_resolution !&actual)
@@ -804,7 +803,7 @@ let test_populate context =
   let environment = populate ~context ["test.py", {|
       def foo(x: int) -> str: ...
     |}] in
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let global_resolution = GlobalResolution.create environment in
   assert_equal
     ~cmp:(Option.equal (Type.Callable.equal_overload Type.equal))
     ~printer:(function
@@ -1081,7 +1080,7 @@ let test_class_definition context =
 
 let test_modules context =
   let environment = populate ~context ["wingus.py", ""; "dingus.py", ""; "os/path.py", ""] in
-  let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let global_resolution = GlobalResolution.create environment in
   assert_is_some (GlobalResolution.module_definition global_resolution !&"wingus");
   assert_is_some (GlobalResolution.module_definition global_resolution !&"dingus");
   assert_is_none (GlobalResolution.module_definition global_resolution !&"zap");
@@ -1306,16 +1305,12 @@ let test_update_and_compute_dependencies context =
   let dependency_A = SharedMemoryKeys.TypeCheckSource (Reference.create "A") in
   let dependency_B = SharedMemoryKeys.TypeCheckSource (Reference.create "B") in
   (* Establish dependencies *)
-  let untracked_global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let untracked_global_resolution = GlobalResolution.create environment in
   let dependency_tracked_global_resolution_A =
-    AnnotatedGlobalEnvironment.ReadOnly.dependency_tracked_resolution
-      environment
-      ~dependency:dependency_A
+    GlobalResolution.create ~dependency:dependency_A environment
   in
   let dependency_tracked_global_resolution_B =
-    AnnotatedGlobalEnvironment.ReadOnly.dependency_tracked_resolution
-      environment
-      ~dependency:dependency_B
+    GlobalResolution.create ~dependency:dependency_B environment
   in
   let global resolution name = GlobalResolution.global resolution (Reference.create name) in
   (* A read Foo *)
@@ -1366,11 +1361,11 @@ let test_update_and_compute_dependencies context =
       in
       AnnotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result
     in
+    List.iter expected_state_after_update ~f:assert_state;
     assert_equal
       ~printer:(List.to_string ~f:SharedMemoryKeys.show_dependency)
       (SharedMemoryKeys.DependencyKey.KeySet.elements dependents)
-      expected_dependencies;
-    List.iter expected_state_after_update ~f:assert_state
+      expected_dependencies
   in
   (* Removes source without replacing it, triggers dependency *)
   assert_update

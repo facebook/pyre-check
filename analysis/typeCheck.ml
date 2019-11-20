@@ -5083,10 +5083,8 @@ let check_typecheck_unit
       match configuration with
       | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
           (* TODO (T53810748): Refine the dependency to define's name *)
-          AnnotatedGlobalEnvironment.ReadOnly.dependency_tracked_resolution
-            environment
-            ~dependency:(TypeCheckSource qualifier)
-      | _ -> AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+          GlobalResolution.create environment ~dependency:(TypeCheckSource qualifier)
+      | _ -> GlobalResolution.create environment
     in
     resolution global_resolution ()
   in

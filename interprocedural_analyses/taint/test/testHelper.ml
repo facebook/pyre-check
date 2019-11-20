@@ -361,7 +361,7 @@ let run_with_taint_models tests ~name =
     let _, _, environment =
       Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_environment
     in
-    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let global_resolution = GlobalResolution.create environment in
     Model.parse
       ~resolution:(TypeCheck.resolution global_resolution ())
       ~source:model_source

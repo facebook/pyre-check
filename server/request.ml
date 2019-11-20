@@ -807,7 +807,7 @@ let process_type_query_request
         TypeQuery.Response (TypeQuery.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | TypeQuery.DumpClassHierarchy ->
         let global_environment = TypeEnvironment.global_environment environment in
-        let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution global_environment in
+        let resolution = GlobalResolution.create global_environment in
         let class_hierarchy_json =
           let indices =
             Analysis.UnannotatedGlobalEnvironment.ReadOnly.all_indices

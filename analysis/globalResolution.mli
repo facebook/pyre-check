@@ -6,15 +6,9 @@
 open Ast
 open Statement
 
-type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
-
 type t
 
-val create
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.ReadOnly.t ->
-  global:(Reference.t -> global option) ->
-  t
+val create : ?dependency:SharedMemoryKeys.dependency -> AnnotatedGlobalEnvironment.ReadOnly.t -> t
 
 val resolve_literal : t -> Expression.t -> Type.t
 
@@ -134,7 +128,7 @@ val parse_as_parameter_specification_instance_annotation
   keywords_parameter_annotation:Expression.t ->
   Type.Variable.Variadic.Parameters.t option
 
-val global : t -> Reference.t -> global option
+val global : t -> Reference.t -> AnnotatedGlobalEnvironment.global option
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 

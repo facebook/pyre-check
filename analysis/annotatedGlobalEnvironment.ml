@@ -9,6 +9,8 @@ open Pyre
 open Statement
 module PreviousEnvironment = ClassMetadataEnvironment
 
+type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
+
 let class_hierarchy_environment class_metadata_environment =
   ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
 
@@ -22,7 +24,7 @@ let unannotated_global_environment environment =
 
 
 module GlobalValue = struct
-  type t = GlobalResolution.global option
+  type t = global option
 
   let prefix = Prefix.make ()
 
@@ -30,14 +32,11 @@ module GlobalValue = struct
 
   let unmarshall value = Marshal.from_string value 0
 
-  let compare = Option.compare GlobalResolution.compare_global
+  let compare = Option.compare compare_global
 end
 
 let produce_global_annotation class_metadata_environment name ~track_dependencies =
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
-  let resolution =
-    GlobalResolution.create ?dependency ~class_metadata_environment ~global:(fun _ -> None)
-  in
   let produce_class_meta_annotation { Node.location; _ } =
     let primitive = Type.Primitive (Reference.show name) in
     Annotation.create_immutable ~global:true (Type.meta primitive) |> Node.create ~location
@@ -70,9 +69,13 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
               None
           in
           Node.create ~location signature
-          |> GlobalResolution.apply_decorators ~resolution
+          |> AttributeResolution.apply_decorators ?dependency ~class_metadata_environment
           |> (fun overload -> [Define.Signature.is_overloaded_function signature, overload])
-          |> GlobalResolution.create_callable ~resolution ~parent ~name:(Reference.show name)
+          |> AttributeResolution.create_callable
+               ?dependency
+               ~class_metadata_environment
+               ~parent
+               ~name:(Reference.show name)
         in
         List.map defines ~f:create_overload
         |> Type.Callable.from_overloads
@@ -82,13 +85,14 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
     | SimpleAssign { explicit_annotation; value; target_location } ->
         let explicit_annotation =
           explicit_annotation
-          >>| GlobalResolution.parse_annotation resolution
+          >>| AttributeResolution.parse_annotation ?dependency ~class_metadata_environment
           >>= fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation
         in
         let annotation =
           match explicit_annotation with
           | Some explicit -> explicit
-          | None -> GlobalResolution.resolve_literal resolution value
+          | None ->
+              AttributeResolution.resolve_literal ?dependency ~class_metadata_environment value
         in
         produce_assignment_global
           ~target_location
@@ -97,7 +101,9 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
         |> Option.some
     | TupleAssign { value; target_location; index; total_length } ->
         let extracted =
-          match GlobalResolution.resolve_literal resolution value with
+          match
+            AttributeResolution.resolve_literal ?dependency ~class_metadata_environment value
+          with
           | Type.Tuple (Type.Bounded (Concrete parameters))
             when List.length parameters = total_length ->
               List.nth parameters index
@@ -192,20 +198,6 @@ module ReadOnly = struct
   let get_global = get
 
   let class_metadata_environment = upstream_environment
-
-  let resolution_implementation ?dependency environment =
-    let class_metadata_environment = class_metadata_environment environment in
-    GlobalResolution.create
-      ?dependency
-      ~class_metadata_environment
-      ~global:(get_global environment ?dependency)
-
-
-  let resolution = resolution_implementation ?dependency:None
-
-  let dependency_tracked_resolution environment ~dependency =
-    resolution_implementation ~dependency environment
-
 
   let ast_environment environment =
     class_metadata_environment environment

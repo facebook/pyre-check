@@ -1541,13 +1541,13 @@ module ScratchProject = struct
 
   let build_resolution project =
     let _, _, environment = build_global_environment project in
-    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let global_resolution = GlobalResolution.create environment in
     TypeCheck.resolution global_resolution ()
 
 
   let build_global_resolution project =
     let _, _, environment = build_global_environment project in
-    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+    GlobalResolution.create environment
 end
 
 type test_update_environment_with_t = {
@@ -1639,7 +1639,7 @@ let assert_equivalent_attributes ~context source expected =
     let _, _, environment =
       ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
     in
-    let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let global_resolution = GlobalResolution.create environment in
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in

@@ -16,9 +16,7 @@ type t = {
 
 let global_environment { global_environment; _ } = global_environment
 
-let global_resolution { global_environment; _ } =
-  AnnotatedGlobalEnvironment.ReadOnly.resolution global_environment
-
+let global_resolution { global_environment; _ } = GlobalResolution.create global_environment
 
 let ast_environment { global_environment; _ } =
   AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
@@ -59,9 +57,7 @@ module ReadOnly = struct
 
   let global_environment { global_environment; _ } = global_environment
 
-  let global_resolution { global_environment; _ } =
-    AnnotatedGlobalEnvironment.ReadOnly.resolution global_environment
-
+  let global_resolution { global_environment; _ } = GlobalResolution.create global_environment
 
   let ast_environment { global_environment; _ } =
     AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment

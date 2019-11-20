@@ -31,9 +31,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
   let models =
     let source = Test.trim_extra_indentation model_source in
     let resolution =
-      let global_resolution =
-        Analysis.AnnotatedGlobalEnvironment.ReadOnly.resolution global_environment
-      in
+      let global_resolution = Analysis.GlobalResolution.create global_environment in
       TypeCheck.resolution global_resolution ()
     in
     let rule_filter =

@@ -349,7 +349,7 @@ let test_join context =
     let _, _, environment =
       ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
     in
-    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+    GlobalResolution.create environment
   in
   let assert_join left right expected =
     let result = Error.join ~resolution left right in
@@ -612,7 +612,7 @@ let test_less_or_equal context =
     let _, _, environment =
       ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
     in
-    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+    GlobalResolution.create environment
   in
   assert_true
     (Error.less_or_equal
@@ -688,7 +688,7 @@ let test_filter context =
         ]
       |> ScratchProject.build_global_environment
     in
-    AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+    GlobalResolution.create environment
   in
   let assert_filtered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in

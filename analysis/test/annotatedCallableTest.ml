@@ -23,10 +23,7 @@ let test_return_annotation context =
         |}]
         |> ScratchProject.build_global_environment
       in
-      let parser =
-        AnnotatedGlobalEnvironment.ReadOnly.resolution environment
-        |> GlobalResolution.annotation_parser
-      in
+      let parser = GlobalResolution.create environment |> GlobalResolution.annotation_parser in
       let signature =
         {
           Define.Signature.name = !&"derp";

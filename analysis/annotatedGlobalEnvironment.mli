@@ -6,10 +6,12 @@ open Ast
 open Core
 open SharedMemoryKeys
 
+type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
+
 module AnnotatedReadOnly : sig
   type t
 
-  val get_global : t -> ?dependency:dependency -> Reference.t -> GlobalResolution.global option
+  val get_global : t -> ?dependency:dependency -> Reference.t -> global option
 
   val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
 
@@ -18,10 +20,6 @@ module AnnotatedReadOnly : sig
   val serialize_decoded : t -> Memory.decodable -> (string * string * string option) option
 
   val decoded_equal : t -> Memory.decodable -> Memory.decodable -> bool option
-
-  val resolution : t -> GlobalResolution.t
-
-  val dependency_tracked_resolution : t -> dependency:dependency -> GlobalResolution.t
 
   (* Shortcut for walking through all of the environments *)
   val ast_environment : t -> AstEnvironment.ReadOnly.t

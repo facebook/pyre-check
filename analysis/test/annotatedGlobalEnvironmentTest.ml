@@ -50,12 +50,12 @@ let test_simple_registration context =
     let read_only = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let printer global =
       global
-      >>| GlobalResolution.sexp_of_global
+      >>| AnnotatedGlobalEnvironment.sexp_of_global
       >>| Sexp.to_string_hum
       |> Option.value ~default:"None"
     in
     let location_insensitive_compare left right =
-      Option.compare GlobalResolution.compare_global left right = 0
+      Option.compare AnnotatedGlobalEnvironment.compare_global left right = 0
     in
     assert_equal
       ~cmp:location_insensitive_compare
@@ -133,11 +133,11 @@ let test_updates context =
     let execute_action = function
       | global_name, dependency, expectation ->
           let location_insensitive_compare left right =
-            Option.compare GlobalResolution.compare_global left right = 0
+            Option.compare AnnotatedGlobalEnvironment.compare_global left right = 0
           in
           let printer global =
             global
-            >>| GlobalResolution.sexp_of_global
+            >>| AnnotatedGlobalEnvironment.sexp_of_global
             >>| Sexp.to_string_hum
             |> Option.value ~default:"None"
           in

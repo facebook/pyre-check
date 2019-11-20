@@ -24,7 +24,7 @@ let environment ?source context =
 
 let resolution ?source context =
   let environment = environment ?source context in
-  AnnotatedGlobalEnvironment.ReadOnly.resolution environment
+  GlobalResolution.create environment
 
 
 let concrete_connect ?parameters =
@@ -2456,7 +2456,7 @@ let test_solve_less_or_equal context =
     |}
       context
   in
-  let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+  let resolution = GlobalResolution.create environment in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
   let prep annotation =
     let aliases a =
@@ -2516,10 +2516,7 @@ let test_solve_less_or_equal context =
         >>| Class.create
         >>| GlobalResolution.constructor ~instantiated ~resolution
       in
-      let handler =
-        AnnotatedGlobalEnvironment.ReadOnly.resolution environment
-        |> GlobalResolution.class_hierarchy
-      in
+      let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
       {
         handler;
         constructor;
@@ -2601,7 +2598,7 @@ let test_solve_less_or_equal context =
                   | Type.Tuple (Bounded ordered) -> ordered
                   | _ -> failwith "impossible"
               in
-              let global_resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+              let global_resolution = GlobalResolution.create environment in
               match GlobalResolution.aliases global_resolution primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
@@ -3159,7 +3156,7 @@ let test_instantiate_protocol_parameters context =
       expected
     =
     let environment = environment ?source context in
-    let resolution = AnnotatedGlobalEnvironment.ReadOnly.resolution environment in
+    let resolution = GlobalResolution.create environment in
     let substitute name =
       name
       |> String.substr_replace_all ~pattern:"P" ~with_:"test.P"
@@ -3199,10 +3196,7 @@ let test_instantiate_protocol_parameters context =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      let handler =
-        AnnotatedGlobalEnvironment.ReadOnly.resolution environment
-        |> GlobalResolution.class_hierarchy
-      in
+      let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
       {
         handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
@@ -3380,9 +3374,7 @@ let test_mark_escaped_as_escaped context =
     Type.Callable.create ~annotation:variable ~parameters:(Type.Callable.Defined []) ()
   in
   let result =
-    let handler =
-      AnnotatedGlobalEnvironment.ReadOnly.resolution environment |> GlobalResolution.class_hierarchy
-    in
+    let handler = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
     let handler =
       {
         handler;
