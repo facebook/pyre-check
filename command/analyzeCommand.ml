@@ -110,7 +110,7 @@ let run_analysis
       Service.Check.check
         ~scheduler:(Some scheduler)
         ~configuration
-        ~build_legacy_dependency_graph:true
+        ~build_legacy_dependency_graph:false
       |> fun { module_tracker; environment; ast_environment; _ } ->
       (* In order to get an accurate call graph and type information, we need to ensure that we
          schedule a type check for external files as well. *)
