@@ -353,7 +353,7 @@ let test_type_collection context =
 
           let define = +Test.mock_define
 
-          module Builder = Dependencies.Callgraph.DefaultBuilder
+          module Builder = Callgraph.DefaultBuilder
         end)
         in
         let state = State.create ~resolution () in

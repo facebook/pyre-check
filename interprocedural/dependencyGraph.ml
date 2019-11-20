@@ -25,7 +25,7 @@ let create_callgraph ~environment ~source =
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let fold_defines dependencies ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
     =
-    let module Callgraph = Analysis.Dependencies.Callgraph in
+    let module Callgraph = Analysis.Callgraph in
     let create_target method_name =
       if DependencyGraphSharedMemory.overrides_exist method_name then
         Callable.create_override method_name
@@ -65,7 +65,7 @@ let create_callgraph ~environment ~source =
     in
     let callees =
       Callgraph.get ~caller:name
-      |> List.map ~f:(fun { Dependencies.Callgraph.callee; _ } -> callee)
+      |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)
       |> List.concat_map ~f:callees
     in
     Callable.RealMap.set dependencies ~key:(Callable.create define) ~data:callees

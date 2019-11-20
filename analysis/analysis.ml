@@ -19,6 +19,7 @@ module AwaitableCheck = AwaitableCheck
 module Annotated = Annotated
 module Annotation = Annotation
 module BaseError = BaseError
+module Callgraph = Callgraph
 module Cfg = Cfg
 module Check = Check
 module ClassHierarchy = ClassHierarchy

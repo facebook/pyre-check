@@ -166,7 +166,7 @@ module TypeQuery : sig
   [@@deriving eq, show, to_yojson]
 
   type callee_with_instantiated_locations = {
-    callee: Dependencies.Callgraph.callee;
+    callee: Callgraph.callee;
     locations: Location.Instantiated.t list;
   }
   [@@deriving eq, show]
@@ -192,7 +192,7 @@ module TypeQuery : sig
 
   type base_response =
     | Boolean of bool
-    | Callees of Dependencies.Callgraph.callee list
+    | Callees of Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
     | Callgraph of callees list
     | ClassHierarchy of Yojson.Safe.t

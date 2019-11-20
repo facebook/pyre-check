@@ -166,7 +166,7 @@ module TypeQuery = struct
   [@@deriving eq, show]
 
   type callee_with_instantiated_locations = {
-    callee: Dependencies.Callgraph.callee;
+    callee: Callgraph.callee;
     locations: Location.Instantiated.t list;
   }
   [@@deriving eq, show]
@@ -194,7 +194,7 @@ module TypeQuery = struct
 
   type base_response =
     | Boolean of bool
-    | Callees of Dependencies.Callgraph.callee list
+    | Callees of Callgraph.callee list
     | CalleesWithLocation of callee_with_instantiated_locations list
     | Callgraph of callees list
     | ClassHierarchy of Yojson.Safe.t
@@ -219,17 +219,12 @@ module TypeQuery = struct
 
   let base_response_to_yojson = function
     | Boolean boolean -> `Assoc ["boolean", `Bool boolean]
-    | Callees callees ->
-        `Assoc ["callees", `List (List.map callees ~f:Dependencies.Callgraph.callee_to_yojson)]
+    | Callees callees -> `Assoc ["callees", `List (List.map callees ~f:Callgraph.callee_to_yojson)]
     | CalleesWithLocation callees ->
-        let callee_to_yojson { callee; locations } =
-          Dependencies.Callgraph.callee_to_yojson ~locations callee
-        in
+        let callee_to_yojson { callee; locations } = Callgraph.callee_to_yojson ~locations callee in
         `Assoc ["callees", `List (List.map callees ~f:callee_to_yojson)]
     | Callgraph callees ->
-        let callee_to_yojson { callee; locations } =
-          Dependencies.Callgraph.callee_to_yojson ~locations callee
-        in
+        let callee_to_yojson { callee; locations } = Callgraph.callee_to_yojson ~locations callee in
         `Assoc
           (List.map callees ~f:(fun { caller; callees } ->
                Reference.show caller, `List (List.map callees ~f:callee_to_yojson)))

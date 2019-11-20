@@ -27,7 +27,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  module Builder : Dependencies.Callgraph.Builder
+  module Builder : Callgraph.Builder
 end
 
 module type Signature = sig

@@ -40,7 +40,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  module Builder : Dependencies.Callgraph.Builder
+  module Builder : Callgraph.Builder
 end
 
 module type Signature = sig
@@ -4859,7 +4859,7 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
 
     let define = define
 
-    module Builder = Dependencies.Callgraph.DefaultBuilder
+    module Builder = Callgraph.DefaultBuilder
   end)
   in
   let state_without_resolution =
@@ -4917,7 +4917,7 @@ let check_define_collect_nested
           metadata = { local_mode; ignore_codes; _ };
           _;
         } as source )
-    ~call_graph_builder:(module Builder : Dependencies.Callgraph.Builder)
+    ~call_graph_builder:(module Builder : Callgraph.Builder)
     ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
   let global_resolution = Resolution.global_resolution resolution in
@@ -5004,7 +5004,7 @@ let check_define_collect_nested
 
     (* Store calls in shared memory. *)
     let callees = Context.Builder.get_all_callees () in
-    Dependencies.Callgraph.set ~caller:name ~callees;
+    Callgraph.set ~caller:name ~callees;
 
     (* Schedule nested functions for analysis. *)
     let nested_defines = Option.value_map exit ~f:State.nested_defines ~default:[] in
@@ -5043,7 +5043,7 @@ let check_define ~check_nested ~configuration ~resolution ~source define =
         check_define_collect_nested
           ~configuration
           ~resolution
-          ~call_graph_builder:(module Dependencies.Callgraph.DefaultBuilder)
+          ~call_graph_builder:(module Callgraph.DefaultBuilder)
           ~source
           define
       in
@@ -5059,7 +5059,7 @@ let check_define ~check_nested ~configuration ~resolution ~source define =
               check_define_collect_nested
                 ~configuration
                 ~resolution
-                ~call_graph_builder:(module Dependencies.Callgraph.DefaultBuilder)
+                ~call_graph_builder:(module Callgraph.DefaultBuilder)
                 ~source
                 define
             in

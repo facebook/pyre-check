@@ -16,7 +16,7 @@ module DefaultContext = struct
 
   let define = +Test.mock_define
 
-  module Builder = Dependencies.Callgraph.DefaultBuilder
+  module Builder = Callgraph.DefaultBuilder
 end
 
 module Create (Context : TypeCheck.Context) = struct
@@ -80,7 +80,7 @@ let test_initial context =
 
       let define = +define
 
-      module Builder = Dependencies.Callgraph.DefaultBuilder
+      module Builder = Callgraph.DefaultBuilder
     end
     in
     let resolution =
@@ -1006,7 +1006,7 @@ let test_forward_statement context =
 
       let define = +define
 
-      module Builder = Dependencies.Callgraph.DefaultBuilder
+      module Builder = Callgraph.DefaultBuilder
     end
     in
     let module Create = Create (Context) in
@@ -1587,7 +1587,7 @@ let test_coverage context =
 type method_call = {
   direct_target: string;
   class_name: string;
-  dispatch: Dependencies.Callgraph.dispatch;
+  dispatch: Callgraph.dispatch;
   is_optional_class_attribute: bool;
 }
 
@@ -1609,7 +1609,7 @@ let test_calls context =
           _;
         }
       =
-      Dependencies.Callgraph.set ~caller:name ~callees:[]
+      Callgraph.set ~caller:name ~callees:[]
     in
     Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
     |> List.iter ~f:clear_calls;
@@ -1622,24 +1622,20 @@ let test_calls context =
       let expected_callees =
         let callee = function
           | `Method { direct_target; class_name; dispatch; is_optional_class_attribute } ->
-              Dependencies.Callgraph.Method
+              Callgraph.Method
                 {
                   direct_target = Reference.create direct_target;
                   class_name = Type.Primitive class_name;
                   dispatch;
                   is_optional_class_attribute;
                 }
-          | `Function name -> Dependencies.Callgraph.Function (Reference.create name)
+          | `Function name -> Callgraph.Function (Reference.create name)
         in
-        List.map callees ~f:callee
-        |> List.map ~f:Dependencies.Callgraph.show_callee
-        |> String.Set.of_list
+        List.map callees ~f:callee |> List.map ~f:Callgraph.show_callee |> String.Set.of_list
       in
       let actual_callees =
-        let show { Dependencies.Callgraph.callee; _ } = Dependencies.Callgraph.show_callee callee in
-        Dependencies.Callgraph.get ~caller:(Reference.create caller)
-        |> List.map ~f:show
-        |> String.Set.of_list
+        let show { Callgraph.callee; _ } = Callgraph.show_callee callee in
+        Callgraph.get ~caller:(Reference.create caller) |> List.map ~f:show |> String.Set.of_list
       in
       assert_equal
         ~printer:(fun set -> Set.to_list set |> String.concat ~sep:",")

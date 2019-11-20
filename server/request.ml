@@ -531,8 +531,7 @@ let process_type_query_request
     | TypeQuery.Callees caller ->
         TypeQuery.Response
           (TypeQuery.Callees
-             ( Dependencies.Callgraph.get ~caller
-             |> List.map ~f:(fun { Dependencies.Callgraph.callee; _ } -> callee) ))
+             (Callgraph.get ~caller |> List.map ~f:(fun { Callgraph.callee; _ } -> callee)))
     | TypeQuery.CalleesWithLocation caller ->
         let instantiate =
           Location.instantiate
@@ -542,8 +541,8 @@ let process_type_query_request
                  (AstEnvironment.read_only state.ast_environment))
         in
         let callees =
-          Dependencies.Callgraph.get ~caller
-          |> List.map ~f:(fun { Dependencies.Callgraph.callee; locations } ->
+          Callgraph.get ~caller
+          |> List.map ~f:(fun { Callgraph.callee; locations } ->
                  { TypeQuery.callee; locations = List.map locations ~f:instantiate })
         in
         TypeQuery.Response (TypeQuery.CalleesWithLocation callees)
@@ -620,15 +619,15 @@ let process_type_query_request
           match decoded with
           | Coverage.SharedMemory.Decoded (key, value) ->
               Some (Coverage.CoverageValue.description, Reference.show key, value >>| Coverage.show)
-          | Analysis.Dependencies.Callgraph.SharedMemory.Decoded (key, value) ->
-              let show { Dependencies.Callgraph.callee; locations } =
+          | Analysis.Callgraph.SharedMemory.Decoded (key, value) ->
+              let show { Callgraph.callee; locations } =
                 Format.asprintf
                   "%s: [%s]"
-                  (Dependencies.Callgraph.show_callee callee)
+                  (Callgraph.show_callee callee)
                   (List.map locations ~f:Location.Reference.show |> String.concat ~sep:", ")
               in
               Some
-                ( Dependencies.Callgraph.CalleeValue.description,
+                ( Callgraph.CalleeValue.description,
                   Reference.show key,
                   value >>| List.map ~f:show >>| String.concat ~sep:"," )
           | ResolutionSharedMemory.Decoded (key, value) ->
@@ -793,8 +792,8 @@ let process_type_query_request
                      ~configuration
                      (AstEnvironment.read_only state.ast_environment))
             in
-            Dependencies.Callgraph.get ~caller
-            |> List.map ~f:(fun { Dependencies.Callgraph.callee; locations } ->
+            Callgraph.get ~caller
+            |> List.map ~f:(fun { Callgraph.callee; locations } ->
                    { TypeQuery.callee; locations = List.map locations ~f:instantiate })
             |> fun callees -> { Protocol.TypeQuery.caller; callees }
           in
@@ -998,7 +997,7 @@ let process_type_query_request
 
           let define = define
 
-          module Builder = Dependencies.Callgraph.DefaultBuilder
+          module Builder = Callgraph.DefaultBuilder
         end)
         in
         let state = State.create ~resolution () in
