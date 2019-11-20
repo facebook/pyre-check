@@ -822,7 +822,21 @@ let test_check_constructors context =
     [
       "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st anonymous \
        parameter to call `foo` but got `typing.Type[Class]`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable, Union, Type
+      class Parent: pass
+      class ChildA(Parent): pass
+      class ChildB(Parent): pass
+      def foo(x: Callable[[], Parent]) -> None: ...
+      def bar(a: Type[Union[ChildA, ChildB]], b: Union[Type[ChildA], Type[ChildB]], c: Type[Parent]) -> None:
+        foo(a)
+        foo(b)
+        foo(c)
+    |}
+    [];
+  ()
 
 
 let test_infer_constructor_attributes context =

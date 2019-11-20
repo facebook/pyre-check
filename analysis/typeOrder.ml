@@ -664,11 +664,18 @@ module OrderImplementation = struct
             List.concat_map sofar ~f:call_as_overload
           in
           List.fold (implementation :: overloads) ~f:fold_overload ~init:[constraints]
-      | _, Type.Callable _ when Type.is_meta left ->
-          Type.single_parameter left
-          |> constructor ~protocol_assumptions
-          >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
-          |> Option.value ~default:[]
+      | _, Type.Callable _ when Type.is_meta left -> (
+          match Type.single_parameter left with
+          | Type.Union types ->
+              solve_less_or_equal
+                order
+                ~constraints
+                ~left:(Type.union (List.map ~f:Type.meta types))
+                ~right
+          | single_parameter ->
+              constructor ~protocol_assumptions single_parameter
+              >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
+              |> Option.value ~default:[] )
       | left, Type.Callable _ ->
           resolve_callable_protocol ~order ~assumption:right left
           >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)

@@ -2449,6 +2449,10 @@ let test_solve_less_or_equal context =
 
       class UserDefinedVariadicMapChild(UserDefinedVariadic[pyre_extensions.type_variable_operators.Map[typing.List, Ts]]):
         pass
+
+      class Parent: pass
+      class ChildA(Parent): pass
+      class ChildB(Parent): pass
     |}
       context
   in
@@ -3134,6 +3138,14 @@ let test_solve_less_or_equal context =
       "typing.Tuple[pyre_extensions.type_variable_operators.Concatenate[int, \
        pyre_extensions.type_variable_operators.Map[list, Ts], bool]]"
     [["Ts", "str, float"]];
+  assert_solve
+    ~left:"typing.Union[typing.Type[test.ChildA], typing.Type[test.ChildB]]"
+    ~right:"typing.Callable[[], test.Parent]"
+    [[]];
+  assert_solve
+    ~left:"typing.Type[typing.Union[test.ChildA, test.ChildB]]"
+    ~right:"typing.Callable[[], test.Parent]"
+    [[]];
   ()
 
 
