@@ -318,13 +318,13 @@ let global ({ dependency; _ } as resolution) reference =
         reference
 
 
-let c_attribute ~resolution:({ dependency; _ } as resolution) =
+let attribute_from_class_summary ~resolution:({ dependency; _ } as resolution) =
   AttributeResolution.attribute
     ?dependency
     ~class_metadata_environment:(class_metadata_environment resolution)
 
 
-let attribute ({ dependency; _ } as resolution) ~parent:annotation ~name =
+let attribute_from_annotation ({ dependency; _ } as resolution) ~parent:annotation ~name =
   match
     UnannotatedGlobalEnvironment.ReadOnly.resolve_class
       ?dependency

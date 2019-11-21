@@ -132,7 +132,7 @@ val global : t -> Reference.t -> AnnotatedGlobalEnvironment.global option
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
-val attribute : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option
+val attribute_from_annotation : t -> parent:Type.t -> name:string -> AnnotatedAttribute.t option
 
 val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
@@ -167,7 +167,7 @@ val attributes
 
 val metaclass : resolution:t -> ClassSummary.t Node.t -> Type.t
 
-val c_attribute
+val attribute_from_class_summary
   :  resolution:t ->
   ?transitive:bool ->
   ?class_attributes:bool ->

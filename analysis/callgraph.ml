@@ -134,7 +134,10 @@ module DefaultBuilder : Builder = struct
       | Some (Type.Optional annotation), _ -> (
           match Node.value callee with
           | Expression.Name (Name.Attribute { attribute; _ }) -> (
-              GlobalResolution.attribute global_resolution ~parent:annotation ~name:attribute
+              GlobalResolution.attribute_from_annotation
+                global_resolution
+                ~parent:annotation
+                ~name:attribute
               >>| AnnotatedAttribute.annotation
               >>| Annotation.annotation
               >>= (function
@@ -178,7 +181,7 @@ module DefaultBuilder : Builder = struct
             |> function
             | Some [{ instantiated; class_attributes; class_definition }] ->
                 let attribute =
-                  GlobalResolution.c_attribute
+                  GlobalResolution.attribute_from_class_summary
                     class_definition
                     ~transitive:true
                     ~class_attributes

@@ -1622,7 +1622,7 @@ module State (Context : Context) = struct
         parent
         |> GlobalResolution.class_definition global_resolution
         >>| Annotated.Class.create
-        >>| GlobalResolution.c_attribute
+        >>| GlobalResolution.attribute_from_class_summary
               ~resolution:global_resolution
               ~name
               ~instantiated:parent
@@ -2273,7 +2273,7 @@ module State (Context : Context) = struct
               instantiated
               name
             =
-            GlobalResolution.c_attribute
+            GlobalResolution.attribute_from_class_summary
               ~transitive:true
               ~class_attributes
               class_definition
@@ -2619,7 +2619,7 @@ module State (Context : Context) = struct
                     }
                   =
                   let attribute =
-                    GlobalResolution.c_attribute
+                    GlobalResolution.attribute_from_class_summary
                       class_definition
                       ~transitive:(not (is_private_attribute attribute))
                       ~class_attributes
@@ -3139,7 +3139,7 @@ module State (Context : Context) = struct
                     in
                     let attribute =
                       parent_class
-                      >>| GlobalResolution.c_attribute
+                      >>| GlobalResolution.attribute_from_class_summary
                             ~resolution:global_resolution
                             ~name:attribute
                             ~instantiated:parent
@@ -3518,7 +3518,7 @@ module State (Context : Context) = struct
                     (* Instance *)
                     let reference = Reference.create attribute in
                     let attribute =
-                      GlobalResolution.c_attribute
+                      GlobalResolution.attribute_from_class_summary
                         ~resolution:global_resolution
                         ~name:attribute
                         ~instantiated
@@ -3806,7 +3806,7 @@ module State (Context : Context) = struct
                 >>= fun parent ->
                 GlobalResolution.class_definition global_resolution parent
                 >>| Annotated.Class.create
-                >>| GlobalResolution.c_attribute
+                >>| GlobalResolution.attribute_from_class_summary
                       ~resolution:global_resolution
                       ~name:attribute
                       ~instantiated:parent

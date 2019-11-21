@@ -711,7 +711,7 @@ let test_class_attributes context =
         parent_instantiated_type, false
     in
     let actual_attribute =
-      GlobalResolution.c_attribute
+      GlobalResolution.attribute_from_class_summary
         parent
         ~transitive:true
         ~class_attributes

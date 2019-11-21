@@ -80,7 +80,7 @@ let rec fallback_attribute
     in
     match name with
     | Some name ->
-        GlobalResolution.c_attribute
+        GlobalResolution.attribute_from_class_summary
           definition
           ~class_attributes:false
           ~transitive:true
@@ -92,7 +92,7 @@ let rec fallback_attribute
   in
   let getitem_backup () =
     let fallback =
-      GlobalResolution.c_attribute
+      GlobalResolution.attribute_from_class_summary
         definition
         ~class_attributes:true
         ~transitive:true
@@ -187,7 +187,7 @@ let has_explicit_constructor definition ~resolution =
 let overrides definition ~resolution ~name =
   let find_override parent =
     let potential_override =
-      GlobalResolution.c_attribute
+      GlobalResolution.attribute_from_class_summary
         ~transitive:false
         ~class_attributes:true
         parent
@@ -212,7 +212,7 @@ let overrides definition ~resolution ~name =
 
 
 let has_method ?transitive definition ~resolution ~name =
-  GlobalResolution.c_attribute
+  GlobalResolution.attribute_from_class_summary
     ?transitive
     definition
     ~resolution

@@ -28,7 +28,7 @@ let defining_attribute ~resolution parent_type attribute =
   GlobalResolution.class_definition global_resolution parent_type
   >>| Annotated.Class.create
   >>| (fun definition ->
-        GlobalResolution.c_attribute
+        GlobalResolution.attribute_from_class_summary
           ~transitive:true
           definition
           ~resolution:global_resolution
