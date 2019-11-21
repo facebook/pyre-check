@@ -65,6 +65,7 @@ def run_from_global_state(
     configuration_arguments: ConfigurationArguments,
 ) -> None:
     # Set up all global state :(
+    Configuration.annotation_specs = configuration_arguments.annotation_specs
     Configuration.whitelisted_views = configuration_arguments.whitelisted_views
     Configuration.whitelisted_classes = configuration_arguments.whitelisted_classes
     Configuration.url_resolver_type = configuration_arguments.url_resolver_type
