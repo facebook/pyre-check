@@ -17,15 +17,16 @@ module Binding = struct
     end
 
     type t =
-      | AssignTarget
+      | AssignTarget of Expression.t option
       | ClassName
       | ComprehensionTarget
       | DefineName
-      | ExceptTarget
+      | ExceptTarget of Expression.t option
       | ForTarget
       | ImportName
       | ParameterName of {
           index: int;
+          annotation: Expression.t option;
           star: Star.t option;
         }
       | WithTarget
@@ -36,19 +37,17 @@ module Binding = struct
     kind: Kind.t;
     name: Identifier.t;
     location: Location.t;
-    annotation: Expression.t option;
   }
   [@@deriving sexp, compare, hash]
 
-  let rec of_target ~kind ~annotation { Node.value = target; location } =
+  let rec of_unannotated_target ~kind { Node.value = target; location } =
     let open Expression in
-    let create_without_annotation = List.concat_map ~f:(of_target ~kind ~annotation:None) in
     match target with
-    | Expression.Name (Name.Identifier name) -> [{ name; kind; location; annotation }]
+    | Expression.Name (Name.Identifier name) -> [{ name; kind; location }]
     | Tuple elements
     | List elements ->
         (* Tuple or list cannot be annotated. *)
-        create_without_annotation elements
+        List.concat_map elements ~f:(of_unannotated_target ~kind)
     | _ -> []
 
 
@@ -56,14 +55,22 @@ module Binding = struct
     (* TODO (T53600647): Support walrus operator. *)
     let open Statement in
     match statement with
-    | Statement.Assign { Assign.target; annotation; _ } ->
-        of_target ~kind:Kind.AssignTarget ~annotation target
+    | Statement.Assign
+        {
+          Assign.target =
+            { Node.value = Expression.Expression.Name (Expression.Name.Identifier name); location };
+          annotation = Some annotation;
+          _;
+        } ->
+        [{ name; kind = Kind.AssignTarget (Some annotation); location }]
+    | Statement.Assign { Assign.target; _ } ->
+        of_unannotated_target ~kind:(Kind.AssignTarget None) target
     | Statement.Class { Class.name; _ } ->
-        [{ kind = Kind.ClassName; name = Reference.show name; location; annotation = None }]
+        [{ kind = Kind.ClassName; name = Reference.show name; location }]
     | Statement.Define { Define.signature = { name; _ }; _ } ->
-        [{ kind = Kind.DefineName; name = Reference.show name; location; annotation = None }]
+        [{ kind = Kind.DefineName; name = Reference.show name; location }]
     | Statement.For { For.target; body; orelse; _ } ->
-        let target_names = of_target ~kind:Kind.ForTarget ~annotation:None target in
+        let target_names = of_unannotated_target ~kind:Kind.ForTarget target in
         let body_names = of_statements body in
         let orelse_names = of_statements orelse in
         List.concat [target_names; body_names; orelse_names]
@@ -77,10 +84,8 @@ module Binding = struct
               if String.is_prefix name ~prefix:"_" then
                 None
               else
-                Some { kind = Kind.ImportName; name; location; annotation = None }
-          | Some alias ->
-              Some
-                { kind = Kind.ImportName; name = Reference.show alias; location; annotation = None }
+                Some { kind = Kind.ImportName; name; location }
+          | Some alias -> Some { kind = Kind.ImportName; name = Reference.show alias; location }
         in
         List.filter_map imports ~f:binding_of_import
     | Statement.Try { Try.body; handlers; orelse; finally } ->
@@ -88,7 +93,7 @@ module Binding = struct
           let name_binding =
             Option.map name ~f:(fun name ->
                 (* TODO: Track the location of handler name. *)
-                { kind = Kind.ExceptTarget; name; location; annotation = kind })
+                { kind = Kind.ExceptTarget kind; name; location })
           in
           let bindings_in_body = of_statements body in
           List.append (Option.to_list name_binding) bindings_in_body
@@ -102,7 +107,7 @@ module Binding = struct
         List.append (of_statements body) (of_statements orelse)
     | Statement.With { With.items; body; _ } ->
         let bindings_of_item (_, alias) =
-          Option.value_map alias ~f:(of_target ~kind:Kind.WithTarget ~annotation:None) ~default:[]
+          Option.value_map alias ~f:(of_unannotated_target ~kind:Kind.WithTarget) ~default:[]
         in
         let item_names = List.concat_map items ~f:bindings_of_item in
         let body_names = of_statements body in
@@ -135,11 +140,11 @@ module Binding = struct
       in
       star, name
     in
-    { kind = Kind.ParameterName { index; star }; name; location; annotation }
+    { kind = Kind.ParameterName { index; star; annotation }; name; location }
 
 
   let of_generator { Expression.Comprehension.Generator.target; _ } =
-    of_target ~kind:Kind.ComprehensionTarget ~annotation:None target
+    of_unannotated_target ~kind:Kind.ComprehensionTarget target
 end
 
 let rec globals_of_statement { Node.value; _ } =

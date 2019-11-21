@@ -2367,7 +2367,7 @@ let populate_captures ({ Source.statements; _ } as source) =
         {
           Access.kind = access_kind;
           scope = { Scope.kind = scope_kind; _ };
-          binding = { Binding.kind = binding_kind; name; annotation; location };
+          binding = { Binding.kind = binding_kind; name; location };
         } -> (
         match access_kind with
         | Access.Kind.CurrentScope ->
@@ -2383,7 +2383,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                 | Binding.Kind.(ClassName | ImportName) ->
                     (* Judgement call: these bindings are (supposedly) not useful for type checking *)
                     None
-                | Binding.Kind.(ParameterName { star = Some Star.Twice; _ }) ->
+                | Binding.Kind.(ParameterName { star = Some Star.Twice; annotation; _ }) ->
                     let dictionary_annotation value_annotation =
                       {
                         Node.location;
@@ -2462,7 +2462,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                       | Some value_annotation -> Some (dictionary_annotation value_annotation)
                     in
                     Some { Define.Capture.name; annotation }
-                | Binding.Kind.(ParameterName { star = Some Star.Once; _ }) ->
+                | Binding.Kind.(ParameterName { star = Some Star.Once; annotation; _ }) ->
                     let tuple_annotation value_annotation =
                       {
                         Node.location;
@@ -2538,7 +2538,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                       | Some value_annotation -> Some (tuple_annotation value_annotation)
                     in
                     Some { Define.Capture.name; annotation }
-                | Binding.Kind.(ParameterName { star = None; index = 0 })
+                | Binding.Kind.(ParameterName { star = None; index = 0; annotation })
                   when Option.is_some parent
                        && Option.is_none annotation
                        && not (Define.Signature.is_static_method signature) ->
@@ -2591,10 +2591,12 @@ let populate_captures ({ Source.statements; _ } as source) =
                     else
                       Some { Define.Capture.name; annotation = Some parent_annotation }
                 | Binding.Kind.(
-                    ( AssignTarget | ComprehensionTarget | DefineName | ExceptTarget | ForTarget
-                    | ParameterName { star = None; _ }
-                    | WithTarget )) ->
-                    Some { Define.Capture.name; annotation } ) ) )
+                    ( AssignTarget annotation
+                    | ExceptTarget annotation
+                    | ParameterName { star = None; annotation; _ } )) ->
+                    Some { Define.Capture.name; annotation }
+                | Binding.Kind.(ComprehensionTarget | DefineName | ForTarget | WithTarget) ->
+                    Some { Define.Capture.name; annotation = None } ) ) )
   in
   let rec transform_statement ~scopes statement =
     match statement with

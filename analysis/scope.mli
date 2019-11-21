@@ -17,15 +17,16 @@ module Binding : sig
     end
 
     type t =
-      | AssignTarget
+      | AssignTarget of Expression.t option
       | ClassName
       | ComprehensionTarget
       | DefineName
-      | ExceptTarget
+      | ExceptTarget of Expression.t option
       | ForTarget
       | ImportName
       | ParameterName of {
           index: int;
+          annotation: Expression.t option;
           star: Star.t option;
         }
       | WithTarget
@@ -36,7 +37,6 @@ module Binding : sig
     kind: Kind.t;
     name: Identifier.t;
     location: Location.t;
-    annotation: Expression.t option;
   }
   [@@deriving sexp, compare, hash]
 end
