@@ -36,24 +36,6 @@ let implicit_attributes { Node.value = { ClassSummary.attribute_components; _ };
   Class.implicit_attributes attribute_components
 
 
-let attribute_fold
-    ?(transitive = false)
-    ?(class_attributes = false)
-    ?(include_generated_attributes = true)
-    definition
-    ~initial
-    ~f
-    ~resolution
-  =
-  GlobalResolution.attributes
-    ~transitive
-    ~class_attributes
-    ~include_generated_attributes
-    ~resolution
-    definition
-  |> List.fold ~init:initial ~f
-
-
 let rec fallback_attribute
     ~(resolution : Resolution.t)
     ~name
@@ -209,18 +191,6 @@ let overrides definition ~resolution ~name =
       None
   in
   GlobalResolution.superclasses definition ~resolution |> List.find_map ~f:find_override
-
-
-let has_method ?transitive definition ~resolution ~name =
-  GlobalResolution.attribute_from_class_summary
-    ?transitive
-    definition
-    ~resolution
-    ~name
-    ~instantiated:(annotation definition)
-  |> AnnotatedAttribute.annotation
-  |> Annotation.annotation
-  |> Type.is_callable
 
 
 let has_abstract_base { Node.value = summary; _ } = ClassSummary.is_abstract summary

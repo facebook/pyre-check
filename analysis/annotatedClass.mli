@@ -30,21 +30,9 @@ val get_abstract_attributes : resolution:GlobalResolution.t -> t -> AnnotatedAtt
 
 val implicit_attributes : t -> StatementAttribute.t Identifier.SerializableMap.t
 
-val attribute_fold
-  :  ?transitive:bool ->
-  ?class_attributes:bool ->
-  ?include_generated_attributes:bool ->
-  t ->
-  initial:'accumulator ->
-  f:('accumulator -> Attribute.t -> 'accumulator) ->
-  resolution:GlobalResolution.t ->
-  'accumulator
-
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute : resolution:Resolution.t -> name:Identifier.t -> t -> Attribute.t option
 
 val has_explicit_constructor : t -> resolution:GlobalResolution.t -> bool
 
 val overrides : t -> resolution:GlobalResolution.t -> name:Identifier.t -> Attribute.t option
-
-val has_method : ?transitive:bool -> t -> resolution:GlobalResolution.t -> name:Identifier.t -> bool
