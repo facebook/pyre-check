@@ -192,7 +192,7 @@ let test_define_registration context =
         !&"$local_test?foo$quix";
       ];
 
-  (* Semantically shouldn't support these. But syntactically it makes sense to not fail *)
+  (* Do not look into bodies of classes that are not at top-level *)
   assert_registers
     {|
      def foo():
@@ -200,7 +200,7 @@ let test_define_registration context =
          x: int
          def bar(self): ...
     |}
-    ~expected:[!&"test.$toplevel"; !&"test.foo"; !&"test.foo.C.$class_toplevel"; !&"test.foo.C.bar"];
+    ~expected:[!&"test.$toplevel"; !&"test.foo"];
   assert_registers
     {|
      def foo():
@@ -210,14 +210,23 @@ let test_define_registration context =
            class D:
              def baz(self): ...
     |}
+    ~expected:[!&"test.$toplevel"; !&"test.foo"];
+
+  (* Nested class at module toplevel should still work *)
+  assert_registers
+    {|
+     class C:
+       def foo(self): ...
+       class D:
+         def bar(self): ...
+  |}
     ~expected:
       [
         !&"test.$toplevel";
-        !&"test.foo";
-        !&"test.foo.C.$class_toplevel";
-        !&"test.foo.C.bar";
-        !&"test.foo.C.bar.D.$class_toplevel";
-        !&"test.foo.C.bar.D.baz";
+        !&"test.C.$class_toplevel";
+        !&"test.C.foo";
+        !&"test.C.D.$class_toplevel";
+        !&"test.C.D.bar";
       ];
   ()
 

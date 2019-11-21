@@ -477,6 +477,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
 
 
 let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
   let module ClassCollector = Visit.MakeStatementVisitor (struct
     type t = Class.t Node.t list
 
@@ -667,24 +668,63 @@ let collect_unannotated_globals { Source.statements; source_path = { SourcePath.
   globals |> List.map ~f:write |> KeyTracker.UnannotatedGlobalKeys.add qualifier
 
 
-let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  let all_defines =
-    let module Collector = Visit.StatementCollector (struct
-      type t = Define.t Node.t
-
-      let visit_children _ = true
-
-      let predicate = function
-        | { Node.location; value = Statement.Class { Class.name; body; _ }; _ } ->
-            Define.create_class_toplevel ~parent:name ~statements:body
-            |> Node.create ~location
-            |> Option.some
-        | { Node.location; value = Define define } -> Some { Node.location; Node.value = define }
-        | _ -> None
-    end)
-    in
-    Collector.collect source
+let collect_typecheck_units { Source.statements; _ } =
+  (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
+  let rec collect_from_statement ~ignore_class sofar { Node.value; location } =
+    match value with
+    | Statement.Class { Class.name; body; _ } ->
+        if ignore_class then (
+          Log.info
+            "Dropping the body of class %a as it is nested inside a function"
+            Reference.pp
+            name;
+          sofar )
+        else
+          let sofar =
+            let define =
+              Define.create_class_toplevel ~parent:name ~statements:body |> Node.create ~location
+            in
+            define :: sofar
+          in
+          List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class)
+    | Define ({ Define.body; _ } as define) ->
+        let sofar = { Node.location; Node.value = define } :: sofar in
+        List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class:true)
+    | For { For.body; orelse; _ }
+    | If { If.body; orelse; _ }
+    | While { While.body; orelse; _ } ->
+        let sofar = List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class) in
+        List.fold orelse ~init:sofar ~f:(collect_from_statement ~ignore_class)
+    | Try { Try.body; handlers; orelse; finally } ->
+        let sofar = List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class) in
+        let sofar =
+          List.fold handlers ~init:sofar ~f:(fun sofar { Try.Handler.body; _ } ->
+              List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class))
+        in
+        let sofar = List.fold orelse ~init:sofar ~f:(collect_from_statement ~ignore_class) in
+        List.fold finally ~init:sofar ~f:(collect_from_statement ~ignore_class)
+    | With { With.body; _ } -> List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class)
+    | Assign _
+    | Assert _
+    | Break
+    | Continue
+    | Delete _
+    | Expression _
+    | Global _
+    | Import _
+    | Nonlocal _
+    | Pass
+    | Raise _
+    | Return _
+    | Yield _
+    | YieldFrom _ ->
+        sofar
   in
+  List.fold statements ~init:[] ~f:(collect_from_statement ~ignore_class:false)
+
+
+let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  let all_defines = collect_typecheck_units source in
   let definitions =
     let table = Reference.Table.create () in
     let process_define ({ Node.value = define; _ } as define_node) =

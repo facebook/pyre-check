@@ -39,7 +39,6 @@ let test_check_coverage context =
   assert_covered "assert ERROR";
 
   (* Nested definitions. *)
-  assert_covered "class B: ERROR";
   assert_covered ~additional_errors:[] "def nested() -> None: ERROR";
 
   (* Expressions. *)

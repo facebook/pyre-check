@@ -4813,8 +4813,6 @@ module State (Context : Context) = struct
           Map.change ~f:update nested_defines location
         in
         match Node.value statement with
-        | Class { Class.name; body; _ } ->
-            schedule (Define.create_class_toplevel ~parent:name ~statements:body)
         | Define define -> schedule define
         | _ -> nested_defines
       in
