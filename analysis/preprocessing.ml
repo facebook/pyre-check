@@ -2461,7 +2461,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                                })
                       | Some value_annotation -> Some (dictionary_annotation value_annotation)
                     in
-                    Some { Define.Capture.name; annotation }
+                    Some { Define.Capture.name; kind = Annotation annotation }
                 | Binding.Kind.(ParameterName { star = Some Star.Once; annotation; _ }) ->
                     let tuple_annotation value_annotation =
                       {
@@ -2537,7 +2537,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                                })
                       | Some value_annotation -> Some (tuple_annotation value_annotation)
                     in
-                    Some { Define.Capture.name; annotation }
+                    Some { Define.Capture.name; kind = Annotation annotation }
                 | Binding.Kind.(ParameterName { star = None; index = 0; annotation })
                   when Option.is_some parent
                        && Option.is_none annotation
@@ -2587,16 +2587,22 @@ let populate_captures ({ Source.statements; _ } as source) =
                               };
                         }
                       in
-                      Some { Define.Capture.name; annotation = Some parent_type_annotation }
+                      Some { Define.Capture.name; kind = Annotation (Some parent_type_annotation) }
                     else
-                      Some { Define.Capture.name; annotation = Some parent_annotation }
+                      Some { Define.Capture.name; kind = Annotation (Some parent_annotation) }
                 | Binding.Kind.(
                     ( AssignTarget annotation
                     | ExceptTarget annotation
                     | ParameterName { star = None; annotation; _ } )) ->
-                    Some { Define.Capture.name; annotation }
-                | Binding.Kind.(ComprehensionTarget | DefineName | ForTarget | WithTarget) ->
-                    Some { Define.Capture.name; annotation = None } ) ) )
+                    Some { Define.Capture.name; kind = Annotation annotation }
+                | Binding.Kind.DefineName signature ->
+                    Some
+                      {
+                        Define.Capture.name;
+                        kind = DefineSignature { Node.value = signature; location };
+                      }
+                | Binding.Kind.(ComprehensionTarget | ForTarget | WithTarget) ->
+                    Some { Define.Capture.name; kind = Annotation None } ) ) )
   in
   let rec transform_statement ~scopes statement =
     match statement with

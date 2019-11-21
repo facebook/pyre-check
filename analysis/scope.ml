@@ -20,7 +20,7 @@ module Binding = struct
       | AssignTarget of Expression.t option
       | ClassName
       | ComprehensionTarget
-      | DefineName
+      | DefineName of Statement.Define.Signature.t
       | ExceptTarget of Expression.t option
       | ForTarget
       | ImportName
@@ -67,8 +67,8 @@ module Binding = struct
         of_unannotated_target ~kind:(Kind.AssignTarget None) target
     | Statement.Class { Class.name; _ } ->
         [{ kind = Kind.ClassName; name = Reference.show name; location }]
-    | Statement.Define { Define.signature = { name; _ }; _ } ->
-        [{ kind = Kind.DefineName; name = Reference.show name; location }]
+    | Statement.Define { Define.signature = { name; _ } as signature; _ } ->
+        [{ kind = Kind.DefineName signature; name = Reference.show name; location }]
     | Statement.For { For.target; body; orelse; _ } ->
         let target_names = of_unannotated_target ~kind:Kind.ForTarget target in
         let body_names = of_statements body in

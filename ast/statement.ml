@@ -988,9 +988,16 @@ and Define : sig
   end
 
   module Capture : sig
+    module Kind : sig
+      type t =
+        | Annotation of Expression.t option
+        | DefineSignature of Define.Signature.t Node.t
+      [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    end
+
     type t = {
       name: Identifier.t;
-      annotation: Expression.t option;
+      kind: Kind.t;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
@@ -1273,23 +1280,49 @@ end = struct
   end
 
   module Capture = struct
+    module Kind = struct
+      type t =
+        | Annotation of Expression.t option
+        | DefineSignature of Define.Signature.t Node.t
+      [@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+      let location_sensitive_hash_fold state = function
+        | Annotation annotation ->
+            let state = Int.hash_fold_t state 0 in
+            [%hash_fold: Expression.t option] state annotation
+        | DefineSignature signature_node ->
+            let state = Int.hash_fold_t state 1 in
+            Node.location_sensitive_hash_fold
+              Define.Signature.location_sensitive_hash_fold
+              state
+              signature_node
+
+
+      let location_sensitive_compare left right =
+        match left, right with
+        | Annotation left, Annotation right ->
+            Option.compare Expression.location_sensitive_compare left right
+        | DefineSignature left, DefineSignature right ->
+            Node.location_sensitive_compare Define.Signature.location_sensitive_compare left right
+        | Annotation _, _ -> -1
+        | DefineSignature _, _ -> 1
+    end
+
     type t = {
       name: Identifier.t;
-      annotation: Expression.t option;
+      kind: Kind.t;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    let location_sensitive_hash_fold state { name; annotation } =
+    let location_sensitive_hash_fold state { name; kind } =
       let state = [%hash_fold: Identifier.t] state name in
-      match annotation with
-      | None -> state
-      | Some annotation -> Expression.location_sensitive_hash_fold state annotation
+      Kind.location_sensitive_hash_fold state kind
 
 
     let location_sensitive_compare left right =
       match [%compare: Identifier.t] left.name right.name with
       | x when not (Int.equal x 0) -> x
-      | _ -> Option.compare Expression.location_sensitive_compare left.annotation right.annotation
+      | _ -> Kind.location_sensitive_compare left.kind right.kind
   end
 
   type t = {

@@ -20,7 +20,7 @@ module Binding : sig
       | AssignTarget of Expression.t option
       | ClassName
       | ComprehensionTarget
-      | DefineName
+      | DefineName of Statement.Define.Signature.t
       | ExceptTarget of Expression.t option
       | ForTarget
       | ImportName

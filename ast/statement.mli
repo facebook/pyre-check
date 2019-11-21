@@ -237,9 +237,16 @@ and Define : sig
   end
 
   module Capture : sig
+    module Kind : sig
+      type t =
+        | Annotation of Expression.t option
+        | DefineSignature of Define.Signature.t Node.t
+      [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    end
+
     type t = {
       name: Identifier.t;
-      annotation: Expression.t option;
+      kind: Kind.t;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end

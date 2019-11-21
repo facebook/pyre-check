@@ -496,7 +496,25 @@ let test_define_local_bindings _ =
         pass
       pass
   |}
-    ~expected:["bar", Some (ExpectBinding.create Binding.Kind.DefineName (location (3, 2) (4, 8)))];
+    ~expected:
+      [
+        ( "bar",
+          let signature =
+            {
+              Statement.Define.Signature.name = !&"bar";
+              parameters = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              generator = false;
+              parent = None;
+              nesting_define = None;
+            }
+          in
+          Some (ExpectBinding.create (Binding.Kind.DefineName signature) (location (3, 2) (4, 8)))
+        );
+      ];
   assert_bindings
     {|
     def foo():

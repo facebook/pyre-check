@@ -231,11 +231,10 @@ module Make (Transformer : Transformer) = struct
                 docstring;
               }
         | Continue -> value
-        | Define
-            {
-              signature =
+        | Define { signature; captures; body } ->
+            let transform_signature
                 {
-                  name;
+                  Define.Signature.name;
                   parameters;
                   decorators;
                   return_annotation;
@@ -244,31 +243,36 @@ module Make (Transformer : Transformer) = struct
                   nesting_define;
                   generator;
                   docstring;
-                };
-              captures;
-              body;
-            } ->
+                }
+              =
+              {
+                Define.Signature.name;
+                parameters =
+                  transform_list parameters ~f:(transform_parameter ~transform_expression);
+                decorators = transform_list decorators ~f:transform_expression;
+                return_annotation = return_annotation >>| transform_expression;
+                async;
+                parent;
+                nesting_define;
+                generator;
+                docstring;
+              }
+            in
+            let transform_capture { Define.Capture.name; kind } =
+              let transform_kind = function
+                | Define.Capture.Kind.Annotation annotation ->
+                    let annotation = Option.map annotation ~f:transform_expression in
+                    Define.Capture.Kind.Annotation annotation
+                | Define.Capture.Kind.DefineSignature { Node.value; location } ->
+                    let value = transform_signature value in
+                    Define.Capture.Kind.DefineSignature { Node.value; location }
+              in
+              { Define.Capture.name; kind = transform_kind kind }
+            in
             Define
               {
-                signature =
-                  {
-                    name;
-                    parameters =
-                      transform_list parameters ~f:(transform_parameter ~transform_expression);
-                    decorators = transform_list decorators ~f:transform_expression;
-                    return_annotation = return_annotation >>| transform_expression;
-                    async;
-                    parent;
-                    nesting_define;
-                    generator;
-                    docstring;
-                  };
-                captures =
-                  List.map captures ~f:(fun { Define.Capture.name; annotation } ->
-                      {
-                        Define.Capture.name;
-                        annotation = Option.map annotation ~f:transform_expression;
-                      });
+                signature = transform_signature signature;
+                captures = List.map captures ~f:transform_capture;
                 body = transform_list body ~f:transform_statement |> List.concat;
               }
         | Delete expression -> Delete (transform_expression expression)
