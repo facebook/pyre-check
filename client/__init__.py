@@ -154,6 +154,13 @@ def find_log_directory(
     return log_directory
 
 
+def _buck_target_count(arguments, configuration) -> int:
+    if arguments.source_directories or arguments.targets:
+        return len(set(arguments.targets or []))
+    else:
+        return len(set(configuration.targets or []))
+
+
 def _resolve_filter_paths(
     arguments: Namespace, configuration: Configuration, original_directory: str
 ) -> Set[str]:
