@@ -154,6 +154,8 @@ val is_consistent_with
   expression:Ast.Expression.t option ->
   bool
 
+val is_transitive_successor : t -> predecessor:string -> successor:string -> bool
+
 val resolve_class : t -> Type.t -> UnannotatedGlobalEnvironment.class_data list option
 
 val attributes

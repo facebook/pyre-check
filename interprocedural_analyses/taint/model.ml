@@ -1155,31 +1155,32 @@ let infer_class_models ~environment =
   let open Domains in
   Log.info "Computing inferred models...";
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let fold_taint position existing_state attribute =
+    let leaf =
+      BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn)
+      |> BackwardState.Tree.transform BackwardTaint.complex_feature_set ~f:(fun _ ->
+             [
+               Features.Complex.ReturnAccessPath
+                 [AbstractTreeDomain.Label.create_name_field attribute];
+             ])
+    in
+    BackwardState.assign
+      ~root:(AccessPath.Root.PositionalParameter { position; name = attribute })
+      ~path:[]
+      leaf
+      existing_state
+  in
+  let attributes class_summary =
+    GlobalResolution.attributes
+      ~resolution:global_resolution
+      ~transitive:false
+      ~class_attributes:false
+      ~include_generated_attributes:false
+      class_summary
+  in
+
   let compute_dataclass_model class_summary =
-    let attributes =
-      GlobalResolution.attributes
-        ~resolution:global_resolution
-        ~transitive:false
-        ~class_attributes:false
-        ~include_generated_attributes:false
-        class_summary
-      |> List.map ~f:Annotated.Attribute.name
-    in
-    let fold_taint position existing_state attribute =
-      let leaf =
-        BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn)
-        |> BackwardState.Tree.transform BackwardTaint.complex_feature_set ~f:(fun _ ->
-               [
-                 Features.Complex.ReturnAccessPath
-                   [AbstractTreeDomain.Label.create_name_field attribute];
-               ])
-      in
-      BackwardState.assign
-        ~root:(AccessPath.Root.PositionalParameter { position; name = attribute })
-        ~path:[]
-        leaf
-        existing_state
-    in
+    let attributes = attributes class_summary |> List.map ~f:Annotated.Attribute.name in
     {
       TaintResult.forward = Forward.empty;
       backward =
@@ -1191,17 +1192,63 @@ let infer_class_models ~environment =
       mode = SkipAnalysis;
     }
   in
-  let inferred_dataclass_models class_name =
-    let is_dataclass class_summary =
+  (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
+     field names. *)
+  let compute_named_tuple_model class_summary =
+    let attributes = attributes class_summary in
+    (* If a user-specified constructor exists, don't override it. *)
+    if List.exists attributes ~f:(fun attribute -> Annotated.Attribute.name attribute = "__init__")
+    then
+      None
+    else
+      let is_fields = function
+        | { Node.value = { Annotated.Attribute.name = "_fields"; _ }; _ } -> true
+        | _ -> false
+      in
+      match List.find attributes ~f:is_fields with
+      | Some { Node.value = { value = { Node.value = Tuple names; _ }; _ }; _ } ->
+          let to_string_literal { Node.value = name; _ } =
+            match name with
+            | Expression.String { StringLiteral.value; _ } -> Some value
+            | _ -> None
+          in
+          let attributes = List.filter_map names ~f:to_string_literal in
+          Some
+            {
+              TaintResult.forward = Forward.empty;
+              backward =
+                {
+                  TaintResult.Backward.taint_in_taint_out =
+                    List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
+                  sink_taint = BackwardState.empty;
+                };
+              mode = SkipAnalysis;
+            }
+      | _ -> None
+  in
+  let compute_models class_name class_summary =
+    let is_dataclass =
       AstEnvironment.ReadOnly.get_decorator
         (TypeEnvironment.ReadOnly.ast_environment environment)
         class_summary
         ~decorator:"dataclasses.dataclass"
       |> fun decorators -> not (List.is_empty decorators)
     in
+    if is_dataclass then
+      Some (compute_dataclass_model class_summary)
+    else if
+      GlobalResolution.is_transitive_successor
+        global_resolution
+        ~predecessor:class_name
+        ~successor:"typing.NamedTuple"
+    then
+      compute_named_tuple_model class_summary
+    else
+      None
+  in
+  let inferred_models class_name =
     GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
-    |> Option.filter ~f:is_dataclass
-    >>| compute_dataclass_model
+    >>= compute_models class_name
     >>| fun model -> `Method { Callable.class_name; method_name = "__init__" }, model
   in
   let all_classes =
@@ -1212,5 +1259,5 @@ let infer_class_models ~environment =
     |> AliasEnvironment.ReadOnly.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
-  List.filter_map all_classes ~f:inferred_dataclass_models
+  List.filter_map all_classes ~f:inferred_models
   |> Callable.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)

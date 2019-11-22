@@ -372,6 +372,11 @@ let constructor ~resolution:({ dependency; _ } as resolution) =
     ~class_metadata_environment:(class_metadata_environment resolution)
 
 
+let is_transitive_successor resolution ~predecessor ~successor =
+  let class_hierarchy = class_hierarchy resolution in
+  ClassHierarchy.is_transitive_successor class_hierarchy ~source:predecessor ~target:successor
+
+
 let constraints ~resolution:({ dependency; _ } as resolution) =
   AttributeResolution.constraints
     ?dependency

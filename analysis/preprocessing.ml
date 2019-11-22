@@ -1893,9 +1893,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       let fields_attribute = fields_attribute ~parent ~location attributes in
       fields_attribute :: attribute_statements
     in
-    let tuple_constructor ~parent ~location attributes =
+    let tuple_constructors ~parent ~location attributes =
       let parameters =
-        let self_parameter = Parameter.create ~location ~name:"$parameter$cls" () in
         let to_parameter (name, annotation, value) =
           let value =
             match value with
@@ -1904,41 +1903,52 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           in
           Parameter.create ?value ~location ~annotation ~name:("$parameter$" ^ name) ()
         in
-        self_parameter :: List.map attributes ~f:to_parameter
+        List.map attributes ~f:to_parameter
       in
-      Statement.Define
-        {
-          signature =
-            {
-              name = Reference.create ~prefix:parent "__new__";
-              parameters;
-              decorators = [];
-              docstring = None;
-              return_annotation =
-                Some
-                  (Node.create
-                     ~location
-                     (Expression.Name
-                        (Name.Attribute
-                           {
-                             base = { Node.value = Name (Name.Identifier "typing"); location };
-                             attribute = "NamedTuple";
-                             special = false;
-                           })));
-              async = false;
-              generator = false;
-              parent = Some parent;
-              nesting_define = None;
-            };
-          captures = [];
-          body =
-            [
+      let constructor ~is_new =
+        let name, return_annotation, self_parameter =
+          if is_new then
+            ( "__new__",
               Node.create
                 ~location
-                (Statement.Expression (Node.create ~location Expression.Ellipsis));
-            ];
-        }
-      |> Node.create ~location
+                (Expression.Name
+                   (Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); location };
+                        attribute = "NamedTuple";
+                        special = false;
+                      })),
+              Parameter.create ~location ~name:"$parameter$cls" () )
+          else
+            ( "__init__",
+              Node.create ~location (Expression.Name (Name.Identifier "None")),
+              Parameter.create ~location ~name:"$parameter$self" () )
+        in
+        Statement.Define
+          {
+            signature =
+              {
+                name = Reference.create ~prefix:parent name;
+                parameters = self_parameter :: parameters;
+                decorators = [];
+                docstring = None;
+                return_annotation = Some return_annotation;
+                async = false;
+                generator = false;
+                parent = Some parent;
+                nesting_define = None;
+              };
+            captures = [];
+            body =
+              [
+                Node.create
+                  ~location
+                  (Statement.Expression (Node.create ~location Expression.Ellipsis));
+              ];
+          }
+        |> Node.create ~location
+      in
+      [constructor ~is_new:true; constructor ~is_new:false]
     in
     let tuple_base ~location =
       {
@@ -1955,13 +1965,13 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           | Some attributes, Some name
           (* TODO (T42893621): properly handle the excluded case *)
             when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$cls") name) ->
-              let constructor = tuple_constructor ~parent:name ~location attributes in
+              let constructors = tuple_constructors ~parent:name ~location attributes in
               let attributes = tuple_attributes ~parent:name ~location attributes in
               Statement.Class
                 {
                   Class.name;
                   bases = [tuple_base ~location];
-                  body = constructor :: attributes;
+                  body = constructors @ attributes;
                   decorators = [];
                   docstring = None;
                 }
@@ -2009,30 +2019,33 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               | _ -> None
             in
             let attributes = List.filter_map body ~f:extract_assign in
-            let constructor = tuple_constructor ~parent:name ~location attributes in
+            let constructors = tuple_constructors ~parent:name ~location attributes in
             let fields_attribute = fields_attribute ~parent:name ~location attributes in
-            Class { original with Class.body = constructor :: fields_attribute :: body }
+            Class { original with Class.body = constructors @ (fields_attribute :: body) }
           else
             let extract_named_tuples (bases, attributes_sofar) ({ Call.Argument.value; _ } as base) =
               match extract_attributes value with
               | Some attributes ->
-                  let constructor =
-                    let is_dunder_new = function
+                  let constructors =
+                    let has_name generated_name = function
                       | {
                           Node.value =
                             Statement.Define { Define.signature = { Define.Signature.name; _ }; _ };
                           _;
                         } ->
-                          String.equal (Reference.last name) "__new__"
+                          String.equal (Reference.last name) generated_name
                       | _ -> false
                     in
-                    if List.exists body ~f:is_dunder_new then
+                    if
+                      List.exists body ~f:(has_name "__new__")
+                      || List.exists body ~f:(has_name "__init__")
+                    then
                       []
                     else
-                      [tuple_constructor ~parent:name ~location attributes]
+                      tuple_constructors ~parent:name ~location attributes
                   in
                   let attributes = tuple_attributes ~parent:name ~location attributes in
-                  tuple_base ~location :: bases, attributes_sofar @ constructor @ attributes
+                  tuple_base ~location :: bases, attributes_sofar @ constructors @ attributes
               | None -> base :: bases, attributes_sofar
             in
             let reversed_bases, attributes =

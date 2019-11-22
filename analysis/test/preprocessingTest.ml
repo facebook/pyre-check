@@ -2348,6 +2348,7 @@ let test_transform_ast _ =
     {|
       class T(typing.NamedTuple):
         def __new__(cls) -> typing.NamedTuple: ...
+        def __init__(self) -> None: ...
         _fields: typing.Tuple[()] = ()
     |};
   assert_expand
@@ -2357,6 +2358,7 @@ let test_transform_ast _ =
     {|
       class T(typing.NamedTuple):
         def __new__(cls, a: typing.Any) -> typing.NamedTuple: ...
+        def __init__(self, a: typing.Any) -> None: ...
         _fields: typing.Tuple[str] = ('a',)
         a: typing.Any
     |};
@@ -2367,6 +2369,7 @@ let test_transform_ast _ =
     {|
       class T(typing.NamedTuple):
         def __new__(cls, one: typing.Any, two: typing.Any) -> typing.NamedTuple: ...
+        def __init__(self, one: typing.Any, two: typing.Any) -> None: ...
         _fields: typing.Tuple[str, str] = ('one', 'two')
         one: typing.Any
         two: typing.Any
@@ -2378,6 +2381,7 @@ let test_transform_ast _ =
     {|
       class T(typing.NamedTuple):
         def __new__(cls, one: int, two: str) -> typing.NamedTuple: ...
+        def __init__(self, one: int, two: str) -> None: ...
         _fields: typing.Tuple[str, str] = ('one', 'two')
         one: int
         two: str
@@ -2393,6 +2397,7 @@ let test_transform_ast _ =
           a: typing.Any,
           b: typing.Any,
           c: typing.Any) -> typing.NamedTuple: ...
+        def __init__(self, a: typing.Any, b: typing.Any, c: typing.Any) -> None: ...
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
         a: typing.Any
         b: typing.Any
@@ -2406,6 +2411,7 @@ let test_transform_ast _ =
     {|
       class Foo(Bar, typing.NamedTuple):
         def __new__(cls, one: typing.Any, two: typing.Any) -> typing.NamedTuple: ...
+        def __init__(self, one: typing.Any, two: typing.Any) -> None: ...
         _fields: typing.Tuple[str, str] = ('one', 'two')
         one: typing.Any
         two: typing.Any
@@ -2421,6 +2427,7 @@ let test_transform_ast _ =
     {|
       class Foo(typing.NamedTuple):
         def __new__(cls, a: int, b: str, c: int = 3) -> typing.NamedTuple: ...
+        def __init__(self, a: int, b: str, c: int = 3) -> None: ...
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
         a: int
         b: str
@@ -2441,6 +2448,14 @@ let test_transform_ast _ =
            ts: typing.Any,
            lazy: typing.Any) -> typing.NamedTuple:
            ...
+         def __init__(
+           self,
+           op: typing.Any,
+           path: typing.Any,
+           value: typing.Any,
+           ts: typing.Any,
+           lazy: typing.Any) -> None:
+           ...
          _fields: typing.Tuple[str, str, str, str, str] = ('op', 'path', 'value', 'ts', 'lazy')
          op: typing.Any
          path: typing.Any
@@ -2458,6 +2473,7 @@ let test_transform_ast _ =
       class Foo:
         class T(typing.NamedTuple):
           def __new__(cls, a: typing.Any, b: typing.Any) -> typing.NamedTuple: ...
+          def __init__(self, a: typing.Any, b: typing.Any) -> None: ...
           _fields: typing.Tuple[str, str] = ('a', 'b')
           a: typing.Any
           b: typing.Any
@@ -2471,6 +2487,7 @@ let test_transform_ast _ =
       def foo():
         class T(typing.NamedTuple):
           def __new__(cls) -> typing.NamedTuple: ...
+          def __init__(self) -> None: ...
           _fields: typing.Tuple[()] = ()
     |};
   assert_expand
@@ -3466,7 +3483,7 @@ let test_populate_captures _ =
      def foo(x: int):
        y = 1
        def bar():
-         return (lambda x: x + y) 
+         return (lambda x: x + y)
   |}
     ~expected:[!&"bar", ["y", Annotation None]];
   (* Comprehension bounds are excluded *)
