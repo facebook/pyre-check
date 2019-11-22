@@ -186,6 +186,57 @@ let test_check_unbounded_variables context =
       reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `str`."];
+
+  (* Type variables in the nesting function is correctly captured *)
+  assert_type_errors
+    {|
+     from typing import TypeVar, Callable
+     T = TypeVar('T')
+     def foo(x: T) -> Callable[[], T]:
+         def bar() -> T:
+           return x
+         return bar
+  |}
+    [];
+  (* Type variables in the parent class is correctly captured *)
+  assert_type_errors
+    {|
+     from typing import TypeVar, Generic, Callable
+     T = TypeVar('T')
+     class A(Generic[T]):
+       def foo(self, x: T) -> T:
+         return x
+  |}
+    [];
+  (* Type variables in the parent class of nesting function is correctly captured *)
+  assert_type_errors
+    {|
+     from typing import TypeVar, Generic, Callable
+     T = TypeVar('T')
+     class A(Generic[T]):
+       def foo(self, x: T) -> Callable[[T], int]:
+         def bar(x: T) -> int:
+           return 42
+         return bar
+  |}
+    [];
+
+  (* Correctly mark the boundness of nested function type variables when there're recursive calls *)
+  assert_type_errors
+    {|
+    from typing import TypeVar, Dict, Any, Union
+    def loads(obj: object) -> Dict[str, Any]: ...
+    T = TypeVar('T')
+    def foo() -> None:
+      def bar(obj: T, *, top_level: bool = True) -> Union[str, T]:
+        if isinstance(obj, dict):
+          return "dict"
+        else:
+          loaded = loads(obj)
+          modified = bar(loaded, top_level = False)
+          return str(modified)
+  |}
+    [];
   ()
 
 

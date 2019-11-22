@@ -7,6 +7,24 @@ open Test
 open OUnit2
 open IntegrationTest
 
+let test_check_nested context =
+  assert_default_type_errors
+    ~context
+    {|
+     from typing import Callable, Any
+     
+     def wraps(wrapped: Callable[[...], Any]) -> Callable[[...], Any]: ...
+
+     def foo(f: Callable[[int], int]) -> Callable[[int], int]:
+       @wraps(f)
+       def decorated(x: int) -> int:
+         return f(x)
+       return decorated
+    |}
+    [];
+  ()
+
+
 let test_check_contextmanager context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -379,11 +397,11 @@ let test_decorators context =
       @overload
       def overloaded_decorator(f: Callable[[int], int]) -> Callable[[int], int]: ...
       def overloaded_decorator(f: Callable[[int], float]) -> Callable[[int], object]: ...
-
+  
       @overloaded_decorator
       def foo(x: int) -> int:
         return x
-
+  
       reveal_type(foo)
     |}
     ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable(foo)[[int], object]`."];
@@ -616,6 +634,7 @@ let test_decorator_factories context =
 let () =
   "decorator"
   >::: [
+         "check_nested" >:: test_check_nested;
          "check_contextmanager" >:: test_check_contextmanager;
          "check_asynccontextmanager" >:: test_check_asynccontextmanager;
          "check_click_command" >:: test_check_click_command;

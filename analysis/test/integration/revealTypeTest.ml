@@ -156,7 +156,70 @@ let test_reveal_type context =
     [
       "Revealed type [-1]: Revealed type for `args[0]` is `str`.";
       "Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      class A:
+        def foo(self) -> None:
+          reveal_type(self)
+    |}
+    ["Revealed type [-1]: Revealed type for `self` is `A`."];
+  assert_type_errors
+    {|
+      class A:
+        def foo(self) -> None:
+          def bar() -> None:
+            reveal_type(self)
+    |}
+    ["Revealed type [-1]: Revealed type for `self` is `A`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic
+      T = TypeVar("T")
+      class A(Generic[T]):
+        def foo(self) -> None:
+          def bar() -> None:
+            reveal_type(self)
+    |}
+    ["Revealed type [-1]: Revealed type for `self` is `A[Variable[T]]`."];
+  assert_type_errors
+    {|
+      class A:
+        @classmethod
+        def foo(cls) -> None:
+          reveal_type(cls)
+    |}
+    ["Revealed type [-1]: Revealed type for `cls` is `typing.Type[A]`."];
+  assert_type_errors
+    {|
+      class A:
+        @classmethod
+        def foo(cls) -> None:
+          def bar() -> None:
+            reveal_type(cls)
+    |}
+    ["Revealed type [-1]: Revealed type for `cls` is `typing.Type[A]`."];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        def baz() -> None:
+          reveal_type(bar)
+        def bar(x: int) -> int:
+          return x
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `typing.Callable[[Named(x, int)], int]`."];
+  assert_type_errors
+    {|
+      def foo( *args: str, **kwargs: int) -> None:
+        def f() -> None:
+          reveal_type(args[0])
+          reveal_type(kwargs['key'])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `args[0]` is `str`.";
+      "Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`.";
+    ];
+  ()
 
 
 let () = "revealType" >::: ["reveal_type" >:: test_reveal_type] |> Test.run

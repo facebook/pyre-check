@@ -61,24 +61,20 @@ let test_scheduling context =
       ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
     ];
 
-  (* Entry states are propagated. *)
+  (* Property getters and setters are both scheduled *)
   assert_type_errors
     {|
-      variable = 1
-      def foo() -> int:
-        return variable
-      def bar() -> str:
-        return variable
-
-      variable = 'asdf'
-      def bar() -> str:
-        return variable
+     class Foo:
+       @property
+       def foo(self) -> int:
+         return "abc"
+       @foo.setter
+       def foo(self, value: int) -> None:
+         return 42
     |}
     [
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible variable type [9]: variable is declared to have type `int` but is used as type \
-       `str`.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Incompatible return type [7]: Expected `None` but got `int`.";
     ];
 
   assert_type_errors
