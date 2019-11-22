@@ -329,11 +329,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                   Call.Argument.value =
                     {
                       Node.value =
-                        Expression.Tuple
-                          [
-                            { Node.value = Expression.Integer index; _ };
-                            { Node.value = expression; _ };
-                          ];
+                        Expression.Tuple [{ Node.value = index; _ }; { Node.value = expression; _ }];
                       _;
                     };
                   _;
@@ -345,13 +341,21 @@ let rec parse_annotations ~configuration ~parameters annotation =
               callee;
               arguments =
                 [
-                  { Call.Argument.value = { Node.value = Expression.Integer index; _ }; _ };
+                  { Call.Argument.value = { Node.value = index; _ }; _ };
                   { Call.Argument.value = { Node.value = expression; _ }; _ };
                 ];
             }
           when base_matches "AppliesTo" callee ->
             let extend_path annotation =
-              let field = AbstractTreeDomain.Label.create_int_field index in
+              let field =
+                match index with
+                | Expression.Integer index -> AbstractTreeDomain.Label.create_int_field index
+                | Expression.String { StringLiteral.value = index; _ } ->
+                    AbstractTreeDomain.Label.create_name_field index
+                | _ ->
+                    raise_invalid_model
+                      "Expected either integer or string as index in AppliesTo annotation."
+              in
               match annotation with
               | Sink ({ path; _ } as sink) -> Sink { sink with path = field :: path }
               | Source ({ path; _ } as source) -> Source { source with path = field :: path }

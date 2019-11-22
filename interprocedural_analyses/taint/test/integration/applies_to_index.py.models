@@ -2,6 +2,63 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "applies_to_index.issue_only_with_a_key",
+    "callable_line": 43,
+    "code": 5002,
+    "line": 45,
+    "start": 16,
+    "end": 22,
+    "filename": "applies_to_index.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "applies_to_index.py",
+              "line": 44,
+              "start": 8,
+              "end": 31
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "applies_to_index.only_applies_to_a_key",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-has": "first-index" },
+              { "always-first-index": "a" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "applies_to_index.py",
+              "line": 45,
+              "start": 16,
+              "end": 22
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "applies_to_index.issue_only_with_first",
     "callable_line": 16,
     "code": 5002,
@@ -106,6 +163,63 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "applies_to_index.issue_with_member",
+    "callable_line": 53,
+    "code": 5002,
+    "line": 55,
+    "start": 16,
+    "end": 19,
+    "filename": "applies_to_index.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "applies_to_index.py",
+              "line": 54,
+              "start": 8,
+              "end": 34
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "applies_to_index.only_applies_to_a_member",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-has": "first-field" },
+              { "always-first-field": "a" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "applies_to_index.py",
+              "line": 55,
+              "start": 16,
+              "end": 19
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "applies_to_index.issue_only_with_nested_first",
@@ -186,6 +300,34 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "applies_to_index.only_applies_to_a_key",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "applies_to_index.only_applies_to_a_member",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
   }
 }
 {

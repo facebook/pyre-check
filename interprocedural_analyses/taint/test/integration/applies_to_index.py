@@ -34,3 +34,23 @@ def issue_only_with_nested_first():
     __test_sink(c)
     __test_sink(d)
     return only_applies_to_nested()
+
+
+def only_applies_to_a_key():
+    return {"a": 1}
+
+
+def issue_only_with_a_key():
+    d = only_applies_to_a_key()
+    __test_sink(d["a"])
+    __test_sink(d["b"])
+
+
+def only_applies_to_a_member():
+    ...
+
+
+def issue_with_member():
+    x = only_applies_to_a_member()
+    __test_sink(x.a)
+    __test_sink(x.b)
