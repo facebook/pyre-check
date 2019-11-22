@@ -461,7 +461,6 @@ let run
 let run_start_command
     log_path
     terminal
-    use_watchman
     load_state_from
     save_state_to
     changed_files_path
@@ -572,9 +571,6 @@ let run_start_command
             exit 1
         | _ -> None )
   in
-  (* TODO(T41488848): This argument is no longer used, so include this line to please the linter.
-     Once client-side changes catch up, we should remove the argument. *)
-  let _ = use_watchman in
   run
     (Operations.create_configuration
        ~daemonize:(not terminal)
@@ -597,7 +593,6 @@ let command =
            "-terminal"
            no_arg
            ~doc:"Run the server from the terminal instead of running as a daemon."
-      +> flag "-use-watchman" no_arg ~doc:"Subscribe to watchman for file changes."
       +> flag
            "-load-state-from"
            (optional string)
