@@ -44,3 +44,7 @@ val parse
 val get_model_sources : directories:Path.t list -> (Path.t * string) list
 
 val verify_model_syntax : path:Path.t -> source:string -> unit
+
+val infer_class_models
+  :  environment:TypeEnvironment.ReadOnly.t ->
+  TaintResult.call_model Callable.Map.t

@@ -12,7 +12,8 @@ include TaintResult.Register (struct
   include TaintResult
 
   let init ~configuration ~environment ~functions:_ =
-    (* Parse models *)
+    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
+    let models = Model.infer_class_models ~environment in
     let taint = Yojson.Safe.Util.member "taint" configuration in
     let verify =
       Yojson.Safe.Util.member "verify_models" taint
@@ -29,8 +30,7 @@ include TaintResult.Register (struct
         None
     in
     let create_models ~configuration sources =
-      let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
-      List.fold sources ~init:Callable.Map.empty ~f:(fun models (path, source) ->
+      List.fold sources ~init:models ~f:(fun models (path, source) ->
           Model.parse
             ~resolution:(Analysis.TypeCheck.resolution global_resolution ())
             ~path
@@ -46,7 +46,7 @@ include TaintResult.Register (struct
       |> List.map ~f:Yojson.Safe.Util.to_string
     in
     match model_directories with
-    | [] -> Callable.Map.empty
+    | [] -> models
     | _ -> (
         try
           let directories = List.map model_directories ~f:Path.create_absolute in

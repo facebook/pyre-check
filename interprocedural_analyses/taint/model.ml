@@ -1149,3 +1149,68 @@ let verify_model_syntax ~path ~source =
       raise
         (InvalidModel
            (Format.sprintf "Invalid model at `%s`: %s" (Path.show path) (Exn.to_string exn)))
+
+
+let infer_class_models ~environment =
+  let open Domains in
+  Log.info "Computing inferred models...";
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let compute_dataclass_model class_summary =
+    let attributes =
+      GlobalResolution.attributes
+        ~resolution:global_resolution
+        ~transitive:false
+        ~class_attributes:false
+        ~include_generated_attributes:false
+        class_summary
+      |> List.map ~f:Annotated.Attribute.name
+    in
+    let fold_taint position existing_state attribute =
+      let leaf =
+        BackwardState.Tree.create_leaf (BackwardTaint.singleton Sinks.LocalReturn)
+        |> BackwardState.Tree.transform BackwardTaint.complex_feature_set ~f:(fun _ ->
+               [
+                 Features.Complex.ReturnAccessPath
+                   [AbstractTreeDomain.Label.create_name_field attribute];
+               ])
+      in
+      BackwardState.assign
+        ~root:(AccessPath.Root.PositionalParameter { position; name = attribute })
+        ~path:[]
+        leaf
+        existing_state
+    in
+    {
+      TaintResult.forward = Forward.empty;
+      backward =
+        {
+          TaintResult.Backward.taint_in_taint_out =
+            List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
+          sink_taint = BackwardState.empty;
+        };
+      mode = SkipAnalysis;
+    }
+  in
+  let inferred_dataclass_models class_name =
+    let is_dataclass class_summary =
+      AstEnvironment.ReadOnly.get_decorator
+        (TypeEnvironment.ReadOnly.ast_environment environment)
+        class_summary
+        ~decorator:"dataclasses.dataclass"
+      |> fun decorators -> not (List.is_empty decorators)
+    in
+    GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
+    |> Option.filter ~f:is_dataclass
+    >>| compute_dataclass_model
+    >>| fun model -> `Method { Callable.class_name; method_name = "__init__" }, model
+  in
+  let all_classes =
+    TypeEnvironment.ReadOnly.global_environment environment
+    |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
+    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+    |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+    |> AliasEnvironment.ReadOnly.unannotated_global_environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+  in
+  List.filter_map all_classes ~f:inferred_dataclass_models
+  |> Callable.Map.of_alist_reduce ~f:(TaintResult.join ~iteration:0)

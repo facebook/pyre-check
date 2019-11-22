@@ -454,15 +454,16 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
     let keys = Fixpoint.KeySet.of_list all_callables in
     Fixpoint.remove_new keys;
     Fixpoint.remove_old keys;
+    let inferred_models = Model.infer_class_models ~environment in
     let initial_models =
       match models with
-      | None -> Callable.Map.empty
+      | None -> inferred_models
       | Some source ->
           Model.parse
             ~resolution:(TypeCheck.resolution global_resolution ())
             ~source:(Test.trim_extra_indentation source)
             ~configuration:TaintConfiguration.default
-            Callable.Map.empty
+            inferred_models
     in
     initial_models
     |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
