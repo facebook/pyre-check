@@ -13,114 +13,104 @@ from .. import (
     EnvironmentException,
     __name__ as client_name,
     _resolve_filter_paths,
-    find_local_root,
     find_log_directory,
     get_binary_version_from_file,
     switch_root,
 )
+from ..analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ..filesystem import __name__ as filesystem_name
 
 
 class InitTest(unittest.TestCase):
     @patch("os.chdir")
     def test_switch_root(self, chdir) -> None:
-        original_directory = "/a/b/c"
-        with patch("os.path.realpath", return_value="realpath"), patch(
-            "os.path.isfile", return_value=False
-        ) as isfile, patch("os.getcwd", return_value="/a/b/c"):
-            isfile.side_effect = (
-                lambda directory: directory == "/a/b/.pyre_configuration"
-            )
-            directory = switch_root(original_directory)
-            self.assertEqual(directory, "/a/b")
-            chdir.assert_called_once_with(directory)
-
-        with patch("{}.find_root".format(filesystem_name)) as mock_find_root:
-            original_directory = "/a/b"
-            mock_find_root.side_effect = ["/a", "/a/b"]
-            directory = switch_root(original_directory)
-            self.assertEqual(directory, "/a/b")
-
-    @patch("os.chdir")
-    def test_find_local_root(self, chdir) -> None:
-        original_directory = "/a/b/c"
+        arguments = MagicMock()
         with patch("os.path.realpath", return_value="realpath"), patch(
             "os.path.isfile", return_value=False
         ) as isfile, patch("os.chdir"):
-            local_root = find_local_root(original_directory)
-            self.assertEqual(local_root, None)
+            arguments.local_configuration = None
+            switch_root(arguments)
+            self.assertEqual(arguments.local_configuration, None)
 
-            isfile.side_effect = (
-                lambda directory: directory == "/a/b/.pyre_configuration.local"
-            )
-            local_root = find_local_root(original_directory)
-            self.assertEqual(local_root, "/a/b")
-
-            with self.assertRaises(EnvironmentException):
+            arguments.local_configuration = None
+            with patch("os.getcwd", return_value="/a/b/c"):
                 isfile.side_effect = (
                     lambda directory: directory == "/a/b/.pyre_configuration.local"
-                    or directory == "/a/.pyre_configuration.local"
                 )
-                find_local_root(original_directory)
+                switch_root(arguments)
+                self.assertEqual(arguments.original_directory, "/a/b/c")
+                self.assertEqual(arguments.local_configuration, "/a/b")
+
+                with self.assertRaises(EnvironmentException):
+                    isfile.side_effect = (
+                        lambda directory: directory == "/a/b/.pyre_configuration.local"
+                        or directory == "/a/.pyre_configuration.local"
+                    )
+                    switch_root(arguments)
+
+        with patch("{}.find_root".format(filesystem_name)) as mock_find_root:
+            with patch("os.getcwd", return_value="/a/b"):
+                arguments.original_directory = "/a/b"
+                arguments.current_directory = "/a/b"
+                arguments.local_configuration = None
+                mock_find_root.side_effect = ["/a", "/a/b"]
+                switch_root(arguments)
+                self.assertEqual(arguments.original_directory, "/a/b")
+                self.assertEqual(arguments.current_directory, "/a/b")
+                self.assertEqual(arguments.local_configuration, None)
 
     @patch("{}.switch_root".format(client_name))
     @patch("os.makedirs")
     def test_find_log_directory(self, mkdirs, switch_root) -> None:
-        local_configuration = None
-        current_directory = "project"
-        log_directory = find_log_directory(None, current_directory, local_configuration)
-        self.assertEqual(log_directory, "project/.pyre")
+        arguments = MagicMock()
+        arguments.local_configuration = None
+        arguments.original_directory = "project/subdirectory"
+        arguments.current_directory = "project"
+        arguments.log_directory = None
+        find_log_directory(arguments)
+        self.assertEqual(arguments.log_directory, "project/.pyre")
 
-        local_configuration = "/project/subdirectory"
-        current_directory = "/project"
-        log_directory = find_log_directory(None, current_directory, local_configuration)
-        self.assertEqual(log_directory, "/project/.pyre/subdirectory")
+        arguments.local_configuration = "/project/subdirectory"
+        arguments.original_directory = "/project"
+        arguments.current_directory = "/project"
+        arguments.log_directory = None
+        find_log_directory(arguments)
+        self.assertEqual(arguments.log_directory, "/project/.pyre/subdirectory")
 
-        log_directory = find_log_directory(
-            "something", current_directory, local_configuration
-        )
-        self.assertEqual(log_directory, "something")
+        arguments.log_directory = "something"
+        find_log_directory(arguments)
+        self.assertEqual(arguments.log_directory, "something")
 
     def test_resolve_filter_paths(self) -> None:
         arguments = MagicMock()
         configuration = MagicMock()
-        original_directory = "/project"
         arguments.source_directories = []
         arguments.targets = []
+        arguments.original_directory = "/project"
         configuration.local_configuration_root = None
 
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
+        filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, [])
 
         arguments.source_directories = ["/project/a"]
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
+        filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, ["/project/a"])
 
         arguments.source_directories = ["/project/a"]
         arguments.targets = ["//x/y/..."]
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
+        filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, ["/project/a", "x/y"])
 
         arguments.source_directories = ["/project/local/a"]
         arguments.targets = ["//x/y:z"]
         configuration.local_configuration_root = "project/local"
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
+        filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, ["/project/local/a", "x/y"])
 
         arguments.source_directories = []
         arguments.targets = []
         configuration.local_configuration_root = "/project/local"
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
+        filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, ["/project/local"])
 
     @patch.object(os, "getenv", return_value=None)

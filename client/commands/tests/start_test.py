@@ -15,7 +15,6 @@ from ... import commands, configuration_monitor, project_files_monitor  # noqa
 from ...analysis_directory import AnalysisDirectory
 from ...commands import start  # noqa
 from ...filesystem import acquire_lock  # noqa
-from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -23,22 +22,11 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__n
 
 
 class StartTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("fcntl.lockf")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
-    def test_start(
-        self,
-        _daemonize,
-        get_directories_to_analyze,
-        lock_file,
-        find_local_root,
-        switch_root,
-        getcwd,
-    ) -> None:
+    def test_start(self, _daemonize, get_directories_to_analyze, lock_file) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -104,7 +92,9 @@ class StartTest(unittest.TestCase):
             )
             command.run()
             call_client.assert_called_once_with(command=commands.Start.NAME)
-            Monitor.assert_called_once_with(configuration, ".", analysis_directory)
+            Monitor.assert_called_once_with(
+                arguments, configuration, analysis_directory
+            )
             Monitor.return_value.daemonize.assert_called_once_with()
 
             analysis_directory = AnalysisDirectory(".")
@@ -223,14 +213,9 @@ class StartTest(unittest.TestCase):
             prepare.assert_called_once_with()
             Monitor.assert_not_called()
 
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_start_flags(
-        self, get_directories_to_analyze, find_local_root, switch_root, getcwd
-    ) -> None:
+    def test_start_flags(self, get_directories_to_analyze) -> None:
         # Check start with watchman.
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")

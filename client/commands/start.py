@@ -104,8 +104,8 @@ class Start(Reporting):
                     if self._use_watchman:
                         try:
                             file_monitor = project_files_monitor.ProjectFilesMonitor(  # noqa
+                                self._arguments,
                                 self._configuration,
-                                self._current_directory,
                                 self._analysis_directory,
                             )
                             file_monitor.daemonize()

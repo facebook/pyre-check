@@ -21,7 +21,6 @@ from ...commands.infer import (
     dequalify,
 )
 from ...error import Error
-from ..command import __name__ as client_name
 from .command_test import (
     mock_arguments as general_mock_arguments,
     mock_configuration as general_mock_configuration,
@@ -553,6 +552,7 @@ class PyreTest(unittest.TestCase):
 
 def mock_arguments() -> MagicMock:
     arguments = general_mock_arguments()
+
     arguments.debug = False
     arguments.additional_check = []
     arguments.sequential = False
@@ -564,6 +564,7 @@ def mock_arguments() -> MagicMock:
     arguments.logger = None
     arguments.log_identifier = None
     arguments.enable_profiling = None
+    arguments.current_directory = "."
     arguments.json = False
     arguments.annotate_from_existing_stubs = False
 
@@ -581,15 +582,10 @@ def mock_configuration() -> MagicMock:
 
 
 class InferTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("json.loads", return_value=[])
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_infer(
-        self, directories_to_analyze, json_loads, find_local_root, switch_root, getcwd
-    ) -> None:
+    def test_infer(self, directories_to_analyze, json_loads) -> None:
         arguments = mock_arguments()
         arguments.strict = False
 

@@ -38,12 +38,10 @@ class KillTest(unittest.TestCase):
         ],
     )
     @patch("os.path.realpath")
-    @patch("os.chdir")
     @patch("subprocess.run")
     def test_kill(
         self,
         run,
-        chdir,
         realpath,
         readlink,
         unlink,

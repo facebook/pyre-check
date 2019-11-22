@@ -372,8 +372,6 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 def resolve_analysis_directory(
     arguments: argparse.Namespace,
     configuration: Configuration,
-    original_directory: str,
-    current_directory: str,
     build: bool = False,
     isolate: bool = False,
 ) -> AnalysisDirectory:
@@ -399,14 +397,12 @@ def resolve_analysis_directory(
     if arguments.filter_directory:
         filter_paths = [arguments.filter_directory]
     else:
-        filter_paths = _resolve_filter_paths(
-            arguments, configuration, original_directory
-        )
+        filter_paths = _resolve_filter_paths(arguments, configuration)
 
     local_configuration_root = configuration.local_configuration_root
     if local_configuration_root:
         local_configuration_root = os.path.relpath(
-            local_configuration_root, current_directory
+            local_configuration_root, arguments.current_directory
         )
 
     use_buck_builder = (
@@ -443,7 +439,7 @@ def resolve_analysis_directory(
             source_directories=source_directories,
             targets=targets,
             buck_builder=buck_builder,
-            original_directory=original_directory,
+            original_directory=arguments.original_directory,
             filter_paths=filter_paths,
             local_configuration_root=local_configuration_root,
             extensions=configuration.extensions,

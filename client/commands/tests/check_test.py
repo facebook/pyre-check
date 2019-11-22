@@ -11,7 +11,6 @@ from unittest.mock import MagicMock, Mock, patch
 from ... import commands  # noqa
 from ...analysis_directory import AnalysisDirectory
 from ...commands import check
-from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -19,22 +18,11 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
 
 
 class CheckTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_check(
-        self,
-        get_directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        switch_root,
-        getcwd,
-    ) -> None:
+    def test_check(self, get_directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
 
         arguments = mock_arguments()
@@ -74,21 +62,12 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Check.NAME)
             prepare.assert_called_once_with()
 
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_sequential_check(
-        self,
-        directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        switch_root,
-        getcwd,
+        self, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -125,17 +104,8 @@ class CheckTest(unittest.TestCase):
     @patch.object(
         commands.Reporting, "_get_directories_to_analyze", return_value=set(["a", "b"])
     )
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_filter_directories(
-        self,
-        find_local_root,
-        switch_root,
-        getcwd,
-        directories_to_analyze,
-        realpath,
-        check_output,
+        self, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -168,21 +138,12 @@ class CheckTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_dumb_terminal(
-        self,
-        directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        switch_root,
-        getcwd,
+        self, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -213,21 +174,12 @@ class CheckTest(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_hide_parse_errors(
-        self,
-        directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        switch_root,
-        getcwd,
+        self, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
 
@@ -257,22 +209,11 @@ class CheckTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_check_strict(
-        self,
-        directories_to_analyze,
-        realpath,
-        check_output,
-        find_local_root,
-        switch_root,
-        getcwd,
-    ) -> None:
+    def test_check_strict(self, directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
 
         arguments = mock_arguments()

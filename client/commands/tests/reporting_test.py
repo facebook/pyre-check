@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, mock_open, patch
 from ... import commands  # noqa
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ...error import Error  # noqa
-from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -23,13 +22,11 @@ class ReportingTest(unittest.TestCase):
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
     @patch.object(os.path, "isdir", side_effect=lambda path: True)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
-    @patch("os.getcwd", return_value="/test")
-    @patch("{}.switch_root".format(client_name), return_value="/")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
-    def test_get_errors(
-        self, find_local_root, switch_root, get_cwd, exists, isdir, realpath
-    ) -> None:
+    def test_get_errors(self, exists, isdir, realpath) -> None:
         arguments = mock_arguments()
+        arguments.original_directory = "/test"  # called from
+        arguments.current_directory = "/"  # project root
+        arguments.local_configuration = None
         configuration = mock_configuration()
         result = MagicMock()
 
@@ -69,7 +66,7 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.ignore_error)
             self.assertFalse(error.external_to_global_root)
 
-        get_cwd.return_value = "/f/g/target"
+        arguments.original_directory = "/f/g/target"
         arguments.targets = ["//f/g:target"]
         configuration.targets = []
         handler = commands.Reporting(
@@ -83,9 +80,9 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.external_to_global_root)
 
         # Called from root with local configuration command line argument
-        get_cwd.return_value = "/"  # called from
-        switch_root.return_value = "/"  # project root
-        find_local_root.return_value = "/test"  # local configuration
+        arguments.original_directory = "/"  # called from
+        arguments.current_directory = "/"  # project root
+        arguments.local_configuration = "/test"
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/shared")
         )
@@ -99,9 +96,9 @@ class ReportingTest(unittest.TestCase):
         return
 
         # Test wildcard in do not check
-        get_cwd.return_value = "/"  # called from
-        switch_root.return_value = "/"  # project root
-        find_local_root.return_value = None
+        arguments.original_directory = "/"  # called from
+        arguments.current_directory = "/"  # project root
+        arguments.local_configuration = None
         configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(arguments, configuration, AnalysisDirectory("/a"))
         json_errors["errors"][0]["path"] = "b/c.py"
@@ -113,14 +110,9 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.external_to_global_root)
 
     @patch.object(subprocess, "run")
-    @patch("os.getcwd", return_value="/")
-    @patch("{}.switch_root".format(client_name), return_value="/")
-    @patch("{}.find_local_root".format(client_name), return_value=None)
-    def test_get_directories_to_analyze(
-        self, find_local_root, switch_root, getcwd, run
-    ) -> None:
+    def test_get_directories_to_analyze(self, run) -> None:
         arguments = mock_arguments()
-        switch_root.return_value = "base"
+        arguments.current_directory = "base"
         arguments.source_directories = ["base"]
         configuration = mock_configuration()
         handler = commands.Reporting(

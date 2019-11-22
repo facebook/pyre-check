@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import argparse
 import functools
 import logging
 import os
@@ -35,11 +36,12 @@ class ProjectFilesMonitor(WatchmanSubscriber):
 
     def __init__(
         self,
+        arguments: argparse.Namespace,
         configuration: Configuration,
-        current_directory: str,
         analysis_directory: AnalysisDirectory,
     ) -> None:
         super(ProjectFilesMonitor, self).__init__(configuration, analysis_directory)
+        self._arguments = arguments
         self._configuration = configuration
         self._analysis_directory = analysis_directory
 
@@ -47,7 +49,9 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             ["py", "pyi"] + configuration.extensions
         )  # type: Set[str]
 
-        self._watchman_path = self._find_watchman_path(current_directory)  # type: str
+        self._watchman_path = self._find_watchman_path(
+            arguments.current_directory
+        )  # type: str
 
         self.socket_connection = SocketConnection(self._configuration.log_directory)
         self.socket_connection.connect()
