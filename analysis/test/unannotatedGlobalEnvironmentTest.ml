@@ -105,6 +105,15 @@ let test_define_registration context =
     ~expected:[!&"test.$toplevel"; !&"test.Foo.$class_toplevel"; !&"test.Foo.foo"];
   assert_registers
     {|
+     class Foo:
+       @property
+       def foo(self): ...
+       @foo.setter
+       def foo(self, value): ...
+    |}
+    ~expected:[!&"test.$toplevel"; !&"test.Foo.$class_toplevel"; !&"test.Foo.foo"];
+  assert_registers
+    {|
     def foo():
       def bar():
         ...
@@ -1458,8 +1467,9 @@ let test_updates context =
       ~middle_actions:
         [
           (let definition =
-             let overloads = [first_overload] in
-             { UnannotatedGlobalEnvironment.FunctionDefinition.body = Some body; overloads }
+             let open UnannotatedGlobalEnvironment.FunctionDefinition in
+             let siblings = [{ Sibling.kind = Sibling.Kind.Overload; body = first_overload }] in
+             { body = Some body; siblings }
            in
            `Define (!&"test.foo", dependency, Some definition));
         ]
@@ -1467,13 +1477,170 @@ let test_updates context =
       ~post_actions:
         [
           (let definition =
-             let overloads = [first_overload; second_overload] in
-             { UnannotatedGlobalEnvironment.FunctionDefinition.body = Some body; overloads }
+             let open UnannotatedGlobalEnvironment.FunctionDefinition in
+             let siblings =
+               [
+                 { Sibling.kind = Sibling.Kind.Overload; body = first_overload };
+                 { Sibling.kind = Sibling.Kind.Overload; body = second_overload };
+               ]
+             in
+             { body = Some body; siblings }
            in
            `Define (!&"test.foo", dependency, Some definition));
         ]
       ()
   in
+
+  assert_updates
+    ~original_source:{|
+      class A:
+        foo: int
+    |}
+    ~new_source:
+      {|
+      class A:
+        @property
+        def foo(self) -> int: ...
+        @foo.setter
+        def foo(self, value: int) -> None: ...
+    |}
+    ~middle_actions:[`Define (!&"test.A.foo", dependency, None)]
+    ~expected_triggers:[dependency]
+    ~post_actions:
+      [
+        (let definition =
+           let open UnannotatedGlobalEnvironment.FunctionDefinition in
+           let create_elipsis ~start ~stop () =
+             node
+               ~path
+               ~start
+               ~stop
+               (Statement.Expression (node ~path ~start ~stop Expression.Ellipsis))
+           in
+           let body =
+             node
+               ~path
+               ~start:(4, 2)
+               ~stop:(4, 27)
+               {
+                 Define.signature =
+                   {
+                     Define.Signature.name = !&"test.A.foo";
+                     parameters =
+                       [
+                         node
+                           ~path
+                           ~start:(4, 10)
+                           ~stop:(4, 14)
+                           { Parameter.name = "$parameter$self"; value = None; annotation = None };
+                       ];
+                     decorators =
+                       [
+                         node
+                           ~path
+                           ~start:(3, 3)
+                           ~stop:(3, 11)
+                           (Expression.Name (Name.Identifier "property"));
+                       ];
+                     docstring = None;
+                     return_annotation =
+                       Some
+                         (node
+                            ~path
+                            ~start:(4, 19)
+                            ~stop:(4, 22)
+                            (Expression.Name (Name.Identifier "int")));
+                     async = false;
+                     generator = false;
+                     parent = Some !&"test.A";
+                     nesting_define = None;
+                   };
+                 captures = [];
+                 body = [create_elipsis ~start:(4, 24) ~stop:(4, 27) ()];
+               }
+           in
+           let siblings =
+             [
+               (let body =
+                  node
+                    ~path
+                    ~start:(6, 2)
+                    ~stop:(6, 40)
+                    {
+                      Define.signature =
+                        {
+                          Define.Signature.name = !&"test.A.foo";
+                          parameters =
+                            [
+                              node
+                                ~path
+                                ~start:(6, 10)
+                                ~stop:(6, 14)
+                                {
+                                  Parameter.name = "$parameter$self";
+                                  value = None;
+                                  annotation = None;
+                                };
+                              node
+                                ~path
+                                ~start:(6, 16)
+                                ~stop:(6, 21)
+                                {
+                                  Parameter.name = "$parameter$value";
+                                  value = None;
+                                  annotation =
+                                    Some
+                                      (node
+                                         ~path
+                                         ~start:(6, 23)
+                                         ~stop:(6, 26)
+                                         (Expression.Name (Name.Identifier "int")));
+                                };
+                            ];
+                          decorators =
+                            [
+                              node
+                                ~path
+                                ~start:(5, 3)
+                                ~stop:(5, 13)
+                                (Expression.Name
+                                   (Name.Attribute
+                                      {
+                                        base =
+                                          node
+                                            ~path
+                                            ~start:(5, 3)
+                                            ~stop:(5, 6)
+                                            (Expression.Name (Name.Identifier "foo"));
+                                        attribute = "setter";
+                                        special = false;
+                                      }));
+                            ];
+                          docstring = None;
+                          return_annotation =
+                            Some
+                              (node
+                                 ~path
+                                 ~start:(6, 31)
+                                 ~stop:(6, 35)
+                                 (Expression.Name (Name.Identifier "None")));
+                          async = false;
+                          generator = false;
+                          parent = Some !&"test.A";
+                          nesting_define = None;
+                        };
+                      captures = [];
+                      body = [create_elipsis ~start:(6, 37) ~stop:(6, 40) ()];
+                    }
+                in
+                { Sibling.kind = Sibling.Kind.PropertySetter; body });
+             ]
+           in
+           { body = Some body; siblings }
+         in
+         `Define (!&"test.A.foo", dependency, Some definition));
+      ]
+    ();
 
   (* Location-only change *)
   assert_updates

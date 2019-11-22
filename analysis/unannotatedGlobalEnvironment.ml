@@ -27,19 +27,41 @@ type unannotated_global =
 [@@deriving compare, show, equal]
 
 module FunctionDefinition = struct
+  module Sibling = struct
+    module Kind = struct
+      type t =
+        | Overload
+        | PropertySetter
+      [@@deriving sexp, compare]
+    end
+
+    type t = {
+      kind: Kind.t;
+      body: Define.t Node.t;
+    }
+    [@@deriving sexp, compare]
+
+    let location_sensitive_compare left right =
+      match Kind.compare left.kind right.kind with
+      | x when not (Int.equal x 0) -> x
+      | _ -> Node.location_sensitive_compare Define.location_sensitive_compare left.body right.body
+  end
+
   type t = {
     body: Define.t Node.t option;
-    overloads: Define.t Node.t list;
+    siblings: Sibling.t list;
   }
   [@@deriving sexp, compare]
 
   let location_sensitive_compare left right =
-    let location_sensitive_define_node_compare =
-      Node.location_sensitive_compare Define.location_sensitive_compare
-    in
-    match Option.compare location_sensitive_define_node_compare left.body right.body with
+    match
+      Option.compare
+        (Node.location_sensitive_compare Define.location_sensitive_compare)
+        left.body
+        right.body
+    with
     | x when not (Int.equal x 0) -> x
-    | _ -> List.compare location_sensitive_define_node_compare left.overloads right.overloads
+    | _ -> List.compare Sibling.compare left.siblings right.siblings
 end
 
 type class_data = {
@@ -729,31 +751,41 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as 
     let table = Reference.Table.create () in
     let process_define ({ Node.value = define; _ } as define_node) =
       let define_name = Define.name define in
-      let is_overload = Define.is_overloaded_function define in
+      let sibling =
+        let open FunctionDefinition.Sibling in
+        if Define.is_overloaded_function define then
+          Some { kind = Kind.Overload; body = define_node }
+        else if Define.is_property_setter define then
+          Some { kind = Kind.PropertySetter; body = define_node }
+        else
+          None
+      in
       let update = function
-        | None ->
-            if is_overload then
-              None, [define_node]
-            else
-              Some define_node, []
-        | Some (body, overloads) ->
-            if is_overload then
-              body, define_node :: overloads
-            else if Option.is_some body then
-              (* Last definition wins -- collector returns functions in reverse order *)
-              body, overloads
-            else
-              Some define_node, overloads
+        | None -> (
+            match sibling with
+            | Some sibling -> None, [sibling]
+            | None -> Some define_node, [] )
+        | Some (body, siblings) -> (
+            match sibling with
+            | Some sibling -> body, sibling :: siblings
+            | None ->
+                if Option.is_some body then (
+                  Log.info
+                    "Function with duplicated name %a detected. Dropping the body"
+                    Reference.pp
+                    define_name;
+                  (* Last definition wins -- collector returns functions in reverse order *)
+                  body, siblings )
+                else
+                  Some define_node, siblings )
       in
       Hashtbl.update table define_name ~f:update
     in
     let collect_definition ~key ~data:(body, overloads) collected =
-      let overloads =
-        List.sort
-          overloads
-          ~compare:(Node.location_sensitive_compare Define.location_sensitive_compare)
+      let siblings =
+        List.sort overloads ~compare:FunctionDefinition.Sibling.location_sensitive_compare
       in
-      (key, { FunctionDefinition.body; overloads }) :: collected
+      (key, { FunctionDefinition.body; siblings }) :: collected
     in
     let all_defines =
       (* Take into account module toplevel *)

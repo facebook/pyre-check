@@ -25,9 +25,24 @@ type unannotated_global =
 [@@deriving compare, show]
 
 module FunctionDefinition : sig
+  module Sibling : sig
+    module Kind : sig
+      type t =
+        | Overload
+        | PropertySetter
+      [@@deriving sexp, compare]
+    end
+
+    type t = {
+      kind: Kind.t;
+      body: Define.t Node.t;
+    }
+    [@@deriving sexp, compare]
+  end
+
   type t = {
     body: Define.t Node.t option;
-    overloads: Define.t Node.t list;
+    siblings: Sibling.t list;
   }
   [@@deriving sexp, compare]
 
