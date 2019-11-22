@@ -582,18 +582,13 @@ def mock_configuration() -> MagicMock:
 
 class InferTest(unittest.TestCase):
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("json.loads", return_value=[])
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_infer(
-        self,
-        directories_to_analyze,
-        json_loads,
-        find_local_root,
-        find_project_root,
-        getcwd,
+        self, directories_to_analyze, json_loads, find_local_root, switch_root, getcwd
     ) -> None:
         arguments = mock_arguments()
         arguments.strict = False

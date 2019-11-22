@@ -15,15 +15,15 @@ from .. import (
     _resolve_filter_paths,
     find_local_root,
     find_log_directory,
-    find_project_root,
     get_binary_version_from_file,
+    switch_root,
 )
 from ..filesystem import __name__ as filesystem_name
 
 
 class InitTest(unittest.TestCase):
     @patch("os.chdir")
-    def test_find_project_root(self, chdir) -> None:
+    def test_switch_root(self, chdir) -> None:
         original_directory = "/a/b/c"
         with patch("os.path.realpath", return_value="realpath"), patch(
             "os.path.isfile", return_value=False
@@ -31,14 +31,14 @@ class InitTest(unittest.TestCase):
             isfile.side_effect = (
                 lambda directory: directory == "/a/b/.pyre_configuration"
             )
-            directory = find_project_root(original_directory)
+            directory = switch_root(original_directory)
             self.assertEqual(directory, "/a/b")
             chdir.assert_called_once_with(directory)
 
         with patch("{}.find_root".format(filesystem_name)) as mock_find_root:
             original_directory = "/a/b"
             mock_find_root.side_effect = ["/a", "/a/b"]
-            directory = find_project_root(original_directory)
+            directory = switch_root(original_directory)
             self.assertEqual(directory, "/a/b")
 
     @patch("os.chdir")
@@ -63,9 +63,9 @@ class InitTest(unittest.TestCase):
                 )
                 find_local_root(original_directory)
 
-    @patch("{}.find_project_root".format(client_name))
+    @patch("{}.switch_root".format(client_name))
     @patch("os.makedirs")
-    def test_find_log_directory(self, mkdirs, find_project_root) -> None:
+    def test_find_log_directory(self, mkdirs, switch_root) -> None:
         local_configuration = None
         current_directory = "project"
         log_directory = find_log_directory(None, current_directory, local_configuration)

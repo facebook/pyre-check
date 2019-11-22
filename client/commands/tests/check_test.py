@@ -20,7 +20,7 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
 
 class CheckTest(unittest.TestCase):
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -32,7 +32,7 @@ class CheckTest(unittest.TestCase):
         realpath,
         check_output,
         find_local_root,
-        find_project_root,
+        switch_root,
         getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
@@ -75,7 +75,7 @@ class CheckTest(unittest.TestCase):
             prepare.assert_called_once_with()
 
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -87,7 +87,7 @@ class CheckTest(unittest.TestCase):
         realpath,
         check_output,
         find_local_root,
-        find_project_root,
+        switch_root,
         getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
@@ -126,12 +126,12 @@ class CheckTest(unittest.TestCase):
         commands.Reporting, "_get_directories_to_analyze", return_value=set(["a", "b"])
     )
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_filter_directories(
         self,
         find_local_root,
-        find_project_root,
+        switch_root,
         getcwd,
         directories_to_analyze,
         realpath,
@@ -169,7 +169,7 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -181,7 +181,7 @@ class CheckTest(unittest.TestCase):
         realpath,
         check_output,
         find_local_root,
-        find_project_root,
+        switch_root,
         getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
@@ -214,7 +214,7 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -226,7 +226,7 @@ class CheckTest(unittest.TestCase):
         realpath,
         check_output,
         find_local_root,
-        find_project_root,
+        switch_root,
         getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
@@ -258,7 +258,7 @@ class CheckTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
@@ -270,7 +270,7 @@ class CheckTest(unittest.TestCase):
         realpath,
         check_output,
         find_local_root,
-        find_project_root,
+        switch_root,
         getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x

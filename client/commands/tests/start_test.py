@@ -24,7 +24,7 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__n
 
 class StartTest(unittest.TestCase):
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("fcntl.lockf")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -36,7 +36,7 @@ class StartTest(unittest.TestCase):
         get_directories_to_analyze,
         lock_file,
         find_local_root,
-        find_project_root,
+        switch_root,
         getcwd,
     ) -> None:
         arguments = mock_arguments()
@@ -224,12 +224,12 @@ class StartTest(unittest.TestCase):
             Monitor.assert_not_called()
 
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.find_project_root".format(client_name), return_value=".")
+    @patch("{}.switch_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_start_flags(
-        self, get_directories_to_analyze, find_local_root, find_project_root, getcwd
+        self, get_directories_to_analyze, find_local_root, switch_root, getcwd
     ) -> None:
         # Check start with watchman.
         arguments = mock_arguments()

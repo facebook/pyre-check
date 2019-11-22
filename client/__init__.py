@@ -103,13 +103,12 @@ def get_binary_version_from_file(local_path: Optional[str]) -> str:
     return "No version set" if not version else version
 
 
-def find_project_root(original_directory: str, switch: bool = True) -> str:
+def switch_root(original_directory: str) -> str:
     """Pyre always runs from the directory containing the nearest .pyre_configuration,
     if one exists."""
     global_root = find_root(original_directory, CONFIGURATION_FILE)
     root = global_root or original_directory
-    if switch:
-        os.chdir(root)
+    os.chdir(root)
     return root
 
 

@@ -15,7 +15,7 @@ from argparse import Namespace
 from logging import Logger
 from typing import Iterable
 
-from . import CONFIGURATION_FILE, FAILURE, SUCCESS, log
+from . import CONFIGURATION_FILE, FAILURE, SUCCESS, log, switch_root
 from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .filesystem import find_root
