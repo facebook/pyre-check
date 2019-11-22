@@ -31,7 +31,7 @@
             "call": {
               "position": {
                 "filename": "attach_features.py",
-                "line": 14,
+                "line": 11,
                 "start": 11,
                 "end": 33
               },
@@ -67,7 +67,7 @@
           {
             "root": {
               "filename": "attach_features.py",
-              "line": 20,
+              "line": 17,
               "start": 16,
               "end": 37
             },
@@ -89,7 +89,7 @@
           {
             "root": {
               "filename": "attach_features.py",
-              "line": 19,
+              "line": 16,
               "start": 16,
               "end": 27
             },
@@ -114,7 +114,7 @@
           {
             "root": {
               "filename": "attach_features.py",
-              "line": 18,
+              "line": 15,
               "start": 16,
               "end": 26
             },
@@ -145,7 +145,7 @@
             "call": {
               "position": {
                 "filename": "attach_features.py",
-                "line": 24,
+                "line": 21,
                 "start": 18,
                 "end": 26
               },
@@ -197,7 +197,7 @@
           {
             "root": {
               "filename": "attach_features.py",
-              "line": 9,
+              "line": 6,
               "start": 8,
               "end": 16
             },
@@ -259,7 +259,7 @@
           {
             "root": {
               "filename": "attach_features.py",
-              "line": 32,
+              "line": 29,
               "start": 16,
               "end": 19
             },
@@ -305,7 +305,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 37, "start": 30, "end": 33 } ],
+            "tito": [ { "line": 34, "start": 30, "end": 33 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },

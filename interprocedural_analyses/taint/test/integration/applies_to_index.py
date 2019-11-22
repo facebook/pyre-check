@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 def only_applies_to_first():
     return 1, 0
 

@@ -10,7 +10,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 28,
+              "line": 26,
               "start": 11,
               "end": 18
             },
@@ -50,7 +50,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 24,
+              "line": 22,
               "start": 11,
               "end": 50
             },
@@ -90,7 +90,7 @@
           {
             "root": {
               "filename": "attributes.py",
-              "line": 20,
+              "line": 18,
               "start": 11,
               "end": 46
             },

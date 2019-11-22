@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 def int_source() -> int:
     return __test_source()
 

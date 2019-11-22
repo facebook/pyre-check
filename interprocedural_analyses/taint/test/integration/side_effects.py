@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 def test_from_1_to_0():
     x = 0
     change_arg0(x, __test_source())

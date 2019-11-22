@@ -1,6 +1,3 @@
-# flake8: noqaes
-
-
 class C:
     def update(self, parameter):
         ...

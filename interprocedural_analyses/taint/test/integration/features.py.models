@@ -103,7 +103,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 19, "start": 15, "end": 16 } ],
+            "tito": [ { "line": 17, "start": 15, "end": 16 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-type": "scalar" },
@@ -127,7 +127,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 23, "start": 15, "end": 16 } ],
+            "tito": [ { "line": 21, "start": 15, "end": 16 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-type": "scalar" },
@@ -151,7 +151,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 36, "start": 19, "end": 20 } ],
+            "tito": [ { "line": 34, "start": 19, "end": 20 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "type": "scalar" }, { "via": "tito" } ]
           }
@@ -172,7 +172,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 27, "start": 18, "end": 19 } ],
+            "tito": [ { "line": 25, "start": 18, "end": 19 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -193,7 +193,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 31, "start": 33, "end": 34 } ],
+            "tito": [ { "line": 29, "start": 33, "end": 34 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-type": "scalar" },

@@ -95,7 +95,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 49, "start": 35, "end": 41 } ],
+            "tito": [ { "line": 46, "start": 35, "end": 41 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -147,7 +147,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 53, "start": 21, "end": 27 } ],
+            "tito": [ { "line": 50, "start": 21, "end": 27 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -168,7 +168,7 @@
         "taint": [
           {
             "decl": "MISSING",
-            "tito": [ { "line": 18, "start": 30, "end": 38 } ],
+            "tito": [ { "line": 15, "start": 30, "end": 38 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -178,7 +178,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 15, "start": 20, "end": 21 } ],
+            "tito": [ { "line": 12, "start": 20, "end": 21 } ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[report]" },
               { "kind": "LocalReturn", "name": "[name]" },
@@ -203,7 +203,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 33, "start": 24, "end": 25 } ],
+            "tito": [ { "line": 30, "start": 24, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
           }
@@ -223,11 +223,11 @@
           {
             "root": {
               "filename": "taint_in_taint_out.py",
-              "line": 37,
+              "line": 34,
               "start": 32,
               "end": 47
             },
-            "tito": [ { "line": 37, "start": 32, "end": 47 } ],
+            "tito": [ { "line": 34, "start": 32, "end": 47 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -260,7 +260,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 41, "start": 29, "end": 30 } ],
+            "tito": [ { "line": 38, "start": 29, "end": 30 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },
@@ -274,7 +274,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 41, "start": 19, "end": 20 } ],
+            "tito": [ { "line": 38, "start": 19, "end": 20 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },

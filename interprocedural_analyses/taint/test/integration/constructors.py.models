@@ -89,7 +89,7 @@
           {
             "root": {
               "filename": "constructors.py",
-              "line": 17,
+              "line": 14,
               "start": 13,
               "end": 34
             },
@@ -119,7 +119,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 14, "start": 32, "end": 50 } ],
+            "tito": [ { "line": 11, "start": 32, "end": 50 } ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
             ],
@@ -132,7 +132,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 14, "start": 19, "end": 30 } ],
+            "tito": [ { "line": 11, "start": 19, "end": 30 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -143,7 +143,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 14, "start": 15, "end": 18 } ],
+            "tito": [ { "line": 11, "start": 15, "end": 18 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -164,7 +164,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 22, "start": 52, "end": 61 } ],
+            "tito": [ { "line": 19, "start": 52, "end": 61 } ],
             "leaves": [
               { "kind": "LocalReturn", "name": "[oauth_token_secret]" }
             ],
@@ -177,7 +177,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 22, "start": 41, "end": 50 } ],
+            "tito": [ { "line": 19, "start": 41, "end": 50 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[oauth_token]" } ],
             "features": [ { "always-via": "tito" } ]
           }

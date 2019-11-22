@@ -1,4 +1,3 @@
-# flake8: noqa
 from django.http import Request
 
 

@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "overrides.testB",
-    "callable_line": 104,
+    "callable_line": 103,
     "code": 5002,
-    "line": 106,
+    "line": 105,
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
@@ -19,7 +19,71 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
+                "line": 104,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
                 "line": 105,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "overrides.D.methodA" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overrides.testB",
+    "callable_line": 103,
+    "code": 5002,
+    "line": 106,
+    "start": 20,
+    "end": 21,
+    "filename": "overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 104,
                 "start": 8,
                 "end": 19
               },
@@ -46,70 +110,6 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 106,
-                "start": 14,
-                "end": 15
-              },
-              "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "overrides.testB",
-    "callable_line": 104,
-    "code": 5002,
-    "line": 107,
-    "start": 20,
-    "end": 21,
-    "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 105,
-                "start": 8,
-                "end": 19
-              },
-              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 107,
                 "start": 20,
                 "end": 21
               },
@@ -131,73 +131,9 @@
   "kind": "issue",
   "data": {
     "callable": "overrides.testBase",
-    "callable_line": 72,
+    "callable_line": 71,
     "code": 5002,
-    "line": 75,
-    "start": 20,
-    "end": 21,
-    "filename": "overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 73,
-                "start": 8,
-                "end": 19
-              },
-              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "__test_source",
-                "on_all_flows": true
-              }
-            ],
-            "features": [ { "always-via": "special_source" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 75,
-                "start": 20,
-                "end": 21
-              },
-              "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
-            ],
-            "features": [ { "always-via": "special_sink" } ]
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "overrides.testBase",
-    "callable_line": 72,
-    "code": 5002,
-    "line": 74,
+    "line": 73,
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
@@ -211,7 +147,71 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
+                "line": 72,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
                 "line": 73,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overrides.testBase",
+    "callable_line": 71,
+    "code": 5002,
+    "line": 74,
+    "start": 20,
+    "end": 21,
+    "filename": "overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 72,
                 "start": 8,
                 "end": 19
               },
@@ -238,10 +238,10 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 74,
-                "start": 14,
-                "end": 15
+                "start": 20,
+                "end": 21
               },
-              "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
+              "resolves_to": [ "overrides.B.classMethod" ],
               "port": "formal(arg)",
               "length": 1
             },
@@ -259,9 +259,9 @@
   "kind": "issue",
   "data": {
     "callable": "overrides.testC",
-    "callable_line": 120,
+    "callable_line": 119,
     "code": 5002,
-    "line": 122,
+    "line": 121,
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
@@ -275,7 +275,7 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
-                "line": 121,
+                "line": 120,
                 "start": 8,
                 "end": 19
               },
@@ -296,7 +296,7 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
-                "line": 121,
+                "line": 120,
                 "start": 8,
                 "end": 19
               },
@@ -322,7 +322,7 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
-                "line": 122,
+                "line": 121,
                 "start": 14,
                 "end": 15
               },
@@ -344,9 +344,9 @@
   "kind": "issue",
   "data": {
     "callable": "overrides.testD",
-    "callable_line": 136,
+    "callable_line": 135,
     "code": 5002,
-    "line": 138,
+    "line": 137,
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
@@ -360,7 +360,7 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
-                "line": 137,
+                "line": 136,
                 "start": 8,
                 "end": 19
               },
@@ -386,7 +386,7 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
-                "line": 138,
+                "line": 137,
                 "start": 14,
                 "end": 15
               },
@@ -408,9 +408,9 @@
   "kind": "issue",
   "data": {
     "callable": "overrides.testStaticB",
-    "callable_line": 110,
+    "callable_line": 109,
     "code": 5002,
-    "line": 112,
+    "line": 111,
     "start": 18,
     "end": 19,
     "filename": "overrides.py",
@@ -424,7 +424,7 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
-                "line": 111,
+                "line": 110,
                 "start": 8,
                 "end": 19
               },
@@ -450,7 +450,7 @@
             "call": {
               "position": {
                 "filename": "overrides.py",
-                "line": 112,
+                "line": 111,
                 "start": 18,
                 "end": 19
               },
@@ -797,7 +797,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 27, "start": 35, "end": 38 } ],
+            "tito": [ { "line": 26, "start": 35, "end": 38 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -808,7 +808,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 27, "start": 8, "end": 25 } ],
+            "tito": [ { "line": 26, "start": 8, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -829,7 +829,7 @@
           {
             "root": {
               "filename": "overrides.py",
-              "line": 30,
+              "line": 29,
               "start": 20,
               "end": 23
             },
@@ -856,7 +856,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 37, "start": 35, "end": 38 } ],
+            "tito": [ { "line": 36, "start": 35, "end": 38 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -867,7 +867,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 37, "start": 8, "end": 25 } ],
+            "tito": [ { "line": 36, "start": 8, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -888,7 +888,7 @@
           {
             "root": {
               "filename": "overrides.py",
-              "line": 44,
+              "line": 43,
               "start": 20,
               "end": 23
             },
@@ -914,7 +914,7 @@
           {
             "root": {
               "filename": "overrides.py",
-              "line": 40,
+              "line": 39,
               "start": 15,
               "end": 30
             },
@@ -974,7 +974,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 51, "start": 32, "end": 35 } ],
+            "tito": [ { "line": 50, "start": 32, "end": 35 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -985,7 +985,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 51, "start": 8, "end": 22 } ],
+            "tito": [ { "line": 50, "start": 8, "end": 22 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -1006,7 +1006,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 63, "start": 32, "end": 35 } ],
+            "tito": [ { "line": 62, "start": 32, "end": 35 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "[r]" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -1017,7 +1017,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 63, "start": 8, "end": 22 } ],
+            "tito": [ { "line": 62, "start": 8, "end": 22 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -1038,7 +1038,7 @@
           {
             "root": {
               "filename": "overrides.py",
-              "line": 66,
+              "line": 65,
               "start": 20,
               "end": 23
             },
@@ -1064,7 +1064,7 @@
           {
             "root": {
               "filename": "overrides.py",
-              "line": 69,
+              "line": 68,
               "start": 15,
               "end": 30
             },
@@ -1095,11 +1095,11 @@
           {
             "root": {
               "filename": "overrides.py",
-              "line": 153,
+              "line": 152,
               "start": 15,
               "end": 30
             },
-            "tito": [ { "line": 153, "start": 15, "end": 30 } ],
+            "tito": [ { "line": 152, "start": 15, "end": 30 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -1122,7 +1122,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 153, "start": 11, "end": 14 } ],
+            "tito": [ { "line": 152, "start": 11, "end": 14 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
           }

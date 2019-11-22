@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_a_key",
-    "callable_line": 43,
+    "callable_line": 40,
     "code": 5002,
-    "line": 45,
+    "line": 42,
     "start": 16,
     "end": 22,
     "filename": "applies_to_index.py",
@@ -18,7 +18,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 44,
+              "line": 41,
               "start": 8,
               "end": 31
             },
@@ -42,7 +42,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 45,
+              "line": 42,
               "start": 16,
               "end": 22
             },
@@ -60,9 +60,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_first",
-    "callable_line": 16,
+    "callable_line": 13,
     "code": 5002,
-    "line": 18,
+    "line": 15,
     "start": 16,
     "end": 21,
     "filename": "applies_to_index.py",
@@ -75,7 +75,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 17,
+              "line": 14,
               "start": 22,
               "end": 45
             },
@@ -95,7 +95,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 18,
+              "line": 15,
               "start": 16,
               "end": 21
             },
@@ -113,9 +113,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_second",
-    "callable_line": 22,
+    "callable_line": 19,
     "code": 5002,
-    "line": 25,
+    "line": 22,
     "start": 16,
     "end": 21,
     "filename": "applies_to_index.py",
@@ -128,7 +128,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 23,
+              "line": 20,
               "start": 22,
               "end": 46
             },
@@ -148,7 +148,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 25,
+              "line": 22,
               "start": 16,
               "end": 21
             },
@@ -166,9 +166,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_with_member",
-    "callable_line": 53,
+    "callable_line": 50,
     "code": 5002,
-    "line": 55,
+    "line": 52,
     "start": 16,
     "end": 19,
     "filename": "applies_to_index.py",
@@ -181,7 +181,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 54,
+              "line": 51,
               "start": 8,
               "end": 34
             },
@@ -205,7 +205,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 55,
+              "line": 52,
               "start": 16,
               "end": 19
             },
@@ -230,7 +230,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 36,
+              "line": 33,
               "start": 11,
               "end": 35
             },
@@ -253,9 +253,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_nested_first",
-    "callable_line": 28,
+    "callable_line": 25,
     "code": 5002,
-    "line": 32,
+    "line": 29,
     "start": 16,
     "end": 21,
     "filename": "applies_to_index.py",
@@ -268,7 +268,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 29,
+              "line": 26,
               "start": 20,
               "end": 44
             },
@@ -288,7 +288,7 @@
           {
             "root": {
               "filename": "applies_to_index.py",
-              "line": 32,
+              "line": 29,
               "start": 16,
               "end": 21
             },

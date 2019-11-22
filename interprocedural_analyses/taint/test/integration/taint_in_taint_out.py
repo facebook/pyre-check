@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 class Data:
     def __init__(self, a, b):
         self.a = a

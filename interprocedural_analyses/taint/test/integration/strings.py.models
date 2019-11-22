@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "strings.bad_1",
-    "callable_line": 10,
+    "callable_line": 9,
     "code": 5002,
-    "line": 12,
+    "line": 11,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -18,11 +18,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 11,
+              "line": 10,
               "start": 24,
               "end": 39
             },
-            "tito": [ { "line": 11, "start": 24, "end": 39 } ],
+            "tito": [ { "line": 10, "start": 24, "end": 39 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -44,7 +44,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 12,
+              "line": 11,
               "start": 16,
               "end": 17
             },
@@ -62,9 +62,9 @@
   "kind": "issue",
   "data": {
     "callable": "strings.bad_2",
-    "callable_line": 15,
+    "callable_line": 14,
     "code": 5002,
-    "line": 17,
+    "line": 16,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -77,11 +77,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 16,
+              "line": 15,
               "start": 24,
               "end": 39
             },
-            "tito": [ { "line": 16, "start": 24, "end": 39 } ],
+            "tito": [ { "line": 15, "start": 24, "end": 39 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -103,7 +103,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 17,
+              "line": 16,
               "start": 16,
               "end": 17
             },
@@ -121,9 +121,9 @@
   "kind": "issue",
   "data": {
     "callable": "strings.either",
-    "callable_line": 20,
+    "callable_line": 19,
     "code": 5002,
-    "line": 25,
+    "line": 24,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -136,13 +136,13 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 22,
+              "line": 21,
               "start": 28,
               "end": 43
             },
             "tito": [
-              { "line": 24, "start": 28, "end": 43 },
-              { "line": 22, "start": 28, "end": 43 }
+              { "line": 23, "start": 28, "end": 43 },
+              { "line": 21, "start": 28, "end": 43 }
             ],
             "leaves": [
               {
@@ -161,13 +161,13 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 24,
+              "line": 23,
               "start": 28,
               "end": 43
             },
             "tito": [
-              { "line": 24, "start": 28, "end": 43 },
-              { "line": 22, "start": 28, "end": 43 }
+              { "line": 23, "start": 28, "end": 43 },
+              { "line": 21, "start": 28, "end": 43 }
             ],
             "leaves": [
               {
@@ -191,7 +191,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 25,
+              "line": 24,
               "start": 16,
               "end": 17
             },
@@ -209,9 +209,9 @@
   "kind": "issue",
   "data": {
     "callable": "strings.maybe_lhs",
-    "callable_line": 28,
+    "callable_line": 27,
     "code": 5002,
-    "line": 33,
+    "line": 32,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -224,11 +224,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 30,
+              "line": 29,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 30, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 29, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -245,11 +245,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 32,
+              "line": 31,
               "start": 12,
               "end": 27
             },
-            "tito": [ { "line": 30, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 29, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -271,7 +271,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 33,
+              "line": 32,
               "start": 16,
               "end": 17
             },
@@ -289,9 +289,9 @@
   "kind": "issue",
   "data": {
     "callable": "strings.maybe_rhs",
-    "callable_line": 36,
+    "callable_line": 35,
     "code": 5002,
-    "line": 41,
+    "line": 40,
     "start": 16,
     "end": 17,
     "filename": "strings.py",
@@ -304,11 +304,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 38,
+              "line": 37,
               "start": 12,
               "end": 27
             },
-            "tito": [ { "line": 40, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 39, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -325,11 +325,11 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 40,
+              "line": 39,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 40, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 39, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -351,7 +351,7 @@
           {
             "root": {
               "filename": "strings.py",
-              "line": 41,
+              "line": 40,
               "start": 16,
               "end": 17
             },
@@ -377,7 +377,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 3, "start": 11, "end": 17 } ],
+            "tito": [ { "line": 2, "start": 11, "end": 17 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },
@@ -401,7 +401,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 7, "start": 17, "end": 23 } ],
+            "tito": [ { "line": 6, "start": 17, "end": 23 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },

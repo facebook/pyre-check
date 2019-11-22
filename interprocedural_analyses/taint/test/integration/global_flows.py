@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 def update_arg1(arg1, arg2):
     ...
 

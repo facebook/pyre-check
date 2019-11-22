@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.repr_is_tainted",
-    "callable_line": 23,
+    "callable_line": 22,
     "code": 5001,
-    "line": 25,
+    "line": 24,
     "start": 9,
     "end": 16,
     "filename": "string_conversion.py",
@@ -19,7 +19,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 25,
+                "line": 24,
                 "start": 9,
                 "end": 16
               },
@@ -47,7 +47,7 @@
           {
             "root": {
               "filename": "string_conversion.py",
-              "line": 25,
+              "line": 24,
               "start": 9,
               "end": 16
             },
@@ -68,9 +68,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.str_falls_back_to_repr",
-    "callable_line": 28,
+    "callable_line": 27,
     "code": 5001,
-    "line": 30,
+    "line": 29,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -84,7 +84,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 30,
+                "line": 29,
                 "start": 9,
                 "end": 15
               },
@@ -112,7 +112,7 @@
           {
             "root": {
               "filename": "string_conversion.py",
-              "line": 30,
+              "line": 29,
               "start": 9,
               "end": 15
             },
@@ -133,9 +133,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.str_is_tainted",
-    "callable_line": 18,
+    "callable_line": 17,
     "code": 5001,
-    "line": 20,
+    "line": 19,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -149,7 +149,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 20,
+                "line": 19,
                 "start": 9,
                 "end": 15
               },
@@ -177,7 +177,7 @@
           {
             "root": {
               "filename": "string_conversion.py",
-              "line": 20,
+              "line": 19,
               "start": 9,
               "end": 15
             },
@@ -273,7 +273,7 @@
           {
             "root": {
               "filename": "string_conversion.py",
-              "line": 15,
+              "line": 14,
               "start": 15,
               "end": 26
             },
@@ -307,7 +307,7 @@
           {
             "root": {
               "filename": "string_conversion.py",
-              "line": 10,
+              "line": 9,
               "start": 15,
               "end": 26
             },

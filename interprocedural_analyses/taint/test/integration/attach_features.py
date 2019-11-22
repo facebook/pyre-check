@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 def source():
     return 0
 

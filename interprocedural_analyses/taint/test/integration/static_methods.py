@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 class StaticClass:
     @staticmethod
     def sink(oops):

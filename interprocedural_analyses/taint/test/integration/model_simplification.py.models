@@ -12,7 +12,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 45,
+                "line": 43,
                 "start": 56,
                 "end": 57
               },
@@ -32,11 +32,11 @@
           {
             "root": {
               "filename": "model_simplification.py",
-              "line": 38,
+              "line": 36,
               "start": 47,
               "end": 53
             },
-            "tito": [ { "line": 38, "start": 42, "end": 45 } ],
+            "tito": [ { "line": 36, "start": 42, "end": 45 } ],
             "leaves": [
               { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
             ],
@@ -50,7 +50,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 38,
+                "line": 36,
                 "start": 34,
                 "end": 54
               },
@@ -58,7 +58,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "tito": [ { "line": 38, "start": 42, "end": 45 } ],
+            "tito": [ { "line": 36, "start": 42, "end": 45 } ],
             "leaves": [
               { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
             ],
@@ -72,7 +72,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 50,
+                "line": 48,
                 "start": 34,
                 "end": 35
               },
@@ -80,7 +80,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "tito": [ { "line": 38, "start": 42, "end": 45 } ],
+            "tito": [ { "line": 36, "start": 42, "end": 45 } ],
             "leaves": [
               { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
             ],
@@ -94,7 +94,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 60,
+                "line": 58,
                 "start": 34,
                 "end": 35
               },
@@ -102,7 +102,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "tito": [ { "line": 38, "start": 42, "end": 45 } ],
+            "tito": [ { "line": 36, "start": 42, "end": 45 } ],
             "leaves": [
               { "kind": "GetAttr", "name": "getattr", "on_all_flows": true }
             ],
@@ -121,7 +121,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 45, "start": 59, "end": 71 } ],
+            "tito": [ { "line": 43, "start": 59, "end": 71 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
           }
@@ -132,7 +132,7 @@
         "taint": [
           {
             "decl": "MISSING",
-            "tito": [ { "line": 45, "start": 56, "end": 57 } ],
+            "tito": [ { "line": 43, "start": 56, "end": 57 } ],
             "leaves": [ { "kind": "LocalReturn" } ],
             "features": [ { "always-via": "tito" } ]
           }
@@ -164,7 +164,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 30,
+                "line": 28,
                 "start": 25,
                 "end": 28
               },
@@ -190,7 +190,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 30, "start": 30, "end": 42 } ],
+            "tito": [ { "line": 28, "start": 30, "end": 42 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [
               { "always-via": "tito" },
@@ -204,7 +204,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 30, "start": 25, "end": 28 } ],
+            "tito": [ { "line": 28, "start": 25, "end": 28 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
           }
@@ -226,7 +226,7 @@
             "call": {
               "position": {
                 "filename": "model_simplification.py",
-                "line": 71,
+                "line": 69,
                 "start": 18,
                 "end": 21
               },
@@ -252,7 +252,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 71, "start": 18, "end": 21 } ],
+            "tito": [ { "line": 69, "start": 18, "end": 21 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
           }
@@ -272,7 +272,7 @@
           {
             "root": {
               "filename": "model_simplification.py",
-              "line": 75,
+              "line": 73,
               "start": 21,
               "end": 36
             },

@@ -10,11 +10,11 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 13,
+              "line": 11,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 13, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 11, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -38,9 +38,9 @@
   "kind": "issue",
   "data": {
     "callable": "dataclass_taint.bad_is_tainted",
-    "callable_line": 12,
+    "callable_line": 10,
     "code": 5002,
-    "line": 14,
+    "line": 12,
     "start": 16,
     "end": 23,
     "filename": "dataclass_taint.py",
@@ -53,11 +53,11 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 13,
+              "line": 11,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 13, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 11, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",
@@ -78,7 +78,7 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 14,
+              "line": 12,
               "start": 16,
               "end": 23
             },
@@ -103,11 +103,11 @@
           {
             "root": {
               "filename": "dataclass_taint.py",
-              "line": 19,
+              "line": 17,
               "start": 28,
               "end": 43
             },
-            "tito": [ { "line": 19, "start": 28, "end": 43 } ],
+            "tito": [ { "line": 17, "start": 28, "end": 43 } ],
             "leaves": [
               {
                 "kind": "Test",

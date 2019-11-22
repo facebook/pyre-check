@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 class SomeAPI:
     HOST = "api.some.com/1.1"
     AUTHENTICATE_URL = f"https://{HOST}/some.json"

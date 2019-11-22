@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from typing import Any, Dict, List, cast
 
 

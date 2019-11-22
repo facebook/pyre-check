@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 def source_field():
     result = {}
     result.a = __test_source()

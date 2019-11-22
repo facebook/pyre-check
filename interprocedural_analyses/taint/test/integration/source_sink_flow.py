@@ -1,6 +1,3 @@
-# flake8: noqa
-
-
 def bar():
     return __test_source()
 
