@@ -1262,15 +1262,9 @@ end = struct
       | Complex float_value ->
           Format.fprintf formatter "%f" float_value
       | Dictionary { Dictionary.entries; keywords } ->
-          Format.fprintf formatter "Dictionary { %a%a }" pp_dictionary entries pp_keywords keywords
+          Format.fprintf formatter "{ %a%a }" pp_dictionary entries pp_keywords keywords
       | DictionaryComprehension { Comprehension.element; generators } ->
-          Format.fprintf
-            formatter
-            "Dictionary comprehension { %a: %a }"
-            pp_dictionary_entry
-            element
-            pp_generators
-            generators
+          Format.fprintf formatter "{ %a: %a }" pp_dictionary_entry element pp_generators generators
       | False -> Format.fprintf formatter "%s" "False"
       | Generator generator -> Format.fprintf formatter "%a" pp_basic_comprehension generator
       | Integer integer -> Format.fprintf formatter "%d" integer

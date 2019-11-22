@@ -281,7 +281,15 @@ let test_pp _ =
   assert_pp_equal
     (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 })
     "a := 1";
-  assert_pp_equal (parse_single_expression "'string {}'.format(1)") "\"string {}\".format(1)"
+  assert_pp_equal (parse_single_expression "'string {}'.format(1)") "\"string {}\".format(1)";
+  assert_pp_equal
+    (+Expression.Dictionary
+        {
+          Dictionary.entries =
+            [{ Dictionary.Entry.key = +Expression.Integer 1; value = +Expression.Integer 2 }];
+          keywords = [];
+        })
+    "{ 1:2 }"
 
 
 let test_equality _ =
