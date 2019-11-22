@@ -86,3 +86,5 @@ val build_symlink_map : links:t list -> t Map.t
 val with_suffix : t -> suffix:string -> t
 
 val get_directory : t -> t
+
+val project_directory : local_root:string -> filter_directories:string list -> string

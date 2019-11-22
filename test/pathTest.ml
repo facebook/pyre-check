@@ -174,6 +174,25 @@ let test_get_directory context =
     ~expected:(Path.create_relative ~root ~relative:"foo/bar")
 
 
+let test_project_directory _ =
+  assert_equal
+    (Path.project_directory
+       ~local_root:"/home/johnsmith/foo/pyre-project-directory"
+       ~filter_directories:["/home/johnsmith/foo/pyre-project-directory"])
+    "/home/johnsmith/foo/pyre-project-directory";
+  assert_equal
+    (Path.project_directory
+       ~local_root:"/home/johnsmith/scratch/garbage/pyre/foo/pyre-project-directory"
+       ~filter_directories:["/home/johnsmith/foo/pyre-project-directory"])
+    "/home/johnsmith/foo/pyre-project-directory";
+  assert_equal
+    (Path.project_directory
+       ~local_root:"/home/johnsmith/scratch/garbage/pyre/foo/pyre-project-directory"
+       ~filter_directories:[])
+    "";
+  ()
+
+
 let test_directory_contains context =
   let _, root = root context in
   assert_equal
@@ -252,6 +271,7 @@ let () =
          "file_exists" >:: test_file_exists;
          "last" >:: test_last;
          "get_directory" >:: test_get_directory;
+         "project_directory" >:: test_project_directory;
          "link" >:: test_link;
          "remove" >:: test_remove;
          "build_symlink_map" >:: test_build_symlink_map;

@@ -1338,23 +1338,17 @@ let rec process
           in
           { state; response = None }
       | SaveDocument path ->
-          if Random.bool () then
-            Telemetry.send_telemetry () ~f:(fun _ ->
-                let { Configuration.Server.server_uuid; _ } = server_configuration in
-                let { Configuration.Analysis.local_root; _ } = configuration in
-                let file_path = Path.absolute path in
-                let content =
-                  In_channel.with_file ~binary:false file_path ~f:In_channel.input_all
-                in
-                let relative_path =
-                  match Path.get_relative_to_root ~root:local_root ~path with
-                  | Some relative -> relative
-                  | None -> file_path
-                in
-                {
-                  Telemetry.Message.uuid = server_uuid;
-                  message = Telemetry.Message.Update { path = relative_path; content };
-                });
+          ( if Random.bool () then
+              let { Configuration.Analysis.local_root; filter_directories; project_root; _ } =
+                configuration
+              in
+              let { Configuration.Server.server_uuid; _ } = server_configuration in
+              Telemetry.send_telemetry () ~f:(fun _ ->
+                  Telemetry.create_update_message
+                    ~local_root
+                    ~project_root
+                    ~filter_directories
+                    ~server_uuid) );
 
           (* On save, evict entries from the lookup cache. The updated source will be picked up at
              the next lookup (if any). *)

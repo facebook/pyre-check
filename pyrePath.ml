@@ -225,3 +225,12 @@ let with_suffix path ~suffix =
 
 let get_directory path =
   absolute path |> Filename.dirname |> create_absolute ~follow_symbolic_links:false
+
+
+let project_directory ~local_root ~filter_directories =
+  if String.is_substring ~substring:"/scratch/" local_root then
+    match filter_directories with
+    | [project_directory] -> project_directory
+    | _ -> ""
+  else
+    local_root
