@@ -13,14 +13,7 @@ import time
 import traceback
 from typing import Type  # noqa
 
-from . import (
-    buck,
-    commands,
-    find_log_directory,
-    get_binary_version_from_file,
-    log,
-    log_statistics,
-)
+from . import buck, commands, get_binary_version_from_file, log, log_statistics
 from .commands import (  # noqa
     Command,
     ExitCode,

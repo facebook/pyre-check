@@ -8,7 +8,6 @@
 import os  # noqa
 import shutil  # noqa
 import signal
-import subprocess
 import unittest
 from unittest.mock import MagicMock, call, patch
 

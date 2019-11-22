@@ -348,10 +348,10 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)
-    @patch("{}.switch_root".format(client_name), return_value="/root/local")
+    @patch("{}.find_project_root".format(client_name), return_value="/root/local")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_resolve_source_directories(
-        self, find_local_root, switch_root, exists, cwd, realpath
+        self, find_local_root, find_project_root, exists, cwd, realpath
     ) -> None:
         arguments = MagicMock()
         arguments.source_directories = []
