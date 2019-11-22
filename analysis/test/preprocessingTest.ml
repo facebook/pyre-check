@@ -3184,15 +3184,6 @@ let test_populate_captures _ =
            [{ Call.Argument.name = None; value = +Expression.Tuple [!"str"; value_annotation] }];
        }
   in
-  let meta_annotation value_annotation =
-    +Expression.Call
-       {
-         callee =
-           +Expression.Name
-              (Name.Attribute { base = !"typing.Type"; attribute = "__getitem__"; special = true });
-         arguments = [{ Call.Argument.name = None; value = value_annotation }];
-       }
-  in
   let int_annotation = !"int" in
   let any_annotation = !"typing.Any" in
   let tuple_int_annotation = tuple_annotation int_annotation in
@@ -3557,7 +3548,7 @@ let test_populate_captures _ =
          def bar() -> int:
            return self.x
   |}
-    ~expected:[!&"bar", ["self", Annotation (Some !"Foo")]];
+    ~expected:[!&"bar", ["self", Self !&"Foo"]];
   assert_captures
     {|
      class Foo:
@@ -3575,7 +3566,7 @@ let test_populate_captures _ =
          def bar() -> int:
            return this.x
   |}
-    ~expected:[!&"bar", ["this", Annotation (Some !"Foo")]];
+    ~expected:[!&"bar", ["this", Self !&"Foo"]];
   assert_captures
     {|
      class Foo:
@@ -3586,7 +3577,7 @@ let test_populate_captures _ =
            def baz() -> int:
              return self.x
   |}
-    ~expected:[!&"baz", ["self", Annotation (Some !"Foo")]];
+    ~expected:[!&"baz", ["self", Self !&"Foo"]];
   assert_captures
     {|
      class Foo:
@@ -3616,7 +3607,7 @@ let test_populate_captures _ =
            def bar() -> int:
              return self.y
   |}
-    ~expected:[!&"bar", ["self", Annotation (Some !"Bar")]];
+    ~expected:[!&"bar", ["self", Self !&"Bar"]];
   assert_captures
     {|
      class Foo:
@@ -3628,7 +3619,7 @@ let test_populate_captures _ =
              def baz() -> int:
                return self.y
   |}
-    ~expected:[!&"baz", ["self", Annotation (Some !"Bar")]];
+    ~expected:[!&"baz", ["self", Self !&"Bar"]];
 
   (* Capture cls *)
   assert_captures
@@ -3640,7 +3631,7 @@ let test_populate_captures _ =
          def bar() -> "Foo":
            return cls
   |}
-    ~expected:[!&"bar", ["cls", Annotation (Some (meta_annotation !"Foo"))]];
+    ~expected:[!&"bar", ["cls", ClassSelf !&"Foo"]];
   assert_captures
     {|
      class Foo:
@@ -3660,7 +3651,7 @@ let test_populate_captures _ =
          def bar() -> "Foo":
            return clazz
   |}
-    ~expected:[!&"bar", ["clazz", Annotation (Some (meta_annotation !"Foo"))]];
+    ~expected:[!&"bar", ["clazz", ClassSelf !&"Foo"]];
   assert_captures
     {|
      class Foo:
@@ -3672,7 +3663,7 @@ let test_populate_captures _ =
            def baz() -> "Foo":
              return cls
   |}
-    ~expected:[!&"baz", ["cls", Annotation (Some (meta_annotation !"Foo"))]];
+    ~expected:[!&"baz", ["cls", ClassSelf !&"Foo"]];
   assert_captures
     {|
      class Foo:

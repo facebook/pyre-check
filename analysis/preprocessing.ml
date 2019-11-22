@@ -2543,53 +2543,13 @@ let populate_captures ({ Source.statements; _ } as source) =
                        && Option.is_none annotation
                        && not (Define.Signature.is_static_method signature) ->
                     let parent = Option.value_exn parent in
-                    let parent_annotation = from_reference ~location parent in
                     if
                       Define.Signature.is_class_method signature
                       || Define.Signature.is_class_property signature
                     then
-                      let parent_type_annotation =
-                        {
-                          Node.location;
-                          value =
-                            Expression.Call
-                              {
-                                callee =
-                                  {
-                                    Node.location;
-                                    value =
-                                      Name
-                                        (Name.Attribute
-                                           {
-                                             base =
-                                               {
-                                                 Node.location;
-                                                 value =
-                                                   Name
-                                                     (Name.Attribute
-                                                        {
-                                                          base =
-                                                            {
-                                                              Node.location;
-                                                              value =
-                                                                Name (Name.Identifier "typing");
-                                                            };
-                                                          attribute = "Type";
-                                                          special = false;
-                                                        });
-                                               };
-                                             attribute = "__getitem__";
-                                             special = true;
-                                           });
-                                  };
-                                arguments =
-                                  [{ Call.Argument.name = None; value = parent_annotation }];
-                              };
-                        }
-                      in
-                      Some { Define.Capture.name; kind = Annotation (Some parent_type_annotation) }
+                      Some { Define.Capture.name; kind = ClassSelf parent }
                     else
-                      Some { Define.Capture.name; kind = Annotation (Some parent_annotation) }
+                      Some { Define.Capture.name; kind = Self parent }
                 | Binding.Kind.(
                     ( AssignTarget annotation
                     | ExceptTarget annotation

@@ -266,6 +266,7 @@ module Make (Transformer : Transformer) = struct
                 | Define.Capture.Kind.DefineSignature { Node.value; location } ->
                     let value = transform_signature value in
                     Define.Capture.Kind.DefineSignature { Node.value; location }
+                | Define.Capture.Kind.(Self _ | ClassSelf _) as kind -> kind
               in
               { Define.Capture.name; kind = transform_kind kind }
             in

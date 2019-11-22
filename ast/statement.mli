@@ -240,6 +240,8 @@ and Define : sig
     module Kind : sig
       type t =
         | Annotation of Expression.t option
+        | Self of Reference.t
+        | ClassSelf of Reference.t
         | DefineSignature of Define.Signature.t Node.t
       [@@deriving compare, eq, sexp, show, hash, to_yojson]
     end

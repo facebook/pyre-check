@@ -991,6 +991,8 @@ and Define : sig
     module Kind : sig
       type t =
         | Annotation of Expression.t option
+        | Self of Reference.t
+        | ClassSelf of Reference.t
         | DefineSignature of Define.Signature.t Node.t
       [@@deriving compare, eq, sexp, show, hash, to_yojson]
     end
@@ -1283,6 +1285,8 @@ end = struct
     module Kind = struct
       type t =
         | Annotation of Expression.t option
+        | Self of Reference.t
+        | ClassSelf of Reference.t
         | DefineSignature of Define.Signature.t Node.t
       [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
@@ -1290,8 +1294,14 @@ end = struct
         | Annotation annotation ->
             let state = Int.hash_fold_t state 0 in
             [%hash_fold: Expression.t option] state annotation
-        | DefineSignature signature_node ->
+        | Self parent ->
             let state = Int.hash_fold_t state 1 in
+            Reference.hash_fold_t state parent
+        | ClassSelf parent ->
+            let state = Int.hash_fold_t state 2 in
+            Reference.hash_fold_t state parent
+        | DefineSignature signature_node ->
+            let state = Int.hash_fold_t state 3 in
             Node.location_sensitive_hash_fold
               Define.Signature.location_sensitive_hash_fold
               state
@@ -1302,9 +1312,13 @@ end = struct
         match left, right with
         | Annotation left, Annotation right ->
             Option.compare Expression.location_sensitive_compare left right
+        | Self left, Self right -> Reference.compare left right
+        | ClassSelf left, ClassSelf right -> Reference.compare left right
         | DefineSignature left, DefineSignature right ->
             Node.location_sensitive_compare Define.Signature.location_sensitive_compare left right
         | Annotation _, _ -> -1
+        | Self _, _ -> -1
+        | ClassSelf _, _ -> -1
         | DefineSignature _, _ -> 1
     end
 
