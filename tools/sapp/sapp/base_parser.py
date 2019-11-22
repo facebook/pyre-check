@@ -87,6 +87,9 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
     def get_version(self):
         return self.version
 
+    def initialize(self, metadata: Optional[Metadata]) -> None:
+        return
+
     # @abstractmethod
     def parse(self, input: AnalysisOutput) -> Iterable[Dict[str, Any]]:
         """Must return objects with a 'type': ParseType field.
