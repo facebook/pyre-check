@@ -130,6 +130,37 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 updated_tracked_paths=["a.py"], new_paths=[], deleted_paths=[]
             )
         )
+        self.assertFalse(
+            SharedAnalysisDirectory.should_rebuild(
+                updated_tracked_paths=["a.py", "b/c/not_real_TARGETS"],
+                new_paths=[],
+                deleted_paths=[],
+            )
+        )
+        self.assertTrue(
+            SharedAnalysisDirectory.should_rebuild(
+                updated_tracked_paths=["a.py", "b/c/TARGETS"],
+                new_paths=[],
+                deleted_paths=[],
+            )
+        )
+        self.assertTrue(
+            SharedAnalysisDirectory.should_rebuild(
+                updated_tracked_paths=[], new_paths=["TARGETS"], deleted_paths=[]
+            )
+        )
+        self.assertTrue(
+            SharedAnalysisDirectory.should_rebuild(
+                updated_tracked_paths=[], new_paths=[], deleted_paths=["TARGETS"]
+            )
+        )
+        self.assertTrue(
+            SharedAnalysisDirectory.should_rebuild(
+                updated_tracked_paths=["a.py", "b/c/foo.thrift"],
+                new_paths=[],
+                deleted_paths=[],
+            )
+        )
 
     @patch.object(analysis_directory, "add_symbolic_link")
     @patch.object(SharedAnalysisDirectory, "rebuild")

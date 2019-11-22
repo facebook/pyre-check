@@ -9,6 +9,8 @@ import logging
 import os
 import shutil
 import subprocess
+from itertools import chain
+from pathlib import Path
 from time import time
 from typing import Dict, List, NamedTuple, Optional, Set
 
@@ -230,6 +232,11 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     def should_rebuild(
         updated_tracked_paths: List[str], new_paths: List[str], deleted_paths: List[str]
     ) -> bool:
+        if any(
+            Path(path).suffix == ".thrift" or Path(path).name == "TARGETS"
+            for path in chain(updated_tracked_paths, new_paths, deleted_paths)
+        ):
+            return True
         return (
             len(updated_tracked_paths) >= REBUILD_THRESHOLD_FOR_UPDATED_PATHS
             or len(new_paths) + len(deleted_paths)
