@@ -29,14 +29,17 @@ type taint_annotation =
   | Sink of {
       sink: Sinks.t;
       breadcrumbs: breadcrumbs;
+      path: AbstractTreeDomain.Label.path;
     }
   | Source of {
       source: Sources.t;
       breadcrumbs: breadcrumbs;
+      path: AbstractTreeDomain.Label.path;
     }
   | Tito of {
       tito: Sinks.t;
       breadcrumbs: breadcrumbs;
+      path: AbstractTreeDomain.Label.path;
     }
   | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
   | Sanitize (* Don't propagate inferred model of methods with Sanitize *)
@@ -51,6 +54,7 @@ let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 let introduce_sink_taint
     ~root
     ~sinks_to_keep
+    ~path
     ({ TaintResult.backward = { sink_taint; _ }; _ } as taint)
     taint_sink_kind
     breadcrumbs
@@ -63,7 +67,7 @@ let introduce_sink_taint
   if should_keep_taint then
     let backward =
       let assign_backward_taint environment taint =
-        BackwardState.assign ~weak:true ~root ~path:[] taint environment
+        BackwardState.assign ~weak:true ~root ~path taint environment
       in
       match taint_sink_kind with
       | Sinks.LocalReturn -> raise_invalid_model "Invalid TaintSink annotation `LocalReturn`"
@@ -85,13 +89,14 @@ let introduce_sink_taint
 
 let introduce_taint_in_taint_out
     ~root
+    ~path
     ({ TaintResult.backward = { taint_in_taint_out; _ }; _ } as taint)
     taint_sink_kind
     breadcrumbs
   =
   let backward =
     let assign_backward_taint environment taint =
-      BackwardState.assign ~weak:true ~root ~path:[] taint environment
+      BackwardState.assign ~weak:true ~root ~path taint environment
     in
     match taint_sink_kind with
     | Sinks.LocalReturn ->
@@ -127,6 +132,7 @@ let introduce_taint_in_taint_out
 let introduce_source_taint
     ~root
     ~sources_to_keep
+    ~path
     ({ TaintResult.forward = { source_taint }; _ } as taint)
     taint_source_kind
     breadcrumbs
@@ -145,7 +151,7 @@ let introduce_source_taint
         |> ForwardTaint.transform ForwardTaint.simple_feature_set ~f:(add_breadcrumbs breadcrumbs)
         |> ForwardState.Tree.create_leaf
       in
-      ForwardState.assign ~weak:true ~root ~path:[] leaf_taint source_taint
+      ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint
     in
     { taint with forward = { source_taint } }
   else
@@ -231,22 +237,23 @@ let rec parse_annotations ~configuration ~parameters annotation =
     let open Configuration in
     let kinds, breadcrumbs = extract_leafs expression in
     List.map kinds ~f:(fun kind ->
-        Source { source = Sources.parse ~allowed:configuration.sources kind; breadcrumbs })
+        Source
+          { source = Sources.parse ~allowed:configuration.sources kind; breadcrumbs; path = [] })
   in
   let get_sink_kinds expression =
     let open Configuration in
     let kinds, breadcrumbs = extract_leafs expression in
     List.map kinds ~f:(fun kind ->
-        Sink { sink = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs })
+        Sink { sink = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs; path = [] })
   in
   let get_taint_in_taint_out expression =
     let open Configuration in
     let kinds, breadcrumbs = extract_leafs expression in
     match kinds with
-    | [] -> [Tito { tito = Sinks.LocalReturn; breadcrumbs }]
+    | [] -> [Tito { tito = Sinks.LocalReturn; breadcrumbs; path = [] }]
     | _ ->
         List.map kinds ~f:(fun kind ->
-            Tito { tito = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs })
+            Tito { tito = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs; path = [] })
   in
   let extract_attach_features ~name expression =
     let keep_features = function
@@ -291,6 +298,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 {
                   sink = Sinks.Attach;
                   breadcrumbs = extract_attach_features ~name:"AttachToSink" expression;
+                  path = [];
                 };
             ]
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
@@ -300,6 +308,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 {
                   tito = Sinks.Attach;
                   breadcrumbs = extract_attach_features ~name:"AttachToTito" expression;
+                  path = [];
                 };
             ]
         | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
@@ -309,10 +318,51 @@ let rec parse_annotations ~configuration ~parameters annotation =
                 {
                   source = Sources.Attach;
                   breadcrumbs = extract_attach_features ~name:"AttachToSource" expression;
+                  path = [];
                 };
             ]
+        | Call
+            {
+              callee;
+              arguments =
+                {
+                  Call.Argument.value =
+                    {
+                      Node.value =
+                        Expression.Tuple
+                          [
+                            { Node.value = Expression.Integer index; _ };
+                            { Node.value = expression; _ };
+                          ];
+                      _;
+                    };
+                  _;
+                }
+                :: _;
+            }
+        | Call
+            {
+              callee;
+              arguments =
+                [
+                  { Call.Argument.value = { Node.value = Expression.Integer index; _ }; _ };
+                  { Call.Argument.value = { Node.value = expression; _ }; _ };
+                ];
+            }
+          when base_matches "AppliesTo" callee ->
+            let extend_path annotation =
+              let field = AbstractTreeDomain.Label.create_int_field index in
+              match annotation with
+              | Sink ({ path; _ } as sink) -> Sink { sink with path = field :: path }
+              | Source ({ path; _ } as source) -> Source { source with path = field :: path }
+              | Tito ({ path; _ } as tito) -> Tito { tito with path = field :: path }
+              | SkipAnalysis
+              | Sanitize ->
+                  annotation
+            in
+            parse_annotation expression |> List.map ~f:extend_path
         | Name (Name.Identifier "TaintInTaintOut") ->
-            [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
+            [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; path = [] }]
         | Name (Name.Identifier "SkipAnalysis") -> [SkipAnalysis]
         | Name (Name.Identifier "Sanitize") -> [Sanitize]
         | _ ->
@@ -377,15 +427,15 @@ let taint_parameter
   =
   let add_to_model model annotation =
     match annotation with
-    | Sink { sink; breadcrumbs } ->
+    | Sink { sink; breadcrumbs; path } ->
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root ~sinks_to_keep model sink
-    | Source { source; breadcrumbs } ->
+        |> introduce_sink_taint ~root ~path ~sinks_to_keep model sink
+    | Source { source; breadcrumbs; path } ->
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_source_taint ~root ~sources_to_keep model source
-    | Tito { tito; breadcrumbs } ->
+        |> introduce_source_taint ~root ~path ~sources_to_keep model source
+    | Tito { tito; breadcrumbs; path } ->
         (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
@@ -393,7 +443,7 @@ let taint_parameter
              ~resolution
              AccessPath.Root.LocalResult
              ~callable_annotation
-        |> introduce_taint_in_taint_out ~root model tito
+        |> introduce_taint_in_taint_out ~root ~path model tito
     | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
     | Sanitize -> raise_invalid_model "Sanitize annotation must be in return position"
   in
@@ -414,14 +464,14 @@ let taint_return
   let add_to_model model annotation =
     let root = AccessPath.Root.LocalResult in
     match annotation with
-    | Sink { sink; breadcrumbs } ->
+    | Sink { sink; breadcrumbs; path } ->
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_sink_taint ~root ~sinks_to_keep model sink
-    | Source { source; breadcrumbs } ->
+        |> introduce_sink_taint ~root ~path ~sinks_to_keep model sink
+    | Source { source; breadcrumbs; path } ->
         List.map ~f:Features.SimpleSet.element breadcrumbs
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
-        |> introduce_source_taint ~root ~sources_to_keep model source
+        |> introduce_source_taint ~root ~path ~sources_to_keep model source
     | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
     | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
     | Sanitize -> { model with mode = TaintResult.Sanitize }

@@ -123,6 +123,11 @@ let test_source_models context =
     |}
     ~expect:[outcome ~kind:`Method ~returns:[Sources.Test] "test.C.foo"]
     ();
+  assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> AppliesTo[0, TaintSource[Test]]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "test.f"]
+    ();
 
   ()
 
@@ -219,6 +224,16 @@ let test_sink_models context =
     ();
   assert_model
     ~model_source:"def test.multiple(parameter: TaintSink[XSS, Demo]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Demo; Sinks.XSS] }]
+          "test.multiple";
+      ]
+    ();
+  assert_model
+    ~model_source:"def test.multiple(parameter: AppliesTo[1, TaintSink[XSS, Demo]]): ..."
     ~expect:
       [
         outcome
@@ -340,6 +355,11 @@ let test_taint_in_taint_out_models context =
   assert_model
     ~context
     ~model_source:"def test.tito(parameter: TaintInTaintOut): ..."
+    ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "test.tito"]
+    ();
+  assert_model
+    ~context
+    ~model_source:"def test.tito(parameter: AppliesTo[1, TaintInTaintOut]): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "test.tito"]
     ()
 
