@@ -87,16 +87,6 @@ module type Signature = sig
 end
 
 module State (Context : Context) = struct
-  type nested_define_state = {
-    nested_resolution: Resolution.t;
-    nested_bottom: bool;
-  }
-
-  type nested_define = {
-    nested: Define.t;
-    initial: nested_define_state;
-  }
-
   type partitioned = {
     consistent_with_boundary: Type.t;
     not_consistent_with_boundary: Type.t option;
@@ -106,27 +96,16 @@ module State (Context : Context) = struct
     resolution: Resolution.t;
     errors: ErrorMap.t;
     check_return: bool;
-    nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
     resolution_fixpoint: LocalAnnotationMap.t;
   }
 
-  let pp_nested_define format { nested = { Define.signature = { name; _ }; _ }; _ } =
-    Format.fprintf format "%a" Reference.pp name
-
-
-  let pp format { resolution; errors; nested_defines; bottom; _ } =
+  let pp format { resolution; errors; bottom; _ } =
     let global_resolution = Resolution.global_resolution resolution in
     let expected =
       let parser = GlobalResolution.annotation_parser global_resolution in
       let { Node.value = { Define.signature; _ }; _ } = Context.define in
       Annotated.Callable.return_annotation ~signature ~parser
-    in
-    let nested_defines =
-      let nested_define_to_string nested_define =
-        Format.asprintf "    %a" pp_nested_define nested_define
-      in
-      Map.data nested_defines |> List.map ~f:nested_define_to_string |> String.concat ~sep:"\n"
     in
     let annotations =
       let annotation_to_string (name, annotation) =
@@ -156,18 +135,10 @@ module State (Context : Context) = struct
     in
     Format.fprintf
       format
-      "  Bottom: %b\n\
-      \  Expected return: %a\n\
-      \  Nested defines:\n\
-       %s\n\
-      \  Types:\n\
-       %s\n\
-      \  Errors:\n\
-       %s\n"
+      "  Bottom: %b\n  Expected return: %a\n  Types:\n%s\n  Errors:\n%s\n"
       bottom
       Type.pp
       expected
-      nested_defines
       annotations
       errors
 
@@ -190,14 +161,7 @@ module State (Context : Context) = struct
       ?(resolution_fixpoint = LocalAnnotationMap.empty)
       ()
     =
-    {
-      resolution;
-      errors;
-      check_return = true;
-      nested_defines = Location.Reference.Map.empty;
-      bottom;
-      resolution_fixpoint;
-    }
+    { resolution; errors; check_return = true; bottom; resolution_fixpoint }
 
 
   let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
@@ -327,13 +291,6 @@ module State (Context : Context) = struct
     Resolution.annotations resolution |> Map.data |> Coverage.aggregate_over_annotations
 
 
-  let nested_defines { nested_defines; _ } =
-    let process_define (location, { nested; initial = { nested_resolution; _ } }) =
-      Node.create ~location nested, nested_resolution
-    in
-    Map.to_alist nested_defines |> List.map ~f:process_define
-
-
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
     let global_resolution = Resolution.global_resolution resolution in
     if left.bottom then
@@ -351,10 +308,6 @@ module State (Context : Context) = struct
       let left_errors = Map.data left.errors |> Error.Set.of_list in
       let right_errors = Map.data right.errors |> Error.Set.of_list in
       Set.is_subset left_errors ~of_:right_errors
-      && Map.fold
-           ~init:true
-           ~f:(entry_less_or_equal right.nested_defines (fun _ _ -> true))
-           left.nested_defines
       && Map.fold
            ~init:true
            ~f:
@@ -388,12 +341,6 @@ module State (Context : Context) = struct
     else if right.bottom then
       left
     else
-      let join_nested_defines ~key:_ = function
-        | `Left nested_define
-        | `Right nested_define
-        | `Both (_, nested_define) ->
-            Some nested_define
-      in
       let join_resolutions left_resolution right_resolution =
         let merge_annotations ~key:_ = function
           | `Both (left, right) ->
@@ -420,7 +367,6 @@ module State (Context : Context) = struct
       {
         left with
         errors = Map.merge_skewed left.errors right.errors ~combine:combine_errors;
-        nested_defines = Map.merge left.nested_defines right.nested_defines ~f:join_nested_defines;
         resolution = join_resolutions left.resolution right.resolution;
       }
 
@@ -434,12 +380,6 @@ module State (Context : Context) = struct
     else if next.bottom then
       previous
     else
-      let join_nested_defines ~key:_ = function
-        | `Left nested_define
-        | `Right nested_define
-        | `Both (_, nested_define) ->
-            Some nested_define
-      in
       let widen_annotations ~key annotation =
         match annotation with
         | `Both (previous, next) ->
@@ -485,8 +425,6 @@ module State (Context : Context) = struct
       {
         previous with
         errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
-        nested_defines =
-          Map.merge ~f:join_nested_defines previous.nested_defines next.nested_defines;
         resolution = Resolution.with_annotations resolution ~annotations;
         resolution_fixpoint;
       }
@@ -4810,55 +4748,12 @@ module State (Context : Context) = struct
     |> Error.filter ~configuration:Context.configuration ~resolution:global_resolution
 
 
-  let forward ?key ({ bottom; _ } as state) ~statement:({ Node.location; _ } as statement) =
-    let ({ resolution; resolution_fixpoint; nested_defines; _ } as state) =
+  let forward ?key ({ bottom; _ } as state) ~statement =
+    let ({ resolution; resolution_fixpoint; _ } as state) =
       if bottom then
         state
       else
         forward_statement ~state ~statement
-    in
-    let state =
-      let nested_defines =
-        let schedule define =
-          let update = function
-            | Some ({ initial = { nested_resolution; nested_bottom }; _ } as nested) ->
-                let resolution, bottom =
-                  if nested_bottom then
-                    state.resolution, state.bottom
-                  else if state.bottom then
-                    nested_resolution, nested_bottom
-                  else
-                    join_resolutions nested_resolution state.resolution, false
-                in
-                Some
-                  {
-                    nested with
-                    initial = { nested_resolution = resolution; nested_bottom = bottom };
-                  }
-            | None ->
-                let { resolution = initial_resolution; _ } = initial ~resolution in
-                let nested_resolution =
-                  let update ~key ~data initial_resolution =
-                    let annotation =
-                      (* Discard local mutable annotation information. *)
-                      if Annotation.is_immutable data then
-                        { data with Annotation.annotation = Annotation.original data }
-                      else
-                        data
-                    in
-                    Resolution.set_local initial_resolution ~reference:key ~annotation
-                  in
-                  Resolution.annotations resolution |> Map.fold ~init:initial_resolution ~f:update
-                in
-                Some { nested = define; initial = { nested_resolution; nested_bottom = false } }
-          in
-          Map.change ~f:update nested_defines location
-        in
-        match Node.value statement with
-        | Define define -> schedule define
-        | _ -> nested_defines
-      in
-      { state with nested_defines }
     in
     let state =
       let resolution_fixpoint =
@@ -4914,7 +4809,6 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
     {
       State.errors = ErrorMap.Map.empty;
       check_return = true;
-      nested_defines = Location.Reference.Map.empty;
       bottom = false;
       resolution_fixpoint = LocalAnnotationMap.empty;
       resolution = empty_resolution;
@@ -4948,7 +4842,7 @@ let resolution_with_key ~global_resolution ~parent ~name ~key =
 
 let name = "TypeCheck"
 
-let check_define_collect_nested
+let check_define
     ~configuration:({ Configuration.Analysis.include_hints; _ } as configuration)
     ~resolution
     ~source:
@@ -5047,15 +4941,14 @@ let check_define_collect_nested
     Callgraph.set ~caller:name ~callees;
 
     (* Schedule nested functions for analysis. *)
-    let nested_defines = Option.value_map exit ~f:State.nested_defines ~default:[] in
     let errors = exit >>| State.errors >>| filter_errors |> Option.value ~default:[] in
     let coverage = exit >>| State.coverage |> Option.value ~default:(Coverage.create ()) in
-    { errors; coverage }, nested_defines
+    { errors; coverage }
   in
   try
     let initial = State.initial ~resolution in
     if Define.is_stub define then
-      { errors = filter_errors (State.errors initial); coverage = Coverage.create () }, []
+      { errors = filter_errors (State.errors initial); coverage = Coverage.create () }
     else
       check ~define:define_node ~initial
   with
@@ -5072,43 +4965,7 @@ let check_define_collect_nested
       let undefined_error =
         Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node
       in
-      { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }, []
-
-
-let check_define ~check_nested ~configuration ~resolution ~source define =
-  (* TODO: Remove the check_nested distinction once defines can be typecheck units *)
-  match check_nested with
-  | false ->
-      let result, _ =
-        check_define_collect_nested
-          ~configuration
-          ~resolution
-          ~call_graph_builder:(module Callgraph.DefaultBuilder)
-          ~source
-          define
-      in
-      result
-  | true ->
-      let queue = Queue.singleton (define, resolution) in
-      let results = ref [] in
-      let rec compute_results () =
-        match Queue.dequeue queue with
-        | None -> ()
-        | Some (define, resolution) ->
-            let result, nested_defines =
-              check_define_collect_nested
-                ~configuration
-                ~resolution
-                ~call_graph_builder:(module Callgraph.DefaultBuilder)
-                ~source
-                define
-            in
-            results := result :: !results;
-            Queue.enqueue_all queue nested_defines;
-            compute_results ()
-      in
-      compute_results ();
-      aggregate_results !results
+      { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }
 
 
 let check_typecheck_unit
@@ -5128,8 +4985,12 @@ let check_typecheck_unit
     in
     resolution global_resolution ()
   in
-  let check_nested = false in
-  check_define ~check_nested ~configuration ~resolution ~source define
+  check_define
+    ~configuration
+    ~resolution
+    ~call_graph_builder:(module Callgraph.DefaultBuilder)
+    ~source
+    define
 
 
 let check_source ~configuration ~environment source =
