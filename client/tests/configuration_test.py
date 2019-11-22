@@ -24,6 +24,16 @@ from ..exceptions import EnvironmentException
 
 
 class ConfigurationTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        # The Pyre environment variables change the outcome of tests.
+        if "PYRE_CLIENT" in os.environ:
+            del os.environ["PYRE_CLIENT"]
+        if "PYRE_BINARY" in os.environ:
+            del os.environ["PYRE_BINARY"]
+        if "PYRE_TYPESHED" in os.environ:
+            del os.environ["PYRE_TYPESHED"]
+
     @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.path.isdir", return_value=True)
     @patch("os.path.exists")
