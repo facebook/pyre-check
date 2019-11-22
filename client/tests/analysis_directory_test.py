@@ -54,10 +54,11 @@ class AnalysisDirectoryTest(unittest.TestCase):
         side_effect=lambda targets, build, prompt: targets,
     )
     def test_resolve_analysis_directory(self, buck) -> None:  # pyre-fixme[2]
+        original_directory = "/project"
+        current_directory = "/project"
+
         arguments = MagicMock()
         arguments.build = None
-        arguments.original_directory = "/project"
-        arguments.current_directory = "/project"
 
         configuration = MagicMock()
         configuration.source_directories = []
@@ -68,7 +69,9 @@ class AnalysisDirectoryTest(unittest.TestCase):
         arguments.targets = []
         arguments.filter_directory = None
         expected_analysis_directory = AnalysisDirectory("a/b")
-        analysis_directory = resolve_analysis_directory(arguments, configuration)
+        analysis_directory = resolve_analysis_directory(
+            arguments, configuration, original_directory, current_directory
+        )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
@@ -79,7 +82,9 @@ class AnalysisDirectoryTest(unittest.TestCase):
         expected_analysis_directory = AnalysisDirectory(
             "/symlinked/directory", filter_paths=["/real/directory"]
         )
-        analysis_directory = resolve_analysis_directory(arguments, configuration)
+        analysis_directory = resolve_analysis_directory(
+            arguments, configuration, original_directory, current_directory
+        )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
@@ -322,10 +327,11 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         side_effect=lambda targets, build, prompt: targets,
     )
     def test_resolve_analysis_directory(self, buck) -> None:  # pyre-fixme[2]
+        original_directory = "/project"
+        current_directory = "/project"
+
         arguments = MagicMock()
         arguments.build = None
-        arguments.original_directory = "/project"
-        arguments.current_directory = "/project"
 
         configuration = MagicMock()
         configuration.source_directories = []
@@ -341,7 +347,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/project",
             filter_paths=["/real/directory"],
         )
-        analysis_directory = resolve_analysis_directory(arguments, configuration)
+        analysis_directory = resolve_analysis_directory(
+            arguments, configuration, original_directory, current_directory
+        )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
@@ -356,7 +364,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/project",
             filter_paths=["/filter"],
         )
-        analysis_directory = resolve_analysis_directory(arguments, configuration)
+        analysis_directory = resolve_analysis_directory(
+            arguments, configuration, original_directory, current_directory
+        )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )
@@ -372,7 +382,9 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
             original_directory="/project",
             filter_paths=["/filter"],
         )
-        analysis_directory = resolve_analysis_directory(arguments, configuration)
+        analysis_directory = resolve_analysis_directory(
+            arguments, configuration, original_directory, current_directory
+        )
         self.assertEqualRootAndFilterRoot(
             analysis_directory, expected_analysis_directory
         )

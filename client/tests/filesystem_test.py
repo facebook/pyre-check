@@ -16,7 +16,8 @@ from typing import Dict  # noqa
 from unittest.mock import MagicMock, Mock, call, patch
 
 from .. import buck, commands, filesystem
-from ..analysis_directory import SharedAnalysisDirectory, resolve_analysis_directory
+from ..analysis_directory import SharedAnalysisDirectory
+from ..commands.command import __name__ as client_name
 from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
     Filesystem,
@@ -345,18 +346,21 @@ class FilesystemTest(unittest.TestCase):
             clear.assert_has_calls([call()])
 
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
-    @patch("os.getcwd", return_value="/")
+    @patch("os.getcwd", return_value="/root")
     @patch("os.path.exists", return_value=True)
-    def test_resolve_source_directories(self, exists, cwd, realpath) -> None:
+    @patch("{}.switch_root".format(client_name), return_value="/root/local")
+    @patch("{}.find_local_root".format(client_name), return_value=None)
+    def test_resolve_source_directories(
+        self, find_local_root, switch_root, exists, cwd, realpath
+    ) -> None:
         arguments = MagicMock()
         arguments.source_directories = []
-        arguments.original_directory = "/root"
         arguments.build = False
         arguments.command = commands.Check
-        arguments.current_directory = "/root/local"
         arguments.use_buck_builder = False
         arguments.ignore_unbuilt_dependencies = False
         arguments.local_configuration = None
+        arguments.logger = None
         configuration = MagicMock()
         configuration.source_directories = []
         configuration.local_configuration_root = "/root/local"
@@ -400,6 +404,7 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
+            cwd.side_effect = ["/root", "/"]
             arguments.source_directories = []
             arguments.targets = ["arguments_target"]
             configuration.source_directories = ["configuration_source_directory"]
@@ -418,6 +423,7 @@ class FilesystemTest(unittest.TestCase):
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
             # same test as above, but Start instead of Check; build should be False
+            cwd.side_effect = ["/root", "/"]
             command = commands.Start(arguments, configuration)
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
@@ -434,6 +440,7 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
+            cwd.side_effect = ["/root", "/", "/", "/"]
             command = commands.Start(arguments, configuration)
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
@@ -453,6 +460,7 @@ class FilesystemTest(unittest.TestCase):
             "generate_source_directories",
             return_value=["configuration_source_directory"],
         ) as buck_source_directories:
+            cwd.side_effect = ["/root", "/"]
             arguments.source_directories = []
             arguments.targets = []
             arguments.command = commands.Check
@@ -477,6 +485,7 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(
             buck, "generate_source_directories", return_value=["."]
         ) as buck_source_directories:
+            cwd.side_effect = ["/root", "/"]
             arguments.source_directories = []
             arguments.targets = []
             configuration.targets = ["."]

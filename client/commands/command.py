@@ -17,11 +17,19 @@ import threading
 from abc import ABC, abstractmethod
 from typing import Iterable, List, Optional, Set  # noqa
 
-from .. import is_capable_terminal, json_rpc, log, readable_directory
+from .. import (
+    find_local_root,
+    find_log_directory,
+    is_capable_terminal,
+    json_rpc,
+    log,
+    readable_directory,
+    switch_root,
+)
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
 from ..exceptions import EnvironmentException
-from ..filesystem import remove_if_exists
+from ..filesystem import remove_if_exists, translate_path
 from ..socket_connection import SocketConnection, SocketException
 
 
@@ -130,7 +138,7 @@ class CommandParser(ABC):
 
     def __init__(self, arguments: argparse.Namespace) -> None:
         self._arguments = arguments
-        self._local_configuration: str = arguments.local_configuration
+        self._local_configuration: Optional[str] = arguments.local_configuration
         self._version: bool = arguments.version
         self._debug: bool = arguments.debug
         self._sequential: bool = arguments.sequential
@@ -175,10 +183,21 @@ class CommandParser(ABC):
 
         # Derived arguments
         self._capable_terminal: bool = is_capable_terminal()
-        self._original_directory: str = arguments.original_directory
-        self._current_directory: str = arguments.current_directory
+        self._original_directory: str = os.getcwd()
+        self._current_directory: str = switch_root(self._original_directory)
+        self._local_configuration = self._local_configuration or find_local_root(
+            self._original_directory
+        )
+        self._log_directory: str = find_log_directory(
+            self._log_directory, self._current_directory, self._local_configuration
+        )
+        logger = self._logger
+        if logger:
+            self._logger = translate_path(self._original_directory, logger)
         if self._debug or not self._capable_terminal:
             self._noninteractive = True
+
+        log.initialize(self._noninteractive, self._log_directory)
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
@@ -381,7 +400,7 @@ class CommandParser(ABC):
         return self._exit_code
 
     @property
-    def local_configuration(self) -> str:
+    def local_configuration(self) -> Optional[str]:
         return self._local_configuration
 
 
@@ -398,14 +417,15 @@ class Command(CommandParser):
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         super(Command, self).__init__(arguments)
-        if self.local_configuration:
+        local_configuration = self._local_configuration
+        if local_configuration:
             self._local_root = (
-                self.local_configuration
-                if os.path.isdir(self.local_configuration)
-                else os.path.dirname(self.local_configuration)
+                local_configuration
+                if os.path.isdir(local_configuration)
+                else os.path.dirname(local_configuration)
             )
         else:
-            self._local_root = arguments.original_directory
+            self._local_root = self._original_directory
 
         self._configuration: Configuration = configuration or self.generate_configuration()
         self._strict: bool = arguments.strict or self._configuration.strict
@@ -416,7 +436,10 @@ class Command(CommandParser):
         self._number_of_workers: int = self._configuration.number_of_workers
         self._version_hash: str = self._configuration.version_hash
         self._formatter: Optional[str] = self._configuration.formatter
-        self._taint_models_path: List[str] = self._configuration.taint_models_path
+        self._taint_models_path: List[str] = [
+            translate_path(self._original_directory, path)
+            for path in self._configuration.taint_models_path
+        ]
 
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
@@ -444,7 +467,12 @@ class Command(CommandParser):
         if not configuration:
             return AnalysisDirectory(".")
         else:
-            return resolve_analysis_directory(self._arguments, configuration)
+            return resolve_analysis_directory(
+                self._arguments,
+                configuration,
+                self._original_directory,
+                self._current_directory,
+            )
 
     def run(self) -> "Command":
         configuration = self._configuration

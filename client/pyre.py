@@ -18,11 +18,8 @@ from . import (
     commands,
     find_log_directory,
     get_binary_version_from_file,
-    is_capable_terminal,
     log,
     log_statistics,
-    switch_root,
-    translate_arguments,
 )
 from .commands import (  # noqa
     Command,
@@ -88,11 +85,6 @@ def main() -> int:
     exit_code = ExitCode.FAILURE
     start = time.time()
     try:
-        switch_root(arguments)
-        translate_arguments(commands, arguments)
-        find_log_directory(arguments)
-        log.initialize(arguments.noninteractive, arguments.log_directory)
-
         if arguments.version:
             binary_version = get_binary_version_from_file(arguments.local_configuration)
             log.stdout.write(

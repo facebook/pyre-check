@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
 from ...analysis_directory import AnalysisDirectory
+from ..command import __name__ as client_name
 
 
 def mock_arguments(  # noqa
@@ -23,7 +24,6 @@ def mock_arguments(  # noqa
     no_saved_state=False,
     no_verify=False,
     no_watchman=False,
-    original_directory=None,
     output=None,
     save_initial_state_to=None,
     saved_state_project=None,
@@ -38,7 +38,6 @@ def mock_arguments(  # noqa
     arguments.build = build
     arguments.changed_files_path = changed_files_path
     arguments.command = command
-    arguments.current_directory = "."
     arguments.debug = False
     arguments.enable_profiling = False
     arguments.enable_memory_profiling = False
@@ -56,7 +55,6 @@ def mock_arguments(  # noqa
     arguments.no_verify = no_verify
     arguments.no_watchman = no_watchman
     arguments.nonblocking = False
-    arguments.original_directory = original_directory or "/original/directory/"
     arguments.output = output
     arguments.save_initial_state_to = save_initial_state_to
     arguments.save_results_to = None
@@ -96,7 +94,10 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
 
 
 class CommandTest(unittest.TestCase):
-    def test_relative_path(self) -> None:
+    @patch("os.getcwd", return_value="/original/directory")
+    @patch("{}.switch_root".format(client_name), return_value=".")
+    @patch("{}.find_local_root".format(client_name), return_value=None)
+    def test_relative_path(self, find_local_root, switch_root, getcwd) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
@@ -136,7 +137,10 @@ class CommandTest(unittest.TestCase):
                 commands.command.State.DEAD,
             )
 
-    def test_logger(self) -> None:
+    @patch("os.getcwd", return_value="/original/directory")
+    @patch("{}.switch_root".format(client_name), return_value=".")
+    @patch("{}.find_local_root".format(client_name), return_value=None)
+    def test_logger(self, find_local_root, switch_root, getcwd) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")

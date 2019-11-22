@@ -182,13 +182,13 @@ def _count(
     return collector
 
 
-def _pyre_configuration_directory(local_configuration: str) -> Path:
+def _pyre_configuration_directory(local_configuration: Optional[str]) -> Path:
     if local_configuration:
         return Path(local_configuration.replace(".pyre_configuration.local", ""))
     return Path.cwd()
 
 
-def _find_paths(local_configuration: str, paths: List[str]) -> List[Path]:
+def _find_paths(local_configuration: Optional[str], paths: List[str]) -> List[Path]:
     pyre_configuration_directory = _pyre_configuration_directory(local_configuration)
 
     if paths:

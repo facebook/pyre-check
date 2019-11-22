@@ -15,11 +15,13 @@ import sys
 import time
 import traceback
 from argparse import Namespace
+from pathlib import Path
 from typing import Any, Dict, Optional, Set, TextIO
 
 from . import buck
+from .configuration import Configuration
 from .exceptions import EnvironmentException
-from .filesystem import find_root, translate_path, translate_paths  # noqa
+from .filesystem import find_root, translate_paths  # noqa
 
 
 CONFIGURATION_FILE: str = ".pyre_configuration"
@@ -101,16 +103,18 @@ def get_binary_version_from_file(local_path: Optional[str]) -> str:
     return "No version set" if not version else version
 
 
-def switch_root(arguments) -> None:
+def switch_root(original_directory: str) -> str:
     """Pyre always runs from the directory containing the nearest .pyre_configuration,
     if one exists."""
-    arguments.original_directory = os.getcwd()
-    global_root = find_root(arguments.original_directory, CONFIGURATION_FILE)
-    root = global_root or arguments.original_directory
-    arguments.current_directory = root
+    global_root = find_root(original_directory, CONFIGURATION_FILE)
+    root = global_root or original_directory
     os.chdir(root)
+    return root
 
-    local_root = find_root(arguments.original_directory, CONFIGURATION_FILE + ".local")
+
+def find_local_root(original_directory: str) -> Optional[str]:
+    global_root = find_root(original_directory, CONFIGURATION_FILE)
+    local_root = find_root(original_directory, CONFIGURATION_FILE + ".local")
     # Check for illegal nested local configuration.
     if local_root:
         parent_local_root = find_root(
@@ -128,43 +132,25 @@ def switch_root(arguments) -> None:
     # If the global configuration root is deeper than local configuration, ignore local.
     if global_root and local_root and global_root.startswith(local_root):
         local_root = None
-    if local_root and arguments.local_configuration is None:
-        arguments.local_configuration = local_root
+    if local_root:
+        return local_root
 
 
-def find_log_directory(arguments) -> None:
+def find_log_directory(
+    log_directory: Optional[str],
+    current_directory: str,
+    local_configuration: Optional[str],
+) -> str:
     """Pyre outputs all logs to a .pyre directory that lives in the project root."""
-    if not hasattr(arguments, "log_directory") or arguments.log_directory is None:
-        if (
-            not hasattr(arguments, "current_directory")
-            or not arguments.current_directory
-        ):
-            switch_root(arguments)
-        log_directory = os.path.join(arguments.current_directory, LOG_DIRECTORY)
-        local_configuration: Optional[str] = arguments.local_configuration if hasattr(
-            arguments, "local_configuration"
-        ) else None
+    if not log_directory:
+        log_directory = os.path.join(current_directory, LOG_DIRECTORY)
         if local_configuration:
             # `log_directory` will never escape `.pyre/` because in `switch_root` we have
             # guaranteed that configurations are never deeper than local configurations
-            relative = os.path.relpath(local_configuration, arguments.current_directory)
+            relative = os.path.relpath(local_configuration, current_directory)
             log_directory = os.path.join(log_directory, relative)
-        arguments.log_directory = log_directory
-    if not os.path.exists(arguments.log_directory):
-        os.makedirs(arguments.log_directory)
-
-
-def translate_arguments(commands, arguments) -> None:
-    root = arguments.original_directory
-
-    if arguments.command in [commands.Analyze]:
-        if arguments.taint_models_path:
-            arguments.taint_models_path = [
-                translate_path(root, path) for path in arguments.taint_models_path
-            ]
-
-    if arguments.logger:
-        arguments.logger = translate_path(root, arguments.logger)
+    Path(log_directory).mkdir(exist_ok=True)
+    return log_directory
 
 
 def _buck_target_count(arguments, configuration) -> int:
@@ -174,7 +160,9 @@ def _buck_target_count(arguments, configuration) -> int:
         return len(set(configuration.targets or []))
 
 
-def _resolve_filter_paths(arguments, configuration) -> Set[str]:
+def _resolve_filter_paths(
+    arguments: Namespace, configuration: Configuration, original_directory: str
+) -> Set[str]:
     filter_paths = []
     if arguments.source_directories or arguments.targets:
         if arguments.source_directories:
@@ -187,7 +175,9 @@ def _resolve_filter_paths(arguments, configuration) -> Set[str]:
         local_configuration_root = configuration.local_configuration_root
         if local_configuration_root:
             filter_paths = [local_configuration_root]
-    return translate_paths(filter_paths, arguments.original_directory)
+    # pyre-fixme[6]: Expected `Set[str]` for 1st anonymous parameter to call
+    # `translate_paths` but got `typing.List[typing.Any]`.
+    return translate_paths(filter_paths, original_directory)
 
 
 def number_of_workers() -> int:
