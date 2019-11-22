@@ -789,6 +789,23 @@ let test_unary context =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_unary"]
 
 
+let test_parameter_default_values context =
+  assert_taint
+    ~context
+    {|
+      def source_in_default(totally_innocent=__test_source()):
+        return totally_innocent
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_default"];
+  assert_taint
+    ~context
+    {|
+      def source_in_default(tainted=__test_source(), benign):
+        return benign
+    |}
+    [outcome ~kind:`Function ~returns:[] "qualifier.source_in_default"]
+
+
 let test_walrus context =
   assert_taint
     ~context
@@ -938,6 +955,7 @@ let () =
     "test_ternary", test_ternary;
     "test_tuple", test_tuple;
     "test_unary", test_unary;
+    "test_parameter_default_values", test_parameter_default_values;
     "test_walrus", test_walrus;
     "test_yield", test_yield;
     "test_construction", test_construction;

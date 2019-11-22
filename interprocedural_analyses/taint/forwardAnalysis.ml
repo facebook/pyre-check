@@ -60,22 +60,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let empty_state = { taint = initial_taint }
 
-    let create ~existing_model parameters =
-      (* Use primed sources to populate initial state of parameters *)
-      let forward_primed_taint = existing_model.TaintResult.forward.source_taint in
-      let prime_parameter state (parameter_root, name, original) =
-        let location = original.Node.location in
-        let prime =
-          ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
-          |> ForwardState.Tree.apply_call location ~callees:[] ~port:parameter_root
-        in
-        let root = AccessPath.Root.Variable name in
-        let taint = ForwardState.assign ~root ~path:[] prime state.taint in
-        { state with taint }
-      in
-      List.fold parameters ~init:{ taint = ForwardState.empty } ~f:prime_parameter
-
-
     let less_or_equal ~left:{ taint = left } ~right:{ taint = right } =
       ForwardState.less_or_equal ~left ~right
 
@@ -757,6 +741,41 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | YieldFrom expression ->
           let taint, state = analyze_expression ~resolution ~state ~expression in
           store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
+
+
+    let create ~existing_model parameters =
+      (* Use primed sources to populate initial state of parameters *)
+      let forward_primed_taint = existing_model.TaintResult.forward.source_taint in
+      let prime_parameter
+          state
+          (parameter_root, name, { Ast.Node.location; value = { Parameter.value; _ } })
+        =
+        let prime =
+          ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
+          |> ForwardState.Tree.apply_call location ~callees:[] ~port:parameter_root
+        in
+        let default_value_taint, state =
+          match value with
+          | None -> ForwardState.Tree.bottom, state
+          | Some expression ->
+              let resolution =
+                FunctionContext.environment
+                |> TypeEnvironment.ReadOnly.global_resolution
+                |> fun global_resolution -> TypeCheck.resolution global_resolution ()
+              in
+              analyze_expression ~resolution ~state ~expression
+        in
+        let root = AccessPath.Root.Variable name in
+        let taint =
+          ForwardState.assign
+            ~root
+            ~path:[]
+            (ForwardState.Tree.join prime default_value_taint)
+            state.taint
+        in
+        { state with taint }
+      in
+      List.fold parameters ~init:{ taint = ForwardState.empty } ~f:prime_parameter
 
 
     let forward ?key state ~statement =
