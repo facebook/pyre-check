@@ -221,13 +221,14 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         self.graph.add_issue_instance(instance)
 
-    def _generate_tito(self, entry, callable):
+    # We need to thread filename explicitly since the entry might be a callinfo.
+    def _generate_tito(self, filename: str, entry, callable):
         titos = [
             SourceLocation(t["line"], t["start"], t["end"])
             for t in entry.get("titos", [])
         ]
         if len(titos) > 200:
-            pre_key: Tuple[str, str, int] = (entry["filename"], callable, len(titos))
+            pre_key: Tuple[str, str, int] = (filename, callable, len(titos))
             if pre_key not in self.summary["big_tito"]:
                 log.info("Big Tito: %s", str(pre_key))
                 self.summary["big_tito"].add(pre_key)
@@ -242,7 +243,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         caller = issue["callable"]
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
-        titos = self._generate_tito(callinfo, caller)
+        titos = self._generate_tito(issue["filename"], callinfo, caller)
         call_tf = self._generate_raw_postcondition(
             run,
             issue["filename"],
@@ -278,7 +279,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         callee_location = entry["callee_location"]
         assert "caller_port" in entry, str(entry)
         assert "callee_port" in entry, str(entry)
-        titos = self._generate_tito(entry, entry["caller"])
+        titos = self._generate_tito(entry["filename"], entry, entry["caller"])
 
         return self._generate_raw_postcondition(
             run,
@@ -350,7 +351,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         caller = issue["callable"]
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
-        titos = self._generate_tito(callinfo, caller)
+        titos = self._generate_tito(issue["filename"], callinfo, caller)
         call_tf = self._generate_raw_precondition(
             run,
             issue["filename"],
@@ -384,7 +385,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
     def _generate_precondition(self, run, entry):
         callee_location = entry["callee_location"]
-        titos = self._generate_tito(entry, entry["caller"])
+        titos = self._generate_tito(entry["filename"], entry, entry["caller"])
 
         return self._generate_raw_precondition(
             run,
