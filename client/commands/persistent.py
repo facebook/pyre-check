@@ -69,8 +69,10 @@ class Persistent(Command):
         ]
         if self._configuration.autocomplete:
             flags.append("-autocomplete")
+
         if self._log_directory:
             flags.extend(["-log-directory", self._log_directory])
+        flags += self._feature_flags()
         return flags
 
     @classmethod

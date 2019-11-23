@@ -15,7 +15,7 @@ import signal
 import subprocess
 import threading
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Optional, Set  # noqa
+from typing import Dict, Iterable, List, Optional, Set  # noqa
 
 from .. import is_capable_terminal, json_rpc, log, readable_directory
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
@@ -354,6 +354,9 @@ class CommandParser(ABC):
         parser.add_argument(
             "--saved-state-project", default=None, type=str, help=argparse.SUPPRESS
         )
+        parser.add_argument(
+            "--features", default=None, type=str, help=argparse.SUPPRESS
+        )
         # Temporary flag to help migrate to json sockets for incremental and query
         # commands.
         parser.add_argument(
@@ -421,6 +424,7 @@ class Command(CommandParser):
         self._analysis_directory: AnalysisDirectory = (
             analysis_directory or self.generate_analysis_directory()
         )
+        self._features: str = arguments.features
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -502,6 +506,11 @@ class Command(CommandParser):
         if self._log_directory:
             flags.extend(["-log-directory", self._log_directory])
         return flags
+
+    def _feature_flags(self) -> List[str]:
+        if self._features:
+            return ["-features", self._features]
+        return []
 
     def _read_stdout(self, stdout: Iterable[bytes]) -> None:
         self._buffer = []

@@ -4855,7 +4855,8 @@ let resolution_with_key ~global_resolution ~parent ~name ~key =
 let name = "TypeCheck"
 
 let check_define
-    ~configuration:({ Configuration.Analysis.include_hints; _ } as configuration)
+    ~configuration:
+      ({ Configuration.Analysis.include_hints; features = { click_to_fix }; _ } as configuration)
     ~resolution
     ~source:
       ( {
@@ -4883,7 +4884,7 @@ let check_define
     in
     let filter_hints errors =
       match mode with
-      | Unsafe when not include_hints ->
+      | Unsafe when (not include_hints) || not click_to_fix ->
           List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
       | _ -> errors
     in

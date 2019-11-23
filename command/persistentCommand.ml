@@ -106,7 +106,15 @@ let communicate
   listen server_socket ()
 
 
-let run_command expected_version log_identifier perform_autocompletion log_directory local_root () =
+let run_command
+    expected_version
+    log_identifier
+    perform_autocompletion
+    log_directory
+    features
+    local_root
+    ()
+  =
   let local_root = Path.create_absolute local_root in
   let configuration =
     Configuration.Analysis.create
@@ -114,6 +122,7 @@ let run_command expected_version log_identifier perform_autocompletion log_direc
       ~log_identifier
       ?log_directory
       ~perform_autocompletion
+      ~features:(Configuration.Features.create features)
       ?expected_version
       ()
   in
@@ -205,5 +214,9 @@ let command =
            ~doc:"IDENTIFIER Add given identifier to logged samples."
       +> flag "-autocomplete" no_arg ~doc:"Process autocomplete requests."
       +> flag "-log-directory" (optional string) ~doc:"Location to write logs and other data"
+      +> flag
+           "-features"
+           (optional string)
+           ~doc:"Features gated by permissions sent from the client."
       +> anon (maybe_with_default "." ("source-root" %: string)))
     run_command

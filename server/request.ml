@@ -36,8 +36,12 @@ let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
 
 let parse_lsp
     ~configuration:
-      ( { Configuration.Analysis.perform_autocompletion; go_to_definition_enabled; _ } as
-      configuration )
+      ( {
+          Configuration.Analysis.perform_autocompletion;
+          go_to_definition_enabled;
+          features = { click_to_fix };
+          _;
+        } as configuration )
     ~state:{ State.symlink_targets_to_sources; _ }
     ~request
   =
@@ -220,7 +224,8 @@ let parse_lsp
                   };
               id;
               _;
-            } ->
+            }
+          when click_to_fix ->
             uri_to_path ~uri >>| fun path -> CodeActionRequest { id; uri; diagnostics; path }
         | Ok _ -> None
         | Error yojson_error ->

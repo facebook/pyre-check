@@ -6,6 +6,22 @@
 open Core
 open Pyre
 
+exception InvalidFeatureJSON of string
+
+module Features = struct
+  type t = { click_to_fix: bool } [@@deriving yojson, show]
+
+  let default = { click_to_fix = true }
+
+  let create feature_string =
+    match feature_string >>| Yojson.Safe.from_string >>| of_yojson with
+    | Some (Ok features) -> features
+    | Some (Error error) ->
+        Log.error "Invalid JSON: %s" error;
+        raise (InvalidFeatureJSON error)
+    | _ -> default
+end
+
 module Analysis = struct
   type incremental_style =
     | Shallow
@@ -43,6 +59,7 @@ module Analysis = struct
     include_hints: bool;
     perform_autocompletion: bool;
     go_to_definition_enabled: bool;
+    features: Features.t;
     log_directory: Path.t;
   }
   [@@deriving show]
@@ -84,6 +101,7 @@ module Analysis = struct
       ?(include_hints = false)
       ?(perform_autocompletion = false)
       ?(go_to_definition_enabled = false)
+      ?(features = Features.default)
       ?log_directory
       ()
     =
@@ -123,6 +141,7 @@ module Analysis = struct
       include_hints;
       perform_autocompletion;
       go_to_definition_enabled;
+      features;
       log_directory =
         ( match log_directory with
         | Some directory -> Path.create_absolute directory

@@ -42,6 +42,7 @@ def mock_arguments(  # noqa
     arguments.debug = False
     arguments.enable_profiling = False
     arguments.enable_memory_profiling = False
+    arguments.features = None
     arguments.filter_directory = ["."]
     arguments.hide_parse_errors = False
     arguments.incremental_style = commands.IncrementalStyle.SHALLOW

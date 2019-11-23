@@ -5,6 +5,12 @@
 
 open Pyre
 
+module Features : sig
+  type t = { click_to_fix: bool } [@@deriving yojson, show]
+
+  val create : string option -> t
+end
+
 module Analysis : sig
   type incremental_style =
     | Shallow
@@ -42,6 +48,7 @@ module Analysis : sig
     include_hints: bool;
     perform_autocompletion: bool;
     go_to_definition_enabled: bool;
+    features: Features.t;
     log_directory: Path.t;
   }
   [@@deriving show, eq]
@@ -76,6 +83,7 @@ module Analysis : sig
     ?include_hints:bool ->
     ?perform_autocompletion:bool ->
     ?go_to_definition_enabled:bool ->
+    ?features:Features.t ->
     ?log_directory:string ->
     unit ->
     t

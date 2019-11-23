@@ -471,6 +471,7 @@ let run_start_command
     transitive
     new_incremental_check
     perform_autocompletion
+    features
     verbose
     expected_version
     sections
@@ -544,6 +545,7 @@ let run_start_command
       ~store_type_check_resolution
       ~incremental_style
       ~perform_autocompletion
+      ~features:(Configuration.Features.create features)
       ?log_directory
       ()
   in
@@ -625,5 +627,9 @@ let command =
       +> flag "-transitive" no_arg ~doc:"Calculate dependencies of changed files transitively."
       +> flag "-new-incremental-check" no_arg ~doc:"Use the new fine grain dependency incremental"
       +> flag "-autocomplete" no_arg ~doc:"Process autocomplete requests."
+      +> flag
+           "-features"
+           (optional string)
+           ~doc:"Features gated by permissions sent from the client."
       ++ Specification.base_command_line_arguments)
     run_start_command

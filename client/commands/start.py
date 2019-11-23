@@ -36,7 +36,6 @@ class Start(Reporting):
         self._store_type_check_resolution: bool = arguments.store_type_check_resolution
         self._use_watchman: bool = not arguments.no_watchman
         self._incremental_style: IncrementalStyle = arguments.incremental_style
-
         if self._no_saved_state:
             self._save_initial_state_to: Optional[str] = None
             self._changed_files_path: Optional[str] = None
@@ -194,5 +193,6 @@ class Start(Reporting):
 
         if self._configuration.autocomplete:
             flags.append("-autocomplete")
+        flags.extend(self._feature_flags())
 
         return flags
