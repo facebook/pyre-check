@@ -35,7 +35,9 @@ class PersistentTest(unittest.TestCase):
         # Check start without watchman.
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.no_watchman = True
-            arguments.features = str({"click_to_fix": True, "go_to_definition": True})
+            arguments.features = str(
+                {"click_to_fix": True, "go_to_definition": True, "hover": True}
+            )
             command = commands.Persistent(
                 arguments, configuration, AnalysisDirectory(".")
             )
@@ -49,7 +51,7 @@ class PersistentTest(unittest.TestCase):
                     "-log-directory",
                     ".pyre",
                     "-features",
-                    "{'click_to_fix': True, 'go_to_definition': True}",
+                    "{'click_to_fix': True, 'go_to_definition': True, 'hover': True}",
                 ],
             )
             self.assertEqual(arguments.store_type_check_resolution, False)

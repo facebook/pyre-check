@@ -38,7 +38,7 @@ let parse_lsp
     ~configuration:
       ( {
           Configuration.Analysis.perform_autocompletion;
-          features = { click_to_fix; go_to_definition };
+          features = { click_to_fix; go_to_definition; hover };
           _;
         } as configuration )
     ~state:{ State.symlink_targets_to_sources; _ }
@@ -202,7 +202,8 @@ let parse_lsp
                   };
               id;
               _;
-            } ->
+            }
+          when hover ->
             uri_to_path ~uri
             >>| fun path ->
             HoverRequest { DefinitionRequest.id; path; position = to_pyre_position position }

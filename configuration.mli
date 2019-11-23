@@ -9,6 +9,7 @@ module Features : sig
   type t = {
     click_to_fix: bool;
     go_to_definition: bool;
+    hover: bool;
   }
   [@@deriving yojson, show]
 

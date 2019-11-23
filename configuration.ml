@@ -12,10 +12,11 @@ module Features = struct
   type t = {
     click_to_fix: bool;
     go_to_definition: bool;
+    hover: bool;
   }
   [@@deriving yojson, show]
 
-  let default = { click_to_fix = true; go_to_definition = false }
+  let default = { click_to_fix = true; go_to_definition = false; hover = false }
 
   let create feature_string =
     match feature_string >>| Yojson.Safe.from_string >>| of_yojson with
