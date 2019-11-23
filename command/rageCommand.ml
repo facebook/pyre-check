@@ -55,9 +55,10 @@ let run_rage log_directory local_root () =
     "Actual binary version: %s\nBinary build info: %s\n"
     (Version.version ())
     (Version.build_info ());
-  let configuration =
+  let ({ Configuration.Analysis.features; _ } as configuration) =
     Configuration.Analysis.create ?log_directory ~local_root:(Path.create_absolute local_root) ()
   in
+  Out_channel.printf "Features: %s\n" (Configuration.Features.show features);
   let logs =
     get_mercurial_base ()
     :: get_mercurial_status ()
