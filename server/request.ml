@@ -568,20 +568,13 @@ let process_type_query_request
         let map =
           map |> extend_map ~new_map:(AstEnvironment.shared_memory_hash_to_key_map qualifiers)
         in
-        (* Resolution shared memory. *)
-        let map =
-          let keys = ResolutionSharedMemory.get_keys ~qualifiers in
-          map
-          |> extend_map ~new_map:(ResolutionSharedMemory.compute_hashes_to_keys ~keys)
-          |> extend_map
-               ~new_map:(ResolutionSharedMemory.Keys.compute_hashes_to_keys ~keys:qualifiers)
-        in
         (* Coverage. *)
         let map =
           extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:qualifiers)
         in
         (* TODO (T56904923): Track the CallGraph table consistency *)
         map
+        (* TODO (T57043920): Track TypeEnvironment consistency *)
         |> Map.to_alist
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
         |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key })
@@ -630,16 +623,6 @@ let process_type_query_request
                 ( Callgraph.CalleeValue.description,
                   Reference.show key,
                   value >>| List.map ~f:show >>| String.concat ~sep:"," )
-          | ResolutionSharedMemory.Decoded (key, value) ->
-              Some
-                ( ResolutionSharedMemory.TypeAnnotationsValue.description,
-                  Reference.show key,
-                  value >>| LocalAnnotationMap.show )
-          | ResolutionSharedMemory.Keys.Decoded (key, value) ->
-              Some
-                ( ResolutionSharedMemory.AnnotationsKeyValue.description,
-                  Reference.show key,
-                  value >>| List.map ~f:Reference.show >>| String.concat ~sep:"," )
           | _ ->
               List.find_map
                 [
@@ -676,9 +659,6 @@ let process_type_query_request
                     | ( Coverage.SharedMemory.Decoded (_, first),
                         Coverage.SharedMemory.Decoded (_, second) ) ->
                         Option.equal Coverage.equal first second
-                    | ( ResolutionSharedMemory.Decoded (_, first),
-                        ResolutionSharedMemory.Decoded (_, second) ) ->
-                        Option.equal LocalAnnotationMap.equal first second
                     | _ ->
                         List.find_map
                           [

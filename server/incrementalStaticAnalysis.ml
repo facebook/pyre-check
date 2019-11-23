@@ -9,15 +9,7 @@ open Analysis
 
 let compute_type_check_resolution ~configuration ~scheduler ~environment ~source_paths =
   (* Only compute type check resolutions for source paths that need it. *)
-  let reanalyze_source_paths =
-    let has_resolution_shared_memory { SourcePath.qualifier; _ } =
-      ResolutionSharedMemory.get_keys ~qualifiers:[qualifier] |> List.is_empty |> not
-    in
-    List.filter source_paths ~f:(fun source_path -> not (has_resolution_shared_memory source_path))
-  in
-  let qualifiers =
-    List.map reanalyze_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-  in
+  let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
   Analysis.Check.analyze_sources
     qualifiers
     ~scheduler
