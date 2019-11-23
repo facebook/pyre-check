@@ -49,12 +49,6 @@ module FunctionDefinition : sig
   val location_sensitive_compare : t -> t -> int
 end
 
-type class_data = {
-  instantiated: Type.t;
-  class_attributes: bool;
-  class_definition: ClassSummary.t Node.t;
-}
-
 module ReadOnly : sig
   type t
 
@@ -92,8 +86,6 @@ module ReadOnly : sig
   val get_define : t -> ?dependency:dependency -> Reference.t -> FunctionDefinition.t option
 
   val get_define_body : t -> ?dependency:dependency -> Reference.t -> Define.t Node.t option
-
-  val resolve_class : t -> ?dependency:dependency -> Type.t -> class_data list option
 
   val is_protocol : t -> ?dependency:dependency -> Type.t -> bool
 end

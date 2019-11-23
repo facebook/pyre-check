@@ -160,15 +160,14 @@ let get_definition ~resolution = function
 
 let resolve_method ~resolution ~class_type ~method_name =
   let callable_implementation =
-    GlobalResolution.class_definition resolution class_type
-    >>| Annotated.Class.create
-    >>| fun definition ->
-    GlobalResolution.attribute_from_class_summary
-      ~transitive:true
-      definition
-      ~resolution
-      ~name:method_name
-      ~instantiated:class_type
+    Type.split class_type
+    |> fst
+    |> Type.primitive_name
+    >>= GlobalResolution.attribute_from_class_name
+          ~transitive:true
+          ~resolution
+          ~name:method_name
+          ~instantiated:class_type
   in
   match callable_implementation with
   | Some callable when Annotated.Attribute.defined callable -> (

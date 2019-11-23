@@ -26,13 +26,20 @@ val is_unit_test : t -> bool
 
 val has_abstract_base : t -> bool
 
-val get_abstract_attributes : resolution:GlobalResolution.t -> t -> AnnotatedAttribute.t list
+val get_abstract_attributes
+  :  resolution:GlobalResolution.t ->
+  Type.Primitive.t ->
+  AnnotatedAttribute.t list
 
 val implicit_attributes : t -> StatementAttribute.t Identifier.SerializableMap.t
 
 (* Attribute defined by `__getattr__`. *)
-val fallback_attribute : resolution:Resolution.t -> name:Identifier.t -> t -> Attribute.t option
+val fallback_attribute
+  :  resolution:Resolution.t ->
+  name:Identifier.t ->
+  Type.Primitive.t ->
+  Attribute.t option
 
-val has_explicit_constructor : t -> resolution:GlobalResolution.t -> bool
+val has_explicit_constructor : Type.Primitive.t -> resolution:GlobalResolution.t -> bool
 
 val overrides : t -> resolution:GlobalResolution.t -> name:Identifier.t -> Attribute.t option

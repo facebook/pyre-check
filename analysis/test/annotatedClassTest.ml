@@ -501,11 +501,11 @@ let test_class_attributes context =
     assert_equal
       ~cmp:attribute_list_equal
       ~printer:print_attributes
-      (GlobalResolution.attributes ~resolution definition)
+      (GlobalResolution.attributes ~resolution definition |> fun a -> Option.value_exn a)
       attributes
   in
   assert_attributes
-    parent
+    (Reference.show (Class.name parent))
     [
       GlobalResolution.create_attribute ~resolution ~parent (create_simple_attribute "__init__");
       GlobalResolution.create_attribute
@@ -571,13 +571,14 @@ let test_class_attributes context =
         parent_instantiated_type, false
     in
     let actual_attribute =
-      GlobalResolution.attribute_from_class_summary
-        parent
+      GlobalResolution.attribute_from_class_name
+        (Reference.show (Class.name parent))
         ~transitive:true
         ~class_attributes
         ~resolution
         ~name:attribute_name
         ~instantiated
+      |> (fun a -> Option.value_exn a)
       |> Node.value
     in
     assert_equal
@@ -668,6 +669,8 @@ let test_fallback_attribute context =
            | { Node.location; value = Statement.Class definition; _ } ->
                Node.create ~location definition |> Node.map ~f:ClassSummary.create |> Class.create
            | _ -> failwith "Last statement was not a class")
+      |> Class.name
+      |> Reference.show
       |> Class.fallback_attribute ~resolution ~name
     in
     match annotation with

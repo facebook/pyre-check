@@ -25,15 +25,14 @@ let normalize_global ~resolution reference =
 
 let defining_attribute ~resolution parent_type attribute =
   let global_resolution = Resolution.global_resolution resolution in
-  GlobalResolution.class_definition global_resolution parent_type
-  >>| Annotated.Class.create
-  >>| (fun definition ->
-        GlobalResolution.attribute_from_class_summary
-          ~transitive:true
-          definition
-          ~resolution:global_resolution
-          ~name:attribute
-          ~instantiated:parent_type)
+  Type.split parent_type
+  |> fst
+  |> Type.primitive_name
+  >>= GlobalResolution.attribute_from_class_name
+        ~transitive:true
+        ~resolution:global_resolution
+        ~name:attribute
+        ~instantiated:parent_type
   >>= fun attribute -> if Annotated.Attribute.defined attribute then Some attribute else None
 
 

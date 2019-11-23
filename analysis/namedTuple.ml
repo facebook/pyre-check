@@ -33,7 +33,9 @@ let field_annotations ~global_resolution annotation =
   in
   annotation
   |> Option.some_if (is_named_tuple ~global_resolution ~annotation)
-  >>= GlobalResolution.class_definition global_resolution
-  >>| GlobalResolution.attributes ~resolution:global_resolution
+  >>| Type.split
+  >>| fst
+  >>= Type.primitive_name
+  >>= GlobalResolution.attributes ~resolution:global_resolution
   >>| fun attributes ->
   field_names attributes |> List.filter_map ~f:(matching_annotation attributes)

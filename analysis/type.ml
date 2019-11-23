@@ -407,6 +407,12 @@ include T
 
 let _ = show (* shadowed below *)
 
+type class_data = {
+  instantiated: t;
+  class_attributes: bool;
+  class_name: Primitive.t;
+}
+
 type type_t = t [@@deriving compare, eq, sexp, show, hash]
 
 module Map = Map.Make (T)
@@ -3782,3 +3788,34 @@ let contains_prohibited_any annotation =
 
 
 let to_yojson annotation = `String (show annotation)
+
+let resolve_class annotation =
+  let rec extract ~meta original_annotation =
+    let annotation =
+      match original_annotation with
+      | Variable variable -> Variable.Unary.upper_bound variable
+      | _ -> original_annotation
+    in
+    match annotation with
+    | Top
+    | Bottom
+    | Any ->
+        Some []
+    | Union annotations ->
+        let flatten_optional sofar optional =
+          match sofar, optional with
+          | Some sofar, Some optional -> Some (optional :: sofar)
+          | _ -> None
+        in
+        List.map ~f:(extract ~meta) annotations
+        |> List.fold ~init:(Some []) ~f:flatten_optional
+        >>| List.concat
+        >>| List.rev
+    | annotation when is_meta annotation -> single_parameter annotation |> extract ~meta:true
+    | _ -> (
+        match split annotation |> fst |> primitive_name with
+        | Some class_name ->
+            Some [{ instantiated = original_annotation; class_attributes = meta; class_name }]
+        | None -> None )
+  in
+  extract ~meta:false annotation

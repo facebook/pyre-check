@@ -617,24 +617,24 @@ module Implementation = struct
     in
     let attributes class_type ~protocol_assumptions ~callable_assumptions =
       let assumptions = { assumptions with protocol_assumptions; callable_assumptions } in
-      match
-        UnannotatedGlobalEnvironment.ReadOnly.resolve_class
-          ?dependency
-          (unannotated_global_environment class_metadata_environment)
-          class_type
-      with
+      match Type.resolve_class class_type with
       | None -> None
       | Some [] -> None
-      | Some [{ instantiated; class_attributes; class_definition }] ->
-          attributes
-            class_definition
+      | Some [{ instantiated; class_attributes; class_name }] ->
+          UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+            (unannotated_global_environment class_metadata_environment)
             ?dependency
-            ~class_metadata_environment
-            ~assumptions
-            ~transitive:true
-            ~instantiated
-            ~class_attributes
-          |> Option.some
+            class_name
+          >>| attribute_table
+                ?dependency
+                ~class_metadata_environment
+                ~assumptions
+                ~transitive:true
+                ~instantiated
+                ~class_attributes
+                ~include_generated_attributes:true
+                ?special_method:None
+          >>| AnnotatedAttribute.Table.to_list
       | Some (_ :: _) ->
           (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
              indirectly by breaking apart the union before doing the
@@ -1003,28 +1003,6 @@ module Implementation = struct
             AnnotatedAttribute.Table.filter_map table ~f:(instantiate ~instantiated));
         Hashtbl.set ~key ~data:table AttributeCache.cache;
         table
-
-
-  and attributes
-      ~assumptions
-      ?(transitive = false)
-      ?(class_attributes = false)
-      ?(include_generated_attributes = true)
-      ?instantiated
-      definition
-      ?dependency
-      ~class_metadata_environment
-    =
-    attribute_table
-      ~transitive
-      ~class_attributes
-      ~include_generated_attributes
-      ?instantiated
-      definition
-      ?dependency
-      ~assumptions
-      ~class_metadata_environment
-    |> AnnotatedAttribute.Table.to_list
 
 
   and create_attribute
@@ -2695,42 +2673,36 @@ module Implementation = struct
            definition
       |> List.map ~f:(fun definition -> class_annotation definition)
     in
-    let definition_index attribute =
-      attribute
-      |> AnnotatedAttribute.parent
+    let definition_index parent =
+      parent
       |> (fun class_annotation ->
            List.findi definitions ~f:(fun _ annotation -> Type.equal annotation class_annotation))
       >>| fst
       |> Option.value ~default:Int.max_value
     in
-    let constructor_signature, constructor_index =
-      let attribute =
-        attribute
-          definition
-          ~transitive:true
-          ?dependency
-          ~class_metadata_environment
-          ~assumptions
-          ~name:"__init__"
-          ~instantiated
-      in
-      let signature = attribute |> AnnotatedAttribute.annotation |> Annotation.annotation in
-      signature, definition_index attribute
+    let attribute_table =
+      attribute_table
+        definition
+        ~transitive:true
+        ?dependency
+        ~class_metadata_environment
+        ~assumptions
+        ~instantiated
+        ~class_attributes:false
+        ~include_generated_attributes:true
     in
-    let new_signature, new_index =
-      let attribute =
-        attribute
-          definition
-          ~transitive:true
-          ?dependency
-          ~class_metadata_environment
-          ~assumptions
-          ~name:"__new__"
-          ~instantiated
+    let signature_and_index ~name =
+      let signature, parent =
+        match AnnotatedAttribute.Table.lookup_name attribute_table name with
+        | Some attribute ->
+            ( AnnotatedAttribute.annotation attribute |> Annotation.annotation,
+              AnnotatedAttribute.parent attribute )
+        | None -> Type.Top, class_annotation definition
       in
-      let signature = attribute |> AnnotatedAttribute.annotation |> Annotation.annotation in
-      signature, definition_index attribute
+      signature, definition_index parent
     in
+    let constructor_signature, constructor_index = signature_and_index ~name:"__init__" in
+    let new_signature, new_index = signature_and_index ~name:"__new__" in
     let signature =
       if new_index < constructor_index then
         new_signature
@@ -2741,68 +2713,16 @@ module Implementation = struct
     | Type.Callable callable ->
         Type.Callable (Type.Callable.with_return_annotation ~annotation:return_annotation callable)
     | _ -> signature
-
-
-  and attribute
-      ~assumptions
-      ?(transitive = false)
-      ?(class_attributes = false)
-      ?(special_method = false)
-      ({ Node.location; _ } as definition)
-      ?dependency
-      ~class_metadata_environment
-      ~name
-      ~instantiated
-    =
-    let table =
-      attribute_table
-        ~instantiated
-        ~transitive
-        ~class_attributes
-        ~special_method
-        ~include_generated_attributes:true
-        ?dependency
-        ~class_metadata_environment
-        ~assumptions
-        definition
-    in
-    match AnnotatedAttribute.Table.lookup_name table name with
-    | Some attribute -> attribute
-    | None ->
-        create_attribute
-          ?dependency
-          ~class_metadata_environment
-          ~assumptions
-          ~parent:definition
-          ~defined:false
-          ~default_class_attribute:class_attributes
-          {
-            Node.location;
-            value =
-              {
-                Attribute.name;
-                kind =
-                  Simple
-                    {
-                      annotation = None;
-                      value = None;
-                      primitive = true;
-                      toplevel = true;
-                      frozen = false;
-                      implicit = false;
-                    };
-              };
-          }
 end
 
-let assume_nothing f =
-  f
-    ~assumptions:
-      {
-        protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
-        callable_assumptions = TypeOrder.CallableAssumptions.empty;
-      }
+let empty_assumptions =
+  {
+    protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
+    callable_assumptions = TypeOrder.CallableAssumptions.empty;
+  }
 
+
+let assume_nothing f = f ~assumptions:empty_assumptions
 
 let full_order = assume_nothing Implementation.full_order
 
@@ -2810,9 +2730,33 @@ let check_invalid_type_parameters = assume_nothing Implementation.check_invalid_
 
 let parse_annotation = assume_nothing Implementation.parse_annotation
 
-let attribute_table = assume_nothing Implementation.attribute_table
+let summary_and_attribute_table
+    ~transitive
+    ~class_attributes
+    ~include_generated_attributes
+    ?special_method
+    ?instantiated
+    ?dependency
+    name
+    ~class_metadata_environment
+  =
+  UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+    (unannotated_global_environment class_metadata_environment)
+    ?dependency
+    name
+  >>| fun definition ->
+  ( definition,
+    Implementation.attribute_table
+      ~transitive
+      ~class_attributes
+      ~include_generated_attributes
+      ?special_method
+      ?instantiated
+      ?dependency
+      ~class_metadata_environment
+      ~assumptions:empty_assumptions
+      definition )
 
-let attributes = assume_nothing Implementation.attributes
 
 let create_attribute = assume_nothing Implementation.create_attribute
 
@@ -2837,8 +2781,6 @@ let resolve_mutable_literals = assume_nothing Implementation.resolve_mutable_lit
 let constraints_solution_exists = assume_nothing Implementation.constraints_solution_exists
 
 let constructor = assume_nothing Implementation.constructor
-
-let attribute = assume_nothing Implementation.attribute
 
 include TypeParameterValidationTypes
 include SignatureSelectionTypes

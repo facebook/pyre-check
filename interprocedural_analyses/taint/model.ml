@@ -1062,15 +1062,14 @@ let get_global_model ~resolution ~expression =
         let global_resolution = Resolution.global_resolution resolution in
         let parent =
           let attribute =
-            GlobalResolution.class_definition global_resolution annotation
-            >>| Annotated.Class.create
-            >>| fun definition ->
-            GlobalResolution.attribute_from_class_summary
-              ~transitive:true
-              definition
-              ~resolution:global_resolution
-              ~name:attribute
-              ~instantiated:annotation
+            Type.split annotation
+            |> fst
+            |> Type.primitive_name
+            >>= GlobalResolution.attribute_from_class_name
+                  ~transitive:true
+                  ~resolution:global_resolution
+                  ~name:attribute
+                  ~instantiated:annotation
           in
           match attribute with
           | Some attribute when Annotated.Attribute.defined attribute ->
@@ -1180,7 +1179,9 @@ let infer_class_models ~environment =
   in
 
   let compute_dataclass_model class_summary =
-    let attributes = attributes class_summary |> List.map ~f:Annotated.Attribute.name in
+    let attributes =
+      attributes class_summary >>| List.map ~f:Annotated.Attribute.name |> Option.value ~default:[]
+    in
     {
       TaintResult.forward = Forward.empty;
       backward =
@@ -1195,7 +1196,7 @@ let infer_class_models ~environment =
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
      field names. *)
   let compute_named_tuple_model class_summary =
-    let attributes = attributes class_summary in
+    let attributes = attributes class_summary |> Option.value ~default:[] in
     (* If a user-specified constructor exists, don't override it. *)
     if List.exists attributes ~f:(fun attribute -> Annotated.Attribute.name attribute = "__init__")
     then
@@ -1235,14 +1236,14 @@ let infer_class_models ~environment =
       |> fun decorators -> not (List.is_empty decorators)
     in
     if is_dataclass then
-      Some (compute_dataclass_model class_summary)
+      Some (compute_dataclass_model class_name)
     else if
       GlobalResolution.is_transitive_successor
         global_resolution
         ~predecessor:class_name
         ~successor:"typing.NamedTuple"
     then
-      compute_named_tuple_model class_summary
+      compute_named_tuple_model class_name
     else
       None
   in

@@ -156,38 +156,36 @@ val is_consistent_with
 
 val is_transitive_successor : t -> predecessor:string -> successor:string -> bool
 
-val resolve_class : t -> Type.t -> UnannotatedGlobalEnvironment.class_data list option
-
 val attributes
   :  resolution:t ->
   ?transitive:bool ->
   ?class_attributes:bool ->
   ?include_generated_attributes:bool ->
   ?instantiated:Type.t ->
-  ClassSummary.t Node.t ->
-  AnnotatedAttribute.t list
+  Type.Primitive.t ->
+  AnnotatedAttribute.t list option
 
 val metaclass : resolution:t -> ClassSummary.t Node.t -> Type.t
 
-val attribute_from_class_summary
+val attribute_from_class_name
   :  resolution:t ->
   ?transitive:bool ->
   ?class_attributes:bool ->
   ?special_method:bool ->
-  ClassSummary.t Node.t ->
+  Type.Primitive.t ->
   name:Identifier.t ->
   instantiated:Type.t ->
-  AnnotatedAttribute.t
+  AnnotatedAttribute.t option
 
-val attribute_table
+val summary_and_attribute_table
   :  resolution:t ->
   transitive:bool ->
   class_attributes:bool ->
   include_generated_attributes:bool ->
   ?special_method:bool ->
   ?instantiated:Type.t ->
-  ClassSummary.t Node.t ->
-  AnnotatedAttribute.Table.t
+  Type.Primitive.t ->
+  (ClassSummary.t Node.t * AnnotatedAttribute.Table.t) option
 
 val generics : resolution:t -> ClassSummary.t Node.t -> Type.OrderedTypes.t
 

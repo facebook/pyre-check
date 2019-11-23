@@ -318,31 +318,68 @@ let global ({ dependency; _ } as resolution) reference =
         reference
 
 
-let attribute_from_class_summary ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.attribute
+let attribute_from_class_name
+    ~resolution:({ dependency; _ } as resolution)
+    ?(transitive = false)
+    ?(class_attributes = false)
+    ?(special_method = false)
+    class_name
+    ~name
+    ~instantiated
+  =
+  let access (({ Node.location; _ } as summary), table) =
+    match AnnotatedAttribute.Table.lookup_name table name with
+    | Some attribute -> attribute
+    | None ->
+        AttributeResolution.create_attribute
+          ?dependency
+          ~class_metadata_environment:(class_metadata_environment resolution)
+          ~parent:summary
+          ~defined:false
+          ~default_class_attribute:class_attributes
+          {
+            Node.location;
+            value =
+              {
+                Attribute.name;
+                kind =
+                  Simple
+                    {
+                      annotation = None;
+                      value = None;
+                      primitive = true;
+                      toplevel = true;
+                      frozen = false;
+                      implicit = false;
+                    };
+              };
+          }
+  in
+  AttributeResolution.summary_and_attribute_table
+    ~instantiated
+    ~transitive
+    ~class_attributes
+    ~special_method
+    ~include_generated_attributes:true
     ?dependency
     ~class_metadata_environment:(class_metadata_environment resolution)
+    class_name
+  >>| access
 
 
-let attribute_from_annotation ({ dependency; _ } as resolution) ~parent:annotation ~name =
-  match
-    UnannotatedGlobalEnvironment.ReadOnly.resolve_class
-      ?dependency
-      (unannotated_global_environment resolution)
-      annotation
-  with
+let attribute_from_annotation resolution ~parent:annotation ~name =
+  match Type.resolve_class annotation with
   | None -> None
   | Some [] -> None
-  | Some [{ instantiated; class_attributes; class_definition }] ->
-      AttributeResolution.attribute
-        class_definition
-        ?dependency
-        ~class_metadata_environment:(class_metadata_environment resolution)
+  | Some [{ instantiated; class_attributes; class_name }] ->
+      attribute_from_class_name
+        ~resolution
         ~transitive:true
         ~instantiated
         ~class_attributes
         ~name
-      |> fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
+        class_name
+      >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
   | Some (_ :: _) -> None
 
 
@@ -403,28 +440,36 @@ let generics ~resolution:({ dependency; _ } as resolution) =
     ~class_metadata_environment:(class_metadata_environment resolution)
 
 
-let attribute_table ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.attribute_table
+let summary_and_attribute_table ~resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.summary_and_attribute_table
     ?dependency
     ~class_metadata_environment:(class_metadata_environment resolution)
 
 
-let attributes ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.attributes
+let attributes
+    ~resolution:({ dependency; _ } as resolution)
+    ?(transitive = false)
+    ?(class_attributes = false)
+    ?(include_generated_attributes = true)
+    ?instantiated
+    name
+  =
+  AttributeResolution.summary_and_attribute_table
+    ~transitive
+    ~class_attributes
+    ~include_generated_attributes
+    ?instantiated
+    name
     ?dependency
     ~class_metadata_environment:(class_metadata_environment resolution)
+  >>| snd
+  >>| AnnotatedAttribute.Table.to_list
 
 
 let metaclass ~resolution:({ dependency; _ } as resolution) =
   AttributeResolution.metaclass
     ?dependency
     ~class_metadata_environment:(class_metadata_environment resolution)
-
-
-let resolve_class ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.resolve_class
-    (unannotated_global_environment resolution)
-    ?dependency
 
 
 let resolve_mutable_literals ({ dependency; _ } as resolution) =

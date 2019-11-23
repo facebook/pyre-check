@@ -64,12 +64,6 @@ module FunctionDefinition = struct
     | _ -> List.compare Sibling.compare left.siblings right.siblings
 end
 
-type class_data = {
-  instantiated: Type.t;
-  class_attributes: bool;
-  class_definition: ClassSummary.t Node.t;
-}
-
 module ReadOnly = struct
   type t = {
     ast_environment: AstEnvironment.ReadOnly.t;
@@ -119,46 +113,6 @@ module ReadOnly = struct
   let primitive_name annotation =
     let primitive, _ = Type.split annotation in
     Type.primitive_name primitive
-
-
-  let resolve_class { get_class_definition; _ } ?dependency annotation =
-    let rec extract ~is_meta original_annotation =
-      let annotation =
-        match original_annotation with
-        | Type.Variable variable -> Type.Variable.Unary.upper_bound variable
-        | _ -> original_annotation
-      in
-      match annotation with
-      | Type.Top
-      | Type.Bottom
-      | Type.Any ->
-          Some []
-      | Type.Union annotations ->
-          let flatten_optional sofar optional =
-            match sofar, optional with
-            | Some sofar, Some optional -> Some (optional :: sofar)
-            | _ -> None
-          in
-          List.map ~f:(extract ~is_meta) annotations
-          |> List.fold ~init:(Some []) ~f:flatten_optional
-          >>| List.concat
-          >>| List.rev
-      | annotation when Type.is_meta annotation ->
-          Type.single_parameter annotation |> extract ~is_meta:true
-      | _ -> (
-          match primitive_name annotation >>= get_class_definition ?dependency with
-          | Some class_definition ->
-              Some
-                [
-                  {
-                    instantiated = original_annotation;
-                    class_attributes = is_meta;
-                    class_definition;
-                  };
-                ]
-          | None -> None )
-    in
-    extract ~is_meta:false annotation
 
 
   let is_protocol { get_class_definition; _ } ?dependency annotation =

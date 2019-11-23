@@ -177,12 +177,12 @@ module DefaultBuilder : Builder = struct
       else
         match resolved_base with
         | Type.Optional base -> (
-            GlobalResolution.resolve_class global_resolution base
+            Type.resolve_class base
             |> function
-            | Some [{ instantiated; class_attributes; class_definition }] ->
+            | Some [{ instantiated; class_attributes; class_name }] -> (
                 let attribute =
-                  GlobalResolution.attribute_from_class_summary
-                    class_definition
+                  GlobalResolution.attribute_from_class_name
+                    class_name
                     ~transitive:true
                     ~class_attributes
                     ~special_method:false
@@ -190,11 +190,14 @@ module DefaultBuilder : Builder = struct
                     ~name
                     ~instantiated
                 in
-                if Annotated.Attribute.property attribute then
-                  register_attribute_callable
-                    ~is_optional_class_attribute:true
-                    instantiated
-                    attribute
+                match attribute with
+                | Some attribute ->
+                    if Annotated.Attribute.property attribute then
+                      register_attribute_callable
+                        ~is_optional_class_attribute:true
+                        instantiated
+                        attribute
+                | None -> () )
             | Some _
             | None ->
                 () )

@@ -518,10 +518,10 @@ let process_type_query_request
           { TypeQuery.name; annotation }
         in
         parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)
-        |> GlobalResolution.class_definition global_resolution
-        >>| Annotated.Class.create
-        >>| (fun annotated_class ->
-              GlobalResolution.attributes ~resolution:global_resolution annotated_class)
+        |> Type.split
+        |> fst
+        |> Type.primitive_name
+        >>= GlobalResolution.attributes ~resolution:global_resolution
         >>| List.map ~f:to_attribute
         >>| (fun attributes -> TypeQuery.Response (TypeQuery.FoundAttributes attributes))
         |> Option.value
@@ -909,9 +909,11 @@ let process_type_query_request
         let parsed_annotation =
           parse_and_validate ~fill_missing_type_parameters_with_any:true annotation
         in
-        GlobalResolution.class_definition global_resolution parsed_annotation
-        >>| Annotated.Class.create
-        >>| GlobalResolution.attributes
+        parsed_annotation
+        |> Type.split
+        |> fst
+        |> Type.primitive_name
+        >>= GlobalResolution.attributes
               ~instantiated:parsed_annotation
               ~resolution:global_resolution
         >>| List.filter_map ~f:to_method

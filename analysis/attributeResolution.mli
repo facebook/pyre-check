@@ -154,26 +154,16 @@ val parse_annotation
   Expression.expression Node.t ->
   Type.t
 
-val attribute_table
+val summary_and_attribute_table
   :  transitive:bool ->
   class_attributes:bool ->
   include_generated_attributes:bool ->
   ?special_method:bool ->
   ?instantiated:Type.t ->
   ?dependency:SharedMemoryKeys.dependency ->
-  ClassSummary.t Node.t ->
+  string ->
   class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  AnnotatedAttribute.Table.t
-
-val attributes
-  :  ?transitive:bool ->
-  ?class_attributes:bool ->
-  ?include_generated_attributes:bool ->
-  ?instantiated:Type.t ->
-  ClassSummary.t Node.t ->
-  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  AnnotatedAttribute.attribute Node.t list
+  (ClassSummary.t Node.t * AnnotatedAttribute.Table.t) option
 
 val create_attribute
   :  ?dependency:SharedMemoryKeys.dependency ->
@@ -265,14 +255,3 @@ val constructor
   instantiated:Type.t ->
   class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
   Type.t
-
-val attribute
-  :  ?transitive:bool ->
-  ?class_attributes:bool ->
-  ?special_method:bool ->
-  ClassSummary.t Node.t ->
-  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  name:string ->
-  instantiated:Type.t ->
-  AnnotatedAttribute.attribute Node.t

@@ -1602,10 +1602,10 @@ module State (Context : Context) = struct
         List.fold arguments ~f:forward_argument ~init:state
       in
       let find_method ~parent ~name =
-        parent
-        |> GlobalResolution.class_definition global_resolution
-        >>| Annotated.Class.create
-        >>| GlobalResolution.attribute_from_class_summary
+        Type.split parent
+        |> fst
+        |> Type.primitive_name
+        >>= GlobalResolution.attribute_from_class_name
               ~resolution:global_resolution
               ~name
               ~instantiated:parent
@@ -1700,14 +1700,15 @@ module State (Context : Context) = struct
           | AttributeResolution.Found
               ({ kind = Type.Callable.Named access; implementation; _ } as callable)
             when String.equal "__init__" (Reference.last access) ->
-              GlobalResolution.class_definition global_resolution implementation.annotation
+              Type.split implementation.annotation
+              |> fst
+              |> Type.primitive_name
               >>| (function
-                    | { Node.value = summary; _ } ->
-                        let { ClassSummary.name = class_name; _ } = summary in
+                    | class_name ->
                         let abstract_methods =
                           Annotated.Class.get_abstract_attributes
                             ~resolution:global_resolution
-                            (Annotated.Class.create (Node.create ~location summary))
+                            class_name
                           |> List.map ~f:Annotated.Attribute.name
                         in
                         if not (List.is_empty abstract_methods) then
@@ -1715,11 +1716,18 @@ module State (Context : Context) = struct
                             {
                               callable;
                               reason =
-                                Some (AbstractClassInstantiation { class_name; abstract_methods });
+                                Some
+                                  (AbstractClassInstantiation
+                                     { class_name = Reference.create class_name; abstract_methods });
                             }
-                        else if ClassSummary.is_protocol summary then
+                        else if
+                          GlobalResolution.is_protocol global_resolution (Primitive class_name)
+                        then
                           AttributeResolution.NotFound
-                            { callable; reason = Some (ProtocolInstantiation class_name) }
+                            {
+                              callable;
+                              reason = Some (ProtocolInstantiation (Reference.create class_name));
+                            }
                         else
                           signature)
               |> Option.value ~default:signature
@@ -2247,26 +2255,26 @@ module State (Context : Context) = struct
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
         let resolve_in_call
             (state, joined_annotation)
-            { UnannotatedGlobalEnvironment.instantiated; class_definition; class_attributes }
+            { Type.instantiated; class_name; class_attributes }
           =
           let resolve_method
               ?(class_attributes = false)
               ?(special_method = false)
-              class_definition
+              class_name
               instantiated
               name
             =
-            GlobalResolution.attribute_from_class_summary
+            GlobalResolution.attribute_from_class_name
               ~transitive:true
               ~class_attributes
-              class_definition
+              class_name
               ~resolution:global_resolution
               ~special_method
               ~name
               ~instantiated
-            |> Annotated.Attribute.annotation
-            |> Annotation.annotation
-            |> function
+            >>| Annotated.Attribute.annotation
+            >>| Annotation.annotation
+            >>= function
             | Type.Top -> None
             | annotation -> Some annotation
           in
@@ -2275,7 +2283,7 @@ module State (Context : Context) = struct
               resolve_method
                 ~class_attributes
                 ~special_method:true
-                class_definition
+                class_name
                 instantiated
                 "__contains__"
             with
@@ -2300,7 +2308,7 @@ module State (Context : Context) = struct
                   resolve_method
                     ~class_attributes
                     ~special_method:true
-                    class_definition
+                    class_name
                     instantiated
                     "__iter__"
                 with
@@ -2321,10 +2329,10 @@ module State (Context : Context) = struct
                        good way of saying "synthetic expression with type T", simulate what happens
                        ourselves. *)
                     let forward_method ~method_name ~arguments { state; resolved = parent; _ } =
-                      GlobalResolution.class_definition global_resolution parent
-                      >>| Annotated.Class.create
-                      >>= (fun class_definition ->
-                            resolve_method class_definition parent method_name)
+                      Type.split parent
+                      |> fst
+                      |> Type.primitive_name
+                      >>= (fun class_name -> resolve_method class_name parent method_name)
                       >>| fun callable ->
                       forward_callable
                         ~state
@@ -2396,7 +2404,7 @@ module State (Context : Context) = struct
         in
         let { state; resolved; _ } = forward_expression ~state ~expression:right in
         let state, resolved =
-          GlobalResolution.resolve_class global_resolution resolved
+          Type.resolve_class resolved
           >>| List.fold ~f:resolve_in_call ~init:(state, Type.Bottom)
           |> Option.value ~default:(state, Type.Bottom)
         in
@@ -2579,7 +2587,43 @@ module State (Context : Context) = struct
                 in
                 { state; resolved = Type.Top; resolved_annotation = None; base = None }
           else (* Attribute access. *)
-            match GlobalResolution.resolve_class global_resolution resolved_base with
+            let rec find_attribute ({ Type.instantiated; class_attributes; class_name } as resolved)
+              =
+              let name = attribute in
+              match
+                GlobalResolution.attribute_from_class_name
+                  class_name
+                  ~transitive:(not (is_private_attribute attribute))
+                  ~class_attributes
+                  ~special_method:special
+                  ~resolution:global_resolution
+                  ~name
+                  ~instantiated
+              with
+              | Some attribute ->
+                  let attribute =
+                    if not (Annotated.Attribute.defined attribute) then
+                      Annotated.Class.fallback_attribute class_name ~resolution ~name
+                      |> Option.value ~default:attribute
+                    else
+                      attribute
+                  in
+                  let undefined_target =
+                    if Annotated.Attribute.defined attribute then
+                      None
+                    else
+                      Some instantiated
+                  in
+                  (* Collect @property's in the call graph. *)
+                  Some
+                    ( resolved,
+                      (attribute, undefined_target),
+                      Annotated.Attribute.annotation attribute )
+              | None -> None
+            in
+            match
+              Type.resolve_class resolved_base >>| List.map ~f:find_attribute >>= Option.all
+            with
             | None ->
                 let state =
                   Error.UndefinedAttribute
@@ -2594,43 +2638,8 @@ module State (Context : Context) = struct
             | Some [] -> { state; resolved = Type.Top; resolved_annotation = None; base = None }
             | Some (head :: tail) ->
                 let name = attribute in
-                let rec find_attribute
-                    {
-                      UnannotatedGlobalEnvironment.instantiated;
-                      class_attributes;
-                      class_definition;
-                    }
-                  =
-                  let attribute =
-                    GlobalResolution.attribute_from_class_summary
-                      class_definition
-                      ~transitive:(not (is_private_attribute attribute))
-                      ~class_attributes
-                      ~special_method:special
-                      ~resolution:global_resolution
-                      ~name
-                      ~instantiated
-                  in
-                  let attribute =
-                    if not (Annotated.Attribute.defined attribute) then
-                      Annotated.Class.fallback_attribute class_definition ~resolution ~name
-                      |> Option.value ~default:attribute
-                    else
-                      attribute
-                  in
-                  let undefined_target =
-                    if Annotated.Attribute.defined attribute then
-                      None
-                    else
-                      Some instantiated
-                  in
-                  (* Collect @property's in the call graph. *)
-                  (attribute, undefined_target), Annotated.Attribute.annotation attribute
-                in
-                let head_definition, head_resolved = find_attribute head in
-                let tail_definitions, tail_resolveds =
-                  List.map ~f:find_attribute tail |> List.unzip
-                in
+                let head_resolved_class, head_definition, head_resolved = head in
+                let tail_resolved_classes, tail_definitions, tail_resolveds = List.unzip3 tail in
                 begin
                   let attributes =
                     List.map (head_definition :: tail_definitions) ~f:fst
@@ -2638,8 +2647,8 @@ module State (Context : Context) = struct
                     List.zip_exn
                       definitions
                       (List.map
-                         (head :: tail)
-                         ~f:(fun { UnannotatedGlobalEnvironment.instantiated; _ } -> instantiated))
+                         (head_resolved_class :: tail_resolved_classes)
+                         ~f:(fun { Type.instantiated; _ } -> instantiated))
                   in
                   Context.Builder.add_property_callees
                     ~global_resolution
@@ -3107,22 +3116,19 @@ module State (Context : Context) = struct
                       else
                         resolved, false
                     in
-                    let parent_class =
-                      GlobalResolution.class_definition global_resolution parent
-                      >>| Annotated.Class.create
-                    in
+                    let parent_class_name = Type.split parent |> fst |> Type.primitive_name in
                     let reference =
                       match base with
                       | { Node.value = Name name; _ } when is_simple_name name ->
                           Some (Reference.create ~prefix:(name_to_reference_exn name) attribute)
                       | _ ->
-                          parent_class
-                          >>| Annotated.Class.name
+                          parent_class_name
+                          >>| Reference.create
                           >>| fun prefix -> Reference.create ~prefix attribute
                     in
                     let attribute =
-                      parent_class
-                      >>| GlobalResolution.attribute_from_class_summary
+                      parent_class_name
+                      >>= GlobalResolution.attribute_from_class_name
                             ~resolution:global_resolution
                             ~name:attribute
                             ~instantiated:parent
@@ -3391,8 +3397,7 @@ module State (Context : Context) = struct
                 let parent_class =
                   match name with
                   | Name.Attribute { base; _ } ->
-                      Resolution.resolve resolution base
-                      |> GlobalResolution.resolve_class global_resolution
+                      Resolution.resolve resolution base |> Type.resolve_class
                   | _ -> None
                 in
                 match name, parent_class with
@@ -3491,71 +3496,69 @@ module State (Context : Context) = struct
                     else
                       None
                 | ( Name.Attribute { attribute; _ },
-                    Some
-                      ({
-                         UnannotatedGlobalEnvironment.instantiated;
-                         class_attributes;
-                         class_definition;
-                       }
-                      :: _) ) ->
+                    Some ({ Type.instantiated; class_attributes; class_name } :: _) ) -> (
                     (* Instance *)
                     let reference = Reference.create attribute in
                     let attribute =
-                      GlobalResolution.attribute_from_class_summary
+                      GlobalResolution.attribute_from_class_name
                         ~resolution:global_resolution
                         ~name:attribute
                         ~instantiated
                         ~class_attributes
                         ~transitive:true
-                        class_definition
+                        class_name
                     in
-                    if is_illegal_attribute_annotation attribute then
-                      (* Non-self attributes may not be annotated. *)
-                      Error.create
-                        ~location
-                        ~kind:(Error.IllegalAnnotationTarget target)
-                        ~define:Context.define
-                      |> Option.some
-                    else if Annotated.Class.Attribute.defined attribute && insufficiently_annotated
-                    then
-                      let attribute_location = Annotated.Attribute.location attribute in
-                      Error.create
-                        ~location:attribute_location
-                        ~kind:
-                          (Error.MissingAttributeAnnotation
-                             {
-                               parent = Annotated.Attribute.parent attribute;
-                               missing_annotation =
+                    match attribute with
+                    | Some attribute ->
+                        if is_illegal_attribute_annotation attribute then
+                          (* Non-self attributes may not be annotated. *)
+                          Error.create
+                            ~location
+                            ~kind:(Error.IllegalAnnotationTarget target)
+                            ~define:Context.define
+                          |> Option.some
+                        else if
+                          Annotated.Class.Attribute.defined attribute && insufficiently_annotated
+                        then
+                          let attribute_location = Annotated.Attribute.location attribute in
+                          Error.create
+                            ~location:attribute_location
+                            ~kind:
+                              (Error.MissingAttributeAnnotation
                                  {
-                                   Error.name = reference;
-                                   annotation = actual_annotation;
-                                   given_annotation = Option.some_if is_immutable expected;
-                                   evidence_locations;
-                                   thrown_at_source;
-                                 };
-                             })
-                        ~define:Context.define
-                      |> Option.some
-                    else if insufficiently_annotated && explicit && not is_type_alias then
-                      Error.create
-                        ~location
-                        ~kind:
-                          (Error.ProhibitedAny
-                             {
-                               missing_annotation =
+                                   parent = Annotated.Attribute.parent attribute;
+                                   missing_annotation =
+                                     {
+                                       Error.name = reference;
+                                       annotation = actual_annotation;
+                                       given_annotation = Option.some_if is_immutable expected;
+                                       evidence_locations;
+                                       thrown_at_source;
+                                     };
+                                 })
+                            ~define:Context.define
+                          |> Option.some
+                        else if insufficiently_annotated && explicit && not is_type_alias then
+                          Error.create
+                            ~location
+                            ~kind:
+                              (Error.ProhibitedAny
                                  {
-                                   Error.name = reference;
-                                   annotation = actual_annotation;
-                                   given_annotation = Option.some_if is_immutable expected;
-                                   evidence_locations;
-                                   thrown_at_source = true;
-                                 };
-                               is_type_alias = false;
-                             })
-                        ~define:Context.define
-                      |> Option.some
-                    else
-                      None
+                                   missing_annotation =
+                                     {
+                                       Error.name = reference;
+                                       annotation = actual_annotation;
+                                       given_annotation = Option.some_if is_immutable expected;
+                                       evidence_locations;
+                                       thrown_at_source = true;
+                                     };
+                                   is_type_alias = false;
+                                 })
+                            ~define:Context.define
+                          |> Option.some
+                        else
+                          None
+                    | None -> None )
                 | _ ->
                     Error.create
                       ~location
@@ -3787,9 +3790,10 @@ module State (Context : Context) = struct
                 >>= (fun annotation -> Option.some_if (Annotation.is_final annotation) annotation)
                 >>| Annotation.annotation
                 >>= fun parent ->
-                GlobalResolution.class_definition global_resolution parent
-                >>| Annotated.Class.create
-                >>| GlobalResolution.attribute_from_class_summary
+                Type.split parent
+                |> fst
+                |> Type.primitive_name
+                >>= GlobalResolution.attribute_from_class_name
                       ~resolution:global_resolution
                       ~name:attribute
                       ~instantiated:parent
@@ -4310,16 +4314,17 @@ module State (Context : Context) = struct
               ~transitive:false
               ~include_generated_attributes:true
               ~resolution:global_resolution
-              definition
-            |> List.map ~f:AnnotatedAttribute.name
-            |> List.filter ~f:is_private_attribute
-            |> List.map ~f:(fun name ->
-                   Error.create
-                     ~location
-                     ~kind:
-                       (Error.PrivateProtocolProperty
-                          { name; parent = Annotated.Class.annotation definition })
-                     ~define:Context.define)
+              (Reference.show (Annotated.Class.name definition))
+            >>| List.map ~f:AnnotatedAttribute.name
+            >>| List.filter ~f:is_private_attribute
+            >>| List.map ~f:(fun name ->
+                    Error.create
+                      ~location
+                      ~kind:
+                        (Error.PrivateProtocolProperty
+                           { name; parent = Annotated.Class.annotation definition })
+                      ~define:Context.define)
+            |> Option.value ~default:[]
           in
           private_protocol_property_errors @ errors
         else
@@ -4341,7 +4346,8 @@ module State (Context : Context) = struct
                   GlobalResolution.attributes
                     ~include_generated_attributes:true
                     ~resolution:global_resolution
-                    definition
+                    (Reference.show (AnnotatedClass.name definition))
+                  |> Option.value ~default:[]
                 in
                 let is_uninitialized
                     ({ Node.value = { AnnotatedAttribute.name; initialized; _ }; _ } as attribute)
@@ -4367,7 +4373,8 @@ module State (Context : Context) = struct
                     ~transitive:true
                     ~include_generated_attributes:true
                     ~resolution:global_resolution
-                    definition
+                    (Reference.show (AnnotatedClass.name definition))
+                  |> Option.value ~default:[]
                 in
                 let is_initialized
                     { Node.value = { AnnotatedAttribute.initialized; property; _ }; _ }
@@ -4487,7 +4494,11 @@ module State (Context : Context) = struct
         let check_protocol definition errors = check_protocol_properties definition errors in
         let check_attributes definition errors =
           (* Error on uninitialized attributes if there was no constructor in which to do so. *)
-          if not (AnnotatedClass.has_explicit_constructor definition ~resolution:global_resolution)
+          if
+            not
+              (AnnotatedClass.has_explicit_constructor
+                 (AnnotatedClass.name definition |> Reference.show)
+                 ~resolution:global_resolution)
           then
             check_attribute_initialization
               ~is_dynamically_initialized:(fun _ -> false)
@@ -4502,57 +4513,58 @@ module State (Context : Context) = struct
             GlobalResolution.attributes
               ~include_generated_attributes:false
               ~resolution:global_resolution
-              definition
-            |> List.filter_map
-                 ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; location } ->
-                   let actual = annotation in
-                   let check_override
-                       ( { Node.value = { Attribute.annotation; name; visibility; _ }; _ } as
-                       overridden_attribute )
-                     =
-                     let expected = annotation in
-                     let overridable =
-                       match visibility with
-                       | ReadOnly (Refinable { overridable }) -> overridable
-                       | _ -> true
-                     in
-                     if
-                       ( GlobalResolution.less_or_equal
-                           global_resolution
-                           ~left:actual
-                           ~right:expected
-                       || Type.is_top actual
-                       || Type.contains_variable actual )
-                       && overridable
-                     then (* TODO(T53997072): Support type variable instantiation for overrides. *)
-                       None
-                     else
-                       let kind =
-                         if not overridable then
-                           Error.InvalidAssignment (FinalAttribute (Reference.create name))
-                         else
-                           Error.InconsistentOverride
-                             {
-                               overridden_method = name;
-                               parent =
-                                 Attribute.parent overridden_attribute
-                                 |> Type.show
-                                 |> Reference.create;
-                               override_kind = Attribute;
-                               override =
-                                 Error.WeakenedPostcondition
-                                   (Error.create_mismatch
-                                      ~resolution:global_resolution
-                                      ~actual
-                                      ~expected
-                                      ~covariant:false);
-                             }
-                       in
-                       Some (Error.create ~location ~kind ~define:Context.define)
-                   in
-                   Class.overrides ~resolution:global_resolution ~name definition
-                   >>| check_override
-                   |> Option.value ~default:None)
+              (Reference.show (AnnotatedClass.name definition))
+            >>| List.filter_map
+                  ~f:(fun { Node.value = { AnnotatedAttribute.name; annotation; _ }; location } ->
+                    let actual = annotation in
+                    let check_override
+                        ( { Node.value = { Attribute.annotation; name; visibility; _ }; _ } as
+                        overridden_attribute )
+                      =
+                      let expected = annotation in
+                      let overridable =
+                        match visibility with
+                        | ReadOnly (Refinable { overridable }) -> overridable
+                        | _ -> true
+                      in
+                      if
+                        ( GlobalResolution.less_or_equal
+                            global_resolution
+                            ~left:actual
+                            ~right:expected
+                        || Type.is_top actual
+                        || Type.contains_variable actual )
+                        && overridable
+                      then (* TODO(T53997072): Support type variable instantiation for overrides. *)
+                        None
+                      else
+                        let kind =
+                          if not overridable then
+                            Error.InvalidAssignment (FinalAttribute (Reference.create name))
+                          else
+                            Error.InconsistentOverride
+                              {
+                                overridden_method = name;
+                                parent =
+                                  Attribute.parent overridden_attribute
+                                  |> Type.show
+                                  |> Reference.create;
+                                override_kind = Attribute;
+                                override =
+                                  Error.WeakenedPostcondition
+                                    (Error.create_mismatch
+                                       ~resolution:global_resolution
+                                       ~actual
+                                       ~expected
+                                       ~covariant:false);
+                              }
+                        in
+                        Some (Error.create ~location ~kind ~define:Context.define)
+                    in
+                    Class.overrides ~resolution:global_resolution ~name definition
+                    >>| check_override
+                    |> Option.value ~default:None)
+            |> Option.value ~default:[]
           in
           override_errors @ errors
         in

@@ -187,6 +187,12 @@ and t =
   | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show, hash]
 
+type class_data = {
+  instantiated: t;
+  class_attributes: bool;
+  class_name: Primitive.t;
+}
+
 type type_t = t [@@deriving compare, eq, sexp, show]
 
 module Map : Map.S with type Key.t = t
@@ -782,3 +788,5 @@ val infer_transform : t -> t
 val contains_prohibited_any : t -> bool
 
 val to_yojson : t -> Yojson.Safe.json
+
+val resolve_class : t -> class_data list option

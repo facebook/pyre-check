@@ -1665,9 +1665,11 @@ let assert_equivalent_attributes ~context source expected =
       in
       { attribute with annotation; original_annotation }
     in
-    Option.value_exn (GlobalResolution.class_definition global_resolution class_type)
-    |> Annotated.Class.create
-    |> GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
+    Type.split class_type
+    |> fst
+    |> Type.primitive_name
+    >>= GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
+    |> (fun attributes -> Option.value_exn attributes)
     |> List.sort ~compare:compare_by_name
     |> List.map ~f:Node.value
     |> List.map ~f:ignore_value_location
