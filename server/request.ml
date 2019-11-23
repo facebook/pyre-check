@@ -38,8 +38,7 @@ let parse_lsp
     ~configuration:
       ( {
           Configuration.Analysis.perform_autocompletion;
-          go_to_definition_enabled;
-          features = { click_to_fix };
+          features = { click_to_fix; go_to_definition };
           _;
         } as configuration )
     ~state:{ State.symlink_targets_to_sources; _ }
@@ -80,7 +79,7 @@ let parse_lsp
               id;
               _;
             }
-          when go_to_definition_enabled ->
+          when go_to_definition ->
             uri_to_path ~uri
             >>| fun path ->
             GetDefinitionRequest

@@ -6,9 +6,15 @@
 open Pyre
 
 module Features : sig
-  type t = { click_to_fix: bool } [@@deriving yojson, show]
+  type t = {
+    click_to_fix: bool;
+    go_to_definition: bool;
+  }
+  [@@deriving yojson, show]
 
   val create : string option -> t
+
+  val default : t
 end
 
 module Analysis : sig

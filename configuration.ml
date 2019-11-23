@@ -9,9 +9,13 @@ open Pyre
 exception InvalidFeatureJSON of string
 
 module Features = struct
-  type t = { click_to_fix: bool } [@@deriving yojson, show]
+  type t = {
+    click_to_fix: bool;
+    go_to_definition: bool;
+  }
+  [@@deriving yojson, show]
 
-  let default = { click_to_fix = true }
+  let default = { click_to_fix = true; go_to_definition = false }
 
   let create feature_string =
     match feature_string >>| Yojson.Safe.from_string >>| of_yojson with

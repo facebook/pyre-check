@@ -1421,7 +1421,7 @@ module ScratchProject = struct
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
         ~incremental_style
-        ~go_to_definition_enabled:true
+        ~features:{ Configuration.Features.default with go_to_definition = true }
         ()
     in
     let external_sources =

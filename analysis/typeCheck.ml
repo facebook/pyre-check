@@ -4856,7 +4856,7 @@ let name = "TypeCheck"
 
 let check_define
     ~configuration:
-      ({ Configuration.Analysis.include_hints; features = { click_to_fix }; _ } as configuration)
+      ({ Configuration.Analysis.include_hints; features = { click_to_fix; _ }; _ } as configuration)
     ~resolution
     ~source:
       ( {
