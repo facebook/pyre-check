@@ -1546,44 +1546,6 @@ let test_forward context =
   assert_forward ~postcondition_bottom:true [] "sys.exit(1)" []
 
 
-let test_coverage context =
-  let assert_coverage source expected =
-    let coverage =
-      let project = ScratchProject.setup ~context ["coverage_test.py", source] in
-      let _, ast_environment, environment = ScratchProject.build_type_environment project in
-      let source =
-        AstEnvironment.ReadOnly.get_source
-          (AstEnvironment.read_only ast_environment)
-          (Reference.create "coverage_test")
-      in
-      let source = Option.value_exn source in
-      let configuration = ScratchProject.configuration_of project in
-      TypeCheck.run ~configuration ~environment ~source |> ignore;
-      Coverage.get ~qualifier:!&"coverage_test" |> fun coverage -> Option.value_exn coverage
-    in
-    assert_equal ~printer:Coverage.show expected coverage
-  in
-  assert_coverage {| def foo(): pass |} { Coverage.full = 0; partial = 0; untyped = 0; crashes = 0 };
-  assert_coverage
-    {|
-      def foo(y: int):
-        if condition():
-          x = y
-        else:
-          x = z
-    |}
-    { Coverage.full = 1; partial = 0; untyped = 1; crashes = 0 };
-  assert_coverage
-    {|
-      def foo(y: asdf):
-        if condition():
-          x = y
-        else:
-          x = 1
-    |}
-    { Coverage.full = 0; partial = 0; untyped = 2; crashes = 0 }
-
-
 type method_call = {
   direct_target: string;
   class_name: string;
@@ -2202,7 +2164,6 @@ let () =
          "forward_expression" >:: test_forward_expression;
          "forward_statement" >:: test_forward_statement;
          "forward" >:: test_forward;
-         "coverage" >:: test_coverage;
          "module_exports" >:: test_module_exports;
          "object_callables" >:: test_object_callables;
          "callable_selection" >:: test_callable_selection;

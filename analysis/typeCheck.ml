@@ -60,8 +60,6 @@ module type Signature = sig
 
   val errors : t -> Error.t list
 
-  val coverage : t -> Coverage.t
-
   val initial : resolution:Resolution.t -> t
 
   type base =
@@ -286,10 +284,6 @@ module State (Context : Context) = struct
   let resolution { resolution; _ } = resolution
 
   let error_map { errors; _ } = errors
-
-  let coverage { resolution; _ } =
-    Resolution.annotations resolution |> Map.data |> Coverage.aggregate_over_annotations
-
 
   let less_or_equal ~left:({ resolution; _ } as left) ~right =
     let global_resolution = Resolution.global_resolution resolution in
@@ -4786,15 +4780,15 @@ end
 
 type result = {
   errors: Error.t list;
-  coverage: Coverage.t;
+  local_annotation_map: LocalAnnotationMap.t option;
 }
 
-let aggregate_results results =
-  let errors, coverages =
-    List.fold results ~init:([], []) ~f:(fun (errors_sofar, coverage_sofar) { errors; coverage } ->
-        List.append errors errors_sofar, coverage :: coverage_sofar)
+let aggregate_errors results =
+  let errors =
+    List.fold results ~init:[] ~f:(fun errors_sofar { errors; _ } ->
+        List.append errors errors_sofar)
   in
-  { errors; coverage = Coverage.aggregate coverages }
+  errors
 
 
 let resolution global_resolution ?(annotations = Reference.Map.empty) () =
@@ -4946,13 +4940,12 @@ let check_define
 
     (* Schedule nested functions for analysis. *)
     let errors = exit >>| State.errors >>| filter_errors |> Option.value ~default:[] in
-    let coverage = exit >>| State.coverage |> Option.value ~default:(Coverage.create ()) in
-    { errors; coverage }, local_annotation_map
+    { errors; local_annotation_map }
   in
   try
     let initial = State.initial ~resolution in
     if Define.is_stub define then
-      { errors = filter_errors (State.errors initial); coverage = Coverage.create () }, None
+      { errors = filter_errors (State.errors initial); local_annotation_map = None }
     else
       check ~define:define_node ~initial
   with
@@ -4974,7 +4967,7 @@ let check_define
       let undefined_error =
         Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node
       in
-      { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }, None
+      { errors = [undefined_error]; local_annotation_map = None }
 
 
 let check_function_definition
@@ -5007,20 +5000,18 @@ let check_function_definition
     List.map siblings ~f:(fun { UnannotatedGlobalEnvironment.FunctionDefinition.Sibling.body; _ } ->
         body)
   in
-  let sibling_results =
-    List.map sibling_bodies ~f:(fun define_node -> check_define define_node |> fst)
-  in
+  let sibling_results = List.map sibling_bodies ~f:(fun define_node -> check_define define_node) in
   match body with
-  | None -> aggregate_results sibling_results
+  | None -> aggregate_errors sibling_results
   | Some define_node ->
-      let body_result, local_annotation_map = check_define define_node in
+      let ({ local_annotation_map; _ } as body_result) = check_define define_node in
       let () =
         if configuration.store_type_check_resolution then
           (* Write fixpoint type resolutions to shared memory *)
           let name = Node.value define_node |> Define.name in
           Option.iter local_annotation_map ~f:(ResolutionSharedMemory.add ~qualifier name)
       in
-      aggregate_results (body_result :: sibling_results)
+      aggregate_errors (body_result :: sibling_results)
 
 
 let check_source
@@ -5045,7 +5036,7 @@ let check_source
   List.map
     all_defines
     ~f:(check_function_definition ~configuration ~environment ~qualifier ~metadata)
-  |> aggregate_results
+  |> List.concat
 
 
 (* TODO (T53810748): Elimintate the use of LocalChanges *)
@@ -5072,8 +5063,7 @@ let run
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%s`..." relative;
-  let { errors; coverage } = check_source_with_local_changes ~configuration ~environment source in
-  Coverage.add coverage ~qualifier;
+  let errors = check_source_with_local_changes ~configuration ~environment source in
   Statistics.performance
     ~flush:false
     ~randomly_log_every:100

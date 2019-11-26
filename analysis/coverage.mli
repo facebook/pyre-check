@@ -27,31 +27,7 @@ val sum : t -> t -> t
 
 val aggregate_over_types : Type.t list -> t
 
-val aggregate_over_annotations : Annotation.t list -> t
-
 val aggregate : t list -> t
-
-module CoverageValue : sig
-  type nonrec t = t
-
-  val prefix : Prefix.t
-
-  val description : string
-
-  val unmarshall : string -> t
-end
-
-module SharedMemory :
-  Memory.WithCache.S
-    with type t = CoverageValue.t
-     and type key = SharedMemoryKeys.ReferenceKey.t
-     and type key_out = SharedMemoryKeys.ReferenceKey.out
-     and module KeySet = Caml.Set.Make(SharedMemoryKeys.ReferenceKey)
-     and module KeyMap = MyMap.Make(SharedMemoryKeys.ReferenceKey)
-
-val add : t -> qualifier:Reference.t -> unit
-
-val get : qualifier:Reference.t -> t option
 
 type aggregate = {
   strict_coverage: int;

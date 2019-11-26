@@ -48,27 +48,7 @@ let aggregate_over_types types =
   List.fold ~init:(create ()) ~f:aggregate types
 
 
-let aggregate_over_annotations annotations =
-  List.map annotations ~f:(fun { Annotation.annotation; _ } -> annotation) |> aggregate_over_types
-
-
 let aggregate coverages = List.fold ~init:(create ()) ~f:sum coverages
-
-module CoverageValue = struct
-  type nonrec t = t
-
-  let prefix = Prefix.make ()
-
-  let description = "Coverage"
-
-  let unmarshall value = Marshal.from_string value 0
-end
-
-module SharedMemory = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (CoverageValue)
-
-let add coverage ~qualifier = SharedMemory.add qualifier coverage
-
-let get ~qualifier = SharedMemory.get qualifier
 
 type aggregate = {
   strict_coverage: int;

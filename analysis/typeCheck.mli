@@ -47,8 +47,6 @@ module type Signature = sig
 
   val errors : t -> Error.t list
 
-  val coverage : t -> Coverage.t
-
   val initial : resolution:Resolution.t -> t
 
   type base =

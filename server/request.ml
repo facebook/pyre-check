@@ -568,10 +568,6 @@ let process_type_query_request
         let map =
           map |> extend_map ~new_map:(AstEnvironment.shared_memory_hash_to_key_map qualifiers)
         in
-        (* Coverage. *)
-        let map =
-          extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:qualifiers)
-        in
         (* TODO (T56904923): Track the CallGraph table consistency *)
         map
         (* TODO (T57043920): Track TypeEnvironment consistency *)
@@ -610,8 +606,6 @@ let process_type_query_request
         in
         let serialize_decoded decoded =
           match decoded with
-          | Coverage.SharedMemory.Decoded (key, value) ->
-              Some (Coverage.CoverageValue.description, Reference.show key, value >>| Coverage.show)
           | Analysis.Callgraph.SharedMemory.Decoded (key, value) ->
               let show { Callgraph.callee; locations } =
                 Format.asprintf
@@ -655,25 +649,18 @@ let process_type_query_request
               match first_decoded, second_decoded with
               | Some first, Some second -> (
                   let equal =
-                    match first, second with
-                    | ( Coverage.SharedMemory.Decoded (_, first),
-                        Coverage.SharedMemory.Decoded (_, second) ) ->
-                        Option.equal Coverage.equal first second
-                    | _ ->
-                        List.find_map
-                          [
-                            AnnotatedGlobalEnvironment.ReadOnly.decoded_equal global_environment;
-                            ClassMetadataEnvironment.ReadOnly.decoded_equal
-                              class_metadata_environment;
-                            ClassHierarchyEnvironment.ReadOnly.decoded_equal
-                              class_hierarchy_environment;
-                            AliasEnvironment.ReadOnly.decoded_equal alias_environment;
-                            UnannotatedGlobalEnvironment.ReadOnly.decoded_equal
-                              unannotated_global_environment;
-                            AstEnvironment.decoded_equal;
-                          ]
-                          ~f:(fun decoded_equal -> decoded_equal first second)
-                        |> Option.value ~default:false
+                    List.find_map
+                      [
+                        AnnotatedGlobalEnvironment.ReadOnly.decoded_equal global_environment;
+                        ClassMetadataEnvironment.ReadOnly.decoded_equal class_metadata_environment;
+                        ClassHierarchyEnvironment.ReadOnly.decoded_equal class_hierarchy_environment;
+                        AliasEnvironment.ReadOnly.decoded_equal alias_environment;
+                        UnannotatedGlobalEnvironment.ReadOnly.decoded_equal
+                          unannotated_global_environment;
+                        AstEnvironment.decoded_equal;
+                      ]
+                      ~f:(fun decoded_equal -> decoded_equal first second)
+                    |> Option.value ~default:false
                   in
                   match serialize_decoded first, serialize_decoded second with
                   | Some (kind, key, first_value), Some (_, _, second_value) ->

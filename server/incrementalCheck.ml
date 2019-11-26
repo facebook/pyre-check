@@ -141,7 +141,6 @@ let recheck
   in
   TypeEnvironment.invalidate environment recheck_modules;
   ResolutionSharedMemory.remove recheck_modules;
-  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list recheck_modules);
 
   (* Clean up all lookup data related to updated files. *)
   List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
