@@ -1,5 +1,5 @@
 ---
-id: pyre-static-analysis-tips
+id: pysa-tips
 title: Development Tips
 sidebar_label: Development Tips
 ---
@@ -8,8 +8,8 @@ sidebar_label: Development Tips
 
 ### Inheritance
 
-Pyre is aware of inheritance, so you can add taint annotations to a base class,
-and Pyre will detect when the tainted attribute or function is accessed via a
+Pysa is aware of inheritance, so you can add taint annotations to a base class,
+and Pysa will detect when the tainted attribute or function is accessed via a
 child class. For example, this flow will be detected during static analysis:
 
 ```python
@@ -24,9 +24,9 @@ child = Child()
 some_sink(child.some_source()) # Detected as a tainted flow
 ```
 
-Additionally, Pyre is aware that child classes can be used anywhere a parent
+Additionally, Pysa is aware that child classes can be used anywhere a parent
 classes's type is present. If you access a method on a parent class and the
-implementation on any child class returns taint, Pyre will detect that and
+implementation on any child class returns taint, Pysa will detect that and
 treat the return from the parent class as tainted. For example, this will be
 detected as a tainted flow during static analysis:
 
@@ -45,18 +45,18 @@ def fn(obj: Parent):
     some_sink(obj.some_fn()) # Detected as a tainted flow
 ```
 
-**A huge caveat here is that Pyre needs to be aware of these inheritance
+**A huge caveat here is that Pysa needs to be aware of these inheritance
 relationships and function definitions for it to work.** Code that lives
-outside the repo under analysis might not be visible to Pyre, so these
+outside the repo under analysis might not be visible to Pysa, so these
 inheritances/implementations may be missed. See the Stubs section below for
 more details.
 
 ### Stubs
 
-The concept of stubs is covered in general _[here](pyre_static_analysis_basics.md)_, but this
+The concept of stubs is covered in general _[here](pysa_basics.md)_, but this
 section in particular will cover specific issues you may encounter with the
 `.pyi` kind of stubs. These stubs can be used to prevent pyre errors for types
-that live outside the codebase you are running Pyre on. The simplest stubs are
+that live outside the codebase you are running Pysa on. The simplest stubs are
 just empty files in the root of the `stubs` directory (assuming you have a
 `stubs` directory specified in the `search_path` list in your
 `.pyre_configuration` file). An empty stub basically prevents all type checking
@@ -98,15 +98,15 @@ django.http.request.HttpRequest.GET: TaintSource[UserControlled] = ...
 file, and the `stubs/django/http/request.pyi` file shown above, pyre will see
 the `django.pyi` file first and ignore the `request.pyi` file. This would mean
 that your stub of `HttpRequest` would be missed, and your `HttpRequest.COOKIES`
-and `HttpRequest.GET` annotations would cause errors when running Pyre. The fix
+and `HttpRequest.GET` annotations would cause errors when running Pysa. The fix
 is simply to delete the `django.pyi` file. When deleting that file, you may all
 of a sudden see new typing errors for other types within Django, for which
 you'll need to add new .`pyi` files at the appropriate locations.
 
 ### Missing types cause missed flows
 
-Due to optimizations to allow parallelization, Pyre can be blind in some
-scenarios that might be obvious to a human. Pyre needs to know the type of an
+Due to optimizations to allow parallelization, Pysa can be blind in some
+scenarios that might be obvious to a human. Pysa needs to know the type of an
 object that is a source/sink *at the point at which it is accessed*, in order
 for it to detect tainted flows. For example, if you have a function that returns
 a wrapper around a source, flows from that source will not be found unless the
@@ -170,14 +170,14 @@ to get much less verbose output than `pyre_dump()`.
 
 ### Detecting Taint
 
-There is no direct way to know if Pyre has detected a variable as tainted or
+There is no direct way to know if Pysa has detected a variable as tainted or
 not. One simple way to do this is inject a call to a known sink for your source,
 such as `eval`. You would pass the object that you want to know about into the
-sink, run Pyre Static Analyzer, and see if the flow is detected.
+sink, run Pysa, and see if the flow is detected.
 
 Another strategy for getting a bit more metadata is adding a function into your
 code, which simply constructs and returns the type you want to examine. You can
-then run Pyre Static Analyzer, and grep for the function's name in the
+then run Pysa, and grep for the function's name in the
 `results.json` file located wherever you pointed `--save-results-to=` to when
-running Pyre. You should then be able to see if that function is detected as
+running Pysa. You should then be able to see if that function is detected as
 returning taint, plus a bit more metadata about it.

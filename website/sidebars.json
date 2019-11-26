@@ -13,15 +13,15 @@
       "querying-pyre",
       {
         "type": "subcategory",
-        "label": "Pyre Static Analysis",
+        "label": "Pyre Static Analysis (Pysa)",
         "ids": [
-          "pyre-static-analysis-basics",
-          "pyre-static-analysis-running",
-          "pyre-static-analysis-features",
-          "pyre-static-analysis-advanced",
+          "pysa-basics",
+          "pysa-running",
+          "pysa-features",
+          "pysa-advanced",
           "pysa-model-generators",
-          "pyre-static-analysis-tips",
-          "pyre-static-analysis-increasing-coverage",
+          "pysa-tips",
+          "pysa-coverage",
           "static-analysis-post-processor"
         ]
       }

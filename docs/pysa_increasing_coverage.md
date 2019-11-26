@@ -1,5 +1,5 @@
 ---
-id: pyre-static-analysis-increasing-coverage
+id: pysa-coverage
 title: Coverage Increasing Strategies
 sidebar_label: Coverage Increasing Strategies
 ---
@@ -20,7 +20,7 @@ pyre infer -i --annotate-from-existing-stubs
 
 ## Preprocessors
 
-Pysa comes with a number of preprocessors intended to dynamically generate models for a project. Read [this page](pyre_static_analysis_precollectors.md) to learn about the preprocessors that are currently available, and how to write your own. For best results, every entry point to your application (eg. view function for a Django web server) should have a hand written or preprocessor-generated model.
+Pysa comes with a number of preprocessors intended to dynamically generate models for a project. Read [this page](pysa_precollectors.md) to learn about the preprocessors that are currently available, and how to write your own. For best results, every entry point to your application (eg. view function for a Django web server) should have a hand written or preprocessor-generated model.
 
 ## Quick and Dirty Scripts
 
@@ -30,4 +30,4 @@ For example, do all your Django view functions live in a file called `views.py` 
 
 ## Hand Crafted Models
 
-Consider all the ways that your application takes user input, and check to see if Pysa already has models written or not. For example, if you're using Flask as your web server rather than Django, you'll find Pysa doesn't currently have any pre-written models for Flask. You'll need to write some models following the instructions in the [previous pages of our docs](pyre_static_analysis_basics.md). If the models are generally useful to others, please consider putting up a pull request to contribute them back to Pysa.
+Consider all the ways that your application takes user input, and check to see if Pysa already has models written or not. For example, if you're using Flask as your web server rather than Django, you'll find Pysa doesn't currently have any pre-written models for Flask. You'll need to write some models following the instructions in the [previous pages of our docs](pysa_basics.md). If the models are generally useful to others, please consider putting up a pull request to contribute them back to Pysa.

@@ -27,7 +27,7 @@ pass it into `run_from_global_state`.
 ## Example Model Generators
 
 The set of model generators is always changing, but below are some examples of
-model generators which are currently provided out of the box with Pyre.
+model generators which are currently provided out of the box with Pysa.
 
 ### [`RESTApiSourceGenerator`](https://github.com/facebook/pyre-check/blob/master/tools/generate_taint_models/get_REST_api_sources.py)
 

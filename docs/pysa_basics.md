@@ -1,5 +1,5 @@
 ---
-id: pyre-static-analysis-basics
+id: pysa-basics
 title: Basics
 sidebar_label: Basics
 ---
@@ -8,25 +8,21 @@ sidebar_label: Basics
 
 Pyre has applications beyond type checking python code; it can also run static
 analysis to identify potential security issues. These security issues are
-identified with what is called a **Taint Analysis**.
-
-Note that references to "Pyre" throughout the Static Analysis section of the
-documentation will usually be specifically referring to the Pyre Static
-Analyzer.
+identified with what is called a **Taint Analysis**. Pyre Static Analyzer is
+usually abreviated to Pysa (pronounced like the Leaning tower of Pisa).
 
 ## Taint Analysis
 
-**Tainted data** is data that must be treated carefully. The Pyre Static
-Analyzer works by tracking flows of data from where they originate (sources) to
-where they terminate in a dangerous location (sinks). For example, we might use
-it to track flows where user-controllable request data flows into an `eval`
-call, leading to a remote code execution vulnerability. This analysis is
-made possible by user-created stubs which provide annotations on source code, as
-well as Rules that define which sources are dangerous for which sinks. Pyre
-comes with many pre-written stubs and rules for builtin and common python
-libraries.
+**Tainted data** is data that must be treated carefully. Pysa works by tracking
+flows of data from where they originate (sources) to where they terminate in a
+dangerous location (sinks). For example, we might use it to track flows where
+user-controllable request data flows into an `eval` call, leading to a remote
+code execution vulnerability. This analysis is made possible by user-created
+stubs which provide annotations on source code, as well as Rules that define
+which sources are dangerous for which sinks. Pysa comes with many pre-written
+stubs and rules for builtin and common python libraries.
 
-Pyre propagates taint as operations are performed on tainted data. For example,
+Pysa propagates taint as operations are performed on tainted data. For example,
 if we start with a tainted integer and perform a number of operations on it, the
 end results will still be tainted:
 
@@ -37,19 +33,19 @@ s = str(x)
 f = f"Value = {s}" # 'f' is marked with the same taint 'x' had
 ```
 
-Pyre will only analyze the code in the repo that it runs on, as well as code in
+Pysa will only analyze the code in the repo that it runs on, as well as code in
 directories listed in the `search_path` of your
 [`.pyre_configuration`](configuration.md) file. It does not see the source of
 your dependencies. **Just because** ***you*** **can see code in your editor, it
-does not mean Pyre has access to that code during analysis.** Because of this
-limitation, Pyre makes some simplifying assumptions during static analysis. If
-taint flows into a function Pyre doesn't have the source for, it will assume
+does not mean Pysa has access to that code during analysis.** Because of this
+limitation, Pysa makes some simplifying assumptions during static analysis. If
+taint flows into a function Pysa doesn't have the source for, it will assume
 that the return type of that function has the same taint. This helps prevents
 false negatives, but can also lead to false positives.
 
 When an object is tainted, that means that all attributes of that object are
 also tainted. Note that this can lead to false positives, such as taint flows
-that include `some_obj.__class__`. This means that Pyre will detect all the
+that include `some_obj.__class__`. This means that Pysa will detect all the
 following flows:
 
 ```python
@@ -62,7 +58,7 @@ some_sink(x.__class__) # This is (unfortunately) also detected
 
 ## Configuration
 
-Pyre uses two types of files for configuration: a single `taint.config` file,
+Pysa uses two types of files for configuration: a single `taint.config` file,
 and an unlimited number of files with a `.pysa` extension. The `taint.config`
 file is a JSON document which stores definitions for Sources, Sinks, Features,
 and Rules (discussed below). The `.pysa` files are stub files (elaborated on
@@ -72,7 +68,7 @@ repository](https://github.com/facebook/pyre-check/tree/master/stubs/taint).
 
 These files live in the directory configured by `taint_models_path` in your
 `.pyre_configuration` file. Any `.pysa` file found in this folder will be parsed
-by Pyre and the stubs will be used during the analysis.
+by Pysa and the stubs will be used during the analysis.
 
 
 ## Sources
@@ -209,13 +205,13 @@ escaped.
 ## Taint Propagation
 
 Sometimes the features discussed in the Taint Analysis section are not enough to
-detect all taint flows. In particular, Pyre relies on additional annotations to
+detect all taint flows. In particular, Pysa relies on additional annotations to
 help it understand when an object is tainted via a function call or when a
 function call on a tainted object returns tainted data. Taint propagation is
 defined by adding `TaintInTaintOut` annotations to stubs in `.pysa` files.
 
 When a function call taints an object, such as when you update a dictionary with
-a tainted value, Pyre needs a `TaintInTaintOut` annotation that indicates
+a tainted value, Pysa needs a `TaintInTaintOut` annotation that indicates
 `Updates[self]`:
 
 ```python
@@ -223,7 +219,7 @@ def dict.update(self, __m: TaintInTaintOut[Updates[self]]): ...
 ```
 
 When a function call on a tainted object returns taint, such as when you
-retrieve a value from a dictionary, Pyre needs a `TaintInTaintOut` annotation
+retrieve a value from a dictionary, Pysa needs a `TaintInTaintOut` annotation
 that indicates `LocalReturn`:
 
 ```python
@@ -233,16 +229,16 @@ def dict.get(self: TaintInTaintOut[LocalReturn], key, default = ...): ...
 ## Features
 
 Features annotations are also placed in your `taint.config` and `.pysa` files.
-This is a larger topic and will be covered in detail on [its own page](pyre_static_analysis_features.md).
+This is a larger topic and will be covered in detail on [its own page](pysa_features.md).
 
 ## Stub files
 
 ### Usage
 
-By default, Pyre computes an inferred model for each function and combines it
+By default, Pysa computes an inferred model for each function and combines it
 with any declared models in `.pysa` files (of which there can be more than one).
 The union of these models and their annotations will be used. For example,
-cookies are both user controlled and potentially sensitive to log, and Pyre
+cookies are both user controlled and potentially sensitive to log, and Pysa
 allows us apply two different annotations to them:
 
 ```python
@@ -301,7 +297,7 @@ def urllib.request.urlopen(url: TaintSink[RequestSend], data = ...,
 Pysa will complain if the signature of your stub doesn't exactly match the
 implementation. When working with functions defined outside your project, where
 you don't directly see the source. You can use [`pyre query`](querying_pyre.md)
-with the `signature` argument to have Pyre dump it's internal model of a
+with the `signature` argument to have Pysa dump it's internal model of a
 function, so you know exactly how to write your model
 
 #### Eliding

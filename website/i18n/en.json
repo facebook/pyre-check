@@ -17,9 +17,6 @@
         "title": "Pyre Errors",
         "sidebar_label": "Error Types"
       },
-      "formal/coq_formalization/README": {
-        "title": "formal/coq_formalization/README"
-      },
       "gradual-typing": {
         "title": "Gradual Typing",
         "sidebar_label": "Gradual Typing"
@@ -40,23 +37,31 @@
         "title": "Overview",
         "sidebar_label": "Overview"
       },
-      "pyre-static-analysis-advanced": {
+      "pysa-advanced": {
         "title": "Advanced Topics",
         "sidebar_label": "Advanced Topics"
       },
-      "pyre-static-analysis-basics": {
+      "pysa-basics": {
         "title": "Basics",
         "sidebar_label": "Basics"
       },
-      "pyre-static-analysis-features": {
+      "pysa-features": {
         "title": "Feature Annotations",
         "sidebar_label": "Feature Annotations"
       },
-      "pyre-static-analysis-running": {
-        "title": "Running Pyre Static Analyzer",
-        "sidebar_label": "Running Pyre Static Analyzer"
+      "pysa-coverage": {
+        "title": "Coverage Increasing Strategies",
+        "sidebar_label": "Coverage Increasing Strategies"
       },
-      "pyre-static-analysis-tips": {
+      "pysa-model-generators": {
+        "title": "Dynamically Generating Models",
+        "sidebar_label": "Dynamically Generating Models"
+      },
+      "pysa-running": {
+        "title": "Running Pysa",
+        "sidebar_label": "Running Pysa"
+      },
+      "pysa-tips": {
         "title": "Development Tips",
         "sidebar_label": "Development Tips"
       },

@@ -1,16 +1,16 @@
 ---
-id: pyre-static-analysis-advanced
+id: pysa-advanced
 title: Advanced Topics
 sidebar_label: Advanced Topics
 ---
 
 ## Overview
 
-This page documents less straightforward bits of Pyre Static Analyzer.
+This page documents less straightforward bits of Pysa.
 
 ## Annotating `dataclass` Models
 
-In Pyre, [`dataclass`](https://docs.python.org/3/library/dataclasses.html?)es
+In Pysa, [`dataclass`](https://docs.python.org/3/library/dataclasses.html?)es
 are defined via attributes, which are converted to properties under the hood. If
 you want to taint the attributes of a `dataclass`, you might try to do the
 following:
@@ -29,11 +29,11 @@ class MyDataClass:
 tainted.MyDataClass.attribute: TaintSource[SensitiveData]
 ```
 
-This doesn't work, because during analysis Pyre's understanding of the data
+This doesn't work, because during analysis Pysa's understanding of the data
 class is of how the class looks after the property is expanded; that is:
 
 ```python
-# Pyre's view of tainted.py
+# Pysa's view of tainted.py
 class MyDataClass:
   @property
   def attribute(self) -> str: ...

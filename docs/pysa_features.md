@@ -1,5 +1,5 @@
 ---
-id: pyre-static-analysis-features
+id: pysa-features
 title: Feature Annotations
 sidebar_label: Feature Annotations
 ---
@@ -53,7 +53,7 @@ def getattr(
 ): ...
 ```
 
-Pyre also supports attaching features to inferred flows, which allows you to
+Pysa also supports attaching features to inferred flows, which allows you to
 filter flows passing through a function without having to annotate the taint
 yourself explicitly, and having the feature attached to all taint flowing
 through the function. This is done by adding the `AttachToSource` and
@@ -67,9 +67,9 @@ def get_signed_cookie() -> AttachToSource[Via[signed]]: ...
 def HttpResponseRedirect.__init__(self, redirect_to: AttachToSink[Via[redirect]], *args, **kwargs): ...
 ```
 
-Note that **Pyre automatically adds some `via` features with special meaning**
+Note that **Pysa automatically adds some `via` features with special meaning**
 such as `via:obscure`, `via:format-string`, and `via:tito`. `via:obscure` means
-that the flow passed through code that Pyre does not have access to analyze, and
+that the flow passed through code that Pysa does not have access to analyze, and
 thus some taint flow assumptions were made. This can be a useful to filter out
 flows that may be more noisy. `via:format-string` means that a flow passed
 through a [python f-string](https://www.python.org/dev/peps/pep-0498/)

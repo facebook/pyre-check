@@ -1,7 +1,7 @@
 ---
-id: pyre-static-analysis-running
-title: Running Pyre Static Analyzer
-sidebar_label: Running Pyre Static Analyzer
+id: pysa-running
+title: Running Pysa
+sidebar_label: Running Pysa
 ---
 
 ## Setup
@@ -12,12 +12,12 @@ The setup requires the following 4 types of files.
 2. **Taint Config** (`taint.config`): This file declares sources, sinks,
    features, and rules.
 3. **Taint Stubs** (`.pysa`): These files link together the information in your
-   source code and `taint.config`. They tell Pyre where in our code there
+   source code and `taint.config`. They tell Pysa where in our code there
    exist sources and sinks.
-4. **Pyre Configuration** (`.pyre_configuration`): Parts of this file are
-   critical to using the Static Analysis feature of Pyre. `source_directories` tells Pyre
+4. **Pysa Configuration** (`.pyre_configuration`): Parts of this file are
+   critical to using Pysa. `source_directories` tells Pysa
    the directory containing the source code you want to analyze.
-   `taint_models_path` tells Pyre where to find the config and stub files.
+   `taint_models_path` tells Pysa where to find the config and stub files.
 
 ## Example
 
@@ -85,8 +85,8 @@ Notice the following:
 }
 ```
 
-This declares the valid sources and sinks that Pyre should recognize. We
-also tell Pyre that data flowing from a `UserSpecified` source to a
+This declares the valid sources and sinks that Pysa should recognize. We
+also tell Pysa that data flowing from a `UserSpecified` source to a
 `RemoteCodeExecution` sink is a possible shell injection.
 
 ### 3. Taint Stubs
@@ -102,9 +102,9 @@ def os.system(command: TaintSink[RemoteCodeExecution]): ...
 ```
 
 This file links together the information in `source.py` and `taint.config`. We
-use it to tell Pyre where in our code there exist sources and sinks.
+use it to tell Pysa where in our code there exist sources and sinks.
 
-### 4. Pyre Configuration
+### 4. Pysa Configuration
 
 ```python
 # static_analysis_example/.pyre_configuration
@@ -115,7 +115,7 @@ use it to tell Pyre where in our code there exist sources and sinks.
 }
 ```
 
-Pyre needs to know what directory to analyze, as well as where to find the config
+Pysa needs to know what directory to analyze, as well as where to find the config
 and stub files.
 
 ### Analysis
