@@ -297,6 +297,13 @@ def urllib.request.urlopen(url: TaintSink[RequestSend], data = ...,
                            timeout = ..., *, cafile = ..., capath = ...,
                            cadefault = ..., context = ...): ...
 ```
+
+Pysa will complain if the signature of your stub doesn't exactly match the
+implementation. When working with functions defined outside your project, where
+you don't directly see the source. You can use [`pyre query`](querying_pyre.md)
+with the `signature` argument to have Pyre dump it's internal model of a
+function, so you know exactly how to write your model
+
 #### Eliding
 
 As you can see from the above examples, defaulted values and function bodies can
