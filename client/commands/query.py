@@ -75,7 +75,7 @@ class Query(Command):
         return flags
 
     def _run(self) -> None:
-        if self._use_json_sockets:
+        if self._configuration._use_json_sockets:
             request = json_rpc.Request(
                 method="typeQuery", parameters={"query": self.query}
             )
