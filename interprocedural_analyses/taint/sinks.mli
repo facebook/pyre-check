@@ -16,6 +16,7 @@ type t =
   | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
   | RemoteCodeExecution
   | SQL
+  | AddFeatureToArgument
   | Test
   | XMLParser
   | XSS

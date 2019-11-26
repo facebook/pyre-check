@@ -17,6 +17,8 @@ module T = struct
     | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
     | RemoteCodeExecution
     | SQL
+    | AddFeatureToArgument
+    (* Special marker to designate modifying the state the parameter passed in. *)
     | Test
     | XMLParser
     | XSS
@@ -38,6 +40,7 @@ let show = function
   | ParameterUpdate index -> Format.sprintf "ParameterUpdate%d" index
   | RemoteCodeExecution -> "RemoteCodeExecution"
   | SQL -> "SQL"
+  | AddFeatureToArgument -> "AddFeatureToArgument"
   | Test -> "Test"
   | XMLParser -> "XMLParser"
   | XSS -> "XSS"
@@ -51,6 +54,7 @@ let create = function
   | "Logging" -> Logging
   | "RemoteCodeExecution" -> RemoteCodeExecution
   | "SQL" -> SQL
+  | "AddFeatureToArgument" -> AddFeatureToArgument
   | "Test" -> Test
   | "XMLParser" -> XMLParser
   | "XSS" -> XSS

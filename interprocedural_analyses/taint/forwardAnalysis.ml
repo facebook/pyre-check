@@ -257,6 +257,27 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let sink_tree =
             List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
           in
+          (* Add features to arguments. *)
+          let state =
+            match AccessPath.of_expression ~resolution argument with
+            | Some { AccessPath.root; path } -> (
+                let features_to_add =
+                  BackwardState.Tree.filter_by_leaf ~leaf:Sinks.AddFeatureToArgument sink_tree
+                  |> BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
+                  |> List.filter ~f:Features.is_breadcrumb
+                in
+                match features_to_add with
+                | _ :: _ as features ->
+                    let taint =
+                      ForwardState.read state.taint ~root ~path
+                      |> ForwardState.Tree.transform
+                           ForwardTaint.simple_feature_set
+                           ~f:(List.rev_append features)
+                    in
+                    store_taint ~root ~path taint state
+                | [] -> state )
+            | None -> state
+          in
           FunctionContext.check_flow ~location ~source_tree:argument_taint ~sink_tree;
           tito, state
         in

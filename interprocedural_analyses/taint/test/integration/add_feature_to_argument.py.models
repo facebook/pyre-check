@@ -1,0 +1,182 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.add_feature_to_first",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(first)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "AddFeatureToArgument" } ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.add_via_value_of",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(first)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "AddFeatureToArgument" } ] }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.adds_and_taints",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 6,
+              "start": 8,
+              "end": 23
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.propagate_add_feature",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 12,
+              "start": 32,
+              "end": 41
+            },
+            "leaves": [
+              {
+                "kind": "AddFeatureToArgument",
+                "name": "add_feature_to_argument.add_feature_to_first",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.test_add_feature_to_sink",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 26,
+              "start": 25,
+              "end": 34
+            },
+            "leaves": [
+              {
+                "kind": "AddFeatureToArgument",
+                "name": "add_feature_to_argument.add_feature_to_first",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "string_concat_lhs" } ]
+          },
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 27,
+              "start": 16,
+              "end": 25
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "special_sink" }
+            ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.test_add_via_value_of_second",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 20,
+              "start": 8,
+              "end": 23
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via-value": "second" },
+              { "always-via": "special_source" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

@@ -41,6 +41,10 @@ type taint_annotation =
       breadcrumbs: breadcrumbs;
       path: AbstractTreeDomain.Label.path;
     }
+  | AddFeatureToArgument of {
+      breadcrumbs: breadcrumbs;
+      path: AbstractTreeDomain.Label.path;
+    }
   | SkipAnalysis (* Don't analyze methods with SkipAnalysis *)
   | Sanitize (* Don't propagate inferred model of methods with Sanitize *)
 [@@deriving sexp]
@@ -315,6 +319,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
               | Sink ({ path; _ } as sink) -> Sink { sink with path = field :: path }
               | Source ({ path; _ } as source) -> Source { source with path = field :: path }
               | Tito ({ path; _ } as tito) -> Tito { tito with path = field :: path }
+              | AddFeatureToArgument ({ path; _ } as add_feature_to_argument) ->
+                  AddFeatureToArgument { add_feature_to_argument with path = field :: path }
               | SkipAnalysis
               | Sanitize ->
                   annotation
@@ -333,6 +339,9 @@ let rec parse_annotations ~configuration ~parameters annotation =
             | Some "TaintSink" -> get_sink_kinds expression
             | Some "TaintSource" -> get_source_kinds expression
             | Some "TaintInTaintOut" -> get_taint_in_taint_out expression
+            | Some "AddFeatureToArgument" ->
+                let _, breadcrumbs = extract_leafs expression in
+                [AddFeatureToArgument { breadcrumbs; path = [] }]
             | Some "AttachToSink" ->
                 [
                   Sink
@@ -442,6 +451,10 @@ let taint_parameter
              AccessPath.Root.LocalResult
              ~callable_annotation
         |> introduce_taint_in_taint_out ~root ~path model tito
+    | AddFeatureToArgument { breadcrumbs; path } ->
+        List.map ~f:Features.SimpleSet.element breadcrumbs
+        |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
+        |> introduce_sink_taint ~root ~path ~sinks_to_keep model Sinks.AddFeatureToArgument
     | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
     | Sanitize -> raise_invalid_model "Sanitize annotation must be in return position"
   in
@@ -471,6 +484,8 @@ let taint_return
         |> add_signature_based_breadcrumbs ~resolution root ~callable_annotation
         |> introduce_source_taint ~root ~path ~sources_to_keep model source
     | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
+    | AddFeatureToArgument _ ->
+        raise_invalid_model "Invalid return annotation: AddFeatureToArgument"
     | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
     | Sanitize -> { model with mode = TaintResult.Sanitize }
   in
@@ -673,7 +688,9 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
           in
           List.fold
             rules
-            ~init:(Sources.Set.singleton Sources.Attach, Sinks.Set.singleton Sinks.Attach)
+            ~init:
+              ( Sources.Set.singleton Sources.Attach,
+                Sinks.Set.of_list [Sinks.AddFeatureToArgument; Sinks.Attach] )
             ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
               ( Core.Set.union sources (Sources.Set.of_list rule_sources),
                 Core.Set.union sinks (Sinks.Set.of_list rule_sinks) ))

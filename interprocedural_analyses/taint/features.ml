@@ -136,3 +136,8 @@ let gather_breadcrumbs breadcrumbs feature =
   match feature.SimpleSet.element with
   | Simple.Breadcrumb _ -> feature :: breadcrumbs
   | _ -> breadcrumbs
+
+
+let is_breadcrumb = function
+  | { SimpleSet.element = Simple.Breadcrumb _; _ } -> true
+  | _ -> false

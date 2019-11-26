@@ -236,6 +236,27 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             BackwardState.Tree.join sink_taint taint_in_taint_out
             |> BackwardState.Tree.join obscure_taint
           in
+
+          let state =
+            match AccessPath.of_expression ~resolution argument with
+            | Some { AccessPath.root; path } -> (
+                let features_to_add =
+                  BackwardState.Tree.filter_by_leaf ~leaf:Sinks.AddFeatureToArgument sink_taint
+                  |> BackwardTaint.fold BackwardTaint.simple_feature_set ~f:List.rev_append ~init:[]
+                  |> List.filter ~f:Features.is_breadcrumb
+                in
+                match features_to_add with
+                | _ :: _ as features ->
+                    let taint =
+                      BackwardState.read state.taint ~root ~path
+                      |> BackwardState.Tree.transform
+                           BackwardTaint.simple_feature_set
+                           ~f:(List.rev_append features)
+                    in
+                    { taint = BackwardState.assign ~root ~path taint state.taint }
+                | [] -> state )
+            | None -> state
+          in
           analyze_unstarred_expression ~resolution argument_taint argument state
         in
         let obscure_taint =
@@ -729,7 +750,9 @@ let extract_tito_and_sink_models define ~resolution ~existing_backward entry_tai
     let sink_taint =
       let simplify_sink_taint ~key:sink ~data:sink_tree accumulator =
         match sink with
-        | Sinks.LocalReturn -> accumulator
+        | Sinks.LocalReturn
+        | Sinks.Attach ->
+            accumulator
         | _ -> simplify annotation sink_tree |> BackwardState.Tree.join accumulator
       in
       Map.Poly.fold ~init:BackwardState.Tree.empty ~f:simplify_sink_taint partition

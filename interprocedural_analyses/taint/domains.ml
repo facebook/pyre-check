@@ -26,6 +26,8 @@ end
 module type SET_ARG = sig
   include Set.Elt
 
+  val equal : t -> t -> bool
+
   val show : t -> string
 
   val ignore_leaf_at_call : t -> bool
@@ -250,7 +252,7 @@ end
 module type TAINT_DOMAIN = sig
   include AbstractDomain.S
 
-  type leaf
+  type leaf [@@deriving eq]
 
   val leaf : leaf AbstractDomain.part
 
@@ -301,6 +303,8 @@ end = struct
   include Map
 
   type leaf = Leaf.t [@@deriving compare]
+
+  let equal_leaf = Leaf.equal
 
   let add map leaf = Map.set map ~key:leaf ~data:FlowDetails.initial
 
@@ -492,6 +496,13 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     in
     transform Taint.trace_info ~f:essential_trace_info tree
     |> transform Taint.complex_feature_set ~f:essential_complex_features
+
+
+  let filter_by_leaf ~leaf taint_tree =
+    collapse taint_tree
+    |> Taint.partition Taint.leaf ~f:(Taint.equal_leaf leaf)
+    |> (fun map -> Map.Poly.find map true)
+    |> Option.value ~default:Taint.bottom
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
