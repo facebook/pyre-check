@@ -69,7 +69,7 @@ module TypeQuery = struct
     | NormalizeType of Expression.t
     | PathOfModule of Reference.t
     | SaveServerState of Path.t
-    | Signature of Reference.t
+    | Signature of Reference.t list
     | Superclasses of Expression.t
     | Type of Expression.t
     | TypeAtPosition of {
@@ -106,6 +106,7 @@ module TypeQuery = struct
   [@@deriving eq, show, to_yojson]
 
   type found_signature = {
+    function_name: string;
     return_type: Type.t option;
     parameters: found_parameter list;
   }

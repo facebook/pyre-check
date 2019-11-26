@@ -56,7 +56,7 @@ let help () =
     | SaveServerState _ ->
         Some "save_server_state('path'): Saves Pyre's serialized state into `path`."
     | Signature _ ->
-        Some "signature(function_name): Gives a human-readable signature for `function_name`."
+        Some "signature(a, b, ...): Gives a human-readable signature for the given function names."
     | Superclasses _ ->
         Some "superclasses(class_name): Returns the list of superclasses for `class_name`."
     | Type _ -> Some "type(expression): Evaluates the type of `expression`."
@@ -96,7 +96,7 @@ let help () =
       NormalizeType empty;
       PathOfModule (Reference.create "");
       SaveServerState path;
-      Signature (Reference.create "");
+      Signature [Reference.create ""];
       Superclasses empty;
       Type (Node.create_with_default_location Expression.True);
       TypeAtPosition { path; position = Location.any_position };
@@ -248,7 +248,7 @@ let parse_query
       | "save_server_state", [path] ->
           Request.TypeQueryRequest
             (SaveServerState (Path.create_absolute ~follow_symbolic_links:false (string path)))
-      | "signature", [name] -> Request.TypeQueryRequest (Signature (reference name))
+      | "signature", names -> Request.TypeQueryRequest (Signature (List.map names ~f:reference))
       | "superclasses", [name] -> Request.TypeQueryRequest (Superclasses (access name))
       | "type", [argument] -> Request.TypeQueryRequest (Type (expression argument))
       | ( "type_at_position",

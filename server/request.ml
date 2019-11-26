@@ -16,6 +16,8 @@ open Pyre
 
 exception IncorrectParameters of Type.t
 
+exception MissingFunction of Reference.t
+
 let to_pyre_position { LanguageServer.Types.Position.line; character } =
   (* The LSP protocol starts a file at line 0, column 0. Pyre starts a file at line 1, column 0. *)
   { Location.line = line + 1; column = character }
@@ -903,43 +905,50 @@ let process_type_query_request
         Log.info "Saving server state into `%s`" path;
         Memory.save_shared_memory ~path;
         TypeQuery.Response (TypeQuery.Success (Format.sprintf "Saved state."))
-    | TypeQuery.Signature function_name -> (
-        let keep_known_annotation annotation =
-          match annotation with
-          | Type.Top -> None
-          | _ -> Some annotation
+    | TypeQuery.Signature function_names -> (
+        let get_signatures function_name =
+          let keep_known_annotation annotation =
+            match annotation with
+            | Type.Top -> None
+            | _ -> Some annotation
+          in
+          match
+            UnannotatedGlobalEnvironment.ReadOnly.get_define_body
+              unannotated_global_environment
+              function_name
+          with
+          | Some { Node.location; value = { Statement.Define.signature; _ } } -> (
+              let parser = GlobalResolution.annotation_parser global_resolution in
+              let { Type.Callable.annotation; parameters; _ } =
+                Node.create signature ~location
+                |> Analysis.Annotated.Callable.create_overload ~parser
+              in
+              match parameters with
+              | Type.Callable.Defined parameters ->
+                  let format parameter =
+                    match parameter with
+                    | Type.Callable.Parameter.Named { name; annotation; _ } ->
+                        let name = Identifier.sanitized name in
+                        Some
+                          {
+                            TypeQuery.parameter_name = name;
+                            annotation = keep_known_annotation annotation;
+                          }
+                    | _ -> None
+                  in
+                  let parameters = List.filter_map ~f:format parameters in
+                  {
+                    TypeQuery.return_type = keep_known_annotation annotation;
+                    parameters;
+                    function_name = Reference.show function_name;
+                  }
+              | _ -> raise (MissingFunction function_name) )
+          | None -> raise (MissingFunction function_name)
         in
-        match
-          UnannotatedGlobalEnvironment.ReadOnly.get_define_body
-            unannotated_global_environment
-            function_name
+        try
+          TypeQuery.Response (TypeQuery.FoundSignature (List.map function_names ~f:get_signatures))
         with
-        | Some { Node.location; value = { Statement.Define.signature; _ } } -> (
-            let parser = GlobalResolution.annotation_parser global_resolution in
-            let { Type.Callable.annotation; parameters; _ } =
-              Node.create signature ~location |> Analysis.Annotated.Callable.create_overload ~parser
-            in
-            match parameters with
-            | Type.Callable.Defined parameters ->
-                let format parameter =
-                  match parameter with
-                  | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                      let name = Identifier.sanitized name in
-                      Some
-                        {
-                          TypeQuery.parameter_name = name;
-                          annotation = keep_known_annotation annotation;
-                        }
-                  | _ -> None
-                in
-                let parameters = List.filter_map ~f:format parameters in
-                TypeQuery.Response
-                  (TypeQuery.FoundSignature
-                     [{ TypeQuery.return_type = keep_known_annotation annotation; parameters }])
-            | _ ->
-                TypeQuery.Error
-                  (Format.sprintf "No signature found for %s" (Reference.show function_name)) )
-        | None ->
+        | MissingFunction function_name ->
             TypeQuery.Error
               (Format.sprintf "No signature found for %s" (Reference.show function_name)) )
     | TypeQuery.Superclasses annotation ->

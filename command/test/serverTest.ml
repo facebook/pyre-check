@@ -896,13 +896,9 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.return_type = Some Type.integer;
-              Protocol.TypeQuery.parameters =
-                [
-                  {
-                    Protocol.TypeQuery.parameter_name = "x";
-                    Protocol.TypeQuery.annotation = Some Type.integer;
-                  };
-                ];
+              function_name = "test.foo";
+              parameters =
+                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
             };
           ]));
   assert_type_query_response
@@ -916,10 +912,50 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.return_type = Some Type.integer;
-              Protocol.TypeQuery.parameters =
-                [{ Protocol.TypeQuery.parameter_name = "x"; Protocol.TypeQuery.annotation = None }];
+              function_name = "test.foo";
+              parameters = [{ Protocol.TypeQuery.parameter_name = "x"; annotation = None }];
             };
           ]));
+  assert_type_query_response
+    ~source:
+      {|
+      def foo(x: int) -> int:
+        pass
+      def bar(x: int) -> str:
+        pass
+    |}
+    ~query:"signature(test.foo, test.bar)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundSignature
+          [
+            {
+              Protocol.TypeQuery.return_type = Some Type.integer;
+              function_name = "test.foo";
+              parameters =
+                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
+            };
+            {
+              Protocol.TypeQuery.return_type = Some Type.string;
+              function_name = "test.bar";
+              parameters =
+                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
+            };
+          ]));
+  assert_type_query_response
+    ~source:{|
+      def foo(x: int) -> int:
+        pass
+    |}
+    ~query:"signature(test.foo, test.nonexistent)"
+    (Protocol.TypeQuery.Error "No signature found for test.nonexistent");
+  assert_type_query_response
+    ~source:{|
+      def foo(x: int) -> int:
+        pass
+    |}
+    ~query:"signature(test.foo, test.nonexistent, test.also_nonexistent)"
+    (Protocol.TypeQuery.Error "No signature found for test.nonexistent");
+
   assert_type_query_response
     ~source:{|
       def foo(x: int):
@@ -931,13 +967,9 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.return_type = None;
-              Protocol.TypeQuery.parameters =
-                [
-                  {
-                    Protocol.TypeQuery.parameter_name = "x";
-                    Protocol.TypeQuery.annotation = Some Type.integer;
-                  };
-                ];
+              function_name = "test.foo";
+              parameters =
+                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
             };
           ]));
   assert_type_query_response
@@ -952,13 +984,9 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.return_type = None;
-              Protocol.TypeQuery.parameters =
-                [
-                  {
-                    Protocol.TypeQuery.parameter_name = "x";
-                    Protocol.TypeQuery.annotation = Some Type.integer;
-                  };
-                ];
+              function_name = "test.foo";
+              parameters =
+                [{ Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer }];
             };
           ]));
   assert_type_query_response
@@ -983,16 +1011,11 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.return_type = Some Type.string;
-              Protocol.TypeQuery.parameters =
+              function_name = "test.C.foo";
+              parameters =
                 [
-                  {
-                    Protocol.TypeQuery.parameter_name = "self";
-                    Protocol.TypeQuery.annotation = None;
-                  };
-                  {
-                    Protocol.TypeQuery.parameter_name = "x";
-                    Protocol.TypeQuery.annotation = Some Type.integer;
-                  };
+                  { Protocol.TypeQuery.parameter_name = "self"; annotation = None };
+                  { Protocol.TypeQuery.parameter_name = "x"; annotation = Some Type.integer };
                 ];
             };
           ]));
@@ -1015,15 +1038,13 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.return_type = Some (Type.union [Type.integer; Type.string]);
-              Protocol.TypeQuery.parameters =
+              function_name = "test.C.foo";
+              parameters =
                 [
-                  {
-                    Protocol.TypeQuery.parameter_name = "self";
-                    Protocol.TypeQuery.annotation = None;
-                  };
+                  { Protocol.TypeQuery.parameter_name = "self"; annotation = None };
                   {
                     Protocol.TypeQuery.parameter_name = "x";
-                    Protocol.TypeQuery.annotation = Some (Type.union [Type.integer; Type.string]);
+                    annotation = Some (Type.union [Type.integer; Type.string]);
                   };
                 ];
             };
