@@ -4858,12 +4858,8 @@ let check_define
     ~configuration:
       ({ Configuration.Analysis.include_hints; features = { click_to_fix; _ }; _ } as configuration)
     ~resolution
-    ~source:
-      {
-        Source.source_path = { SourcePath.qualifier; relative; _ };
-        metadata = { local_mode; ignore_codes; _ };
-        _;
-      }
+    ~qualifier
+    ~metadata:{ Source.Metadata.local_mode; ignore_codes; _ }
     ~call_graph_builder:(module Builder : Callgraph.Builder)
     ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
@@ -4940,12 +4936,9 @@ let check_define
     in
     if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
 
-    (* Write fixpoint type resolutions to shared memory *)
-    let dump_resolutions { State.resolution_fixpoint; _ } =
-      if configuration.store_type_check_resolution then
-        ResolutionSharedMemory.add ~qualifier name resolution_fixpoint
+    let local_annotation_map =
+      exit >>| fun { State.resolution_fixpoint; _ } -> resolution_fixpoint
     in
-    exit >>| dump_resolutions |> ignore;
 
     (* Store calls in shared memory. *)
     let callees = Context.Builder.get_all_callees () in
@@ -4954,12 +4947,12 @@ let check_define
     (* Schedule nested functions for analysis. *)
     let errors = exit >>| State.errors >>| filter_errors |> Option.value ~default:[] in
     let coverage = exit >>| State.coverage |> Option.value ~default:(Coverage.create ()) in
-    { errors; coverage }
+    { errors; coverage }, local_annotation_map
   in
   try
     let initial = State.initial ~resolution in
     if Define.is_stub define then
-      { errors = filter_errors (State.errors initial); coverage = Coverage.create () }
+      { errors = filter_errors (State.errors initial); coverage = Coverage.create () }, None
     else
       check ~define:define_node ~initial
   with
@@ -4967,7 +4960,12 @@ let check_define
       Statistics.event
         ~name:"undefined type"
         ~integers:[]
-        ~normals:["handle", relative; "define", Reference.show name; "type", Type.show annotation]
+        ~normals:
+          [
+            "module", Reference.show qualifier;
+            "define", Reference.show name;
+            "type", Type.show annotation;
+          ]
         ();
       if Define.dump define then
         Log.dump
@@ -4976,14 +4974,15 @@ let check_define
       let undefined_error =
         Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node
       in
-      { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }
+      { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }, None
 
 
-let check_typecheck_unit
+let check_function_definition
     ~configuration
     ~environment
-    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
-    define
+    ~qualifier
+    ~metadata
+    { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings }
   =
   let resolution =
     let global_resolution =
@@ -4996,15 +4995,39 @@ let check_typecheck_unit
     in
     resolution global_resolution ()
   in
-  check_define
+  let check_define =
+    check_define
+      ~configuration
+      ~resolution
+      ~call_graph_builder:(module Callgraph.DefaultBuilder)
+      ~qualifier
+      ~metadata
+  in
+  let sibling_bodies =
+    List.map siblings ~f:(fun { UnannotatedGlobalEnvironment.FunctionDefinition.Sibling.body; _ } ->
+        body)
+  in
+  let sibling_results =
+    List.map sibling_bodies ~f:(fun define_node -> check_define define_node |> fst)
+  in
+  match body with
+  | None -> aggregate_results sibling_results
+  | Some define_node ->
+      let body_result, local_annotation_map = check_define define_node in
+      let () =
+        if configuration.store_type_check_resolution then
+          (* Write fixpoint type resolutions to shared memory *)
+          let name = Node.value define_node |> Define.name in
+          Option.iter local_annotation_map ~f:(ResolutionSharedMemory.add ~qualifier name)
+      in
+      aggregate_results (body_result :: sibling_results)
+
+
+let check_source
     ~configuration
-    ~resolution
-    ~call_graph_builder:(module Callgraph.DefaultBuilder)
-    ~source
-    define
-
-
-let check_source ~configuration ~environment source =
+    ~environment
+    { Source.source_path = { SourcePath.qualifier; _ }; metadata; _ }
+  =
   let all_defines =
     let unannotated_global_environment =
       TypeEnvironment.global_environment environment
@@ -5013,25 +5036,15 @@ let check_source ~configuration ~environment source =
       |> ClassHierarchyEnvironment.ReadOnly.alias_environment
       |> AliasEnvironment.ReadOnly.unannotated_global_environment
     in
-    let get_defines name =
-      let open UnannotatedGlobalEnvironment.FunctionDefinition in
-      match
-        UnannotatedGlobalEnvironment.ReadOnly.get_define unannotated_global_environment name
-      with
-      | None -> []
-      | Some { body; siblings } -> (
-          let sibling_bodies = List.map siblings ~f:(fun { Sibling.body; _ } -> body) in
-          match body with
-          | None -> sibling_bodies
-          | Some body -> body :: sibling_bodies )
-    in
-    let { Source.source_path = { SourcePath.qualifier; _ }; _ } = source in
     UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
       unannotated_global_environment
       qualifier
-    |> List.concat_map ~f:get_defines
+    |> List.filter_map
+         ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define unannotated_global_environment)
   in
-  List.map all_defines ~f:(check_typecheck_unit ~configuration ~environment ~source)
+  List.map
+    all_defines
+    ~f:(check_function_definition ~configuration ~environment ~qualifier ~metadata)
   |> aggregate_results
 
 
