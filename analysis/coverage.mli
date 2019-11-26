@@ -25,6 +25,8 @@ val crashes : t -> int
 
 val sum : t -> t -> t
 
+val aggregate_over_types : Type.t list -> t
+
 val aggregate_over_annotations : Annotation.t list -> t
 
 val aggregate : t list -> t

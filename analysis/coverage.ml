@@ -36,8 +36,8 @@ let sum left right =
   }
 
 
-let aggregate_over_annotations annotations =
-  let aggregate ({ full; partial; untyped; _ } as coverage) { Annotation.annotation; _ } =
+let aggregate_over_types types =
+  let aggregate ({ full; partial; untyped; _ } as coverage) annotation =
     if Type.is_untyped annotation then
       { coverage with untyped = untyped + 1 }
     else if Type.is_partially_typed annotation then
@@ -45,7 +45,11 @@ let aggregate_over_annotations annotations =
     else
       { coverage with full = full + 1 }
   in
-  List.fold ~init:(create ()) ~f:aggregate annotations
+  List.fold ~init:(create ()) ~f:aggregate types
+
+
+let aggregate_over_annotations annotations =
+  List.map annotations ~f:(fun { Annotation.annotation; _ } -> annotation) |> aggregate_over_types
 
 
 let aggregate coverages = List.fold ~init:(create ()) ~f:sum coverages

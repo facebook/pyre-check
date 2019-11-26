@@ -1369,22 +1369,21 @@ let rec process
             { state; response = None } )
       | TypeCoverageRequest { path; id } ->
           let response =
-            ModuleTracker.lookup_path ~configuration module_tracker path
-            >>= fun { SourcePath.qualifier; _ } ->
-            match Coverage.get ~qualifier with
-            | Some { Coverage.full; partial; untyped; _ } ->
-                let total = Float.of_int (full + partial + untyped) in
-                let covered_percent =
-                  if total > 0.0 then
-                    Int.of_float (Float.of_int full /. total *. 100.0)
-                  else
-                    0
-                in
-                LanguageServer.Protocol.TypeCoverageResponse.create ~id ~covered_percent
-                |> LanguageServer.Protocol.TypeCoverageResponse.to_yojson
-                |> Yojson.Safe.to_string
-                |> fun response -> Some (LanguageServerProtocolResponse response)
-            | _ -> None
+            LookupCache.find_all_annotations ~state ~configuration ~path
+            >>| fun location_types ->
+            let types = List.map location_types ~f:snd in
+            let { Coverage.full; partial; untyped; _ } = Coverage.aggregate_over_types types in
+            let total = Float.of_int (full + partial + untyped) in
+            let covered_percent =
+              if total > 0.0 then
+                Int.of_float (Float.of_int full /. total *. 100.0)
+              else
+                0
+            in
+            LanguageServer.Protocol.TypeCoverageResponse.create ~id ~covered_percent
+            |> LanguageServer.Protocol.TypeCoverageResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> fun response -> LanguageServerProtocolResponse response
           in
           { state; response }
       | GetServerUuid ->
