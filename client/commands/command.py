@@ -507,9 +507,8 @@ class Command(CommandParser):
             flags.extend(["-log-directory", self._log_directory])
         return flags
 
+    # temporarily always return empty list to unblock client release
     def _feature_flags(self) -> List[str]:
-        if self._features:
-            return ["-features", self._features]
         return []
 
     def _read_stdout(self, stdout: Iterable[bytes]) -> None:

@@ -50,8 +50,6 @@ class PersistentTest(unittest.TestCase):
                     "hash",
                     "-log-directory",
                     ".pyre",
-                    "-features",
-                    "{'click_to_fix': True, 'go_to_definition': True, 'hover': True}",
                 ],
             )
             self.assertEqual(arguments.store_type_check_resolution, False)
