@@ -55,7 +55,8 @@ include TaintResult.Register (struct
           Model.get_model_sources ~directories |> create_models ~configuration
         with
         | exn ->
-            Log.error "Error getting taint models: %s" (Exn.to_string exn);
+            Log.error "Error getting taint models.";
+            Log.error "%s" (Exn.to_string exn);
             raise exn )
 
 

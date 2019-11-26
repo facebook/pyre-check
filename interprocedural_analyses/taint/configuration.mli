@@ -22,6 +22,12 @@ type t = {
 
 val get : unit -> t
 
+exception
+  MalformedConfiguration of {
+    path: string;
+    parse_error: string;
+  }
+
 val parse : string -> t
 
 val register : t -> unit

@@ -45,6 +45,12 @@ module SharedConfig =
       let unmarshall value = Marshal.from_string value 0
     end)
 
+exception
+  MalformedConfiguration of {
+    path: string;
+    parse_error: string;
+  }
+
 let parse source =
   let parse_sources json =
     let parse_source json = Json.Util.member "name" json |> Json.Util.to_string in
@@ -180,12 +186,16 @@ let create ~rule_filter ~directories =
     if not (Path.file_exists configuration_path) then
       None
     else
-      configuration_path
-      |> File.create
-      |> File.content
-      |> Option.value ~default:""
-      |> parse
-      |> Option.some
+      try
+        configuration_path
+        |> File.create
+        |> File.content
+        |> Option.value ~default:""
+        |> parse
+        |> Option.some
+      with
+      | Yojson.Json_error parse_error ->
+          raise (MalformedConfiguration { path = Path.absolute configuration_path; parse_error })
   in
   let merge_rules left right =
     {
