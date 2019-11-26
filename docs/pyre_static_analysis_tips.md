@@ -153,22 +153,6 @@ these operators can be found
 know when you need to add annotations to the usage of operators, such as the use
 of square brackets to access a dictionary.
 
-## Preprocessor
-
-Some annotations are tractable to add and keep up to date, such as tracking
-where user input can come out of the `HttpRequest` object. Others are more
-difficult, such as annotating every endpoint in a large Django API that receives
-user input which has been [extracted from a URL
-parameter](https://docs.djangoproject.com/en/2.2/topics/http/urls/#example).
-These functions are constantly being added, removed, and changed. It would be
-intractable to keep creating `.pysa` stubs for them.
-
-For use cases where we need to generate a large number of stubs in a dynamic
-fashion, we have preprocessors that dynamically generate `.pysa` stubs. The code
-lives in
-[`tools/generate_taint_models`](https://github.com/facebook/pyre-check/tree/master/tools/generate_taint_models),
-and can easily be extended to support additional preprocessing use cases.
-
 ## Debugging Tools
 
 ### `pyre_dump()`

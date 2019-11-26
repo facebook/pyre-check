@@ -19,6 +19,7 @@
           "pyre-static-analysis-running",
           "pyre-static-analysis-features",
           "pyre-static-analysis-advanced",
+          "pysa-model-generators",
           "pyre-static-analysis-tips",
           "static-analysis-post-processor"
         ]
