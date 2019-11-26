@@ -3,13 +3,13 @@ import logging
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from time import sleep, time
+from time import sleep
 from typing import Any, Dict, Iterator, List, Mapping, Optional, overload
 
 from typing_extensions import Literal
 
 from .environment import Environment
-from .specification import BatchRepositoryUpdate, Specification
+from .specification import Specification
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -187,20 +187,22 @@ class ProfileLogs:
             "cold_start_log": self.cold_start_log,
         }
 
-    def total_of_totals(self) -> int:
+    def total_incremental_check_time(self) -> int:
         return sum(log["total"] for log in self.incremental_update_logs) // 1000
+
+    def full_check_time(self) -> int:
+        return sum(duration for _, duration in self.cold_start_log.items()) // 1000
 
 
 @dataclass
 class ResultComparison:
     discrepancy: Optional[InconsistentOutput]
-    full_check_time: int
     profile_logs: ProfileLogs
 
     def to_json(self, dont_show_discrepancy: bool = False) -> Dict[str, Any]:
         result: Dict[str, Any] = {
-            "full_check_time": self.full_check_time,
-            "incremental_check_time": self.profile_logs.total_of_totals(),
+            "full_check_time": self.profile_logs.full_check_time(),
+            "incremental_check_time": self.profile_logs.total_incremental_check_time(),
             "profile_logs": self.profile_logs.to_json(),
         }
         discrepancy = self.discrepancy
@@ -232,9 +234,7 @@ def compare_server_to_full(
         )
 
         LOG.info("Running pyre full check...")
-        start_time = time()
         full_check_output = pyre_runner.run_check()
-        full_check_time = int((time() - start_time) * 1000)
         LOG.info(
             f"Pyre full check successfully finished (with {len(full_check_output)} errors)."  # noqa: line too long
         )
@@ -245,7 +245,7 @@ def compare_server_to_full(
         else InconsistentOutput(full_check_output, incremental_check_output)
     )
     profile_logs = ProfileLogs(incremental_update_logs, cold_start_log)
-    return ResultComparison(discrepancy, full_check_time, profile_logs)
+    return ResultComparison(discrepancy, profile_logs)
 
 
 def benchmark_server(

@@ -79,14 +79,18 @@ class FinishedRunnerResult(RunnerResult, metaclass=ABCMeta):
         self._output = output
 
     def to_logger_sample(self) -> Sample:
+        full_check_time = self._output.profile_logs.full_check_time()
+        incremental_check_time = (
+            self._output.profile_logs.total_incremental_check_time()
+        )
         return Sample(
             normals={
                 "status": self.get_status(),
                 "input": json.dumps(self.input.to_json()),
             },
             integers={
-                "full_check_time": self._output.full_check_time,
-                "incremental_check_time": self._output.profile_logs.total_of_totals(),
+                "full_check_time": full_check_time,
+                "incremental_check_time": incremental_check_time,
             },
         )
 
@@ -129,17 +133,18 @@ class BenchmarkResult(RunnerResult):
         return {
             "status": self.get_status(),
             "input": self.input.to_json(),
-            "time": self._profile_logs.total_of_totals(),
+            "time": self._profile_logs.total_incremental_check_time(),
             "profile_logs": self._profile_logs.to_json(),
         }
 
     def to_logger_sample(self) -> Sample:
+        incremental_check_time = self._profile_logs.total_incremental_check_time()
         return Sample(
             normals={
                 "status": self.get_status(),
                 "input": json.dumps(self.input.to_json()),
             },
-            integers={"incremental_check_time": self._profile_logs.total_of_totals()},
+            integers={"incremental_check_time": incremental_check_time},
         )
 
     def profile_logs(self) -> ProfileLogs:
