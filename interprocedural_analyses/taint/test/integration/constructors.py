@@ -19,3 +19,15 @@ def test_construction(request: HttpRequest):
     instance = SomeAPI.from_default_keys(data["1"], data["2"])
     instance.async_get_authenticated_user()
     return instance
+
+
+class SourceInConstructor:
+    def __init__(self):
+        self.x = __test_source()
+        self.y = 0
+
+
+def test_source_in_constructor():
+    c = SourceInConstructor()
+    __test_sink(c.x)
+    __test_sink(c.y)

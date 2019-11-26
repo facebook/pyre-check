@@ -1,9 +1,94 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_source_in_constructor",
+    "callable_line": 30,
+    "code": 5002,
+    "line": 32,
+    "start": 16,
+    "end": 19,
+    "filename": "constructors.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "constructors.py",
+                "line": 31,
+                "start": 8,
+                "end": 29
+              },
+              "resolves_to": [ "constructors.SourceInConstructor.__init__" ],
+              "port": "result[x]",
+              "length": 1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [
+              { "always-via": "special_source" },
+              { "always-has": "first-field" },
+              { "always-first-field": "x" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "constructors.py",
+              "line": 32,
+              "start": 16,
+              "end": 19
+            },
+            "leaves": [
+              { "kind": "Test", "name": "__test_sink", "on_all_flows": true }
+            ],
+            "features": [ { "always-via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Ovr{object::__init__}",
-    "sources": [],
+    "sources": [
+      {
+        "port": "result[x]",
+        "taint": [
+          {
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
     "sinks": [],
     "tito": [
       {
@@ -146,6 +231,47 @@
             "tito": [ { "line": 11, "start": 15, "end": 18 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "always-via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SourceInConstructor.__init__",
+    "sources": [
+      {
+        "port": "result[x]",
+        "taint": [
+          {
+            "root": {
+              "filename": "constructors.py",
+              "line": 26,
+              "start": 17,
+              "end": 32
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
       }

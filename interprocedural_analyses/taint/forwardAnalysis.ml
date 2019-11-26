@@ -821,7 +821,7 @@ let extract_features_to_attach existing_taint =
 
 
 let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
-  let { Define.signature = { return_annotation; _ }; _ } = define in
+  let { Define.signature = { return_annotation; name; parameters; _ }; _ } = define in
   let return_annotation =
     Option.map ~f:(GlobalResolution.parse_annotation resolution) return_annotation
   in
@@ -842,7 +842,16 @@ let extract_source_model ~define ~resolution ~features_to_attach exit_taint =
       taint
   in
   let return_taint =
-    ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] exit_taint |> simplify
+    let return_variable =
+      if Reference.last name = "__init__" then
+        match parameters with
+        | { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _ ->
+            AccessPath.Root.Variable self_parameter
+        | [] -> AccessPath.Root.LocalResult
+      else
+        AccessPath.Root.LocalResult
+    in
+    ForwardState.read ~root:return_variable ~path:[] exit_taint |> simplify
   in
   ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
   |> attach_features
