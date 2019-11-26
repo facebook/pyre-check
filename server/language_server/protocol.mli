@@ -97,6 +97,8 @@ module HoverResponse : sig
   }
 
   val create : id:Types.RequestId.t -> result:hover_result option -> t
+
+  val create_empty : id:Types.RequestId.t -> t
 end
 
 module CodeActionResponse : sig

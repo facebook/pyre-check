@@ -252,6 +252,9 @@ module HoverResponse = struct
         } );
       error = None;
     }
+
+
+  let create_empty ~id = create ~id ~result:None
 end
 
 module CodeActionResponse = struct

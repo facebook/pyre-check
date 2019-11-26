@@ -35,9 +35,7 @@ let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
 
 
 let parse_lsp
-    ~configuration:
-      ( { Configuration.Analysis.perform_autocompletion; features = { hover; _ }; _ } as
-      configuration )
+    ~configuration:({ Configuration.Analysis.perform_autocompletion; _ } as configuration)
     ~state:{ State.symlink_targets_to_sources; _ }
     ~request
   =
@@ -198,8 +196,7 @@ let parse_lsp
                   };
               id;
               _;
-            }
-          when hover ->
+            } ->
             uri_to_path ~uri
             >>| fun path ->
             HoverRequest { DefinitionRequest.id; path; position = to_pyre_position position }
@@ -1119,7 +1116,7 @@ let rec process
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
-  let { Configuration.Features.go_to_definition; click_to_fix; _ } =
+  let { Configuration.Features.go_to_definition; click_to_fix; hover } =
     Configuration.Analysis.features configuration
   in
   let timer = Timer.start () in
@@ -1182,6 +1179,15 @@ let rec process
             |> LanguageServer.Protocol.CompletionResponse.to_yojson
             |> Yojson.Safe.to_string
             |> fun response -> Some (LanguageServerProtocolResponse response)
+          in
+          { state; response }
+      | HoverRequest { DefinitionRequest.id; _ } when not hover ->
+          let response =
+            LanguageServer.Protocol.HoverResponse.create_empty ~id
+            |> LanguageServer.Protocol.HoverResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> (fun response -> LanguageServerProtocolResponse response)
+            |> Option.some
           in
           { state; response }
       | HoverRequest { DefinitionRequest.id; path; position } ->
