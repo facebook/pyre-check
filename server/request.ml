@@ -36,8 +36,8 @@ let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
 
 let parse_lsp
     ~configuration:
-      ( { Configuration.Analysis.perform_autocompletion; features = { click_to_fix; hover; _ }; _ }
-      as configuration )
+      ( { Configuration.Analysis.perform_autocompletion; features = { hover; _ }; _ } as
+      configuration )
     ~state:{ State.symlink_targets_to_sources; _ }
     ~request
   =
@@ -220,8 +220,7 @@ let parse_lsp
                   };
               id;
               _;
-            }
-          when click_to_fix ->
+            } ->
             uri_to_path ~uri >>| fun path -> CodeActionRequest { id; uri; diagnostics; path }
         | Ok _ -> None
         | Error yojson_error ->
@@ -1133,7 +1132,7 @@ let rec process
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
-  let { Configuration.Features.go_to_definition; _ } =
+  let { Configuration.Features.go_to_definition; click_to_fix; _ } =
     Configuration.Analysis.features configuration
   in
   let timer = Timer.start () in
@@ -1208,6 +1207,15 @@ let rec process
             in
             HoverResponse.create ~id ~result
             |> HoverResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> (fun response -> LanguageServerProtocolResponse response)
+            |> Option.some
+          in
+          { state; response }
+      | CodeActionRequest { id; _ } when not click_to_fix ->
+          let response =
+            LanguageServer.Protocol.CodeActionResponse.create_empty ~id
+            |> LanguageServer.Protocol.CodeActionResponse.to_yojson
             |> Yojson.Safe.to_string
             |> (fun response -> LanguageServerProtocolResponse response)
             |> Option.some

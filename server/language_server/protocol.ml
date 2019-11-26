@@ -258,6 +258,8 @@ module CodeActionResponse = struct
   include Types.CodeActionResponse
 
   let create ~id ~code_actions = { jsonrpc = "2.0"; id; result = Some code_actions; error = None }
+
+  let create_empty ~id = create ~id ~code_actions:[]
 end
 
 module TypeCoverageResponse = struct

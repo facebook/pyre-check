@@ -103,6 +103,8 @@ module CodeActionResponse : sig
   type t [@@deriving to_yojson]
 
   val create : id:Types.RequestId.t -> code_actions:Types.CodeAction.t list -> t
+
+  val create_empty : id:Types.RequestId.t -> t
 end
 
 module TypeCoverageResponse : sig
