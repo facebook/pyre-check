@@ -188,7 +188,7 @@ class ProfileLogs:
         }
 
     def total_of_totals(self) -> int:
-        return sum(log["total"] for log in self.incremental_update_logs)
+        return sum(log["total"] for log in self.incremental_update_logs) // 1000
 
 
 @dataclass
