@@ -195,31 +195,29 @@ let rec parse_annotations ~configuration ~parameters annotation =
     | Tuple expressions -> List.concat_map ~f:extract_names expressions
     | _ -> []
   in
-  let base_matches expected = function
+  let base_name = function
     | {
         Node.value =
           Expression.Name
             (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ });
         _;
       } ->
-        Identifier.equal expected identifier
-    | _ -> false
+        Some identifier
+    | _ -> None
   in
   let rec extract_kinds expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier taint_kind) -> [Leaf taint_kind]
     | Name (Name.Attribute { base; _ }) -> extract_kinds base
-    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-      when base_matches "Via" callee ->
-        [Breadcrumbs (extract_breadcrumbs expression)]
-    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-      when base_matches "ViaValueOf" callee ->
-        [Breadcrumbs (extract_via_value_of expression)]
-    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-      when base_matches "Updates" callee ->
-        extract_names expression
-        |> List.map ~f:(fun name ->
-               Leaf (Format.sprintf "ParameterUpdate%d" (get_parameter_position name)))
+    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
+        match base_name callee with
+        | Some "Via" -> [Breadcrumbs (extract_breadcrumbs expression)]
+        | Some "ViaValueOf" -> [Breadcrumbs (extract_via_value_of expression)]
+        | Some "Updates" ->
+            extract_names expression
+            |> List.map ~f:(fun name ->
+                   Leaf (Format.sprintf "ParameterUpdate%d" (get_parameter_position name)))
+        | _ -> extract_kinds callee )
     | Call { callee; _ } -> extract_kinds callee
     | Tuple expressions -> List.concat_map ~f:extract_kinds expressions
     | _ -> []
@@ -273,55 +271,12 @@ let rec parse_annotations ~configuration ~parameters annotation =
   in
   match annotation with
   | Some ({ Node.value; _ } as expression) ->
+      let raise_invalid_annotation () =
+        Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show expression)
+        |> raise_invalid_model
+      in
       let rec parse_annotation = function
         | Expression.Call
-            {
-              callee;
-              arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _;
-            }
-          when base_matches "Union" callee ->
-            List.concat_map expressions ~f:(fun expression ->
-                parse_annotations ~configuration ~parameters (Some expression))
-        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-          when base_matches "TaintSink" callee ->
-            get_sink_kinds expression
-        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-          when base_matches "TaintSource" callee ->
-            get_source_kinds expression
-        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-          when base_matches "TaintInTaintOut" callee ->
-            get_taint_in_taint_out expression
-        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-          when base_matches "AttachToSink" callee ->
-            [
-              Sink
-                {
-                  sink = Sinks.Attach;
-                  breadcrumbs = extract_attach_features ~name:"AttachToSink" expression;
-                  path = [];
-                };
-            ]
-        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-          when base_matches "AttachToTito" callee ->
-            [
-              Tito
-                {
-                  tito = Sinks.Attach;
-                  breadcrumbs = extract_attach_features ~name:"AttachToTito" expression;
-                  path = [];
-                };
-            ]
-        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
-          when base_matches "AttachToSource" callee ->
-            [
-              Source
-                {
-                  source = Sources.Attach;
-                  breadcrumbs = extract_attach_features ~name:"AttachToSource" expression;
-                  path = [];
-                };
-            ]
-        | Call
             {
               callee;
               arguments =
@@ -345,7 +300,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
                   { Call.Argument.value = { Node.value = expression; _ }; _ };
                 ];
             }
-          when base_matches "AppliesTo" callee ->
+          when base_name callee = Some "AppliesTo" ->
             let extend_path annotation =
               let field =
                 match index with
@@ -365,13 +320,52 @@ let rec parse_annotations ~configuration ~parameters annotation =
                   annotation
             in
             parse_annotation expression |> List.map ~f:extend_path
+        | Call
+            {
+              callee;
+              arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _;
+            }
+          when base_name callee = Some "Union" ->
+            List.concat_map expressions ~f:(fun expression ->
+                parse_annotations ~configuration ~parameters (Some expression))
+        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
+            match base_name callee with
+            | Some "TaintSink" -> get_sink_kinds expression
+            | Some "TaintSource" -> get_source_kinds expression
+            | Some "TaintInTaintOut" -> get_taint_in_taint_out expression
+            | Some "AttachToSink" ->
+                [
+                  Sink
+                    {
+                      sink = Sinks.Attach;
+                      breadcrumbs = extract_attach_features ~name:"AttachToSink" expression;
+                      path = [];
+                    };
+                ]
+            | Some "AttachToTito" ->
+                [
+                  Tito
+                    {
+                      tito = Sinks.Attach;
+                      breadcrumbs = extract_attach_features ~name:"AttachToTito" expression;
+                      path = [];
+                    };
+                ]
+            | Some "AttachToSource" ->
+                [
+                  Source
+                    {
+                      source = Sources.Attach;
+                      breadcrumbs = extract_attach_features ~name:"AttachToSource" expression;
+                      path = [];
+                    };
+                ]
+            | _ -> raise_invalid_annotation () )
         | Name (Name.Identifier "TaintInTaintOut") ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = []; path = [] }]
         | Name (Name.Identifier "SkipAnalysis") -> [SkipAnalysis]
         | Name (Name.Identifier "Sanitize") -> [Sanitize]
-        | _ ->
-            Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show expression)
-            |> raise_invalid_model
+        | _ -> raise_invalid_annotation ()
       in
       parse_annotation value
   | None -> []
