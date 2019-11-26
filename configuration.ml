@@ -166,6 +166,9 @@ module Analysis = struct
     (* Have an ordering of search_path > local_root with the parser. search_path precedes
      * local_root due to the possibility of having a subdirectory of the root in the search path. *)
     search_path @ [SearchPath.Root local_root]
+
+
+  let features { features; _ } = features
 end
 
 module Server = struct

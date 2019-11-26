@@ -102,6 +102,8 @@ module Analysis : sig
   val log_directory : t -> Path.t
 
   val search_path : t -> SearchPath.t list
+
+  val features : t -> Features.t
 end
 
 module Server : sig

@@ -36,11 +36,8 @@ let instantiate_error ~configuration ~state:{ State.ast_environment; _ } error =
 
 let parse_lsp
     ~configuration:
-      ( {
-          Configuration.Analysis.perform_autocompletion;
-          features = { click_to_fix; go_to_definition; hover };
-          _;
-        } as configuration )
+      ( { Configuration.Analysis.perform_autocompletion; features = { click_to_fix; hover; _ }; _ }
+      as configuration )
     ~state:{ State.symlink_targets_to_sources; _ }
     ~request
   =
@@ -78,8 +75,7 @@ let parse_lsp
                   };
               id;
               _;
-            }
-          when go_to_definition ->
+            } ->
             uri_to_path ~uri
             >>| fun path ->
             GetDefinitionRequest
@@ -1137,6 +1133,9 @@ let rec process
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
+  let { Configuration.Features.go_to_definition; _ } =
+    Configuration.Analysis.features configuration
+  in
   let timer = Timer.start () in
   let log_request_error ~error =
     Statistics.event
@@ -1172,6 +1171,15 @@ let rec process
             let items = Service.Rage.get_logs configuration in
             LanguageServer.Protocol.RageResponse.create ~items ~id
             |> LanguageServer.Protocol.RageResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> (fun response -> LanguageServerProtocolResponse response)
+            |> Option.some
+          in
+          { state; response }
+      | GetDefinitionRequest { DefinitionRequest.id; _ } when not go_to_definition ->
+          let response =
+            LanguageServer.Protocol.TextDocumentDefinitionResponse.create_empty ~id
+            |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
             |> Yojson.Safe.to_string
             |> (fun response -> LanguageServerProtocolResponse response)
             |> Option.some
