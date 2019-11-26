@@ -43,7 +43,11 @@ class AnalysisDirectoryTest(unittest.TestCase):
             ]
         )
         expected = UpdatedPaths(
-            updated_paths=["foo/bar/tracked.py", "baz/hello/also_tracked.py"],
+            updated_paths=[
+                "foo/bar/tracked.py",
+                "baz/hello/also_tracked.py",
+                "foo/bar/deleted.py",
+            ],
             deleted_paths=["foo/bar/deleted.py"],
         )
         self.assertEqual(actual, expected)
@@ -287,7 +291,8 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
         }
         actual = shared_analysis_directory.process_updated_files(["project/deleted.py"])
         expected = UpdatedPaths(
-            updated_paths=[], deleted_paths=["scratch/bar/deleted.py"]
+            updated_paths=["scratch/bar/deleted.py"],
+            deleted_paths=["scratch/bar/deleted.py"],
         )
         self.assertEqual(actual, expected)
         self.assertEqual(shared_analysis_directory._symbolic_links, {})
@@ -342,6 +347,7 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 "baz/hello/new_file_tracked_because_of_search_path.py",
                 # New file from the rebuild.
                 "scratch/new_file_from_rebuild.py",
+                "scratch/deleted_by_rebuild.py",
             ],
             deleted_paths=["scratch/deleted_by_rebuild.py"],
         )

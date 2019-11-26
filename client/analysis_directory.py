@@ -97,6 +97,7 @@ class AnalysisDirectory:
             for path in paths
             if self._is_tracked(path) and path not in deleted_paths
         ]
+        tracked_paths.extend(deleted_paths)
         return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
 
     def cleanup(self) -> None:
@@ -253,6 +254,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         # paths updated during a rebuild.
         tracked_paths.extend(new_scratch_paths - old_scratch_paths)
         deleted_paths = list(old_scratch_paths - new_scratch_paths)
+        tracked_paths.extend(deleted_paths)
         return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
 
     def _process_new_paths(
@@ -323,6 +325,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         ):
             return self._process_rebuilt_files(tracked_paths, deleted_paths)
         elif not (new_paths or deleted_paths):
+            tracked_paths.extend(deleted_paths)
             return UpdatedPaths(
                 updated_paths=tracked_paths, deleted_paths=deleted_paths
             )
@@ -333,6 +336,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         if deleted_paths:
             LOG.info("Detected deleted paths: `%s`.", "`,`".join(deleted_paths))
             deleted_paths = self._process_deleted_paths(deleted_paths)
+            tracked_paths.extend(deleted_paths)
         return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
 
     def cleanup(self) -> None:
