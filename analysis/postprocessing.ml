@@ -99,10 +99,12 @@ let add_local_mode_errors
   List.fold ~f:add_error ~init:errors unused_local_modes
 
 
-let run_on_source ~source errors =
+let run_on_source ~global_resolution ~source errors =
   let toplevel = Source.top_level_define_node source in
   add_local_mode_errors ~define:toplevel source errors
   |> ignore source
+  |> List.map
+       ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution:global_resolution)
   |> List.sort ~compare:Error.compare
 
 
@@ -116,6 +118,7 @@ let run ~modules environment =
           []
         else
           let errors = TypeEnvironment.ReadOnly.get_errors environment module_name in
-          run_on_source ~source errors
+          let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+          run_on_source ~global_resolution ~source errors
   in
   List.concat_map modules ~f:run_on_module

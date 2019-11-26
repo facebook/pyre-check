@@ -4859,11 +4859,11 @@ let check_define
       ({ Configuration.Analysis.include_hints; features = { click_to_fix; _ }; _ } as configuration)
     ~resolution
     ~source:
-      ( {
-          Source.source_path = { SourcePath.qualifier; relative; _ };
-          metadata = { local_mode; ignore_codes; _ };
-          _;
-        } as source )
+      {
+        Source.source_path = { SourcePath.qualifier; relative; _ };
+        metadata = { local_mode; ignore_codes; _ };
+        _;
+      }
     ~call_graph_builder:(module Builder : Callgraph.Builder)
     ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
@@ -4892,8 +4892,6 @@ let check_define
     |> filter_hints
     |> Error.join_at_define ~resolution:global_resolution
     |> Error.join_at_source ~resolution:global_resolution
-    |> List.map
-         ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution:global_resolution)
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in

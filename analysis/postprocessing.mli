@@ -5,6 +5,10 @@
 open Ast
 module Error = AnalysisError
 
-val run_on_source : source:Source.t -> Error.t list -> Error.t list
+val run_on_source
+  :  global_resolution:GlobalResolution.t ->
+  source:Source.t ->
+  Error.t list ->
+  Error.t list
 
 val run : modules:Reference.t list -> TypeEnvironment.ReadOnly.t -> Error.t list

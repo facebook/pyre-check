@@ -66,12 +66,12 @@ let make_errors ~context ?(handle = "test.py") source =
   in
   let configuration = ScratchProject.configuration_of project in
   let ast_environment = AstEnvironment.read_only ast_environment in
-  let errors =
+  let global_resolution, errors =
     let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
-    TypeEnvironment.get_errors environment qualifier
+    TypeEnvironment.global_resolution environment, TypeEnvironment.get_errors environment qualifier
   in
   let errors =
-    Postprocessing.run_on_source ~source errors
+    Postprocessing.run_on_source ~global_resolution ~source errors
     |> List.map
          ~f:
            (Error.instantiate

@@ -408,11 +408,12 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       | AnalysisError.NotCallable _ -> false
       | _ -> true
     in
-    let errors =
+    let global_resolution, errors =
       let { Source.source_path = { SourcePath.qualifier; _ }; _ } = source in
-      TypeEnvironment.get_errors environment qualifier
+      ( TypeEnvironment.global_resolution environment,
+        TypeEnvironment.get_errors environment qualifier )
     in
-    Postprocessing.run_on_source ~source errors |> List.filter ~f:keep
+    Postprocessing.run_on_source ~global_resolution ~source errors |> List.filter ~f:keep
   in
   ( if not (List.is_empty errors) then
       let errors =

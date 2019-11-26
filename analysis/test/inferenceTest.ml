@@ -133,11 +133,12 @@ let test_check_missing_parameter context =
   let assert_inference_errors =
     let check ~configuration ~environment ~source =
       Inference.run ~configuration ~environment ~source;
-      let errors =
+      let global_resolution, errors =
         let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
-        Analysis.TypeEnvironment.get_errors environment qualifier
+        ( Analysis.TypeEnvironment.global_resolution environment,
+          Analysis.TypeEnvironment.get_errors environment qualifier )
       in
-      Analysis.Postprocessing.run_on_source ~source errors
+      Analysis.Postprocessing.run_on_source ~global_resolution ~source errors
     in
     assert_errors ~context ~debug:false ~infer:true ~check
   in
