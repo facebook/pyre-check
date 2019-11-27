@@ -177,9 +177,6 @@ module ScratchServer = struct
         TypeEnvironment.create global_environment,
         sources )
     in
-    Dependencies.register_all_dependencies
-      (Dependencies.create (AstEnvironment.read_only ast_environment))
-      sources;
     let qualifiers =
       List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
           qualifier)

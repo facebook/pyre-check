@@ -56,7 +56,6 @@ module TypeQuery : sig
     | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
     | Defines of Reference.t list
-    | DependentDefines of Path.t list
     | DumpCallGraph
     | DumpClassHierarchy
     | DumpDependencies of Path.t

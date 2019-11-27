@@ -716,24 +716,6 @@ let process_type_query_request
         in
         List.concat_map module_names ~f:defines_of_module
         |> fun defines -> TypeQuery.Response (TypeQuery.FoundDefines defines)
-    | TypeQuery.DependentDefines paths ->
-        let modules =
-          List.filter_map paths ~f:(ModuleTracker.lookup_path ~configuration module_tracker)
-          |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-        in
-        let ast_environment = TypeEnvironment.ast_environment environment in
-        let legacy_dependency_tracker = Dependencies.create ast_environment in
-        let dependency_set = Dependencies.transitive_of_list legacy_dependency_tracker ~modules in
-        let dependencies =
-          let source_to_define_name source =
-            let define_to_name { Statement.Define.signature = { name; _ }; _ } = name in
-            define_to_name (Source.top_level_define source)
-          in
-          Reference.Set.to_list dependency_set
-          |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-          |> List.map ~f:source_to_define_name
-        in
-        TypeQuery.Response (TypeQuery.References dependencies)
     | TypeQuery.DumpCallGraph ->
         let get_callgraph module_qualifier =
           let callees

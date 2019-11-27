@@ -1219,63 +1219,6 @@ let test_protocol_persistent context =
     None
 
 
-let test_query_dependencies context =
-  let { ScratchServer.configuration; server_configuration; state } =
-    ScratchServer.start
-      ~context
-      [
-        "qa.py", {|
-      import qb
-      def foo() -> str:
-        return qb.do()
-    |};
-        "qb.py", {|
-    |};
-        "qb.pyi", {|
-    from qc import do
-    |};
-        "qc.py", {|
-      def do() -> str:
-          pass
-    |};
-      ]
-  in
-  let { Configuration.Analysis.local_root; _ } = configuration in
-  let assert_response ~request expected =
-    let { Request.response; _ } =
-      Request.process ~state ~configuration:server_configuration ~request
-    in
-    assert_response_equal (Some expected) response
-  in
-  let reference_response references =
-    Protocol.TypeQueryResponse
-      (Protocol.TypeQuery.Response (Protocol.TypeQuery.References references))
-  in
-  let create_path relative = Path.create_relative ~root:local_root ~relative in
-  assert_response
-    ~request:
-      (Protocol.Request.TypeQueryRequest (Protocol.TypeQuery.DependentDefines [create_path "qa.py"]))
-    (reference_response []);
-  assert_response
-    ~request:
-      (Protocol.Request.TypeQueryRequest
-         (Protocol.TypeQuery.DependentDefines [create_path "nonexistent.py"]))
-    (reference_response []);
-  assert_response
-    ~request:
-      (Protocol.Request.TypeQueryRequest (Protocol.TypeQuery.DependentDefines [create_path "qb.py"]))
-    (reference_response []);
-  assert_response
-    ~request:
-      (Protocol.Request.TypeQueryRequest
-         (Protocol.TypeQuery.DependentDefines [create_path "qb.pyi"]))
-    (reference_response [Reference.create "qa.$toplevel"]);
-  assert_response
-    ~request:
-      (Protocol.Request.TypeQueryRequest (Protocol.TypeQuery.DependentDefines [create_path "qc.py"]))
-    (reference_response [Reference.create "qa.$toplevel"; Reference.create "qb.$toplevel"])
-
-
 let test_incremental_dependencies context =
   let { ScratchServer.configuration; server_configuration; state } =
     ScratchServer.start
@@ -1527,7 +1470,6 @@ let () =
       "language_scheduler_shutdown", test_language_scheduler_shutdown;
       "did_save_with_content", test_did_save_with_content;
       "incremental_dependencies", test_incremental_dependencies;
-      "query_dependencies", test_query_dependencies;
       "incremental_typecheck", test_incremental_typecheck;
       "incremental_repopulate", test_incremental_repopulate;
       "incremental_lookups", test_incremental_lookups;
