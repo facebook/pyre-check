@@ -298,7 +298,7 @@ let run
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
   let module Context = struct
-    let global_resolution = TypeEnvironment.global_resolution environment
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let transformations = Location.Reference.Table.create ()
 
@@ -657,7 +657,4 @@ let run
   in
   (* Create error. *)
   let { Node.location; value = define } = Source.top_level_define_node source in
-  let error =
-    Error.create ~location ~kind:(Error.Deobfuscation source) ~define:(Node.create define ~location)
-  in
-  TypeEnvironment.set_errors environment qualifier [error]
+  [Error.create ~location ~kind:(Error.Deobfuscation source) ~define:(Node.create define ~location)]

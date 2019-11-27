@@ -18,8 +18,13 @@ let assert_deobfuscation ~context source expected =
   let handle = "qualifier.py" in
   let actual =
     let source = parse ~handle source in
-    DeobfuscationCheck.run ~configuration ~environment ~source;
-    match TypeEnvironment.get_errors environment !&"qualifier" with
+    let errors =
+      DeobfuscationCheck.run
+        ~configuration
+        ~environment:(TypeEnvironment.read_only environment)
+        ~source
+    in
+    match errors with
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in

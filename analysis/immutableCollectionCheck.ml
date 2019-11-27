@@ -67,16 +67,12 @@ module State (Context : Context) = struct
     failwith "Not implemented"
 end
 
-let run
-    ~configuration:_
-    ~environment
-    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
+let run ~configuration:_ ~environment ~source =
   let check define =
     let module Context = struct
       let define = define
 
-      let global_resolution = TypeEnvironment.global_resolution environment
+      let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
     end
     in
     let module State = State (Context) in
@@ -86,7 +82,4 @@ let run
     >>| State.errors
     |> Option.value ~default:[]
   in
-  let errors =
-    source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check |> List.concat
-  in
-  TypeEnvironment.set_errors environment qualifier errors
+  source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check |> List.concat

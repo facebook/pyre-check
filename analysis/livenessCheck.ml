@@ -181,13 +181,9 @@ end
 
 let name = "Liveness"
 
-let run
-    ~configuration:_
-    ~environment
-    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
+let run ~configuration:_ ~environment ~source =
   let module Context = struct
-    let global_resolution = TypeEnvironment.global_resolution environment
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let errors = ErrorMap.Table.create ()
 
@@ -207,5 +203,4 @@ let run
     |> Option.value ~default:[]
   in
   List.map ~f:check (nested_defines_deep_to_shallow define) |> ignore;
-  let errors = check define in
-  TypeEnvironment.set_errors environment qualifier errors
+  check define

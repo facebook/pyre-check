@@ -11,21 +11,12 @@ module type Signature = sig
 
   val run
     :  configuration:Configuration.Analysis.t ->
-    environment:TypeEnvironment.t ->
+    environment:TypeEnvironment.ReadOnly.t ->
     source:Source.t ->
-    unit
+    Error.t list
 end
 
 val get_check_to_run : check_name:string -> (module Signature) option
-
-val run_check
-  :  ?open_documents:(Ast.Reference.t -> bool) ->
-  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  environment:TypeEnvironment.t ->
-  Ast.Reference.t list ->
-  (module Signature) ->
-  unit
 
 val analyze_sources
   :  ?open_documents:(Ast.Reference.t -> bool) ->

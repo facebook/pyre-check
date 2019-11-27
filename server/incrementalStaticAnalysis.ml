@@ -14,24 +14,23 @@ let compute_type_check_resolution ~configuration ~scheduler ~environment ~source
     qualifiers
     ~scheduler
     ~configuration:{ configuration with store_type_check_resolution = true }
-    ~environment;
-
-  (* Discard all type errors as we only want the resolution *)
-  let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
-  TypeEnvironment.invalidate environment qualifiers
+    ~environment
 
 
 let run_additional_check ~configuration ~scheduler ~environment ~source_paths ~check =
   compute_type_check_resolution ~configuration ~scheduler ~environment ~source_paths;
   match Analysis.Check.get_check_to_run ~check_name:check with
   | Some (module Check) ->
-      let ast_environment =
-        TypeEnvironment.global_environment environment
-        |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
+      let ast_environment = TypeEnvironment.ast_environment environment in
+      let sources =
+        List.filter_map source_paths ~f:(fun { SourcePath.qualifier; is_external; _ } ->
+            if is_external then
+              None
+            else
+              AstEnvironment.ReadOnly.get_source ast_environment qualifier)
       in
-      let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
-      Analysis.Check.run_check ~configuration ~scheduler ~environment qualifiers (module Check);
-      List.concat_map qualifiers ~f:(TypeEnvironment.get_errors environment)
+      List.concat_map sources ~f:(fun source ->
+          Check.run ~configuration ~environment:(TypeEnvironment.read_only environment) ~source)
       |> List.map
            ~f:
              (Analysis.Error.instantiate

@@ -10,6 +10,6 @@ val name : string
 
 val run
   :  configuration:Configuration.Analysis.t ->
-  environment:TypeEnvironment.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
   source:Source.t ->
-  unit
+  Error.t list

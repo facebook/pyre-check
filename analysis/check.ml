@@ -13,9 +13,9 @@ module type Signature = sig
 
   val run
     :  configuration:Configuration.Analysis.t ->
-    environment:TypeEnvironment.t ->
+    environment:TypeEnvironment.ReadOnly.t ->
     source:Source.t ->
-    unit
+    Error.t list
 end
 
 let checks : (module Signature) String.Map.t =
@@ -32,16 +32,9 @@ let checks : (module Signature) String.Map.t =
 
 let get_check_to_run ~check_name = Map.find checks check_name
 
-let run_check
-    ?open_documents
-    ~scheduler
-    ~configuration
-    ~environment
-    checked_sources
-    (module Check : Signature)
-  =
+let run_type_check ?open_documents ~scheduler ~configuration ~environment checked_sources =
   let number_of_sources = List.length checked_sources in
-  Log.info "Running check `%s`..." Check.name;
+  Log.info "Running type check...";
   let timer = Timer.start () in
   let map _ qualifiers =
     AttributeResolution.AttributeCache.clear ();
@@ -55,7 +48,7 @@ let run_check
             { configuration with Configuration.Analysis.store_type_check_resolution = true }
         | _ -> configuration
       in
-      Check.run ~configuration ~environment ~source;
+      TypeCheck.run ~configuration ~environment ~source;
       number_files + 1
     in
     let ast_environment = TypeEnvironment.ast_environment environment in
@@ -78,7 +71,7 @@ let run_check
       ~inputs:checked_sources
       ()
   in
-  Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
+  Statistics.performance ~name:"check_TypeCheck" ~timer ();
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size post-typecheck"
@@ -112,7 +105,7 @@ let analyze_sources
   Log.info "Checking %d sources..." number_of_sources;
   Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
   let timer = Timer.start () in
-  run_check ?open_documents ~scheduler ~configuration ~environment checked_sources (module TypeCheck);
+  run_type_check ?open_documents ~scheduler ~configuration ~environment checked_sources;
   Statistics.performance ~name:"analyzed sources" ~phase_name:"Type check" ~timer ();
   Profiling.track_shared_memory_usage ~name:"After analyze_sources" ()
 
