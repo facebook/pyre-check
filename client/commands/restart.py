@@ -69,6 +69,8 @@ class Restart(Command):
         # Force the incremental run to be blocking.
         # pyre-fixme[16]: `Namespace` has no attribute `nonblocking`.
         self._arguments.nonblocking = False
+        # pyre-fixme[16]: `Namespace` has no attribute `no_start`.
+        self._arguments.no_start = False
         Incremental(
             self._arguments, self._configuration, self._analysis_directory
         ).run()

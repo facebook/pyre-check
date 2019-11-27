@@ -52,10 +52,8 @@ def extract_typeshed(typeshed_zip_path: str, base_directory: str) -> str:
     return typeshed
 
 
-def poor_mans_rsync(
-    source_directory: str, destination_directory: str, ignored_files=None
-) -> None:
-    ignored_files = ignored_files or []
+def poor_mans_rsync(source_directory: str, destination_directory: str) -> None:
+    ignored_files = [".pyre_configuration"]
     ignored_directories = [".pyre"]
     # Do not delete the server directory while copying!
     assert_readable_directory(source_directory)
@@ -121,9 +119,6 @@ class Repository:
         repository_path: str,
         debug: bool,
     ) -> None:
-        self._test_typeshed_location = extract_typeshed(
-            typeshed_zip_path, base_directory
-        )
 
         # Parse list of fake commits.
         assert_readable_directory(repository_path)
@@ -138,6 +133,19 @@ class Repository:
         self._pyre_directory = os.path.join(base_directory, "repository")
         os.mkdir(self._pyre_directory)
         os.chdir(self._pyre_directory)
+
+        with open(
+            os.path.join(self._pyre_directory, ".pyre_configuration"), "w"
+        ) as configuration_file:
+            typeshed_location = extract_typeshed(typeshed_zip_path, base_directory)
+            json.dump(
+                {
+                    "source_directories": ["."],
+                    "typeshed": typeshed_location,
+                    "search_path": ["stubs"],
+                },
+                configuration_file,
+            )
 
         self.debug = debug
         # Seed the repository with the base commit.
@@ -160,7 +168,6 @@ class Repository:
 
         self._copy_commit(original_path, ".")
 
-        self._resolve_typeshed_location(".pyre_configuration")
         return self._current_commit
 
     def _copy_commit(self, original_path, destination_path) -> None:
@@ -173,20 +180,10 @@ class Repository:
         # generate the right notifications. Hence, this.
         poor_mans_rsync(original_path, destination_path)
 
-    def _resolve_typeshed_location(self, filename) -> None:
-        with fileinput.input(filename, inplace=True) as f:
-            for line in f:
-                print(
-                    line.replace(
-                        "PYRE_TEST_TYPESHED_LOCATION", self._test_typeshed_location
-                    ),
-                    end="",
-                )
-
     def get_pyre_errors(self):
         # Run the full check first so that watchman updates have time to propagate.
         check_errors = self.run_pyre("check")
-        incremental_errors = self.run_pyre("incremental")
+        incremental_errors = self.run_pyre("incremental", "--no-start")
         return (incremental_errors, check_errors)
 
     def run_pyre(self, command: str, *arguments: str) -> str:
@@ -218,7 +215,12 @@ def run_integration_test(
         )
         with _watch_directory(repository.get_repository_directory()):
             try:
-                repository.run_pyre("start", "--incremental-style=fine_grained")
+                repository.run_pyre(
+                    "--logging-sections",
+                    "server",
+                    "start",
+                    "--incremental-style=fine_grained",
+                )
                 for commit in repository:
                     (actual_error, expected_error) = repository.get_pyre_errors()
                     if actual_error != expected_error:

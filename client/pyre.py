@@ -72,6 +72,8 @@ def main() -> int:
             arguments.nonblocking = False
             # pyre-fixme[16]: `Namespace` has no attribute `transitive`.
             arguments.incremental_style = IncrementalStyle.SHALLOW
+            # pyre-fixme[16]: `Namespace` has no attribute `no_start`.
+            arguments.no_start = False
         else:
             watchman_link = "https://facebook.github.io/watchman/docs/install.html"
             LOG.warning(

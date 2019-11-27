@@ -50,6 +50,7 @@ class Incremental(Reporting):
         super(Incremental, self).__init__(arguments, configuration, analysis_directory)
         self._nonblocking = arguments.nonblocking  # type: bool
         self._incremental_style = arguments.incremental_style  # type: bool
+        self._no_start_server = arguments.no_start  # type: bool
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -79,9 +80,12 @@ class Incremental(Reporting):
             default=IncrementalStyle.SHALLOW,
             help="How to approach doing incremental checks.",
         )
+        incremental.add_argument(
+            "--no-start", action="store_true", help=argparse.SUPPRESS
+        )
 
     def _run(self) -> None:
-        if self._state() == State.DEAD:
+        if (not self._no_start_server) and self._state() == State.DEAD:
             LOG.warning("Starting server at `%s`.", self._analysis_directory.get_root())
             arguments = self._arguments
             # pyre-fixme[16]: `Namespace` has no attribute `terminal`.

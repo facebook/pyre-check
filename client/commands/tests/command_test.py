@@ -54,6 +54,7 @@ def mock_arguments(  # noqa
     arguments.logger = None
     arguments.logging_sections = None
     arguments.no_saved_state = no_saved_state
+    arguments.no_start = False
     arguments.no_verify = no_verify
     arguments.no_watchman = no_watchman
     arguments.nonblocking = False
