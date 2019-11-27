@@ -55,3 +55,57 @@ def tempfile.mkstemp(suffix: TaintSink[FileSystem], prefix: TaintSink[FileSystem
 def tempfile.mkdtemp(suffix: TaintSink[FileSystem], prefix: TaintSink[FileSystem], dir: TaintSink[FileSystem]): ...
 def linecache.getline(filename: TaintSink[FileSystem], lineno, module_globals): ...
 def linecache.lazycache(filename: TaintSink[FileSystem], module_globals): ...
+
+def tarfile.TarFile.open(
+    cls,
+    name: TaintSink[FileSystem] = ...,
+    mode = ...,
+    fileobj = ...,
+    bufsize = ...,
+    format = ...,
+    tarinfo = ...,
+    dereference = ...,
+    ignore_zeros = ...,
+    encoding = ...,
+    errors = ...,
+    pax_headers = ...,
+    debug = ...,
+    errorlevel = ...
+): ...
+    # tarfile.TarFile
+def tarfile.TarFile.__init__(
+    self,
+    name: TaintSink[FileSystem] = ...,
+    mode = ...,
+    format = ...,
+    tarinfo =...,
+    dereference = ...,
+    ignore_zeros = ...,
+    encoding = ...,
+    errors = ...,
+    pax_headers = ...,
+    debug = ...,
+    errorlevel = ...,
+    compresslevel = ...
+): ...
+
+# misc functionst that accept file paths as a param
+def marshal.load(file: TaintSink[FileSystem]): ...
+def marshal.dump(value, file: TaintSink[FileSystem], version=...): ...
+def shelve.DbfilenameShelf(filename: TaintSink[FileSystem], flag=..., protocol=..., writeback=...): ...
+def shelve.open(filename: TaintSink[FileSystem], flag=..., protocol=..., writeback=...): ...
+def pickle.Unpickler.__init__(
+    self,
+    file: TaintSink[FileSystem],
+    fix_imports = ...,
+    encoding = ...,
+    errors = ...
+): ...
+def pickle.load(
+    file: TaintSink[FileSystem],
+    *,
+    fix_imports=...,
+    encoding=...,
+    errors=...,
+  ): ...
+def urllib.request.urlretrieve(url, filename: TaintSink[FileSystem]=..., reporthook=..., data=...): ...
