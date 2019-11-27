@@ -101,26 +101,25 @@ def poor_mans_rsync(
 
     for filename in destination_files:
         if filename not in source_files:
-            LOG.info("Removing file '%s' from destination" % filename)
             os.remove(os.path.join(destination_directory, filename))
 
     # Compare files across source and destination.
     (match, mismatch, error) = filecmp.cmpfiles(
         source_directory, destination_directory, source_files, shallow=False
     )
-    for filename in match:
-        LOG.info("Skipping file '%s' because it matches" % filename)
     for filename in mismatch:
-        LOG.info("Copying file '%s' due to mismatch" % filename)
         shutil.copy2(os.path.join(source_directory, filename), destination_directory)
     for filename in error:
-        LOG.info("Copying file '%s' because it is missing" % filename)
         shutil.copy2(os.path.join(source_directory, filename), destination_directory)
 
 
 class Repository:
     def __init__(
-        self, typeshed_zip_path: str, base_directory: str, repository_path: str
+        self,
+        typeshed_zip_path: str,
+        base_directory: str,
+        repository_path: str,
+        debug: bool,
     ) -> None:
         self._test_typeshed_location = extract_typeshed(
             typeshed_zip_path, base_directory
@@ -140,6 +139,7 @@ class Repository:
         os.mkdir(self._pyre_directory)
         os.chdir(self._pyre_directory)
 
+        self.debug = debug
         # Seed the repository with the base commit.
         self.__next__()
 
@@ -191,9 +191,11 @@ class Repository:
 
     def run_pyre(self, command: str, *arguments: str) -> str:
         pyre_client = os.getenv("PYRE_TEST_CLIENT_LOCATION", "pyre")
+        standard_error = None if self.debug else subprocess.DEVNULL
         try:
             output = subprocess.check_output(
-                [pyre_client, "--noninteractive", "--output=json", command, *arguments]
+                [pyre_client, "--noninteractive", "--output=json", command, *arguments],
+                stderr=standard_error,
             )
         except subprocess.CalledProcessError as error:
             if error.returncode not in [0, 1]:
@@ -211,7 +213,9 @@ def run_integration_test(
 
     with tempfile.TemporaryDirectory() as base_directory:
         discrepancies = {}
-        repository = Repository(typeshed_zip_path, base_directory, repository_path)
+        repository = Repository(
+            typeshed_zip_path, base_directory, repository_path, debug
+        )
         with _watch_directory(repository.get_repository_directory()):
             try:
                 repository.run_pyre("start", "--incremental-style=fine_grained")
@@ -219,6 +223,7 @@ def run_integration_test(
                     (actual_error, expected_error) = repository.get_pyre_errors()
                     if actual_error != expected_error:
                         discrepancies[commit] = (actual_error, expected_error)
+                        LOG.error("Found discrepancies in %s", commit)
                         if debug:
                             break
                 repository.run_pyre("stop")
@@ -249,7 +254,10 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str) -> int:
     saved_state_path = tempfile.NamedTemporaryFile().name
     with tempfile.TemporaryDirectory() as saved_state_create_directory:
         repository = Repository(
-            typeshed_zip_path, saved_state_create_directory, repository_path
+            typeshed_zip_path,
+            saved_state_create_directory,
+            repository_path,
+            debug=False,
         )
         repository.run_pyre("--save-initial-state-to", saved_state_path, "incremental")
         repository.__next__()
@@ -259,7 +267,7 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str) -> int:
     os.chdir(original_directory)
     with tempfile.TemporaryDirectory() as saved_state_load_directory:
         repository = Repository(
-            typeshed_zip_path, saved_state_load_directory, repository_path
+            typeshed_zip_path, saved_state_load_directory, repository_path, debug=False
         )
         repository.__next__()
         repository.run_pyre("--load-initial-state-from", saved_state_path, "start")
