@@ -6,7 +6,7 @@
 type result = {
   module_tracker: Analysis.ModuleTracker.t;
   ast_environment: Analysis.AstEnvironment.t;
-  environment: Analysis.TypeEnvironment.t;
+  global_environment: Analysis.AnnotatedGlobalEnvironment.ReadOnly.t;
   errors: Analysis.Error.t list;
 }
 

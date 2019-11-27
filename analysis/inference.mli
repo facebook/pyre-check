@@ -33,6 +33,6 @@ val name : string
 
 val run
   :  configuration:Configuration.Analysis.t ->
-  environment:TypeEnvironment.t ->
+  global_resolution:GlobalResolution.t ->
   source:Source.t ->
-  unit
+  Error.t list

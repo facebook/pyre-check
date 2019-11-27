@@ -10,42 +10,42 @@ open Pyre
 type result = {
   module_tracker: ModuleTracker.t;
   ast_environment: AstEnvironment.t;
-  environment: TypeEnvironment.t;
+  global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
   errors: Error.t list;
 }
 
-let run_infer ~scheduler ~configuration ~environment qualifiers =
+let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
   let number_of_sources = List.length qualifiers in
   Log.info "Running inference...";
   let timer = Timer.start () in
-  let ast_environment = TypeEnvironment.ast_environment environment in
+  let ast_environment = GlobalResolution.ast_environment global_resolution in
   let map _ qualifiers =
     AttributeResolution.AttributeCache.clear ();
-    let analyze_source number_files source =
-      Inference.run ~configuration ~environment ~source;
-      number_files + 1
+    let analyze_source (errors, number_files) source =
+      let new_errors = Inference.run ~configuration ~global_resolution ~source in
+      List.append new_errors errors, number_files + 1
     in
     List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-    |> List.fold ~init:0 ~f:analyze_source
+    |> List.fold ~init:([], 0) ~f:analyze_source
   in
-  let reduce left right =
-    let number_files = left + right in
+  let reduce (left_errors, left_number_files) (right_errors, right_number_files) =
+    let number_files = left_number_files + right_number_files in
     Log.log ~section:`Progress "Processed %d of %d sources" number_files number_of_sources;
-    number_files
+    List.append left_errors right_errors, number_files
   in
-  let _ =
+  let errors, _ =
     Scheduler.map_reduce
       scheduler
       ~configuration
       ~bucket_size:75
-      ~initial:0
+      ~initial:([], 0)
       ~map
       ~reduce
       ~inputs:qualifiers
       ()
   in
   Statistics.performance ~name:"inference" ~timer ();
-  List.concat_map qualifiers ~f:(TypeEnvironment.get_errors environment)
+  errors
 
 
 let infer
@@ -69,7 +69,7 @@ let infer
     AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart
   in
   let qualifiers = AstEnvironment.UpdateResult.reparsed ast_environment_update_result in
-  let environment =
+  let global_environment =
     let ast_environment = AstEnvironment.read_only ast_environment in
     Log.info "Building type environment...";
 
@@ -83,10 +83,9 @@ let infer
         (Ast.Reference.Set.of_list qualifiers)
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
-    let environment = TypeEnvironment.create global_environment in
     AttributeResolution.AttributeCache.clear ();
     Statistics.performance ~name:"full environment built" ~timer ();
-    environment
+    global_environment
   in
   let errors =
     let qualifiers =
@@ -98,6 +97,7 @@ let infer
       in
       List.filter qualifiers ~f:is_not_external
     in
-    run_infer ~scheduler ~configuration ~environment qualifiers
+    let global_resolution = GlobalResolution.create global_environment in
+    run_infer ~scheduler ~configuration ~global_resolution qualifiers
   in
-  { module_tracker; ast_environment; environment; errors }
+  { module_tracker; ast_environment; global_environment; errors }

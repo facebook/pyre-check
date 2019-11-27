@@ -130,7 +130,7 @@ let fixpoint_parse source =
 
 
 let get_inference_errors ~context source =
-  let source, configuration, ast_environment, environment =
+  let source, configuration, ast_environment, global_resolution =
     let project = ScratchProject.setup ~context ["test.py", source] in
     let _, ast_environment, global_environment = ScratchProject.build_global_environment project in
     let configuration = ScratchProject.configuration_of project in
@@ -142,11 +142,9 @@ let get_inference_errors ~context source =
     ( source,
       { configuration with infer = true },
       ast_environment,
-      TypeEnvironment.create global_environment )
+      GlobalResolution.create global_environment )
   in
-  Inference.run ~configuration ~environment ~source;
-  let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
-  Analysis.TypeEnvironment.get_errors environment qualifier
+  Inference.run ~configuration ~global_resolution ~source
   |> List.map
        ~f:
          (Error.instantiate

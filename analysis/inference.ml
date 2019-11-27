@@ -654,16 +654,15 @@ let name = "Inference"
 
 let run
     ~configuration
-    ~environment
+    ~global_resolution
     ~source:
       ( {
-          Source.source_path = { SourcePath.qualifier; relative; is_stub; _ };
+          Source.source_path = { SourcePath.relative; is_stub; _ };
           metadata = { local_mode; ignore_codes; _ };
           _;
         } as source )
   =
   Log.debug "Checking %s..." relative;
-  let global_resolution = TypeEnvironment.global_resolution environment in
   let resolution = TypeCheck.resolution global_resolution () in
   let dequalify_map = Preprocessing.dequalify_map source in
   let check
@@ -751,16 +750,13 @@ let run
            { error with kind = Error.weaken_literals kind })
     |> List.sort ~compare:Error.compare
   in
-  let errors =
-    if is_stub then
-      []
-    else
-      let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
-      let errors =
-        List.concat results
-        |> Error.join_at_source ~resolution:(Resolution.global_resolution resolution)
-        |> format_errors
-      in
-      errors
-  in
-  TypeEnvironment.set_errors environment qualifier errors
+  if is_stub then
+    []
+  else
+    let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
+    let errors =
+      List.concat results
+      |> Error.join_at_source ~resolution:(Resolution.global_resolution resolution)
+      |> format_errors
+    in
+    errors

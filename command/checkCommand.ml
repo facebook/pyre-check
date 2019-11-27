@@ -75,13 +75,13 @@ let run_check
       ()
   in
   (fun () ->
-    let errors, environment =
+    let errors, ast_environment =
       if infer then
-        let { Infer.errors; environment; _ } = Infer.infer ~configuration () in
-        errors, environment
+        let { Infer.errors; ast_environment; _ } = Infer.infer ~configuration () in
+        errors, ast_environment
       else
         let timer = Timer.start () in
-        let { Check.errors; environment; _ } =
+        let { Check.errors; ast_environment; _ } =
           Check.check ~scheduler:None ~configuration ~build_legacy_dependency_graph:false
         in
         let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
@@ -96,14 +96,14 @@ let run_check
             ]
           ~normals:["request kind", "FullCheck"]
           ();
-        errors, environment
+        errors, ast_environment
     in
     if debug then
       Memory.report_statistics ();
 
     (* Print results. *)
     let errors =
-      let ast_environment = TypeEnvironment.ast_environment environment in
+      let ast_environment = AstEnvironment.read_only ast_environment in
       List.map
         errors
         ~f:
