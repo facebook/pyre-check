@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.ProcessBuilder;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,7 +18,13 @@ public final class CommandLine {
 
   public static InputStream getCommandLineOutput(
       @Nullable File workingDirectory, String... commands) throws IOException {
-    return Runtime.getRuntime().exec(commands, null, workingDirectory).getInputStream();
+
+    ProcessBuilder processBuilder = new ProcessBuilder(commands);
+    processBuilder.directory(workingDirectory);
+    processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+    // The runtime reaps the process once it exits.
+    Process process = processBuilder.start();
+    return process.getInputStream();
   }
 
   public static List<String> getCommandLineOutputLines(
