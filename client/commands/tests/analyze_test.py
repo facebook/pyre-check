@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, Mock, patch
 from ... import commands  # noqa
 from ...analysis_directory import AnalysisDirectory
 from ...commands import check
+from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -18,11 +19,22 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
 
 
 class AnalyzeTest(unittest.TestCase):
+    @patch("os.getcwd", return_value="/original/directory")
+    @patch("{}.switch_root".format(client_name), return_value=".")
+    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_analyze(self, directories_to_analyze, realpath, check_output) -> None:
+    def test_analyze(
+        self,
+        directories_to_analyze,
+        realpath,
+        check_output,
+        find_local_root,
+        switch_root,
+        getcwd,
+    ) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
         arguments.taint_models_path = []

@@ -175,7 +175,9 @@ class Incremental(Reporting):
             LOG.info("File monitor is not running.")
             try:
                 ProjectFilesMonitor(
-                    self._arguments, self._configuration, self._analysis_directory
+                    self._configuration,
+                    self._current_directory,
+                    self._analysis_directory,
                 ).daemonize()
                 LOG.info("Restarted file monitor.")
             except MonitorException as exception:

@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 from ... import commands
 from ...analysis_directory import AnalysisDirectory, SharedAnalysisDirectory
 from ...commands import command, incremental, stop  # noqa
+from ..command import __name__ as client_name
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -22,6 +23,9 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(
 
 
 class IncrementalTest(unittest.TestCase):
+    @patch("os.getcwd", return_value="/original/directory")
+    @patch("{}.switch_root".format(client_name), return_value=".")
+    @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(incremental, "ProjectFilesMonitor")
@@ -29,7 +33,15 @@ class IncrementalTest(unittest.TestCase):
     @patch.object(incremental, "Start")
     @patch.object(stop, "Stop")
     def test_incremental(
-        self, commands_Stop, commands_Start, commands_Command_state, Monitor, exists
+        self,
+        commands_Stop,
+        commands_Start,
+        commands_Command_state,
+        Monitor,
+        exists,
+        find_local_root,
+        switch_root,
+        getcwd,
     ) -> None:
         state = MagicMock()
         state.running = ["running"]
@@ -75,9 +87,7 @@ class IncrementalTest(unittest.TestCase):
             test_command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             Monitor.is_alive.assert_called_once_with(configuration)
-            Monitor.assert_called_once_with(
-                arguments, configuration, analysis_directory
-            )
+            Monitor.assert_called_once_with(configuration, ".", analysis_directory)
             file_monitor_instance.daemonize.assert_called_once_with()
 
         Monitor.reset_mock()
@@ -251,10 +261,8 @@ class IncrementalTest(unittest.TestCase):
             file_monitor_instance.daemonize.assert_not_called()
 
         arguments = mock_arguments()
-        arguments.original_directory = "/test"  # called from
-        arguments.current_directory = "/"  # project root
-        arguments.local_configuration = None
-
+        getcwd.return_value = "/test"  # called from
+        switch_root.return_value = "/"  # project root
         configuration = mock_configuration()
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")

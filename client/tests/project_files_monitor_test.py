@@ -35,7 +35,7 @@ class MonitorTest(unittest.TestCase):
 
         # no additional extensions
         configuration.extensions = []
-        monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
+        monitor = ProjectFilesMonitor(configuration, ".", analysis_directory)
         self.assertEqual(len(monitor._subscriptions), 1)
         subscription = monitor._subscriptions[0]
         self.assertEqual(subscription.root, "/ROOT")
@@ -52,7 +52,7 @@ class MonitorTest(unittest.TestCase):
 
         # additional extensions
         configuration.extensions = ["thrift", "whl"]
-        monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
+        monitor = ProjectFilesMonitor(configuration, ".", analysis_directory)
         self.assertEqual(len(monitor._subscriptions), 1)
         subscription = monitor._subscriptions[0]
         self.assertEqual(subscription.root, "/ROOT")
@@ -133,7 +133,6 @@ class MonitorTest(unittest.TestCase):
             server_thread = threading.Thread(target=server)
             server_thread.start()
 
-            arguments = mock_arguments()
             configuration = mock_configuration()
             configuration.log_directory = root + "/.pyre"
             configuration.extensions = []
@@ -146,9 +145,7 @@ class MonitorTest(unittest.TestCase):
 
             # only create the monitor once the socket is open
             with socket_created_lock:
-                monitor = ProjectFilesMonitor(
-                    arguments, configuration, analysis_directory
-                )
+                monitor = ProjectFilesMonitor(configuration, ".", analysis_directory)
                 monitor._handle_response(
                     {"root": "/ROOT", "files": ["a.py", "subdir/b.py"]}
                 )
@@ -172,13 +169,12 @@ class MonitorTest(unittest.TestCase):
         _socket_connection,
     ) -> None:
         with tempfile.TemporaryDirectory() as root:
-            arguments = mock_arguments()
             configuration = mock_configuration()
             configuration.extensions = []
             analysis_directory = MagicMock()
             analysis_directory.get_root.return_value = root
 
-            monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
+            monitor = ProjectFilesMonitor(configuration, ".", analysis_directory)
             monitor._alive = False  # never enter watchman loop
             monitor._run()
 

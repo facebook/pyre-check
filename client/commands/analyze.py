@@ -78,7 +78,12 @@ class Analyze(Check):
 
     def generate_analysis_directory(self) -> AnalysisDirectory:
         return resolve_analysis_directory(
-            self._arguments, self._configuration, build=True, isolate=True
+            self._arguments,
+            self._configuration,
+            self._original_directory,
+            self._current_directory,
+            build=True,
+            isolate=True,
         )
 
     def _flags(self) -> List[str]:
