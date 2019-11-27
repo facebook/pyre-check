@@ -137,10 +137,6 @@ struct
   let invalidate () = Hashtbl.clear cache
 end
 
-module FunctionDefinitionsCache = DefinitionsCache (struct
-  type t = Define.t Node.t list option
-end)
-
 module ClassDefinitionsCache = DefinitionsCache (struct
   type t = Class.t Node.t list option
 end)
@@ -162,17 +158,16 @@ let containing_source resolution reference =
 
 
 let function_definitions resolution reference =
-  match FunctionDefinitionsCache.get reference with
-  | Some result -> result
-  | None ->
-      let result =
-        containing_source resolution reference
-        >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
-        >>| List.filter ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
-                Reference.equal reference name)
-      in
-      FunctionDefinitionsCache.set reference result;
-      result
+  let unannotated_global_environment = unannotated_global_environment resolution in
+  UnannotatedGlobalEnvironment.ReadOnly.get_define unannotated_global_environment reference
+  >>| fun { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings } ->
+  let sibling_bodies =
+    List.map siblings ~f:(fun { UnannotatedGlobalEnvironment.FunctionDefinition.Sibling.body; _ } ->
+        body)
+  in
+  match body with
+  | None -> sibling_bodies
+  | Some body -> body :: sibling_bodies
 
 
 let class_definitions resolution reference =

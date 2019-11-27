@@ -92,12 +92,6 @@ val class_metadata : t -> Type.t -> ClassMetadataEnvironment.class_metadata opti
 
 val is_protocol : t -> Type.t -> bool
 
-module FunctionDefinitionsCache : sig
-  val enable : unit -> unit
-
-  val invalidate : unit -> unit
-end
-
 module ClassDefinitionsCache : sig
   val enable : unit -> unit
 

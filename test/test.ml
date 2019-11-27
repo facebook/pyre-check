@@ -1357,7 +1357,6 @@ let create_type_alias_table type_aliases =
 
 
 let mock_scheduler () =
-  Analysis.GlobalResolution.FunctionDefinitionsCache.invalidate ();
   Analysis.GlobalResolution.ClassDefinitionsCache.invalidate ();
   Scheduler.mock ()
 
