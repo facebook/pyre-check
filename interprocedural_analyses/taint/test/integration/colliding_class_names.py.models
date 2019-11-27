@@ -1,0 +1,32 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "colliding_class_names.C.foo",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "colliding_class_names.py",
+              "line": 3,
+              "start": 15,
+              "end": 30
+            },
+            "leaves": [
+              {
+                "kind": "Test",
+                "name": "__test_source",
+                "on_all_flows": true
+              }
+            ],
+            "features": [ { "always-via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

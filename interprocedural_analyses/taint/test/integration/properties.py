@@ -43,7 +43,7 @@ class OtherDerived(Class):
 
 
 class TaintedGetterAndSetter:
-    # This will be  by the model.
+    # This will be the model.
     @property
     def my_property(self) -> str:
         pass

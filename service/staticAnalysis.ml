@@ -24,8 +24,16 @@ let record_overrides overrides =
   Reference.Map.iteri overrides ~f:record_override_edge
 
 
-let unfiltered_callables ~resolution ~source =
-  let defines = Preprocessing.defines ~include_stubs:true ~include_toplevels:true source in
+let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath.qualifier; _ }; _ }
+  =
+  let defines =
+    GlobalResolution.unannotated_global_environment resolution
+    |> (fun environment ->
+         UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module environment qualifier)
+    |> List.filter_map ~f:(GlobalResolution.function_definitions resolution)
+    |> List.concat
+    |> List.filter ~f:(fun { Node.value = define; _ } -> not (Define.is_overloaded_function define))
+  in
   let record_toplevel_definition definition =
     let name = definition.Node.value.Define.signature.name in
     match definition.Node.value.Define.signature.parent with
@@ -159,7 +167,7 @@ let analyze
     let make_callables result qualifier =
       AstEnvironment.ReadOnly.get_source ast_environment qualifier
       >>| (fun source ->
-            callables ~resolution:(Resolution.global_resolution resolution) ~source
+            callables ~resolution:global_resolution ~source
             |> List.fold ~f:classify_source ~init:result)
       |> Option.value ~default:result
     in
@@ -173,7 +181,7 @@ let analyze
               GlobalResolution.source_is_unit_test (Resolution.global_resolution resolution) ~source
             then
               List.fold
-                (unfiltered_callables ~resolution:(Resolution.global_resolution resolution) ~source)
+                (unfiltered_callables ~resolution:global_resolution ~source)
                 ~f:(fun result (callable, _) -> Callable.Set.add callable result)
                 ~init:result
             else
