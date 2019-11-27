@@ -444,6 +444,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               (Node.location callee)
               (Ast.Transform.sanitize_expression expression |> Expression.show)
               (ForwardState.Tree.show taint)
+        | Expression.Name (Name.Identifier "reveal_type"), [{ Call.Argument.value = expression; _ }]
+          ->
+            Log.dump
+              "%a: Revealed type for %s: %s"
+              Location.pp
+              (Node.location callee)
+              (Ast.Transform.sanitize_expression expression |> Expression.show)
+              (Resolution.resolve resolution expression |> Type.show)
         | _ -> ()
       end;
       match AccessPath.get_global ~resolution callee, Node.value callee with
