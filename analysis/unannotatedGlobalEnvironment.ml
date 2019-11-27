@@ -273,7 +273,7 @@ end = struct
   let set_define ~name definitions = FunctionDefinitions.write_through name definitions
 
   let add_to_transaction
-      txn
+      transaction
       ~previous_classes_list
       ~previous_unannotated_globals_list
       ~previous_defines_list
@@ -283,7 +283,7 @@ end = struct
       UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
     in
     let defines_keys = FunctionDefinitions.KeySet.of_list previous_defines_list in
-    ClassDefinitions.add_to_transaction ~keys:class_keys txn
+    ClassDefinitions.add_to_transaction ~keys:class_keys transaction
     |> UnannotatedGlobals.add_to_transaction ~keys:unannotated_globals_keys
     |> FunctionDefinitions.add_to_transaction ~keys:defines_keys
 
