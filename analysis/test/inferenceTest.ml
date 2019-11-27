@@ -129,62 +129,68 @@ let fixpoint_parse source =
   parse source |> Preprocessing.preprocess |> Preprocessing.defines |> List.hd_exn
 
 
-let test_check_missing_parameter context =
-  let assert_inference_errors =
-    let check ~configuration ~environment ~source =
-      Inference.run ~configuration ~environment ~source;
-      let global_resolution, errors =
-        let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
-        ( Analysis.TypeEnvironment.global_resolution environment,
-          Analysis.TypeEnvironment.get_errors environment qualifier )
-      in
-      Analysis.Postprocessing.run_on_source ~global_resolution ~source errors
+let get_inference_errors ~context source =
+  let source, configuration, ast_environment, environment =
+    let project = ScratchProject.setup ~context ["test.py", source] in
+    let _, ast_environment, global_environment = ScratchProject.build_global_environment project in
+    let configuration = ScratchProject.configuration_of project in
+    let ast_environment = AstEnvironment.read_only ast_environment in
+    let source =
+      AstEnvironment.ReadOnly.get_source ast_environment (Reference.create "test")
+      |> fun option -> Option.value_exn option
     in
-    assert_errors ~context ~debug:false ~infer:true ~check
+    ( source,
+      { configuration with infer = true },
+      ast_environment,
+      TypeEnvironment.create global_environment )
+  in
+  Inference.run ~configuration ~environment ~source;
+  let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
+  Analysis.TypeEnvironment.get_errors environment qualifier
+  |> List.map
+       ~f:
+         (Error.instantiate
+            ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
+
+
+let test_check_missing_parameter context =
+  let assert_inference_errors ~expected source =
+    let errors = get_inference_errors ~context source in
+    let actual =
+      List.map errors ~f:(fun error ->
+          Error.Instantiated.description error ~show_error_traces:false)
+    in
+    assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") expected actual;
+    Memory.reset_shared_memory ()
   in
   assert_inference_errors
     {|
       def foo(x = 5) -> int:
         return x
     |}
-    ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
+    ~expected:
+      ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
   assert_inference_errors
     {|
       def foo(x: typing.Any) -> None:
         x = 5
     |}
-    ["Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified."];
+    ~expected:
+      [
+        "Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified.";
+      ];
   assert_inference_errors
     {|
       def foo(x: typing.Any = 5) -> None:
         pass
     |}
-    ["Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified."]
+    ~expected:
+      [
+        "Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified.";
+      ]
 
 
-let assert_infer
-    ?(debug = false)
-    ?(infer = true)
-    ?(show_error_traces = false)
-    ?(fields = ["description"])
-    ~context
-    source
-    errors
-  =
-  let check_errors configuration global_environment source =
-    let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment in
-    let environment = TypeEnvironment.create global_environment in
-    Inference.run ~configuration ~environment ~source;
-    let errors =
-      let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
-      Analysis.TypeEnvironment.get_errors environment qualifier
-    in
-    List.map
-      errors
-      ~f:
-        (Error.instantiate
-           ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
-  in
+let assert_infer ?(fields = ["description"]) ~context source errors =
   let fields_of_error error =
     let field_of_error field =
       let access_field body field =
@@ -194,25 +200,14 @@ let assert_infer
         | _ -> `String "TEST FAIL: ERROR ACCESSING FIELD IN ERROR JSON"
       in
       List.fold
-        ~init:(Error.Instantiated.to_json ~show_error_traces error)
+        ~init:(Error.Instantiated.to_json ~show_error_traces:false error)
         ~f:access_field
         (String.split ~on:'.' field)
     in
     List.map fields ~f:field_of_error
   in
-  let configuration, source, environment =
-    let project = ScratchProject.setup ~context ["test.py", source] in
-    let _, ast_environment, environment = ScratchProject.build_global_environment project in
-    let configuration = ScratchProject.configuration_of project in
-    let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "test")
-      |> fun option -> Option.value_exn option
-    in
-    { configuration with debug; infer }, source, environment
-  in
   let to_string json = Yojson.Safe.sort json |> Yojson.Safe.to_string in
+  let infer_errors = get_inference_errors ~context source in
   assert_equal
     ~cmp:(List.equal String.equal)
     ~printer:(fun errors -> Format.asprintf "%a" Sexp.pp [%message (errors : string list)])
@@ -220,9 +215,7 @@ let assert_infer
       (diff ~print:(fun format errors ->
            Format.fprintf format "%a" Sexp.pp [%message (errors : string list)]))
     (List.map ~f:(fun string -> Yojson.Safe.from_string string |> to_string) errors)
-    ( List.map ~f:fields_of_error (check_errors configuration environment source)
-    |> List.concat
-    |> List.map ~f:to_string );
+    (List.map ~f:fields_of_error infer_errors |> List.concat |> List.map ~f:to_string);
   Memory.reset_shared_memory ()
 
 

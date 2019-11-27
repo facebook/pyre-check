@@ -18,8 +18,6 @@ end
 
 val get_check_to_run : check_name:string -> (module Signature) option
 
-val create_check : configuration:Configuration.Analysis.t -> (module Signature)
-
 val run_check
   :  ?open_documents:(Ast.Reference.t -> bool) ->
   scheduler:Scheduler.t ->

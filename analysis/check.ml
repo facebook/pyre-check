@@ -24,22 +24,13 @@ let checks : (module Signature) String.Map.t =
       "awaitable", (module AwaitableCheck);
       "deobfuscation", (module DeobfuscationCheck);
       "immutable_collection", (module ImmutableCollectionCheck);
-      "inference", (module Inference);
       "liveness", (module LivenessCheck);
-      "typeCheck", (module TypeCheck);
     ]
   in
   String.Map.of_alist_exn checks
 
 
 let get_check_to_run ~check_name = Map.find checks check_name
-
-let create_check ~configuration:{ Configuration.Analysis.infer; _ } : (module Signature) =
-  if infer then
-    (module Inference)
-  else
-    (module TypeCheck)
-
 
 let run_check
     ?open_documents
@@ -121,13 +112,7 @@ let analyze_sources
   Log.info "Checking %d sources..." number_of_sources;
   Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
   let timer = Timer.start () in
-  run_check
-    ?open_documents
-    ~scheduler
-    ~configuration
-    ~environment
-    checked_sources
-    (create_check ~configuration);
+  run_check ?open_documents ~scheduler ~configuration ~environment checked_sources (module TypeCheck);
   Statistics.performance ~name:"analyzed sources" ~phase_name:"Type check" ~timer ();
   Profiling.track_shared_memory_usage ~name:"After analyze_sources" ()
 

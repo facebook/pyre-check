@@ -75,22 +75,29 @@ let run_check
       ()
   in
   (fun () ->
-    let timer = Timer.start () in
-    let { Check.errors; environment; _ } =
-      Check.check ~scheduler:None ~configuration ~build_legacy_dependency_graph:false
+    let errors, environment =
+      if infer then
+        let { Infer.errors; environment; _ } = Infer.infer ~configuration () in
+        errors, environment
+      else
+        let timer = Timer.start () in
+        let { Check.errors; environment; _ } =
+          Check.check ~scheduler:None ~configuration ~build_legacy_dependency_graph:false
+        in
+        let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+        Statistics.performance
+          ~name:"check"
+          ~timer
+          ~integers:
+            [
+              "gc_minor_collections", minor_collections;
+              "gc_major_collections", major_collections;
+              "gc_compactions", compactions;
+            ]
+          ~normals:["request kind", "FullCheck"]
+          ();
+        errors, environment
     in
-    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-    Statistics.performance
-      ~name:"check"
-      ~timer
-      ~integers:
-        [
-          "gc_minor_collections", minor_collections;
-          "gc_major_collections", major_collections;
-          "gc_compactions", compactions;
-        ]
-      ~normals:["request kind", "FullCheck"]
-      ();
     if debug then
       Memory.report_statistics ();
 
