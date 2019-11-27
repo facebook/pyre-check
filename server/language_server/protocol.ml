@@ -146,7 +146,14 @@ end
 module InitializeResponse = struct
   include Types.InitializeResponse
 
-  let default id ~server_uuid ~offer_autocompletion =
+  type features = {
+    autocomplete: bool;
+    click_to_fix: bool;
+    hover: bool;
+    go_to_definition: bool;
+  }
+
+  let default id ~server_uuid ~features:{ autocomplete; click_to_fix; hover; go_to_definition } =
     let open TextDocumentSyncOptions in
     {
       jsonrpc = "2.0";
@@ -167,21 +174,24 @@ module InitializeResponse = struct
                           will_save_wait_until = None;
                           save = Some { SaveOptions.include_text = Some false };
                         };
-                    hover_provider = Some true;
+                    hover_provider = Some hover;
                     completion_provider =
                       Option.some_if
-                        offer_autocompletion
+                        autocomplete
                         {
                           CompletionOptions.resolve_provider = Some false;
                           trigger_characters = Some ["."];
                         };
                     signature_help_provider = None;
-                    definition_provider = Some true;
+                    definition_provider = Some go_to_definition;
                     references_provider = None;
                     document_highlight_provider = None;
                     document_symbol_provider = None;
                     workspace_symbol_provider = None;
-                    code_action_provider = Some { codeActionKinds = ["refactor.rewrite"] };
+                    code_action_provider =
+                      Option.some_if
+                        click_to_fix
+                        { CodeActionOptions.codeActionKinds = ["refactor.rewrite"] };
                     code_lens_provider = None;
                     document_formatting_provider = None;
                     document_range_formatting_provider = None;
@@ -214,9 +224,9 @@ end
 module TextDocumentDefinitionResponse = struct
   include Types.TextDocumentDefinitionResponse
 
-  let create_with_result ~id result = { jsonrpc = "2.0"; id; result = Some result; error = None }
+  let create_with_result ~id result = { jsonrpc = "2.0"; id; result; error = None }
 
-  let create_empty ~id = create_with_result ~id []
+  let create_empty ~id = create_with_result ~id None
 
   let create ~id ~start ~stop ~path =
     let uri ~path =
@@ -228,7 +238,7 @@ module TextDocumentDefinitionResponse = struct
       >>| (fun uri -> { Location.uri; range = Range.create ~start ~stop })
       |> Option.to_list
     in
-    create_with_result ~id result
+    create_with_result ~id (Some result)
 end
 
 module HoverResponse = struct

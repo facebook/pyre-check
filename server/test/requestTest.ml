@@ -658,12 +658,14 @@ let test_process_get_definition_request context =
               };
           }
         in
-        response >>| response_location |> Option.to_list
+        match response with
+        | Some _ -> response >>| response_location |> Option.to_list |> Option.some
+        | None -> None
       in
       {
         TextDocumentDefinitionResponse.jsonrpc = "2.0";
         id = int_request_id 0;
-        result = Some result;
+        result;
         error = None;
       }
       |> TextDocumentDefinitionResponse.to_yojson

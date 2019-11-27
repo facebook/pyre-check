@@ -19,7 +19,12 @@ let communicate
     server_socket
     all_uris
     server_uuid
-    ~configuration:{ Configuration.Analysis.perform_autocompletion; _ }
+    ~configuration:
+      {
+        Configuration.Analysis.perform_autocompletion = autocomplete;
+        features = { hover; click_to_fix; go_to_definition };
+        _;
+      }
   =
   let display_nuclide_message message =
     ShowMessage.create LanguageServer.Types.ShowMessageParameters.InfoMessage message
@@ -40,7 +45,9 @@ let communicate
             Log.info "%s" message;
             failwith message)
   (* Write the initialize response *)
-  >>| InitializeResponse.default ~server_uuid ~offer_autocompletion:perform_autocompletion
+  >>| InitializeResponse.default
+        ~server_uuid
+        ~features:{ click_to_fix; autocomplete; hover; go_to_definition }
   >>| InitializeResponse.to_yojson
   >>| LanguageServer.Protocol.write_message Out_channel.stdout
   |> ignore;

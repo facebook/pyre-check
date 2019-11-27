@@ -407,7 +407,11 @@ let test_initialize_request_parses _ =
 
 let test_initialize_response _ =
   assert_equal
-    ( InitializeResponse.default (int_request_id 1) ~server_uuid:"1234" ~offer_autocompletion:true
+    ( InitializeResponse.default
+        (int_request_id 1)
+        ~server_uuid:"1234"
+        ~features:
+          { autocomplete = true; hover = true; click_to_fix = true; go_to_definition = true }
     |> InitializeResponse.to_yojson
     |> Yojson.Safe.sort )
     ( {|
@@ -439,7 +443,8 @@ let test_initialize_response _ =
     ( InitializeResponse.default
         (string_request_id "961810f9-ed94-4044-a7c8-82b4135925a7")
         ~server_uuid:"1234"
-        ~offer_autocompletion:false
+        ~features:
+          { autocomplete = false; hover = false; click_to_fix = false; go_to_definition = false }
     |> InitializeResponse.to_yojson
     |> Yojson.Safe.sort )
     ( {|
@@ -448,10 +453,9 @@ let test_initialize_response _ =
         "jsonrpc": "2.0",
         "result": {
           "capabilities": {
-            "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
-            "definitionProvider": true,
+            "definitionProvider": false,
             "executeCommandProvider": { "commands": [ "add_pyre_annotation_1234" ] },
-            "hoverProvider": true,
+            "hoverProvider": false,
             "rageProvider": true,
             "textDocumentSync": {
               "change": 1,
@@ -653,11 +657,11 @@ let test_language_server_definition_response context =
   assert_response
     ~id:(int_request_id 1)
     ~location:None
-    ~expected:(`Assoc ["id", `Int 1; "jsonrpc", `String "2.0"; "result", `List []]);
+    ~expected:(`Assoc ["id", `Int 1; "jsonrpc", `String "2.0"; "result", `Null]);
   assert_response
     ~id:(string_request_id "abcd")
     ~location:None
-    ~expected:(`Assoc ["id", `String "abcd"; "jsonrpc", `String "2.0"; "result", `List []]);
+    ~expected:(`Assoc ["id", `String "abcd"; "jsonrpc", `String "2.0"; "result", `Null]);
 
   let touch path = File.create ~content:"" path |> File.write in
   let file = Path.create_relative ~root:local_root ~relative:"a.py" in
