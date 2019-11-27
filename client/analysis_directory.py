@@ -12,7 +12,7 @@ import subprocess
 from itertools import chain
 from pathlib import Path
 from time import time
-from typing import Dict, List, NamedTuple, Optional, Set
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple
 
 from . import _resolve_filter_paths, buck, filesystem, log
 from .configuration import Configuration
@@ -246,7 +246,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
     def _process_rebuilt_files(
         self, tracked_paths: List[str], deleted_paths: List[str]
-    ) -> UpdatedPaths:
+    ) -> Tuple[List[str], List[str]]:
         old_scratch_paths = set(self._symbolic_links.values())
         self.rebuild()
         new_scratch_paths = set(self._symbolic_links.values())
@@ -254,8 +254,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         # paths updated during a rebuild.
         tracked_paths.extend(new_scratch_paths - old_scratch_paths)
         deleted_paths = list(old_scratch_paths - new_scratch_paths)
-        tracked_paths.extend(deleted_paths)
-        return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
+        return tracked_paths, deleted_paths
 
     def _process_new_paths(
         self, new_paths: List[str], tracked_paths: List[str]
@@ -323,20 +322,18 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         if SharedAnalysisDirectory.should_rebuild(
             tracked_paths, new_paths, deleted_paths
         ):
-            return self._process_rebuilt_files(tracked_paths, deleted_paths)
-        elif not (new_paths or deleted_paths):
-            tracked_paths.extend(deleted_paths)
-            return UpdatedPaths(
-                updated_paths=tracked_paths, deleted_paths=deleted_paths
+            tracked_paths, deleted_paths = self._process_rebuilt_files(
+                tracked_paths, deleted_paths
             )
+        elif new_paths or deleted_paths:
+            if new_paths:
+                LOG.info("Detected new paths: %s.", ",".join(new_paths))
+                tracked_paths = self._process_new_paths(new_paths, tracked_paths)
+            if deleted_paths:
+                LOG.info("Detected deleted paths: `%s`.", "`,`".join(deleted_paths))
+                deleted_paths = self._process_deleted_paths(deleted_paths)
 
-        if new_paths:
-            LOG.info("Detected new paths: %s.", ",".join(new_paths))
-            tracked_paths = self._process_new_paths(new_paths, tracked_paths)
-        if deleted_paths:
-            LOG.info("Detected deleted paths: `%s`.", "`,`".join(deleted_paths))
-            deleted_paths = self._process_deleted_paths(deleted_paths)
-            tracked_paths.extend(deleted_paths)
+        tracked_paths.extend(deleted_paths)
         return UpdatedPaths(updated_paths=tracked_paths, deleted_paths=deleted_paths)
 
     def cleanup(self) -> None:
