@@ -8,6 +8,7 @@ module Analysis = TaintAnalysis
 module BackwardAnalysis = BackwardAnalysis
 module TaintConfiguration = Configuration
 module Domains = Domains
+module Features = Features
 module Flow = Flow
 module ForwardAnalysis = ForwardAnalysis
 module Model = Model

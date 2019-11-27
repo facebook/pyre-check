@@ -1,8 +1,10 @@
 @generated
 Call dependencies
+features.optional_scalar (fun) -> []
 features.tito_via_constructor (fun) -> [int::__init__ (method)]
 features.tito_via_len (fun) -> [features.len (fun)]
 features.tito_via_min_left (fun) -> [features.min (fun)]
 features.tito_via_min_or_not (fun) -> [features.min (fun)]
 features.tito_via_min_right (fun) -> [features.min (fun)]
 features.tito_via_named (fun) -> [features.named (fun)]
+features.tito_via_optional (fun) -> [features.optional_scalar (fun)]

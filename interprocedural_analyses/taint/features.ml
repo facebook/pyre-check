@@ -103,20 +103,29 @@ module ComplexSet = AbstractElementSetDomain.Make (Complex)
 let add_obscure set = SimpleSet.element (Simple.Breadcrumb Breadcrumb.Obscure) :: set
 
 let add_type_breadcrumb ~resolution annotation =
-  let is_scalar =
+  let rec matches_modulo_optional_and_awaitable ~f annotation =
     match annotation with
-    | None -> false
-    | Some Type.Any -> false
-    | Some return_type ->
-        GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.number
-        || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.enumeration
+    | None
+    | Some Type.Any
+    | Some Type.Bottom ->
+        false
+    | Some (Type.Optional annotation)
+    | Some
+        (Type.Parametric
+          { name = "typing.Awaitable"; parameters = Type.OrderedTypes.Concrete [annotation] }) ->
+        matches_modulo_optional_and_awaitable ~f (Some annotation)
+    | Some annotation -> f annotation
+  in
+  let is_scalar =
+    let scalar_predicate return_type =
+      GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.number
+      || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.enumeration
+    in
+    matches_modulo_optional_and_awaitable annotation ~f:scalar_predicate
   in
   let is_boolean =
-    match annotation with
-    | None -> false
-    | Some Type.Any -> false
-    | Some return_type ->
-        GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.bool
+    matches_modulo_optional_and_awaitable annotation ~f:(fun left ->
+        GlobalResolution.less_or_equal resolution ~left ~right:Type.bool)
   in
   let add feature_set =
     let add_if cond type_name feature_set =

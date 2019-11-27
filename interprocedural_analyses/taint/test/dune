@@ -18,6 +18,7 @@
   configurationTest
   domainTest
   integrationTest
+  featuresTest
   fixpointTest
   flowTest
   forwardAnalysisTest

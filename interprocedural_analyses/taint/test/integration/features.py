@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 
 def len(o: Any) -> int:
@@ -38,3 +38,11 @@ def tito_via_min_or_not(o: Any, b: bool):
 
 def tito_via_constructor(o: Any):
     return int(o)
+
+
+def optional_scalar(parameter) -> Optional[int]:
+    return 0
+
+
+def tito_via_optional(o: Any):
+    return optional_scalar(o)
