@@ -24,7 +24,8 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(
 
 class IncrementalTest(unittest.TestCase):
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
+    @patch("os.chdir")
+    @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
@@ -40,7 +41,8 @@ class IncrementalTest(unittest.TestCase):
         Monitor,
         exists,
         find_local_root,
-        switch_root,
+        find_project_root,
+        chdir,
         getcwd,
     ) -> None:
         state = MagicMock()
@@ -262,10 +264,11 @@ class IncrementalTest(unittest.TestCase):
 
         arguments = mock_arguments()
         getcwd.return_value = "/test"  # called from
-        switch_root.return_value = "/"  # project root
+        find_project_root.return_value = "/"  # project root
         configuration = mock_configuration()
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")
+        chdir.reset_mock()
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads",
@@ -302,6 +305,7 @@ class IncrementalTest(unittest.TestCase):
             )
 
             test_command.run()
+            chdir.assert_called_once_with("/")
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()

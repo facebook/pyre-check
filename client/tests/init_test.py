@@ -15,15 +15,14 @@ from .. import (
     _resolve_filter_paths,
     find_local_root,
     find_log_directory,
+    find_project_root,
     get_binary_version_from_file,
-    switch_root,
 )
 from ..filesystem import __name__ as filesystem_name
 
 
 class InitTest(unittest.TestCase):
-    @patch("os.chdir")
-    def test_switch_root(self, chdir) -> None:
+    def test_find_project_root(self) -> None:
         original_directory = "/a/b/c"
         with patch("os.path.realpath", return_value="realpath"), patch(
             "os.path.isfile", return_value=False
@@ -31,22 +30,20 @@ class InitTest(unittest.TestCase):
             isfile.side_effect = (
                 lambda directory: directory == "/a/b/.pyre_configuration"
             )
-            directory = switch_root(original_directory)
+            directory = find_project_root(original_directory)
             self.assertEqual(directory, "/a/b")
-            chdir.assert_called_once_with(directory)
 
         with patch("{}.find_root".format(filesystem_name)) as mock_find_root:
             original_directory = "/a/b"
             mock_find_root.side_effect = ["/a", "/a/b"]
-            directory = switch_root(original_directory)
+            directory = find_project_root(original_directory)
             self.assertEqual(directory, "/a/b")
 
-    @patch("os.chdir")
-    def test_find_local_root(self, chdir) -> None:
+    def test_find_local_root(self) -> None:
         original_directory = "/a/b/c"
         with patch("os.path.realpath", return_value="realpath"), patch(
             "os.path.isfile", return_value=False
-        ) as isfile, patch("os.chdir"):
+        ) as isfile:
             local_root = find_local_root(original_directory)
             self.assertEqual(local_root, None)
 
@@ -65,9 +62,8 @@ class InitTest(unittest.TestCase):
 
     @patch("{}.Path".format(client_name))
     @patch("{}.Path.mkdir".format(client_name))
-    @patch("{}.switch_root".format(client_name))
     @patch("os.makedirs")
-    def test_find_log_directory(self, mkdirs, switch_root, path_mkdir, path) -> None:
+    def test_find_log_directory(self, mkdirs, path_mkdir, path) -> None:
         local_configuration = None
         current_directory = "project"
         log_directory = find_log_directory(None, current_directory, local_configuration)

@@ -97,9 +97,9 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
 
 class CommandTest(unittest.TestCase):
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
+    @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
-    def test_relative_path(self, find_local_root, switch_root, getcwd) -> None:
+    def test_relative_path(self, find_local_root, find_project_root, getcwd) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
@@ -140,9 +140,9 @@ class CommandTest(unittest.TestCase):
             )
 
     @patch("os.getcwd", return_value="/original/directory")
-    @patch("{}.switch_root".format(client_name), return_value=".")
+    @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
-    def test_logger(self, find_local_root, switch_root, getcwd) -> None:
+    def test_logger(self, find_local_root, find_project_root, getcwd) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")

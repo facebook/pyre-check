@@ -24,10 +24,18 @@ class ReportingTest(unittest.TestCase):
     @patch.object(os.path, "isdir", side_effect=lambda path: True)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
     @patch("os.getcwd", return_value="/test")
-    @patch("{}.switch_root".format(client_name), return_value="/")
+    @patch("{}.find_project_root".format(client_name), return_value="/")
     @patch("{}.find_local_root".format(client_name), return_value=None)
+    @patch("os.chdir")
     def test_get_errors(
-        self, find_local_root, switch_root, get_cwd, exists, isdir, realpath
+        self,
+        chdir,
+        find_local_root,
+        find_project_root,
+        get_cwd,
+        exists,
+        isdir,
+        realpath,
     ) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
@@ -84,7 +92,7 @@ class ReportingTest(unittest.TestCase):
 
         # Called from root with local configuration command line argument
         get_cwd.return_value = "/"  # called from
-        switch_root.return_value = "/"  # project root
+        find_project_root.return_value = "/"  # project root
         find_local_root.return_value = "/test"  # local configuration
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/shared")
@@ -100,7 +108,7 @@ class ReportingTest(unittest.TestCase):
 
         # Test wildcard in do not check
         get_cwd.return_value = "/"  # called from
-        switch_root.return_value = "/"  # project root
+        find_project_root.return_value = "/"  # project root
         find_local_root.return_value = None
         configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(arguments, configuration, AnalysisDirectory("/a"))
@@ -114,13 +122,14 @@ class ReportingTest(unittest.TestCase):
 
     @patch.object(subprocess, "run")
     @patch("os.getcwd", return_value="/")
-    @patch("{}.switch_root".format(client_name), return_value="/")
+    @patch("os.chdir")
+    @patch("{}.find_project_root".format(client_name), return_value="/")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_get_directories_to_analyze(
-        self, find_local_root, switch_root, getcwd, run
+        self, find_local_root, find_project_root, chdir, getcwd, run
     ) -> None:
         arguments = mock_arguments()
-        switch_root.return_value = "base"
+        find_project_root.return_value = "base"
         arguments.source_directories = ["base"]
         configuration = mock_configuration()
         handler = commands.Reporting(

@@ -20,11 +20,11 @@ from typing import Dict, Iterable, List, Optional, Set  # noqa
 from .. import (
     find_local_root,
     find_log_directory,
+    find_project_root,
     is_capable_terminal,
     json_rpc,
     log,
     readable_directory,
-    switch_root,
 )
 from ..analysis_directory import AnalysisDirectory, resolve_analysis_directory
 from ..configuration import Configuration
@@ -184,7 +184,7 @@ class CommandParser(ABC):
         # Derived arguments
         self._capable_terminal: bool = is_capable_terminal()
         self._original_directory: str = os.getcwd()
-        self._current_directory: str = switch_root(self._original_directory)
+        self._current_directory: str = find_project_root(self._original_directory)
         self._local_configuration = self._local_configuration or find_local_root(
             self._original_directory
         )
@@ -196,6 +196,9 @@ class CommandParser(ABC):
             self._logger = translate_path(self._original_directory, logger)
         if self._debug or not self._capable_terminal:
             self._noninteractive = True
+
+        # TODO(T57959968): Stop changing the directory in the client
+        os.chdir(self._current_directory)
 
         log.initialize(self._noninteractive, self._log_directory)
 
