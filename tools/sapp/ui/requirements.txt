@@ -1,0 +1,5 @@
+flask
+flask-cors
+Flask-GraphQL
+SQLAlchemy
+graphene_sqlalchemy
