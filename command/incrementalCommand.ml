@@ -36,6 +36,8 @@ let run
     local_root
     ()
   =
+  (* TODO (T58175975): Completely remove `additional_checks` flag *)
+  ignore additional_checks;
   try
     let filter_directories =
       filter_directories
@@ -62,7 +64,6 @@ let run
         ?profiling_output
         ?memory_profiling_output
         ~infer
-        ~additional_checks
         ~parallel:(not sequential)
         ?filter_directories
         ?ignore_all_errors

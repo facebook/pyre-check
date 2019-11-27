@@ -37,7 +37,6 @@ module Analysis = struct
   type t = {
     start_time: float;
     infer: bool;
-    additional_checks: string list;
     configuration_file_hash: string option;
     parallel: bool;
     filter_directories: Path.t list option;
@@ -71,7 +70,6 @@ module Analysis = struct
 
   let equal first second =
     Bool.equal first.infer second.infer
-    && [%compare.equal: string list] first.additional_checks second.additional_checks
     && [%compare.equal: string option] first.expected_version second.expected_version
     && Bool.equal first.strict second.strict
 
@@ -79,7 +77,6 @@ module Analysis = struct
   let create
       ?(start_time = Unix.time ())
       ?(infer = false)
-      ?(additional_checks = [])
       ?configuration_file_hash
       ?(parallel = true)
       ?filter_directories
@@ -113,7 +110,6 @@ module Analysis = struct
     {
       start_time;
       infer;
-      additional_checks;
       configuration_file_hash;
       parallel;
       filter_directories;

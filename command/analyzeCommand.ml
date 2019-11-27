@@ -46,6 +46,8 @@ let run_analysis
     local_root
     ()
   =
+  (* TODO (T58175975): Completely remove `additional_checks` flag *)
+  ignore additional_checks;
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -72,7 +74,6 @@ let run_analysis
       ?profiling_output
       ?memory_profiling_output
       ~infer
-      ~additional_checks
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ?filter_directories

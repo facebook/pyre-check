@@ -497,6 +497,8 @@ let run_start_command
     local_root
     ()
   =
+  (* TODO (T58175975): Completely remove `additional_checks` flag *)
+  ignore additional_checks;
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -524,7 +526,6 @@ let run_start_command
       ~sections
       ~debug
       ~infer
-      ~additional_checks
       ?configuration_file_hash
       ~strict
       ~show_error_traces
