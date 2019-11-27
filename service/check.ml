@@ -84,10 +84,7 @@ let check
     AttributeResolution.AttributeCache.clear ();
     Statistics.performance ~name:"full environment built" ~timer ();
     let indices () =
-      AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment global_environment
-      |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-      |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-      |> AliasEnvironment.ReadOnly.unannotated_global_environment
+      GlobalResolution.unannotated_global_environment resolution
       |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
     in
     if Log.is_enabled `Dotty then (

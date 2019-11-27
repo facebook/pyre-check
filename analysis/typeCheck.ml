@@ -5021,11 +5021,8 @@ let check_source
   =
   let all_defines =
     let unannotated_global_environment =
-      TypeEnvironment.global_environment environment
-      |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
-      |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-      |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-      |> AliasEnvironment.ReadOnly.unannotated_global_environment
+      TypeEnvironment.global_resolution environment
+      |> GlobalResolution.unannotated_global_environment
     in
     UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
       unannotated_global_environment

@@ -84,6 +84,20 @@ val resolve_exports : t -> reference:Reference.t -> Reference.t
 
 val ast_environment : t -> AstEnvironment.ReadOnly.t
 
+val annotated_global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
+
+val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
+
+val undecorated_function_environment : t -> UndecoratedFunctionEnvironment.ReadOnly.t
+
+val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
+
+val alias_environment : t -> AliasEnvironment.ReadOnly.t
+
+val empty_stub_environment : t -> EmptyStubEnvironment.ReadOnly.t
+
+val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
 val aliases : t -> Type.Primitive.t -> Type.alias option
 
 val module_definition : t -> Reference.t -> Module.t option

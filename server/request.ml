@@ -482,19 +482,14 @@ let process_type_query_request
     in
     let global_environment = TypeEnvironment.global_environment environment in
     let class_metadata_environment =
-      AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment global_environment
+      GlobalResolution.class_metadata_environment global_resolution
     in
     let class_hierarchy_environment =
-      ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
+      GlobalResolution.class_hierarchy_environment global_resolution
     in
-    let alias_environment =
-      ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
-    in
-    let empty_stub_environment =
-      AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
-    in
+    let alias_environment = GlobalResolution.alias_environment global_resolution in
     let unannotated_global_environment =
-      EmptyStubEnvironment.ReadOnly.unannotated_global_environment empty_stub_environment
+      GlobalResolution.unannotated_global_environment global_resolution
     in
     match request with
     | TypeQuery.RunCheck { check_name; paths } ->

@@ -1264,11 +1264,8 @@ let infer_class_models ~environment =
     >>| fun model -> `Method { Callable.class_name; method_name = "__init__" }, model
   in
   let all_classes =
-    TypeEnvironment.ReadOnly.global_environment environment
-    |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
-    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
-    |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-    |> AliasEnvironment.ReadOnly.unannotated_global_environment
+    TypeEnvironment.ReadOnly.global_resolution environment
+    |> GlobalResolution.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
   List.filter_map all_classes ~f:inferred_models
