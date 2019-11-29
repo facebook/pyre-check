@@ -1409,8 +1409,10 @@ class DefaultStrictTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "add_strict")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch("%s.add_local_unsafe" % upgrade.__name__)
+    @patch("%s.get_lint_status" % upgrade.__name__, return_value=0)
     def test_run_strict_default(
         self,
+        get_lint_status,
         add_local_unsafe,
         get_errors,
         add_strict,
