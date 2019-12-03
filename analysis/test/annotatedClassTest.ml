@@ -284,7 +284,6 @@ let test_get_decorator context =
 let test_constructors context =
   let assert_constructor source instantiated constructors =
     let instantiated = "test." ^ instantiated in
-    AttributeResolution.AttributeCache.clear ();
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -486,7 +485,6 @@ let test_class_attributes context =
   in
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
-    AttributeResolution.AttributeCache.clear ();
     let attribute_list_equal =
       let equal left right =
         Attribute.name left = Attribute.name right
@@ -651,7 +649,6 @@ let test_class_attributes context =
 
 let test_fallback_attribute context =
   let assert_fallback_attribute ~name source annotation =
-    AttributeResolution.AttributeCache.clear ();
     let _, ast_environment, environment =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in

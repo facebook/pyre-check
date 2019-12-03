@@ -7,7 +7,7 @@ open Core
 open Ast
 open Pyre
 open Statement
-module PreviousEnvironment = ClassMetadataEnvironment
+module PreviousEnvironment = AttributeResolution
 
 type global = Annotation.t Node.t [@@deriving eq, show, compare, sexp]
 
@@ -35,7 +35,10 @@ module GlobalValue = struct
   let compare = Option.compare compare_global
 end
 
-let produce_global_annotation class_metadata_environment name ~track_dependencies =
+let produce_global_annotation attribute_resolution name ~track_dependencies =
+  let class_metadata_environment =
+    AttributeResolution.ReadOnly.class_metadata_environment attribute_resolution
+  in
   let dependency = Option.some_if track_dependencies (SharedMemoryKeys.AnnotateGlobal name) in
   let produce_class_meta_annotation { Node.location; _ } =
     let primitive = Type.Primitive (Reference.show name) in
@@ -69,11 +72,11 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
               None
           in
           Node.create ~location signature
-          |> AttributeResolution.apply_decorators ?dependency ~class_metadata_environment
+          |> AttributeResolution.ReadOnly.apply_decorators ?dependency attribute_resolution
           |> (fun overload -> [Define.Signature.is_overloaded_function signature, overload])
-          |> AttributeResolution.create_callable
+          |> AttributeResolution.ReadOnly.create_callable
+               attribute_resolution
                ?dependency
-               ~class_metadata_environment
                ~parent
                ~name:(Reference.show name)
         in
@@ -85,14 +88,14 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
     | SimpleAssign { explicit_annotation; value; target_location } ->
         let explicit_annotation =
           explicit_annotation
-          >>| AttributeResolution.parse_annotation ?dependency ~class_metadata_environment
+          >>| AttributeResolution.ReadOnly.parse_annotation ?dependency attribute_resolution
           >>= fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation
         in
         let annotation =
           match explicit_annotation with
           | Some explicit -> explicit
           | None ->
-              AttributeResolution.resolve_literal ?dependency ~class_metadata_environment value
+              AttributeResolution.ReadOnly.resolve_literal ?dependency attribute_resolution value
         in
         produce_assignment_global
           ~target_location
@@ -102,7 +105,7 @@ let produce_global_annotation class_metadata_environment name ~track_dependencie
     | TupleAssign { value; target_location; index; total_length } ->
         let extracted =
           match
-            AttributeResolution.resolve_literal ?dependency ~class_metadata_environment value
+            AttributeResolution.ReadOnly.resolve_literal ?dependency attribute_resolution value
           with
           | Type.Tuple (Type.Bounded (Concrete parameters))
             when List.length parameters = total_length ->
@@ -197,7 +200,11 @@ module ReadOnly = struct
 
   let get_global = get
 
-  let class_metadata_environment = upstream_environment
+  let attribute_resolution = upstream_environment
+
+  let class_metadata_environment read_only =
+    attribute_resolution read_only |> AttributeResolution.ReadOnly.class_metadata_environment
+
 
   let ast_environment environment =
     class_metadata_environment environment

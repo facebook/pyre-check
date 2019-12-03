@@ -11,6 +11,7 @@ open Ast
 open Test
 open TypeOrder
 open Annotated
+open Assumptions
 
 let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
 

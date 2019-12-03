@@ -81,7 +81,6 @@ let check
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let environment = TypeEnvironment.create global_environment in
     let resolution = GlobalResolution.create global_environment in
-    AttributeResolution.AttributeCache.clear ();
     Statistics.performance ~name:"full environment built" ~timer ();
     let indices () =
       GlobalResolution.unannotated_global_environment resolution

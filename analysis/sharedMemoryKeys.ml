@@ -44,6 +44,31 @@ end
 
 module ReferenceDependencyKey = Memory.DependencyKey.Make (ReferenceKey)
 
+module AttributeTableKey = struct
+  module T = struct
+    type t = {
+      transitive: bool;
+      class_attributes: bool;
+      include_generated_attributes: bool;
+      special_method: bool;
+      name: Type.Primitive.t;
+      instantiated: Type.t option;
+      assumptions: Assumptions.t;
+    }
+    [@@deriving compare, sexp, hash, show]
+  end
+
+  include T
+  module Set = Set.Make (T)
+  include Hashable.Make (T)
+
+  let to_string key = sexp_of_t key |> Sexp.to_string
+
+  type out = t
+
+  let from_string sexp = Sexp.of_string sexp |> t_of_sexp
+end
+
 type dependency =
   | TypeCheckSource of Reference.t
   | AliasRegister of Reference.t
@@ -52,6 +77,7 @@ type dependency =
   | UndecoratedFunction of Reference.t
   | AnnotateGlobal of Reference.t
   | FromEmptyStub of Reference.t
+  | AttributeTable of AttributeTableKey.t
 [@@deriving show, compare, sexp]
 
 module DependencyKey = Memory.DependencyKey.Make (struct

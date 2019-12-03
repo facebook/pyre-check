@@ -29,7 +29,6 @@ let connections persistent_clients =
 
 
 let initialize_server ?incremental_style ~context ~initial_sources =
-  AttributeResolution.AttributeCache.clear ();
   let ({ ScratchProject.module_tracker; _ } as project) =
     let internal_sources, external_sources =
       let fold_source (internal_sources, external_sources) (is_external, source) =

@@ -15,6 +15,7 @@ module AliasEnvironment = AliasEnvironment
 module AnnotatedGlobalEnvironment = AnnotatedGlobalEnvironment
 module AttributeResolution = AttributeResolution
 module AstEnvironment = AstEnvironment
+module Assumptions = Assumptions
 module AwaitableCheck = AwaitableCheck
 module Annotated = Annotated
 module Annotation = Annotation

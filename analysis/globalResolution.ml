@@ -17,6 +17,11 @@ let create ?dependency annotated_global_environment = { annotated_global_environ
 
 let annotated_global_environment { annotated_global_environment; _ } = annotated_global_environment
 
+let attribute_resolution resolution =
+  annotated_global_environment resolution
+  |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
+
+
 let class_metadata_environment resolution =
   annotated_global_environment resolution
   |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
@@ -187,7 +192,7 @@ let class_definitions resolution reference =
 
 
 let full_order ({ dependency; _ } as resolution) =
-  AttributeResolution.full_order ?dependency (class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.full_order ?dependency (attribute_resolution resolution)
 
 
 let less_or_equal resolution = full_order resolution |> TypeOrder.always_less_or_equal
@@ -198,19 +203,19 @@ let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy
 
 let parse_reference ?(allow_untracked = false) ({ dependency; _ } as resolution) reference =
   Expression.from_reference ~location:Location.Reference.any reference
-  |> AttributeResolution.parse_annotation
+  |> AttributeResolution.ReadOnly.parse_annotation
        ?dependency
        ~allow_untracked
        ~allow_invalid_type_parameters:true
-       ~class_metadata_environment:(class_metadata_environment resolution)
+       (attribute_resolution resolution)
 
 
 let parse_as_list_variadic ({ dependency; _ } as resolution) name =
   let parsed_as_type_variable =
-    AttributeResolution.parse_annotation
+    AttributeResolution.ReadOnly.parse_annotation
       ?dependency
-      ~class_metadata_environment:(class_metadata_environment resolution)
       ~allow_untracked:true
+      (attribute_resolution resolution)
       name
     |> Type.primitive_name
     >>= aliases resolution
@@ -269,12 +274,12 @@ let class_extends_placeholder_stub_class ({ dependency; _ } as resolution) { Cla
   =
   let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
     let parsed =
-      AttributeResolution.parse_annotation
+      AttributeResolution.ReadOnly.parse_annotation
         ~allow_untracked:true
         ~allow_invalid_type_parameters:true
         ~allow_primitives_from_empty_stubs:true
         ?dependency
-        ~class_metadata_environment:(class_metadata_environment resolution)
+        (attribute_resolution resolution)
         value
     in
     match parsed with
@@ -326,9 +331,9 @@ let attribute_from_class_name
     match AnnotatedAttribute.Table.lookup_name table name with
     | Some attribute -> attribute
     | None ->
-        AttributeResolution.create_attribute
+        AttributeResolution.ReadOnly.create_attribute
           ?dependency
-          ~class_metadata_environment:(class_metadata_environment resolution)
+          (attribute_resolution resolution)
           ~parent:summary
           ~defined:false
           ~default_class_attribute:class_attributes
@@ -350,14 +355,14 @@ let attribute_from_class_name
               };
           }
   in
-  AttributeResolution.summary_and_attribute_table
+  AttributeResolution.ReadOnly.summary_and_attribute_table
     ~instantiated
     ~transitive
     ~class_attributes
     ~special_method
     ~include_generated_attributes:true
     ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+    (attribute_resolution resolution)
     class_name
   >>| access
 
@@ -380,9 +385,9 @@ let attribute_from_annotation resolution ~parent:annotation ~name =
 
 let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~expression =
   let comparator ~left ~right =
-    AttributeResolution.constraints_solution_exists
+    AttributeResolution.ReadOnly.constraints_solution_exists
       ?dependency
-      ~class_metadata_environment:(class_metadata_environment resolution)
+      (attribute_resolution resolution)
       ~left
       ~right
   in
@@ -399,9 +404,7 @@ let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~ex
 
 
 let constructor ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.constructor
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.constructor ?dependency (attribute_resolution resolution)
 
 
 let is_transitive_successor resolution ~predecessor ~successor =
@@ -410,15 +413,11 @@ let is_transitive_successor resolution ~predecessor ~successor =
 
 
 let constraints ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.constraints
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.constraints ?dependency (attribute_resolution resolution)
 
 
 let create_attribute ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.create_attribute
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.create_attribute ?dependency (attribute_resolution resolution)
 
 
 let successors ~resolution:({ dependency; _ } as resolution) =
@@ -430,15 +429,13 @@ let superclasses ~resolution:({ dependency; _ } as resolution) =
 
 
 let generics ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.generics
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.generics ?dependency (attribute_resolution resolution)
 
 
 let summary_and_attribute_table ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.summary_and_attribute_table
+  AttributeResolution.ReadOnly.summary_and_attribute_table
     ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+    (attribute_resolution resolution)
 
 
 let attributes
@@ -449,46 +446,38 @@ let attributes
     ?instantiated
     name
   =
-  AttributeResolution.summary_and_attribute_table
+  AttributeResolution.ReadOnly.summary_and_attribute_table
+    (attribute_resolution resolution)
     ~transitive
     ~class_attributes
     ~include_generated_attributes
     ?instantiated
     name
     ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
   >>| snd
   >>| AnnotatedAttribute.Table.to_list
 
 
 let metaclass ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.metaclass
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.metaclass ?dependency (attribute_resolution resolution)
 
 
 let resolve_mutable_literals ({ dependency; _ } as resolution) =
-  AttributeResolution.resolve_mutable_literals
+  AttributeResolution.ReadOnly.resolve_mutable_literals
     ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+    (attribute_resolution resolution)
 
 
 let apply_decorators ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.apply_decorators
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.apply_decorators ?dependency (attribute_resolution resolution)
 
 
 let create_callable ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.create_callable
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.create_callable ?dependency (attribute_resolution resolution)
 
 
 let signature_select ~global_resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.signature_select
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
 
 
 let resolve_exports ({ dependency; _ } as resolution) ~reference =
@@ -502,8 +491,8 @@ let join resolution = full_order resolution |> TypeOrder.join
 let meet resolution = full_order resolution |> TypeOrder.meet
 
 let check_invalid_type_parameters ({ dependency; _ } as resolution) =
-  AttributeResolution.check_invalid_type_parameters
-    (class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.check_invalid_type_parameters
+    (attribute_resolution resolution)
     ?dependency
 
 
@@ -517,9 +506,9 @@ let variables ?default ({ dependency; _ } as resolution) =
 let solve_less_or_equal resolution = full_order resolution |> TypeOrder.solve_less_or_equal
 
 let constraints_solution_exists ({ dependency; _ } as resolution) =
-  AttributeResolution.constraints_solution_exists
+  AttributeResolution.ReadOnly.constraints_solution_exists
     ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+    (attribute_resolution resolution)
 
 
 let partial_solve_constraints resolution =
@@ -533,15 +522,11 @@ let solve_ordered_types_less_or_equal resolution =
 
 
 let parse_annotation ({ dependency; _ } as resolution) =
-  AttributeResolution.parse_annotation
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.parse_annotation ?dependency (attribute_resolution resolution)
 
 
 let resolve_literal ({ dependency; _ } as resolution) =
-  AttributeResolution.resolve_literal
-    ?dependency
-    ~class_metadata_environment:(class_metadata_environment resolution)
+  AttributeResolution.ReadOnly.resolve_literal ?dependency (attribute_resolution resolution)
 
 
 let parse_as_concatenation ({ dependency; _ } as resolution) =

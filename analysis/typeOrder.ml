@@ -7,75 +7,7 @@ open Core
 open Ast
 open Pyre
 module Callable = Type.Callable
-
-module ProtocolAssumptions : sig
-  type t
-
-  val find_assumed_protocol_parameters
-    :  candidate:Type.t ->
-    protocol:Identifier.t ->
-    t ->
-    Type.OrderedTypes.t option
-
-  val add
-    :  candidate:Type.t ->
-    protocol:Identifier.t ->
-    protocol_parameters:Type.OrderedTypes.t ->
-    t ->
-    t
-
-  val empty : t
-end = struct
-  type protocol_parameters = Type.OrderedTypes.t
-
-  type assumption = {
-    candidate: Type.t;
-    protocol: Identifier.t;
-  }
-  [@@deriving eq]
-
-  type t = (assumption, protocol_parameters) List.Assoc.t
-
-  let find_assumed_protocol_parameters ~candidate ~protocol assumptions =
-    List.Assoc.find assumptions { candidate; protocol } ~equal:equal_assumption
-
-
-  let add ~candidate ~protocol ~protocol_parameters existing_assumptions =
-    List.Assoc.add
-      existing_assumptions
-      { candidate; protocol }
-      protocol_parameters
-      ~equal:equal_assumption
-
-
-  let empty = []
-end
-
-module CallableAssumptions : sig
-  (* This should be removed when classes can be generic over TParams, and Callable can be treated
-     like any other generic protocol. *)
-  type t
-
-  val find_assumed_callable_type : candidate:Type.t -> t -> Type.t option
-
-  val add : candidate:Type.t -> callable:Type.t -> t -> t
-
-  val empty : t
-end = struct
-  type callable_assumption = Type.t
-
-  type t = (Type.t, callable_assumption) List.Assoc.t
-
-  let find_assumed_callable_type ~candidate assumptions =
-    List.Assoc.find assumptions candidate ~equal:Type.equal
-
-
-  let add ~candidate ~callable existing_assumptions =
-    List.Assoc.add existing_assumptions candidate callable ~equal:Type.equal
-
-
-  let empty = []
-end
+open Assumptions
 
 type order = {
   handler: (module ClassHierarchy.Handler);

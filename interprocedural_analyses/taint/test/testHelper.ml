@@ -58,7 +58,6 @@ let environment
       ~ast_environment_update_result
       ()
   in
-  AttributeResolution.AttributeCache.clear ();
   ast_environment
 
 

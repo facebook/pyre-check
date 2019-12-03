@@ -13,6 +13,8 @@ module AnnotatedReadOnly : sig
 
   val get_global : t -> ?dependency:dependency -> Reference.t -> global option
 
+  val attribute_resolution : t -> AttributeResolution.ReadOnly.t
+
   val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
 
   val hash_to_key_map : t -> string String.Map.t
@@ -28,4 +30,4 @@ end
 include
   Environment.S
     with module ReadOnly = AnnotatedReadOnly
-     and module PreviousEnvironment = ClassMetadataEnvironment
+     and module PreviousEnvironment = AttributeResolution

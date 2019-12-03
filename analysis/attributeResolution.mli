@@ -124,107 +124,6 @@ type signature_match = {
   reasons: reasons;
 }
 
-type assumptions = {
-  protocol_assumptions: TypeOrder.ProtocolAssumptions.t;
-  callable_assumptions: TypeOrder.CallableAssumptions.t;
-}
-
-module AttributeCache : sig
-  val clear : unit -> unit
-end
-
-module AnnotationCache : sig
-  val clear : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> unit
-end
-
-val full_order : ?dependency:dependency -> ClassMetadataEnvironment.ReadOnly.t -> TypeOrder.order
-
-val check_invalid_type_parameters
-  :  ClassMetadataEnvironment.ReadOnly.t ->
-  ?dependency:SharedMemoryKeys.dependency ->
-  Type.t ->
-  type_parameters_mismatch list * Type.t
-
-val parse_annotation
-  :  ?allow_untracked:bool ->
-  ?allow_invalid_type_parameters:bool ->
-  ?allow_primitives_from_empty_stubs:bool ->
-  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  Expression.expression Node.t ->
-  Type.t
-
-val summary_and_attribute_table
-  :  transitive:bool ->
-  class_attributes:bool ->
-  include_generated_attributes:bool ->
-  ?special_method:bool ->
-  ?instantiated:Type.t ->
-  ?dependency:SharedMemoryKeys.dependency ->
-  string ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  (ClassSummary.t Node.t * AnnotatedAttribute.Table.t) option
-
-val create_attribute
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  parent:ClassSummary.t Node.t ->
-  ?instantiated:Type.t ->
-  ?defined:bool ->
-  ?inherited:bool ->
-  ?default_class_attribute:bool ->
-  Attribute.attribute Node.t ->
-  AnnotatedAttribute.attribute Node.t
-
-val metaclass
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  ClassSummary.t Node.t ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  Type.t
-
-val constraints
-  :  ?target:ClassSummary.t Node.t ->
-  ?parameters:Type.t Type.OrderedTypes.record ->
-  ClassSummary.t Node.t ->
-  ?dependency:SharedMemoryKeys.dependency ->
-  instantiated:Type.t ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  TypeConstraints.Solution.t
-
-val generics
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  ClassSummary.t Node.t ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  Type.t Type.OrderedTypes.record
-
-val resolve_literal
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  Expression.expression Node.t ->
-  Type.t
-
-val apply_decorators
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  Define.Signature.t Node.t ->
-  Type.t Type.Callable.overload
-
-val create_callable
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  parent:Type.t option ->
-  name:string ->
-  (bool * Type.t Type.Callable.overload) list ->
-  Type.t Type.Callable.record
-
-val signature_select
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  resolve:(Expression.expression Node.t -> Type.t) ->
-  arguments:Expression.Call.Argument.t list ->
-  callable:Type.t Type.Callable.record ->
-  sig_t
-
 val weaken_mutable_literals
   :  (Expression.expression Node.t -> Type.t) ->
   expression:Expression.expression Node.t option ->
@@ -233,25 +132,123 @@ val weaken_mutable_literals
   comparator:(left:Type.t -> right:Type.t -> bool) ->
   Type.t
 
-val resolve_mutable_literals
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  resolve:(Expression.expression Node.t -> Type.t) ->
-  expression:Expression.expression Node.t option ->
-  resolved:Type.t ->
-  expected:Type.t ->
-  Type.t
+module AnnotationCache : sig
+  val clear : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> unit
+end
 
-val constraints_solution_exists
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  left:Type.t ->
-  right:Type.t ->
-  bool
+module AttributeReadOnly : sig
+  include Environment.ReadOnly
 
-val constructor
-  :  ?dependency:SharedMemoryKeys.dependency ->
-  ClassSummary.t Node.t ->
-  instantiated:Type.t ->
-  class_metadata_environment:ClassMetadataEnvironment.MetadataReadOnly.t ->
-  Type.t
+  val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
+
+  val full_order : ?dependency:dependency -> t -> TypeOrder.order
+
+  val check_invalid_type_parameters
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    Type.t ->
+    type_parameters_mismatch list * Type.t
+
+  val parse_annotation
+    :  t ->
+    ?allow_untracked:bool ->
+    ?allow_invalid_type_parameters:bool ->
+    ?allow_primitives_from_empty_stubs:bool ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    Expression.expression Node.t ->
+    Type.t
+
+  val summary_and_attribute_table
+    :  t ->
+    transitive:bool ->
+    class_attributes:bool ->
+    include_generated_attributes:bool ->
+    ?special_method:bool ->
+    ?instantiated:Type.t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    string ->
+    (ClassSummary.t Node.t * AnnotatedAttribute.Table.t) option
+
+  val create_attribute
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    parent:ClassSummary.t Node.t ->
+    ?instantiated:Type.t ->
+    ?defined:bool ->
+    ?inherited:bool ->
+    ?default_class_attribute:bool ->
+    Attribute.attribute Node.t ->
+    AnnotatedAttribute.attribute Node.t
+
+  val metaclass : t -> ?dependency:SharedMemoryKeys.dependency -> ClassSummary.t Node.t -> Type.t
+
+  val constraints
+    :  t ->
+    ?target:ClassSummary.t Node.t ->
+    ?parameters:Type.t Type.OrderedTypes.record ->
+    ClassSummary.t Node.t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    instantiated:Type.t ->
+    TypeConstraints.Solution.t
+
+  val generics
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    ClassSummary.t Node.t ->
+    Type.t Type.OrderedTypes.record
+
+  val resolve_literal
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    Expression.expression Node.t ->
+    Type.t
+
+  val apply_decorators
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    Define.Signature.t Node.t ->
+    Type.t Type.Callable.overload
+
+  val create_callable
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    parent:Type.t option ->
+    name:string ->
+    (bool * Type.t Type.Callable.overload) list ->
+    Type.t Type.Callable.record
+
+  val signature_select
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    resolve:(Expression.expression Node.t -> Type.t) ->
+    arguments:Expression.Call.Argument.t list ->
+    callable:Type.t Type.Callable.record ->
+    sig_t
+
+  val resolve_mutable_literals
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    resolve:(Expression.expression Node.t -> Type.t) ->
+    expression:Expression.expression Node.t option ->
+    resolved:Type.t ->
+    expected:Type.t ->
+    Type.t
+
+  val constraints_solution_exists
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    left:Type.t ->
+    right:Type.t ->
+    bool
+
+  val constructor
+    :  t ->
+    ?dependency:SharedMemoryKeys.dependency ->
+    ClassSummary.t Node.t ->
+    instantiated:Type.t ->
+    Type.t
+end
+
+include Environment.S with module ReadOnly = AttributeReadOnly
+
+module PreviousEnvironment = ClassMetadataEnvironment

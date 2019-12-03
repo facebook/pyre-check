@@ -20,7 +20,6 @@ let run_infer ~scheduler ~configuration ~global_resolution qualifiers =
   let timer = Timer.start () in
   let ast_environment = GlobalResolution.ast_environment global_resolution in
   let map _ qualifiers =
-    AttributeResolution.AttributeCache.clear ();
     let analyze_source (errors, number_files) source =
       let new_errors = Inference.run ~configuration ~global_resolution ~source in
       List.append new_errors errors, number_files + 1
@@ -83,7 +82,6 @@ let infer
         (Ast.Reference.Set.of_list qualifiers)
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
-    AttributeResolution.AttributeCache.clear ();
     Statistics.performance ~name:"full environment built" ~timer ();
     global_environment
   in

@@ -37,7 +37,6 @@ let run_type_check ~scheduler ~configuration ~environment checked_sources =
   Log.info "Running type check...";
   let timer = Timer.start () in
   let map _ qualifiers =
-    AttributeResolution.AttributeCache.clear ();
     let analyze_source number_files source =
       TypeCheck.run ~configuration ~environment ~source;
       number_files + 1
@@ -74,7 +73,6 @@ let run_type_check ~scheduler ~configuration ~environment checked_sources =
 let analyze_sources ?(filter_external_sources = true) ~scheduler ~configuration ~environment sources
   =
   let ast_environment = TypeEnvironment.ast_environment environment in
-  AttributeResolution.AttributeCache.clear ();
   let checked_sources =
     if filter_external_sources then
       let is_not_external qualifier =

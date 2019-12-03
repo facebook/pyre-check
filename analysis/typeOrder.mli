@@ -4,20 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
-module ProtocolAssumptions : sig
-  type t
-
-  val empty : t
-end
-[@@deriving show]
-
-module CallableAssumptions : sig
-  type t
-
-  val empty : t
-end
-[@@deriving show]
+open Assumptions
 
 type order = {
   handler: (module ClassHierarchy.Handler);
