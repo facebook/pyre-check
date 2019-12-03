@@ -109,7 +109,12 @@ let check
     environment
   in
   let errors =
-    Analysis.Check.analyze_and_postprocess ~scheduler ~configuration ~environment qualifiers
+    Analysis.Check.analyze_sources ~scheduler ~configuration ~environment qualifiers;
+    Analysis.Postprocessing.run
+      ~scheduler
+      ~configuration
+      ~environment:(Analysis.TypeEnvironment.read_only environment)
+      qualifiers
   in
   Profiling.track_shared_memory_usage ();
 

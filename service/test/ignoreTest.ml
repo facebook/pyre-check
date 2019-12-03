@@ -11,30 +11,20 @@ open TypeCheck
 
 let ignore_lines_test context =
   let assert_errors ?(show_error_traces = false) input_source expected_errors =
-    let configuration, sources, ast_environment, environment =
+    let configuration, ast_environment, type_errors =
       let project = ScratchProject.setup ~context ["test.py", input_source] in
-      let sources, ast_environment, global_environment =
-        ScratchProject.build_global_environment project
+      let _, ast_environment, _, type_errors =
+        ScratchProject.build_type_environment_and_postprocess project
       in
       let configuration = ScratchProject.configuration_of project in
-      ( configuration,
-        sources,
-        AstEnvironment.read_only ast_environment,
-        TypeEnvironment.create global_environment )
+      configuration, AstEnvironment.read_only ast_environment, type_errors
     in
-    let scheduler = Test.mock_scheduler () in
     let descriptions =
-      let qualifiers =
-        List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
-            qualifier)
-      in
-      Analysis.Check.analyze_and_postprocess ~scheduler ~configuration ~environment qualifiers
-      |> List.map ~f:(fun error ->
-             Error.instantiate
-               ~lookup:
-                 (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
-               error
-             |> Error.Instantiated.description ~show_error_traces)
+      List.map type_errors ~f:(fun error ->
+          Error.instantiate
+            ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
+            error
+          |> Error.Instantiated.description ~show_error_traces)
     in
     let description_list_to_string descriptions =
       Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]

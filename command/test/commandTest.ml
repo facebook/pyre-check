@@ -164,33 +164,22 @@ module ScratchServer = struct
       ?(external_sources = [])
       sources
     =
-    let configuration, module_tracker, ast_environment, environment, sources =
+    let configuration, module_tracker, ast_environment, environment, type_errors =
       let ({ ScratchProject.module_tracker; configuration; _ } as project) =
         ScratchProject.setup ~context ~external_sources ~include_helper_builtins:false sources
       in
-      let sources, ast_environment, global_environment =
-        ScratchProject.build_global_environment project
+      let _, ast_environment, type_environment, type_errors =
+        ScratchProject.build_type_environment_and_postprocess project
       in
       ( { configuration with incremental_style },
         module_tracker,
         ast_environment,
-        TypeEnvironment.create global_environment,
-        sources )
-    in
-    let qualifiers =
-      List.map sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } ->
-          qualifier)
-    in
-    let new_errors =
-      Analysis.Check.analyze_and_postprocess
-        ~scheduler:(mock_scheduler ())
-        ~configuration
-        ~environment
-        qualifiers
+        type_environment,
+        type_errors )
     in
     (* Associate the new errors with new files *)
     let errors = Ast.Reference.Table.create () in
-    List.iter new_errors ~f:(fun error ->
+    List.iter type_errors ~f:(fun error ->
         let key = Error.path error in
         Hashtbl.add_multi errors ~key ~data:error);
     let server_configuration =

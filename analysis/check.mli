@@ -26,12 +26,3 @@ val analyze_sources
   environment:TypeEnvironment.t ->
   Ast.Reference.t list ->
   unit
-
-val analyze_and_postprocess
-  :  ?open_documents:(Ast.Reference.t -> bool) ->
-  ?filter_external_sources:bool ->
-  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  environment:TypeEnvironment.t ->
-  Ast.Reference.t list ->
-  Error.t list

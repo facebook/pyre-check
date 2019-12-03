@@ -108,17 +108,29 @@ let run_on_source ~global_resolution ~source errors =
   |> List.sort ~compare:Error.compare
 
 
-let run ~modules environment =
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  let run_on_module module_name =
-    match AstEnvironment.ReadOnly.get_source ast_environment module_name with
-    | None -> []
-    | Some ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source) ->
-        if is_external then
-          []
-        else
-          let errors = TypeEnvironment.ReadOnly.get_errors environment module_name in
-          let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-          run_on_source ~global_resolution ~source errors
+let run ~scheduler ~configuration ~environment sources =
+  Log.log ~section:`Progress "Postprocessing...";
+  let map _ modules =
+    let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+    let run_on_module module_name =
+      match AstEnvironment.ReadOnly.get_source ast_environment module_name with
+      | None -> []
+      | Some ({ Source.source_path = { SourcePath.is_external; _ }; _ } as source) ->
+          if is_external then
+            []
+          else
+            let errors = TypeEnvironment.ReadOnly.get_errors environment module_name in
+            let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+            run_on_source ~global_resolution ~source errors
+    in
+    List.concat_map modules ~f:run_on_module
   in
-  List.concat_map modules ~f:run_on_module
+  Scheduler.map_reduce
+    scheduler
+    ~configuration
+    ~bucket_size:200
+    ~initial:[]
+    ~map
+    ~reduce:List.append
+    ~inputs:sources
+    ()

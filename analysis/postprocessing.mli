@@ -11,4 +11,9 @@ val run_on_source
   Error.t list ->
   Error.t list
 
-val run : modules:Reference.t list -> TypeEnvironment.ReadOnly.t -> Error.t list
+val run
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
+  Reference.t list ->
+  Error.t list

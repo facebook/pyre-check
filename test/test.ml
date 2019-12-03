@@ -1538,6 +1538,18 @@ module ScratchProject = struct
     sources, ast_environment, environment
 
 
+  let build_type_environment_and_postprocess project =
+    let sources, ast_environment, type_environment = build_type_environment project in
+    let errors =
+      List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
+      |> Postprocessing.run
+           ~scheduler:(Scheduler.mock ())
+           ~configuration:(configuration_of project)
+           ~environment:(TypeEnvironment.read_only type_environment)
+    in
+    sources, ast_environment, type_environment, errors
+
+
   let build_resolution project =
     let _, _, environment = build_global_environment project in
     let global_resolution = GlobalResolution.create environment in
