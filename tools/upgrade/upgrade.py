@@ -308,10 +308,27 @@ def _commit_message(directory, summary_override: Optional[str] = None) -> str:
 
 def _submit_changes(arguments, message) -> None:
     LOG.info("Committing changes.")
-    subprocess.call(["hg", "commit", "--message", message])
-    submit_command = ["jf", "submit", "--update-fields"]
+    subprocess.run(["hg", "commit", "--message", message])
     if arguments.submit is True:
-        subprocess.call(submit_command)
+        submit = subprocess.run(
+            ["jf", "submit", "--update-fields"], capture_output=True
+        )
+        match = re.search(r"/(D\d+)/", submit.stdout.decode())
+        if match:
+            diff_id = match.group(1)
+            bot_approval = subprocess.run(
+                ["jf", "action", "--get-bot-approval", diff_id], capture_output=True
+            )
+            approval = (
+                "manual accept required" if bot_approval.returncode else "auto-accepted"
+            )
+            LOG.info(
+                f"Diff created ({approval}): "
+                f"https://our.intern.facebook.com/intern/diff/{diff_id}/"
+            )
+        else:
+            # Lack of diff ID in submit output means there were no changes to submit.
+            LOG.info(submit.stdout)
 
 
 # Exposed for testing.

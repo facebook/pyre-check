@@ -14,7 +14,7 @@ LOG: Logger = logging.getLogger(__name__)
 
 
 def get_lint_status() -> int:
-    lint_status = subprocess.call(
+    lint_status = subprocess.run(
         [
             "arc",
             "lint",
@@ -24,9 +24,9 @@ def get_lint_status() -> int:
             "none",
         ]
     )
-    return lint_status
+    return lint_status.returncode
 
 
 def apply_lint() -> None:
     LOG.info("Lint was dirty after file modifications. Cleaning lint and re-checking.")
-    subprocess.call(["arc", "lint", "--apply-patches", "--output", "none"])
+    subprocess.run(["arc", "lint", "--apply-patches", "--output", "none"])

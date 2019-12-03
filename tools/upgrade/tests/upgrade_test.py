@@ -7,6 +7,7 @@
 
 import argparse
 import json
+import re
 import subprocess
 import tempfile
 import unittest
@@ -14,6 +15,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
 from .. import errors, postprocess, upgrade
+
+
+MOCK_DIFF_ID = "D00000000"
+MOCK_DIFF_ID_SEARCH_OBJECT = re.search(r"(D\d+)", MOCK_DIFF_ID)
 
 
 class FixmeAllTest(unittest.TestCase):
@@ -163,7 +168,7 @@ class FixmeAllTest(unittest.TestCase):
         assert run.call_count == 1
 
     @patch("%s.sort_errors" % upgrade.__name__, side_effect=lambda errors: errors)
-    @patch("subprocess.call")
+    @patch("subprocess.run")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
@@ -236,7 +241,7 @@ class FixmeAllTest(unittest.TestCase):
                     "none",
                 ]
             ),
-            call().__bool__(),
+            call().returncode.__bool__(),
             call(["arc", "lint", "--apply-patches", "--output", "none"]),
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
         ]
@@ -269,14 +274,15 @@ class FixmeAllTest(unittest.TestCase):
                     "none",
                 ]
             ),
-            call().__bool__(),
+            call().returncode.__bool__(),
             call(["arc", "lint", "--apply-patches", "--output", "none"]),
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
         ]
         subprocess.assert_has_calls(calls)
 
     @patch("%s.sort_errors" % upgrade.__name__, side_effect=lambda errors: errors)
-    @patch("subprocess.call")
+    @patch("subprocess.run")
+    @patch("re.search", return_value=MOCK_DIFF_ID_SEARCH_OBJECT)
     @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value=Path(".")
@@ -293,6 +299,7 @@ class FixmeAllTest(unittest.TestCase):
         remove_version,
         find_configuration,
         gather,
+        regex_search,
         subprocess,
         sort_errors,
     ) -> None:
@@ -361,7 +368,13 @@ class FixmeAllTest(unittest.TestCase):
         fix.assert_called_once_with(arguments, pyre_errors)
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-            call(["jf", "submit", "--update-fields"]),
+            call(["jf", "submit", "--update-fields"], capture_output=True),
+            call().stdout.decode(),
+            call(
+                ["jf", "action", "--get-bot-approval", MOCK_DIFF_ID],
+                capture_output=True,
+            ),
+            call().returncode.__bool__(),
         ]
         subprocess.assert_has_calls(calls)
 
@@ -376,7 +389,13 @@ class FixmeAllTest(unittest.TestCase):
         fix.assert_has_calls(calls)
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-            call(["jf", "submit", "--update-fields"]),
+            call(["jf", "submit", "--update-fields"], capture_output=True),
+            call().stdout.decode(),
+            call(
+                ["jf", "action", "--get-bot-approval", MOCK_DIFF_ID],
+                capture_output=True,
+            ),
+            call().returncode.__bool__(),
         ]
         subprocess.assert_has_calls(calls)
 
@@ -426,9 +445,12 @@ def bar(x: str) -> str:
             self.assertEqual(updated_contents, contents)
 
     @patch("subprocess.run")
+    @patch("re.search", return_value=MOCK_DIFF_ID_SEARCH_OBJECT)
     @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch.object(upgrade.Configuration, "find_project_configuration")
-    def test_run_fixme_all_sandcastle(self, find_configuration, gather, run) -> None:
+    def test_run_fixme_all_sandcastle(
+        self, find_configuration, gather, regex_search, run
+    ) -> None:
         command_json = """
         {
             "command": "CommandName",
@@ -489,7 +511,8 @@ def bar(x: str) -> str:
 
 class FixmeSingleTest(unittest.TestCase):
     @patch("%s.sort_errors" % upgrade.__name__, side_effect=lambda errors: errors)
-    @patch("subprocess.call")
+    @patch("subprocess.run")
+    @patch("re.search", return_value=MOCK_DIFF_ID_SEARCH_OBJECT)
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value=Path(".")
     )
@@ -502,6 +525,7 @@ class FixmeSingleTest(unittest.TestCase):
         get_errors,
         remove_version,
         find_configuration,
+        regex_search,
         subprocess,
         sort_errors,
     ) -> None:
@@ -524,7 +548,13 @@ class FixmeSingleTest(unittest.TestCase):
             fix.assert_not_called()
             calls = [
                 call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-                call(["jf", "submit", "--update-fields"]),
+                call(["jf", "submit", "--update-fields"], capture_output=True),
+                call().stdout.decode(),
+                call(
+                    ["jf", "action", "--get-bot-approval", MOCK_DIFF_ID],
+                    capture_output=True,
+                ),
+                call().returncode.__bool__(),
             ]
             subprocess.assert_has_calls(calls)
 
@@ -549,18 +579,25 @@ class FixmeSingleTest(unittest.TestCase):
             fix.assert_called_once_with(arguments, pyre_errors)
             calls = [
                 call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-                call(["jf", "submit", "--update-fields"]),
+                call(["jf", "submit", "--update-fields"], capture_output=True),
+                call().stdout.decode(),
+                call(
+                    ["jf", "action", "--get-bot-approval", MOCK_DIFF_ID],
+                    capture_output=True,
+                ),
+                call().returncode.__bool__(),
             ]
             call.assert_has_calls(calls)
 
 
 class FixmeTest(unittest.TestCase):
-    @patch("subprocess.call")
+    @patch("subprocess.run")
     @patch.object(Path, "read_text")
     @patch("%s.errors_from_run" % upgrade.__name__)
     @patch("%s.errors_from_stdin" % upgrade.__name__)
+    @patch("%s._submit_changes" % upgrade.__name__)
     def test_run_fixme(
-        self, stdin_errors, run_errors, path_read_text, subprocess
+        self, submit_changes, stdin_errors, run_errors, path_read_text, subprocess
     ) -> None:
         arguments = MagicMock()
         arguments.sandcastle = None
@@ -636,7 +673,7 @@ class FixmeTest(unittest.TestCase):
                         "none",
                     ]
                 ),
-                call().__bool__(),
+                call().returncode.__bool__(),
                 call(["arc", "lint", "--apply-patches", "--output", "none"]),
             ]
             subprocess.assert_has_calls(calls)
@@ -1204,7 +1241,8 @@ class DecodeTest(unittest.TestCase):
 
 
 class UpdateGlobalVersionTest(unittest.TestCase):
-    @patch("subprocess.call")
+    @patch("subprocess.run")
+    @patch("re.search", return_value=MOCK_DIFF_ID_SEARCH_OBJECT)
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value="/root"
     )
@@ -1226,6 +1264,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         open_mock,
         gather_local_configurations,
         find_project_configuration,
+        regex_search,
         subprocess,
     ) -> None:
         arguments = MagicMock()
@@ -1320,7 +1359,13 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                         ),
                     ]
                 ),
-                call(["jf", "submit", "--update-fields"]),
+                call(["jf", "submit", "--update-fields"], capture_output=True),
+                call().stdout.decode(),
+                call(
+                    ["jf", "action", "--get-bot-approval", MOCK_DIFF_ID],
+                    capture_output=True,
+                ),
+                call().returncode.__bool__(),
             ]
             subprocess.assert_has_calls(calls)
 
