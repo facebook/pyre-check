@@ -13,7 +13,6 @@ type t = {
   set_errors: Reference.t -> Error.t list -> unit;
   set_local_annotations: Reference.t -> (Reference.t * LocalAnnotationMap.t) list -> unit;
   invalidate: Reference.t list -> unit;
-  invalidate_local_annotations: Reference.t list -> unit;
   get_errors: Reference.t -> Error.t list;
   get_local_annotations: Reference.t -> (Reference.t * LocalAnnotationMap.t) list option;
 }
@@ -35,8 +34,6 @@ let set_local_annotations { set_local_annotations; _ } = set_local_annotations
 let get_local_annotations { get_local_annotations; _ } = get_local_annotations
 
 let invalidate { invalidate; _ } = invalidate
-
-let invalidate_local_annotations { invalidate_local_annotations; _ } = invalidate_local_annotations
 
 module AnalysisErrorValue = struct
   type t = Error.t list
@@ -71,15 +68,11 @@ let create global_environment =
     RawErrors.KeySet.of_list qualifiers |> RawErrors.remove_batch;
     LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch
   in
-  let invalidate_local_annotations qualifiers =
-    LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch
-  in
   {
     global_environment;
     set_errors;
     set_local_annotations;
     invalidate;
-    invalidate_local_annotations;
     get_errors;
     get_local_annotations;
   }

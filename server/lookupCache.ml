@@ -25,11 +25,7 @@ let instantiate_location ~state:{ State.environment; _ } =
   Location.instantiate ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
 
 
-let get_lookups
-    ~configuration:({ Configuration.Analysis.store_type_check_resolution; _ } as configuration)
-    ~state:{ lookups; module_tracker; environment; scheduler; _ }
-    paths
-  =
+let get_lookups ~configuration ~state:{ lookups; module_tracker; environment; _ } paths =
   let paths, nonexistent_paths =
     let get_source_path path =
       match Analysis.ModuleTracker.lookup_path ~configuration module_tracker path with
@@ -59,20 +55,7 @@ let get_lookups
       |> ignore;
       { path; source_path = Some source_path; lookup }
     in
-    let source_paths = List.map paths ~f:(fun (_, source_path) -> source_path) in
-    if not store_type_check_resolution then (
-      IncrementalStaticAnalysis.compute_type_check_resolution
-        ~configuration
-        ~scheduler
-        ~environment
-        ~source_paths;
-      let lookups = List.map ~f:generate_lookup paths in
-      TypeEnvironment.invalidate_local_annotations
-        environment
-        (List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier) source_paths);
-      lookups )
-    else
-      List.map ~f:generate_lookup paths
+    List.map ~f:generate_lookup paths
   in
   let nonexistents =
     List.map nonexistent_paths ~f:(fun path -> { path; source_path = None; lookup = None })

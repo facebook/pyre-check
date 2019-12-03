@@ -27,7 +27,9 @@ module type FUNCTION_CONTEXT = sig
 
   val is_constructor : unit -> bool
 
-  val environment : TypeEnvironment.ReadOnly.t
+  val global_resolution : GlobalResolution.t
+
+  val local_annotations : LocalAnnotationMap.t option
 
   val debug : bool
 end
@@ -671,16 +673,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let backward ?key state ~statement:{ Node.value = statement; _ } =
       let resolution =
-        let qualifier, signature =
-          let { Node.value = { Define.signature; _ }; location = { Location.path; _ } } =
-            FunctionContext.definition
-          in
-          path, signature
+        let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
+          FunctionContext.definition
         in
         TypeCheck.resolution_with_key
-          ~environment:FunctionContext.environment
-          ~qualifier
-          ~signature
+          ~global_resolution:FunctionContext.global_resolution
+          ~local_annotations:FunctionContext.local_annotations
+          ~parent
           ~key
       in
       analyze_statement ~resolution state statement
@@ -793,7 +792,12 @@ let run ~environment ~define ~existing_model =
   let module AnalysisInstance = AnalysisInstance (struct
     let definition = define
 
-    let environment = environment
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
+
+    let local_annotations =
+      let { Node.location = { Location.path = qualifier; _ }; value = define } = define in
+      TypeCheck.get_or_recompute_local_annotations ~environment ~qualifier (Define.name define)
+
 
     let is_constructor () =
       match Reference.last name with

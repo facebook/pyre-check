@@ -235,7 +235,6 @@ let process_type_query_request
         let errors =
           IncrementalStaticAnalysis.run_additional_check
             ~configuration
-            ~scheduler:state.scheduler
             ~environment
             ~source_paths
             ~check:check_name

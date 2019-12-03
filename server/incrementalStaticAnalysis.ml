@@ -7,18 +7,7 @@ open Core
 open Ast
 open Analysis
 
-let compute_type_check_resolution ~configuration ~scheduler ~environment ~source_paths =
-  (* Only compute type check resolutions for source paths that need it. *)
-  let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
-  Analysis.Check.analyze_sources
-    qualifiers
-    ~scheduler
-    ~configuration:{ configuration with store_type_check_resolution = true }
-    ~environment
-
-
-let run_additional_check ~configuration ~scheduler ~environment ~source_paths ~check =
-  compute_type_check_resolution ~configuration ~scheduler ~environment ~source_paths;
+let run_additional_check ~configuration ~environment ~source_paths ~check =
   match Analysis.Check.get_check_to_run ~check_name:check with
   | Some (module Check) ->
       let ast_environment = TypeEnvironment.ast_environment environment in

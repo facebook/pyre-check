@@ -69,13 +69,22 @@ module State (Context : Context) = struct
   type t = {
     used: Identifier.Set.t;
     define: Define.t Node.t;
+    local_annotations: LocalAnnotationMap.t option;
   }
 
   let show { used; _ } = Set.to_list used |> String.concat ~sep:", "
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let initial ~define = { used = Identifier.Set.empty; define }
+  let initial ~define =
+    let local_annotations =
+      TypeCheck.get_or_recompute_local_annotations
+        ~environment:Context.environment
+        ~qualifier:Context.qualifier
+        (Node.value define |> Define.name)
+    in
+    { used = Identifier.Set.empty; define; local_annotations }
+
 
   let less_or_equal ~left:{ used = left; _ } ~right:{ used = right; _ } =
     Set.is_subset left ~of_:right
@@ -103,15 +112,15 @@ module State (Context : Context) = struct
 
   let forward ?key:_ state ~statement:_ = state
 
-  let backward ?key ({ used; define; _ } as state) ~statement:({ Node.location; value } as statement)
+  let backward
+      ?key
+      ({ used; define; local_annotations; _ } as state)
+      ~statement:({ Node.location; value } as statement)
     =
     let resolution =
-      let { Node.value = { Define.signature; _ }; _ } = define in
-      TypeCheck.resolution_with_key
-        ~environment:Context.environment
-        ~qualifier:Context.qualifier
-        ~signature
-        ~key
+      let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } = define in
+      let global_resolution = TypeEnvironment.ReadOnly.global_resolution Context.environment in
+      TypeCheck.resolution_with_key ~global_resolution ~local_annotations ~parent ~key
     in
     (* Check for bottomed out state. *)
     let bottom =

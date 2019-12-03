@@ -4845,18 +4845,14 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
   Resolution.create ~global_resolution ~annotations ~resolve ~resolve_assignment ()
 
 
-let resolution_with_key ~environment ~qualifier ~signature:{ Define.Signature.name; parent; _ } ~key
-  =
+let resolution_with_key ~global_resolution ~local_annotations ~parent ~key =
   let annotations =
-    match
-      key, TypeEnvironment.ReadOnly.get_local_annotation_map_for_define environment ~qualifier name
-    with
+    match key, local_annotations with
     | Some key, Some map ->
         LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty
     | _ -> Reference.Map.empty
   in
-  resolution (TypeEnvironment.ReadOnly.global_resolution environment) ~annotations ()
-  |> Resolution.with_parent ~parent
+  resolution global_resolution ~annotations () |> Resolution.with_parent ~parent
 
 
 let name = "TypeCheck"
@@ -4955,6 +4951,30 @@ let check_define
         Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node
       in
       { errors = [undefined_error]; local_annotations = None }
+
+
+let get_or_recompute_local_annotations ~environment ~qualifier name =
+  match TypeEnvironment.ReadOnly.get_local_annotations environment qualifier with
+  | Some local_annotations -> List.Assoc.find local_annotations name ~equal:Reference.equal
+  | None -> (
+      (* Local annotations not preserved in shared memory. Recompute it. *)
+      let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+      match GlobalResolution.define_body global_resolution name with
+      | None -> None
+      | Some define_node ->
+          let _, local_annotations, _ =
+            let resolution = resolution global_resolution () in
+            let module Context = struct
+              let debug = false
+
+              let define = define_node
+
+              module Builder = Callgraph.NullBuilder
+            end
+            in
+            exit_state ~resolution (module Context)
+          in
+          local_annotations >>| fun (_, local_annotations) -> local_annotations )
 
 
 let check_function_definition

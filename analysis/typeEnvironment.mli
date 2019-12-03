@@ -51,6 +51,4 @@ val set_local_annotations : t -> Reference.t -> (Reference.t * LocalAnnotationMa
 
 val invalidate : t -> Reference.t list -> unit
 
-val invalidate_local_annotations : t -> Reference.t list -> unit
-
 val read_only : t -> ReadOnly.t

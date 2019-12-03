@@ -27,7 +27,6 @@ let assert_static_analysis_errors ~context ~source ~check ~expected ~include_typ
       in
       Server.IncrementalStaticAnalysis.run_additional_check
         ~configuration
-        ~scheduler:(Test.mock_scheduler ())
         ~environment
         ~source_paths
         ~check

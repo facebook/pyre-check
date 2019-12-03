@@ -79,10 +79,16 @@ val resolution
   unit ->
   Resolution.t
 
-val resolution_with_key
+val get_or_recompute_local_annotations
   :  environment:TypeEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
-  signature:Define.Signature.t ->
+  Reference.t ->
+  LocalAnnotationMap.t option
+
+val resolution_with_key
+  :  global_resolution:GlobalResolution.t ->
+  local_annotations:LocalAnnotationMap.t option ->
+  parent:Reference.t option ->
   key:int option ->
   Resolution.t
 

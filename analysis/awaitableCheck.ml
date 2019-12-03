@@ -10,11 +10,11 @@ open Pyre
 module Error = AnalysisError
 
 module type Context = sig
-  val qualifier : Reference.t
-
   val define : Define.t Node.t
 
-  val environment : TypeEnvironment.ReadOnly.t
+  val global_resolution : GlobalResolution.t
+
+  val local_annotations : LocalAnnotationMap.t option
 end
 
 module State (Context : Context) = struct
@@ -539,12 +539,14 @@ module State (Context : Context) = struct
 
 
   let forward ?key state ~statement:{ Node.value; _ } =
-    let { Node.value = { Define.signature; _ }; _ } = Context.define in
+    let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
+      Context.define
+    in
     let resolution =
       TypeCheck.resolution_with_key
-        ~environment:Context.environment
-        ~qualifier:Context.qualifier
-        ~signature
+        ~global_resolution:Context.global_resolution
+        ~local_annotations:Context.local_annotations
+        ~parent
         ~key
     in
     let global_resolution = Resolution.global_resolution resolution in
@@ -613,11 +615,15 @@ let run
   =
   let check define =
     let module Context = struct
-      let qualifier = qualifier
-
       let define = define
 
-      let environment = environment
+      let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
+
+      let local_annotations =
+        TypeCheck.get_or_recompute_local_annotations
+          ~environment
+          ~qualifier
+          (Node.value define |> Define.name)
     end
     in
     let module State = State (Context) in

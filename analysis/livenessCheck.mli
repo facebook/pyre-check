@@ -42,6 +42,7 @@ module State (Context : Context) : sig
   type t = {
     used: Identifier.Set.t;
     define: Define.t Node.t;
+    local_annotations: LocalAnnotationMap.t option;
   }
 
   val show : t -> string

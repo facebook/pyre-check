@@ -33,6 +33,7 @@ module ConstantPropagationState (Context : Context) = struct
   and t = {
     constants: constant Reference.Map.t;
     define: Define.t;
+    local_annotations: LocalAnnotationMap.t option;
     nested_defines: t NestedDefines.t;
   }
 
@@ -55,7 +56,14 @@ module ConstantPropagationState (Context : Context) = struct
       | Some { constants; _ } -> constants
       | _ -> Reference.Map.empty
     in
-    { constants; define = define.Node.value; nested_defines = NestedDefines.initial }
+    let define = define.Node.value in
+    let local_annotations =
+      TypeCheck.get_or_recompute_local_annotations
+        ~environment:Context.environment
+        ~qualifier:Context.qualifier
+        (Define.name define)
+    in
+    { constants; define; local_annotations; nested_defines = NestedDefines.initial }
 
 
   let nested_defines { nested_defines; _ } = nested_defines
@@ -85,15 +93,17 @@ module ConstantPropagationState (Context : Context) = struct
 
   let forward
       ?key
-      ({ constants; define = { Define.signature; _ }; nested_defines } as state)
+      ( {
+          constants;
+          define = { Define.signature = { Define.Signature.parent; _ }; _ };
+          local_annotations;
+          nested_defines;
+        } as state )
       ~statement
     =
     let resolution =
-      TypeCheck.resolution_with_key
-        ~environment:Context.environment
-        ~qualifier:Context.qualifier
-        ~signature
-        ~key
+      let global_resolution = TypeEnvironment.ReadOnly.global_resolution Context.environment in
+      TypeCheck.resolution_with_key ~global_resolution ~local_annotations ~parent ~key
     in
     (* Update transformations. *)
     let transformed =

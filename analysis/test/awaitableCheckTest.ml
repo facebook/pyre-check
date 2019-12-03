@@ -10,7 +10,6 @@ open Test
 
 let assert_awaitable_errors ~context =
   let check ~configuration ~environment ~source =
-    TypeCheck.run ~configuration ~environment ~source;
     AwaitableCheck.run ~configuration ~environment:(TypeEnvironment.read_only environment) ~source
   in
   assert_errors ~context ~check

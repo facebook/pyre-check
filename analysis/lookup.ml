@@ -178,7 +178,7 @@ let create_of_source
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
     let annotation_lookup =
-      TypeEnvironment.ReadOnly.get_local_annotation_map_for_define type_environment ~qualifier name
+      TypeCheck.get_or_recompute_local_annotations ~environment:type_environment ~qualifier name
       |> Option.value ~default:LocalAnnotationMap.empty
     in
     let cfg = Cfg.create define in
