@@ -99,29 +99,35 @@ let instantiate
 
 
 module Table = struct
-  type element = t
+  type element = t [@@deriving compare]
+
+  type table = (string, element) Caml.Hashtbl.t
 
   type t = {
-    attributes: element String.Table.t;
+    attributes: table;
     names: string list ref;
   }
 
-  let create () = { attributes = String.Table.create (); names = ref [] }
+  let create () = { attributes = Caml.Hashtbl.create 15; names = ref [] }
 
   let add { attributes; names } ({ Node.value = { name; _ }; _ } as attribute) =
-    match Hashtbl.add attributes ~key:name ~data:attribute with
-    | `Ok -> names := name :: !names
-    | `Duplicate -> ()
+    if Caml.Hashtbl.mem attributes name then
+      ()
+    else (
+      Caml.Hashtbl.add attributes name attribute;
+      names := name :: !names )
 
 
-  let lookup_name { attributes; _ } = Hashtbl.find attributes
+  let lookup_name { attributes; _ } = Caml.Hashtbl.find_opt attributes
 
-  let to_list { attributes; names } = List.rev_map !names ~f:(Hashtbl.find_exn attributes)
+  let to_list { attributes; names } = List.rev_map !names ~f:(Caml.Hashtbl.find attributes)
 
   let clear { attributes; names } =
-    Hashtbl.clear attributes;
+    Caml.Hashtbl.clear attributes;
     names := []
 
+
+  let compare left right = List.compare compare_element (to_list left) (to_list right)
 
   let filter_map ~f table =
     let add_attribute attribute = Option.iter (f attribute) ~f:(add table) in

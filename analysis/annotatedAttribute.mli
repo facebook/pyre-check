@@ -63,7 +63,7 @@ val instantiate : t -> constraints:(Type.t -> Type.t option) -> t
 module Table : sig
   type element = t
 
-  type t
+  type t [@@deriving compare]
 
   val create : unit -> t
 
