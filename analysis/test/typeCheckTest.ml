@@ -16,7 +16,7 @@ module DefaultContext = struct
 
   let define = +Test.mock_define
 
-  module Builder = Callgraph.DefaultBuilder
+  module Builder = Callgraph.NullBuilder
 end
 
 module Create (Context : TypeCheck.Context) = struct
@@ -80,7 +80,7 @@ let test_initial context =
 
       let define = +define
 
-      module Builder = Callgraph.DefaultBuilder
+      module Builder = Callgraph.NullBuilder
     end
     in
     let resolution =
@@ -1006,7 +1006,7 @@ let test_forward_statement context =
 
       let define = +define
 
-      module Builder = Callgraph.DefaultBuilder
+      module Builder = Callgraph.NullBuilder
     end
     in
     let module Create = Create (Context) in

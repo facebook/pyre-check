@@ -218,3 +218,15 @@ module DefaultBuilder : Builder = struct
     Hashtbl.clear table;
     Hashtbl.to_alist callees |> List.map ~f:(fun (callee, locations) -> { callee; locations })
 end
+
+module NullBuilder : Builder = struct
+  let initialize () = ()
+
+  let add_callee ~global_resolution:_ ~target:_ ~callables:_ ~dynamic:_ ~callee:_ = ()
+
+  let add_property_callees ~global_resolution:_ ~resolved_base:_ ~attributes:_ ~name:_ ~location:_ =
+    ()
+
+
+  let get_all_callees () = []
+end

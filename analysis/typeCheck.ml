@@ -4809,7 +4809,7 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
 
     let define = define
 
-    module Builder = Callgraph.DefaultBuilder
+    module Builder = Callgraph.NullBuilder
   end)
   in
   let state_without_resolution =

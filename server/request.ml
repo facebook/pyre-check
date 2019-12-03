@@ -683,7 +683,7 @@ let process_type_query_request
 
           let define = define
 
-          module Builder = Callgraph.DefaultBuilder
+          module Builder = Callgraph.NullBuilder
         end)
         in
         let state = State.create ~resolution () in

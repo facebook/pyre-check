@@ -44,7 +44,7 @@ module State (Context : Context) = struct
 
     let calls = Location.Reference.Table.create ()
 
-    module Builder = Callgraph.DefaultBuilder
+    module Builder = Callgraph.NullBuilder
   end
 
   module TypeCheckState = TypeCheck.State (TypeCheckContext)

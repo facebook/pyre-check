@@ -66,3 +66,5 @@ module type Builder = sig
 end
 
 module DefaultBuilder : Builder
+
+module NullBuilder : Builder
