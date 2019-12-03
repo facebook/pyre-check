@@ -4778,18 +4778,23 @@ module State (Context : Context) = struct
   let backward ?key:_ state ~statement:_ = state
 end
 
-type result = {
-  errors: Error.t list;
-  local_annotation_map: LocalAnnotationMap.t option;
-}
+module CheckResult = struct
+  type t = {
+    errors: Error.t list;
+    local_annotations: (Reference.t * LocalAnnotationMap.t) option;
+  }
 
-let aggregate_errors results =
-  let errors =
+  let aggregate_errors results =
     List.fold results ~init:[] ~f:(fun errors_sofar { errors; _ } ->
         List.append errors errors_sofar)
-  in
-  errors
 
+
+  let aggregate_local_annotations results =
+    List.fold results ~init:[] ~f:(fun annotations_sofar { local_annotations; _ } ->
+        match local_annotations with
+        | None -> annotations_sofar
+        | Some annotations -> annotations :: annotations_sofar)
+end
 
 let resolution global_resolution ?(annotations = Reference.Map.empty) () =
   let define =
@@ -4930,8 +4935,8 @@ let check_define
     in
     if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
 
-    let local_annotation_map =
-      exit >>| fun { State.resolution_fixpoint; _ } -> resolution_fixpoint
+    let local_annotations =
+      exit >>| fun { State.resolution_fixpoint; _ } -> name, resolution_fixpoint
     in
 
     (* Store calls in shared memory. *)
@@ -4940,12 +4945,12 @@ let check_define
 
     (* Schedule nested functions for analysis. *)
     let errors = exit >>| State.errors >>| filter_errors |> Option.value ~default:[] in
-    { errors; local_annotation_map }
+    { CheckResult.errors; local_annotations }
   in
   try
     let initial = State.initial ~resolution in
     if Define.is_stub define then
-      { errors = filter_errors (State.errors initial); local_annotation_map = None }
+      { CheckResult.errors = filter_errors (State.errors initial); local_annotations = None }
     else
       check ~define:define_node ~initial
   with
@@ -4967,27 +4972,16 @@ let check_define
       let undefined_error =
         Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node
       in
-      { errors = [undefined_error]; local_annotation_map = None }
+      { errors = [undefined_error]; local_annotations = None }
 
 
 let check_function_definition
     ~configuration
-    ~environment
+    ~resolution
     ~qualifier
     ~metadata
     { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings }
   =
-  let resolution =
-    let global_resolution =
-      let environment = TypeEnvironment.global_environment environment in
-      match configuration with
-      | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-          (* TODO (T53810748): Refine the dependency to define's name *)
-          GlobalResolution.create environment ~dependency:(TypeCheckSource qualifier)
-      | _ -> GlobalResolution.create environment
-    in
-    resolution global_resolution ()
-  in
   let check_define =
     check_define
       ~configuration
@@ -5001,17 +4995,12 @@ let check_function_definition
         body)
   in
   let sibling_results = List.map sibling_bodies ~f:(fun define_node -> check_define define_node) in
+  let open CheckResult in
   match body with
-  | None -> aggregate_errors sibling_results
+  | None -> { errors = aggregate_errors sibling_results; local_annotations = None }
   | Some define_node ->
-      let ({ local_annotation_map; _ } as body_result) = check_define define_node in
-      let () =
-        if configuration.store_type_check_resolution then
-          (* Write fixpoint type resolutions to shared memory *)
-          let name = Node.value define_node |> Define.name in
-          Option.iter local_annotation_map ~f:(ResolutionSharedMemory.add ~qualifier name)
-      in
-      aggregate_errors (body_result :: sibling_results)
+      let ({ local_annotations; _ } as body_result) = check_define define_node in
+      { errors = aggregate_errors (body_result :: sibling_results); local_annotations }
 
 
 let check_source
@@ -5019,10 +5008,17 @@ let check_source
     ~environment
     { Source.source_path = { SourcePath.qualifier; _ }; metadata; _ }
   =
+  let global_resolution =
+    match configuration with
+    | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
+        (* TODO (T53810748): Refine the dependency to define's name *)
+        GlobalResolution.create environment ~dependency:(TypeCheckSource qualifier)
+    | _ -> GlobalResolution.create environment
+  in
+  let resolution = resolution global_resolution () in
   let all_defines =
     let unannotated_global_environment =
-      TypeEnvironment.global_resolution environment
-      |> GlobalResolution.unannotated_global_environment
+      GlobalResolution.unannotated_global_environment global_resolution
     in
     UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
       unannotated_global_environment
@@ -5032,20 +5028,7 @@ let check_source
   in
   List.map
     all_defines
-    ~f:(check_function_definition ~configuration ~environment ~qualifier ~metadata)
-  |> List.concat
-
-
-(* TODO (T53810748): Elimintate the use of LocalChanges *)
-let check_source_with_local_changes ~configuration ~environment source =
-  ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
-
-  let result = check_source ~configuration ~environment source in
-  (* These local changes allow us to add keys incrementally in a worker process without worrying
-     about removing (which can only be done by a master. *)
-  ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
-  ResolutionSharedMemory.Keys.LocalChanges.pop_stack ();
-  result
+    ~f:(check_function_definition ~configuration ~resolution ~qualifier ~metadata)
 
 
 let run
@@ -5060,7 +5043,15 @@ let run
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%s`..." relative;
-  let errors = check_source_with_local_changes ~configuration ~environment source in
+  let errors, local_annotations =
+    let results =
+      check_source
+        ~configuration
+        ~environment:(TypeEnvironment.global_environment environment)
+        source
+    in
+    CheckResult.aggregate_errors results, CheckResult.aggregate_local_annotations results
+  in
   Statistics.performance
     ~flush:false
     ~randomly_log_every:100
@@ -5070,4 +5061,14 @@ let run
     ~normals:["handle", relative; "request kind", "SingleFileTypeCheck"]
     ~integers:["number of lines", number_of_lines]
     ();
+  let () =
+    if configuration.store_type_check_resolution then (
+      (* Write fixpoint type resolutions to shared memory *)
+      ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
+
+      List.iter local_annotations ~f:(fun (name, local_annotation_map) ->
+          ResolutionSharedMemory.add ~qualifier name local_annotation_map);
+      ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
+      ResolutionSharedMemory.Keys.LocalChanges.pop_stack () )
+  in
   TypeEnvironment.set_errors environment qualifier errors
