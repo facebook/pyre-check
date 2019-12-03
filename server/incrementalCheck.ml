@@ -140,7 +140,6 @@ let recheck
       (AnnotatedGlobalEnvironment.UpdateResult.read_only annotated_global_environment_update_result)
   in
   TypeEnvironment.invalidate environment recheck_modules;
-  ResolutionSharedMemory.remove recheck_modules;
 
   (* Clean up all lookup data related to updated files. *)
   List.iter recheck_modules ~f:(LookupCache.evict ~lookups);

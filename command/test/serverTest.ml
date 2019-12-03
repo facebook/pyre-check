@@ -539,7 +539,8 @@ let test_query context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       build_expected_response local_root
     in
-    assert_response_equal (Some (Protocol.TypeQueryResponse expected_response)) response
+    assert_response_equal (Some (Protocol.TypeQueryResponse expected_response)) response;
+    Memory.reset_shared_memory ()
   in
   assert_type_query_response_with_local_root
     ~handle:"test.py"
@@ -1276,12 +1277,11 @@ let test_incremental_lookups context =
   let { Request.state = { environment; _ }; _ } =
     Request.process ~state ~configuration:server_configuration ~request
   in
-  let global_resolution = TypeEnvironment.global_resolution environment in
   let annotations =
-    let ast_environment = GlobalResolution.ast_environment global_resolution in
+    let ast_environment = TypeEnvironment.ast_environment environment in
     AstEnvironment.ReadOnly.get_source ast_environment qualifier
     |> (fun value -> Option.value_exn value)
-    |> Lookup.create_of_source global_resolution
+    |> Lookup.create_of_source (TypeEnvironment.read_only environment)
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
            Format.asprintf "%a/%a" Location.Reference.pp key Type.pp data

@@ -50,10 +50,9 @@ let get_lookups
   let generate_lookups paths =
     let generate_lookup (path, ({ SourcePath.qualifier; _ } as source_path)) =
       let lookup =
-        let global_resolution = TypeEnvironment.global_resolution environment in
         let ast_environment = TypeEnvironment.ast_environment environment in
         AstEnvironment.ReadOnly.get_source ast_environment qualifier
-        >>| Lookup.create_of_source global_resolution
+        >>| Lookup.create_of_source (TypeEnvironment.read_only environment)
       in
       lookup
       >>| (fun lookup -> String.Table.set lookups ~key:(Reference.show qualifier) ~data:lookup)
@@ -68,7 +67,8 @@ let get_lookups
         ~environment
         ~source_paths;
       let lookups = List.map ~f:generate_lookup paths in
-      ResolutionSharedMemory.remove
+      TypeEnvironment.invalidate_local_annotations
+        environment
         (List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier) source_paths);
       lookups )
     else

@@ -16,7 +16,7 @@ let name = "Deobfuscation"
 module type Context = sig
   val qualifier : Reference.t
 
-  val global_resolution : GlobalResolution.t
+  val environment : TypeEnvironment.ReadOnly.t
 
   val transformations : Statement.t list Location.Reference.Table.t
 
@@ -90,7 +90,7 @@ module ConstantPropagationState (Context : Context) = struct
     =
     let resolution =
       TypeCheck.resolution_with_key
-        ~global_resolution:Context.global_resolution
+        ~environment:Context.environment
         ~qualifier:Context.qualifier
         ~signature
         ~key
@@ -305,7 +305,7 @@ let run
   let module Context = struct
     let qualifier = qualifier
 
-    let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
+    let environment = environment
 
     let transformations = Location.Reference.Table.create ()
 

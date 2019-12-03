@@ -4841,19 +4841,18 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
   Resolution.create ~global_resolution ~annotations ~resolve ~resolve_assignment ()
 
 
-let resolution_with_key
-    ~global_resolution
-    ~qualifier
-    ~signature:{ Define.Signature.name; parent; _ }
-    ~key
+let resolution_with_key ~environment ~qualifier ~signature:{ Define.Signature.name; parent; _ } ~key
   =
   let annotations =
-    match key, ResolutionSharedMemory.get_local_annotation_map ~qualifier name with
+    match
+      key, TypeEnvironment.ReadOnly.get_local_annotation_map_for_define environment ~qualifier name
+    with
     | Some key, Some map ->
         LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty
     | _ -> Reference.Map.empty
   in
-  resolution global_resolution ~annotations () |> Resolution.with_parent ~parent
+  resolution (TypeEnvironment.ReadOnly.global_resolution environment) ~annotations ()
+  |> Resolution.with_parent ~parent
 
 
 let name = "TypeCheck"
@@ -5069,6 +5068,6 @@ let run
   let () =
     if configuration.store_type_check_resolution then
       (* Write fixpoint type resolutions to shared memory *)
-      ResolutionSharedMemory.add qualifier local_annotations
+      TypeEnvironment.set_local_annotations environment qualifier local_annotations
   in
   TypeEnvironment.set_errors environment qualifier errors

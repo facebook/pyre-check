@@ -26,8 +26,8 @@ let generate_lookup ~context source =
     in
     source, TypeEnvironment.read_only environment
   in
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let lookup = Lookup.create_of_source global_resolution source in
+  let lookup = Lookup.create_of_source environment source in
+  Memory.reset_shared_memory ();
   lookup
 
 

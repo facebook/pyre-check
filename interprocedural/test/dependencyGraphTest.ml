@@ -336,7 +336,7 @@ let test_type_collection context =
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
     let lookup =
-      ResolutionSharedMemory.get_local_annotation_map ~qualifier name
+      TypeEnvironment.ReadOnly.get_local_annotation_map_for_define environment ~qualifier name
       |> fun value -> Option.value_exn value
     in
     let test_expect (node_id, statement_index, test_expression, expected_type) =

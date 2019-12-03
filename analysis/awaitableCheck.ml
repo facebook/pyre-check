@@ -14,7 +14,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val global_resolution : GlobalResolution.t
+  val environment : TypeEnvironment.ReadOnly.t
 end
 
 module State (Context : Context) = struct
@@ -542,7 +542,7 @@ module State (Context : Context) = struct
     let { Node.value = { Define.signature; _ }; _ } = Context.define in
     let resolution =
       TypeCheck.resolution_with_key
-        ~global_resolution:Context.global_resolution
+        ~environment:Context.environment
         ~qualifier:Context.qualifier
         ~signature
         ~key
@@ -611,18 +611,18 @@ let run
     ~environment
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let check define =
     let module Context = struct
       let qualifier = qualifier
 
       let define = define
 
-      let global_resolution = global_resolution
+      let environment = environment
     end
     in
     let module State = State (Context) in
     let module Fixpoint = Fixpoint.Make (State) in
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     let should_run_analysis =
       define.Node.value.Define.signature.Define.Signature.parent
       >>| (fun parent -> Type.Primitive (Reference.show parent))

@@ -897,7 +897,12 @@ let test_resolution_shared_memory_added_for_open_documents context =
   let paths = [test_path_a; test_path_b] in
   let state = { state with open_documents = Reference.Table.of_alist_exn [!&"a", test_code] } in
   let contains_resolution_shared_memory_reference ~qualifier name =
-    Analysis.ResolutionSharedMemory.get_local_annotation_map ~qualifier name |> Option.is_some
+    let { State.environment; _ } = state in
+    Analysis.TypeEnvironment.ReadOnly.get_local_annotation_map_for_define
+      (Analysis.TypeEnvironment.read_only environment)
+      ~qualifier
+      name
+    |> Option.is_some
   in
   (* Before type checking request, shared memory does not have a.foo and b.foo *)
   assert_false (contains_resolution_shared_memory_reference ~qualifier:!&"a" !&"a.foo");

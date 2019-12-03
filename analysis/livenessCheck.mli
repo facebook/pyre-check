@@ -31,7 +31,7 @@ end
 module type Context = sig
   val qualifier : Reference.t
 
-  val global_resolution : GlobalResolution.t
+  val environment : TypeEnvironment.ReadOnly.t
 
   val errors : ErrorMap.t
 

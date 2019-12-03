@@ -80,7 +80,7 @@ val resolution
   Resolution.t
 
 val resolution_with_key
-  :  global_resolution:GlobalResolution.t ->
+  :  environment:TypeEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
   signature:Define.Signature.t ->
   key:int option ->

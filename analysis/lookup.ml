@@ -168,16 +168,17 @@ module Visit = struct
 end
 
 let create_of_source
-    global_resolution
+    type_environment
     ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
     let annotation_lookup =
-      ResolutionSharedMemory.get_local_annotation_map ~qualifier name
+      TypeEnvironment.ReadOnly.get_local_annotation_map_for_define type_environment ~qualifier name
       |> Option.value ~default:LocalAnnotationMap.empty
     in
     let cfg = Cfg.create define in

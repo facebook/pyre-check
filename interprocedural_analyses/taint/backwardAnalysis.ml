@@ -671,16 +671,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let backward ?key state ~statement:{ Node.value = statement; _ } =
       let resolution =
-        let global_resolution =
-          TypeEnvironment.ReadOnly.global_resolution FunctionContext.environment
-        in
         let qualifier, signature =
           let { Node.value = { Define.signature; _ }; location = { Location.path; _ } } =
             FunctionContext.definition
           in
           path, signature
         in
-        TypeCheck.resolution_with_key ~global_resolution ~qualifier ~signature ~key
+        TypeCheck.resolution_with_key
+          ~environment:FunctionContext.environment
+          ~qualifier
+          ~signature
+          ~key
       in
       analyze_statement ~resolution state statement
 

@@ -15,7 +15,7 @@ let assert_taint ~context source expected =
   let environment, ast_environment =
     let project = Test.ScratchProject.setup ~context [handle, source] in
     let _, ast_environment, environment = Test.ScratchProject.build_type_environment project in
-    TypeEnvironment.read_only environment, ast_environment
+    environment, ast_environment
   in
   let source =
     AstEnvironment.ReadOnly.get_source
@@ -29,7 +29,10 @@ let assert_taint ~context source expected =
     let call_target = Callable.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
     let backward =
-      BackwardAnalysis.run ~environment ~define ~existing_model:Taint.Result.empty_model
+      BackwardAnalysis.run
+        ~environment:(TypeEnvironment.read_only environment)
+        ~define
+        ~existing_model:Taint.Result.empty_model
     in
     let model = { Taint.Result.empty_model with backward } in
     Result.empty_model
@@ -37,7 +40,8 @@ let assert_taint ~context source expected =
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  List.iter ~f:(check_expectation ~environment) expected
+  List.iter ~f:(check_expectation ~environment:(TypeEnvironment.read_only environment)) expected;
+  TypeEnvironment.invalidate environment [Ast.Reference.create "qualifier"]
 
 
 let test_plus_taint_in_taint_out context =

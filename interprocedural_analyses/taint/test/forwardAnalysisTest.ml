@@ -21,7 +21,7 @@ let assert_taint ?models ~context source expect =
   let ast_environment, environment =
     let project = Test.ScratchProject.setup ~context sources in
     let _, ast_environment, environment = Test.ScratchProject.build_type_environment project in
-    ast_environment, TypeEnvironment.read_only environment
+    ast_environment, environment
   in
   let source =
     AstEnvironment.ReadOnly.get_source
@@ -29,7 +29,7 @@ let assert_taint ?models ~context source expect =
       (Ast.Reference.create "qualifier")
     |> fun option -> Option.value_exn option
   in
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let global_resolution = TypeEnvironment.global_resolution environment in
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->
@@ -47,7 +47,10 @@ let assert_taint ?models ~context source expect =
     let call_target = Callable.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
     let forward, _errors =
-      ForwardAnalysis.run ~environment ~define ~existing_model:Taint.Result.empty_model
+      ForwardAnalysis.run
+        ~environment:(TypeEnvironment.read_only environment)
+        ~define
+        ~existing_model:Taint.Result.empty_model
     in
     let model = { Taint.Result.empty_model with forward } in
     Result.empty_model
@@ -55,7 +58,8 @@ let assert_taint ?models ~context source expect =
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  List.iter ~f:(check_expectation ~environment) expect
+  List.iter ~f:(check_expectation ~environment:(TypeEnvironment.read_only environment)) expect;
+  TypeEnvironment.invalidate environment [Ast.Reference.create "qualifier"]
 
 
 let test_no_model context =
