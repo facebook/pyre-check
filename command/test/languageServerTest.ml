@@ -912,7 +912,7 @@ let test_request_parser context =
         | Some request -> Protocol.Request.show request
         | _ -> "None")
       request
-      (Request.parse_lsp ~configuration ~state ~request:message)
+      (RequestParser.parse_and_translate ~configuration ~state ~request:message)
   in
   assert_parsed_request_equals
     (open_message file_path)
