@@ -4861,6 +4861,39 @@ let resolution_with_key ~environment ~qualifier ~signature:{ Define.Signature.na
 
 let name = "TypeCheck"
 
+let exit_state ~resolution (module Context : Context) =
+  let module State = State (Context) in
+  let module Fixpoint = Fixpoint.Make (State) in
+  let initial = State.initial ~resolution in
+  let { Node.value = { Define.signature = { Define.Signature.name; _ }; _ } as define; _ } =
+    Context.define
+  in
+  if Define.is_stub define then
+    State.errors initial, None, None
+  else (
+    Log.log ~section:`Check "Checking %a" Reference.pp name;
+    Context.Builder.initialize ();
+    let dump = Define.dump define in
+    if dump then (
+      Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
+      Log.dump "AST:\n%a" Define.pp define );
+    if Define.dump_locations define then
+      Log.dump "AST with Locations:\n%s" (Define.show_json define);
+    let exit =
+      let cfg = Cfg.create define in
+      let fixpoint = Fixpoint.forward ~cfg ~initial in
+      Fixpoint.exit fixpoint
+    in
+    if dump then Option.iter exit ~f:(Log.dump "Exit state:\n%a" State.pp);
+
+    let callees = Context.Builder.get_all_callees () in
+    let errors = exit >>| State.errors |> Option.value ~default:[] in
+    let local_annotations =
+      exit >>| fun { State.resolution_fixpoint; _ } -> name, resolution_fixpoint
+    in
+    errors, local_annotations, Some callees )
+
+
 let check_define
     ~configuration:
       ({ Configuration.Analysis.include_hints; features = { click_to_fix; _ }; _ } as configuration)
@@ -4870,16 +4903,8 @@ let check_define
     ~call_graph_builder:(module Builder : Callgraph.Builder)
     ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
-  let global_resolution = Resolution.global_resolution resolution in
-  let module Context = struct
-    let debug = configuration.debug
-
-    let define = define_node
-
-    module Builder = Builder
-  end
-  in
   let filter_errors errors =
+    let global_resolution = Resolution.global_resolution resolution in
     let mode = Source.mode ~configuration ~local_mode in
     let filter errors =
       let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
@@ -4896,71 +4921,20 @@ let check_define
     |> Error.join_at_define ~resolution:global_resolution
     |> Error.join_at_source ~resolution:global_resolution
   in
-  let module State = State (Context) in
-  let module Fixpoint = Fixpoint.Make (State) in
-  let check
-      ~define:{ Node.value = { Define.signature = { name; parent; _ }; _ } as define; _ }
-      ~initial
-    =
-    Log.log ~section:`Check "Checking %a" Reference.pp name;
-    Context.Builder.initialize ();
-    let dump = Define.dump define in
-    if dump then (
-      Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
-      Log.dump "AST:\n%a" Define.pp define );
-    if Define.dump_locations define then
-      Log.dump "AST with Locations:\n%s" (Define.show_json define);
-    let dump_cfg cfg fixpoint =
-      let precondition table id =
-        match Hashtbl.find table id with
-        | Some { State.resolution; _ } ->
-            let stringify ~key ~data label =
-              let annotation_string =
-                Type.show (Annotation.annotation data) |> String.strip ~drop:(Char.equal '`')
-              in
-              label ^ "\n" ^ Reference.show key ^ ": " ^ annotation_string
-            in
-            Map.fold ~f:stringify ~init:"" (Resolution.annotations resolution)
-        | None -> ""
-      in
-      if Define.dump_cfg define then
-        let name =
-          match parent with
-          | Some parent -> Reference.combine parent name
-          | None -> name
-        in
-        Path.create_relative
-          ~root:(Configuration.Analysis.log_directory configuration)
-          ~relative:(Format.asprintf "cfgs%a.dot" Reference.pp name)
-        |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
-        |> File.write
-    in
-    let exit =
-      let cfg = Cfg.create define in
-      let fixpoint = Fixpoint.forward ~cfg ~initial in
-      dump_cfg cfg fixpoint;
-      Fixpoint.exit fixpoint
-    in
-    if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
-
-    let local_annotations =
-      exit >>| fun { State.resolution_fixpoint; _ } -> name, resolution_fixpoint
-    in
-
-    (* Store calls in shared memory. *)
-    let callees = Context.Builder.get_all_callees () in
-    Callgraph.set ~caller:name ~callees;
-
-    (* Schedule nested functions for analysis. *)
-    let errors = exit >>| State.errors >>| filter_errors |> Option.value ~default:[] in
-    { CheckResult.errors; local_annotations }
-  in
   try
-    let initial = State.initial ~resolution in
-    if Define.is_stub define then
-      { CheckResult.errors = filter_errors (State.errors initial); local_annotations = None }
-    else
-      check ~define:define_node ~initial
+    let errors, local_annotations, callees =
+      let module Context = struct
+        let debug = configuration.debug
+
+        let define = define_node
+
+        module Builder = Builder
+      end
+      in
+      exit_state ~resolution (module Context)
+    in
+    Option.iter callees ~f:(fun callees -> Callgraph.set ~caller:name ~callees);
+    { CheckResult.errors = filter_errors errors; local_annotations }
   with
   | ClassHierarchy.Untracked annotation ->
       Statistics.event
