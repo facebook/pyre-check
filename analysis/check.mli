@@ -19,8 +19,7 @@ end
 val get_check_to_run : check_name:string -> (module Signature) option
 
 val analyze_sources
-  :  ?open_documents:(Ast.Reference.t -> bool) ->
-  ?filter_external_sources:bool ->
+  :  ?filter_external_sources:bool ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:TypeEnvironment.t ->

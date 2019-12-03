@@ -881,38 +881,6 @@ let test_open_document_state context =
     ~expected:(Reference.Table.create ())
 
 
-let test_resolution_shared_memory_added_for_open_documents context =
-  let test_code = "def foo() -> int: return 3" in
-  let { ScratchServer.configuration; state; _ } =
-    ScratchServer.start ~context ["a.py", ""; "b.py", ""]
-  in
-  let configuration = { configuration with store_type_check_resolution = false } in
-  let { Configuration.Analysis.local_root; _ } = configuration in
-  let test_path_a = Path.create_relative ~root:local_root ~relative:"a.py" in
-  let test_path_b = Path.create_relative ~root:local_root ~relative:"b.py" in
-  let test_file_a = File.create test_path_a ~content:test_code in
-  let test_file_b = File.create test_path_b ~content:test_code in
-  File.write test_file_a;
-  File.write test_file_b;
-  let paths = [test_path_a; test_path_b] in
-  let state = { state with open_documents = Reference.Table.of_alist_exn [!&"a", test_code] } in
-  let contains_resolution_shared_memory_reference ~qualifier name =
-    let { State.environment; _ } = state in
-    Analysis.TypeEnvironment.ReadOnly.get_local_annotation_map_for_define
-      (Analysis.TypeEnvironment.read_only environment)
-      ~qualifier
-      name
-    |> Option.is_some
-  in
-  (* Before type checking request, shared memory does not have a.foo and b.foo *)
-  assert_false (contains_resolution_shared_memory_reference ~qualifier:!&"a" !&"a.foo");
-  assert_false (contains_resolution_shared_memory_reference ~qualifier:!&"b" !&"b.foo");
-  let _ = Request.process_type_check_request ~state ~configuration paths in
-  (* Before type checking request, shared memory only has a.foo because a.py is open. *)
-  assert_true (contains_resolution_shared_memory_reference ~qualifier:!&"a" !&"a.foo");
-  assert_false (contains_resolution_shared_memory_reference ~qualifier:!&"b" !&"b.foo")
-
-
 let () =
   "request"
   >::: [
@@ -924,7 +892,5 @@ let () =
          "process_get_definition_request" >:: test_process_get_definition_request;
          "open_document_state" >:: test_open_document_state;
          "create_annotation_edit" >:: test_create_annotation_edit;
-         "test_resolution_shared_memory_added_for_open_documents"
-         >:: test_resolution_shared_memory_added_for_open_documents;
        ]
   |> Test.run

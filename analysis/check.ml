@@ -32,22 +32,13 @@ let checks : (module Signature) String.Map.t =
 
 let get_check_to_run ~check_name = Map.find checks check_name
 
-let run_type_check ?open_documents ~scheduler ~configuration ~environment checked_sources =
+let run_type_check ~scheduler ~configuration ~environment checked_sources =
   let number_of_sources = List.length checked_sources in
   Log.info "Running type check...";
   let timer = Timer.start () in
   let map _ qualifiers =
     AttributeResolution.AttributeCache.clear ();
-    let analyze_source
-        number_files
-        ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
-      =
-      let configuration =
-        match open_documents with
-        | Some predicate when predicate qualifier ->
-            { configuration with Configuration.Analysis.store_type_check_resolution = true }
-        | _ -> configuration
-      in
+    let analyze_source number_files source =
       TypeCheck.run ~configuration ~environment ~source;
       number_files + 1
     in
@@ -80,13 +71,7 @@ let run_type_check ?open_documents ~scheduler ~configuration ~environment checke
   ()
 
 
-let analyze_sources
-    ?open_documents
-    ?(filter_external_sources = true)
-    ~scheduler
-    ~configuration
-    ~environment
-    sources
+let analyze_sources ?(filter_external_sources = true) ~scheduler ~configuration ~environment sources
   =
   let ast_environment = TypeEnvironment.ast_environment environment in
   AttributeResolution.AttributeCache.clear ();
@@ -105,6 +90,6 @@ let analyze_sources
   Log.info "Checking %d sources..." number_of_sources;
   Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
   let timer = Timer.start () in
-  run_type_check ?open_documents ~scheduler ~configuration ~environment checked_sources;
+  run_type_check ~scheduler ~configuration ~environment checked_sources;
   Statistics.performance ~name:"analyzed sources" ~phase_name:"Type check" ~timer ();
   Profiling.track_shared_memory_usage ~name:"After analyze_sources" ()

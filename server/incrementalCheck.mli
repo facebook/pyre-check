@@ -12,7 +12,6 @@ val recheck
   errors:Analysis.Check.Error.t list Ast.Reference.Table.t ->
   scheduler:Scheduler.t ->
   connections:State.connections ->
-  open_documents:string Ast.Reference.Table.t ->
   lookups:Analysis.Lookup.t String.Table.t ->
   configuration:Configuration.Analysis.t ->
   PyrePath.t list ->

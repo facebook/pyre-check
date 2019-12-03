@@ -233,7 +233,6 @@ let load
       ~errors
       ~scheduler
       ~connections
-      ~open_documents:(Reference.Table.create ())
       ~lookups:(String.Table.create ())
       ~configuration
       changed_paths

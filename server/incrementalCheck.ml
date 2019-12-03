@@ -19,7 +19,6 @@ let recheck
     ~errors
     ~scheduler
     ~connections
-    ~open_documents
     ~lookups
     ~configuration:({ incremental_style; _ } as configuration)
     paths
@@ -144,12 +143,7 @@ let recheck
   (* Clean up all lookup data related to updated files. *)
   List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
   let new_errors =
-    Analysis.Check.analyze_sources
-      ~open_documents:(Reference.Table.mem open_documents)
-      ~scheduler
-      ~configuration
-      ~environment
-      recheck_modules;
+    Analysis.Check.analyze_sources ~scheduler ~configuration ~environment recheck_modules;
     Analysis.Postprocessing.run
       ~scheduler
       ~configuration
@@ -204,16 +198,8 @@ let recheck
 
 let recheck_with_state
     ~state:
-      ( {
-          State.module_tracker;
-          ast_environment;
-          errors;
-          scheduler;
-          connections;
-          open_documents;
-          lookups;
-          _;
-        } as state )
+      ( { State.module_tracker; ast_environment; errors; scheduler; connections; lookups; _ } as
+      state )
     ~configuration
     paths
   =
@@ -224,7 +210,6 @@ let recheck_with_state
       ~errors
       ~scheduler
       ~connections
-      ~open_documents
       ~lookups
       ~configuration
       paths
