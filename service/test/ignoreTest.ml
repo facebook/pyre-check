@@ -13,7 +13,7 @@ let ignore_lines_test context =
   let assert_errors ?(show_error_traces = false) input_source expected_errors =
     let configuration, ast_environment, type_errors =
       let project = ScratchProject.setup ~context ["test.py", input_source] in
-      let _, ast_environment, _, type_errors =
+      let { ScratchProject.BuiltTypeEnvironment.ast_environment; _ }, type_errors =
         ScratchProject.build_type_environment_and_postprocess project
       in
       let configuration = ScratchProject.configuration_of project in

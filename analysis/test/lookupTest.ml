@@ -16,15 +16,16 @@ let show_location { Location.path; start; stop } =
 
 let generate_lookup ~context source =
   let source, environment =
-    let project = ScratchProject.setup ~context ["test.py", source] in
-    let _, ast_environment, environment = ScratchProject.build_type_environment project in
+    let { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+    in
     let source =
       AstEnvironment.ReadOnly.get_source
         (AstEnvironment.read_only ast_environment)
         (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
-    source, TypeEnvironment.read_only environment
+    source, TypeEnvironment.read_only type_environment
   in
   let lookup = Lookup.create_of_source environment source in
   Memory.reset_shared_memory ();

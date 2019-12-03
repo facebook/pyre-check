@@ -12,8 +12,10 @@ open Test
 let assert_deobfuscation ~context source expected =
   let configuration, environment =
     let project = ScratchProject.setup ~context [] in
-    let _, _, environment = ScratchProject.build_type_environment project in
-    ScratchProject.configuration_of project, environment
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.build_type_environment project
+    in
+    ScratchProject.configuration_of project, type_environment
   in
   let handle = "qualifier.py" in
   let actual =

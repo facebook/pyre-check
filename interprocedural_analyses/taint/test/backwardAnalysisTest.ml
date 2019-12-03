@@ -12,10 +12,14 @@ open TestHelper
 
 let assert_taint ~context source expected =
   let handle = "qualifier.py" in
-  let environment, ast_environment =
-    let project = Test.ScratchProject.setup ~context [handle, source] in
-    let _, ast_environment, environment = Test.ScratchProject.build_type_environment project in
-    environment, ast_environment
+  let {
+    Test.ScratchProject.BuiltTypeEnvironment.ast_environment;
+    type_environment = environment;
+    _;
+  }
+    =
+    Test.ScratchProject.setup ~context [handle, source]
+    |> Test.ScratchProject.build_type_environment
   in
   let source =
     AstEnvironment.ReadOnly.get_source

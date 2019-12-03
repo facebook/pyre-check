@@ -1384,6 +1384,14 @@ module ScratchProject = struct
     module_tracker: ModuleTracker.t;
   }
 
+  module BuiltTypeEnvironment = struct
+    type t = {
+      sources: Source.t list;
+      ast_environment: AstEnvironment.t;
+      type_environment: TypeEnvironment.t;
+    }
+  end
+
   let clean_ast_shared_memory ~configuration module_tracker ast_environment =
     let deletions =
       ModuleTracker.source_paths module_tracker
@@ -1531,22 +1539,25 @@ module ScratchProject = struct
 
   let build_type_environment project =
     let sources, ast_environment, global_environment = build_global_environment project in
-    let environment = TypeEnvironment.create global_environment in
+    let type_environment = TypeEnvironment.create global_environment in
     let configuration = configuration_of project in
-    List.iter sources ~f:(fun source -> TypeCheck.run ~configuration ~environment ~source);
-    sources, ast_environment, environment
+    List.iter sources ~f:(fun source ->
+        TypeCheck.run ~configuration ~environment:type_environment ~source);
+    { BuiltTypeEnvironment.sources; ast_environment; type_environment }
 
 
   let build_type_environment_and_postprocess project =
-    let sources, ast_environment, type_environment = build_type_environment project in
+    let built_type_environment = build_type_environment project in
     let errors =
-      List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
+      List.map
+        built_type_environment.sources
+        ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
       |> Postprocessing.run
            ~scheduler:(Scheduler.mock ())
            ~configuration:(configuration_of project)
-           ~environment:(TypeEnvironment.read_only type_environment)
+           ~environment:(TypeEnvironment.read_only built_type_environment.type_environment)
     in
-    sources, ast_environment, type_environment, errors
+    built_type_environment, errors
 
 
   let build_resolution project =

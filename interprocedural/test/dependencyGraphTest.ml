@@ -18,12 +18,14 @@ let setup ?(update_environment_with = []) ~context ~handle source =
     in
     ScratchProject.setup ~context ~external_sources [handle, source]
   in
-  let sources, _, environment = ScratchProject.build_type_environment project in
+  let { ScratchProject.BuiltTypeEnvironment.sources; type_environment; _ } =
+    ScratchProject.build_type_environment project
+  in
   let source =
     List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
         String.equal relative handle)
   in
-  source, TypeEnvironment.read_only environment
+  source, TypeEnvironment.read_only type_environment
 
 
 let create_call_graph ?(update_environment_with = []) ~context source_text =
@@ -320,7 +322,10 @@ let test_type_collection context =
   let assert_type_collection source ~handle ~expected =
     let configuration, source, environment =
       let project = ScratchProject.setup ~context [handle, source] in
-      let _, ast_environment, environment = ScratchProject.build_type_environment project in
+      let { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment = environment; _ }
+        =
+        ScratchProject.build_type_environment project
+      in
       let source =
         AstEnvironment.ReadOnly.get_source
           (AstEnvironment.read_only ast_environment)

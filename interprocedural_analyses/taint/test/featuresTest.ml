@@ -11,8 +11,10 @@ let test_add_type_breadcrumb context =
   let open Taint.Features in
   let assert_type_based_breadcrumbs annotation expected =
     let project = Test.ScratchProject.setup ~context [] in
-    let _, _, environment = Test.ScratchProject.build_type_environment project in
-    let resolution = TypeEnvironment.global_resolution environment in
+    let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      Test.ScratchProject.build_type_environment project
+    in
+    let resolution = TypeEnvironment.global_resolution type_environment in
     let actual =
       add_type_breadcrumb ~resolution (Some annotation) []
       |> List.map ~f:(fun { SimpleSet.element; _ } -> element)

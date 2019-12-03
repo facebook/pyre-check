@@ -59,7 +59,14 @@ let make_errors ~context ?(handle = "test.py") source =
       ~external_sources:["builtins.pyi", builtins_source; "typing.pyi", typing_source]
       [handle, source]
   in
-  let sources, ast_environment, environment = ScratchProject.build_type_environment project in
+  let {
+    ScratchProject.BuiltTypeEnvironment.sources;
+    ast_environment;
+    type_environment = environment;
+  }
+    =
+    ScratchProject.build_type_environment project
+  in
   let source =
     List.find_exn sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.relative; _ }; _ } ->
         String.equal relative handle)
@@ -168,7 +175,7 @@ module ScratchServer = struct
       let ({ ScratchProject.module_tracker; configuration; _ } as project) =
         ScratchProject.setup ~context ~external_sources ~include_helper_builtins:false sources
       in
-      let _, ast_environment, type_environment, type_errors =
+      let { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ }, type_errors =
         ScratchProject.build_type_environment_and_postprocess project
       in
       ( { configuration with incremental_style },

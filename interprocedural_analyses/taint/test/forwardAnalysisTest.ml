@@ -18,10 +18,14 @@ let assert_taint ?models ~context source expect =
     | Some models -> [handle, source; "models.py", models]
     | None -> [handle, source]
   in
-  let ast_environment, environment =
+  let {
+    Test.ScratchProject.BuiltTypeEnvironment.ast_environment;
+    type_environment = environment;
+    _;
+  }
+    =
     let project = Test.ScratchProject.setup ~context sources in
-    let _, ast_environment, environment = Test.ScratchProject.build_type_environment project in
-    ast_environment, environment
+    Test.ScratchProject.build_type_environment project
   in
   let source =
     AstEnvironment.ReadOnly.get_source

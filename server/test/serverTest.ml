@@ -41,7 +41,9 @@ let initialize_server ?incremental_style ~context ~initial_sources =
     in
     ScratchProject.setup ?incremental_style ~context ~external_sources internal_sources
   in
-  let _, ast_environment, environment, type_errors =
+  let ( { ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment = environment; _ },
+        type_errors )
+    =
     ScratchProject.build_type_environment_and_postprocess project
   in
   let errors = Reference.Table.create () in
