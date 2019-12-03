@@ -14,6 +14,8 @@ module Error = AnalysisError
 let name = "Deobfuscation"
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val global_resolution : GlobalResolution.t
 
   val transformations : Statement.t list Location.Reference.Table.t
@@ -83,12 +85,15 @@ module ConstantPropagationState (Context : Context) = struct
 
   let forward
       ?key
-      ( { constants; define = { Define.signature = { name; parent; _ }; _ }; nested_defines } as
-      state )
+      ({ constants; define = { Define.signature; _ }; nested_defines } as state)
       ~statement
     =
     let resolution =
-      TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
+      TypeCheck.resolution_with_key
+        ~global_resolution:Context.global_resolution
+        ~qualifier:Context.qualifier
+        ~signature
+        ~key
     in
     (* Update transformations. *)
     let transformed =
@@ -298,6 +303,8 @@ let run
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
   let module Context = struct
+    let qualifier = qualifier
+
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let transformations = Location.Reference.Table.create ()

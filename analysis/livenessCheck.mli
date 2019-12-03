@@ -29,6 +29,8 @@ module NestedDefineLookup : sig
 end
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val global_resolution : GlobalResolution.t
 
   val errors : ErrorMap.t

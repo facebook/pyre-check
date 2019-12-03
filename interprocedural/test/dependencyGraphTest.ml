@@ -329,12 +329,16 @@ let test_type_collection context =
       in
       ScratchProject.configuration_of project, source, TypeEnvironment.read_only environment
     in
+    let { Source.source_path = { SourcePath.qualifier; _ }; _ } = source in
     let defines =
       Preprocessing.defines ~include_toplevels:true source
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
-    let lookup = ResolutionSharedMemory.get name |> fun value -> Option.value_exn value in
+    let lookup =
+      ResolutionSharedMemory.get_local_annotation_map ~qualifier name
+      |> fun value -> Option.value_exn value
+    in
     let test_expect (node_id, statement_index, test_expression, expected_type) =
       let key = [%hash: int * int] (node_id, statement_index) in
       let annotations =

@@ -5,10 +5,10 @@
 
 open Core
 open Ast
-module SharedMemory = Memory
+open Pyre
 
-module TypeAnnotationsValue = struct
-  type t = LocalAnnotationMap.t
+module LocalAnnotationsValue = struct
+  type t = (Reference.t * LocalAnnotationMap.t) list
 
   let prefix = Prefix.make ()
 
@@ -17,34 +17,16 @@ module TypeAnnotationsValue = struct
   let unmarshall value = Marshal.from_string value 0
 end
 
-module AnnotationsKeyValue = struct
-  type t = Reference.t list
+module LocalAnnotations =
+  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (LocalAnnotationsValue)
 
-  let prefix = Prefix.make ()
+let add = LocalAnnotations.add
 
-  let description = "Node type resolution keys"
+let get = LocalAnnotations.get
 
-  let unmarshall value = Marshal.from_string value 0
-end
-
-include SharedMemory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (TypeAnnotationsValue)
-(** A map of function definitions (indexed by Reference.t key) to to annotations for each statement *)
-
-module Keys = SharedMemory.NoCache.Make (SharedMemoryKeys.ReferenceKey) (AnnotationsKeyValue)
-
-let remove qualifiers =
-  let accesses =
-    List.filter_map ~f:Keys.get qualifiers |> List.concat |> List.filter ~f:mem |> KeySet.of_list
-  in
-  remove_batch accesses;
-  Keys.remove_batch (Keys.KeySet.of_list qualifiers)
+let get_local_annotation_map ~qualifier name =
+  get qualifier
+  >>= fun local_annotations -> List.Assoc.find local_annotations name ~equal:Reference.equal
 
 
-let add ~qualifier name value =
-  ( match Keys.get qualifier with
-  | None -> Keys.add qualifier [name]
-  | Some names -> Keys.add qualifier (name :: names) );
-  add name value
-
-
-let get_keys ~qualifiers = List.filter_map qualifiers ~f:Keys.get |> List.concat
+let remove qualifiers = LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch

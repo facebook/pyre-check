@@ -571,24 +571,6 @@ let test_class_definitions context =
 
 (* We don't reverse order when returning the classes. *)
 
-let test_resolution_shared_memory _ =
-  ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
-  ResolutionSharedMemory.add
-    ~qualifier:(Reference.create "a")
-    (Reference.create "name")
-    LocalAnnotationMap.empty;
-  ResolutionSharedMemory.add
-    ~qualifier:(Reference.create "a")
-    (Reference.create "other")
-    LocalAnnotationMap.empty;
-  assert_equal
-    ~printer:(List.to_string ~f:Reference.show)
-    (ResolutionSharedMemory.get_keys ~qualifiers:[Reference.create "a"])
-    [Reference.create "other"; Reference.create "name"];
-  ResolutionSharedMemory.Keys.LocalChanges.revert_all ();
-  ResolutionSharedMemory.Keys.LocalChanges.pop_stack ()
-
-
 let test_source_is_unit_test context =
   let assert_is_unit_test ?(expected = true) source =
     let _, ast_environment, environment =
@@ -630,7 +612,6 @@ let () =
          >:: test_resolve_mutable_literals_typed_dictionary;
          "function_definitions" >:: test_function_definitions;
          "class_definitions" >:: test_class_definitions;
-         "resolve_shared_memory" >:: test_resolution_shared_memory;
          "source_is_unit_test" >:: test_source_is_unit_test;
        ]
   |> Test.run

@@ -10,6 +10,8 @@ open Pyre
 module Error = AnalysisError
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val define : Define.t Node.t
 
   val global_resolution : GlobalResolution.t
@@ -537,9 +539,13 @@ module State (Context : Context) = struct
 
 
   let forward ?key state ~statement:{ Node.value; _ } =
-    let { Node.value = { Define.signature = { name; parent; _ }; _ }; _ } = Context.define in
+    let { Node.value = { Define.signature; _ }; _ } = Context.define in
     let resolution =
-      TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
+      TypeCheck.resolution_with_key
+        ~global_resolution:Context.global_resolution
+        ~qualifier:Context.qualifier
+        ~signature
+        ~key
     in
     let global_resolution = Resolution.global_resolution resolution in
     match value with
@@ -600,10 +606,16 @@ end
 
 let name = "Awaitable"
 
-let run ~configuration:_ ~environment ~source =
+let run
+    ~configuration:_
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let check define =
     let module Context = struct
+      let qualifier = qualifier
+
       let define = define
 
       let global_resolution = global_resolution

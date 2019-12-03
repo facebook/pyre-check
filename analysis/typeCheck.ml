@@ -4841,9 +4841,14 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
   Resolution.create ~global_resolution ~annotations ~resolve ~resolve_assignment ()
 
 
-let resolution_with_key ~global_resolution ~parent ~name ~key =
+let resolution_with_key
+    ~global_resolution
+    ~qualifier
+    ~signature:{ Define.Signature.name; parent; _ }
+    ~key
+  =
   let annotations =
-    match key, ResolutionSharedMemory.get name with
+    match key, ResolutionSharedMemory.get_local_annotation_map ~qualifier name with
     | Some key, Some map ->
         LocalAnnotationMap.get_precondition map key |> Option.value ~default:Reference.Map.empty
     | _ -> Reference.Map.empty
@@ -5062,13 +5067,8 @@ let run
     ~integers:["number of lines", number_of_lines]
     ();
   let () =
-    if configuration.store_type_check_resolution then (
+    if configuration.store_type_check_resolution then
       (* Write fixpoint type resolutions to shared memory *)
-      ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
-
-      List.iter local_annotations ~f:(fun (name, local_annotation_map) ->
-          ResolutionSharedMemory.add ~qualifier name local_annotation_map);
-      ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
-      ResolutionSharedMemory.Keys.LocalChanges.pop_stack () )
+      ResolutionSharedMemory.add qualifier local_annotations
   in
   TypeEnvironment.set_errors environment qualifier errors

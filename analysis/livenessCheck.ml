@@ -56,6 +56,8 @@ module NestedDefineLookup = struct
 end
 
 module type Context = sig
+  val qualifier : Reference.t
+
   val global_resolution : GlobalResolution.t
 
   val errors : ErrorMap.t
@@ -104,8 +106,12 @@ module State (Context : Context) = struct
   let backward ?key ({ used; define; _ } as state) ~statement:({ Node.location; value } as statement)
     =
     let resolution =
-      let { Node.value = { Define.signature = { name; parent; _ }; _ }; _ } = define in
-      TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
+      let { Node.value = { Define.signature; _ }; _ } = define in
+      TypeCheck.resolution_with_key
+        ~global_resolution:Context.global_resolution
+        ~qualifier:Context.qualifier
+        ~signature
+        ~key
     in
     (* Check for bottomed out state. *)
     let bottom =
@@ -181,8 +187,14 @@ end
 
 let name = "Liveness"
 
-let run ~configuration:_ ~environment ~source =
+let run
+    ~configuration:_
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let module Context = struct
+    let qualifier = qualifier
+
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let errors = ErrorMap.Table.create ()

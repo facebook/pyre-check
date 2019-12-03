@@ -81,8 +81,8 @@ val resolution
 
 val resolution_with_key
   :  global_resolution:GlobalResolution.t ->
-  parent:Reference.t option ->
-  name:Reference.t ->
+  qualifier:Reference.t ->
+  signature:Define.Signature.t ->
   key:int option ->
   Resolution.t
 

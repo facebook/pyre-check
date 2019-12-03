@@ -896,16 +896,16 @@ let test_resolution_shared_memory_added_for_open_documents context =
   File.write test_file_b;
   let paths = [test_path_a; test_path_b] in
   let state = { state with open_documents = Reference.Table.of_alist_exn [!&"a", test_code] } in
-  let contains_resolution_shared_memory_reference key_string =
-    key_string |> Reference.create |> Analysis.ResolutionSharedMemory.get |> Option.is_some
+  let contains_resolution_shared_memory_reference ~qualifier name =
+    Analysis.ResolutionSharedMemory.get_local_annotation_map ~qualifier name |> Option.is_some
   in
   (* Before type checking request, shared memory does not have a.foo and b.foo *)
-  assert_false (contains_resolution_shared_memory_reference "a.foo");
-  assert_false (contains_resolution_shared_memory_reference "b.foo");
+  assert_false (contains_resolution_shared_memory_reference ~qualifier:!&"a" !&"a.foo");
+  assert_false (contains_resolution_shared_memory_reference ~qualifier:!&"b" !&"b.foo");
   let _ = Request.process_type_check_request ~state ~configuration paths in
   (* Before type checking request, shared memory only has a.foo because a.py is open. *)
-  assert_true (contains_resolution_shared_memory_reference "a.foo");
-  assert_false (contains_resolution_shared_memory_reference "b.foo")
+  assert_true (contains_resolution_shared_memory_reference ~qualifier:!&"a" !&"a.foo");
+  assert_false (contains_resolution_shared_memory_reference ~qualifier:!&"b" !&"b.foo")
 
 
 let () =
