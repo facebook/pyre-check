@@ -1556,28 +1556,7 @@ type method_call = {
 let test_calls context =
   let assert_calls source calls =
     let project = ScratchProject.setup ~context ["qualifier.py", source] in
-    let _, ast_environment, global_environment = ScratchProject.build_global_environment project in
-    let source =
-      AstEnvironment.ReadOnly.get_source
-        (AstEnvironment.read_only ast_environment)
-        (Reference.create "qualifier")
-    in
-    let source = Option.value_exn source in
-    let configuration = ScratchProject.configuration_of project in
-    (* Clear dependencies for all defines. *)
-    let clear_calls
-        {
-          Node.value = { Statement.Define.signature = { Statement.Define.Signature.name; _ }; _ };
-          _;
-        }
-      =
-      Callgraph.set ~caller:name ~callees:[]
-    in
-    Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
-    |> List.iter ~f:clear_calls;
-
-    let environment = TypeEnvironment.create global_environment in
-    TypeCheck.run ~configuration ~environment ~source;
+    let _ = ScratchProject.build_type_environment project in
 
     (* Check calls. *)
     let assert_calls (caller, callees) =
@@ -1605,7 +1584,8 @@ let test_calls context =
         expected_callees
         actual_callees
     in
-    List.iter calls ~f:assert_calls
+    List.iter calls ~f:assert_calls;
+    Memory.reset_shared_memory ()
   in
   assert_calls
     {|
