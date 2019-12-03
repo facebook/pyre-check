@@ -679,7 +679,7 @@ let process_type_query_request
           |> Node.create_with_default_location
         in
         let module State = TypeCheck.State (struct
-          let configuration = configuration
+          let debug = false
 
           let define = define
 

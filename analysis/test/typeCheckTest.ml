@@ -12,7 +12,7 @@ open TypeCheck
 open Test
 
 module DefaultContext = struct
-  let configuration = Configuration.Analysis.create ()
+  let debug = false
 
   let define = +Test.mock_define
 
@@ -76,7 +76,7 @@ let test_initial context =
       | _ -> failwith "Unable to parse define."
     in
     let module Context = struct
-      let configuration = Configuration.Analysis.create ()
+      let debug = false
 
       let define = +define
 
@@ -1002,7 +1002,7 @@ let test_forward_statement context =
       | _ -> failwith "Unable to parse define."
     in
     let module Context = struct
-      let configuration = Configuration.Analysis.create ()
+      let debug = false
 
       let define = +define
 

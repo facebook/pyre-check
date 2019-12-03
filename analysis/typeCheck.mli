@@ -23,7 +23,7 @@ module ErrorMap : sig
 end
 
 module type Context = sig
-  val configuration : Configuration.Analysis.t
+  val debug : bool
 
   val define : Define.t Node.t
 

@@ -38,7 +38,7 @@ end
 
 module State (Context : Context) = struct
   module TypeCheckContext = struct
-    let configuration = Context.configuration
+    let debug = Context.configuration.debug
 
     let define = Context.define
 

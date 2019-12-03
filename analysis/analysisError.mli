@@ -306,11 +306,7 @@ val join_at_source : resolution:GlobalResolution.t -> t list -> t list
 
 val deduplicate : t list -> t list
 
-val filter
-  :  configuration:Configuration.Analysis.t ->
-  resolution:GlobalResolution.t ->
-  t list ->
-  t list
+val filter : resolution:GlobalResolution.t -> t list -> t list
 
 val suppress : mode:Source.mode -> ignore_codes:int list -> t -> bool
 

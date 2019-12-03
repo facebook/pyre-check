@@ -36,7 +36,7 @@ module ErrorMap = struct
 end
 
 module type Context = sig
-  val configuration : Configuration.Analysis.t
+  val debug : bool
 
   val define : Define.t Node.t
 
@@ -4751,7 +4751,11 @@ module State (Context : Context) = struct
     |> Error.deduplicate
     |> class_initialization_errors
     |> overload_errors
-    |> Error.filter ~configuration:Context.configuration ~resolution:global_resolution
+    |> fun errors ->
+    if Context.debug then
+      errors
+    else
+      Error.filter ~resolution:global_resolution errors
 
 
   let forward ?key ({ bottom; _ } as state) ~statement =
@@ -4801,7 +4805,7 @@ let resolution global_resolution ?(annotations = Reference.Map.empty) () =
     Define.create_toplevel ~qualifier:None ~statements:[] |> Node.create_with_default_location
   in
   let module State = State (struct
-    let configuration = Configuration.Analysis.create ()
+    let debug = false
 
     let define = define
 
@@ -4868,7 +4872,7 @@ let check_define
   =
   let global_resolution = Resolution.global_resolution resolution in
   let module Context = struct
-    let configuration = configuration
+    let debug = configuration.debug
 
     let define = define_node
 

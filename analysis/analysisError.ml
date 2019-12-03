@@ -2625,7 +2625,7 @@ let deduplicate errors =
   Core.Hash_set.to_list error_set
 
 
-let filter ~configuration ~resolution errors =
+let filter ~resolution errors =
   let should_filter ({ location; _ } as error) =
     let is_mock_error { kind; _ } =
       match kind with
@@ -2755,9 +2755,7 @@ let filter ~configuration ~resolution errors =
     || is_callable_attribute_error error
     || is_invalid_abstract_error error
   in
-  match configuration with
-  | { Configuration.Analysis.debug = true; _ } -> errors
-  | _ -> List.filter ~f:(fun error -> not (should_filter error)) errors
+  List.filter ~f:(fun error -> not (should_filter error)) errors
 
 
 let suppress ~mode ~ignore_codes error =

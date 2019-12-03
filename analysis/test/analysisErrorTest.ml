@@ -692,11 +692,11 @@ let test_filter context =
   in
   let assert_filtered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
-    assert_equal [] (filter ~configuration ~resolution errors)
+    assert_equal [] (filter ~resolution errors)
   in
   let assert_unfiltered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
-    assert_equal ~cmp:(List.equal equal) errors (filter ~configuration ~resolution errors)
+    assert_equal ~cmp:(List.equal equal) errors (filter ~resolution errors)
   in
   (* Suppress stub errors. *)
   let stub = { Location.Reference.any with Location.path = !&"stub" } in

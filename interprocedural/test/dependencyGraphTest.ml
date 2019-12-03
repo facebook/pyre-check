@@ -353,7 +353,7 @@ let test_type_collection context =
       |> fun expression ->
       if String.equal (Expression.show expression) test_expression then
         let module State = TypeCheck.State (struct
-          let configuration = configuration
+          let debug = configuration.debug
 
           let define = +Test.mock_define
 
