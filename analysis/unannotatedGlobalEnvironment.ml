@@ -650,7 +650,7 @@ let collect_typecheck_units { Source.statements; _ } =
     match value with
     | Statement.Class { Class.name; body; _ } ->
         if ignore_class then (
-          Log.info
+          Log.debug
             "Dropping the body of class %a as it is nested inside a function"
             Reference.pp
             name;
@@ -724,8 +724,9 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as 
             | Some sibling -> body, sibling :: siblings
             | None ->
                 if Option.is_some body then (
-                  Log.info
-                    "Function with duplicated name %a detected. Dropping the body"
+                  Log.debug
+                    "Dropping the body of function %a as it has duplicated name with other \
+                     functions"
                     Reference.pp
                     define_name;
                   (* Last definition wins -- collector returns functions in reverse order *)
