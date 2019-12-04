@@ -142,6 +142,40 @@ class IgnoreCountCollector(CountCollector):
         super().__init__(r"# pyre-ignore\[(\d*)\]:")
 
 
+class StrictCountCollector(StatisticsCollector):
+    def __init__(self, strict_by_default: bool) -> None:
+        self.is_strict: bool = False
+        self.is_unsafe: bool = False
+        self.strict_count: int = 0
+        self.unsafe_count: int = 0
+        self.strict_by_default: bool = strict_by_default
+        self.unsafe_regex: Pattern[str] = compile(r"# pyre-unsafe")
+        self.strict_regex: Pattern[str] = compile(r"# pyre-strict")
+
+    def visit_Module(self, node: cst.Module) -> None:
+        self.is_strict = False
+        self.is_unsafe = False
+
+    def visit_Comment(self, node: cst.Comment) -> None:
+        strict_match = self.strict_regex.match(node.value)
+        if strict_match:
+            self.is_strict = True
+        unsafe_match = self.unsafe_regex.match(node.value)
+        if unsafe_match:
+            self.is_unsafe = True
+
+    def leave_Module(self, node: cst.Module) -> None:
+        if self.is_unsafe:
+            self.unsafe_count += 1
+        elif self.is_strict or self.strict_by_default:
+            self.strict_count += 1
+        else:
+            self.unsafe_count += 1
+
+    def build_json(self) -> Dict[str, int]:
+        return {"unsafe_count": self.unsafe_count, "strict_count": self.strict_count}
+
+
 def _get_paths(target_directory: Path) -> List[Path]:
     return [
         path
@@ -216,6 +250,7 @@ class Statistics(Command):
             arguments, original_directory, configuration, analysis_directory
         )
         self._filter_paths: List[str] = arguments.filter_paths
+        self._strict: bool = self._configuration.strict
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -235,10 +270,12 @@ class Statistics(Command):
         annotations = _count(parsed_paths, AnnotationCountCollector())
         fixmes = _count(parsed_paths, FixmeCountCollector())
         ignores = _count(parsed_paths, IgnoreCountCollector())
+        strict_files = _count(parsed_paths, StrictCountCollector(self._strict))
         data = {
             "annotations": annotations.build_json(),
             "fixmes": fixmes.build_json(),
             "ignores": ignores.build_json(),
+            "strict": strict_files.build_json(),
         }
         log.stdout.write(json.dumps(data))
 
@@ -252,6 +289,12 @@ class Statistics(Command):
             )
             self._log_fixmes("fixme", data["fixmes"], root)
             self._log_fixmes("ignore", data["ignores"], root)
+            log_statistics(
+                "perfpipe_pyre_strict_adoption",
+                configuration=self._configuration,
+                integers=data["strict"],
+                normals={"root": root},
+            )
 
     def _log_fixmes(self, fixme_type: str, data: Dict[str, int], root: str) -> None:
         for error_code, count in data.items():

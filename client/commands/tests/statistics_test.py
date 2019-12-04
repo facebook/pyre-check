@@ -16,6 +16,7 @@ from ..statistics import (
     AnnotationCountCollector,
     FixmeCountCollector,
     IgnoreCountCollector,
+    StrictCountCollector,
     _find_paths,
 )
 from .command_test import mock_arguments
@@ -282,4 +283,55 @@ class IgnoreCountCollectorTest(unittest.TestCase):
         self.assert_counts(
             "# pyre-ignore[2]: Example Error Message\n\n\n# pyre-ignore[2]: message",
             {"2": 2},
+        )
+
+
+class StrictCountCollectorTest(unittest.TestCase):
+    @staticmethod
+    def format_files(source: str) -> Module:
+        return parse_module(textwrap.dedent(source.rstrip()))
+
+    def assert_counts(
+        self, source: str, expected: Dict[str, int], default_strict: bool
+    ) -> None:
+        source_module = self.format_files(source)
+        collector = StrictCountCollector(default_strict)
+        source_module.visit(collector)
+        self.assertEqual(collector.build_json(), expected)
+
+    def test_strict_files(self) -> None:
+        self.assert_counts(
+            """
+            # pyre-unsafe
+
+            def foo():
+                return 1
+            """,
+            {"strict_count": 0, "unsafe_count": 1},
+            True,
+        )
+        self.assert_counts(
+            """
+            # pyre-strict
+            def foo():
+                return 1
+            """,
+            {"strict_count": 1, "unsafe_count": 0},
+            False,
+        )
+        self.assert_counts(
+            """
+            def foo():
+                return 1
+            """,
+            {"strict_count": 0, "unsafe_count": 1},
+            False,
+        )
+        self.assert_counts(
+            """
+            def foo():
+                return 1
+            """,
+            {"strict_count": 1, "unsafe_count": 0},
+            True,
         )
