@@ -192,37 +192,6 @@ let class_annotation { Node.value = { ClassSummary.name; _ }; _ } =
   Type.Primitive (Reference.show name)
 
 
-module AnnotationCache = struct
-  type t = {
-    allow_untracked: bool;
-    allow_invalid_type_parameters: bool;
-    allow_primitives_from_empty_stubs: bool;
-    expression: Expression.t;
-  }
-  [@@deriving compare, sexp, hash]
-
-  include Hashable.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let hash = Hashtbl.hash
-
-    let hash_fold_t = hash_fold_t
-
-    let sexp_of_t = sexp_of_t
-
-    let t_of_sexp = t_of_sexp
-  end)
-
-  let cache = Table.create ~size:1023 ()
-
-  let clear ~scheduler ~configuration =
-    (* We need to clear the cache in each of the workers :( *)
-    Scheduler.once_per_worker scheduler ~configuration ~f:(fun () -> Hashtbl.clear cache);
-    Hashtbl.clear cache
-end
-
 let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~comparator =
   let open Expression in
   match expression with
@@ -1037,50 +1006,34 @@ module Implementation = struct
       ?dependency
       expression
     =
-    let key =
-      {
-        AnnotationCache.allow_untracked;
-        allow_invalid_type_parameters;
-        allow_primitives_from_empty_stubs;
-        expression;
-      }
+    let modify_aliases = function
+      | Type.TypeAlias alias ->
+          check_invalid_type_parameters ~class_metadata_environment ?dependency alias ~assumptions
+          |> snd
+          |> fun alias -> Type.TypeAlias alias
+      | result -> result
     in
-    match Hashtbl.find AnnotationCache.cache key with
-    | Some result -> result
-    | None ->
-        let modify_aliases = function
-          | Type.TypeAlias alias ->
-              check_invalid_type_parameters
-                ~class_metadata_environment
-                ?dependency
-                alias
-                ~assumptions
-              |> snd
-              |> fun alias -> Type.TypeAlias alias
-          | result -> result
-        in
-        let annotation =
-          AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
-            (alias_environment class_metadata_environment)
-            ~modify_aliases
-            ?dependency
-            ~allow_untracked
-            ~allow_primitives_from_empty_stubs
-            expression
-        in
-        let result =
-          if not allow_invalid_type_parameters then
-            check_invalid_type_parameters
-              ~class_metadata_environment
-              ?dependency
-              annotation
-              ~assumptions
-            |> snd
-          else
-            annotation
-        in
-        Hashtbl.set ~key ~data:result AnnotationCache.cache;
-        result
+    let annotation =
+      AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+        (alias_environment class_metadata_environment)
+        ~modify_aliases
+        ?dependency
+        ~allow_untracked
+        ~allow_primitives_from_empty_stubs
+        expression
+    in
+    let result =
+      if not allow_invalid_type_parameters then
+        check_invalid_type_parameters
+          ~class_metadata_environment
+          ?dependency
+          annotation
+          ~assumptions
+        |> snd
+      else
+        annotation
+    in
+    result
 
 
   let attribute_table
@@ -2831,7 +2784,7 @@ module Implementation = struct
     | _ -> signature
 end
 
-let make_open_recurser ~given_attribute_table =
+let make_open_recurser ~given_attribute_table ~given_parse_annotation =
   let rec open_recurser =
     {
       Implementation.full_order;
@@ -2851,10 +2804,10 @@ let make_open_recurser ~given_attribute_table =
       constructor;
     }
   and attribute_table ~assumptions = given_attribute_table open_recurser ~assumptions
+  and parse_annotation ~assumptions = given_parse_annotation open_recurser ~assumptions
   and full_order ~assumptions = Implementation.full_order open_recurser ~assumptions
   and check_invalid_type_parameters ~assumptions =
     Implementation.check_invalid_type_parameters open_recurser ~assumptions
-  and parse_annotation ~assumptions = Implementation.parse_annotation open_recurser ~assumptions
   and create_attribute ~assumptions = Implementation.create_attribute open_recurser ~assumptions
   and metaclass ~assumptions = Implementation.metaclass open_recurser ~assumptions
   and constraints ~assumptions = Implementation.constraints open_recurser ~assumptions
@@ -2878,8 +2831,90 @@ let empty_assumptions =
   }
 
 
+module ParseAnnotationCache = struct
+  module Cache = ManagedCache.Make (struct
+    module PreviousEnvironment = ClassMetadataEnvironment
+    module Key = SharedMemoryKeys.ParseAnnotationKey
+
+    module Value = struct
+      type t = Type.t [@@deriving compare]
+
+      let prefix = Prefix.make ()
+
+      let description = "parse annotation"
+
+      let unmarshall value = Marshal.from_string value 0
+    end
+
+    module KeySet = SharedMemoryKeys.ParseAnnotationKey.Set
+    module HashableKey = SharedMemoryKeys.ParseAnnotationKey
+
+    let produce_value
+        class_metadata_environment
+        ( {
+            SharedMemoryKeys.ParseAnnotationKey.assumptions;
+            allow_untracked;
+            allow_invalid_type_parameters;
+            allow_primitives_from_empty_stubs;
+            expression;
+          } as key )
+        ~track_dependencies
+      =
+      let uncached_open_recurser =
+        make_open_recurser
+          ~given_attribute_table:Implementation.attribute_table
+          ~given_parse_annotation:Implementation.parse_annotation
+      in
+      let dependency =
+        if track_dependencies then Some (SharedMemoryKeys.ParseAnnotation key) else None
+      in
+      Implementation.parse_annotation
+        uncached_open_recurser
+        ~assumptions
+        ~class_metadata_environment
+        ~allow_untracked
+        ~allow_invalid_type_parameters
+        ~allow_primitives_from_empty_stubs
+        ?dependency
+        expression
+
+
+    let filter_upstream_dependency = function
+      | SharedMemoryKeys.ParseAnnotation key -> Some key
+      | _ -> None
+  end)
+
+  include Cache
+
+  module ReadOnly = struct
+    include Cache.ReadOnly
+
+    let cached_parse_annotation
+        read_only
+        _open_recurser
+        ~assumptions
+        ~class_metadata_environment:_
+        ?(allow_untracked = false)
+        ?(allow_invalid_type_parameters = false)
+        ?(allow_primitives_from_empty_stubs = false)
+        ?dependency
+        expression
+      =
+      get
+        read_only
+        ?dependency
+        {
+          SharedMemoryKeys.ParseAnnotationKey.assumptions;
+          allow_untracked;
+          allow_invalid_type_parameters;
+          allow_primitives_from_empty_stubs;
+          expression;
+        }
+  end
+end
+
 module Cache = ManagedCache.Make (struct
-  module PreviousEnvironment = ClassMetadataEnvironment
+  module PreviousEnvironment = ParseAnnotationCache
   module Key = SharedMemoryKeys.AttributeTableKey
 
   module Value = struct
@@ -2896,7 +2931,7 @@ module Cache = ManagedCache.Make (struct
   module HashableKey = SharedMemoryKeys.AttributeTableKey
 
   let produce_value
-      class_metadata_environment
+      parse_annotation_cache
       ( {
           SharedMemoryKeys.AttributeTableKey.transitive;
           class_attributes;
@@ -2908,11 +2943,17 @@ module Cache = ManagedCache.Make (struct
         } as key )
       ~track_dependencies
     =
-    let uncached_open_recurser =
-      make_open_recurser ~given_attribute_table:Implementation.attribute_table
+    let open_recurser_with_parse_annotation_cache =
+      make_open_recurser
+        ~given_attribute_table:Implementation.attribute_table
+        ~given_parse_annotation:
+          (ParseAnnotationCache.ReadOnly.cached_parse_annotation parse_annotation_cache)
     in
     let dependency =
       if track_dependencies then Some (SharedMemoryKeys.AttributeTable key) else None
+    in
+    let class_metadata_environment =
+      ParseAnnotationCache.ReadOnly.upstream_environment parse_annotation_cache
     in
     UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
       (unannotated_global_environment class_metadata_environment)
@@ -2921,7 +2962,7 @@ module Cache = ManagedCache.Make (struct
     >>| fun definition ->
     ( definition,
       Implementation.attribute_table
-        uncached_open_recurser
+        open_recurser_with_parse_annotation_cache
         ~transitive
         ~class_attributes
         ~include_generated_attributes
@@ -2944,7 +2985,11 @@ include Cache
 module ReadOnly = struct
   include Cache.ReadOnly
 
-  let class_metadata_environment = upstream_environment
+  let parse_annotation_cache = upstream_environment
+
+  let class_metadata_environment read_only =
+    ParseAnnotationCache.ReadOnly.upstream_environment (upstream_environment read_only)
+
 
   let summary_and_attribute_table
       read_only
@@ -3003,67 +3048,59 @@ module ReadOnly = struct
     |> Option.value ~default:(AnnotatedAttribute.Table.create ())
 
 
-  let open_recurser_with_cached_attribute_table read_only =
-    make_open_recurser ~given_attribute_table:(cached_attribute_table read_only)
+  let open_recurser_with_both_caches read_only =
+    make_open_recurser
+      ~given_attribute_table:(cached_attribute_table read_only)
+      ~given_parse_annotation:
+        (ParseAnnotationCache.ReadOnly.cached_parse_annotation (parse_annotation_cache read_only))
 
 
-  let add_cached_attribute_table_and_empty_assumptions f read_only =
+  let add_both_caches_and_empty_assumptions f read_only =
     f
-      (open_recurser_with_cached_attribute_table read_only)
+      (open_recurser_with_both_caches read_only)
       ~assumptions:empty_assumptions
       ~class_metadata_environment:(class_metadata_environment read_only)
 
 
   let check_invalid_type_parameters =
-    add_cached_attribute_table_and_empty_assumptions Implementation.check_invalid_type_parameters
+    add_both_caches_and_empty_assumptions Implementation.check_invalid_type_parameters
 
 
-  let parse_annotation =
-    add_cached_attribute_table_and_empty_assumptions Implementation.parse_annotation
+  let parse_annotation = add_both_caches_and_empty_assumptions Implementation.parse_annotation
 
+  let create_attribute = add_both_caches_and_empty_assumptions Implementation.create_attribute
 
-  let create_attribute =
-    add_cached_attribute_table_and_empty_assumptions Implementation.create_attribute
+  let metaclass = add_both_caches_and_empty_assumptions Implementation.metaclass
 
+  let constraints = add_both_caches_and_empty_assumptions Implementation.constraints
 
-  let metaclass = add_cached_attribute_table_and_empty_assumptions Implementation.metaclass
+  let generics = add_both_caches_and_empty_assumptions Implementation.generics
 
-  let constraints = add_cached_attribute_table_and_empty_assumptions Implementation.constraints
+  let resolve_literal = add_both_caches_and_empty_assumptions Implementation.resolve_literal
 
-  let generics = add_cached_attribute_table_and_empty_assumptions Implementation.generics
+  let apply_decorators = add_both_caches_and_empty_assumptions Implementation.apply_decorators
 
-  let resolve_literal =
-    add_cached_attribute_table_and_empty_assumptions Implementation.resolve_literal
-
-
-  let apply_decorators =
-    add_cached_attribute_table_and_empty_assumptions Implementation.apply_decorators
-
-
-  let create_callable =
-    add_cached_attribute_table_and_empty_assumptions Implementation.create_callable
-
+  let create_callable = add_both_caches_and_empty_assumptions Implementation.create_callable
 
   let resolve_mutable_literals =
-    add_cached_attribute_table_and_empty_assumptions Implementation.resolve_mutable_literals
+    add_both_caches_and_empty_assumptions Implementation.resolve_mutable_literals
 
 
   let constraints_solution_exists =
-    add_cached_attribute_table_and_empty_assumptions Implementation.constraints_solution_exists
+    add_both_caches_and_empty_assumptions Implementation.constraints_solution_exists
 
 
-  let constructor = add_cached_attribute_table_and_empty_assumptions Implementation.constructor
+  let constructor = add_both_caches_and_empty_assumptions Implementation.constructor
 
   let full_order ?dependency read_only =
     Implementation.full_order
       ?dependency
-      (open_recurser_with_cached_attribute_table read_only)
+      (open_recurser_with_both_caches read_only)
       ~assumptions:empty_assumptions
       (class_metadata_environment read_only)
 
 
-  let signature_select =
-    add_cached_attribute_table_and_empty_assumptions Implementation.signature_select
+  let signature_select = add_both_caches_and_empty_assumptions Implementation.signature_select
 end
 
 module AttributeReadOnly = ReadOnly

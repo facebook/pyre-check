@@ -179,21 +179,7 @@ module GlobalTable = Environment.EnvironmentTable.WithCache (struct
     Option.equal (fun first second -> Annotation.equal (Node.value first) (Node.value second))
 end)
 
-let update_this_and_all_preceding_environments
-    ast_environment
-    ~scheduler
-    ~configuration
-    ~ast_environment_update_result
-    modified_qualifiers
-  =
-  AttributeResolution.AnnotationCache.clear ~scheduler ~configuration;
-  GlobalTable.update_this_and_all_preceding_environments
-    ast_environment
-    ~scheduler
-    ~configuration
-    ~ast_environment_update_result
-    modified_qualifiers
-
+include GlobalTable
 
 module ReadOnly = struct
   include GlobalTable.ReadOnly

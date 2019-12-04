@@ -132,10 +132,6 @@ val weaken_mutable_literals
   comparator:(left:Type.t -> right:Type.t -> bool) ->
   Type.t
 
-module AnnotationCache : sig
-  val clear : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> unit
-end
-
 module AttributeReadOnly : sig
   include Environment.ReadOnly
 
