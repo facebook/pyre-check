@@ -88,7 +88,10 @@ def main() -> int:
                 )
             )
             return ExitCode.SUCCESS
-        command = arguments.command(arguments)
+        command = arguments.command(arguments, os.getcwd())
+
+        # TODO(T57959968): Stop changing the directory in the client
+        os.chdir(command.current_directory)
         log.initialize(command.noninteractive, command.log_directory)
         exit_code = command.run().exit_code()
     except buck.BuckException as error:

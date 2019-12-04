@@ -23,8 +23,6 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(
 
 
 class IncrementalTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
-    @patch("os.chdir")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
@@ -42,8 +40,6 @@ class IncrementalTest(unittest.TestCase):
         exists,
         find_local_root,
         find_project_root,
-        chdir,
-        getcwd,
     ) -> None:
         state = MagicMock()
         state.running = ["running"]
@@ -58,6 +54,7 @@ class IncrementalTest(unittest.TestCase):
         Monitor.return_value = file_monitor_instance
         Monitor.is_alive.return_value = False
 
+        original_directory = "/original/directory"
         arguments = mock_arguments()
 
         configuration = mock_configuration()
@@ -68,7 +65,7 @@ class IncrementalTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             test_command = incremental.Incremental(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             self.assertEqual(
                 test_command._flags(),
@@ -101,7 +98,10 @@ class IncrementalTest(unittest.TestCase):
             nonblocking_arguments = mock_arguments()
             nonblocking_arguments.nonblocking = True
             test_command = incremental.Incremental(
-                nonblocking_arguments, configuration, analysis_directory
+                nonblocking_arguments,
+                original_directory,
+                configuration,
+                analysis_directory,
             )
             self.assertEqual(
                 test_command._flags(),
@@ -137,7 +137,10 @@ class IncrementalTest(unittest.TestCase):
                 commands.IncrementalStyle.TRANSITIVE
             )
             test_command = incremental.Incremental(
-                transitive_arguments, configuration, analysis_directory
+                transitive_arguments,
+                original_directory,
+                configuration,
+                analysis_directory,
             )
             self.assertEqual(
                 test_command._flags(),
@@ -169,7 +172,7 @@ class IncrementalTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             test_command = commands.Incremental(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             self.assertEqual(
                 test_command._flags(),
@@ -189,7 +192,7 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             commands_Start.assert_called_with(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             call_client.assert_has_calls(
                 [call(command=commands.Incremental.NAME)], any_order=True
@@ -201,7 +204,7 @@ class IncrementalTest(unittest.TestCase):
             "json.loads", return_value=[]
         ), patch.object(SharedAnalysisDirectory, "prepare") as prepare:
             test_command = incremental.Incremental(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             self.assertEqual(
                 test_command._flags(),
@@ -234,7 +237,7 @@ class IncrementalTest(unittest.TestCase):
             "json.loads", return_value=[]
         ):
             test_command = commands.Incremental(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             self.assertEqual(
                 test_command._flags(),
@@ -254,7 +257,7 @@ class IncrementalTest(unittest.TestCase):
 
             test_command.run()
             commands_Start.assert_called_with(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             call_client.assert_has_calls(
                 [call(command=commands.Incremental.NAME)], any_order=True
@@ -263,12 +266,11 @@ class IncrementalTest(unittest.TestCase):
             file_monitor_instance.daemonize.assert_not_called()
 
         arguments = mock_arguments()
-        getcwd.return_value = "/test"  # called from
+        original_directory = "/test"  # called from
         find_project_root.return_value = "/"  # project root
         configuration = mock_configuration()
         configuration.version_hash = "hash"
         analysis_directory = AnalysisDirectory(".")
-        chdir.reset_mock()
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads",
@@ -286,7 +288,7 @@ class IncrementalTest(unittest.TestCase):
             ],
         ):
             test_command = incremental.Incremental(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             self.assertEqual(
                 test_command._flags(),
@@ -305,7 +307,6 @@ class IncrementalTest(unittest.TestCase):
             )
 
             test_command.run()
-            chdir.assert_called_once_with("/")
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
@@ -315,7 +316,7 @@ class IncrementalTest(unittest.TestCase):
         start_exit_code.return_value = commands.ExitCode.FAILURE
         with patch.object(commands.Command, "_call_client") as call_client:
             test_command = incremental.Incremental(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             test_command.run()
             call_client.assert_not_called()
@@ -323,13 +324,14 @@ class IncrementalTest(unittest.TestCase):
 
     def test_read_stderr(self) -> None:
         with patch("subprocess.Popen") as popen:
+            original_directory = "/original/directory"
             arguments = mock_arguments()
 
             configuration = mock_configuration()
             configuration.version_hash = "hash"
             analysis_directory = AnalysisDirectory("/root")
             test_command = incremental.Incremental(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             stream = MagicMock()
             test_command._read_stderr(stream)

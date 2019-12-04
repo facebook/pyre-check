@@ -65,10 +65,13 @@ class KillTest(unittest.TestCase):
             "os.getpid", return_value=1234
         ):
             realpath.return_value = "/test-binary"
+            original_directory = "/original/directory"
             arguments = mock_arguments()
             configuration = mock_configuration()
             analysis_directory = MagicMock()
-            commands.Kill(arguments, configuration, analysis_directory).run()
+            commands.Kill(
+                arguments, original_directory, configuration, analysis_directory
+            ).run()
             run.assert_has_calls([call(["pkill", "pyre.bin"])])
             kill.assert_has_calls([call(5678, signal.SIGKILL)])
             remove.assert_has_calls(
@@ -86,21 +89,27 @@ class KillTest(unittest.TestCase):
         ):
             kill.reset_mock()
             realpath.return_value = "/test-binary"
+            original_directory = "/original/directory"
             arguments = mock_arguments()
             configuration = mock_configuration()
             analysis_directory = MagicMock()
-            commands.Kill(arguments, configuration, analysis_directory).run()
+            commands.Kill(
+                arguments, original_directory, configuration, analysis_directory
+            ).run()
             run.assert_has_calls([call(["pkill", "main.exe"])])
             kill.assert_has_calls([call(5678, signal.SIGKILL)])
 
         with patch("os.getcwd", return_value="/root"), patch(
             "shutil.rmtree"
         ) as remove_tree:
+            original_directory = "/original/directory"
             arguments = mock_arguments()
             configuration = mock_configuration()
             analysis_directory = MagicMock()
             arguments.with_fire = True
-            commands.Kill(arguments, configuration, analysis_directory).run()
+            commands.Kill(
+                arguments, original_directory, configuration, analysis_directory
+            ).run()
             remove_tree.assert_has_calls(
                 [call(".pyre/resource_cache"), call("/tmp/pyre/buck_builder_cache")]
             )
@@ -109,7 +118,10 @@ class KillTest(unittest.TestCase):
             "os.getpid", return_value=1234
         ), patch("os.kill", side_effect=ProcessLookupError):
             realpath.return_value = "/test-binary"
+            original_directory = "/original/directory"
             arguments = mock_arguments()
             configuration = mock_configuration()
             analysis_directory = MagicMock()
-            commands.Kill(arguments, configuration, analysis_directory).run()
+            commands.Kill(
+                arguments, original_directory, configuration, analysis_directory
+            ).run()

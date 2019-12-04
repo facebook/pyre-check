@@ -96,22 +96,22 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
 
 
 class CommandTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
-    def test_relative_path(self, find_local_root, find_project_root, getcwd) -> None:
+    def test_relative_path(self, find_local_root, find_project_root) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
+        original_directory = "/original/directory"
         self.assertEqual(
             commands.Command(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )._relative_path("/original/directory/path"),
             "path",
         )
         self.assertEqual(
             commands.Command(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )._relative_path("/original/directory/"),
             ".",
         )
@@ -120,12 +120,13 @@ class CommandTest(unittest.TestCase):
     def test_state(self, os_kill) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
+        original_directory = "/original/directory"
 
         with patch("builtins.open", mock_open()) as open:
             open.side_effect = [io.StringIO("1")]
             self.assertEqual(
                 commands.Command(
-                    arguments, configuration, AnalysisDirectory(".")
+                    arguments, original_directory, configuration, AnalysisDirectory(".")
                 )._state(),
                 commands.command.State.RUNNING,
             )
@@ -134,20 +135,22 @@ class CommandTest(unittest.TestCase):
             open.side_effect = [io.StringIO("derp")]
             self.assertEqual(
                 commands.Command(
-                    arguments, configuration, AnalysisDirectory(".")
+                    arguments, original_directory, configuration, AnalysisDirectory(".")
                 )._state(),
                 commands.command.State.DEAD,
             )
 
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
-    def test_logger(self, find_local_root, find_project_root, getcwd) -> None:
+    def test_logger(self, find_local_root, find_project_root) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory(".")
+        original_directory = "/original/directory"
 
-        test_command = commands.Command(arguments, configuration, analysis_directory)
+        test_command = commands.Command(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self.assertEqual(
             test_command._flags(),
             [
@@ -161,7 +164,9 @@ class CommandTest(unittest.TestCase):
         )
 
         configuration.logger = "/foo/bar"
-        test_command = commands.Command(arguments, configuration, analysis_directory)
+        test_command = commands.Command(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self.assertEqual(
             test_command._flags(),
             [

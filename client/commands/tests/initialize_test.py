@@ -28,6 +28,7 @@ class InitializeTest(unittest.TestCase):
         self, open, subprocess_call, isfile, which, _get_input, get_yes_no_input
     ) -> None:
         get_yes_no_input.return_value = True
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         # pyre.py does not provide a Configuration instance to
         # Initialize - this test should do the same
@@ -48,7 +49,7 @@ class InitializeTest(unittest.TestCase):
         which.side_effect = [True, True]
         with patch.object(commands.Command, "_call_client"):
             initialize.Initialize(
-                arguments, configuration, AnalysisDirectory(".")
+                arguments, original_directory, configuration, AnalysisDirectory(".")
             ).run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
@@ -66,7 +67,7 @@ class InitializeTest(unittest.TestCase):
             initialize.Initialize, "_get_local_configuration", return_value={}
         ):
             initialize.Initialize(
-                arguments, configuration, AnalysisDirectory(".")
+                arguments, original_directory, configuration, AnalysisDirectory(".")
             ).run()
             file().write.assert_has_calls([call("{}"), call("\n")])
 
@@ -79,7 +80,7 @@ class InitializeTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client"):
             with self.assertRaises(EnvironmentException):
                 initialize.Initialize(
-                    arguments, configuration, AnalysisDirectory(".")
+                    arguments, original_directory, configuration, AnalysisDirectory(".")
                 ).run()
 
         with patch.object(commands.Command, "_call_client"), patch.object(
@@ -88,17 +89,18 @@ class InitializeTest(unittest.TestCase):
             which.reset_mock()
             which.side_effect = [True, None, "/tmp/pyre/bin/pyre.bin"]
             initialize.Initialize(
-                arguments, configuration, AnalysisDirectory(".")
+                arguments, original_directory, configuration, AnalysisDirectory(".")
             )._get_configuration()
             which.assert_has_calls(
                 [call("watchman"), call("pyre.bin"), call("/tmp/pyre/bin/pyre.bin")]
             )
 
     def test_get_local_configuration(self) -> None:
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
         command = initialize.Initialize(
-            arguments, configuration, AnalysisDirectory(".")
+            arguments, original_directory, configuration, AnalysisDirectory(".")
         )
 
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(

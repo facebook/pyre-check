@@ -19,7 +19,6 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
 
 
 class CheckTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
@@ -33,17 +32,19 @@ class CheckTest(unittest.TestCase):
         check_output,
         find_local_root,
         find_project_root,
-        getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
 
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Check(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -68,13 +69,12 @@ class CheckTest(unittest.TestCase):
             "json.loads", return_value=[]
         ), patch.object(shared_analysis_directory, "prepare") as prepare:
             command = commands.Check(
-                arguments, configuration, shared_analysis_directory
+                arguments, original_directory, configuration, shared_analysis_directory
             )
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
             prepare.assert_called_once_with()
 
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
@@ -88,10 +88,10 @@ class CheckTest(unittest.TestCase):
         check_output,
         find_local_root,
         find_project_root,
-        getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
 
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         arguments.sequential = True
         configuration = mock_configuration()
@@ -99,7 +99,9 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Check(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -125,20 +127,19 @@ class CheckTest(unittest.TestCase):
     @patch.object(
         commands.Reporting, "_get_directories_to_analyze", return_value=set(["a", "b"])
     )
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_filter_directories(
         self,
         find_local_root,
         find_project_root,
-        getcwd,
         directories_to_analyze,
         realpath,
         check_output,
     ) -> None:
         realpath.side_effect = lambda x: x
 
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         arguments.sequential = True
         configuration = mock_configuration()
@@ -146,7 +147,9 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Check(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -168,7 +171,6 @@ class CheckTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
@@ -182,10 +184,10 @@ class CheckTest(unittest.TestCase):
         check_output,
         find_local_root,
         find_project_root,
-        getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
 
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         arguments.capable_terminal = False
         configuration = mock_configuration()
@@ -193,7 +195,9 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Check(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -213,7 +217,6 @@ class CheckTest(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
@@ -227,10 +230,10 @@ class CheckTest(unittest.TestCase):
         check_output,
         find_local_root,
         find_project_root,
-        getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
 
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         arguments.hide_parse_errors = True
         configuration = mock_configuration()
@@ -238,7 +241,9 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Check(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -257,7 +262,6 @@ class CheckTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
@@ -271,10 +275,10 @@ class CheckTest(unittest.TestCase):
         check_output,
         find_local_root,
         find_project_root,
-        getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
 
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
         configuration.strict = True
@@ -282,7 +286,9 @@ class CheckTest(unittest.TestCase):
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
         ):
-            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Check(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [

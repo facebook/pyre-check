@@ -28,10 +28,13 @@ class Kill(Command):
     def __init__(
         self,
         arguments: argparse.Namespace,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Kill, self).__init__(arguments, configuration, analysis_directory)
+        super(Kill, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self._with_fire: bool = arguments.with_fire
 
     @classmethod

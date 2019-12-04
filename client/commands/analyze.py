@@ -30,10 +30,13 @@ class Analyze(Check):
     def __init__(
         self,
         arguments: argparse.Namespace,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Analyze, self).__init__(arguments, configuration, analysis_directory)
+        super(Analyze, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self._analysis = arguments.analysis  # type: str
         self._taint_models_path = (
             arguments.taint_models_path or self._configuration.taint_models_path

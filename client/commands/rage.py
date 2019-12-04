@@ -20,10 +20,13 @@ class Rage(Command):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Rage, self).__init__(arguments, configuration, analysis_directory)
+        super(Rage, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:

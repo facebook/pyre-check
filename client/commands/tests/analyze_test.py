@@ -19,7 +19,6 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(check.__name__)
 
 
 class AnalyzeTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("subprocess.check_output")
@@ -33,7 +32,6 @@ class AnalyzeTest(unittest.TestCase):
         check_output,
         find_local_root,
         find_project_root,
-        getcwd,
     ) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
@@ -42,13 +40,17 @@ class AnalyzeTest(unittest.TestCase):
         configuration = mock_configuration()
         configuration.taint_models_path = []
 
+        original_directory = "/original/directory"
+
         result = MagicMock()
         result.output = ""
 
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -74,7 +76,9 @@ class AnalyzeTest(unittest.TestCase):
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = ["taint_models"]
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -102,7 +106,9 @@ class AnalyzeTest(unittest.TestCase):
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = ["taint_models_1", "taint_models_2"]
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -133,7 +139,9 @@ class AnalyzeTest(unittest.TestCase):
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = {"taint_models"}
             arguments.taint_models_path = {"overriding_models"}
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -163,7 +171,9 @@ class AnalyzeTest(unittest.TestCase):
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = {"taint_models"}
             arguments.taint_models_path = {"overriding_models"}
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -194,7 +204,9 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -225,7 +237,9 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -257,7 +271,9 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -290,7 +306,9 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -321,7 +339,9 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            command = commands.Analyze(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [

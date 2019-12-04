@@ -24,6 +24,7 @@ class RestartTest(unittest.TestCase):
         state = MagicMock()
         state.running = ["."]
 
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -36,11 +37,13 @@ class RestartTest(unittest.TestCase):
         ) as commands_Start, patch.object(
             restart, "Incremental"
         ) as commands_Incremental:
-            commands.Restart(arguments, configuration, analysis_directory)._run()
+            commands.Restart(
+                arguments, original_directory, configuration, analysis_directory
+            )._run()
             commands_Stop.assert_called_with(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             commands_Incremental.assert_called_with(
-                arguments, configuration, analysis_directory
+                arguments, original_directory, configuration, analysis_directory
             )
             commands_Start.assert_not_called()

@@ -28,10 +28,13 @@ class Start(Reporting):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Start, self).__init__(arguments, configuration, analysis_directory)
+        super(Start, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self._terminal: bool = arguments.terminal
         self._store_type_check_resolution: bool = arguments.store_type_check_resolution
         self._use_watchman: bool = not arguments.no_watchman

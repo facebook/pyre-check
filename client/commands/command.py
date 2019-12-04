@@ -136,7 +136,7 @@ class CommandParser(ABC):
     NAME = ""  # type: str
     _exit_code = ExitCode.SUCCESS  # type: ExitCode
 
-    def __init__(self, arguments: argparse.Namespace) -> None:
+    def __init__(self, arguments: argparse.Namespace, original_directory: str) -> None:
         self._arguments = arguments
         self._local_configuration: Optional[str] = arguments.local_configuration
         self._version: bool = arguments.version
@@ -183,7 +183,7 @@ class CommandParser(ABC):
 
         # Derived arguments
         self._capable_terminal: bool = is_capable_terminal()
-        self._original_directory: str = os.getcwd()
+        self._original_directory: str = original_directory
         self._current_directory: str = find_project_root(self._original_directory)
         self._local_configuration = self._local_configuration or find_local_root(
             self._original_directory
@@ -196,9 +196,6 @@ class CommandParser(ABC):
             self._logger = translate_path(self._original_directory, logger)
         if self._debug or not self._capable_terminal:
             self._noninteractive = True
-
-        # TODO(T57959968): Stop changing the directory in the client
-        os.chdir(self._current_directory)
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
@@ -404,6 +401,10 @@ class CommandParser(ABC):
         return self._exit_code
 
     @property
+    def current_directory(self) -> Optional[str]:
+        return self._current_directory
+
+    @property
     def local_configuration(self) -> Optional[str]:
         return self._local_configuration
 
@@ -425,10 +426,11 @@ class Command(CommandParser):
     def __init__(
         self,
         arguments: argparse.Namespace,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Command, self).__init__(arguments)
+        super(Command, self).__init__(arguments, original_directory)
         local_configuration = self._local_configuration
         if local_configuration:
             self._local_root = (

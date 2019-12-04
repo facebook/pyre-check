@@ -180,10 +180,13 @@ class Profile(Command):
     def __init__(
         self,
         arguments: argparse.Namespace,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Profile, self).__init__(arguments, configuration, analysis_directory)
+        super(Profile, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self._profile_output: ProfileOutput = arguments.profile_output
 
     @classmethod

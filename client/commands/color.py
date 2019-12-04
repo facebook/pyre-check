@@ -116,10 +116,13 @@ class Color(Command):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Color, self).__init__(arguments, configuration, analysis_directory)
+        super(Color, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self.path = arguments.path
 
     @classmethod

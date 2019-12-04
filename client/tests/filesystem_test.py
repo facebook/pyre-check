@@ -416,12 +416,13 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
-            cwd.side_effect = ["/root", "/"]
+            cwd.return_value = "/"
+            original_directory = "/root"
             arguments.source_directories = []
             arguments.targets = ["arguments_target"]
             configuration.source_directories = ["configuration_source_directory"]
 
-            command = commands.Check(arguments, configuration)
+            command = commands.Check(arguments, original_directory, configuration)
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
@@ -435,8 +436,9 @@ class FilesystemTest(unittest.TestCase):
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
             # same test as above, but Start instead of Check; build should be False
-            cwd.side_effect = ["/root", "/"]
-            command = commands.Start(arguments, configuration)
+            cwd.return_value = "/"
+            original_directory = "/root"
+            command = commands.Start(arguments, original_directory, configuration)
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
@@ -452,15 +454,16 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
-            cwd.side_effect = ["/root", "/", "/", "/"]
-            command = commands.Start(arguments, configuration)
+            cwd.side_effect = ["/", "/", "/"]
+            original_directory = "/root"
+            command = commands.Start(arguments, original_directory, configuration)
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(
                 {"arguments_target"}, build=False
             )
-            command = commands.Restart(arguments, configuration)
+            command = commands.Restart(arguments, original_directory, configuration)
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
@@ -472,7 +475,8 @@ class FilesystemTest(unittest.TestCase):
             "generate_source_directories",
             return_value=["configuration_source_directory"],
         ) as buck_source_directories:
-            cwd.side_effect = ["/root", "/"]
+            cwd.return_value = "/"
+            original_directory = "/root"
             arguments.source_directories = []
             arguments.targets = []
             arguments.command = commands.Check
@@ -480,7 +484,7 @@ class FilesystemTest(unittest.TestCase):
             configuration.targets = ["configuration_target"]
             configuration.source_directories = []
 
-            command = commands.Check(arguments, configuration)
+            command = commands.Check(arguments, original_directory, configuration)
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
@@ -497,12 +501,13 @@ class FilesystemTest(unittest.TestCase):
         with patch.object(
             buck, "generate_source_directories", return_value=["."]
         ) as buck_source_directories:
-            cwd.side_effect = ["/root", "/"]
+            cwd.side_effect = ["/", "/"]
+            original_directory = "/root"
             arguments.source_directories = []
             arguments.targets = []
             configuration.targets = ["."]
 
-            command = commands.Check(arguments, configuration)
+            command = commands.Check(arguments, original_directory, configuration)
             analysis_directory = command._analysis_directory
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()

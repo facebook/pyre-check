@@ -28,10 +28,13 @@ class Reporting(Command):
     def __init__(
         self,
         arguments: argparse.Namespace,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super().__init__(arguments, configuration, analysis_directory)
+        super().__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
 
     def _print(self, errors: Sequence[Error]) -> None:
         if errors:

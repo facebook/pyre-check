@@ -23,7 +23,6 @@ _typeshed_search_path: str = "{}.typeshed_search_path".format(commands.start.__n
 
 
 class StartTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("fcntl.lockf")
@@ -37,8 +36,8 @@ class StartTest(unittest.TestCase):
         lock_file,
         find_local_root,
         find_project_root,
-        getcwd,
     ) -> None:
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         arguments.terminal = False
 
@@ -54,7 +53,9 @@ class StartTest(unittest.TestCase):
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments.no_watchman = True
-            command = commands.Start(arguments, configuration, analysis_directory)
+            command = commands.Start(
+                arguments, original_directory, configuration, analysis_directory
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -84,7 +85,9 @@ class StartTest(unittest.TestCase):
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments.no_watchman = False
-            command = commands.Start(arguments, configuration, analysis_directory)
+            command = commands.Start(
+                arguments, original_directory, configuration, analysis_directory
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -126,7 +129,9 @@ class StartTest(unittest.TestCase):
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments.no_watchman = True
-            command = commands.Start(arguments, configuration, analysis_directory)
+            command = commands.Start(
+                arguments, original_directory, configuration, analysis_directory
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -161,7 +166,9 @@ class StartTest(unittest.TestCase):
             project_files_monitor, "ProjectFilesMonitor"
         ) as Monitor:
             arguments.no_watchman = True
-            command = commands.Start(arguments, configuration, analysis_directory)
+            command = commands.Start(
+                arguments, original_directory, configuration, analysis_directory
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -199,7 +206,7 @@ class StartTest(unittest.TestCase):
             arguments = mock_arguments(no_watchman=True)
             configuration = mock_configuration(version_hash="hash")
             command = commands.Start(
-                arguments, configuration, shared_analysis_directory
+                arguments, original_directory, configuration, shared_analysis_directory
             )
             self.assertEqual(
                 command._flags(),
@@ -223,18 +230,20 @@ class StartTest(unittest.TestCase):
             prepare.assert_called_once_with()
             Monitor.assert_not_called()
 
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_start_flags(
-        self, get_directories_to_analyze, find_local_root, find_project_root, getcwd
+        self, get_directories_to_analyze, find_local_root, find_project_root
     ) -> None:
         # Check start with watchman.
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -255,7 +264,9 @@ class StartTest(unittest.TestCase):
 
         arguments = mock_arguments(no_watchman=True, terminal=True)
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -278,7 +289,9 @@ class StartTest(unittest.TestCase):
         # Check filter directories.
         arguments = mock_arguments(no_watchman=True)
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         with patch.object(command, "_get_directories_to_analyze") as get_directories:
             get_directories.return_value = {"a", "b"}
             self.assertEqual(
@@ -304,7 +317,9 @@ class StartTest(unittest.TestCase):
         # Check configuration-file-hash.
         arguments = mock_arguments(no_watchman=True)
         configuration = mock_configuration(version_hash="hash", file_hash="ABCD")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         with patch.object(command, "_get_directories_to_analyze") as get_directories:
             get_directories.return_value = {"a", "b"}
             self.assertEqual(
@@ -332,7 +347,9 @@ class StartTest(unittest.TestCase):
         # Check save-initial-state-to.
         arguments = mock_arguments(save_initial_state_to="/tmp")
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -358,7 +375,9 @@ class StartTest(unittest.TestCase):
             load_initial_state_from="/tmp/pyre_shared_memory",
             changed_files_path="/tmp/changed_files",
         )
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -381,7 +400,9 @@ class StartTest(unittest.TestCase):
             ],
         )
         arguments = mock_arguments(load_initial_state_from="/tmp/pyre_shared_memory")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -402,7 +423,9 @@ class StartTest(unittest.TestCase):
             ],
         )
         arguments = mock_arguments(changed_files_path="/tmp/changed_files")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -422,7 +445,9 @@ class StartTest(unittest.TestCase):
         )
         # Check --saved-state-project.
         arguments = mock_arguments(saved_state_project="pyre/saved_state")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -446,7 +471,9 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments(
             saved_state_project="pyre/saved_state", no_saved_state=True
         )
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -469,7 +496,9 @@ class StartTest(unittest.TestCase):
         arguments.load_initial_state_from = "/do/not/load"
         arguments.save_initial_state_to = "/do/not/save"
         arguments.changed_files_path = "/do/not/change"
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -488,7 +517,9 @@ class StartTest(unittest.TestCase):
             ],
         )
         arguments = mock_arguments(store_type_check_resolution=True)
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -514,7 +545,9 @@ class StartTest(unittest.TestCase):
             os.getcwd(), "first/second"
         )
         configuration.version_hash = "hash"
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -539,7 +572,9 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
         configuration.ignore_all_errors = ["/absolute/a", "/root/b"]
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -563,7 +598,9 @@ class StartTest(unittest.TestCase):
         arguments.incremental_style = commands.IncrementalStyle.FINE_GRAINED
         configuration = mock_configuration(version_hash="hash")
         configuration.ignore_all_errors = ["/absolute/a", "/root/b"]
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -587,7 +624,9 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration(version_hash="hash")
         configuration.autocomplete = True
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -609,7 +648,9 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments()
         arguments.enable_profiling = True
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -632,7 +673,9 @@ class StartTest(unittest.TestCase):
         arguments = mock_arguments()
         arguments.enable_memory_profiling = True
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [
@@ -656,7 +699,9 @@ class StartTest(unittest.TestCase):
         arguments.enable_profiling = True
         arguments.enable_memory_profiling = True
         configuration = mock_configuration(version_hash="hash")
-        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Start(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._flags(),
             [

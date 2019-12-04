@@ -581,20 +581,15 @@ def mock_configuration() -> MagicMock:
 
 
 class InferTest(unittest.TestCase):
-    @patch("os.getcwd", return_value="/original/directory")
     @patch("{}.find_project_root".format(client_name), return_value=".")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("json.loads", return_value=[])
     @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_infer(
-        self,
-        directories_to_analyze,
-        json_loads,
-        find_local_root,
-        find_project_root,
-        getcwd,
+        self, directories_to_analyze, json_loads, find_local_root, find_project_root
     ) -> None:
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         arguments.strict = False
 
@@ -602,7 +597,9 @@ class InferTest(unittest.TestCase):
         configuration.get_typeshed.return_value = "stub"
 
         with patch.object(commands.Command, "_call_client") as call_client:
-            command = Infer(arguments, configuration, AnalysisDirectory("."))
+            command = Infer(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -623,7 +620,9 @@ class InferTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
 
-            command = Infer(arguments, configuration, AnalysisDirectory("."))
+            command = Infer(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [
@@ -644,7 +643,9 @@ class InferTest(unittest.TestCase):
 
         with patch.object(commands.Command, "_call_client") as call_client:
             arguments.json = True
-            command = Infer(arguments, configuration, AnalysisDirectory("."))
+            command = Infer(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
             self.assertEqual(
                 command._flags(),
                 [

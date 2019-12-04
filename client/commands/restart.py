@@ -22,10 +22,13 @@ class Restart(Command):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Restart, self).__init__(arguments, configuration, analysis_directory)
+        super(Restart, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self._terminal: bool = arguments.terminal
         self._store_type_check_resolution: bool = arguments.store_type_check_resolution
         self._use_watchman: bool = not arguments.no_watchman
@@ -69,12 +72,20 @@ class Restart(Command):
         )
 
     def _run(self) -> None:
-        Stop(self._arguments, self._configuration, self._analysis_directory).run()
+        Stop(
+            self._arguments,
+            self._original_directory,
+            self._configuration,
+            self._analysis_directory,
+        ).run()
         # Force the incremental run to be blocking.
         # pyre-fixme[16]: `Namespace` has no attribute `nonblocking`.
         self._arguments.nonblocking = False
         # pyre-fixme[16]: `Namespace` has no attribute `no_start`.
         self._arguments.no_start = False
         Incremental(
-            self._arguments, self._configuration, self._analysis_directory
+            self._arguments,
+            self._original_directory,
+            self._configuration,
+            self._analysis_directory,
         ).run()

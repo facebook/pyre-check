@@ -43,10 +43,13 @@ class Query(Command):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Query, self).__init__(arguments, configuration, analysis_directory)
+        super(Query, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self.query = self._rewrite_paths(arguments.query)
 
     @classmethod

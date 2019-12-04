@@ -27,6 +27,7 @@ class PersistentTest(unittest.TestCase):
     def test_persistent(
         self, _daemonize, directories_to_analyze, run_null_server, Monitor
     ) -> None:
+        original_directory = "/original/directory"
         arguments = mock_arguments()
         configuration = mock_configuration()
         configuration.version_hash = "hash"
@@ -39,7 +40,7 @@ class PersistentTest(unittest.TestCase):
                 {"click_to_fix": True, "go_to_definition": True, "hover": True}
             )
             command = commands.Persistent(
-                arguments, configuration, AnalysisDirectory(".")
+                arguments, original_directory, configuration, AnalysisDirectory(".")
             )
             self.assertEqual(
                 command._flags(),
@@ -62,7 +63,9 @@ class PersistentTest(unittest.TestCase):
             )
 
         # Check null server initialize output
-        command = commands.Persistent(arguments, configuration, AnalysisDirectory("."))
+        command = commands.Persistent(
+            arguments, original_directory, configuration, AnalysisDirectory(".")
+        )
         self.assertEqual(
             command._initialize_response(5),
             "Content-Length: 59\r\n\r\n"

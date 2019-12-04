@@ -14,8 +14,11 @@ class RageTest(unittest.TestCase):
     def test_flags(self) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
+        original_directory = "/original/directory"
         analysis_directory = AnalysisDirectory(".")
         self.assertEqual(
-            commands.Rage(arguments, configuration, analysis_directory)._flags(),
+            commands.Rage(
+                arguments, original_directory, configuration, analysis_directory
+            )._flags(),
             ["-log-directory", ".pyre"],
         )

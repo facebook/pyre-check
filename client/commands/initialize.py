@@ -31,10 +31,11 @@ class Initialize(CommandParser):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Initialize, self).__init__(arguments)
+        super(Initialize, self).__init__(arguments, original_directory)
         self._local: bool = arguments.local
 
     @classmethod

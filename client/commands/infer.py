@@ -398,12 +398,15 @@ class Infer(Reporting):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
         arguments.show_error_traces = True
         arguments.output = JSON
-        super(Infer, self).__init__(arguments, configuration, analysis_directory)
+        super(Infer, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self._print_errors: bool = arguments.print_only
         self._full_only: bool = arguments.full_only
         self._recursive: bool = arguments.recursive

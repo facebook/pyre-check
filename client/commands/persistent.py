@@ -25,10 +25,13 @@ class Persistent(Command):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Persistent, self).__init__(arguments, configuration, analysis_directory)
+        super(Persistent, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self._no_watchman: bool = arguments.no_watchman
 
     @classmethod
@@ -56,7 +59,12 @@ class Persistent(Command):
         arguments.store_type_check_resolution = False
         # pyre-fixme[16]: `Namespace` has no attribute `transitive`.
         arguments.incremental_style = IncrementalStyle.SHALLOW
-        Start(arguments, self._configuration, self._analysis_directory).run()
+        Start(
+            arguments,
+            self._original_directory,
+            self._configuration,
+            self._analysis_directory,
+        ).run()
 
         self._call_client(command=self.NAME, capture_output=False).check()
 

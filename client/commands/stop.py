@@ -28,10 +28,13 @@ class Stop(Command):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Stop, self).__init__(arguments, configuration, analysis_directory)
+        super(Stop, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -49,7 +52,12 @@ class Stop(Command):
         def _kill():
             arguments = self._arguments
             arguments.with_fire = False
-            Kill(arguments, self._configuration, self._analysis_directory).run()
+            Kill(
+                arguments,
+                self._original_directory,
+                self._configuration,
+                self._analysis_directory,
+            ).run()
 
         if self._state() == State.DEAD:
             LOG.warning("No server running, cleaning up any left over Pyre processes.")

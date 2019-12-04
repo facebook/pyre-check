@@ -44,10 +44,13 @@ class Incremental(Reporting):
     def __init__(
         self,
         arguments,
+        original_directory: str,
         configuration: Optional[Configuration] = None,
         analysis_directory: Optional[AnalysisDirectory] = None,
     ) -> None:
-        super(Incremental, self).__init__(arguments, configuration, analysis_directory)
+        super(Incremental, self).__init__(
+            arguments, original_directory, configuration, analysis_directory
+        )
         self._nonblocking = arguments.nonblocking  # type: bool
         self._incremental_style = arguments.incremental_style  # type: bool
         self._no_start_server = arguments.no_start  # type: bool
@@ -96,7 +99,12 @@ class Incremental(Reporting):
             # pyre-fixme[16]: `Namespace` has no attribute `no_watchman`.
             arguments.no_watchman = False
             exit_code = (
-                Start(arguments, self._configuration, self._analysis_directory)
+                Start(
+                    arguments,
+                    self._original_directory,
+                    self._configuration,
+                    self._analysis_directory,
+                )
                 .run()
                 .exit_code()
             )

@@ -20,6 +20,7 @@ class ColorTest(unittest.TestCase):
     def test_query(self, sys, open_mock) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
+        original_directory = "/original/directory"
         open_mock.return_value = mock_open(
             read_data="""
             def foo() -> int:
@@ -31,7 +32,9 @@ class ColorTest(unittest.TestCase):
             result.output = '{"response": {"types": []}}'
             call_client.return_value = result
             arguments.file = ""
-            commands.Color(arguments, configuration, AnalysisDirectory(".")).run()
+            commands.Color(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            ).run()
             call_client.assert_called_once_with(command=commands.Query.NAME)
 
     def test_type_annotations(self) -> None:

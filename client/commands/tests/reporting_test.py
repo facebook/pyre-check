@@ -23,20 +23,13 @@ class ReportingTest(unittest.TestCase):
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
     @patch.object(os.path, "isdir", side_effect=lambda path: True)
     @patch.object(os.path, "exists", side_effect=lambda path: True)
-    @patch("os.getcwd", return_value="/test")
     @patch("{}.find_project_root".format(client_name), return_value="/")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     @patch("os.chdir")
     def test_get_errors(
-        self,
-        chdir,
-        find_local_root,
-        find_project_root,
-        get_cwd,
-        exists,
-        isdir,
-        realpath,
+        self, chdir, find_local_root, find_project_root, exists, isdir, realpath
     ) -> None:
+        original_directory = "/test"
         arguments = mock_arguments()
         configuration = mock_configuration()
         result = MagicMock()
@@ -56,7 +49,7 @@ class ReportingTest(unittest.TestCase):
         }
 
         handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("/test/f/g")
+            arguments, original_directory, configuration, AnalysisDirectory("/test/f/g")
         )
         with patch.object(json, "loads", return_value=json_errors):
             errors = handler._get_errors(result)
@@ -68,7 +61,7 @@ class ReportingTest(unittest.TestCase):
         arguments.targets = ["//f/g:target"]
         configuration.targets = []
         handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("/test/f/g")
+            arguments, original_directory, configuration, AnalysisDirectory("/test/f/g")
         )
         with patch.object(json, "loads", return_value=json_errors):
             errors = handler._get_errors(result)
@@ -77,11 +70,11 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.ignore_error)
             self.assertFalse(error.external_to_global_root)
 
-        get_cwd.return_value = "/f/g/target"
+        original_directory = "/f/g/target"
         arguments.targets = ["//f/g:target"]
         configuration.targets = []
         handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("/test/h/i")
+            arguments, original_directory, configuration, AnalysisDirectory("/test/h/i")
         )
         with patch.object(json, "loads", return_value=json_errors):
             errors = handler._get_errors(result)
@@ -91,11 +84,11 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.external_to_global_root)
 
         # Called from root with local configuration command line argument
-        get_cwd.return_value = "/"  # called from
+        original_directory = "/"  # called from
         find_project_root.return_value = "/"  # project root
         find_local_root.return_value = "/test"  # local configuration
         handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("/shared")
+            arguments, original_directory, configuration, AnalysisDirectory("/shared")
         )
         with patch.object(json, "loads", return_value=json_errors):
             errors = handler._get_errors(result)
@@ -107,11 +100,13 @@ class ReportingTest(unittest.TestCase):
         return
 
         # Test wildcard in do not check
-        get_cwd.return_value = "/"  # called from
+        original_directory = "/"  # called from
         find_project_root.return_value = "/"  # project root
         find_local_root.return_value = None
         configuration.ignore_all_errors = ["*/b"]
-        handler = commands.Reporting(arguments, configuration, AnalysisDirectory("/a"))
+        handler = commands.Reporting(
+            arguments, original_directory, configuration, AnalysisDirectory("/a")
+        )
         json_errors["errors"][0]["path"] = "b/c.py"
         with patch.object(json, "loads", return_value=json_errors):
             errors = handler._get_errors(result)
@@ -121,19 +116,19 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.external_to_global_root)
 
     @patch.object(subprocess, "run")
-    @patch("os.getcwd", return_value="/")
     @patch("os.chdir")
     @patch("{}.find_project_root".format(client_name), return_value="/")
     @patch("{}.find_local_root".format(client_name), return_value=None)
     def test_get_directories_to_analyze(
-        self, find_local_root, find_project_root, chdir, getcwd, run
+        self, find_local_root, find_project_root, chdir, run
     ) -> None:
+        original_directory = "/"
         arguments = mock_arguments()
         find_project_root.return_value = "base"
         arguments.source_directories = ["base"]
         configuration = mock_configuration()
         handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("base")
+            arguments, original_directory, configuration, AnalysisDirectory("base")
         )
         run.return_value = subprocess.CompletedProcess(
             args=[],
@@ -156,14 +151,17 @@ class ReportingTest(unittest.TestCase):
 
         configuration.local_configuration = "a/b/.pyre_configuration.local"
         handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("base")
+            arguments, original_directory, configuration, AnalysisDirectory("base")
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
         configuration.local_configuration = "a/b/.pyre_configuration.local"
         arguments.source_directories = None
         handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("base", filter_paths=["a/b"])
+            arguments,
+            original_directory,
+            configuration,
+            AnalysisDirectory("base", filter_paths=["a/b"]),
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"a/b"})
 
@@ -172,6 +170,7 @@ class ReportingTest(unittest.TestCase):
         configuration.local_configuration = None
         handler = commands.Reporting(
             arguments,
+            original_directory,
             configuration,
             SharedAnalysisDirectory([], ["//target/name"], filter_paths=[]),
         )
