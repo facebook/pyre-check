@@ -357,10 +357,9 @@ let run_with_taint_models tests ~name =
     |}
       |> Test.trim_extra_indentation
     in
-    let _, _, environment =
-      Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_environment
+    let global_resolution =
+      Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_resolution
     in
-    let global_resolution = GlobalResolution.create environment in
     Model.parse
       ~resolution:(TypeCheck.resolution global_resolution ())
       ~source:model_source

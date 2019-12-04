@@ -14,10 +14,7 @@ open Test
 module Callable = Annotated.Callable
 
 let test_apply_decorators context =
-  let _, _, environment =
-    ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
-  in
-  let resolution = GlobalResolution.create environment in
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
   let create_define ~decorators ~parameters ~return_annotation =
     (let decorators = List.map ~f:parse_single_expression decorators in
      {
@@ -76,12 +73,7 @@ let test_apply_decorators context =
   (* Click related tests *)
   let assert_apply_click_decorators ~expected_count define =
     let actual_count =
-      let resolution =
-        let _, _, environment =
-          ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
-        in
-        GlobalResolution.create environment
-      in
+      let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
       GlobalResolution.apply_decorators ~resolution define
       |> fun { Type.Callable.parameters; _ } ->
       match parameters with
@@ -127,10 +119,10 @@ let test_apply_decorators context =
 
 let test_create context =
   let assert_callable ?expected_implicit ?parent ~expected source =
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create environment in
+    let resolution = GlobalResolution.create global_environment in
     let expected =
       GlobalResolution.parse_annotation resolution (parse_single_expression expected)
     in

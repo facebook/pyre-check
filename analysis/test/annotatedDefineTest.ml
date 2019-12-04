@@ -37,10 +37,10 @@ let test_parent_definition context =
     |> Define.parent_definition ~resolution:(GlobalResolution.create environment)
   in
   let assert_parent ~expected ~source ~name ~parent =
-    let _, _, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let actual = parent_class_definition environment name parent >>| Class.name in
+    let actual = parent_class_definition global_environment name parent >>| Class.name in
     let cmp = Option.equal Reference.equal in
     let printer = function
       | None -> "None"
@@ -77,14 +77,14 @@ let test_parent_definition context =
 let test_decorate context =
   let assert_decorated source ~expected =
     let source, environment =
-      let _, ast_environment, environment =
+      let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
       ( Option.value_exn
           (AstEnvironment.ReadOnly.get_source
              (AstEnvironment.read_only ast_environment)
              (Reference.create "test")),
-        environment )
+        global_environment )
     in
     let resolution = GlobalResolution.create environment in
     let take_define = function

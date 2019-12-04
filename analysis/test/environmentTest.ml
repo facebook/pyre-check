@@ -32,14 +32,16 @@ let create_environments_and_project
       ~include_helper_builtins:include_helpers
       additional_sources
   in
-  let _, ast_environment, environment = project |> ScratchProject.build_global_environment in
+  let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
+    project |> ScratchProject.build_global_environment
+  in
   (* TODO (T47159596): This can be done in a more elegant way *)
   let () =
     let set_up_shared_memory _ = () in
     let tear_down_shared_memory () _ = Memory.reset_shared_memory () in
     OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
   in
-  environment, ast_environment, project
+  global_environment, ast_environment, project
 
 
 let create_environment ~context ?include_typeshed_stubs ?include_helpers ?additional_sources () =

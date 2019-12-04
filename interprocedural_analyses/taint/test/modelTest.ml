@@ -16,7 +16,7 @@ let assert_model ?source ?rules ~context ~model_source ~expect () =
     | None -> model_source
     | Some source -> source
   in
-  let _, _, global_environment =
+  let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
     ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
   in
   let configuration =

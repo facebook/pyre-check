@@ -14,16 +14,16 @@ module Callable = Annotated.Callable
 let test_return_annotation context =
   let assert_return_annotation expected ~return_annotation ~async ~generator =
     let return_annotation =
-      let _, _, environment =
+      let parser =
         ScratchProject.setup
           ~context
           ["test.py", {|
           class foo():
             def bar(): pass
         |}]
-        |> ScratchProject.build_global_environment
+        |> ScratchProject.build_global_resolution
+        |> GlobalResolution.annotation_parser
       in
-      let parser = GlobalResolution.create environment |> GlobalResolution.annotation_parser in
       let signature =
         {
           Define.Signature.name = !&"derp";

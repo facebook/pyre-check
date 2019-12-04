@@ -22,7 +22,7 @@ let test_select context =
              ~pattern:"$literal_string"
              ~with_:"typing_extensions.Literal[\"string\"]"
       in
-      let _, ast_environment, environment =
+      let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
         ScratchProject.setup
           ~context
           [
@@ -64,7 +64,7 @@ let test_select context =
           ]
         |> ScratchProject.build_global_environment
       in
-      let global_resolution = GlobalResolution.create environment in
+      let global_resolution = GlobalResolution.create global_environment in
       let resolution =
         TypeCheck.resolution global_resolution ()
         |> Resolution.set_local

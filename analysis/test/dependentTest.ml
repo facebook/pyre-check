@@ -9,10 +9,10 @@ open Ast
 open Test
 
 let default_environment context =
-  let _, _, environment =
+  let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
     ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
   in
-  environment
+  global_environment
 
 
 let assert_dependencies ~environment ~modules ~expected function_to_test =

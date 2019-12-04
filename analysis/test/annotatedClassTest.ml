@@ -29,7 +29,7 @@ let last_statement_exn = function
 
 let test_generics context =
   let assert_generics source generics =
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
@@ -40,7 +40,7 @@ let test_generics context =
     let source = Option.value_exn source in
     match source |> last_statement_exn with
     | { Node.value = Statement.Class definition; _ } ->
-        let resolution = GlobalResolution.create environment in
+        let resolution = GlobalResolution.create global_environment in
         let printer generics = Format.asprintf "%a" Type.OrderedTypes.pp_concise generics in
         assert_equal
           ~printer
@@ -102,7 +102,7 @@ let test_generics context =
 
 
 let test_superclasses context =
-  let _, _, environment =
+  let resolution =
     ScratchProject.setup
       ~context
       [
@@ -117,7 +117,7 @@ let test_superclasses context =
     |}
         );
       ]
-    |> ScratchProject.build_global_environment
+    |> ScratchProject.build_global_resolution
   in
   let ( ! ) name =
     {
@@ -131,7 +131,6 @@ let test_superclasses context =
     |> Node.map ~f:ClassSummary.create
     |> Class.create
   in
-  let resolution = GlobalResolution.create environment in
   let assert_successors target expected =
     let actual = GlobalResolution.successors ~resolution target in
     assert_equal
@@ -166,11 +165,8 @@ type constructor = {
 let test_get_decorator context =
   let assert_get_decorator source decorator expected =
     let resolution =
-      let _, _, environment =
-        ScratchProject.setup ~context ["__init__.py", source]
-        |> ScratchProject.build_global_environment
-      in
-      GlobalResolution.create environment
+      ScratchProject.setup ~context ["__init__.py", source]
+      |> ScratchProject.build_global_resolution
     in
     let assert_logic expected =
       match parse_last_statement source with
@@ -284,10 +280,10 @@ let test_get_decorator context =
 let test_constructors context =
   let assert_constructor source instantiated constructors =
     let instantiated = "test." ^ instantiated in
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create environment in
+    let resolution = GlobalResolution.create global_environment in
     let source =
       AstEnvironment.ReadOnly.get_source
         (AstEnvironment.read_only ast_environment)
@@ -429,7 +425,7 @@ let test_is_protocol _ =
 
 let test_class_attributes context =
   let setup source =
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
@@ -443,7 +439,7 @@ let test_class_attributes context =
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
-    ( GlobalResolution.create environment,
+    ( GlobalResolution.create global_environment,
       Node.create_with_default_location parent |> Node.map ~f:ClassSummary.create |> Class.create )
   in
   let resolution, parent =
@@ -649,10 +645,10 @@ let test_class_attributes context =
 
 let test_fallback_attribute context =
   let assert_fallback_attribute ~name source annotation =
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let global_resolution = GlobalResolution.create environment in
+    let global_resolution = GlobalResolution.create global_environment in
     let resolution = TypeCheck.resolution global_resolution () in
     let attribute =
       let source =
@@ -774,10 +770,10 @@ let test_fallback_attribute context =
 
 let test_constraints context =
   let assert_constraints ~target ~instantiated ?parameters source expected =
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create environment in
+    let resolution = GlobalResolution.create global_environment in
     let source =
       AstEnvironment.ReadOnly.get_source
         (AstEnvironment.read_only ast_environment)
@@ -1057,7 +1053,7 @@ let test_metaclasses context =
       else
         "test." ^ metaclass
     in
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
@@ -1079,7 +1075,7 @@ let test_metaclasses context =
       in
       List.find_map ~f:target statements
     in
-    let resolution = GlobalResolution.create environment in
+    let resolution = GlobalResolution.create global_environment in
     match target with
     | Some target ->
         assert_equal (Type.Primitive metaclass) (GlobalResolution.metaclass ~resolution target)
@@ -1184,12 +1180,11 @@ let test_metaclasses context =
 
 let test_overrides context =
   let resolution =
-    let _, _, environment =
-      ScratchProject.setup
-        ~context
-        [
-          ( "test.py",
-            {|
+    ScratchProject.setup
+      ~context
+      [
+        ( "test.py",
+          {|
       class Foo:
         def foo(): pass
       class Bar(Foo):
@@ -1198,11 +1193,9 @@ let test_overrides context =
         def foo(): pass
         def baz(): pass
     |}
-          );
-        ]
-      |> ScratchProject.build_global_environment
-    in
-    GlobalResolution.create environment
+        );
+      ]
+    |> ScratchProject.build_global_resolution
   in
   let definition =
     let definition =
@@ -1219,10 +1212,9 @@ let test_overrides context =
 
 let test_implicit_attributes context =
   let assert_unimplemented_attributes_equal ~source ~class_name ~expected =
-    let _, _, environment =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+    let resolution =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_resolution
     in
-    let resolution = GlobalResolution.create environment in
     let definition =
       let definition =
         GlobalResolution.class_definition resolution (Type.Primitive class_name) >>| Class.create

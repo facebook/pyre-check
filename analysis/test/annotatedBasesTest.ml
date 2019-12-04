@@ -23,7 +23,7 @@ let value option = Option.value_exn option
 
 let test_inferred_generic_base context =
   let assert_inferred_generic ~target source expected =
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
@@ -42,7 +42,7 @@ let test_inferred_generic_base context =
       in
       List.find_map ~f:target statements |> value |> Node.map ~f:ClassSummary.create
     in
-    let resolution = GlobalResolution.create environment in
+    let resolution = GlobalResolution.create global_environment in
     let parse_annotation =
       GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
     in

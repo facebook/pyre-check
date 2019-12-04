@@ -170,10 +170,7 @@ let test_resolve_literal context =
 let test_resolve_exports context =
   let assert_resolve ~sources name expected =
     let resolution =
-      let _, _, environment =
-        ScratchProject.setup ~context sources |> ScratchProject.build_global_environment
-      in
-      GlobalResolution.create environment
+      ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
     in
     let reference =
       GlobalResolution.resolve_exports resolution ~reference:(Reference.create name)
@@ -573,10 +570,10 @@ let test_class_definitions context =
 
 let test_source_is_unit_test context =
   let assert_is_unit_test ?(expected = true) source =
-    let _, ast_environment, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.ast_environment; global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution = GlobalResolution.create environment in
+    let resolution = GlobalResolution.create global_environment in
     let source =
       AstEnvironment.ReadOnly.get_source
         (AstEnvironment.read_only ast_environment)

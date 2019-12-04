@@ -10,12 +10,7 @@ open Annotation
 open Refinement
 open Test
 
-let resolution context =
-  let _, _, environment =
-    ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
-  in
-  GlobalResolution.create environment
-
+let resolution context = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
 
 let test_refine context =
   let resolution = resolution context in

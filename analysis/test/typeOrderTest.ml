@@ -16,11 +16,11 @@ open Assumptions
 let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
 
 let environment ?source context =
-  let _, _, environment =
+  let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
     let sources = Option.value_map source ~f:(fun source -> ["test.py", source]) ~default:[] in
     ScratchProject.setup ~context sources |> ScratchProject.build_global_environment
   in
-  environment
+  global_environment
 
 
 let resolution ?source context =

@@ -11,10 +11,10 @@ open Interprocedural
 open Test
 
 let setup_environment ~context ?(sources = []) () =
-  let _, _, environment =
+  let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
     ScratchProject.setup ~context sources |> ScratchProject.build_global_environment
   in
-  environment
+  global_environment
 
 
 module ResultA = Interprocedural.Result.Make (struct

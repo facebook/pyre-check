@@ -1392,6 +1392,14 @@ module ScratchProject = struct
     }
   end
 
+  module BuiltGlobalEnvironment = struct
+    type t = {
+      sources: Source.t list;
+      ast_environment: AstEnvironment.t;
+      global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+    }
+  end
+
   let clean_ast_shared_memory ~configuration module_tracker ast_environment =
     let deletions =
       ModuleTracker.source_paths module_tracker
@@ -1519,7 +1527,7 @@ module ScratchProject = struct
       AstEnvironment.UpdateResult.reparsed ast_environment_update_result
       |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
     in
-    let environment =
+    let global_environment =
       let qualifiers =
         List.map sources ~f:(fun { Ast.Source.source_path = { SourcePath.qualifier; _ }; _ } ->
             qualifier)
@@ -1534,16 +1542,18 @@ module ScratchProject = struct
       in
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
     in
-    sources, ast_environment, environment
+    { BuiltGlobalEnvironment.sources; ast_environment; global_environment }
 
 
   let build_type_environment project =
-    let sources, ast_environment, global_environment = build_global_environment project in
-    let environment = TypeEnvironment.create global_environment in
+    let { BuiltGlobalEnvironment.sources; ast_environment; global_environment } =
+      build_global_environment project
+    in
+    let type_environment = TypeEnvironment.create global_environment in
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
-    |> TypeCheck.run ~scheduler:(Scheduler.mock ()) ~configuration ~environment;
-    { BuiltTypeEnvironment.sources; ast_environment; type_environment = environment }
+    |> TypeCheck.run ~scheduler:(Scheduler.mock ()) ~configuration ~environment:type_environment;
+    { BuiltTypeEnvironment.sources; ast_environment; type_environment }
 
 
   let build_type_environment_and_postprocess project =
@@ -1561,14 +1571,14 @@ module ScratchProject = struct
 
 
   let build_resolution project =
-    let _, _, environment = build_global_environment project in
-    let global_resolution = GlobalResolution.create environment in
+    let { BuiltGlobalEnvironment.global_environment; _ } = build_global_environment project in
+    let global_resolution = GlobalResolution.create global_environment in
     TypeCheck.resolution global_resolution ()
 
 
   let build_global_resolution project =
-    let _, _, environment = build_global_environment project in
-    GlobalResolution.create environment
+    let { BuiltGlobalEnvironment.global_environment; _ } = build_global_environment project in
+    GlobalResolution.create global_environment
 end
 
 type test_update_environment_with_t = {
@@ -1607,7 +1617,7 @@ let assert_errors
           in
           ScratchProject.setup ~context ~external_sources [handle, source]
         in
-        let sources, ast_environment, global_environment =
+        let { ScratchProject.BuiltGlobalEnvironment.sources; ast_environment; global_environment } =
           ScratchProject.build_global_environment project
         in
         let configuration = ScratchProject.configuration_of project in
@@ -1655,10 +1665,10 @@ let assert_equivalent_attributes ~context source expected =
   let handle = "test.py" in
   let attributes class_type source =
     Memory.reset_shared_memory ();
-    let _, _, environment =
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
     in
-    let global_resolution = GlobalResolution.create environment in
+    let global_resolution = GlobalResolution.create global_environment in
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in

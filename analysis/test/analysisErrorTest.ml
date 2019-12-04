@@ -345,12 +345,7 @@ let test_due_to_analysis_limitations _ =
 
 
 let test_join context =
-  let resolution =
-    let _, _, environment =
-      ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
-    in
-    GlobalResolution.create environment
-  in
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
   let assert_join left right expected =
     let result = Error.join ~resolution left right in
     assert_equal ~printer:Error.show ~cmp:Error.equal expected result
@@ -608,12 +603,7 @@ let test_join context =
 
 
 let test_less_or_equal context =
-  let resolution =
-    let _, _, environment =
-      ScratchProject.setup ~context [] |> ScratchProject.build_global_environment
-    in
-    GlobalResolution.create environment
-  in
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
   assert_true
     (Error.less_or_equal
        ~resolution
@@ -673,22 +663,19 @@ let test_less_or_equal context =
 let test_filter context =
   let open Error in
   let resolution =
-    let _, _, environment =
-      ScratchProject.setup
-        ~context
-        [
-          ( "test.py",
-            {|
+    ScratchProject.setup
+      ~context
+      [
+        ( "test.py",
+          {|
             class Foo: ...
             class MockChild(unittest.mock.Mock): ...
             class NonCallableChild(unittest.mock.NonCallableMock): ...
             class NonMockChild(Foo): ...
           |}
-          );
-        ]
-      |> ScratchProject.build_global_environment
-    in
-    GlobalResolution.create environment
+        );
+      ]
+    |> ScratchProject.build_global_resolution
   in
   let assert_filtered ?(location = Location.Reference.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
