@@ -12,9 +12,8 @@ import unittest
 from unittest.mock import call, mock_open, patch
 
 from ... import EnvironmentException, commands, log
-from ...analysis_directory import AnalysisDirectory
 from ...commands import initialize
-from .command_test import mock_arguments, mock_configuration
+from .command_test import mock_arguments
 
 
 class InitializeTest(unittest.TestCase):
@@ -30,9 +29,6 @@ class InitializeTest(unittest.TestCase):
         get_yes_no_input.return_value = True
         original_directory = "/original/directory"
         arguments = mock_arguments()
-        # pyre.py does not provide a Configuration instance to
-        # Initialize - this test should do the same
-        configuration = None
 
         def exists(path):
             if path.endswith(".watchmanconfig"):
@@ -48,9 +44,7 @@ class InitializeTest(unittest.TestCase):
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
         which.side_effect = [True, True]
         with patch.object(commands.Command, "_call_client"):
-            initialize.Initialize(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
-            ).run()
+            initialize.Initialize(arguments, original_directory).run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
             open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
 
@@ -66,9 +60,7 @@ class InitializeTest(unittest.TestCase):
         ), patch.object(
             initialize.Initialize, "_get_local_configuration", return_value={}
         ):
-            initialize.Initialize(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
-            ).run()
+            initialize.Initialize(arguments, original_directory).run()
             file().write.assert_has_calls([call("{}"), call("\n")])
 
         def exists(path):
@@ -79,18 +71,14 @@ class InitializeTest(unittest.TestCase):
         isfile.side_effect = exists
         with patch.object(commands.Command, "_call_client"):
             with self.assertRaises(EnvironmentException):
-                initialize.Initialize(
-                    arguments, original_directory, configuration, AnalysisDirectory(".")
-                ).run()
+                initialize.Initialize(arguments, original_directory).run()
 
         with patch.object(commands.Command, "_call_client"), patch.object(
             sys, "argv", ["/tmp/pyre/bin/pyre"]
         ):
             which.reset_mock()
             which.side_effect = [True, None, "/tmp/pyre/bin/pyre.bin"]
-            initialize.Initialize(
-                arguments, original_directory, configuration, AnalysisDirectory(".")
-            )._get_configuration()
+            initialize.Initialize(arguments, original_directory)._get_configuration()
             which.assert_has_calls(
                 [call("watchman"), call("pyre.bin"), call("/tmp/pyre/bin/pyre.bin")]
             )
@@ -98,10 +86,7 @@ class InitializeTest(unittest.TestCase):
     def test_get_local_configuration(self) -> None:
         original_directory = "/original/directory"
         arguments = mock_arguments()
-        configuration = mock_configuration()
-        command = initialize.Initialize(
-            arguments, original_directory, configuration, AnalysisDirectory(".")
-        )
+        command = initialize.Initialize(arguments, original_directory)
 
         with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
             log, "input", return_value="//target/..."

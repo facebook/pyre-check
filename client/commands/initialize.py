@@ -13,11 +13,9 @@ import shutil
 import subprocess
 import sys
 from logging import Logger
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from .. import BINARY_NAME, CONFIGURATION_FILE, find_typeshed, log
-from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration
 from ..exceptions import EnvironmentException
 from .command import CommandParser
 
@@ -28,13 +26,7 @@ LOG: Logger = logging.getLogger(__name__)
 class Initialize(CommandParser):
     NAME = "initialize"
 
-    def __init__(
-        self,
-        arguments,
-        original_directory: str,
-        configuration: Optional[Configuration] = None,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-    ) -> None:
+    def __init__(self, arguments, original_directory: str) -> None:
         super(Initialize, self).__init__(arguments, original_directory)
         self._local: bool = arguments.local
 
