@@ -1539,11 +1539,11 @@ module ScratchProject = struct
 
   let build_type_environment project =
     let sources, ast_environment, global_environment = build_global_environment project in
-    let type_environment = TypeEnvironment.create global_environment in
+    let environment = TypeEnvironment.create global_environment in
     let configuration = configuration_of project in
-    List.iter sources ~f:(fun source ->
-        TypeCheck.run ~configuration ~environment:type_environment ~source);
-    { BuiltTypeEnvironment.sources; ast_environment; type_environment }
+    List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
+    |> TypeCheck.run ~scheduler:(Scheduler.mock ()) ~configuration ~environment;
+    { BuiltTypeEnvironment.sources; ast_environment; type_environment = environment }
 
 
   let build_type_environment_and_postprocess project =

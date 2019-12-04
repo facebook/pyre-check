@@ -126,13 +126,7 @@ let run_analysis
         List.filter qualifiers ~f:is_external
       in
       Log.info "Analyzing %d external sources..." (List.length external_sources);
-      Analysis.Check.analyze_sources
-        ~filter_external_sources:false
-        ~scheduler
-        ~configuration
-        ~environment
-        external_sources
-      |> ignore;
+      Analysis.TypeCheck.run ~scheduler ~configuration ~environment external_sources |> ignore;
       environment, Analysis.TypeEnvironment.ast_environment environment, qualifiers
     in
     let filename_lookup path_reference =

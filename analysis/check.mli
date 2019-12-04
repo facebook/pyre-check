@@ -17,11 +17,3 @@ module type Signature = sig
 end
 
 val get_check_to_run : check_name:string -> (module Signature) option
-
-val analyze_sources
-  :  ?filter_external_sources:bool ->
-  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  environment:TypeEnvironment.t ->
-  Ast.Reference.t list ->
-  unit

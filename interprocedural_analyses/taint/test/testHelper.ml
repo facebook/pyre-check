@@ -387,19 +387,15 @@ type test_environment = {
 }
 
 let initialize ?(handle = "test.py") ?models ~context source_content =
-  let configuration, ast_environment, environment =
+  let configuration, ast_environment, environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    let {
-      Test.ScratchProject.BuiltTypeEnvironment.ast_environment;
-      type_environment = environment;
-      _;
-    }
-      =
-      Test.ScratchProject.build_type_environment project
+    let { Test.ScratchProject.BuiltTypeEnvironment.ast_environment; type_environment; _ }, errors =
+      Test.ScratchProject.build_type_environment_and_postprocess project
     in
     ( Test.ScratchProject.configuration_of project,
       AstEnvironment.read_only ast_environment,
-      environment )
+      type_environment,
+      errors )
   in
   let source =
     AstEnvironment.ReadOnly.get_source
@@ -414,12 +410,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       | AnalysisError.NotCallable _ -> false
       | _ -> true
     in
-    let global_resolution, errors =
-      let { Source.source_path = { SourcePath.qualifier; _ }; _ } = source in
-      ( TypeEnvironment.global_resolution environment,
-        TypeEnvironment.get_errors environment qualifier )
-    in
-    Postprocessing.run_on_source ~global_resolution ~source errors |> List.filter ~f:keep
+    List.filter errors ~f:keep
   in
   ( if not (List.is_empty errors) then
       let errors =

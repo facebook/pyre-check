@@ -95,7 +95,8 @@ val resolution_with_key
 val name : string
 
 val run
-  :  configuration:Configuration.Analysis.t ->
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
   environment:TypeEnvironment.t ->
-  source:Source.t ->
+  Ast.Reference.t list ->
   unit

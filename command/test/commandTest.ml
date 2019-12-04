@@ -59,31 +59,18 @@ let make_errors ~context ?(handle = "test.py") source =
       ~external_sources:["builtins.pyi", builtins_source; "typing.pyi", typing_source]
       [handle, source]
   in
-  let {
-    ScratchProject.BuiltTypeEnvironment.sources;
-    ast_environment;
-    type_environment = environment;
-  }
-    =
-    ScratchProject.build_type_environment project
-  in
-  let source =
-    List.find_exn sources ~f:(fun { Ast.Source.source_path = { Ast.SourcePath.relative; _ }; _ } ->
-        String.equal relative handle)
-  in
-  let configuration = ScratchProject.configuration_of project in
-  let ast_environment = AstEnvironment.read_only ast_environment in
-  let global_resolution, errors =
-    let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
-    TypeEnvironment.global_resolution environment, TypeEnvironment.get_errors environment qualifier
+  let { ScratchProject.BuiltTypeEnvironment.ast_environment; _ }, errors =
+    ScratchProject.build_type_environment_and_postprocess project
   in
   let errors =
-    Postprocessing.run_on_source ~global_resolution ~source errors
-    |> List.map
-         ~f:
-           (Error.instantiate
-              ~lookup:
-                (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment))
+    List.map
+      errors
+      ~f:
+        (Error.instantiate
+           ~lookup:
+             (AstEnvironment.ReadOnly.get_real_path_relative
+                ~configuration:(ScratchProject.configuration_of project)
+                (AstEnvironment.read_only ast_environment)))
   in
   Memory.reset_shared_memory ();
   errors

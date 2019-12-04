@@ -5,12 +5,6 @@
 open Ast
 module Error = AnalysisError
 
-val run_on_source
-  :  global_resolution:GlobalResolution.t ->
-  source:Source.t ->
-  Error.t list ->
-  Error.t list
-
 val run
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->

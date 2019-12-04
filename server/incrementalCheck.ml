@@ -68,8 +68,8 @@ let recheck
     ~short_message:(Some "[Repopulating]")
     ~connections
     ~message_type:WarningMessage;
+  let ast_environment = AstEnvironment.read_only ast_environment in
   let annotated_global_environment_update_result, recheck_modules =
-    let ast_environment = AstEnvironment.read_only ast_environment in
     let annotated_global_environment_update_result =
       AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
         ast_environment
@@ -141,7 +141,13 @@ let recheck
   (* Clean up all lookup data related to updated files. *)
   List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
   let new_errors =
-    Analysis.Check.analyze_sources ~scheduler ~configuration ~environment recheck_modules;
+    let is_not_external qualifier =
+      AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+      >>| (fun { SourcePath.is_external; _ } -> not is_external)
+      |> Option.value ~default:false
+    in
+    List.filter recheck_modules ~f:is_not_external
+    |> Analysis.TypeCheck.run ~scheduler ~configuration ~environment;
     Analysis.Postprocessing.run
       ~scheduler
       ~configuration
@@ -158,9 +164,7 @@ let recheck
 
   let total_rechecked_functions =
     let map sofar modules =
-      List.filter_map
-        modules
-        ~f:(AstEnvironment.ReadOnly.get_source (AstEnvironment.read_only ast_environment))
+      List.filter_map modules ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
       |> List.sum (module Int) ~f:Preprocessing.count_defines
       |> fun added -> sofar + added
     in

@@ -5033,7 +5033,7 @@ let check_source
     ~f:(check_function_definition ~configuration ~resolution ~qualifier ~metadata)
 
 
-let run
+let run_on_source
     ~configuration
     ~environment
     ~source:
@@ -5069,3 +5069,44 @@ let run
       TypeEnvironment.set_local_annotations environment qualifier local_annotations
   in
   TypeEnvironment.set_errors environment qualifier errors
+
+
+let run ~scheduler ~configuration ~environment qualifiers =
+  let number_of_sources = List.length qualifiers in
+  Log.info "Checking %d sources..." number_of_sources;
+  Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
+
+  Log.info "Running type check...";
+  let timer = Timer.start () in
+  let map _ qualifiers =
+    let analyze_source number_files source =
+      run_on_source ~configuration ~environment ~source;
+      number_files + 1
+    in
+    let ast_environment = TypeEnvironment.ast_environment environment in
+    List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
+    |> List.fold ~init:0 ~f:analyze_source
+  in
+  let reduce left right =
+    let number_files = left + right in
+    Log.log ~section:`Progress "Processed %d of %d sources" number_files number_of_sources;
+    number_files
+  in
+  let _ =
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~bucket_size:75
+      ~initial:0
+      ~map
+      ~reduce
+      ~inputs:qualifiers
+      ()
+  in
+  Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ();
+  Statistics.event
+    ~section:`Memory
+    ~name:"shared memory size post-typecheck"
+    ~integers:["size", Memory.heap_size ()]
+    ();
+  Profiling.track_shared_memory_usage ~name:"After analyze_sources" ()
