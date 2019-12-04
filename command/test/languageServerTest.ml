@@ -886,7 +886,7 @@ let test_request_parser context =
         Some
           {
             UpdateFilesParameters.files =
-              [Path.absolute file_path; Path.absolute symlink_source; Path.absolute stub_path];
+              [Path.absolute file_path; Path.absolute symlink_target; Path.absolute stub_path];
             invalidated = [];
           };
     }
@@ -900,7 +900,7 @@ let test_request_parser context =
         Some
           {
             LanguageServer.Types.DisplayTypeErrorsParameters.files =
-              [Path.absolute file_path; Path.absolute symlink_source; Path.absolute stub_path];
+              [Path.absolute file_path; Path.absolute symlink_target; Path.absolute stub_path];
           };
     }
     |> LanguageServer.Types.DisplayTypeErrors.to_yojson

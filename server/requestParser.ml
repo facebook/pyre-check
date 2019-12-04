@@ -14,16 +14,8 @@ let parse_and_translate
     ~request
   =
   let open LanguageServer.Types in
-  let log_method_error method_name =
-    Log.error
-      "Error for method %s: %s does not have required parameters"
-      method_name
-      (Yojson.Safe.pretty_to_string request)
-  in
-  let uri_to_path ~uri =
+  let translate_path ~configuration ~symlink_targets_to_sources path =
     let search_paths = Configuration.Analysis.search_path configuration in
-    Path.from_uri uri
-    >>= fun path ->
     match SearchPath.search_for_path ~search_paths path with
     | Some SearchPath.{ relative_path; _ } -> Some (Path.Relative relative_path)
     | None ->
@@ -33,6 +25,19 @@ let parse_and_translate
         >>| fun SearchPath.{ relative_path; _ } -> Path.Relative relative_path
   in
   let string_to_path string_path = Path.create_absolute ~follow_symbolic_links:false string_path in
+  let strings_to_scratch_paths strings =
+    List.map strings ~f:string_to_path
+    |> List.filter_map ~f:(translate_path ~configuration ~symlink_targets_to_sources)
+  in
+  let uri_to_path ~uri =
+    Path.from_uri uri >>= fun path -> translate_path ~configuration ~symlink_targets_to_sources path
+  in
+  let log_method_error method_name =
+    Log.error
+      "Error for method %s: %s does not have required parameters"
+      method_name
+      (Yojson.Safe.pretty_to_string request)
+  in
   let to_pyre_position { LanguageServer.Types.Position.line; character } =
     (* The LSP protocol starts a file at line 0, column 0. Pyre starts a file at line 1, column 0. *)
     { Ast.Location.line = line + 1; column = character }
@@ -58,7 +63,7 @@ let parse_and_translate
               { DefinitionRequest.id; path; position = to_pyre_position position }
         | Ok _ -> None
         | Error yojson_error ->
-            Log.dump "%s" yojson_error;
+            Log.log ~section:`Server "Error: %s" yojson_error;
             None )
     | "textDocument/didClose" -> (
         match DidCloseTextDocument.of_yojson request with
@@ -229,8 +234,9 @@ let parse_and_translate
     | "updateFiles" -> (
         match UpdateFiles.of_yojson request with
         | Ok { UpdateFiles.parameters = Some { files; invalidated = targets; _ }; _ } ->
-            let files = List.map files ~f:string_to_path in
+            let files = strings_to_scratch_paths files in
             if not (List.is_empty targets) then (
+              let targets = strings_to_scratch_paths targets |> List.map ~f:Path.show in
               Log.info "Invalidate %d symlinks" (List.length targets);
               List.iter targets ~f:(Hashtbl.remove symlink_targets_to_sources) );
             Some (TypeCheckRequest files)
@@ -241,7 +247,7 @@ let parse_and_translate
     | "displayTypeErrors" -> (
         match LanguageServer.Types.DisplayTypeErrors.of_yojson request with
         | Ok { LanguageServer.Types.DisplayTypeErrors.parameters = Some { files }; _ } ->
-            let files = List.map files ~f:string_to_path in
+            let files = strings_to_scratch_paths files in
             Some (DisplayTypeErrors files)
         | Ok _ -> Some (DisplayTypeErrors [])
         | Error yojson_error ->
