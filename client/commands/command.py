@@ -200,8 +200,6 @@ class CommandParser(ABC):
         # TODO(T57959968): Stop changing the directory in the client
         os.chdir(self._current_directory)
 
-        log.initialize(self._noninteractive, self._log_directory)
-
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
@@ -408,6 +406,14 @@ class CommandParser(ABC):
     @property
     def local_configuration(self) -> Optional[str]:
         return self._local_configuration
+
+    @property
+    def log_directory(self) -> str:
+        return self._log_directory
+
+    @property
+    def noninteractive(self) -> bool:
+        return self._noninteractive
 
 
 class Command(CommandParser):

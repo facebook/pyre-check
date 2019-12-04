@@ -88,8 +88,8 @@ def main() -> int:
                 )
             )
             return ExitCode.SUCCESS
-
         command = arguments.command(arguments)
+        log.initialize(command.noninteractive, command.log_directory)
         exit_code = command.run().exit_code()
     except buck.BuckException as error:
         LOG.error(str(error))
