@@ -196,25 +196,29 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
   let open Expression in
   match expression with
   | Some { Node.value = Expression.List items; _ } -> (
-      match resolved, expected with
-      | ( Type.Parametric { name = "list"; parameters = Concrete [actual_item_type] },
-          Type.Parametric { name = "list"; parameters = Concrete [expected_item_type] } ) ->
-          let weakened_item_type =
-            Type.union
-              (List.map
-                 ~f:(fun item ->
-                   weaken_mutable_literals
-                     resolve
-                     ~expression:(Some item)
-                     ~resolved:actual_item_type
-                     ~expected:expected_item_type
-                     ~comparator)
-                 items)
-          in
-          if comparator ~left:weakened_item_type ~right:expected_item_type then
-            expected
-          else
-            Type.list weakened_item_type
+      match resolved with
+      | Type.Parametric { name = "list"; parameters = Concrete [actual_item_type] } -> (
+          match expected with
+          | Type.Parametric { name = "list"; parameters = Concrete [expected_item_type] }
+          | Type.Optional
+              (Type.Parametric { name = "list"; parameters = Concrete [expected_item_type] }) ->
+              let weakened_item_type =
+                Type.union
+                  (List.map
+                     ~f:(fun item ->
+                       weaken_mutable_literals
+                         resolve
+                         ~expression:(Some item)
+                         ~resolved:actual_item_type
+                         ~expected:expected_item_type
+                         ~comparator)
+                     items)
+              in
+              if comparator ~left:weakened_item_type ~right:expected_item_type then
+                expected
+              else
+                Type.list weakened_item_type
+          | _ -> resolved )
       | _ -> resolved )
   | Some { Node.value = Expression.ListComprehension _; _ } -> (
       match resolved, expected with
@@ -224,25 +228,29 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
           expected
       | _ -> resolved )
   | Some { Node.value = Expression.Set items; _ } -> (
-      match resolved, expected with
-      | ( Type.Parametric { name = "set"; parameters = Concrete [actual_item_type] },
-          Type.Parametric { name = "set"; parameters = Concrete [expected_item_type] } ) ->
-          let weakened_item_type =
-            Type.union
-              (List.map
-                 ~f:(fun item ->
-                   weaken_mutable_literals
-                     resolve
-                     ~expression:(Some item)
-                     ~resolved:actual_item_type
-                     ~expected:expected_item_type
-                     ~comparator)
-                 items)
-          in
-          if comparator ~left:weakened_item_type ~right:expected_item_type then
-            expected
-          else
-            Type.set weakened_item_type
+      match resolved with
+      | Type.Parametric { name = "set"; parameters = Concrete [actual_item_type] } -> (
+          match expected with
+          | Type.Parametric { name = "set"; parameters = Concrete [expected_item_type] }
+          | Type.Optional
+              (Type.Parametric { name = "set"; parameters = Concrete [expected_item_type] }) ->
+              let weakened_item_type =
+                Type.union
+                  (List.map
+                     ~f:(fun item ->
+                       weaken_mutable_literals
+                         resolve
+                         ~expression:(Some item)
+                         ~resolved:actual_item_type
+                         ~expected:expected_item_type
+                         ~comparator)
+                     items)
+              in
+              if comparator ~left:weakened_item_type ~right:expected_item_type then
+                expected
+              else
+                Type.set weakened_item_type
+          | _ -> resolved )
       | _ -> resolved )
   | Some { Node.value = Expression.SetComprehension _; _ } -> (
       match resolved, expected with
@@ -313,49 +321,49 @@ let rec weaken_mutable_literals resolve ~expression ~resolved ~expected ~compara
 and weaken_dictionary_entries resolve ~resolved ~expected ~comparator ~entries =
   match entries with
   | _ -> (
-      match resolved, expected with
-      | ( Type.Parametric
-            { name = "dict"; parameters = Concrete [actual_key_type; actual_value_type] },
-          Type.Parametric
-            { name = "dict"; parameters = Concrete [expected_key_type; expected_value_type] } ) ->
-          let weakened_key_type =
-            Type.union
-              (List.map
-                 ~f:(fun { key; _ } ->
-                   weaken_mutable_literals
-                     resolve
-                     ~expression:(Some key)
-                     ~resolved:actual_key_type
-                     ~expected:expected_key_type
-                     ~comparator)
-                 entries)
-          in
-          let weakened_value_type =
-            Type.union
-              (List.map
-                 ~f:(fun { value; _ } ->
-                   weaken_mutable_literals
-                     resolve
-                     ~expression:(Some value)
-                     ~resolved:actual_value_type
-                     ~expected:expected_value_type
-                     ~comparator)
-                 entries)
-          in
+      match resolved with
+      | Type.Parametric
+          { name = "dict"; parameters = Concrete [actual_key_type; actual_value_type] } -> (
+          match expected with
+          | Type.Parametric
+              { name = "dict"; parameters = Concrete [expected_key_type; expected_value_type] }
+          | Type.Optional
+              (Type.Parametric
+                { name = "dict"; parameters = Concrete [expected_key_type; expected_value_type] })
+            ->
+              let weakened_key_type =
+                Type.union
+                  (List.map
+                     ~f:(fun { key; _ } ->
+                       weaken_mutable_literals
+                         resolve
+                         ~expression:(Some key)
+                         ~resolved:actual_key_type
+                         ~expected:expected_key_type
+                         ~comparator)
+                     entries)
+              in
+              let weakened_value_type =
+                Type.union
+                  (List.map
+                     ~f:(fun { value; _ } ->
+                       weaken_mutable_literals
+                         resolve
+                         ~expression:(Some value)
+                         ~resolved:actual_value_type
+                         ~expected:expected_value_type
+                         ~comparator)
+                     entries)
+              in
 
-          (* Note: We don't check for variance because we want {1: 1} to be ok for Dict[float,
-             float] even though it gets resolved as Dict[Literal[1], Literal[1]].
-
-             Also, we check the parameter types manually because (comparator
-             ~left:weakened_dictionary_type ~right:expected) fails for `Dict[int, A]` and `Dict[int,
-             B]. *)
-          if
-            comparator ~left:weakened_key_type ~right:expected_key_type
-            && comparator ~left:weakened_value_type ~right:expected_value_type
-          then
-            expected
-          else
-            Type.dictionary ~key:weakened_key_type ~value:weakened_value_type
+              if
+                comparator ~left:weakened_key_type ~right:expected_key_type
+                && comparator ~left:weakened_value_type ~right:expected_value_type
+              then
+                expected
+              else
+                Type.dictionary ~key:weakened_key_type ~value:weakened_value_type
+          | _ -> resolved )
       | _ -> resolved )
 
 

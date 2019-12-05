@@ -362,6 +362,57 @@ let test_resolve_mutable_literals context =
   ()
 
 
+let test_resolve_mutable_literals_to_optional context =
+  let resolution = make_resolution ~context {|
+      class C: ...
+      class D(C): ...
+    |} in
+  let assert_resolve_mutable_literals ~source ~against expected_output =
+    let parse_annotation annotation =
+      annotation
+      |> parse_single_expression
+      |> GlobalResolution.parse_annotation (Resolution.global_resolution resolution)
+    in
+    let expression =
+      match parse_single_statement source with
+      | { Node.value = Statement.Expression expression; _ } -> expression
+      | _ -> failwith "No Assign to parse"
+    in
+    let resolved = Resolution.resolve resolution expression in
+    let expression = Some expression in
+    let expected = parse_annotation against in
+    assert_equal
+      ~printer:Type.show
+      (parse_annotation expected_output)
+      (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected)
+  in
+  assert_resolve_mutable_literals
+    ~source:"[test.D()]"
+    ~against:"typing.Optional[typing.List[test.C]]"
+    "typing.Optional[typing.List[test.C]]";
+  assert_resolve_mutable_literals
+    ~source:"[[test.D()]]"
+    ~against:"typing.Optional[typing.List[typing.List[test.C]]]"
+    "typing.Optional[typing.List[typing.List[test.C]]]";
+  assert_resolve_mutable_literals
+    ~source:{|["foo"]|}
+    ~against:"typing.Optional[typing.List[typing.Union[typing.List[str], str]]]"
+    "typing.Optional[typing.List[typing.Union[typing.List[str], str]]]";
+  assert_resolve_mutable_literals
+    ~source:"{test.D()}"
+    ~against:"typing.Optional[typing.Set[test.C]]"
+    "typing.Optional[typing.Set[test.C]]";
+  assert_resolve_mutable_literals
+    ~source:"{{test.D()}}"
+    ~against:"typing.Optional[typing.Set[typing.Set[test.C]]]"
+    "typing.Optional[typing.Set[typing.Set[test.C]]]";
+  assert_resolve_mutable_literals
+    ~source:"{test.D(): 2}"
+    ~against:"typing.Optional[typing.Dict[test.C, int]]"
+    "typing.Optional[typing.Dict[test.C, int]]";
+  ()
+
+
 let test_resolve_mutable_literals_typed_dictionary context =
   let resolution = make_resolution ~context "" in
   let assert_resolve_mutable_literals ~source ~against_type expected_output_type =
@@ -602,6 +653,7 @@ let () =
          "resolve_literal" >:: test_resolve_literal;
          "resolve_exports" >:: test_resolve_exports;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;
+         "resolve_mutable_literals_to_optional" >:: test_resolve_mutable_literals_to_optional;
          "resolve_mutable_literals_typed_dictionary"
          >:: test_resolve_mutable_literals_typed_dictionary;
          "function_definitions" >:: test_function_definitions;

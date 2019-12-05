@@ -37,7 +37,17 @@ let test_check_method_returns context =
     |}
     [];
 
-  (* TODO(T57500485). *)
+  assert_type_errors
+    ~context
+    {|
+      class C:
+          pass
+      class D(C):
+          pass
+      def foo() -> typing.Optional[typing.List[C]]:
+          return [C()]
+    |}
+    [];
   assert_type_errors
     ~context
     {|
@@ -48,10 +58,7 @@ let test_check_method_returns context =
       def foo() -> typing.Optional[typing.List[C]]:
           return [D()]
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Optional[typing.List[C]]` but got \
-       `typing.List[D]`.";
-    ];
+    [];
   assert_type_errors
     ~context
     {|
