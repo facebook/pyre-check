@@ -494,9 +494,6 @@ let test_function_definitions context =
       |}]
     "yarp.foo.nested"
     [];
-  assert_functions ["builtins.py", {|
-        def len(): pass
-      |}] "len" ["len"];
   ()
 
 

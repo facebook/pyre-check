@@ -141,13 +141,7 @@ let recheck
   (* Clean up all lookup data related to updated files. *)
   List.iter recheck_modules ~f:(LookupCache.evict ~lookups);
   let new_errors =
-    let is_not_external qualifier =
-      AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
-      >>| (fun { SourcePath.is_external; _ } -> not is_external)
-      |> Option.value ~default:false
-    in
-    List.filter recheck_modules ~f:is_not_external
-    |> Analysis.TypeCheck.run ~scheduler ~configuration ~environment;
+    Analysis.TypeCheck.run ~scheduler ~configuration ~environment recheck_modules;
     Analysis.Postprocessing.run
       ~scheduler
       ~configuration

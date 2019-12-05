@@ -699,60 +699,66 @@ let collect_typecheck_units { Source.statements; _ } =
   List.fold statements ~init:[] ~f:(collect_from_statement ~ignore_class:false)
 
 
-let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  let all_defines = collect_typecheck_units source in
-  let definitions =
-    let table = Reference.Table.create () in
-    let process_define ({ Node.value = define; _ } as define_node) =
-      let define_name = Define.name define in
-      let sibling =
-        let open FunctionDefinition.Sibling in
-        if Define.is_overloaded_function define then
-          Some { kind = Kind.Overload; body = define_node }
-        else if Define.is_property_setter define then
-          Some { kind = Kind.PropertySetter; body = define_node }
-        else
-          None
+let collect_defines ({ Source.source_path = { SourcePath.qualifier; is_external; _ }; _ } as source)
+  =
+  match is_external with
+  | true ->
+      (* Do not collect function bodies for external sources as they won't get type checked *)
+      ()
+  | false ->
+      let all_defines = collect_typecheck_units source in
+      let definitions =
+        let table = Reference.Table.create () in
+        let process_define ({ Node.value = define; _ } as define_node) =
+          let define_name = Define.name define in
+          let sibling =
+            let open FunctionDefinition.Sibling in
+            if Define.is_overloaded_function define then
+              Some { kind = Kind.Overload; body = define_node }
+            else if Define.is_property_setter define then
+              Some { kind = Kind.PropertySetter; body = define_node }
+            else
+              None
+          in
+          let update = function
+            | None -> (
+                match sibling with
+                | Some sibling -> None, [sibling]
+                | None -> Some define_node, [] )
+            | Some (body, siblings) -> (
+                match sibling with
+                | Some sibling -> body, sibling :: siblings
+                | None ->
+                    if Option.is_some body then (
+                      Log.debug
+                        "Dropping the body of function %a as it has duplicated name with other \
+                         functions"
+                        Reference.pp
+                        define_name;
+                      (* Last definition wins -- collector returns functions in reverse order *)
+                      body, siblings )
+                    else
+                      Some define_node, siblings )
+          in
+          Hashtbl.update table define_name ~f:update
+        in
+        let collect_definition ~key ~data:(body, overloads) collected =
+          let siblings =
+            List.sort overloads ~compare:FunctionDefinition.Sibling.location_sensitive_compare
+          in
+          (key, { FunctionDefinition.body; siblings }) :: collected
+        in
+        let all_defines =
+          (* Take into account module toplevel *)
+          Source.top_level_define_node source :: all_defines
+        in
+        List.iter all_defines ~f:process_define;
+        Hashtbl.fold table ~init:[] ~f:collect_definition
       in
-      let update = function
-        | None -> (
-            match sibling with
-            | Some sibling -> None, [sibling]
-            | None -> Some define_node, [] )
-        | Some (body, siblings) -> (
-            match sibling with
-            | Some sibling -> body, sibling :: siblings
-            | None ->
-                if Option.is_some body then (
-                  Log.debug
-                    "Dropping the body of function %a as it has duplicated name with other \
-                     functions"
-                    Reference.pp
-                    define_name;
-                  (* Last definition wins -- collector returns functions in reverse order *)
-                  body, siblings )
-                else
-                  Some define_node, siblings )
-      in
-      Hashtbl.update table define_name ~f:update
-    in
-    let collect_definition ~key ~data:(body, overloads) collected =
-      let siblings =
-        List.sort overloads ~compare:FunctionDefinition.Sibling.location_sensitive_compare
-      in
-      (key, { FunctionDefinition.body; siblings }) :: collected
-    in
-    let all_defines =
-      (* Take into account module toplevel *)
-      Source.top_level_define_node source :: all_defines
-    in
-    List.iter all_defines ~f:process_define;
-    Hashtbl.fold table ~init:[] ~f:collect_definition
-  in
-  List.iter definitions ~f:(fun (name, definition) -> WriteOnly.set_define ~name definition);
-  KeyTracker.FunctionKeys.add
-    qualifier
-    (List.map definitions ~f:fst |> List.sort ~compare:Reference.compare)
+      List.iter definitions ~f:(fun (name, definition) -> WriteOnly.set_define ~name definition);
+      KeyTracker.FunctionKeys.add
+        qualifier
+        (List.map definitions ~f:fst |> List.sort ~compare:Reference.compare)
 
 
 module UpdateResult = struct

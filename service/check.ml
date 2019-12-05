@@ -108,15 +108,7 @@ let check
     environment
   in
   let errors =
-    let is_not_external qualifier =
-      Analysis.AstEnvironment.ReadOnly.get_source_path
-        (Analysis.AstEnvironment.read_only ast_environment)
-        qualifier
-      >>| (fun { Ast.SourcePath.is_external; _ } -> not is_external)
-      |> Option.value ~default:false
-    in
-    List.filter qualifiers ~f:is_not_external
-    |> Analysis.TypeCheck.run ~scheduler ~configuration ~environment;
+    Analysis.TypeCheck.run ~scheduler ~configuration ~environment qualifiers;
     Analysis.Postprocessing.run
       ~scheduler
       ~configuration
