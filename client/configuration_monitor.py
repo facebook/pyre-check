@@ -47,6 +47,7 @@ class ConfigurationMonitor(WatchmanSubscriber):
         roots = self._watchman_client.query("watch-list")["roots"]
         names = ["pyre_monitor_{}".format(os.path.basename(root)) for root in roots]
         subscription = {
+            "empty_on_fresh_instance": True,
             "expression": [
                 "allof",
                 ["type", "f"],
