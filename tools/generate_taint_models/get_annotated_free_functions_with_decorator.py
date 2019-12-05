@@ -42,7 +42,6 @@ class AnnotatedFreeFunctionWithDecoratorGenerator(ModelGenerator):
                     ) or (
                         isinstance(decorator, ast.Call)
                         and isinstance(decorator.func, ast.Name)
-                        # pyre-fixme[16]: `expr` has no attribute `id`.
                         and decorator.func.id == self.target_decorator
                     ):
                         found_functions.add(node)
