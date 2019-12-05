@@ -108,26 +108,18 @@ let run_analysis
       ~directories:configuration.Configuration.Analysis.taint_models_directories
     |> List.iter ~f:(fun (path, source) -> Taint.Model.verify_model_syntax ~path ~source);
     let environment, ast_environment, qualifiers =
+      let configuration =
+        (* In order to get an accurate call graph and type information, we need to ensure that we
+           schedule a type check for external files. *)
+        { configuration with analyze_external_sources = true }
+      in
       Service.Check.check
         ~scheduler:(Some scheduler)
         ~configuration
         ~build_legacy_dependency_graph:false
       |> fun { module_tracker; environment; ast_environment; _ } ->
-      (* In order to get an accurate call graph and type information, we need to ensure that we
-         schedule a type check for external files as well. *)
       let qualifiers = Analysis.ModuleTracker.tracked_explicit_modules module_tracker in
-      let external_sources =
-        let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-        let is_external qualifier =
-          Analysis.AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
-          >>| (fun { Ast.SourcePath.is_external; _ } -> is_external)
-          |> Option.value ~default:false
-        in
-        List.filter qualifiers ~f:is_external
-      in
-      Log.info "Analyzing %d external sources..." (List.length external_sources);
-      Analysis.TypeCheck.run ~scheduler ~configuration ~environment external_sources |> ignore;
-      environment, Analysis.TypeEnvironment.ast_environment environment, qualifiers
+      environment, Analysis.AstEnvironment.read_only ast_environment, qualifiers
     in
     let filename_lookup path_reference =
       match repository_root with

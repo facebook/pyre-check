@@ -39,6 +39,7 @@ module Analysis = struct
     infer: bool;
     configuration_file_hash: string option;
     parallel: bool;
+    analyze_external_sources: bool;
     filter_directories: Path.t list option;
     ignore_all_errors: Path.t list option;
     number_of_workers: int;
@@ -79,6 +80,7 @@ module Analysis = struct
       ?(infer = false)
       ?configuration_file_hash
       ?(parallel = true)
+      ?(analyze_external_sources = false)
       ?filter_directories
       ?ignore_all_errors
       ?(number_of_workers = 4)
@@ -112,6 +114,7 @@ module Analysis = struct
       infer;
       configuration_file_hash;
       parallel;
+      analyze_external_sources;
       filter_directories;
       ignore_all_errors;
       number_of_workers;

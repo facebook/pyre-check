@@ -30,6 +30,7 @@ module Analysis : sig
     infer: bool;
     configuration_file_hash: string option;
     parallel: bool;
+    analyze_external_sources: bool;
     filter_directories: Path.t list option;
     ignore_all_errors: Path.t list option;
     number_of_workers: int;
@@ -64,6 +65,7 @@ module Analysis : sig
     ?infer:bool ->
     ?configuration_file_hash:string ->
     ?parallel:bool ->
+    ?analyze_external_sources:bool ->
     ?filter_directories:Path.t list ->
     ?ignore_all_errors:Path.t list ->
     ?number_of_workers:int ->

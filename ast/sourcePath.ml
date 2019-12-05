@@ -74,9 +74,12 @@ let create_from_search_path ~is_external ~search_paths path =
 
 
 let should_type_check
-    ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
+    ~configuration:
+      { Configuration.Analysis.analyze_external_sources; filter_directories; ignore_all_errors; _ }
     path
   =
+  analyze_external_sources
+  ||
   let path = Path.follow_symbolic_link path |> Option.value ~default:path in
   let directory_contains ~path directory = Path.directory_contains ~directory path in
   let filter_directories = Option.value filter_directories ~default:[] in
