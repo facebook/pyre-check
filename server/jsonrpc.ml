@@ -28,6 +28,16 @@ module Response = struct
       in
       `Assoc ["jsonrpc", `String "2.0"; "error", `Null; "result", errors]
   end
+
+  module Stop = struct
+    let to_json () =
+      `Assoc
+        [
+          "jsonrpc", `String "2.0";
+          "error", `Null;
+          "result", `String "Server stopped, polling for deletion of socket.";
+        ]
+  end
 end
 
 module Request = struct
@@ -47,6 +57,7 @@ module Request = struct
   let origin ~socket request =
     match request_method request with
     | "displayTypeErrors"
+    | "stop"
     | "typeQuery" ->
         Some (Protocol.Request.JSONSocket socket)
     | "updateFiles" -> Some Protocol.Request.FileNotifier
@@ -56,6 +67,7 @@ module Request = struct
   let format_request ~configuration request =
     match request_method request with
     | "typeQuery" -> query_parameter request |> Query.parse_query ~configuration
+    | "stop" -> Protocol.Request.StopRequest
     | _ ->
         request
         |> Yojson.Safe.to_string

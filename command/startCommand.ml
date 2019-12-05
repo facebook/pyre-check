@@ -127,6 +127,11 @@ let computation_thread
                   Connections.remove_file_notifier ~connections:state.connections ~socket |> ignore;
                   Log.error "Socket error"
             in
+            ( match request with
+            | Server.Protocol.Request.StopRequest ->
+                write_to_json_socket (Jsonrpc.Response.Stop.to_json ());
+                Operations.stop ~reason:"explicit request" ~configuration
+            | _ -> () );
             let { Request.state; response } = process_request ~state ~request in
             ( match response with
             | Some (TypeCheckResponse response) ->
@@ -145,6 +150,8 @@ let computation_thread
         | Protocol.Request.NewConnectionSocket socket ->
             (* Stop requests are special - they require communicating back to the socket, but never
                return, so we need to respond to the request before processing it. *)
+            (* TODO: Remove this special handling when we've switched over to json sockets
+               completely. *)
             ( match request with
             | Server.Protocol.Request.StopRequest -> Socket.write socket StopResponse
             | _ -> () );
@@ -220,6 +227,8 @@ let request_handler_thread
     | Protocol.Request.StopRequest, Protocol.Request.NewConnectionSocket socket ->
         Socket.write socket StopResponse;
         Operations.stop ~reason:"explicit request" ~configuration:server_configuration
+    | Protocol.Request.StopRequest, Protocol.Request.JSONSocket _ ->
+        Squeue.push_or_drop request_queue (origin, request) |> ignore
     | Protocol.Request.StopRequest, _ ->
         Operations.stop ~reason:"explicit request" ~configuration:server_configuration
     | Protocol.Request.ClientConnectionRequest client, Protocol.Request.NewConnectionSocket socket

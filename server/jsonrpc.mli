@@ -7,6 +7,10 @@ module Response : sig
   module TypeErrors : sig
     val to_json : Analysis.Error.Instantiated.t list -> Yojson.Safe.json
   end
+
+  module Stop : sig
+    val to_json : unit -> Yojson.Safe.json
+  end
 end
 
 module Request : sig
