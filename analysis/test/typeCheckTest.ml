@@ -1356,7 +1356,7 @@ let test_forward_statement context =
     ~postcondition_immutables:["x", (false, Type.float)]
     ["x", Type.float]
     "assert x in [1]"
-    ["x", Type.float];
+    ["x", Type.integer];
   assert_forward
     ~errors:
       (`Specific

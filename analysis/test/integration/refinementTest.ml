@@ -348,7 +348,17 @@ let test_check_local_refinement context =
         if x is not None:
           reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."]
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[int]` (inferred: `int`)."];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[str]) -> typing.Optional[str]:
+        d = {"a": "a"}
+        if x in d:
+          reveal_type(x)
+          return d[x]
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[str]` (inferred: `str`)."]
 
 
 let test_check_isinstance context =

@@ -4070,9 +4070,17 @@ module State (Context : Context) = struct
               | Type.Bottom ->
                   state
               | element_type -> (
-                  let refined = Annotation.create element_type in
                   match Resolution.get_local ~global_fallback:false resolution ~reference with
-                  | Some previous when not (Annotation.is_immutable previous) ->
+                  | Some previous ->
+                      let refined =
+                        if Annotation.is_immutable previous then
+                          Annotation.create_immutable
+                            ~global:false
+                            ~original:(Some (Annotation.original previous))
+                            element_type
+                        else
+                          Annotation.create element_type
+                      in
                       if Refinement.less_or_equal ~resolution:global_resolution refined previous
                       then
                         let resolution =
@@ -4083,7 +4091,10 @@ module State (Context : Context) = struct
                         state
                   | None when not (Resolution.is_global resolution ~reference) ->
                       let resolution =
-                        Resolution.set_local resolution ~reference ~annotation:refined
+                        Resolution.set_local
+                          resolution
+                          ~reference
+                          ~annotation:(Annotation.create element_type)
                       in
                       { state with resolution }
                   | _ -> state )
