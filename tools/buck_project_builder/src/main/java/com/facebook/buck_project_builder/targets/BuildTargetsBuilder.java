@@ -13,6 +13,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.StackTraceElement;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,6 +66,9 @@ public final class BuildTargetsBuilder {
 
   private static void logCodeGenerationIOException(IOException exception) {
     SimpleLogger.error("IOException during python code generation: " + exception.getMessage());
+    for (StackTraceElement element: exception.getStackTrace()) {
+      SimpleLogger.warning(element.toString());
+    }
   }
 
   private void buildPythonSources() {
