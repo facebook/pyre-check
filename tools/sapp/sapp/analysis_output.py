@@ -16,6 +16,7 @@ from .sharded_files import ShardedFile
 METADATA_GLOB = "*metadata.json"
 
 
+# pyre-fixme[2]: Parameter annotation cannot contain `Any`.
 class Metadata(NamedTuple):
     analysis_root: str
     repo_root: Optional[str] = None
