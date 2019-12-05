@@ -608,11 +608,7 @@ end
 
 let name = "Awaitable"
 
-let run
-    ~configuration:_
-    ~environment
-    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
+let run ~configuration:_ ~environment ~source =
   let check define =
     let module Context = struct
       let define = define
@@ -620,10 +616,7 @@ let run
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
       let local_annotations =
-        TypeCheck.get_or_recompute_local_annotations
-          ~environment
-          ~qualifier
-          (Node.value define |> Define.name)
+        TypeCheck.get_or_recompute_local_annotations ~environment (Node.value define |> Define.name)
     end
     in
     let module State = State (Context) in

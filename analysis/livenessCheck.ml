@@ -56,8 +56,6 @@ module NestedDefineLookup = struct
 end
 
 module type Context = sig
-  val qualifier : Reference.t
-
   val environment : TypeEnvironment.ReadOnly.t
 
   val errors : ErrorMap.t
@@ -80,7 +78,6 @@ module State (Context : Context) = struct
     let local_annotations =
       TypeCheck.get_or_recompute_local_annotations
         ~environment:Context.environment
-        ~qualifier:Context.qualifier
         (Node.value define |> Define.name)
     in
     { used = Identifier.Set.empty; define; local_annotations }
@@ -196,14 +193,8 @@ end
 
 let name = "Liveness"
 
-let run
-    ~configuration:_
-    ~environment
-    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
+let run ~configuration:_ ~environment ~source =
   let module Context = struct
-    let qualifier = qualifier
-
     let environment = environment
 
     let errors = ErrorMap.Table.create ()

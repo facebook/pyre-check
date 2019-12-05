@@ -4796,19 +4796,12 @@ end
 module CheckResult = struct
   type t = {
     errors: Error.t list;
-    local_annotations: (Reference.t * LocalAnnotationMap.t) option;
+    local_annotations: LocalAnnotationMap.t option;
   }
 
   let aggregate_errors results =
     List.fold results ~init:[] ~f:(fun errors_sofar { errors; _ } ->
         List.append errors errors_sofar)
-
-
-  let aggregate_local_annotations results =
-    List.fold results ~init:[] ~f:(fun annotations_sofar { local_annotations; _ } ->
-        match local_annotations with
-        | None -> annotations_sofar
-        | Some annotations -> annotations :: annotations_sofar)
 end
 
 let resolution global_resolution ?(annotations = Reference.Map.empty) () =
@@ -4895,9 +4888,7 @@ let exit_state ~resolution (module Context : Context) =
 
     let callees = Context.Builder.get_all_callees () in
     let errors = exit >>| State.errors |> Option.value ~default:[] in
-    let local_annotations =
-      exit >>| fun { State.resolution_fixpoint; _ } -> name, resolution_fixpoint
-    in
+    let local_annotations = exit >>| fun { State.resolution_fixpoint; _ } -> resolution_fixpoint in
     errors, local_annotations, Some callees )
 
 
@@ -4964,9 +4955,9 @@ let check_define
       { errors = [undefined_error]; local_annotations = None }
 
 
-let get_or_recompute_local_annotations ~environment ~qualifier name =
-  match TypeEnvironment.ReadOnly.get_local_annotations environment qualifier with
-  | Some local_annotations -> List.Assoc.find local_annotations name ~equal:Reference.equal
+let get_or_recompute_local_annotations ~environment name =
+  match TypeEnvironment.ReadOnly.get_local_annotations environment name with
+  | Some _ as local_annotations -> local_annotations
   | None -> (
       (* Local annotations not preserved in shared memory. Recompute it. *)
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
@@ -4985,7 +4976,7 @@ let get_or_recompute_local_annotations ~environment ~qualifier name =
             in
             exit_state ~resolution (module Context)
           in
-          local_annotations >>| fun (_, local_annotations) -> local_annotations )
+          local_annotations )
 
 
 let check_function_definition
@@ -5016,55 +5007,55 @@ let check_function_definition
       { errors = aggregate_errors (body_result :: sibling_results); local_annotations }
 
 
-let check_source
-    ~configuration
-    ~environment
-    { Source.source_path = { SourcePath.qualifier; _ }; metadata; _ }
-  =
-  let global_resolution =
-    match configuration with
-    | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-        (* TODO (T53810748): Refine the dependency to define's name *)
-        GlobalResolution.create environment ~dependency:(TypeCheckSource qualifier)
-    | _ -> GlobalResolution.create environment
-  in
-  let resolution = resolution global_resolution () in
-  let all_defines =
-    let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment global_resolution
-    in
-    UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
-      unannotated_global_environment
-      qualifier
-    |> List.filter_map
-         ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define unannotated_global_environment)
-  in
-  List.map
-    all_defines
-    ~f:(check_function_definition ~configuration ~resolution ~qualifier ~metadata)
-
-
 let run_on_source
     ~configuration
     ~environment
     ~source:
-      ( {
-          Source.source_path = { SourcePath.qualifier; relative; _ };
-          metadata = { Source.Metadata.number_of_lines; _ };
-          _;
-        } as source )
+      {
+        Source.source_path = { SourcePath.qualifier; relative; _ };
+        metadata = { Source.Metadata.number_of_lines; _ } as metadata;
+        _;
+      }
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%s`..." relative;
-  let errors, local_annotations =
-    let results =
-      check_source
-        ~configuration
-        ~environment:(TypeEnvironment.global_environment environment)
-        source
+
+  let all_defines =
+    let unannotated_global_environment =
+      GlobalResolution.unannotated_global_environment
+        (TypeEnvironment.global_resolution environment)
     in
-    CheckResult.aggregate_errors results, CheckResult.aggregate_local_annotations results
+    UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+      unannotated_global_environment
+      qualifier
   in
+  let check_define name =
+    let global_resolution =
+      let global_environment = TypeEnvironment.global_environment environment in
+      match configuration with
+      | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
+          GlobalResolution.create global_environment ~dependency:(TypeCheckSource qualifier)
+      | _ -> GlobalResolution.create global_environment
+    in
+    let resolution = resolution global_resolution () in
+    match GlobalResolution.function_definition global_resolution name with
+    | None -> ()
+    | Some definition ->
+        let { CheckResult.errors; local_annotations } =
+          check_function_definition ~configuration ~resolution ~qualifier ~metadata definition
+        in
+        let () =
+          if configuration.store_type_check_resolution then
+            (* Write fixpoint type resolutions to shared memory *)
+            let local_annotations =
+              Option.value local_annotations ~default:LocalAnnotationMap.empty
+            in
+            TypeEnvironment.set_local_annotations environment name local_annotations
+        in
+        TypeEnvironment.set_errors environment name errors
+  in
+  List.iter all_defines ~f:check_define;
+
   Statistics.performance
     ~flush:false
     ~randomly_log_every:100
@@ -5073,13 +5064,7 @@ let run_on_source
     ~timer
     ~normals:["handle", relative; "request kind", "SingleFileTypeCheck"]
     ~integers:["number of lines", number_of_lines]
-    ();
-  let () =
-    if configuration.store_type_check_resolution then
-      (* Write fixpoint type resolutions to shared memory *)
-      TypeEnvironment.set_local_annotations environment qualifier local_annotations
-  in
-  TypeEnvironment.set_errors environment qualifier errors
+    ()
 
 
 let run ~scheduler ~configuration ~environment qualifiers =

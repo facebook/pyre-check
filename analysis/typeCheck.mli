@@ -81,7 +81,6 @@ val resolution
 
 val get_or_recompute_local_annotations
   :  environment:TypeEnvironment.ReadOnly.t ->
-  qualifier:Reference.t ->
   Reference.t ->
   LocalAnnotationMap.t option
 

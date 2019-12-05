@@ -92,6 +92,12 @@ let define_body ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
+let function_definition ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.get_define
+    ?dependency
+    (unannotated_global_environment resolution)
+
+
 let class_metadata ({ dependency; _ } as resolution) annotation =
   primitive_name annotation
   >>= ClassMetadataEnvironment.ReadOnly.get_class_metadata

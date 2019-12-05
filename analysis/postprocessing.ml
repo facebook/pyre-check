@@ -119,8 +119,16 @@ let run ~scheduler ~configuration ~environment sources =
           if is_external then
             []
           else
-            let errors = TypeEnvironment.ReadOnly.get_errors environment module_name in
             let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+            let errors =
+              let unannotated_global_environment =
+                GlobalResolution.unannotated_global_environment global_resolution
+              in
+              UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+                unannotated_global_environment
+                module_name
+              |> List.concat_map ~f:(TypeEnvironment.ReadOnly.get_errors environment)
+            in
             run_on_source ~global_resolution ~source errors
     in
     List.concat_map modules ~f:run_on_module

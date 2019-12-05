@@ -334,14 +334,13 @@ let test_type_collection context =
       in
       ScratchProject.configuration_of project, source, TypeEnvironment.read_only environment
     in
-    let { Source.source_path = { SourcePath.qualifier; _ }; _ } = source in
     let defines =
       Preprocessing.defines ~include_toplevels:true source
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
     let lookup =
-      TypeEnvironment.ReadOnly.get_local_annotation_map_for_define environment ~qualifier name
+      TypeEnvironment.ReadOnly.get_local_annotations environment name
       |> fun value -> Option.value_exn value
     in
     let test_expect (node_id, statement_index, test_expression, expected_type) =

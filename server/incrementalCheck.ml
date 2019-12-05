@@ -81,7 +81,7 @@ let recheck
     let invalidated_environment_qualifiers = Set.to_list invalidated_environment_qualifiers in
     match incremental_style with
     | FineGrained ->
-        let invalidated_type_checking_keys =
+        let recheck_modules =
           let filter =
             List.filter_map ~f:(function
                 | SharedMemoryKeys.TypeCheckSource source -> Some source
@@ -93,18 +93,14 @@ let recheck
           |> List.concat_map ~f:filter
           |> Reference.Set.of_list
         in
-        let invalidated_type_checking_keys =
-          List.fold
-            invalidated_environment_qualifiers
-            ~init:invalidated_type_checking_keys
-            ~f:Reference.Set.add
+        let recheck_modules =
+          List.fold invalidated_environment_qualifiers ~init:recheck_modules ~f:Reference.Set.add
         in
-        let invalidated_type_checking_keys = Set.to_list invalidated_type_checking_keys in
-        let recheck_modules = invalidated_type_checking_keys in
+        let recheck_modules = Set.to_list recheck_modules in
         Log.log
           ~section:`Server
           "Incremental Environment Builder Update %s"
-          (List.to_string ~f:Reference.show invalidated_type_checking_keys);
+          (List.to_string ~f:Reference.show recheck_modules);
         annotated_global_environment_update_result, recheck_modules
     | _ ->
         let () =
@@ -131,12 +127,35 @@ let recheck
     ();
 
   (* Compute new set of errors. *)
-  (* Clear all type resolution info from shared memory for all affected sources. *)
+  (* Clear type environment from shared memory for all affected sources. *)
   let environment =
     TypeEnvironment.create
       (AnnotatedGlobalEnvironment.UpdateResult.read_only annotated_global_environment_update_result)
   in
-  TypeEnvironment.invalidate environment recheck_modules;
+  let () =
+    let unannotated_global_environment_update_result =
+      AnnotatedGlobalEnvironment.UpdateResult.unannotated_global_environment_update_result
+        annotated_global_environment_update_result
+    in
+    let previous_defines =
+      UnannotatedGlobalEnvironment.UpdateResult.previous_defines
+        unannotated_global_environment_update_result
+      |> Set.to_list
+    in
+    let current_defines =
+      let unannotated_global_environment =
+        UnannotatedGlobalEnvironment.UpdateResult.read_only
+          unannotated_global_environment_update_result
+      in
+      List.concat_map
+        recheck_modules
+        ~f:
+          (UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+             unannotated_global_environment)
+    in
+    TypeEnvironment.invalidate environment previous_defines;
+    TypeEnvironment.invalidate environment current_defines
+  in
 
   (* Clean up all lookup data related to updated files. *)
   List.iter recheck_modules ~f:(LookupCache.evict ~lookups);

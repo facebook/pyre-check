@@ -14,8 +14,6 @@ module Error = AnalysisError
 let name = "Deobfuscation"
 
 module type Context = sig
-  val qualifier : Reference.t
-
   val environment : TypeEnvironment.ReadOnly.t
 
   val transformations : Statement.t list Location.Reference.Table.t
@@ -60,7 +58,6 @@ module ConstantPropagationState (Context : Context) = struct
     let local_annotations =
       TypeCheck.get_or_recompute_local_annotations
         ~environment:Context.environment
-        ~qualifier:Context.qualifier
         (Define.name define)
     in
     { constants; define; local_annotations; nested_defines = NestedDefines.initial }
@@ -313,8 +310,6 @@ let run
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
   let module Context = struct
-    let qualifier = qualifier
-
     let environment = environment
 
     let transformations = Location.Reference.Table.create ()

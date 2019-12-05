@@ -892,8 +892,7 @@ let run ~environment ~define ~existing_model =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
 
     let local_annotations =
-      let { Node.location = { Location.path = qualifier; _ }; value = define } = define in
-      TypeCheck.get_or_recompute_local_annotations ~environment ~qualifier (Define.name define)
+      TypeEnvironment.ReadOnly.get_local_annotations environment (Node.value define |> Define.name)
 
 
     let debug = Define.dump define.value

@@ -5,16 +5,15 @@
 
 open Ast
 open Core
-open Pyre
 module Error = AnalysisError
 
 type t = {
   global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
   set_errors: Reference.t -> Error.t list -> unit;
-  set_local_annotations: Reference.t -> (Reference.t * LocalAnnotationMap.t) list -> unit;
+  set_local_annotations: Reference.t -> LocalAnnotationMap.t -> unit;
   invalidate: Reference.t list -> unit;
   get_errors: Reference.t -> Error.t list;
-  get_local_annotations: Reference.t -> (Reference.t * LocalAnnotationMap.t) list option;
+  get_local_annotations: Reference.t -> LocalAnnotationMap.t option;
 }
 
 let global_environment { global_environment; _ } = global_environment
@@ -46,7 +45,7 @@ module AnalysisErrorValue = struct
 end
 
 module LocalAnnotationsValue = struct
-  type t = (Reference.t * LocalAnnotationMap.t) list
+  type t = LocalAnnotationMap.t
 
   let prefix = Prefix.make ()
 
@@ -82,7 +81,7 @@ module ReadOnly = struct
   type t = {
     global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
     get_errors: Reference.t -> Error.t list;
-    get_local_annotations: Reference.t -> (Reference.t * LocalAnnotationMap.t) list option;
+    get_local_annotations: Reference.t -> LocalAnnotationMap.t option;
   }
 
   let create ?(get_errors = fun _ -> []) ?(get_local_annotations = fun _ -> None) global_environment
@@ -101,10 +100,6 @@ module ReadOnly = struct
   let get_errors { get_errors; _ } = get_errors
 
   let get_local_annotations { get_local_annotations; _ } = get_local_annotations
-
-  let get_local_annotation_map_for_define { get_local_annotations; _ } ~qualifier name =
-    get_local_annotations qualifier
-    >>= fun local_annotations -> List.Assoc.find local_annotations name ~equal:Reference.equal
 end
 
 let read_only { global_environment; get_errors; get_local_annotations; _ } =

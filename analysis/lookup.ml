@@ -167,10 +167,7 @@ module Visit = struct
     !state
 end
 
-let create_of_source
-    type_environment
-    ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
+let create_of_source type_environment source =
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
@@ -178,7 +175,7 @@ let create_of_source
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
     let annotation_lookup =
-      TypeCheck.get_or_recompute_local_annotations ~environment:type_environment ~qualifier name
+      TypeCheck.get_or_recompute_local_annotations ~environment:type_environment name
       |> Option.value ~default:LocalAnnotationMap.empty
     in
     let cfg = Cfg.create define in
