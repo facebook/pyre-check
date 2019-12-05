@@ -28,7 +28,6 @@ let run_analysis
     strict
     show_error_traces
     infer
-    additional_checks
     sequential
     filter_directories
     ignore_all_errors
@@ -46,8 +45,6 @@ let run_analysis
     local_root
     ()
   =
-  (* TODO (T58175975): Completely remove `additional_checks` flag *)
-  ignore additional_checks;
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']

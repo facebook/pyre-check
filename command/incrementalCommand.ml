@@ -18,7 +18,6 @@ let run
     strict
     show_error_traces
     infer
-    additional_checks
     sequential
     filter_directories
     ignore_all_errors
@@ -36,8 +35,6 @@ let run
     local_root
     ()
   =
-  (* TODO (T58175975): Completely remove `additional_checks` flag *)
-  ignore additional_checks;
   try
     let filter_directories =
       filter_directories
