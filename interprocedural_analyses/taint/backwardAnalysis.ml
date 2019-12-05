@@ -294,6 +294,39 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
 
 
+    and analyze_constructor_call
+        ~resolution
+        ~call_expression
+        ~location
+        ~callee
+        ~arguments
+        ~state
+        ~taint
+        ~constructor_targets
+      =
+      (* Since we're searching for ClassType.__new/init__(), Pyre will correctly not insert an
+         implicit type there. However, since the actual call was ClassType(), insert the implicit
+         receiver here ourselves and ignore the value from get_indirect_targets. *)
+      let { Interprocedural.CallResolution.new_targets; init_targets } = constructor_targets in
+      let apply_call_targets state targets =
+        apply_call_targets
+          ~resolution
+          ~call_expression:(Expression.Call call_expression)
+          location
+          ({ Call.Argument.name = None; value = callee } :: arguments)
+          state
+          taint
+          targets
+      in
+
+      let state =
+        match new_targets with
+        | [] -> state
+        | targets -> apply_call_targets state targets
+      in
+      apply_call_targets state init_targets
+
+
     and analyze_dictionary_entry ~resolution taint state { Dictionary.Entry.key; value } =
       let state = analyze_expression ~resolution ~taint ~state ~expression:key in
       let field_name = AccessPath.get_index key in
@@ -359,20 +392,27 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               match FunctionContext.first_parameter () with
               | Some root -> store_weak_taint ~root ~path:[] taint state
               | None -> state ) )
-      | Some global, _ ->
-          let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
-          let _, extra_arguments =
-            Interprocedural.CallResolution.normalize_global ~resolution global
-          in
-          let arguments = extra_arguments @ arguments in
-          apply_call_targets
-            ~resolution
-            ~call_expression:(Expression.Call call_expression)
-            location
-            arguments
-            state
-            taint
-            targets
+      | Some global, _ -> (
+          match Interprocedural.CallResolution.get_global_targets ~resolution global with
+          | Interprocedural.CallResolution.GlobalTargets targets ->
+              apply_call_targets
+                ~resolution
+                ~call_expression:(Expression.Call call_expression)
+                location
+                arguments
+                state
+                taint
+                targets
+          | Interprocedural.CallResolution.ConstructorTargets { constructor_targets; callee } ->
+              analyze_constructor_call
+                ~resolution
+                ~call_expression
+                ~location
+                ~arguments
+                ~callee
+                ~state
+                ~taint
+                ~constructor_targets )
       | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
           let taint =
             (* Specially handle super.__init__ calls in constructors for tito *)
@@ -397,23 +437,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             taint
             indirect_targets
       | None, Name (Name.Identifier _name) ->
-          (* Since we're searching for ClassType.__init__(), Pyre will correctly not insert an
-             implicit type there. However, since the actual call was ClassType(), insert the
-             implicit receiver here ourselves and ignore the value from get_indirect_targets. *)
-          let indirect_targets, _ =
-            Interprocedural.CallResolution.get_indirect_targets
-              ~resolution
-              ~receiver:callee
-              ~method_name:"__init__"
+          let constructor_targets =
+            Interprocedural.CallResolution.get_constructor_targets ~resolution ~receiver:callee
           in
-          apply_call_targets
+          analyze_constructor_call
             ~resolution
-            ~call_expression:(Expression.Call call_expression)
-            location
-            ({ Call.Argument.name = None; value = callee } :: arguments)
-            state
-            taint
-            indirect_targets
+            ~call_expression
+            ~location
+            ~callee
+            ~arguments
+            ~state
+            ~taint
+            ~constructor_targets
       | _ ->
           (* No targets, treat call as obscure *)
           let obscure_taint =

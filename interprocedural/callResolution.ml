@@ -9,20 +9,6 @@ open Analysis
 open Expression
 open Pyre
 
-let normalize_global ~resolution reference =
-  (* Determine if this is a constructor call, as we need to add the uninitialized object argument
-     for self. *)
-  let global_type = Resolution.resolve_reference resolution reference in
-  if Type.is_meta global_type then
-    let dummy_self =
-      { Call.Argument.name = None; value = Node.create_with_default_location Expression.False }
-    in
-    let full_reference = Reference.create ~prefix:reference "__init__" in
-    full_reference, [dummy_self]
-  else
-    reference, []
-
-
 let defining_attribute ~resolution parent_type attribute =
   let global_resolution = Resolution.global_resolution resolution in
   Type.split parent_type
@@ -234,12 +220,6 @@ let resolve_property_targets ~resolution ~base ~attribute =
       |> Option.some
 
 
-let get_global_targets ~resolution ~global =
-  Expression.Name (create_name_from_reference ~location:Location.Reference.any global)
-  |> Node.create_with_default_location
-  |> resolve_target ~resolution
-
-
 let resolve_call_targets ~resolution call =
   let { Call.callee; _ } = Analysis.Annotated.Call.redirect_special_calls ~resolution call in
   match Node.value callee with
@@ -258,3 +238,45 @@ let resolve_call_targets ~resolution call =
       else
         resolve_target ~resolution callee
   | _ -> resolve_target ~resolution callee
+
+
+type target = Callable.t * Type.Callable.implicit option
+
+type constructor_targets = {
+  new_targets: target list;
+  init_targets: target list;
+}
+
+let get_constructor_targets ~resolution ~receiver =
+  let new_targets =
+    let targets, _ = get_indirect_targets ~resolution ~receiver ~method_name:"__new__" in
+    let keep = function
+      | `Method { Callable.class_name = "object"; _ }, _ -> false
+      | _ -> true
+    in
+    List.filter targets ~f:keep
+  in
+  let init_targets, _ = get_indirect_targets ~resolution ~receiver ~method_name:"__init__" in
+  { new_targets; init_targets }
+
+
+type global_targets =
+  | ConstructorTargets of {
+      constructor_targets: constructor_targets;
+      callee: Expression.t;
+    }
+  | GlobalTargets of target list
+
+let get_global_targets ~resolution reference =
+  let callee =
+    Expression.Name (create_name_from_reference ~location:Location.Reference.any reference)
+    |> Node.create_with_default_location
+  in
+  (* Determine if this is a constructor call, as we need to add the uninitialized object argument
+     for self. *)
+  let global_type = Resolution.resolve_reference resolution reference in
+  if Type.is_meta global_type then
+    ConstructorTargets
+      { constructor_targets = get_constructor_targets ~resolution ~receiver:callee; callee }
+  else
+    GlobalTargets (resolve_target ~resolution callee)

@@ -431,6 +431,30 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> analyze_expression ~resolution ~state ~expression
 
 
+    and analyze_constructor_call
+        ~resolution
+        ~callee
+        ~constructor_targets
+        ~arguments
+        ~location
+        ~state
+      =
+      (* Since we're searching for ClassType.__new/init__(), Pyre will correctly not insert an
+         implicit type there. However, since the actual call was ClassType(), insert the implicit
+         receiver here ourselves and ignore the value from get_indirect_targets. *)
+      let { Interprocedural.CallResolution.new_targets; init_targets } = constructor_targets in
+      let apply_call_targets state targets =
+        let arguments = { Call.Argument.name = None; value = callee } :: arguments in
+        apply_call_targets ~resolution location arguments state targets
+      in
+      let state =
+        match new_targets with
+        | [] -> state
+        | targets -> apply_call_targets state targets |> snd
+      in
+      apply_call_targets state init_targets
+
+
     and analyze_call ~resolution ~location ~state callee arguments =
       let call = { Call.callee; arguments } in
       let { Call.callee; arguments } = Annotated.Call.redirect_special_calls ~resolution call in
@@ -457,13 +481,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         | _ -> ()
       end;
       match AccessPath.get_global ~resolution callee, Node.value callee with
-      | Some global, _ ->
-          let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
-          let _, extra_arguments =
-            Interprocedural.CallResolution.normalize_global ~resolution global
-          in
-          let arguments = extra_arguments @ arguments in
-          apply_call_targets ~resolution location arguments state targets
+      | Some global, _ -> (
+          let targets = Interprocedural.CallResolution.get_global_targets ~resolution global in
+          match targets with
+          | Interprocedural.CallResolution.GlobalTargets targets ->
+              apply_call_targets ~resolution location arguments state targets
+          | Interprocedural.CallResolution.ConstructorTargets { constructor_targets; callee } ->
+              analyze_constructor_call
+                ~resolution
+                ~location
+                ~arguments
+                ~callee
+                ~state
+                ~constructor_targets )
       | None, Name (Name.Attribute { base = receiver; attribute = method_name; _ }) ->
           let indirect_targets, receiver =
             Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
@@ -485,21 +515,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           apply_call_targets ~resolution location arguments state indirect_targets
           |>> add_index_breadcrumb_if_necessary
       | None, Name (Name.Identifier _name) ->
-          (* Since we're searching for ClassType.__init__(), Pyre will correctly not insert an
-             implicit type there. However, since the actual call was ClassType(), insert the
-             implicit receiver here ourselves and ignore the value from get_indirect_targets. *)
-          let indirect_targets, _ =
-            Interprocedural.CallResolution.get_indirect_targets
-              ~resolution
-              ~receiver:callee
-              ~method_name:"__init__"
+          let constructor_targets =
+            Interprocedural.CallResolution.get_constructor_targets ~resolution ~receiver:callee
           in
-          apply_call_targets
+          analyze_constructor_call
             ~resolution
-            location
-            ({ Call.Argument.name = None; value = callee } :: arguments)
-            state
-            indirect_targets
+            ~location
+            ~arguments
+            ~state
+            ~constructor_targets
+            ~callee
       | _ ->
           (* No target, treat call as obscure *)
           let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
@@ -900,7 +925,14 @@ let run ~environment ~define ~existing_model =
     let candidates = Location.Reference.Table.create ()
 
     let add_flow_candidate candidate =
-      Location.Reference.Table.set candidates ~key:candidate.Flow.location ~data:candidate
+      let key = candidate.Flow.location in
+      let candidate =
+        match Hashtbl.find candidates key with
+        | Some { Flow.flows; location } ->
+            { Flow.flows = List.rev_append candidate.Flow.flows flows; location }
+        | None -> candidate
+      in
+      Location.Reference.Table.set candidates ~key ~data:candidate
 
 
     let check_flow ~location ~source_tree ~sink_tree =

@@ -1,8 +1,11 @@
 @generated
 Call dependencies
+constructors.ChildWithNew::__new__ (method) -> [__test_sink (fun) object::__new__ (method)]
+constructors.ParentWithInit::__init__ (method) -> []
 constructors.SomeAPI::__init__ (method) -> []
 constructors.SomeAPI::async_get_authenticated_user (method) -> [eval (fun)]
 constructors.SomeAPI::from_default_keys (method) -> [constructors.SomeAPI::__init__ (method)]
 constructors.SourceInConstructor::__init__ (method) -> [__test_source (fun)]
 constructors.test_construction (fun) -> [constructors.SomeAPI::async_get_authenticated_user (method) constructors.SomeAPI::from_default_keys (method)]
+constructors.test_new_thing (fun) -> [__test_source (fun) constructors.ChildWithNew::__new__ (method)]
 constructors.test_source_in_constructor (fun) -> [__test_sink (fun) constructors.SourceInConstructor::__init__ (method)]

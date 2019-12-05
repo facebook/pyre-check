@@ -31,3 +31,18 @@ def test_source_in_constructor():
     c = SourceInConstructor()
     __test_sink(c.x)
     __test_sink(c.y)
+
+
+class ParentWithInit:
+    def __init__(self):
+        pass
+
+
+class ChildWithNew(ParentWithInit):
+    def __new__(cls, input):
+        __test_sink(input)
+        return object.__new__(cls)
+
+
+def test_new_thing():
+    c = ChildWithNew(__test_source())
