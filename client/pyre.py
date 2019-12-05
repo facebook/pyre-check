@@ -13,7 +13,14 @@ import time
 import traceback
 from typing import Type  # noqa
 
-from . import buck, commands, get_binary_version_from_file, log, log_statistics
+from . import (
+    buck,
+    commands,
+    find_project_root,
+    get_binary_version_from_file,
+    log,
+    log_statistics,
+)
 from .commands import (  # noqa
     Command,
     ExitCode,
@@ -88,10 +95,11 @@ def main() -> int:
                 )
             )
             return ExitCode.SUCCESS
-        command = arguments.command(arguments, os.getcwd())
-
+        original_directory = os.getcwd()
         # TODO(T57959968): Stop changing the directory in the client
-        os.chdir(command.current_directory)
+        os.chdir(find_project_root(original_directory))
+        command = arguments.command(arguments, original_directory)
+
         log.initialize(command.noninteractive, command.log_directory)
         exit_code = command.run().exit_code()
     except buck.BuckException as error:
