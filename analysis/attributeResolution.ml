@@ -1126,10 +1126,11 @@ module Implementation = struct
       in
       add_actual ();
       if
-        AnnotatedBases.extends_placeholder_stub_class
-          parent
-          ~aliases:(aliases class_metadata_environment ~dependency)
-          ~from_empty_stub:(is_suppressed_module class_metadata_environment ~dependency)
+        include_generated_attributes
+        && AnnotatedBases.extends_placeholder_stub_class
+             parent
+             ~aliases:(aliases class_metadata_environment ~dependency)
+             ~from_empty_stub:(is_suppressed_module class_metadata_environment ~dependency)
       then
         add_placeholder_stub_inheritances ();
       let get_table =

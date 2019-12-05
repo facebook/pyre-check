@@ -122,6 +122,16 @@ let test_check_data_class context =
         y: str
     |}
     [];
+  assert_type_errors
+    {|
+      from placeholder_stub import X
+      @dataclass
+      class Foo(X):
+        x: int = 1
+      def boo() -> None:
+          b = Foo(1)
+    |}
+    [];
   ()
 
 
