@@ -696,8 +696,6 @@ let test_check_immutable_annotations context =
     [
       "Missing global annotation [5]: Globally accessible variable `constant` must be specified as \
        type other than `Any`.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
-       type `Any` is specified.";
     ];
   assert_type_errors
     {|
@@ -783,8 +781,6 @@ let test_check_immutable_annotations context =
     |}
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
-      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but \
-       no type is specified.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors
@@ -816,11 +812,7 @@ let test_check_immutable_annotations context =
         foo = Foo()
         foo.constant = 1
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified.";
-      "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but no \
-       type is specified.";
-    ];
+    ["Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified."];
   assert_type_errors
     {|
       x = 1
@@ -840,8 +832,6 @@ let test_check_immutable_annotations context =
       ^ "as type that does not contain `Any`.";
       "Missing global annotation [5]: Globally accessible variable `a` must be specified as type \
        other than `Any`.";
-      "Missing global annotation [5]: Globally accessible variable `a` has type `int` but type \
-       `Any` is specified.";
     ];
   assert_type_errors
     {|

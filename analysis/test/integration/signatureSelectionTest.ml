@@ -710,8 +710,6 @@ let test_check_function_overloads context =
     [
       "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
        implementation.";
-      "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
-       implementation.";
     ];
   assert_type_errors
     {|
@@ -729,8 +727,6 @@ let test_check_function_overloads context =
         return x.derp(True)
     |}
     [
-      "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
-       implementation.";
       "Missing overload implementation [42]: Overloaded function `Foo.derp` must have an \
        implementation.";
       "Missing argument [20]: Call `Foo.derp` expects argument `y`.";
@@ -774,8 +770,6 @@ let test_check_function_overloads context =
     |}
     [
       "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
-      "Missing overload implementation [42]: Overloaded function `derp` must have an \
-       implementation.";
       "Revealed type [-1]: Revealed type for `test.derp` is "
       ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`.";
     ];
@@ -792,8 +786,6 @@ let test_check_function_overloads context =
     |}
     [
       "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
-      "Missing overload implementation [42]: Overloaded function `derp` must have an \
-       implementation.";
       "Revealed type [-1]: Revealed type for `test.derp` is "
       ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`.";
     ];
@@ -812,8 +804,6 @@ let test_check_function_overloads context =
     |}
     [
       "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
-      "Missing overload implementation [42]: Overloaded function `derp` must have an \
-       implementation.";
       "Revealed type [-1]: Revealed type for `test.derp` is "
       ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`.";
     ];
@@ -850,8 +840,6 @@ let test_check_constructor_overloads context =
         Class('asdf')
     |}
     [
-      "Missing overload implementation [42]: Overloaded function `Class.__init__` must have an \
-       implementation.";
       "Missing overload implementation [42]: Overloaded function `Class.__init__` must have an \
        implementation.";
     ]

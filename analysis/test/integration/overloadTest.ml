@@ -20,10 +20,7 @@ let test_check_implementation context =
       def foo() -> None:
           pass
     |}
-    [
-      "Missing overload implementation [42]: Overloaded function `foo` must have an implementation.";
-      "Missing overload implementation [42]: Overloaded function `foo` must have an implementation.";
-    ];
+    ["Missing overload implementation [42]: Overloaded function `foo` must have an implementation."];
   assert_default_type_errors
     ~handle:"stub.pyi"
     {|

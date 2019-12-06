@@ -99,9 +99,37 @@ let add_local_mode_errors
   List.fold ~f:add_error ~init:errors unused_local_modes
 
 
-let run_on_source ~global_resolution ~source errors =
-  let toplevel = Source.top_level_define_node source in
-  add_local_mode_errors ~define:toplevel source errors
+let filter_errors
+    ~configuration:
+      ({ Configuration.Analysis.include_hints; features = { click_to_fix; _ }; _ } as configuration)
+    ~global_resolution
+    ~metadata:{ Source.Metadata.local_mode; ignore_codes; _ }
+    errors_by_define
+  =
+  let mode = Source.mode ~configuration ~local_mode in
+  let filter errors =
+    let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
+    List.filter ~f:keep_error errors
+  in
+  let filter_hints errors =
+    match mode with
+    | Unsafe when (not include_hints) || not click_to_fix ->
+        List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
+    | _ -> errors
+  in
+  List.map errors_by_define ~f:(fun errors -> filter errors |> filter_hints)
+  |> List.concat_map ~f:(Error.join_at_define ~resolution:global_resolution)
+  |> Error.join_at_source ~resolution:global_resolution
+
+
+let run_on_source
+    ~configuration
+    ~global_resolution
+    ~source:({ Source.metadata; _ } as source)
+    errors_by_define
+  =
+  filter_errors ~configuration ~global_resolution ~metadata errors_by_define
+  |> add_local_mode_errors ~define:(Source.top_level_define_node source) source
   |> ignore source
   |> List.map
        ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution:global_resolution)
@@ -120,16 +148,16 @@ let run ~scheduler ~configuration ~environment sources =
             []
           else
             let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-            let errors =
+            let errors_by_define =
               let unannotated_global_environment =
                 GlobalResolution.unannotated_global_environment global_resolution
               in
               UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
                 unannotated_global_environment
                 module_name
-              |> List.concat_map ~f:(TypeEnvironment.ReadOnly.get_errors environment)
+              |> List.map ~f:(TypeEnvironment.ReadOnly.get_errors environment)
             in
-            run_on_source ~global_resolution ~source errors
+            run_on_source ~configuration ~global_resolution ~source errors_by_define
     in
     List.concat_map modules ~f:run_on_module
   in

@@ -536,10 +536,8 @@ let test_check_callable_class_decorators context =
       reveal_type(am_i_async)
     |}
     [
-      "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
-       contain `Any`.";
-      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `coroutine` must have a type other than `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Revealed type [-1]: Revealed type for `test.am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
        str]]`.";

@@ -79,10 +79,8 @@ let test_check_attributes context =
           self.a = 1
     |}
     [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
-       is specified.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `None` but no type \
-       is specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type \
+       `typing.Optional[int]` but no type is specified.";
     ];
   assert_type_errors
     ~show_error_traces:true
@@ -161,8 +159,6 @@ let test_check_attributes context =
        `typing.Any` but is never initialized.";
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
        than `Any`.";
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but type \
-       `Any` is specified.";
     ];
   assert_type_errors
     {|
@@ -317,8 +313,6 @@ let test_check_attributes context =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` "
       ^ "has type `int` but no type is specified.";
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `int` but no type \
-       is specified.";
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` "
       ^ "has type `int` but no type is specified.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
@@ -673,8 +667,6 @@ let test_attribute_strict context =
        `typing.Any` but is never initialized.";
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
        than `Any`.";
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type \
-       `typing.Union[int, str]` but type `Any` is specified.";
     ];
 
   (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference errors
@@ -703,10 +695,8 @@ let test_attribute_strict context =
           self.a = 1
     |}
     [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
-       is specified.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `None` but no type \
-       is specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type \
+       `typing.Optional[int]` but no type is specified.";
     ];
   assert_strict_type_errors
     {|
@@ -949,7 +939,6 @@ let test_check_missing_attribute context =
       Foo.a = 1
     |}
     [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
        is specified.";
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
@@ -1010,8 +999,6 @@ let test_check_missing_attribute context =
       ^ "type `typing.Any` but is never initialized.";
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
        `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but type \
-       `Any` is specified.";
     ];
   assert_default_type_errors ~handle:"stub.pyi" {|
         class Foo:
@@ -1036,8 +1023,6 @@ let test_check_missing_attribute context =
     [
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
        `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but type \
-       `Any` is specified.";
     ];
   assert_type_errors
     {|

@@ -4893,36 +4893,16 @@ let exit_state ~resolution (module Context : Context) =
 
 
 let check_define
-    ~configuration:
-      ({ Configuration.Analysis.include_hints; features = { click_to_fix; _ }; _ } as configuration)
+    ~configuration:{ Configuration.Analysis.debug; _ }
     ~resolution
     ~qualifier
-    ~metadata:{ Source.Metadata.local_mode; ignore_codes; _ }
     ~call_graph_builder:(module Builder : Callgraph.Builder)
     ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
-  let filter_errors errors =
-    let global_resolution = Resolution.global_resolution resolution in
-    let mode = Source.mode ~configuration ~local_mode in
-    let filter errors =
-      let keep_error error = not (Error.suppress ~mode ~ignore_codes error) in
-      List.filter ~f:keep_error errors
-    in
-    let filter_hints errors =
-      match mode with
-      | Unsafe when (not include_hints) || not click_to_fix ->
-          List.filter errors ~f:(fun { Error.kind; _ } -> not (Error.language_server_hint kind))
-      | _ -> errors
-    in
-    filter errors
-    |> filter_hints
-    |> Error.join_at_define ~resolution:global_resolution
-    |> Error.join_at_source ~resolution:global_resolution
-  in
   try
     let errors, local_annotations, callees =
       let module Context = struct
-        let debug = configuration.debug
+        let debug = debug
 
         let define = define_node
 
@@ -4932,7 +4912,7 @@ let check_define
       exit_state ~resolution (module Context)
     in
     Option.iter callees ~f:(fun callees -> Callgraph.set ~caller:name ~callees);
-    { CheckResult.errors = filter_errors errors; local_annotations }
+    { CheckResult.errors; local_annotations }
   with
   | ClassHierarchy.Untracked annotation ->
       Statistics.event
@@ -4983,7 +4963,6 @@ let check_function_definition
     ~configuration
     ~resolution
     ~qualifier
-    ~metadata
     { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings }
   =
   let check_define =
@@ -4992,7 +4971,6 @@ let check_function_definition
       ~resolution
       ~call_graph_builder:(module Callgraph.DefaultBuilder)
       ~qualifier
-      ~metadata
   in
   let sibling_bodies =
     List.map siblings ~f:(fun { UnannotatedGlobalEnvironment.FunctionDefinition.Sibling.body; _ } ->
@@ -5013,7 +4991,7 @@ let run_on_source
     ~source:
       {
         Source.source_path = { SourcePath.qualifier; relative; _ };
-        metadata = { Source.Metadata.number_of_lines; _ } as metadata;
+        metadata = { Source.Metadata.number_of_lines; _ };
         _;
       }
   =
@@ -5042,7 +5020,7 @@ let run_on_source
     | None -> ()
     | Some definition ->
         let { CheckResult.errors; local_annotations } =
-          check_function_definition ~configuration ~resolution ~qualifier ~metadata definition
+          check_function_definition ~configuration ~resolution ~qualifier definition
         in
         let () =
           if configuration.store_type_check_resolution then
