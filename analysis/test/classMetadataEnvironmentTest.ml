@@ -143,7 +143,7 @@ let test_updates context =
       (ClassMetadataEnvironment.UpdateResult.locally_triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "dep") in
+  let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "dep") in
   assert_updates
     ~original_sources:["test.py", {|
       class C:

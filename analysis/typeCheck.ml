@@ -4962,9 +4962,8 @@ let get_or_recompute_local_annotations ~environment name =
 let check_function_definition
     ~configuration
     ~resolution
-    ~qualifier
     ~name
-    { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings }
+    { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings; qualifier }
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%a`..." Reference.pp name;
@@ -5010,12 +5009,12 @@ let check_function_definition
   result
 
 
-let run_on_define ~configuration ~environment ~qualifier name =
+let run_on_define ~configuration ~environment name =
   let global_resolution =
     let global_environment = TypeEnvironment.global_environment environment in
     match configuration with
     | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-        GlobalResolution.create global_environment ~dependency:(TypeCheckSource qualifier)
+        GlobalResolution.create global_environment ~dependency:(TypeCheckDefine name)
     | _ -> GlobalResolution.create global_environment
   in
   let resolution = resolution global_resolution () in
@@ -5023,7 +5022,7 @@ let run_on_define ~configuration ~environment ~qualifier name =
   | None -> ()
   | Some definition ->
       let { CheckResult.errors; local_annotations } =
-        check_function_definition ~configuration ~resolution ~qualifier ~name definition
+        check_function_definition ~configuration ~resolution ~name definition
       in
       let () =
         if configuration.store_type_check_resolution then
@@ -5036,38 +5035,14 @@ let run_on_define ~configuration ~environment ~qualifier name =
       TypeEnvironment.set_errors environment name errors
 
 
-let run ~scheduler ~configuration ~environment qualifiers =
-  Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
-
-  let all_defines =
-    let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment
-        (TypeEnvironment.global_resolution environment)
-    in
-    let map _ qualifiers =
-      List.concat_map qualifiers ~f:(fun qualifier ->
-          UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
-            unannotated_global_environment
-            qualifier
-          |> List.map ~f:(fun define_name -> qualifier, define_name))
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~configuration
-      ~bucket_size:75
-      ~initial:[]
-      ~map
-      ~reduce:List.append
-      ~inputs:qualifiers
-      ()
-  in
-  let number_of_defines = List.length all_defines in
-  Log.info "Checking %d functions..." number_of_defines;
-
+let run_on_defines ~scheduler ~configuration ~environment defines =
   let timer = Timer.start () in
+
+  let number_of_defines = List.length defines in
+  Log.info "Checking %d functions..." number_of_defines;
   let map _ names =
-    let analyze_define number_defines (qualifier, define_name) =
-      run_on_define ~configuration ~environment ~qualifier define_name;
+    let analyze_define number_defines define_name =
+      run_on_define ~configuration ~environment define_name;
       number_defines + 1
     in
     List.fold names ~init:0 ~f:analyze_define
@@ -5085,13 +5060,42 @@ let run ~scheduler ~configuration ~environment qualifiers =
       ~initial:0
       ~map
       ~reduce
-      ~inputs:all_defines
+      ~inputs:defines
       ()
   in
-  Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ();
+
+  Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ()
+
+
+let legacy_run_on_modules ~scheduler ~configuration ~environment qualifiers =
+  Profiling.track_shared_memory_usage ~name:"Before legacy type check" ();
+
+  let all_defines =
+    let unannotated_global_environment =
+      GlobalResolution.unannotated_global_environment
+        (TypeEnvironment.global_resolution environment)
+    in
+    let map _ qualifiers =
+      List.concat_map qualifiers ~f:(fun qualifier ->
+          UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+            unannotated_global_environment
+            qualifier)
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~bucket_size:75
+      ~initial:[]
+      ~map
+      ~reduce:List.append
+      ~inputs:qualifiers
+      ()
+  in
+
+  run_on_defines ~scheduler ~configuration ~environment all_defines;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size post-typecheck"
     ~integers:["size", Memory.heap_size ()]
     ();
-  Profiling.track_shared_memory_usage ~name:"After analyze_sources" ()
+  Profiling.track_shared_memory_usage ~name:"After legacy type check" ()

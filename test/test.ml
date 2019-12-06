@@ -1552,7 +1552,10 @@ module ScratchProject = struct
     let type_environment = TypeEnvironment.create global_environment in
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
-    |> TypeCheck.run ~scheduler:(Scheduler.mock ()) ~configuration ~environment:type_environment;
+    |> TypeCheck.legacy_run_on_modules
+         ~scheduler:(Scheduler.mock ())
+         ~configuration
+         ~environment:type_environment;
     { BuiltTypeEnvironment.sources; ast_environment; type_environment }
 
 

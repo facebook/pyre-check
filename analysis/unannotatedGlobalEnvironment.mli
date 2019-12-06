@@ -41,6 +41,7 @@ module FunctionDefinition : sig
   end
 
   type t = {
+    qualifier: Reference.t;
     body: Define.t Node.t option;
     siblings: Sibling.t list;
   }
@@ -102,6 +103,8 @@ module UpdateResult : sig
   val previous_classes : t -> Type.Primitive.Set.t
 
   val previous_defines : t -> Reference.Set.t
+
+  val define_additions : t -> Reference.Set.t
 
   val locally_triggered_dependencies : t -> DependencyKey.KeySet.t
 

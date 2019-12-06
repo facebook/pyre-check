@@ -93,7 +93,14 @@ val resolution_with_key
 
 val name : string
 
-val run
+val run_on_defines
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  environment:TypeEnvironment.t ->
+  Ast.Reference.t list ->
+  unit
+
+val legacy_run_on_modules
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:TypeEnvironment.t ->

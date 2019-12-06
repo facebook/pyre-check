@@ -48,20 +48,24 @@ module FunctionDefinition = struct
   end
 
   type t = {
+    qualifier: Reference.t;
     body: Define.t Node.t option;
     siblings: Sibling.t list;
   }
   [@@deriving sexp, compare]
 
   let location_sensitive_compare left right =
-    match
-      Option.compare
-        (Node.location_sensitive_compare Define.location_sensitive_compare)
-        left.body
-        right.body
-    with
+    match Reference.compare left.qualifier right.qualifier with
     | x when not (Int.equal x 0) -> x
-    | _ -> List.compare Sibling.compare left.siblings right.siblings
+    | _ -> (
+        match
+          Option.compare
+            (Node.location_sensitive_compare Define.location_sensitive_compare)
+            left.body
+            right.body
+        with
+        | x when not (Int.equal x 0) -> x
+        | _ -> List.compare Sibling.compare left.siblings right.siblings )
 end
 
 module ReadOnly = struct
@@ -746,7 +750,7 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; is_external;
           let siblings =
             List.sort overloads ~compare:FunctionDefinition.Sibling.location_sensitive_compare
           in
-          (key, { FunctionDefinition.body; siblings }) :: collected
+          (key, { FunctionDefinition.qualifier; body; siblings }) :: collected
         in
         let all_defines =
           (* Take into account module toplevel *)
@@ -766,6 +770,7 @@ module UpdateResult = struct
     previous_classes: Type.Primitive.Set.t;
     previous_unannotated_globals: Reference.Set.t;
     previous_defines: Reference.Set.t;
+    define_additions: Reference.Set.t;
     triggered_dependencies: DependencyKey.KeySet.t;
     upstream: AstEnvironment.UpdateResult.t;
     read_only: ReadOnly.t;
@@ -780,6 +785,8 @@ module UpdateResult = struct
   let previous_defines { previous_defines; _ } = previous_defines
 
   let previous_classes { previous_classes; _ } = previous_classes
+
+  let define_additions { define_additions; _ } = define_additions
 
   let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
@@ -828,7 +835,7 @@ let update_this_and_all_preceding_environments
   KeyTracker.FunctionKeys.KeySet.of_list modified_qualifiers |> KeyTracker.FunctionKeys.remove_batch;
   match configuration with
   | { incremental_style = FineGrained; _ } ->
-      let triggered_dependencies =
+      let define_additions, triggered_dependencies =
         Profiling.track_duration_and_shared_memory
           "TableUpdate(Unannotated globals)"
           ~tags:["phase_name", "Global discovery"]
@@ -861,12 +868,13 @@ let update_this_and_all_preceding_environments
                 ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
                 ~define_additions:(Set.to_list define_additions)
             in
-            DependencyKey.KeySet.union addition_triggers mutation_triggers)
+            define_additions, DependencyKey.KeySet.union addition_triggers mutation_triggers)
       in
       {
         UpdateResult.previous_classes;
         previous_unannotated_globals;
         previous_defines;
+        define_additions;
         triggered_dependencies;
         upstream;
         read_only = WriteOnly.read_only ~ast_environment;
@@ -888,6 +896,7 @@ let update_this_and_all_preceding_environments
         previous_classes;
         previous_unannotated_globals;
         previous_defines;
+        define_additions = Reference.Set.empty;
         triggered_dependencies;
         upstream;
         read_only = WriteOnly.read_only ~ast_environment;

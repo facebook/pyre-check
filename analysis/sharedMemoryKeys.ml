@@ -93,7 +93,7 @@ module ParseAnnotationKey = struct
 end
 
 type dependency =
-  | TypeCheckSource of Reference.t
+  | TypeCheckDefine of Reference.t
   | AliasRegister of Reference.t
   | ClassConnect of Type.Primitive.t
   | RegisterClassMetadata of Type.Primitive.t

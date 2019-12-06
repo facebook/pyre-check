@@ -504,12 +504,13 @@ let test_updates context =
     in
     let expected_triggers = SharedMemoryKeys.DependencyKey.KeySet.of_list expected_triggers in
     assert_equal
+      ~cmp:SharedMemoryKeys.DependencyKey.KeySet.equal
       ~printer
       expected_triggers
       (UnannotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "dep") in
+  let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "dep") in
   (* get_class_definition *)
   assert_updates
     ~original_source:{|
@@ -828,7 +829,7 @@ let test_updates context =
 
   (* Keep different dependencies straight *)
   let alias_dependency = SharedMemoryKeys.AliasRegister (Reference.create "same_dep") in
-  let check_dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "same_dep") in
+  let check_dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "same_dep") in
   assert_updates
     ~original_source:{|
       class Foo:
@@ -932,7 +933,7 @@ let test_updates context =
     ();
 
   (* Get typecheck unit *)
-  let dependency = SharedMemoryKeys.TypeCheckSource !&"test" in
+  let dependency = SharedMemoryKeys.TypeCheckDefine !&"test" in
   let open Statement in
   let open Expression in
   let path = !&"test" in
@@ -1469,7 +1470,7 @@ let test_updates context =
           (let definition =
              let open UnannotatedGlobalEnvironment.FunctionDefinition in
              let siblings = [{ Sibling.kind = Sibling.Kind.Overload; body = first_overload }] in
-             { body = Some body; siblings }
+             { body = Some body; siblings; qualifier = !&"test" }
            in
            `Define (!&"test.foo", dependency, Some definition));
         ]
@@ -1484,7 +1485,7 @@ let test_updates context =
                  { Sibling.kind = Sibling.Kind.Overload; body = second_overload };
                ]
              in
-             { body = Some body; siblings }
+             { body = Some body; siblings; qualifier = !&"test" }
            in
            `Define (!&"test.foo", dependency, Some definition));
         ]
@@ -1636,7 +1637,7 @@ let test_updates context =
                 { Sibling.kind = Sibling.Kind.PropertySetter; body });
              ]
            in
-           { body = Some body; siblings }
+           { body = Some body; siblings; qualifier = !&"test" }
          in
          `Define (!&"test.A.foo", dependency, Some definition));
       ]

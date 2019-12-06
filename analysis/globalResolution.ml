@@ -171,7 +171,7 @@ let containing_source resolution reference =
 let function_definitions resolution reference =
   let unannotated_global_environment = unannotated_global_environment resolution in
   UnannotatedGlobalEnvironment.ReadOnly.get_define unannotated_global_environment reference
-  >>| fun { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings } ->
+  >>| fun { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings; _ } ->
   let sibling_bodies =
     List.map siblings ~f:(fun { UnannotatedGlobalEnvironment.FunctionDefinition.Sibling.body; _ } ->
         body)

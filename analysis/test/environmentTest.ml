@@ -1304,8 +1304,8 @@ let test_update_and_compute_dependencies context =
       |}]
       ()
   in
-  let dependency_A = SharedMemoryKeys.TypeCheckSource (Reference.create "A") in
-  let dependency_B = SharedMemoryKeys.TypeCheckSource (Reference.create "B") in
+  let dependency_A = SharedMemoryKeys.TypeCheckDefine (Reference.create "A") in
+  let dependency_B = SharedMemoryKeys.TypeCheckDefine (Reference.create "B") in
   (* Establish dependencies *)
   let untracked_global_resolution = GlobalResolution.create environment in
   let dependency_tracked_global_resolution_A =

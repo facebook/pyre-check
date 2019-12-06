@@ -213,7 +213,7 @@ let test_updates context =
       (AliasEnvironment.UpdateResult.locally_triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
-  let dependency = SharedMemoryKeys.TypeCheckSource (Reference.create "dep") in
+  let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "dep") in
   let assert_test_py_updates ?original_source ?new_source =
     assert_updates
       ?original_sources:(original_source >>| fun source -> ["test.py", source])

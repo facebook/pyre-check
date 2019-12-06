@@ -108,7 +108,7 @@ let check
     environment
   in
   let errors =
-    Analysis.TypeCheck.run ~scheduler ~configuration ~environment qualifiers;
+    Analysis.TypeCheck.legacy_run_on_modules ~scheduler ~configuration ~environment qualifiers;
     Analysis.Postprocessing.run
       ~scheduler
       ~configuration

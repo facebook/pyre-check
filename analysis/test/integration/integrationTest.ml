@@ -6,7 +6,7 @@
 let type_check ~configuration ~environment ~source =
   let { Ast.Source.source_path = { Ast.SourcePath.qualifier; _ }; _ } = source in
   let scheduler = Scheduler.mock () in
-  Analysis.TypeCheck.run ~scheduler ~configuration ~environment [qualifier];
+  Analysis.TypeCheck.legacy_run_on_modules ~scheduler ~configuration ~environment [qualifier];
   Analysis.Postprocessing.run
     ~scheduler
     ~configuration
