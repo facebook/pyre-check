@@ -17,7 +17,9 @@ from .errors import errors_from_stdin, sort_errors
 LOG: Logger = logging.getLogger(__name__)
 
 
-def run_missing_overridden_return_annotations(arguments: argparse.Namespace) -> None:
+def run_missing_overridden_return_annotations(
+    arguments: argparse.Namespace, _version_control
+) -> None:
     errors = sort_errors(errors_from_stdin(arguments))
     for path, errors in errors:
         LOG.info("Patching errors in `%s`.", path)
@@ -50,7 +52,9 @@ def run_missing_overridden_return_annotations(arguments: argparse.Namespace) -> 
         path.write_text("\n".join(lines))
 
 
-def run_missing_global_annotations(arguments: argparse.Namespace) -> None:
+def run_missing_global_annotations(
+    arguments: argparse.Namespace, _version_control
+) -> None:
     errors = sort_errors(errors_from_stdin(arguments))
     for path, errors in errors:
         LOG.info("Patching errors in `%s`", path)
