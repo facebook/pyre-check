@@ -69,6 +69,7 @@ class WatchmanSubscriber(object):
             sys.exit(1)
 
     def _subscribe_to_watchman(self, subscription: Subscription) -> None:
+        self._watchman_client.query("watch", subscription.root)
         self._watchman_client.query(
             "subscribe", subscription.root, subscription.name, subscription.subscription
         )
