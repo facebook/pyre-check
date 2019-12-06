@@ -4963,8 +4963,12 @@ let check_function_definition
     ~configuration
     ~resolution
     ~qualifier
+    ~name
     { UnannotatedGlobalEnvironment.FunctionDefinition.body; siblings }
   =
+  let timer = Timer.start () in
+  Log.log ~section:`Check "Checking `%a`..." Reference.pp name;
+
   let check_define =
     check_define
       ~configuration
@@ -4977,104 +4981,111 @@ let check_function_definition
         body)
   in
   let sibling_results = List.map sibling_bodies ~f:(fun define_node -> check_define define_node) in
-  let open CheckResult in
-  match body with
-  | None -> { errors = aggregate_errors sibling_results; local_annotations = None }
-  | Some define_node ->
-      let ({ local_annotations; _ } as body_result) = check_define define_node in
-      { errors = aggregate_errors (body_result :: sibling_results); local_annotations }
+  let result =
+    let open CheckResult in
+    match body with
+    | None -> { errors = aggregate_errors sibling_results; local_annotations = None }
+    | Some define_node ->
+        let ({ local_annotations; _ } as body_result) = check_define define_node in
+        { errors = aggregate_errors (body_result :: sibling_results); local_annotations }
+  in
+
+  let number_of_lines =
+    let bodies =
+      match body with
+      | None -> sibling_bodies
+      | Some body -> body :: sibling_bodies
+    in
+    List.fold bodies ~init:0 ~f:(fun sofar body -> sofar + Node.number_of_lines body)
+  in
+  Statistics.performance
+    ~flush:false
+    ~randomly_log_every:1000
+    ~section:`Check
+    ~name:"SingleDefineTypeCheck"
+    ~timer
+    ~normals:["name", Reference.show name; "request kind", "SingleDefineTypeCheck"]
+    ~integers:["number of lines", number_of_lines]
+    ();
+  result
 
 
-let run_on_source
-    ~configuration
-    ~environment
-    ~source:
-      {
-        Source.source_path = { SourcePath.qualifier; relative; _ };
-        metadata = { Source.Metadata.number_of_lines; _ };
-        _;
-      }
-  =
-  let timer = Timer.start () in
-  Log.log ~section:`Check "Checking `%s`..." relative;
+let run_on_define ~configuration ~environment ~qualifier name =
+  let global_resolution =
+    let global_environment = TypeEnvironment.global_environment environment in
+    match configuration with
+    | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
+        GlobalResolution.create global_environment ~dependency:(TypeCheckSource qualifier)
+    | _ -> GlobalResolution.create global_environment
+  in
+  let resolution = resolution global_resolution () in
+  match GlobalResolution.function_definition global_resolution name with
+  | None -> ()
+  | Some definition ->
+      let { CheckResult.errors; local_annotations } =
+        check_function_definition ~configuration ~resolution ~qualifier ~name definition
+      in
+      let () =
+        if configuration.store_type_check_resolution then
+          (* Write fixpoint type resolutions to shared memory *)
+          let local_annotations =
+            Option.value local_annotations ~default:LocalAnnotationMap.empty
+          in
+          TypeEnvironment.set_local_annotations environment name local_annotations
+      in
+      TypeEnvironment.set_errors environment name errors
+
+
+let run ~scheduler ~configuration ~environment qualifiers =
+  Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
 
   let all_defines =
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment
         (TypeEnvironment.global_resolution environment)
     in
-    UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
-      unannotated_global_environment
-      qualifier
-  in
-  let check_define name =
-    let global_resolution =
-      let global_environment = TypeEnvironment.global_environment environment in
-      match configuration with
-      | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-          GlobalResolution.create global_environment ~dependency:(TypeCheckSource qualifier)
-      | _ -> GlobalResolution.create global_environment
+    let map _ qualifiers =
+      List.concat_map qualifiers ~f:(fun qualifier ->
+          UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+            unannotated_global_environment
+            qualifier
+          |> List.map ~f:(fun define_name -> qualifier, define_name))
     in
-    let resolution = resolution global_resolution () in
-    match GlobalResolution.function_definition global_resolution name with
-    | None -> ()
-    | Some definition ->
-        let { CheckResult.errors; local_annotations } =
-          check_function_definition ~configuration ~resolution ~qualifier definition
-        in
-        let () =
-          if configuration.store_type_check_resolution then
-            (* Write fixpoint type resolutions to shared memory *)
-            let local_annotations =
-              Option.value local_annotations ~default:LocalAnnotationMap.empty
-            in
-            TypeEnvironment.set_local_annotations environment name local_annotations
-        in
-        TypeEnvironment.set_errors environment name errors
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~bucket_size:75
+      ~initial:[]
+      ~map
+      ~reduce:List.append
+      ~inputs:qualifiers
+      ()
   in
-  List.iter all_defines ~f:check_define;
+  let number_of_defines = List.length all_defines in
+  Log.info "Checking %d functions..." number_of_defines;
 
-  Statistics.performance
-    ~flush:false
-    ~randomly_log_every:100
-    ~section:`Check
-    ~name:"SingleFileTypeCheck"
-    ~timer
-    ~normals:["handle", relative; "request kind", "SingleFileTypeCheck"]
-    ~integers:["number of lines", number_of_lines]
-    ()
-
-
-let run ~scheduler ~configuration ~environment qualifiers =
-  let number_of_sources = List.length qualifiers in
-  Log.info "Checking %d sources..." number_of_sources;
-  Profiling.track_shared_memory_usage ~name:"Before analyze_sources" ();
-
-  Log.info "Running type check...";
   let timer = Timer.start () in
-  let map _ qualifiers =
-    let analyze_source number_files source =
-      run_on_source ~configuration ~environment ~source;
-      number_files + 1
+  let map _ names =
+    let analyze_define number_defines (qualifier, define_name) =
+      run_on_define ~configuration ~environment ~qualifier define_name;
+      number_defines + 1
     in
-    let ast_environment = TypeEnvironment.ast_environment environment in
-    List.filter_map qualifiers ~f:(AstEnvironment.ReadOnly.get_source ast_environment)
-    |> List.fold ~init:0 ~f:analyze_source
+    List.fold names ~init:0 ~f:analyze_define
   in
   let reduce left right =
-    let number_files = left + right in
-    Log.log ~section:`Progress "Processed %d of %d sources" number_files number_of_sources;
-    number_files
+    let number_defines = left + right in
+    Log.log ~section:`Progress "Processed %d of %d functions" number_defines number_of_defines;
+    number_defines
   in
   let _ =
     Scheduler.map_reduce
       scheduler
       ~configuration
-      ~bucket_size:75
+      ~bucket_size:500
       ~initial:0
       ~map
       ~reduce
-      ~inputs:qualifiers
+      ~inputs:all_defines
       ()
   in
   Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ();

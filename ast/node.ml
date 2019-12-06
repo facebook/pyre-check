@@ -36,6 +36,20 @@ let start { location; _ } = location.Location.start
 
 let stop { location; _ } = location.Location.stop
 
+let number_of_lines
+    {
+      location =
+        {
+          Location.start = { Location.line = start_line; _ };
+          stop = { Location.line = stop_line; _ };
+          _;
+        };
+      _;
+    }
+  =
+  stop_line - start_line + 1
+
+
 let value { value; _ } = value
 
 let location { location; _ } = location
