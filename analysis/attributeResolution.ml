@@ -68,8 +68,10 @@ module SignatureSelectionTypes = struct
     | InvalidKeywordArgument of invalid_argument Node.t
     | InvalidVariableArgument of invalid_argument Node.t
     | Mismatch of mismatch Node.t
-    | MismatchWithListVariadicTypeVariable of
-        Type.OrderedTypes.t * mismatch_with_list_variadic_type_variable
+    | MismatchWithListVariadicTypeVariable of {
+        variable: Type.OrderedTypes.t;
+        mismatch: mismatch_with_list_variadic_type_variable;
+      }
     | MissingArgument of missing_argument
     | MutuallyRecursiveTypeVariables
     | ProtocolInstantiation of Reference.t
@@ -2306,7 +2308,7 @@ module Implementation = struct
             | not_definite_tuple :: _ ->
                 Error
                   (MismatchWithListVariadicTypeVariable
-                     (expected, NotDefiniteTuple not_definite_tuple))
+                     { variable = expected; mismatch = NotDefiniteTuple not_definite_tuple })
           in
           let concatenate extracted =
             let concatenated =
@@ -2321,7 +2323,9 @@ module Implementation = struct
             match concatenated with
             | Some concatenated -> Ok concatenated
             | None ->
-                Error (MismatchWithListVariadicTypeVariable (expected, CantConcatenate extracted))
+                Error
+                  (MismatchWithListVariadicTypeVariable
+                     { variable = expected; mismatch = CantConcatenate extracted })
           in
           let solve concatenated =
             match
@@ -2334,7 +2338,8 @@ module Implementation = struct
             with
             | [] ->
                 Error
-                  (MismatchWithListVariadicTypeVariable (expected, ConstraintFailure concatenated))
+                  (MismatchWithListVariadicTypeVariable
+                     { variable = expected; mismatch = ConstraintFailure concatenated })
             | updated_constraints_set -> Ok updated_constraints_set
           in
           let make_signature_match = function

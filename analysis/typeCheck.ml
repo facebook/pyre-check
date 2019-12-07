@@ -1833,7 +1833,7 @@ module State (Context : Context) = struct
                     | _ -> normal
                   in
                   Error.create ~location ~kind ~define:Context.define
-              | MismatchWithListVariadicTypeVariable (variable, mismatch) ->
+              | MismatchWithListVariadicTypeVariable { variable; mismatch } ->
                   Error.create
                     ~location
                     ~kind:(Error.InvalidArgument (ListVariadicVariable { variable; mismatch }))

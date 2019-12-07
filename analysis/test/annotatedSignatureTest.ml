@@ -657,15 +657,19 @@ let test_select context =
       ( "[[Variable(Ts)], int]",
         Some
           (AttributeResolution.MismatchWithListVariadicTypeVariable
-             ( Concatenation
-                 (Type.OrderedTypes.Concatenation.create
-                    (Type.OrderedTypes.Concatenation.Middle.create_bare
-                       (Type.Variable.Variadic.List.create "test.Ts"))),
-               NotDefiniteTuple
-                 {
-                   expression = +Expression.Name (Name.Identifier "$local_test$unbounded_tuple");
-                   annotation = Type.Tuple (Unbounded Type.integer);
-                 } )) ));
+             {
+               variable =
+                 Concatenation
+                   (Type.OrderedTypes.Concatenation.create
+                      (Type.OrderedTypes.Concatenation.Middle.create_bare
+                         (Type.Variable.Variadic.List.create "test.Ts")));
+               mismatch =
+                 NotDefiniteTuple
+                   {
+                     expression = +Expression.Name (Name.Identifier "$local_test$unbounded_tuple");
+                     annotation = Type.Tuple (Unbounded Type.integer);
+                   };
+             }) ));
   assert_select
     "[[typing.Tuple[Ts], Variable(Ts)], int]"
     "((1, 'string'), 1.1)"
@@ -673,11 +677,14 @@ let test_select context =
       ( "[[typing.Tuple[$literal_one, $literal_string], $literal_one, $literal_string], int]",
         Some
           (AttributeResolution.MismatchWithListVariadicTypeVariable
-             ( Concatenation
-                 (Type.OrderedTypes.Concatenation.create
-                    (Type.OrderedTypes.Concatenation.Middle.create_bare
-                       (Type.Variable.Variadic.List.create "test.Ts"))),
-               ConstraintFailure (Concrete [Type.float]) )) ));
+             {
+               variable =
+                 Concatenation
+                   (Type.OrderedTypes.Concatenation.create
+                      (Type.OrderedTypes.Concatenation.Middle.create_bare
+                         (Type.Variable.Variadic.List.create "test.Ts")));
+               mismatch = ConstraintFailure (Concrete [Type.float]);
+             }) ));
   assert_select
     "[[pyre_extensions.type_variable_operators.Map[typing.List, Ts]], int]"
     "([1,2,3], ['string', 'string'])"
