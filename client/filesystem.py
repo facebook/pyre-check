@@ -186,22 +186,18 @@ def add_symbolic_link(link_path: str, actual_path: str) -> None:
 def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, None]:
     """Raises an OSError if the lock can't be acquired"""
     try:
-        lockfile = open(path, "w+")  # noqa
+        with open(path, "w+") as lockfile:
+            if not blocking:
+                lock_command = fcntl.LOCK_EX | fcntl.LOCK_NB
+            else:
+                lock_command = fcntl.LOCK_EX
+
+            fcntl.lockf(lockfile.fileno(), lock_command)
+            yield lockfile.fileno()
+            fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
+
     except FileNotFoundError:
         yield
-        return
-
-    if not blocking:
-        lock_command = fcntl.LOCK_EX | fcntl.LOCK_NB
-    else:
-        lock_command = fcntl.LOCK_EX
-
-    fcntl.lockf(lockfile.fileno(), lock_command)
-    try:
-        yield lockfile.fileno()
-    finally:
-        fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
-        lockfile.close()
 
 
 class Filesystem:
