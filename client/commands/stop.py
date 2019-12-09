@@ -64,7 +64,9 @@ class Stop(Command):
             _kill()
         else:
             try:
-                with open(os.path.join(self._log_directory, "server.pid")) as pid_file:
+                with open(
+                    os.path.join(self._log_directory, "server", "server.pid")
+                ) as pid_file:
                     pid_to_poll = int(pid_file.read())
             except (OSError, ValueError):
                 pid_to_poll = None
