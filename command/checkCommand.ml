@@ -10,6 +10,7 @@ open Service
 
 (* run_command prints out the errors, for a Check run *)
 let run_check
+    ignore_infer
     verbose
     expected_version
     sections
@@ -34,18 +35,15 @@ let run_check
     local_root
     ()
   =
-  let filter_directories =
-    filter_directories
+  let argument_to_paths argument =
+    argument
     >>| String.split_on_chars ~on:[';']
     >>| List.map ~f:String.strip
     >>| List.map ~f:Path.create_absolute
   in
-  let ignore_all_errors =
-    ignore_all_errors
-    >>| String.split_on_chars ~on:[';']
-    >>| List.map ~f:String.strip
-    >>| List.map ~f:Path.create_absolute
-  in
+  let ignore_infer = argument_to_paths ignore_infer in
+  let filter_directories = argument_to_paths filter_directories in
+  let ignore_all_errors = argument_to_paths ignore_all_errors in
   let configuration =
     Configuration.Analysis.create
       ~verbose
@@ -68,6 +66,7 @@ let run_check
       ~excludes
       ~extensions
       ?log_directory
+      ?ignore_infer
       ~local_root:(Path.create_absolute local_root)
       ()
   in
@@ -123,5 +122,8 @@ let run_check
 let check_command =
   Command.basic_spec
     ~summary:"Runs a full check without a server (default)"
-    Specification.base_command_line_arguments
+    Command.Spec.(
+      empty
+      +> flag "-ignore-infer" (optional string) ~doc:"Will not infer the listed files."
+      ++ Specification.base_command_line_arguments)
     run_check

@@ -187,6 +187,7 @@ class Configuration:
         self.strict = False  # type: bool
         self._use_buck_builder = None  # type: Optional[bool]
         self._use_json_sockets = None  # type: Optional[bool]
+        self.ignore_infer = []
 
         # Handle search path from multiple sources
         self._search_path = []
@@ -263,6 +264,11 @@ class Configuration:
                     "`ignore_all_errors` field must be a list of strings."
                 )
 
+            if not is_list_of_strings(self.ignore_infer):
+                raise InvalidConfiguration(
+                    "`ignore_infer` field must be a list of strings."
+                )
+
             if not is_list_of_strings(self.extensions):
                 raise InvalidConfiguration(
                     "`extensions` field must be a list of strings."
@@ -299,6 +305,15 @@ class Configuration:
                 if not os.path.exists(element):
                     LOG.warning(
                         "Nonexistent path passed in to `ignore_all_errors` \
+                        field: `{}`".format(
+                            element
+                        )
+                    )
+
+            for element in self.ignore_infer:
+                if not os.path.exists(element):
+                    LOG.warning(
+                        "Nonexistent path passed in to `ignore_infer` \
                         field: `{}`".format(
                             element
                         )
@@ -467,6 +482,14 @@ class Configuration:
                     [
                         expand_relative_path(root=configuration_path, path=path)
                         for path in ignore_all_errors
+                    ]
+                )
+
+                ignore_infer = configuration.consume("ignore_infer", default=[])
+                self.ignore_infer.extend(
+                    [
+                        expand_relative_path(root=configuration_path, path=path)
+                        for path in ignore_infer
                     ]
                 )
 

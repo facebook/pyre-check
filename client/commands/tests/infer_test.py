@@ -577,6 +577,7 @@ def mock_configuration() -> MagicMock:
     configuration.get_typeshed = MagicMock()
     configuration.logger = None
     configuration.strict = False
+    configuration.ignore_infer = []
     return configuration
 
 
@@ -659,6 +660,31 @@ class InferTest(unittest.TestCase):
                     "-infer",
                     "-search-path",
                     "path1,path2,path3",
+                ],
+            )
+            command.run()
+            call_client.assert_not_called()
+        configuration.ignore_infer = ["path1.py", "path2.py"]
+        with patch.object(commands.Command, "_call_client") as call_client:
+            arguments.json = True
+            command = Infer(
+                arguments, original_directory, configuration, AnalysisDirectory(".")
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-show-error-traces",
+                    "-logging-sections",
+                    "-progress",
+                    "-project-root",
+                    ".",
+                    "-log-directory",
+                    ".pyre",
+                    "-infer",
+                    "-search-path",
+                    "path1,path2,path3",
+                    "-ignore-infer",
+                    "path1.py;path2.py",
                 ],
             )
             command.run()

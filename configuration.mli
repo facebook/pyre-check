@@ -56,6 +56,7 @@ module Analysis : sig
     perform_autocompletion: bool;
     go_to_definition_enabled: bool;
     features: Features.t;
+    ignore_infer: Path.t list;
     log_directory: Path.t;
   }
   [@@deriving show, eq]
@@ -91,6 +92,7 @@ module Analysis : sig
     ?perform_autocompletion:bool ->
     ?go_to_definition_enabled:bool ->
     ?features:Features.t ->
+    ?ignore_infer:Path.t list ->
     ?log_directory:string ->
     unit ->
     t

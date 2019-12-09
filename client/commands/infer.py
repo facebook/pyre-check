@@ -416,6 +416,7 @@ class Infer(Reporting):
         self._json: bool = arguments.json
         self._annotate_from_existing_stubs: bool = arguments.annotate_from_existing_stubs
         self._debug_infer: bool = arguments.debug_infer
+        self._ignore_infer: List[str] = self._configuration.ignore_infer
 
     @classmethod
     def add_subparser(cls, parser: argparse._SubParsersAction) -> None:
@@ -516,6 +517,8 @@ class Infer(Reporting):
         )
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
+        if len(self._ignore_infer) > 0:
+            flags.extend(["-ignore-infer", ";".join(self._ignore_infer)])
         return flags
 
     def _errors_from_stdin(self) -> Result:
