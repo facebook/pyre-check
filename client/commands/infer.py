@@ -353,13 +353,15 @@ def annotate_path(arguments, stub_path: str, file_path: str) -> None:
             LOG.warning("\tError: {}".format(error))
 
 
-def annotate_paths(arguments, formatter: Optional[str], stubs, type_directory) -> None:
+def annotate_paths(
+    root, arguments, formatter: Optional[str], stubs, type_directory
+) -> None:
     if arguments.in_place != []:
         stubs = filter_paths(arguments, stubs, type_directory)
 
     for stub in stubs:
         stub_path = stub.path(type_directory)
-        file_path = str(stub.path(Path(""))).rstrip("i")
+        file_path = str(stub.path(Path(root))).rstrip("i")
         annotate_path(arguments, stub_path, file_path)
     if formatter:
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -493,7 +495,13 @@ class Infer(Reporting):
             write_stubs_to_disk(self._arguments, stubs, type_directory)
             if self._arguments.in_place is not None:
                 LOG.info("Annotating files")
-                annotate_paths(self._arguments, self._formatter, stubs, type_directory)
+                annotate_paths(
+                    self._configuration.local_configuration_root,
+                    self._arguments,
+                    self._formatter,
+                    stubs,
+                    type_directory,
+                )
 
         return self
 
