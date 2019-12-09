@@ -350,7 +350,7 @@ def annotate_path(arguments, stub_path: str, file_path: str) -> None:
     except Exception as error:
         LOG.warning("Failed to annotate {}".format(file_path))
         if arguments.debug_infer:
-            LOG.debug("Error: {}".format(error))
+            LOG.warning("\tError: {}".format(error))
 
 
 def annotate_paths(arguments, formatter: Optional[str], stubs, type_directory) -> None:
