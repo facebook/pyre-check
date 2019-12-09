@@ -622,10 +622,12 @@ module OrderImplementation = struct
             [constraints]
           else
             []
-      | Type.TypedDictionary _, _ ->
-          solve_less_or_equal order ~constraints ~left:(Type.Primitive "TypedDictionary") ~right
-      | _, Type.TypedDictionary _ ->
-          solve_less_or_equal order ~constraints ~left ~right:(Type.Primitive "TypedDictionary")
+      | Type.TypedDictionary { total; _ }, _ ->
+          let left = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+          solve_less_or_equal order ~constraints ~left ~right
+      | _, Type.TypedDictionary { total; _ } ->
+          let right = Type.Primitive (Type.TypedDictionary.class_name ~total) in
+          solve_less_or_equal order ~constraints ~left ~right
       | _, Type.Literal _ -> []
       | Type.Literal _, _ ->
           solve_less_or_equal order ~constraints ~left:(Type.weaken_literals left) ~right

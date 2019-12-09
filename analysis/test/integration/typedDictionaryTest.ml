@@ -1069,6 +1069,32 @@ let test_check_typed_dictionary_inference context =
       data: Dict[str, NestedTypedDict] = {'hello': {'foo': {'foo': 3, 'bar': 'hello'}, 'bar': 'hello'}}
     |}
     [];
+  assert_test_typed_dictionary
+    {|
+      from typing import Dict, Protocol
+      import mypy_extensions
+      class NonTotal(mypy_extensions.TypedDict, total=False):
+        foo: int
+        bar: str
+      class Total(mypy_extensions.TypedDict):
+        foo: int
+        bar: str
+      class Copyable(Protocol):
+        def keys(self) -> object: ...
+      class Poppable(Protocol):
+        def pop(self) -> object: ...
+      def expects_copyable(x: Copyable) -> None: ...
+      def expects_poppable(x: Poppable) -> None: ...
+      def foo(n: NonTotal, t: Total) -> None:
+        expects_copyable(n)
+        expects_copyable(t)
+        expects_poppable(t) # total dicts are not poppable
+        expects_poppable(n)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `Poppable` for 1st anonymous parameter to call \
+       `expects_poppable` but got `TypedDict `Total` with fields (foo: int, bar: str)`.";
+    ];
   ()
 
 

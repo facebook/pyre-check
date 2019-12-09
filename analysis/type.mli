@@ -779,6 +779,8 @@ module TypedDictionary : sig
   val is_special_mismatch : method_name:string -> position:int -> total:bool -> bool
 
   val defines : t_self_expression:Expression.t -> total:bool -> Statement.t list
+
+  val class_name : total:bool -> Primitive.t
 end
 
 val remove_undeclared : t -> t
