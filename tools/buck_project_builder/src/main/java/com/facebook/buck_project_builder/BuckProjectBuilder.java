@@ -35,14 +35,17 @@ public final class BuckProjectBuilder {
     ImmutableList<String> targets = command.getTargets();
 
     try {
-      DebugOutput debugOutput =
-          new BuildTargetsCollector(
+      CacheLock.synchronize(
+          () -> {
+            DebugOutput debugOutput =
+              new BuildTargetsCollector(
                   buckRoot, outputDirectory, platformSelector, commandRewriter)
               .getBuilder(start, targets)
               .buildTargets();
-      if (command.isDebug()) {
-        System.out.println(new Gson().toJson(debugOutput));
-      }
+            if (command.isDebug()) {
+              System.out.println(new Gson().toJson(debugOutput));
+            }
+          });
       BuildTimeLogger.logBuildTime(start, System.currentTimeMillis(), targets);
     } catch (BuilderException exception) {
       SimpleLogger.error(exception.getMessage());
