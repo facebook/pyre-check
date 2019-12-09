@@ -29,18 +29,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
 
     def test_globals(self) -> None:
 
-        # Test arg annotations only
-        self.assert_expected_annotations(
-            """
-            @target_decorator
-            def decorated(arg1: str, arg2, *v, **kw):
-                pass
-            """,
-            DecoratorAnnotationSpec(decorator="target_decorator", arg_annotation="Arg"),
-            {"def module.decorated(arg1: Arg, arg2: Arg, *v, **kw): ..."},
-        )
-
-        # Test vararg annotations only
+        # Test argument annotations only.
         self.assert_expected_annotations(
             """
             @target_decorator
@@ -48,12 +37,92 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 pass
             """,
             DecoratorAnnotationSpec(
-                decorator="target_decorator", vararg_annotation="Vararg"
+                decorator="@target_decorator", arg_annotation="Arg"
+            ),
+            {"def module.decorated(arg1: Arg, arg2: Arg, *v, **kw): ..."},
+        )
+
+        # Test argument annotations with unnamed attributed_decorator.
+        self.assert_expected_annotations(
+            """
+            @target_decorator("some_attribute")
+            def decorated_unnamed_attributes(arg1: str, arg2, *v, **kw):
+                pass
+            """,
+            DecoratorAnnotationSpec(
+                decorator='@target_decorator("some_attribute")', arg_annotation="Arg"
+            ),
+            {
+                "def module.decorated_unnamed_attributes(arg1: Arg, arg2: Arg, "
+                "*v, **kw): ..."
+            },
+        )
+
+        # Test argument annotations with named attributed_decorator.
+        self.assert_expected_annotations(
+            """
+            @target_decorator(key="value")
+            def decorated_named_attributes(arg1: str, arg2, *v, **kw):
+                pass
+            """,
+            DecoratorAnnotationSpec(
+                decorator='@target_decorator(key="value")', arg_annotation="Arg"
+            ),
+            {
+                "def module.decorated_named_attributes(arg1: Arg, arg2: Arg, *v, "
+                "**kw): ..."
+            },
+        )
+
+        # Test argument annotations with multiple filter criteria.
+        self.assert_expected_annotations(
+            """
+            @target_decorator("some_attribute", "another_attribute", key="value", \
+            key2="another_value")
+            def decorated_multiple_filter_attributes(arg1: str, arg2, *v, **kw):
+                pass
+            """,
+            DecoratorAnnotationSpec(
+                decorator=(
+                    '@target_decorator("some_attribute", "another_attribute", '
+                    'key2="another_value")'
+                ),
+                arg_annotation="Arg",
+            ),
+            {
+                "def module.decorated_multiple_filter_attributes(arg1: Arg, "
+                "arg2: Arg, *v, **kw): ..."
+            },
+        )
+
+        # Test argument annotations with attributes not found.
+        self.assert_expected_annotations(
+            """
+            @target_decorator("some_attribute", key="value")
+            def decorated_attributes_not_found(arg1: str, arg2, *v, **kw):
+                pass
+            """,
+            DecoratorAnnotationSpec(
+                decorator="@target_decorator('some_attribute_not_found')",
+                arg_annotation="Arg",
+            ),
+            set(),
+        )
+
+        # Test vararg annotations only.
+        self.assert_expected_annotations(
+            """
+            @target_decorator
+            def decorated(arg1: str, arg2, *v, **kw):
+                pass
+            """,
+            DecoratorAnnotationSpec(
+                decorator="@target_decorator", vararg_annotation="Vararg"
             ),
             {"def module.decorated(arg1, arg2, *v: Vararg, **kw): ..."},
         )
 
-        # Test kwarg annotations only
+        # Test kwarg annotations only.
         self.assert_expected_annotations(
             """
             @target_decorator
@@ -61,12 +130,12 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 pass
             """,
             DecoratorAnnotationSpec(
-                decorator="target_decorator", kwarg_annotation="Kwarg"
+                decorator="@target_decorator", kwarg_annotation="Kwarg"
             ),
             {"def module.decorated(arg1, arg2, *v, **kw: Kwarg): ..."},
         )
 
-        # Test return annotations only
+        # Test return annotations only.
         self.assert_expected_annotations(
             """
             @target_decorator
@@ -74,12 +143,12 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 pass
             """,
             DecoratorAnnotationSpec(
-                decorator="target_decorator", return_annotation="Return"
+                decorator="@target_decorator", return_annotation="Return"
             ),
             {"def module.decorated(arg1, arg2, *v, **kw) -> Return: ..."},
         )
 
-        # Test async functions
+        # Test async functions.
         self.assert_expected_annotations(
             """
             @target_decorator
@@ -87,7 +156,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 pass
             """,
             DecoratorAnnotationSpec(
-                decorator="target_decorator",
+                decorator="@target_decorator",
                 arg_annotation="Arg",
                 vararg_annotation="Vararg",
                 kwarg_annotation="Kwarg",
@@ -99,7 +168,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             },
         )
 
-        # Test other decorators present
+        # Test with other decorators present.
         self.assert_expected_annotations(
             """
             @random_decorator1
@@ -109,7 +178,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 pass
             """,
             DecoratorAnnotationSpec(
-                decorator="target_decorator",
+                decorator="@target_decorator",
                 arg_annotation="Arg",
                 vararg_annotation="Vararg",
                 kwarg_annotation="Kwarg",
@@ -121,7 +190,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             },
         )
 
-        # Test functions that shouldn't trigger
+        # Test functions that shouldn't trigger.
         self.assert_expected_annotations(
             """
             def undecorated():
@@ -137,7 +206,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                     pass
             """,
             DecoratorAnnotationSpec(
-                decorator="target_decorator",
+                decorator="@target_decorator",
                 arg_annotation="Arg",
                 vararg_annotation="Vararg",
                 kwarg_annotation="Kwarg",
@@ -146,7 +215,20 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             set(),
         )
 
-        # Test callable decorators
+        # Test argument with target decorator attributes.
+        self.assert_expected_annotations(
+            """
+            @target_decorator
+            def target_decorator_attributes(arg1: str, arg2, *v, **kw):
+                pass
+            """,
+            DecoratorAnnotationSpec(
+                decorator="@target_decorator('some_attribute')", arg_annotation="Arg"
+            ),
+            set(),
+        )
+
+        # Test callable decorators.
         self.assert_expected_annotations(
             """
             @target_decorator()
@@ -154,7 +236,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 pass
             """,
             DecoratorAnnotationSpec(
-                decorator="target_decorator",
+                decorator="@target_decorator",
                 arg_annotation="Arg",
                 vararg_annotation="Vararg",
                 kwarg_annotation="Kwarg",
@@ -165,7 +247,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
             },
         )
 
-        # Test everything at once
+        # Test everything at once.
         self.assert_expected_annotations(
             """
             def undecorated():
@@ -190,7 +272,7 @@ class AnnotatedFreeFunctionWithDecoratorGeneratorTest(unittest.TestCase):
                 pass
             """,
             DecoratorAnnotationSpec(
-                decorator="target_decorator",
+                decorator="@target_decorator",
                 arg_annotation="Arg",
                 vararg_annotation="Vararg",
                 kwarg_annotation="Kwarg",
