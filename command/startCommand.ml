@@ -140,8 +140,7 @@ let computation_thread
                 write_to_json_socket (TypeQuery.json_socket_response response)
             | _ -> () );
             state
-        | Protocol.Request.FileNotifier
-        | Protocol.Request.Background ->
+        | Protocol.Request.FileNotifier ->
             let { Request.state; response } = process_request ~state ~request in
             ( match response with
             | Some response -> broadcast_response state response

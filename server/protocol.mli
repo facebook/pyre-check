@@ -265,7 +265,6 @@ module Request : sig
     | PersistentSocket of Unix.File_descr.t
     | NewConnectionSocket of Unix.File_descr.t
     | FileNotifier
-    | Background
     | JSONSocket of Unix.File_descr.t
 
   val origin_name : origin -> string
