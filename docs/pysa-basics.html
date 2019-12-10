@@ -156,7 +156,7 @@ that <a href="https://docs.python.org/3/library/typing.html">types are declared 
 whole classes can be declared as sinks by adding <code>TaintSink[SINK_NAME]</code> where
 you would add a python type:</p>
 <pre><code class="hljs css language-python"><span class="hljs-comment"># Function parameter sink</span>
-<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">sqlite3</span>.<span class="hljs-title">Cursor</span>.<span class="hljs-title">execute</span><span class="hljs-params">(self, sql: TaintSink[SQL], parameters)</span>:</span> ...
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">sqlite3</span>.<span class="hljs-title">dbapi2</span>.<span class="hljs-title">Cursor</span>.<span class="hljs-title">execute</span><span class="hljs-params">(self, sql: TaintSink[SQL], parameters)</span>:</span> ...
 </code></pre>
 <p>When tainting an entire class, any flow into a method or attribute of the class
 will count as a flow to a taint sink. The specifics of these stub files are
