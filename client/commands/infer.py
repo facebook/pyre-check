@@ -361,7 +361,10 @@ def annotate_paths(
 
     for stub in stubs:
         stub_path = stub.path(type_directory)
-        file_path = str(stub.path(Path(root))).rstrip("i")
+        if root:
+            file_path = str(stub.path(Path(root))).rstrip("i")
+        else:
+            file_path = str(stub.path(Path(""))).rstrip("i")
         annotate_path(arguments, stub_path, file_path)
     if formatter:
         subprocess.call(formatter, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
