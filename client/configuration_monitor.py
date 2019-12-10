@@ -31,12 +31,17 @@ class ConfigurationMonitor(WatchmanSubscriber):
     """
 
     def __init__(
-        self, arguments, configuration, analysis_directory: AnalysisDirectory
+        self,
+        arguments,
+        configuration,
+        analysis_directory: AnalysisDirectory,
+        project_root: str,
     ) -> None:
         super(ConfigurationMonitor, self).__init__(configuration, analysis_directory)
         self.arguments = arguments
         self.configuration = configuration
         self.analysis_directory = analysis_directory
+        self.project_root = project_root
 
     @property
     def _name(self) -> str:
@@ -45,24 +50,27 @@ class ConfigurationMonitor(WatchmanSubscriber):
     @property
     def _subscriptions(self) -> List[Subscription]:
         roots = self._watchman_client.query("watch-list")["roots"]
-        names = ["pyre_monitor_{}".format(os.path.basename(root)) for root in roots]
-        subscription = {
-            "empty_on_fresh_instance": True,
-            "expression": [
-                "allof",
-                ["type", "f"],
-                ["not", "empty"],
-                [
-                    "anyof",
-                    ["suffix", "pyre_configuration.local"],
-                    ["suffix", "pyre_configuration"],
-                ],
-            ],
-            "fields": ["name"],
-        }
-        return [
-            Subscription(root, name, subscription) for (root, name) in zip(roots, names)
-        ]
+        for root in roots:
+            if os.path.commonprefix(
+                [os.path.realpath(root), os.path.realpath(self.project_root)]
+            ):
+                name = "pyre_monitor_{}".format(os.path.basename(root))
+                subscription = {
+                    "empty_on_fresh_instance": True,
+                    "expression": [
+                        "allof",
+                        ["type", "f"],
+                        ["not", "empty"],
+                        [
+                            "anyof",
+                            ["suffix", "pyre_configuration.local"],
+                            ["suffix", "pyre_configuration"],
+                        ],
+                    ],
+                    "fields": ["name"],
+                }
+                return [Subscription(root, name, subscription)]
+        return []
 
     def _handle_response(self, response: Dict[str, Any]) -> None:
         LOG.info(

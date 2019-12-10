@@ -110,6 +110,9 @@ class WatchmanSubscriber(object):
             for subscription in self._subscriptions:
                 self._subscribe_to_watchman(subscription)
 
+            if not self._subscriptions:
+                LOG.info("No watchman roots to subscribe to.")
+
             connection = self._watchman_client.recvConn
             if not connection:
                 LOG.error("Connection to Watchman for %s not found", self._name)

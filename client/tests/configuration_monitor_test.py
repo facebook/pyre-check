@@ -26,17 +26,18 @@ class MonitorTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory("/tmp")
+        project_root = "/"
         # Ensure that run() only gets called from the child.
         fork.return_value = 1
         configuration_monitor.ConfigurationMonitor(
-            arguments, configuration, analysis_directory
+            arguments, configuration, analysis_directory, project_root
         ).daemonize()
         run.assert_not_called()
         fork.assert_has_calls([call()])
 
         fork.return_value = 0
         configuration_monitor.ConfigurationMonitor(
-            arguments, configuration, analysis_directory
+            arguments, configuration, analysis_directory, project_root
         ).daemonize()
         fork.assert_has_calls([call(), call()])
         run.assert_has_calls([call()])
@@ -44,7 +45,7 @@ class MonitorTest(unittest.TestCase):
 
         run.side_effect = OSError
         configuration_monitor.ConfigurationMonitor(
-            arguments, configuration, analysis_directory
+            arguments, configuration, analysis_directory, project_root
         ).daemonize()
         _exit.assert_has_calls([call(0), call(1)])
 
@@ -59,6 +60,7 @@ class MonitorTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory("/tmp")
+        project_root = "/"
         try:
             import pywatchman  # noqa
 
@@ -67,7 +69,7 @@ class MonitorTest(unittest.TestCase):
                 with self.assertRaises(Exception):
                     with patch("builtins.open"):
                         configuration_monitor.ConfigurationMonitor(
-                            arguments, configuration, analysis_directory
+                            arguments, configuration, analysis_directory, project_root
                         )._run()
         except ImportError:
             pass
@@ -77,8 +79,9 @@ class MonitorTest(unittest.TestCase):
         arguments.local_configuration = "/ROOT/a/b/c"
         configuration = mock_configuration()
         analysis_directory = AnalysisDirectory("/tmp")
+        project_root = "/"
         monitor_instance = configuration_monitor.ConfigurationMonitor(
-            arguments, configuration, analysis_directory
+            arguments, configuration, analysis_directory, project_root
         )
 
         with patch.object(stop, "Stop") as stop_command:

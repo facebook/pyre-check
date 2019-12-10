@@ -79,7 +79,10 @@ class Start(Reporting):
             try:
                 with filesystem.acquire_lock(lock, blocking):
                     configuration_monitor.ConfigurationMonitor(
-                        self._arguments, self._configuration, self._analysis_directory
+                        self._arguments,
+                        self._configuration,
+                        self._analysis_directory,
+                        self._current_directory,
                     ).daemonize()
 
                     # This unsafe call is OK due to the client lock always
