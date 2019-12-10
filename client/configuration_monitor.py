@@ -37,7 +37,8 @@ class ConfigurationMonitor(WatchmanSubscriber):
         analysis_directory: AnalysisDirectory,
         project_root: str,
     ) -> None:
-        super(ConfigurationMonitor, self).__init__(configuration, analysis_directory)
+        base_path = os.path.join(project_root, ".pyre")
+        super(ConfigurationMonitor, self).__init__(base_path)
         self.arguments = arguments
         self.configuration = configuration
         self.analysis_directory = analysis_directory

@@ -6,15 +6,13 @@
 
 import functools
 import logging
-import multiprocessing  # noqa
+import multiprocessing
 import os
 import signal
 import sys
 from multiprocessing import Event
 from typing import Any, Dict, List, NamedTuple
 
-from .analysis_directory import AnalysisDirectory
-from .configuration import Configuration
 from .filesystem import acquire_lock, remove_if_exists
 
 
@@ -27,13 +25,10 @@ Subscription = NamedTuple(
 
 
 class WatchmanSubscriber(object):
-    def __init__(
-        self, configuration: Configuration, analysis_directory: AnalysisDirectory
-    ) -> None:
-        self._log_directory: str = configuration.log_directory
-        self._base_path = os.path.join(self._log_directory, self._name)  # type: str
-        self._alive = True  # type: bool
-        self._ready = Event()  # type: multiprocessing.synchronize.Event
+    def __init__(self, base_path: str) -> None:
+        self._base_path: str = base_path
+        self._alive: bool = True
+        self._ready: multiprocessing.synchronize.Event = Event()
 
     @property
     def _name(self) -> str:

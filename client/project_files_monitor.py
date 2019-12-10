@@ -26,7 +26,8 @@ class MonitorException(Exception):
 
 class ProjectFilesMonitor(WatchmanSubscriber):
     """
-        Logs from this monitor are found in .pyre/file_monitor/file_monitor.log
+        Logs from this monitor are found in
+        .pyre/<local root>/file_monitor/file_monitor.log
         One file monitor is spawned per pyre server. When a server is stopped,
         the process of pyre file monitor associated to it is killed.
     """
@@ -39,7 +40,8 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         current_directory: str,
         analysis_directory: AnalysisDirectory,
     ) -> None:
-        super(ProjectFilesMonitor, self).__init__(configuration, analysis_directory)
+        base_path = os.path.join(configuration.log_directory, self._name)
+        super(ProjectFilesMonitor, self).__init__(base_path)
         self._configuration = configuration
         self._analysis_directory = analysis_directory
 
