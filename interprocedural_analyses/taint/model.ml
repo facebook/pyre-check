@@ -843,39 +843,54 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
     |> Source.statements
     |> List.concat_map ~f:filter_define_signature
   in
-  let verify_signature ~normalized_model_parameters callable_annotation =
+  let verify_signature ~normalized_model_parameters ~name callable_annotation =
     match callable_annotation with
     | Some
         ( {
             Type.Callable.implementation =
               { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
             implicit;
+            kind;
             _;
-          } as callable ) ->
-        let model_compatibility_errors =
-          (* Make self as an explicit parameter in type's parameter list *)
-          let implicit_to_explicit_self { Type.Callable.name; implicit_annotation } =
-            let name = demangle_class_attribute name in
-            let open Type.Callable.RecordParameter in
-            Named { name; annotation = implicit_annotation; default = false }
-          in
-          let type_parameters =
-            implicit
-            >>| implicit_to_explicit_self
-            >>| (fun explicit_self -> explicit_self :: implementation_parameters)
-            |> Option.value ~default:implementation_parameters
-          in
-          model_compatible ~type_parameters ~normalized_model_parameters
+          } as callable ) -> (
+        let error =
+          match kind with
+          | Type.Callable.Named actual_name when not (Reference.equal name actual_name) ->
+              Some
+                (Format.asprintf
+                   "The modelled function is an imported function `%a`, please model it directly."
+                   Reference.pp
+                   actual_name)
+          | _ ->
+              let model_compatibility_errors =
+                (* Make self as an explicit parameter in type's parameter list *)
+                let implicit_to_explicit_self { Type.Callable.name; implicit_annotation } =
+                  let name = demangle_class_attribute name in
+                  let open Type.Callable.RecordParameter in
+                  Named { name; annotation = implicit_annotation; default = false }
+                in
+                let type_parameters =
+                  implicit
+                  >>| implicit_to_explicit_self
+                  >>| (fun explicit_self -> explicit_self :: implementation_parameters)
+                  |> Option.value ~default:implementation_parameters
+                in
+                model_compatible ~type_parameters ~normalized_model_parameters
+              in
+              if List.is_empty model_compatibility_errors then
+                None
+              else
+                Some
+                  (Format.asprintf
+                     "Model signature parameters do not match implementation `%s`. Reason(s): %s."
+                     (Type.show_for_hover (Type.Callable callable))
+                     (String.concat model_compatibility_errors ~sep:"; "))
         in
-        if not (List.is_empty model_compatibility_errors) then (
-          let message =
-            Format.asprintf
-              "Model signature parameters do not match implementation `%s`. Reason(s): %s."
-              (Type.show_for_hover (Type.Callable callable))
-              (String.concat model_compatibility_errors ~sep:"; ")
-          in
-          Log.error "%s" message;
-          raise_invalid_model message )
+        match error with
+        | Some error ->
+            Log.error "%s" error;
+            raise_invalid_model error
+        | None -> () )
     | _ -> ()
   in
   let create_model
@@ -957,7 +972,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
         | Type.Callable t -> Some t
         | _ -> None
       in
-      let () = verify_signature ~normalized_model_parameters callable_annotation in
+      let () = verify_signature ~normalized_model_parameters ~name callable_annotation in
       normalized_model_parameters
       |> List.fold
            ~init:TaintResult.empty_model

@@ -137,7 +137,7 @@ you would add a python type:
 
 ```python
 # Function parameter sink
-def sqlite3.Cursor.execute(self, sql: TaintSink[SQL], parameters): ...
+def sqlite3.dbapi2.Cursor.execute(self, sql: TaintSink[SQL], parameters): ...
 ```
 
 When tainting an entire class, any flow into a method or attribute of the class

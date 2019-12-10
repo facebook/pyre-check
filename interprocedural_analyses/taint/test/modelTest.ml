@@ -801,6 +801,15 @@ let test_invalid_models context =
       @foo.setter
       def test.C.foo(self, value: TaintSink[Test]): ...
     |}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      def unittest.TestCase.assertIsNotNone(self, x: TaintSink[Test]): ...
+    |}
+    ~expect:
+      "Invalid model for `unittest.TestCase.assertIsNotNone`: The modelled function is an imported \
+       function `unittest.case.TestCase.assertIsNotNone`, please model it directly."
     ()
 
 
