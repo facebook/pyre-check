@@ -24,21 +24,41 @@ module type Context = sig
 end
 
 module ConstantPropagationState (Context : Context) = struct
-  type constant =
-    | Constant of Expression.t
-    | Top
+  type expression =
+    | Integer of int
+    | String of string
+    | Bytes of string
+    | True
+    | False
+    | Name of Reference.t
+  [@@deriving equal]
 
-  and t = {
+  type constant =
+    | Constant of expression
+    | Top
+  [@@deriving equal]
+
+  type t = {
     constants: constant Reference.Map.t;
     define: Define.t;
     local_annotations: LocalAnnotationMap.t option;
     nested_defines: t NestedDefines.t;
   }
 
+  let constant_to_expression ?(location = Location.Reference.any) = function
+    | Integer integer -> Node.create ~location (Expression.Integer integer)
+    | String string -> Node.create ~location (Expression.String { kind = String; value = string })
+    | Bytes string -> Node.create ~location (Expression.String { kind = Bytes; value = string })
+    | True -> Node.create ~location Expression.True
+    | False -> Node.create ~location Expression.False
+    | Name name -> from_reference ~location name
+
+
   let show { constants; _ } =
     let print_entry (reference, constant) =
       let pp_constant format = function
-        | Constant expression -> Format.fprintf format "Constant %a" Expression.pp expression
+        | Constant expression ->
+            Format.fprintf format "Constant %a" Expression.pp (constant_to_expression expression)
         | Top -> Format.fprintf format "Top"
       in
       Format.asprintf "%a -> %a" Reference.pp reference pp_constant constant
@@ -69,7 +89,7 @@ module ConstantPropagationState (Context : Context) = struct
     let less_or_equal (reference, constant) =
       match constant, Map.find right reference with
       | _, Some Top -> true
-      | Constant left, Some (Constant right) when Expression.equal left right -> true
+      | Constant left, Some (Constant right) when equal_expression left right -> true
       | _ -> false
     in
     Map.to_alist left |> List.for_all ~f:less_or_equal
@@ -77,7 +97,7 @@ module ConstantPropagationState (Context : Context) = struct
 
   let join left right =
     let merge ~key:_ = function
-      | `Both (Constant left, Constant right) when Expression.equal left right ->
+      | `Both (Constant left, Constant right) when equal_expression left right ->
           Some (Constant left)
       | _ -> Some Top
     in
@@ -88,20 +108,7 @@ module ConstantPropagationState (Context : Context) = struct
 
   let update_transformations _ = ()
 
-  let forward
-      ?key
-      ( {
-          constants;
-          define = { Define.signature = { Define.Signature.parent; _ }; _ };
-          local_annotations;
-          nested_defines;
-        } as state )
-      ~statement
-    =
-    let resolution =
-      let global_resolution = TypeEnvironment.ReadOnly.global_resolution Context.environment in
-      TypeCheck.resolution_with_key ~global_resolution ~local_annotations ~parent ~key
-    in
+  let forward ?key:_ ({ constants; nested_defines; _ } as state) ~statement =
     (* Update transformations. *)
     let transformed =
       let transform_statement statement =
@@ -116,7 +123,8 @@ module ConstantPropagationState (Context : Context) = struct
                 let rec transform { Node.value; location } =
                   let get_constant location reference =
                     match Map.find constants reference with
-                    | Some (Constant expression) -> { expression with Node.location }, true
+                    | Some (Constant expression) ->
+                        constant_to_expression ~location expression, true
                     | _ ->
                         ( Node.create
                             ~location
@@ -191,34 +199,21 @@ module ConstantPropagationState (Context : Context) = struct
     let constants =
       match Node.value transformed with
       | Assign { target = { Node.value = Name name; _ }; value = expression; _ }
-        when is_simple_name name ->
+        when is_simple_name name -> (
           let propagate =
-            let is_literal =
-              match Node.value expression with
-              | Integer _
-              | String _
-              | True
-              | False
-              | Name (Name.Identifier "None") ->
-                  true
-              | _ -> false
-            in
-            let is_callable =
-              Resolution.resolve resolution expression
-              |> fun annotation -> Type.is_callable annotation || Type.is_meta annotation
-            in
-            let is_global_constant =
-              match Node.value expression with
-              | Name name -> is_simple_name name
-              | _ -> false
-            in
-            is_literal || is_callable || is_global_constant
+            match Node.value expression with
+            | Integer integer -> Some (Integer integer)
+            | String { kind = String; value = string } -> Some (String string)
+            | String { kind = Bytes; value = string } -> Some (Bytes string)
+            | True -> Some True
+            | False -> Some False
+            | Name name -> name_to_reference name >>| fun reference -> Name reference
+            | _ -> None
           in
           let reference = name_to_reference_exn name in
-          if propagate then
-            Map.set constants ~key:reference ~data:(Constant expression)
-          else
-            Map.remove constants reference
+          match propagate with
+          | Some expression -> Map.set constants ~key:reference ~data:(Constant expression)
+          | None -> Map.remove constants reference )
       | _ -> constants
     in
     let state = { state with constants } in
