@@ -631,3 +631,17 @@ class SharedAnalysisDirectoryTest(unittest.TestCase):
                 os.path.join(project_directory, "to_be_deleted.py"),
                 shared_analysis_directory._symbolic_links,
             )
+
+    @patch.object(analysis_directory, "SocketConnection")
+    def test_notify_about_rebuild(self, socket_connection_class: MagicMock) -> None:
+        fast_buck_builder = buck.FastBuckBuilder(buck_root="dummy_buck_root")
+        shared_analysis_directory = SharedAnalysisDirectory(
+            source_directories=[], targets=["target1"], buck_builder=fast_buck_builder
+        )
+        shared_analysis_directory._configuration = None
+        shared_analysis_directory._notify_about_rebuild(is_start_message=True)
+        socket_connection_class.assert_not_called()
+
+        shared_analysis_directory._configuration = MagicMock()
+        shared_analysis_directory._notify_about_rebuild(is_start_message=True)
+        socket_connection_class.assert_called_once()

@@ -281,6 +281,13 @@ module ShowMessageParameters = struct
     | LogMessage -> 4
 
 
+  let fromMessageTypeNumber = function
+    | 1 -> ErrorMessage
+    | 2 -> WarningMessage
+    | 3 -> InfoMessage
+    | _ -> LogMessage
+
+
   type t = {
     messageType: int; [@key "type"]
     message: string;
@@ -302,7 +309,7 @@ module ShowStatusParameters = struct
     message: string;
     shortMessage: string option;
   }
-  [@@deriving yojson]
+  [@@deriving eq, show, yojson]
 end
 
 module HandshakeServerParameters = struct
@@ -809,6 +816,9 @@ module UpdateFiles = NotificationMessage.Make (UpdateFilesParameters)
 module DisplayTypeErrors = NotificationMessage.Make (DisplayTypeErrorsParameters)
 module TypeCoverage = RequestMessage.Make (TypeCoverageParameters)
 module ShowStatus = Message.Make (ShowStatusParameters)
+
+(* A notification request sent from the client to the server. *)
+module ShowStatusRequest = NotificationMessage.Make (ShowStatusParameters)
 
 (** Responses *)
 

@@ -379,6 +379,7 @@ module Request = struct
     | DocumentChange of File.t
     | SaveDocument of Path.t
     | GetServerUuid
+    | ShowStatusRequest of LanguageServer.Types.ShowStatusParameters.t
     | StopRequest
     | TypeCheckRequest of Path.t list
     | TypeCoverageRequest of {
@@ -412,6 +413,7 @@ module Request = struct
     | TypeCheckRequest [] -> "TypeCheck"
     | TypeCheckRequest _ -> "IncrementalCheck"
     | TypeQueryRequest _ -> "TypeQuery"
+    | ShowStatusRequest _ -> "ShowStatusRequest"
     | StopRequest -> "Stop"
     | ClientShutdownRequest _ -> "ClientConnection"
     | GetDefinitionRequest _ -> "GetDefinition"

@@ -251,6 +251,7 @@ module Request : sig
     | DocumentChange of File.t
     | SaveDocument of Path.t
     | GetServerUuid
+    | ShowStatusRequest of LanguageServer.Types.ShowStatusParameters.t
     | StopRequest
     | TypeCheckRequest of Path.t list
     | TypeCoverageRequest of {

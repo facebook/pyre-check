@@ -14,7 +14,7 @@ from pathlib import Path
 from time import time
 from typing import Dict, List, NamedTuple, Optional, Set, Tuple
 
-from . import _resolve_filter_paths, buck, filesystem, log
+from . import _resolve_filter_paths, buck, filesystem, json_rpc, log
 from .configuration import Configuration
 from .exceptions import EnvironmentException
 from .filesystem import (
@@ -29,6 +29,7 @@ from .filesystem import (
     remove_if_exists,
     translate_paths,
 )
+from .socket_connection import SocketConnection, SocketException
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -45,6 +46,9 @@ REBUILD_THRESHOLD_FOR_UPDATED_PATHS: int = 4
 # might want a higher threshold in order to avoid rebuilding for spurious new
 # files.
 REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS: int = 5
+
+
+DONT_CARE_PROGRESS_VALUE = 1
 
 
 class UpdatedPaths(NamedTuple):
@@ -130,6 +134,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         search_path: Optional[List[str]] = None,
         isolate: bool = False,
         buck_builder: Optional[BuckBuilder] = None,
+        configuration: Optional[Configuration] = None,
     ) -> None:
         self._source_directories: Set[str] = set(source_directories)
         self._targets: Set[str] = set(targets)
@@ -144,6 +149,8 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         # Mapping from source files in the project root to symbolic links in the
         # analysis directory.
         self._symbolic_links = {}  # type: Dict[str, str]
+
+        self._configuration = configuration
 
     def get_scratch_directory(self) -> str:
         try:
@@ -244,12 +251,60 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             >= REBUILD_THRESHOLD_FOR_NEW_OR_DELETED_PATHS
         )
 
+    def _notify_about_rebuild(self, is_start_message: bool = True) -> None:
+        configuration = self._configuration
+        if configuration is None:
+            return
+
+        LOG.info(
+            "Notifying server of %s of rebuild.", "start" if is_start_message else "end"
+        )
+        if is_start_message:
+            message = (
+                "Pyre is rebuilding because a significant number of files were "
+                "changed. Your results may be outdated until this is finished."
+            )
+            short_message = "Rebuilding..."
+            message_type = json_rpc.LanguageServerMessageType.WARNING.value
+        else:
+            message = "Done rebuilding."
+            short_message = "Done rebuilding."
+            message_type = json_rpc.LanguageServerMessageType.INFORMATION.value
+        show_status_message = json_rpc.Request(
+            method="window/showStatus",
+            parameters={
+                "message": message,
+                "shortMessage": short_message,
+                "type": message_type,
+                "actions": [],
+                "progress": {
+                    "numerator": DONT_CARE_PROGRESS_VALUE,
+                    "denominator": DONT_CARE_PROGRESS_VALUE,
+                },
+            },
+        )
+        try:
+            with SocketConnection(configuration.log_directory) as socket_connection:
+                socket_connection.perform_handshake(configuration.version_hash)
+                socket_connection.send_request(show_status_message)
+        except (
+            SocketException,
+            ResourceWarning,
+            json_rpc.JSONRPCException,
+        ) as exception:
+            LOG.error("Error while communicating with server: %s", str(exception))
+
     def _process_rebuilt_files(
         self, tracked_paths: List[str], deleted_paths: List[str]
     ) -> Tuple[List[str], List[str]]:
+        self._notify_about_rebuild(is_start_message=True)
+
         old_scratch_paths = set(self._symbolic_links.values())
         self.rebuild()
         new_scratch_paths = set(self._symbolic_links.values())
+
+        self._notify_about_rebuild(is_start_message=False)
+
         # We ignore the individual new_paths from above and consider only
         # paths updated during a rebuild.
         tracked_paths.extend(new_scratch_paths - old_scratch_paths)
@@ -467,5 +522,6 @@ def resolve_analysis_directory(
             extensions=configuration.extensions,
             search_path=configuration.search_path,
             isolate=isolate,
+            configuration=configuration,
         )
     return analysis_directory

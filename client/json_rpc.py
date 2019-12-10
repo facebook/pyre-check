@@ -5,11 +5,19 @@
 
 
 import json
+from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import Any, BinaryIO, Dict, Optional
 
 
 JSON = Dict[str, Any]
+
+
+class LanguageServerMessageType(Enum):
+    """Message type for an LSP warning message."""
+
+    WARNING = 2
+    INFORMATION = 3
 
 
 class JSONRPCException(Exception):

@@ -259,6 +259,15 @@ let parse_and_translate
         | Error yojson_error ->
             Log.log ~section:`Server "Error: %s" yojson_error;
             None )
+    | "window/showStatus" -> (
+        match LanguageServer.Types.ShowStatusRequest.of_yojson request with
+        | Ok { parameters = Some inner_parameters; _ } -> Some (ShowStatusRequest inner_parameters)
+        | Ok _ ->
+            Log.log ~section:`Server "Error: ShowStatusRequest - No parameters found";
+            None
+        | Error yojson_error ->
+            Log.log ~section:`Server "Error: %s" yojson_error;
+            None )
     | "exit" -> Some (ClientExitRequest Persistent)
     | "telemetry/rage" -> (
         match RageRequest.of_yojson request with

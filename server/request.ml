@@ -1082,6 +1082,16 @@ let rec process
           else (
             Log.log ~section:`Server "Explicitly ignoring didSave request";
             { state; response = None } )
+      | ShowStatusRequest { message; shortMessage; type_; _ } ->
+          let update_function =
+            let open LanguageServer.Types in
+            match ShowMessageParameters.fromMessageTypeNumber type_ with
+            | ShowMessageParameters.InfoMessage -> StatusUpdate.information
+            | _ -> StatusUpdate.warning
+          in
+          update_function ~message ~state ~short_message:shortMessage;
+
+          { state; response = None }
       | TypeCoverageRequest { path; id } ->
           let response =
             LookupCache.find_all_annotations ~state ~configuration ~path

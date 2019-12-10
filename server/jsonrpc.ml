@@ -57,6 +57,7 @@ module Request = struct
   let origin ~socket request =
     match request_method request with
     | "displayTypeErrors"
+    | "window/showStatus"
     | "stop"
     | "typeQuery" ->
         Some (Protocol.Request.JSONSocket socket)
