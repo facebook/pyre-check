@@ -311,8 +311,9 @@ def query_buck_relative_paths(
         "owner(%s)",
         *project_paths,
     ]
+    LOG.info(f"Running command: {command}")
     try:
-        output = json.loads(
+        owner_output = json.loads(
             subprocess.check_output(command, timeout=30, stderr=subprocess.DEVNULL)
             .decode()
             .strip()
@@ -323,8 +324,16 @@ def query_buck_relative_paths(
         JSONDecodeError,
     ) as error:
         raise BuckException("Querying buck for relative paths failed: {}".format(error))
+
+    # When `srcs` is defined on a `python_binary` target `foo`, querying its
+    # buck owner returns `foo-library` for some reason, even though there's no
+    # explicit target named `foo-library`. So, check for the latter case as
+    # well.
     relevant_output = {
-        target: value for target, value in output.items() if target in targets
+        target: value
+        for target, value in owner_output.items()
+        if target in targets
+        or (target.endswith("-library") and target[: -len("-library")] in targets)
     }
     results = {}
     for project_path in project_paths:

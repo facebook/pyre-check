@@ -6,10 +6,10 @@ import glob
 import json
 import subprocess
 import unittest
-from collections import OrderedDict, namedtuple
-from unittest.mock import call, mock_open, patch
+from collections import namedtuple
+from unittest.mock import MagicMock, call, mock_open, patch
 
-from .. import buck, log
+from .. import buck
 
 
 BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
@@ -168,10 +168,10 @@ class BuckTest(unittest.TestCase):
                 buck.generate_source_directories(["target"], build=True)
                 mock_build.assert_has_calls([call(["normalized"], ["target"])])
 
-    @patch.object(buck, "find_buck_root", return_value="/PROJECT_BUCK_ROOT")
-    def test_query_buck_relative_paths(self, find_buck_root) -> None:
-        with patch.object(subprocess, "check_output") as buck_query:
-            buck_query.return_value = json.dumps(
+    @patch.object(buck, "find_buck_root", return_value="/BUCK_ROOT")
+    def test_query_buck_relative_paths(self, find_buck_root: MagicMock) -> None:
+        with patch.object(subprocess, "check_output") as check_output:
+            check_output.return_value = json.dumps(
                 {
                     "targetA": {
                         "buck.base_path": "src/python",
@@ -186,27 +186,42 @@ class BuckTest(unittest.TestCase):
             ).encode("utf-8")
 
             paths = [
-                "/PROJECT_BUCK_ROOT/src/python/a.py",  # tracked paths
-                "/PROJECT_BUCK_ROOT/src/python/b/c.py",
-                "/PROJECT_BUCK_ROOT/src/python/package.py",
-                "/PROJECT_BUCK_ROOT/src/java/python/a.py",  # untracked paths
-                "/PROJECT_BUCK_ROOT/com/companyname/package.py"
+                "/BUCK_ROOT/src/python/a.py",  # tracked paths
+                "/BUCK_ROOT/src/python/b/c.py",
+                "/BUCK_ROOT/src/python/package.py",
+                "/BUCK_ROOT/src/java/python/a.py",  # untracked paths
+                "/BUCK_ROOT/com/companyname/package.py"
                 "/OTHER_PROJECT/src/python/a.py",
             ]
             self.assertDictEqual(
                 buck.query_buck_relative_paths(paths, targets=["targetA", "targetB"]),
                 {
-                    "/PROJECT_BUCK_ROOT/src/python/a.py": "src/python/a.py",
-                    "/PROJECT_BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
-                    "/PROJECT_BUCK_ROOT/src/python/package.py": "com/companyname/package.py",
+                    "/BUCK_ROOT/src/python/a.py": "src/python/a.py",
+                    "/BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
+                    "/BUCK_ROOT/src/python/package.py": "com/companyname/package.py",
                 },
             )
             self.assertDictEqual(
                 buck.query_buck_relative_paths(paths, targets=["targetA"]),
                 {
-                    "/PROJECT_BUCK_ROOT/src/python/a.py": "src/python/a.py",
-                    "/PROJECT_BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
+                    "/BUCK_ROOT/src/python/a.py": "src/python/a.py",
+                    "/BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
                 },
+            )
+
+        with patch.object(subprocess, "check_output") as check_output:
+            check_output.return_value = json.dumps(
+                {
+                    "foo-library": {
+                        "buck.base_path": "src/python",
+                        "srcs": {"a.py": "a.py", "b/c.py": "otherDirectory/c.py"},
+                    }
+                }
+            ).encode("utf-8")
+            paths = ["/BUCK_ROOT/src/python/a.py"]
+            self.assertDictEqual(
+                buck.query_buck_relative_paths(paths, targets=["foo"]),
+                {"/BUCK_ROOT/src/python/a.py": "src/python/a.py"},
             )
 
         with patch.object(
