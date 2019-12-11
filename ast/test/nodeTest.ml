@@ -35,9 +35,9 @@ let test_equality _ =
     }
   in
   compare_two_locations location_1 location_1 true true true;
-  compare_two_locations Location.Reference.any location_1 true true false;
-  compare_two_locations Location.Reference.any location_2 true true false;
-  compare_two_locations location_1 location_2 true true false
+  compare_two_locations Location.Reference.any location_1 true false false;
+  compare_two_locations Location.Reference.any location_2 true false false;
+  compare_two_locations location_1 location_2 true false false
 
 
 let () = "node" >::: ["equality" >:: test_equality] |> Test.run

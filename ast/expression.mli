@@ -35,7 +35,7 @@ module rec BooleanOperator : sig
 
   val inverse : operator -> operator
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and Call : sig
@@ -46,7 +46,7 @@ and Call : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    val location_sensitive_compare : t -> t -> int
+    val location_insensitive_compare : t -> t -> int
   end
 
   type t = {
@@ -55,7 +55,7 @@ and Call : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and ComparisonOperator : sig
@@ -85,7 +85,7 @@ and ComparisonOperator : sig
 
   val override : t -> Expression.t option
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and Comprehension : sig
@@ -98,7 +98,7 @@ and Comprehension : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    val location_sensitive_compare : t -> t -> int
+    val location_insensitive_compare : t -> t -> int
   end
 
   type 'element t = {
@@ -107,7 +107,11 @@ and Comprehension : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : ('element -> 'element -> int) -> 'element t -> 'element t -> int
+  val location_insensitive_compare
+    :  ('element -> 'element -> int) ->
+    'element t ->
+    'element t ->
+    int
 end
 
 and Dictionary : sig
@@ -118,7 +122,7 @@ and Dictionary : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    val location_sensitive_compare : t -> t -> int
+    val location_insensitive_compare : t -> t -> int
   end
 
   type t = {
@@ -127,7 +131,7 @@ and Dictionary : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and Lambda : sig
@@ -147,7 +151,7 @@ and Name : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    val location_sensitive_compare : t -> t -> int
+    val location_insensitive_compare : t -> t -> int
   end
 
   type t =
@@ -155,7 +159,7 @@ and Name : sig
     | Identifier of Identifier.t
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and Parameter : sig
@@ -178,7 +182,7 @@ and Parameter : sig
 
   val name : t -> Identifier.t
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and Starred : sig
@@ -187,7 +191,7 @@ and Starred : sig
     | Twice of Expression.t
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and StringLiteral : sig
@@ -204,7 +208,7 @@ and StringLiteral : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 
   val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
 
@@ -219,7 +223,7 @@ and Ternary : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and UnaryOperator : sig
@@ -236,7 +240,7 @@ and UnaryOperator : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 
   val pp_unary_operator : Format.formatter -> operator -> unit
 
@@ -250,7 +254,7 @@ and WalrusOperator : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 and Expression : sig
@@ -284,14 +288,14 @@ and Expression : sig
 
   and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_compare : t -> t -> int
+  val location_insensitive_compare : t -> t -> int
 end
 
 type t = Expression.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 type expression = Expression.expression [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-val location_sensitive_compare : t -> t -> int
+val location_insensitive_compare : t -> t -> int
 
 val negate : t -> t
 

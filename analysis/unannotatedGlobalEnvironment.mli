@@ -22,7 +22,7 @@ type unannotated_global =
     }
   | Imported of Reference.t
   | Define of Define.Signature.t Node.t list
-[@@deriving compare, show]
+[@@deriving compare, show, sexp]
 
 module FunctionDefinition : sig
   module Sibling : sig
@@ -46,8 +46,6 @@ module FunctionDefinition : sig
     siblings: Sibling.t list;
   }
   [@@deriving sexp, compare]
-
-  val location_sensitive_compare : t -> t -> int
 end
 
 module ReadOnly : sig

@@ -251,7 +251,7 @@ let assert_source_equal left right =
 
 
 let assert_source_equal_with_locations expected actual =
-  let equal_statement left right = Int.equal 0 (Statement.location_sensitive_compare left right) in
+  let equal_statement left right = Int.equal 0 (Statement.compare left right) in
   let compare_sources expected actual =
     let { Source.statements = left; _ } = expected in
     let { Source.statements = right; _ } = actual in

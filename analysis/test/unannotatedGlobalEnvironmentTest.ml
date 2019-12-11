@@ -10,6 +10,16 @@ open Analysis
 open Pyre
 open Test
 
+let location (start_line, start_column) (stop_line, stop_column) =
+  {
+    Location.path = !&"test";
+    start = { Location.line = start_line; column = start_column };
+    stop = { Location.line = stop_line; column = stop_column };
+  }
+
+
+let create_with_location value start end_ = Node.create value ~location:(location start end_)
+
 let test_global_registration context =
   let assert_registers ?(expected = true) source name =
     let project = ScratchProject.setup ["test.py", source] ~context in
@@ -256,7 +266,8 @@ let test_simple_global_registration context =
     let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
     let printer global =
       global
-      >>| UnannotatedGlobalEnvironment.show_unannotated_global
+      >>| UnannotatedGlobalEnvironment.sexp_of_unannotated_global
+      >>| Sexp.to_string_hum
       |> Option.value ~default:"None"
     in
     let location_insensitive_compare left right =
@@ -312,7 +323,7 @@ let test_simple_global_registration context =
        (SimpleAssign
           {
             explicit_annotation = None;
-            value = +Expression.Expression.Integer 8;
+            value = create_with_location (Expression.Expression.Integer 8) (3, 8) (3, 9);
             target_location =
               {
                 Location.path = !&"test";
@@ -340,10 +351,12 @@ let test_simple_global_registration context =
             parse_define
               {|
                 def foo(x: int) -> str:
-                    pass
+                  pass
               |};
             parse_define
               {|
+                # spacer
+                # spacer
                 def foo(x: float) -> bool:
                   pass
               |};
@@ -405,7 +418,8 @@ let test_updates context =
       | `Global (global_name, dependency, expectation) ->
           let printer optional =
             optional
-            >>| UnannotatedGlobalEnvironment.show_unannotated_global
+            >>| UnannotatedGlobalEnvironment.sexp_of_unannotated_global
+            >>| Sexp.to_string_hum
             |> Option.value ~default:"none"
           in
           let cmp left right =
@@ -435,28 +449,26 @@ let test_updates context =
               0
               (Option.compare UnannotatedGlobalEnvironment.FunctionDefinition.compare left right)
           in
+          let print format definition =
+            Format.fprintf
+              format
+              "%s"
+              (Sexp.to_string_hum
+                 [%message (definition : UnannotatedGlobalEnvironment.FunctionDefinition.t option)])
+          in
           assert_equal
             ~cmp
             ~printer:(fun definition ->
               Sexp.to_string_hum
                 [%message (definition : UnannotatedGlobalEnvironment.FunctionDefinition.t option)])
+            ~pp_diff:(diff ~print)
             expectation
             actual
       | `DefineBody (define_name, dependency, expectation) ->
           let actual =
             UnannotatedGlobalEnvironment.ReadOnly.get_define_body read_only define_name ~dependency
           in
-          let cmp =
-            let equal left right =
-              Int.equal
-                0
-                (Node.location_sensitive_compare
-                   Statement.Define.location_sensitive_compare
-                   left
-                   right)
-            in
-            Option.equal equal
-          in
+          let cmp = [%compare.equal: Statement.Define.t Node.t option] in
           assert_equal
             ~cmp
             ~printer:(fun bodies ->
@@ -499,16 +511,16 @@ let test_updates context =
         (Reference.Set.singleton (Reference.create "test"))
     in
     let printer set =
-      SharedMemoryKeys.DependencyKey.KeySet.elements set
-      |> List.to_string ~f:SharedMemoryKeys.show_dependency
+      let f x = SharedMemoryKeys.sexp_of_dependency x |> Sexp.to_string_hum in
+      SharedMemoryKeys.DependencyKey.KeySet.elements set |> List.to_string ~f
     in
     let expected_triggers = SharedMemoryKeys.DependencyKey.KeySet.of_list expected_triggers in
+    post_actions >>| List.iter ~f:execute_action |> Option.value ~default:();
     assert_equal
       ~cmp:SharedMemoryKeys.DependencyKey.KeySet.equal
       ~printer
       expected_triggers
-      (UnannotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result);
-    post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
+      (UnannotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result)
   in
   let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "dep") in
   (* get_class_definition *)
@@ -548,7 +560,7 @@ let test_updates context =
         x: int
     |}
     ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
-    ~expected_triggers:[]
+    ~expected_triggers:[dependency]
     ();
 
   (* Last class definition wins *)
@@ -649,8 +661,9 @@ let test_updates context =
             Some
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
-                   explicit_annotation = Some (parse_single_expression "int");
-                   value = parse_single_expression "7";
+                   explicit_annotation =
+                     Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
+                   value = { (parse_single_expression "7") with location = location (2, 9) (2, 10) };
                    target_location = Location.Reference.any;
                  }) );
       ]
@@ -663,8 +676,9 @@ let test_updates context =
             Some
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
-                   explicit_annotation = Some (parse_single_expression "int");
-                   value = parse_single_expression "9";
+                   explicit_annotation =
+                     Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
+                   value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
                    target_location = Location.Reference.any;
                  }) );
       ]
@@ -728,6 +742,21 @@ let test_updates context =
     ~expected_triggers:[]
     ();
 
+  let path = !&"test" in
+  let open Statement in
+  let open Expression in
+  let tuple_expression =
+    node
+      ~path
+      ~start:(2, 10)
+      ~stop:(2, 24)
+      (Expression.Tuple
+         [
+           node ~path ~start:(2, 10) ~stop:(2, 13) (Expression.Name (Name.Identifier "int"));
+           node ~path ~start:(2, 15) ~stop:(2, 18) (Expression.Name (Name.Identifier "str"));
+           node ~path ~start:(2, 20) ~stop:(2, 24) (Expression.Name (Name.Identifier "bool"));
+         ])
+  in
   assert_updates
     ~original_source:{|
       X, Y, Z = int, str, bool
@@ -740,7 +769,7 @@ let test_updates context =
             Some
               (UnannotatedGlobalEnvironment.TupleAssign
                  {
-                   value = parse_single_expression "int, str, bool";
+                   value = tuple_expression;
                    index = 0;
                    target_location = Location.Reference.any;
                    total_length = 3;
@@ -751,7 +780,7 @@ let test_updates context =
             Some
               (UnannotatedGlobalEnvironment.TupleAssign
                  {
-                   value = parse_single_expression "int, str, bool";
+                   value = tuple_expression;
                    index = 1;
                    target_location = Location.Reference.any;
                    total_length = 3;
@@ -762,7 +791,7 @@ let test_updates context =
             Some
               (UnannotatedGlobalEnvironment.TupleAssign
                  {
-                   value = parse_single_expression "int, str, bool";
+                   value = tuple_expression;
                    index = 2;
                    target_location = Location.Reference.any;
                    total_length = 3;
@@ -790,7 +819,8 @@ let test_updates context =
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
                    explicit_annotation = None;
-                   value = parse_single_expression "int";
+                   value =
+                     { (parse_single_expression "int") with location = location (2, 4) (2, 7) };
                    target_location = Location.Reference.any;
                  }) );
       ]
@@ -820,7 +850,8 @@ let test_updates context =
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
                    explicit_annotation = None;
-                   value = parse_single_expression "int";
+                   value =
+                     { (parse_single_expression "int") with location = location (3, 6) (3, 9) };
                    target_location = Location.Reference.any;
                  }) );
       ]
@@ -861,8 +892,9 @@ let test_updates context =
             Some
               (UnannotatedGlobalEnvironment.SimpleAssign
                  {
-                   explicit_annotation = Some (parse_single_expression "int");
-                   value = parse_single_expression "9";
+                   explicit_annotation =
+                     Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
+                   value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
                    target_location = Location.Reference.any;
                  }) );
       ]
@@ -888,7 +920,7 @@ let test_updates context =
       {|
       class Foo:
         def method(self) -> None:
-         print("hello")
+         print("hellobo")
     |}
     ~new_source:
       {|
@@ -900,16 +932,27 @@ let test_updates context =
     ~expected_triggers:[]
     ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
     ();
-  let parse_define define =
-    match parse_single_statement define ~preprocess:true ~handle:"test.py" with
-    | { Node.value = Statement.Statement.Define { signature; _ }; location } ->
-        Node.create signature ~location
-    | _ -> failwith "not define"
+  let create_simple_signature ~start ~stop name return_annotation =
+    node
+      ~path
+      ~start
+      ~stop
+      {
+        Define.Signature.name;
+        parameters = [];
+        decorators = [];
+        docstring = None;
+        return_annotation;
+        async = false;
+        generator = false;
+        parent = None;
+        nesting_define = None;
+      }
   in
   assert_updates
     ~original_source:{|
       def foo() -> None:
-       print("hello")
+       print("hellobo")
     |}
     ~new_source:{|
       def foo() -> None:
@@ -920,7 +963,20 @@ let test_updates context =
         `Global
           ( Reference.create "test.foo",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Define [parse_define "def foo() -> None: pass"]) );
+            Some
+              (UnannotatedGlobalEnvironment.Define
+                 [
+                   create_simple_signature
+                     ~start:(2, 0)
+                     ~stop:(3, 17)
+                     !&"test.foo"
+                     (Some
+                        (node
+                           ~path
+                           ~start:(2, 13)
+                           ~stop:(2, 17)
+                           (Expression.Name (Name.Identifier "None"))));
+                 ]) );
       ]
     ~expected_triggers:[]
     ~post_actions:
@@ -928,15 +984,25 @@ let test_updates context =
         `Global
           ( Reference.create "test.foo",
             dependency,
-            Some (UnannotatedGlobalEnvironment.Define [parse_define "def foo() -> None: pass"]) );
+            Some
+              (UnannotatedGlobalEnvironment.Define
+                 [
+                   create_simple_signature
+                     ~start:(2, 0)
+                     ~stop:(3, 17)
+                     !&"test.foo"
+                     (Some
+                        (node
+                           ~path
+                           ~start:(2, 13)
+                           ~stop:(2, 17)
+                           (Expression.Name (Name.Identifier "None"))));
+                 ]) );
       ]
     ();
 
   (* Get typecheck unit *)
   let dependency = SharedMemoryKeys.TypeCheckDefine !&"test" in
-  let open Statement in
-  let open Expression in
-  let path = !&"test" in
   let create_simple_return ~start ~stop expression =
     node
       ~path
@@ -1427,8 +1493,8 @@ let test_updates context =
                 Some
                   (node
                      ~path
-                     ~start:(7, 19)
-                     ~stop:(7, 22)
+                     ~start:(8, 19)
+                     ~stop:(8, 22)
                      (Expression.Name (Name.Identifier "str")));
               async = false;
               generator = false;

@@ -24,7 +24,7 @@ type unannotated_global =
     }
   | Imported of Reference.t
   | Define of Define.Signature.t Node.t list
-[@@deriving compare, show, equal]
+[@@deriving compare, show, equal, sexp]
 
 module FunctionDefinition = struct
   module Sibling = struct
@@ -40,11 +40,6 @@ module FunctionDefinition = struct
       body: Define.t Node.t;
     }
     [@@deriving sexp, compare]
-
-    let location_sensitive_compare left right =
-      match Kind.compare left.kind right.kind with
-      | x when not (Int.equal x 0) -> x
-      | _ -> Node.location_sensitive_compare Define.location_sensitive_compare left.body right.body
   end
 
   type t = {
@@ -53,19 +48,6 @@ module FunctionDefinition = struct
     siblings: Sibling.t list;
   }
   [@@deriving sexp, compare]
-
-  let location_sensitive_compare left right =
-    match Reference.compare left.qualifier right.qualifier with
-    | x when not (Int.equal x 0) -> x
-    | _ -> (
-        match
-          Option.compare
-            (Node.location_sensitive_compare Define.location_sensitive_compare)
-            left.body
-            right.body
-        with
-        | x when not (Int.equal x 0) -> x
-        | _ -> List.compare Sibling.compare left.siblings right.siblings )
 end
 
 module ReadOnly = struct
@@ -263,7 +245,7 @@ end = struct
 
     let unmarshall value = Marshal.from_string value 0
 
-    let compare = FunctionDefinition.location_sensitive_compare
+    let compare = FunctionDefinition.compare
   end
 
   module FunctionDefinitions =
@@ -747,9 +729,7 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; is_external;
           Hashtbl.update table define_name ~f:update
         in
         let collect_definition ~key ~data:(body, overloads) collected =
-          let siblings =
-            List.sort overloads ~compare:FunctionDefinition.Sibling.location_sensitive_compare
-          in
+          let siblings = List.sort overloads ~compare:FunctionDefinition.Sibling.compare in
           (key, { FunctionDefinition.qualifier; body; siblings }) :: collected
         in
         let all_defines =

@@ -273,9 +273,7 @@ let test_ast_change _ =
     let handle = "test.py" in
     let old_source = Test.parse ~handle old_source in
     let new_source = Test.parse ~handle new_source in
-    let compare_changed =
-      not (Int.equal 0 (Source.location_sensitive_compare old_source new_source))
-    in
+    let compare_changed = not (Int.equal 0 (Source.compare old_source new_source)) in
     let hash_changed =
       let hash_source source = Hash.run Source.hash_fold_t source in
       not (Int.equal (hash_source old_source) (hash_source new_source))

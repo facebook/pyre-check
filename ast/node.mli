@@ -25,7 +25,7 @@ val number_of_lines : 'node_type t -> int
 
 val map : 'node_type t -> f:('node_type -> 'new_node_type) -> 'new_node_type t
 
-val location_sensitive_compare
+val location_insensitive_compare
   :  ('node_type -> 'node_type -> int) ->
   'node_type t ->
   'node_type t ->

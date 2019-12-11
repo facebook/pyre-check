@@ -73,7 +73,7 @@ val create
   Statement.t list ->
   t
 
-val location_sensitive_compare : t -> t -> int
+val location_insensitive_compare : t -> t -> int
 
 val mode : configuration:Configuration.Analysis.t -> local_mode:local_mode Node.t option -> mode
 

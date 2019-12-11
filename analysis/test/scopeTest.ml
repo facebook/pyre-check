@@ -329,9 +329,17 @@ let location (start_line, start_column) (stop_line, stop_column) =
   }
 
 
-let int_annotation = +Expression.Expression.Name (Expression.Name.Identifier "int")
+let int_annotation start end_ =
+  Node.create
+    (Expression.Expression.Name (Expression.Name.Identifier "int"))
+    ~location:(location start end_)
 
-let str_annotation = +Expression.Expression.Name (Expression.Name.Identifier "str")
+
+let str_annotation start end_ =
+  Node.create
+    (Expression.Expression.Name (Expression.Name.Identifier "str"))
+    ~location:(location start end_)
+
 
 let test_define_local_bindings _ =
   let assert_bindings ~expected source_text =
@@ -372,7 +380,8 @@ let test_define_local_bindings _ =
           Some
             (ExpectBinding.create
                Binding.Kind.(
-                 ParameterName { star = None; index = 0; annotation = Some int_annotation })
+                 ParameterName
+                   { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
                (location (2, 8) (2, 9))) );
       ];
   assert_bindings
@@ -386,13 +395,15 @@ let test_define_local_bindings _ =
           Some
             (ExpectBinding.create
                Binding.Kind.(
-                 ParameterName { star = None; index = 0; annotation = Some int_annotation })
+                 ParameterName
+                   { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
                (location (2, 8) (2, 9))) );
         ( "y",
           Some
             (ExpectBinding.create
                Binding.Kind.(
-                 ParameterName { star = None; index = 1; annotation = Some str_annotation })
+                 ParameterName
+                   { star = None; index = 1; annotation = Some (str_annotation (2, 19) (2, 22)) })
                (location (2, 16) (2, 17))) );
       ];
   assert_bindings
@@ -407,7 +418,11 @@ let test_define_local_bindings _ =
             (ExpectBinding.create
                Binding.Kind.(
                  ParameterName
-                   { star = Some Star.Once; index = 0; annotation = Some int_annotation })
+                   {
+                     star = Some Star.Once;
+                     index = 0;
+                     annotation = Some (int_annotation (2, 16) (2, 19));
+                   })
                (location (2, 9) (2, 14))) );
       ];
   assert_bindings
@@ -422,7 +437,11 @@ let test_define_local_bindings _ =
             (ExpectBinding.create
                Binding.Kind.(
                  ParameterName
-                   { star = Some Star.Twice; index = 0; annotation = Some int_annotation })
+                   {
+                     star = Some Star.Twice;
+                     index = 0;
+                     annotation = Some (int_annotation (2, 19) (2, 22));
+                   })
                (location (2, 9) (2, 17))) );
       ];
   assert_bindings
@@ -436,13 +455,15 @@ let test_define_local_bindings _ =
           Some
             (ExpectBinding.create
                Binding.Kind.(
-                 ParameterName { star = None; index = 0; annotation = Some int_annotation })
+                 ParameterName
+                   { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
                (location (2, 8) (2, 9))) );
         ( "y",
           Some
             (ExpectBinding.create
                Binding.Kind.(
-                 ParameterName { star = None; index = 1; annotation = Some str_annotation })
+                 ParameterName
+                   { star = None; index = 1; annotation = Some (str_annotation (2, 19) (2, 22)) })
                (location (2, 16) (2, 17))) );
       ];
   assert_bindings
@@ -464,7 +485,7 @@ let test_define_local_bindings _ =
         ( "x",
           Some
             (ExpectBinding.create
-               (Binding.Kind.AssignTarget (Some int_annotation))
+               (Binding.Kind.AssignTarget (Some (int_annotation (3, 5) (3, 8))))
                (location (3, 2) (3, 3))) );
       ];
   assert_bindings
@@ -548,7 +569,7 @@ let test_define_local_bindings _ =
         ( "y",
           Some
             (ExpectBinding.create
-               (Binding.Kind.AssignTarget (Some int_annotation))
+               (Binding.Kind.AssignTarget (Some (int_annotation (4, 7) (4, 10))))
                (location (4, 4) (4, 5))) );
       ];
   assert_bindings
@@ -596,12 +617,17 @@ let test_define_local_bindings _ =
         ( "y",
           Some
             (ExpectBinding.create
-               (Binding.Kind.ExceptTarget (Some !"KeyError"))
+               (Binding.Kind.ExceptTarget
+                  (Some
+                     (Node.create
+                        ~location:(location (5, 9) (5, 17))
+                        (Expression.Expression.Name
+                           (Expression.create_name "KeyError" ~location:(location (5, 9) (5, 17)))))))
                (location (3, 2) (10, 14))) );
         ( "z",
           Some
             (ExpectBinding.create
-               (Binding.Kind.AssignTarget (Some int_annotation))
+               (Binding.Kind.AssignTarget (Some (int_annotation (10, 7) (10, 10))))
                (location (10, 4) (10, 5))) );
       ];
   assert_bindings
@@ -1075,14 +1101,15 @@ let test_scope_stack_lookup _ =
         ( "x",
           Some
             ( ExpectBinding.create
-                (Binding.Kind.AssignTarget (Some int_annotation))
+                (Binding.Kind.AssignTarget (Some (int_annotation (3, 5) (3, 8))))
                 (location (3, 2) (3, 3))
             |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
         ( "y",
           Some
             ( ExpectBinding.create
                 Binding.Kind.(
-                  ParameterName { star = None; index = 0; annotation = Some int_annotation })
+                  ParameterName
+                    { star = None; index = 0; annotation = Some (int_annotation (4, 13) (4, 16)) })
                 (location (4, 10) (4, 11))
             |> ExpectAccess.create Access.Kind.CurrentScope ) );
       ];
@@ -1102,14 +1129,16 @@ let test_scope_stack_lookup _ =
           Some
             ( ExpectBinding.create
                 Binding.Kind.(
-                  ParameterName { star = None; index = 0; annotation = Some int_annotation })
+                  ParameterName
+                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
                 (location (2, 8) (2, 9))
             |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
         ( "y",
           Some
             ( ExpectBinding.create
                 Binding.Kind.(
-                  ParameterName { star = None; index = 0; annotation = Some int_annotation })
+                  ParameterName
+                    { star = None; index = 0; annotation = Some (int_annotation (3, 13) (3, 16)) })
                 (location (3, 10) (3, 11))
             |> ExpectAccess.create Access.Kind.CurrentScope ) );
       ];
@@ -1149,7 +1178,7 @@ let test_scope_stack_lookup _ =
         ( "x",
           Some
             ( ExpectBinding.create
-                (Binding.Kind.AssignTarget (Some int_annotation))
+                (Binding.Kind.AssignTarget (Some (int_annotation (5, 5) (5, 8))))
                 (location (5, 2) (5, 3))
             |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local) ) );
       ];

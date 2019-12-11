@@ -2522,7 +2522,7 @@ let test_populate_nesting_define _ =
     let source = Test.parse ~handle:"test.py" (trim_extra_indentation source_text) in
     let { Source.statements = actual; _ } = Preprocessing.populate_nesting_defines source in
     assert_equal
-      ~cmp:[%compare.equal: Statement.t list]
+      ~cmp:(List.equal (fun a b -> Statement.location_insensitive_compare a b = 0))
       ~printer:
         (List.to_string ~f:(fun statement -> Sexp.to_string_hum (Statement.sexp_of_t statement)))
       expected
@@ -3142,6 +3142,14 @@ let test_populate_nesting_define _ =
   ()
 
 
+let location ?(path = !&"test") (start_line, start_column) (stop_line, stop_column) =
+  {
+    Location.path;
+    start = { Location.line = start_line; Location.column = start_column };
+    stop = { Location.line = stop_line; Location.column = stop_column };
+  }
+
+
 let test_populate_captures _ =
   let assert_captures ~expected source_text =
     let source =
@@ -3176,37 +3184,96 @@ let test_populate_captures _ =
     in
     List.iter expected ~f:(fun (name, captures) -> assert_captures name captures)
   in
-  let tuple_annotation value_annotation =
-    +Expression.Call
-       {
-         callee =
-           +Expression.Name
-              (Name.Attribute { base = !"typing.Tuple"; attribute = "__getitem__"; special = true });
-         arguments =
-           [
-             {
-               Call.Argument.name = None;
-               value = +Expression.Tuple [value_annotation; +Expression.Ellipsis];
-             };
-           ];
-       }
+  let tuple_annotation value_annotation start stop =
+    Node.create
+      (Expression.Call
+         {
+           callee =
+             Node.create
+               (Expression.Name
+                  (Name.Attribute
+                     {
+                       base =
+                         Node.create
+                           (Expression.Name
+                              (create_name ~location:(location start stop) "typing.Tuple"))
+                           ~location:(location start stop);
+                       attribute = "__getitem__";
+                       special = true;
+                     }))
+               ~location:(location start stop);
+           arguments =
+             [
+               {
+                 Call.Argument.name = None;
+                 value =
+                   Node.create
+                     ~location:(location start stop)
+                     (Expression.Tuple
+                        [
+                          value_annotation;
+                          Node.create ~location:(location start stop) Expression.Ellipsis;
+                        ]);
+               };
+             ];
+         })
+      ~location:(location start stop)
   in
-  let dict_annotation value_annotation =
-    +Expression.Call
-       {
-         callee =
-           +Expression.Name
-              (Name.Attribute { base = !"typing.Dict"; attribute = "__getitem__"; special = true });
-         arguments =
-           [{ Call.Argument.name = None; value = +Expression.Tuple [!"str"; value_annotation] }];
-       }
+  let dict_annotation value_annotation start stop =
+    Node.create
+      (Expression.Call
+         {
+           callee =
+             Node.create
+               ~location:(location start stop)
+               (Expression.Name
+                  (Name.Attribute
+                     {
+                       base =
+                         Node.create
+                           (Expression.Name
+                              (create_name ~location:(location start stop) "typing.Dict"))
+                           ~location:(location start stop);
+                       attribute = "__getitem__";
+                       special = true;
+                     }));
+           arguments =
+             [
+               {
+                 Call.Argument.name = None;
+                 value =
+                   Node.create
+                     ~location:(location start stop)
+                     (Expression.Tuple
+                        [
+                          Node.create
+                            (Expression.Name (create_name ~location:(location start stop) "str"))
+                            ~location:(location start stop);
+                          value_annotation;
+                        ]);
+               };
+             ];
+         })
+      ~location:(location start stop)
   in
-  let int_annotation = !"int" in
-  let any_annotation = !"typing.Any" in
-  let tuple_int_annotation = tuple_annotation int_annotation in
-  let tuple_any_annotation = tuple_annotation any_annotation in
-  let dict_int_annotation = dict_annotation int_annotation in
-  let dict_any_annotation = dict_annotation any_annotation in
+  let int_annotation start stop =
+    Node.create
+      (Expression.Name (create_name ~location:(location start stop) "int"))
+      ~location:(location start stop)
+  in
+  let any_annotation start stop =
+    Node.create
+      (Expression.Name (create_name ~location:(location start stop) "typing.Any"))
+      ~location:(location start stop)
+  in
+  let tuple_int_annotation (start, stop) (int_start, int_stop) =
+    tuple_annotation (int_annotation int_start int_stop) start stop
+  in
+  let tuple_any_annotation start stop = tuple_annotation (any_annotation start stop) start stop in
+  let dict_int_annotation (start, stop) (int_start, int_stop) =
+    dict_annotation (int_annotation int_start int_stop) start stop
+  in
+  let dict_any_annotation (start, stop) = dict_annotation (any_annotation start stop) start stop in
   assert_captures
     {|
      def foo():
@@ -3219,7 +3286,7 @@ let test_populate_captures _ =
        def bar():
          y = x
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation)]];
+    ~expected:[!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14)))]];
   assert_captures
     {|
      def foo(x: int):
@@ -3234,18 +3301,28 @@ let test_populate_captures _ =
           [
             ( "bar",
               DefineSignature
-                (+{
-                    Define.Signature.name = !&"bar";
-                    parameters =
-                      [+{ Parameter.name = "y"; value = None; annotation = Some int_annotation }];
-                    decorators = [];
-                    docstring = None;
-                    return_annotation = Some int_annotation;
-                    async = false;
-                    generator = false;
-                    parent = None;
-                    nesting_define = None;
-                  }) );
+                (Node.create
+                   {
+                     Define.Signature.name = !&"bar";
+                     parameters =
+                       [
+                         Node.create
+                           {
+                             Parameter.name = "y";
+                             value = None;
+                             annotation = Some (int_annotation (3, 13) (3, 16));
+                           }
+                           ~location:(location (3, 10) (3, 11));
+                       ];
+                     decorators = [];
+                     docstring = None;
+                     return_annotation = Some (int_annotation (3, 21) (3, 24));
+                     async = false;
+                     generator = false;
+                     parent = None;
+                     nesting_define = None;
+                   }
+                   ~location:(location (3, 2) (4, 12))) );
           ] );
       ];
   assert_captures
@@ -3255,7 +3332,7 @@ let test_populate_captures _ =
          nonlocal x
          x = 1
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation)]];
+    ~expected:[!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14)))]];
   (* x in `bar` will shadow x in `foo` *)
   assert_captures
     {|
@@ -3319,7 +3396,11 @@ let test_populate_captures _ =
          def qux():
            return y
   |}
-    ~expected:[!&"baz", ["x", Annotation (Some int_annotation)]; !&"qux", ["y", Annotation None]];
+    ~expected:
+      [
+        !&"baz", ["x", Annotation (Some (int_annotation (2, 11) (2, 14)))];
+        !&"qux", ["y", Annotation None];
+      ];
   assert_captures
     {|
      def foo(x: int):
@@ -3331,7 +3412,11 @@ let test_populate_captures _ =
          def qux(self):
            return y + self.z
   |}
-    ~expected:[!&"baz", ["x", Annotation (Some int_annotation)]; !&"qux", ["y", Annotation None]];
+    ~expected:
+      [
+        !&"baz", ["x", Annotation (Some (int_annotation (2, 11) (2, 14)))];
+        !&"qux", ["y", Annotation None];
+      ];
 
   (* Test accesses collection *)
   assert_captures
@@ -3341,7 +3426,8 @@ let test_populate_captures _ =
        def bar():
          assert (x == y)
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3349,7 +3435,7 @@ let test_populate_captures _ =
        def bar():
          x
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation)]];
+    ~expected:[!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14)))]];
   assert_captures
     {|
      def foo(x: int):
@@ -3358,7 +3444,8 @@ let test_populate_captures _ =
          yield x
          return y
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3367,7 +3454,8 @@ let test_populate_captures _ =
          for i in range(x):
            print(y)
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3378,7 +3466,8 @@ let test_populate_captures _ =
          else:
            return y
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3387,7 +3476,8 @@ let test_populate_captures _ =
          while x > 1:
            print(y)
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3395,7 +3485,8 @@ let test_populate_captures _ =
        def bar():
          raise ValueError(x + y)
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3408,7 +3499,8 @@ let test_populate_captures _ =
          finally:
            return x + y
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3417,7 +3509,8 @@ let test_populate_captures _ =
          with open('test.txt', 'r' if x > 1 else 'w') as f:
            print(y)
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3425,7 +3518,8 @@ let test_populate_captures _ =
        async def bar():
          await baz(x, y)
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3433,7 +3527,8 @@ let test_populate_captures _ =
        def bar():
          return [x, y]
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3441,7 +3536,8 @@ let test_populate_captures _ =
        def bar():
          return x, y
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3449,7 +3545,8 @@ let test_populate_captures _ =
        def bar():
          return {x, y}
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3457,7 +3554,8 @@ let test_populate_captures _ =
        def bar():
          return {x: y}
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3465,7 +3563,8 @@ let test_populate_captures _ =
        def bar():
          return f"x = {x}, y = {y}"
   |}
-    ~expected:[!&"bar", ["x", Annotation (Some int_annotation); "y", Annotation None]];
+    ~expected:
+      [!&"bar", ["x", Annotation (Some (int_annotation (2, 11) (2, 14))); "y", Annotation None]];
   assert_captures
     {|
      def foo(x: int):
@@ -3476,7 +3575,11 @@ let test_populate_captures _ =
            return 42
          return y
   |}
-    ~expected:[!&"bar", ["y", Annotation None]; !&"baz", ["x", Annotation (Some int_annotation)]];
+    ~expected:
+      [
+        !&"bar", ["y", Annotation None];
+        !&"baz", ["x", Annotation (Some (int_annotation (2, 11) (2, 14)))];
+      ];
   (* Lambda bounds are excluded *)
   assert_captures
     {|
@@ -3503,21 +3606,29 @@ let test_populate_captures _ =
        def bar():
          return args[0]
   |}
-    ~expected:[!&"bar", ["args", Annotation (Some tuple_any_annotation)]];
+    ~expected:[!&"bar", ["args", Annotation (Some (tuple_any_annotation (2, 9) (2, 14)))]];
   assert_captures
     {|
      def foo( *args: int):
        def bar():
          return args[0]
   |}
-    ~expected:[!&"bar", ["args", Annotation (Some tuple_int_annotation)]];
+    ~expected:
+      [
+        ( !&"bar",
+          ["args", Annotation (Some (tuple_int_annotation ((2, 9), (2, 14)) ((2, 16), (2, 19))))] );
+      ];
   assert_captures
     {|
      def foo( *derp: int):
        def bar():
          return derp[0]
   |}
-    ~expected:[!&"bar", ["derp", Annotation (Some tuple_int_annotation)]];
+    ~expected:
+      [
+        ( !&"bar",
+          ["derp", Annotation (Some (tuple_int_annotation ((2, 9), (2, 14)) ((2, 16), (2, 19))))] );
+      ];
   assert_captures
     {|
      def foo( *args: int):
@@ -3533,21 +3644,25 @@ let test_populate_captures _ =
        def bar():
          return kwargs["derp"]
   |}
-    ~expected:[!&"bar", ["kwargs", Annotation (Some dict_any_annotation)]];
+    ~expected:[!&"bar", ["kwargs", Annotation (Some (dict_any_annotation ((2, 9), (2, 17))))]];
   assert_captures
     {|
      def foo( **kwargs: int):
        def bar():
          return kwargs["derp"]
   |}
-    ~expected:[!&"bar", ["kwargs", Annotation (Some dict_int_annotation)]];
+    ~expected:
+      [
+        ( !&"bar",
+          ["kwargs", Annotation (Some (dict_int_annotation ((2, 9), (2, 17)) ((2, 19), (2, 22))))] );
+      ];
   assert_captures
     {|
      def foo( **durp):
        def bar():
          return durp["derp"]
   |}
-    ~expected:[!&"bar", ["durp", Annotation (Some dict_any_annotation)]];
+    ~expected:[!&"bar", ["durp", Annotation (Some (dict_any_annotation ((2, 9), (2, 15))))]];
   assert_captures
     {|
      def foo( **kwargs: int):
@@ -3603,7 +3718,18 @@ let test_populate_captures _ =
          def bar() -> T:
            return self
   |}
-    ~expected:[!&"bar", ["self", Annotation (Some !"T")]];
+    ~expected:
+      [
+        ( !&"bar",
+          [
+            ( "self",
+              Annotation
+                (Some
+                   (Node.create
+                      ~location:(location (4, 16) (4, 17))
+                      (Expression.Name (Identifier "T")))) );
+          ] );
+      ];
   assert_captures
     {|
      class Foo:
@@ -3690,7 +3816,18 @@ let test_populate_captures _ =
          def bar() -> T:
            return cls
   |}
-    ~expected:[!&"bar", ["cls", Annotation (Some !"T")]];
+    ~expected:
+      [
+        ( !&"bar",
+          [
+            ( "cls",
+              Annotation
+                (Some
+                   (Node.create
+                      ~location:(location (5, 15) (5, 16))
+                      (Expression.Name (Identifier "T")))) );
+          ] );
+      ];
   ()
 
 
