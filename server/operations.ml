@@ -123,14 +123,28 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   }
 
 
+let log_configuration { Configuration.Analysis.features; incremental_style; _ } =
+  Log.info
+    "Server started using incremental style %a"
+    Configuration.Analysis.pp_incremental_style
+    incremental_style;
+  Log.info "Enabled features = %s" (Configuration.Features.show features)
+
+
 let start
     ?old_state
     ~connections
     ~configuration:
       ( {
           Configuration.Server.configuration =
-            { Configuration.Analysis.expected_version; store_type_check_resolution; _ } as
-            configuration;
+            {
+              Configuration.Analysis.expected_version;
+              store_type_check_resolution;
+              local_root;
+              project_root;
+              _;
+            } as configuration;
+          server_uuid;
           saved_state_action;
           _;
         } as server_configuration )
@@ -165,8 +179,7 @@ let start
   ( match saved_state_action with
   | Some (Save saved_state_path) -> SavedState.save ~configuration ~saved_state_path state
   | _ -> () );
-  let { Configuration.Analysis.local_root; project_root; _ } = configuration in
-  let { Configuration.Server.server_uuid; _ } = server_configuration in
+  log_configuration configuration;
   Telemetry.send_telemetry () ~f:(fun _ ->
       Telemetry.create_session_start_message ~local_root ~project_root ~server_uuid);
   state
