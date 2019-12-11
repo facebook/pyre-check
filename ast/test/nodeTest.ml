@@ -11,15 +11,14 @@ open Test
 type test_node = string Ast.Node.t [@@deriving compare, eq, sexp, show, hash]
 
 let test_equality _ =
-  let compare_two_locations left right =
-    let full_printer { Node.value; location } =
-      Format.asprintf "%s/%s" (Location.Reference.show location) value
-    in
+  let compare_two_locations left right equal compare_equal hashes_equal =
     let value = "some_string" in
     let node_left = Node.create ~location:left value in
     let node_right = Node.create ~location:right value in
-    assert_equal ~cmp:equal_test_node ~printer:full_printer node_left node_right;
-    assert_equal ~printer:Int.to_string (hash_test_node node_left) (hash_test_node node_right)
+    let assert_bool_equal = assert_equal ~cmp:Bool.equal ~printer:Bool.to_string in
+    assert_bool_equal (equal_test_node node_left node_right) equal;
+    assert_bool_equal (compare_test_node node_left node_right = 0) compare_equal;
+    assert_bool_equal (hash_test_node node_left = hash_test_node node_right) hashes_equal
   in
   let location_1 =
     {
@@ -35,9 +34,10 @@ let test_equality _ =
       Location.stop = { Location.line = 12; column = 7 };
     }
   in
-  compare_two_locations Location.Reference.any location_1;
-  compare_two_locations Location.Reference.any location_2;
-  compare_two_locations location_1 location_2
+  compare_two_locations location_1 location_1 true true true;
+  compare_two_locations Location.Reference.any location_1 true true false;
+  compare_two_locations Location.Reference.any location_2 true true false;
+  compare_two_locations location_1 location_2 true true false
 
 
 let () = "node" >::: ["equality" >:: test_equality] |> Test.run

@@ -6,7 +6,7 @@
 open Core
 
 type 'node_type t = {
-  location: Location.t; [@hash.ignore]
+  location: Location.t;
   value: 'node_type;
 }
 [@@deriving sexp, show, hash, to_yojson]
@@ -20,11 +20,6 @@ let pp print_node format { value; _ } = print_node format value
 let compare compare_value left right = compare_value left.value right.value
 
 let equal equal_value left right = equal_value left.value right.value
-
-let location_sensitive_hash_fold hash_fold_value state { location; value } =
-  let state = [%hash_fold: Location.t] state location in
-  hash_fold_value state value
-
 
 let location_sensitive_compare compare_value left right =
   match [%compare: Location.t] left.location right.location with

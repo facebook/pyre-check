@@ -277,7 +277,7 @@ let test_ast_change _ =
       not (Int.equal 0 (Source.location_sensitive_compare old_source new_source))
     in
     let hash_changed =
-      let hash_source source = Hash.run Source.location_sensitive_hash_fold source in
+      let hash_source source = Hash.run Source.hash_fold_t source in
       not (Int.equal (hash_source old_source) (hash_source new_source))
     in
     assert_equal

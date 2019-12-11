@@ -243,13 +243,6 @@ let pp format { statements; _ } =
   List.iter statements ~f:print_statement
 
 
-let location_sensitive_hash_fold state { metadata; source_path; statements; docstring } =
-  ignore docstring;
-  let state = Metadata.hash_fold_t state metadata in
-  let state = SourcePath.hash_fold_t state source_path in
-  List.fold statements ~init:state ~f:Statement.location_sensitive_hash_fold
-
-
 let location_sensitive_compare left right =
   match Metadata.compare left.metadata right.metadata with
   | x when x <> 0 -> x

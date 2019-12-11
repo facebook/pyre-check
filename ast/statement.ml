@@ -18,17 +18,6 @@ module Assign = struct
 
   let is_static_attribute_initialization { parent; _ } = Option.is_some parent
 
-  let location_sensitive_hash_fold state { target; annotation; value; parent } =
-    let state = Expression.location_sensitive_hash_fold state target in
-    let state =
-      match annotation with
-      | None -> state
-      | Some annotation -> Expression.location_sensitive_hash_fold state annotation
-    in
-    let state = Expression.location_sensitive_hash_fold state value in
-    [%hash_fold: Reference.t option] state parent
-
-
   let location_sensitive_compare left right =
     match Expression.location_sensitive_compare left.target right.target with
     | x when not (Int.equal x 0) -> x
@@ -64,17 +53,6 @@ module Raise = struct
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  let location_sensitive_hash_fold state { expression; from } =
-    let state =
-      match expression with
-      | None -> state
-      | Some expression -> Expression.location_sensitive_hash_fold state expression
-    in
-    match from with
-    | None -> state
-    | Some expression -> Expression.location_sensitive_hash_fold state expression
-
-
   let location_sensitive_compare left right =
     match Option.compare Expression.location_sensitive_compare left.expression right.expression with
     | x when not (Int.equal x 0) -> x
@@ -87,13 +65,6 @@ module Return = struct
     expression: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let location_sensitive_hash_fold state { is_implicit; expression } =
-    let state = [%hash_fold: bool] state is_implicit in
-    match expression with
-    | None -> state
-    | Some expression -> Expression.location_sensitive_hash_fold state expression
-
 
   let location_sensitive_compare left right =
     match Bool.compare left.is_implicit right.is_implicit with
@@ -112,8 +83,6 @@ module rec Assert : sig
       | While
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    val location_sensitive_hash_fold : t Hash.folder
-
     val location_sensitive_compare : t -> t -> int
   end
 
@@ -123,8 +92,6 @@ module rec Assert : sig
     origin: Origin.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 end = struct
@@ -137,15 +104,6 @@ end = struct
         }
       | While
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    let location_sensitive_hash_fold state = function
-      | Assertion -> [%hash_fold: int] state 0
-      | If { statement; true_branch } ->
-          let state = [%hash_fold: int] state 1 in
-          let state = Statement.location_sensitive_hash_fold state statement in
-          [%hash_fold: bool] state true_branch
-      | While -> [%hash_fold: int] state 2
-
 
     let location_sensitive_compare left right : int =
       match left, right with
@@ -166,16 +124,6 @@ end = struct
     origin: Origin.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let location_sensitive_hash_fold state { test; message; origin } =
-    let state = Expression.location_sensitive_hash_fold state test in
-    let state =
-      match message with
-      | None -> state
-      | Some message -> Expression.location_sensitive_hash_fold state message
-    in
-    Origin.location_sensitive_hash_fold state origin
-
 
   let location_sensitive_compare left right =
     match Expression.location_sensitive_compare left.test right.test with
@@ -315,8 +263,6 @@ and Class : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 
   val constructors : ?in_test:bool -> t -> Define.t list
@@ -358,16 +304,6 @@ end = struct
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let location_sensitive_hash_fold state { name; bases; body; decorators; docstring } =
-    let state = [%hash_fold: Reference.t] state name in
-    let state =
-      List.fold bases ~init:state ~f:Expression.Call.Argument.location_sensitive_hash_fold
-    in
-    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
-    let state = List.fold decorators ~init:state ~f:Expression.location_sensitive_hash_fold in
-    [%hash_fold: string option] state docstring
-
 
   let location_sensitive_compare left right =
     match [%compare: Reference.t] left.name right.name with
@@ -940,8 +876,6 @@ and Define : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    val location_sensitive_hash_fold : t Hash.folder
-
     val location_sensitive_compare : t -> t -> int
 
     val create_toplevel : qualifier:Reference.t option -> t
@@ -1010,8 +944,6 @@ and Define : sig
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 
@@ -1089,37 +1021,6 @@ end = struct
       nesting_define: Reference.t option;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    let location_sensitive_hash_fold
-        state
-        {
-          name;
-          parameters;
-          decorators;
-          docstring;
-          return_annotation;
-          async;
-          generator;
-          parent;
-          nesting_define;
-        }
-      =
-      let state = [%hash_fold: Reference.t] state name in
-      let state =
-        List.fold parameters ~init:state ~f:Expression.Parameter.location_sensitive_hash_fold
-      in
-      let state = List.fold decorators ~init:state ~f:Expression.location_sensitive_hash_fold in
-      let state = [%hash_fold: string option] state docstring in
-      let state =
-        match return_annotation with
-        | None -> state
-        | Some return_annotation -> Expression.location_sensitive_hash_fold state return_annotation
-      in
-      let state = [%hash_fold: bool] state async in
-      let state = [%hash_fold: bool] state generator in
-      let state = [%hash_fold: Reference.t option] state parent in
-      [%hash_fold: Reference.t option] state nesting_define
-
 
     let location_sensitive_compare left right =
       match [%compare: Reference.t] left.name right.name with
@@ -1290,24 +1191,6 @@ end = struct
         | DefineSignature of Define.Signature.t Node.t
       [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-      let location_sensitive_hash_fold state = function
-        | Annotation annotation ->
-            let state = Int.hash_fold_t state 0 in
-            [%hash_fold: Expression.t option] state annotation
-        | Self parent ->
-            let state = Int.hash_fold_t state 1 in
-            Reference.hash_fold_t state parent
-        | ClassSelf parent ->
-            let state = Int.hash_fold_t state 2 in
-            Reference.hash_fold_t state parent
-        | DefineSignature signature_node ->
-            let state = Int.hash_fold_t state 3 in
-            Node.location_sensitive_hash_fold
-              Define.Signature.location_sensitive_hash_fold
-              state
-              signature_node
-
-
       let location_sensitive_compare left right =
         match left, right with
         | Annotation left, Annotation right ->
@@ -1328,11 +1211,6 @@ end = struct
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    let location_sensitive_hash_fold state { name; kind } =
-      let state = [%hash_fold: Identifier.t] state name in
-      Kind.location_sensitive_hash_fold state kind
-
-
     let location_sensitive_compare left right =
       match [%compare: Identifier.t] left.name right.name with
       | x when not (Int.equal x 0) -> x
@@ -1345,12 +1223,6 @@ end = struct
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let location_sensitive_hash_fold state { signature; captures; body } =
-    let state = Signature.location_sensitive_hash_fold state signature in
-    let state = List.fold captures ~init:state ~f:Capture.location_sensitive_hash_fold in
-    List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold
-
 
   let location_sensitive_compare left right =
     match Signature.location_sensitive_compare left.signature right.signature with
@@ -1673,8 +1545,6 @@ and For : sig
 
   val preamble : t -> Statement.t
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end = struct
   type t = {
@@ -1740,14 +1610,6 @@ end = struct
     }
 
 
-  let location_sensitive_hash_fold state { target; iterator; body; orelse; async } =
-    let state = Expression.location_sensitive_hash_fold state target in
-    let state = Expression.location_sensitive_hash_fold state iterator in
-    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
-    let state = List.fold orelse ~init:state ~f:Statement.location_sensitive_hash_fold in
-    [%hash_fold: bool] state async
-
-
   let location_sensitive_compare left right =
     match Expression.location_sensitive_compare left.target right.target with
     | x when not (Int.equal x 0) -> x
@@ -1773,8 +1635,6 @@ and If : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end = struct
   type t = {
@@ -1783,12 +1643,6 @@ end = struct
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let location_sensitive_hash_fold state { test; body; orelse } =
-    let state = Expression.location_sensitive_hash_fold state test in
-    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
-    List.fold orelse ~init:state ~f:Statement.location_sensitive_hash_fold
-
 
   let location_sensitive_compare left right =
     match Expression.location_sensitive_compare left.test right.test with
@@ -1808,8 +1662,6 @@ and Try : sig
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    val location_sensitive_hash_fold : t Hash.folder
-
     val location_sensitive_compare : t -> t -> int
   end
 
@@ -1823,8 +1675,6 @@ and Try : sig
 
   val preamble : Handler.t -> Statement.t list
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end = struct
   module Handler = struct
@@ -1834,16 +1684,6 @@ end = struct
       body: Statement.t list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    let location_sensitive_hash_fold state { kind; name; body } =
-      let state =
-        match kind with
-        | None -> state
-        | Some kind -> Expression.location_sensitive_hash_fold state kind
-      in
-      let state = [%hash_fold: Identifier.t option] state name in
-      List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold
-
 
     let location_sensitive_compare left right =
       match Option.compare Expression.location_sensitive_compare left.kind right.kind with
@@ -1951,13 +1791,6 @@ end = struct
     | _ -> []
 
 
-  let location_sensitive_hash_fold state { body; handlers; orelse; finally } =
-    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
-    let state = List.fold handlers ~init:state ~f:Handler.location_sensitive_hash_fold in
-    let state = List.fold orelse ~init:state ~f:Statement.location_sensitive_hash_fold in
-    List.fold finally ~init:state ~f:Statement.location_sensitive_hash_fold
-
-
   let location_sensitive_compare left right =
     match List.compare Statement.location_sensitive_compare left.body right.body with
     | x when not (Int.equal x 0) -> x
@@ -1978,8 +1811,6 @@ and While : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end = struct
   type t = {
@@ -1988,12 +1819,6 @@ end = struct
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let location_sensitive_hash_fold state { test; body; orelse } =
-    let state = Expression.location_sensitive_hash_fold state test in
-    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
-    List.fold orelse ~init:state ~f:Statement.location_sensitive_hash_fold
-
 
   let location_sensitive_compare left right =
     match Expression.location_sensitive_compare left.test right.test with
@@ -2014,8 +1839,6 @@ and With : sig
 
   val preamble : t -> Statement.t list
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end = struct
   type t = {
@@ -2024,19 +1847,6 @@ end = struct
     async: bool;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let location_sensitive_hash_fold_item state (value, target) =
-    let state = Expression.location_sensitive_hash_fold state value in
-    match target with
-    | None -> state
-    | Some target -> Expression.location_sensitive_hash_fold state target
-
-
-  let location_sensitive_hash_fold state { items; body; async } =
-    let state = List.fold items ~init:state ~f:location_sensitive_hash_fold_item in
-    let state = List.fold body ~init:state ~f:Statement.location_sensitive_hash_fold in
-    [%hash_fold: bool] state async
-
 
   let location_sensitive_compare_item (left_value, left_target) (right_value, right_target) =
     match Expression.location_sensitive_compare left_value right_value with
@@ -2124,8 +1934,6 @@ and Statement : sig
 
   val extract_docstring : t list -> string option
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end = struct
   type statement =
@@ -2153,71 +1961,6 @@ end = struct
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let rec location_sensitive_hash_fold_statement state statement =
-    match statement with
-    | Assign assign ->
-        let state = [%hash_fold: int] state 0 in
-        Assign.location_sensitive_hash_fold state assign
-    | Assert assert_ ->
-        let state = [%hash_fold: int] state 1 in
-        Assert.location_sensitive_hash_fold state assert_
-    | Break -> [%hash_fold: int] state 2
-    | Class class_ ->
-        let state = [%hash_fold: int] state 3 in
-        Class.location_sensitive_hash_fold state class_
-    | Continue -> [%hash_fold: int] state 4
-    | Define define ->
-        let state = [%hash_fold: int] state 5 in
-        Define.location_sensitive_hash_fold state define
-    | Delete expression ->
-        let state = [%hash_fold: int] state 6 in
-        Expression.location_sensitive_hash_fold state expression
-    | Expression expression ->
-        let state = [%hash_fold: int] state 7 in
-        Expression.location_sensitive_hash_fold state expression
-    | For for_ ->
-        let state = [%hash_fold: int] state 8 in
-        For.location_sensitive_hash_fold state for_
-    | Global identifiers ->
-        let state = [%hash_fold: int] state 9 in
-        List.fold identifiers ~init:state ~f:[%hash_fold: Identifier.t]
-    | If if_ ->
-        let state = [%hash_fold: int] state 10 in
-        If.location_sensitive_hash_fold state if_
-    | Import import ->
-        let state = [%hash_fold: int] state 11 in
-        [%hash_fold: Import.t] state import
-    | Nonlocal identifiers ->
-        let state = [%hash_fold: int] state 12 in
-        List.fold identifiers ~init:state ~f:[%hash_fold: Identifier.t]
-    | Pass -> [%hash_fold: int] state 13
-    | Raise raise_ ->
-        let state = [%hash_fold: int] state 14 in
-        Raise.location_sensitive_hash_fold state raise_
-    | Return return ->
-        let state = [%hash_fold: int] state 15 in
-        Return.location_sensitive_hash_fold state return
-    | Try try_ ->
-        let state = [%hash_fold: int] state 16 in
-        Try.location_sensitive_hash_fold state try_
-    | With with_ ->
-        let state = [%hash_fold: int] state 17 in
-        With.location_sensitive_hash_fold state with_
-    | While while_ ->
-        let state = [%hash_fold: int] state 18 in
-        While.location_sensitive_hash_fold state while_
-    | Yield yield ->
-        let state = [%hash_fold: int] state 19 in
-        Expression.location_sensitive_hash_fold state yield
-    | YieldFrom yield_from ->
-        let state = [%hash_fold: int] state 20 in
-        Expression.location_sensitive_hash_fold state yield_from
-
-
-  and location_sensitive_hash_fold state statement =
-    Node.location_sensitive_hash_fold location_sensitive_hash_fold_statement state statement
-
 
   let rec location_sensitive_compare_statement left right =
     match left, right with

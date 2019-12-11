@@ -2,7 +2,6 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
-open Core
 
 module Assign : sig
   type t = {
@@ -14,8 +13,6 @@ module Assign : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   val is_static_attribute_initialization : t -> bool
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 end
@@ -41,8 +38,6 @@ module Raise : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end
 
@@ -52,8 +47,6 @@ module Return : sig
     expression: Expression.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 end
@@ -69,8 +62,6 @@ module rec Assert : sig
       | While
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-    val location_sensitive_hash_fold : t Hash.folder
-
     val location_sensitive_compare : t -> t -> int
   end
 
@@ -80,8 +71,6 @@ module rec Assert : sig
     origin: Origin.t;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 end
@@ -138,8 +127,6 @@ and Class : sig
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 
   val constructors : ?in_test:bool -> t -> Define.t list
@@ -188,8 +175,6 @@ and Define : sig
           (* If the define is nested, this is the name of the nesting define. *)
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    val location_sensitive_hash_fold : t Hash.folder
 
     val location_sensitive_compare : t -> t -> int
 
@@ -259,8 +244,6 @@ and Define : sig
     body: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 
@@ -333,8 +316,6 @@ and For : sig
 
   val preamble : t -> Statement.t
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end
 
@@ -345,8 +326,6 @@ and If : sig
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 end
@@ -359,8 +338,6 @@ and Try : sig
       body: Statement.t list;
     }
     [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-    val location_sensitive_hash_fold : t Hash.folder
 
     val location_sensitive_compare : t -> t -> int
   end
@@ -375,8 +352,6 @@ and Try : sig
 
   val preamble : Handler.t -> Statement.t list
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 end
 
@@ -387,8 +362,6 @@ and While : sig
     orelse: Statement.t list;
   }
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 end
@@ -402,8 +375,6 @@ and With : sig
   [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t list
-
-  val location_sensitive_hash_fold : t Hash.folder
 
   val location_sensitive_compare : t -> t -> int
 end
@@ -435,8 +406,6 @@ and Statement : sig
 
   type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-  val location_sensitive_hash_fold : t Hash.folder
-
   val location_sensitive_compare : t -> t -> int
 
   val assume : ?origin:Assert.Origin.t -> Expression.t -> t
@@ -451,7 +420,5 @@ end
 type statement = Statement.statement [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 type t = Statement.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-val location_sensitive_hash_fold : t Hash.folder
 
 val location_sensitive_compare : t -> t -> int
