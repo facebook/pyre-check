@@ -161,7 +161,12 @@ let test_lookup_class_attributes context =
   let assert_annotation = assert_annotation ~lookup ~path:"test" in
   assert_annotation_list
     ~lookup
-    ["3:11-3:11/typing.Any"; "3:4-3:5/bool"; "3:7-3:11/typing.Type[bool]"];
+    [
+      "2:6-2:9/typing.Type[test.Foo]";
+      "3:11-3:11/typing.Any";
+      "3:4-3:5/bool";
+      "3:7-3:11/typing.Type[bool]";
+    ];
   assert_annotation ~position:{ Location.line = 3; column = 3 } ~annotation:None;
   assert_annotation ~position:{ Location.line = 3; column = 4 } ~annotation:(Some "3:4-3:5/bool");
   assert_annotation ~position:{ Location.line = 3; column = 5 } ~annotation:None
@@ -201,6 +206,7 @@ let test_lookup_identifier_accesses context =
   assert_annotation_list
     ~lookup
     [
+      "2:6-2:7/typing.Type[test.A]";
       "3:13-3:15/typing_extensions.Literal[12]";
       "3:4-3:5/int";
       "3:7-3:10/typing.Type[int]";
@@ -283,6 +289,7 @@ let test_lookup_multiline_accesses context =
       "17:12-19:13/int";
       "2:13-2:17/None";
       "3:7-5:15/bool";
+      "8:6-8:7/typing.Type[test.A]";
       "9:13-9:15/typing_extensions.Literal[12]";
       "9:4-9:5/int";
       "9:7-9:10/typing.Type[int]";
@@ -591,6 +598,8 @@ let test_lookup_definitions_instances context =
       "test:18:4-18:11 -> test:3:4-4:12";
       "test:19:4-19:13 -> test:3:4-4:12";
       "test:19:4-19:5 -> test:6:0-9:18";
+      "test:2:6-2:7 -> test:2:0-4:12";
+      "test:6:6-6:7 -> test:6:0-9:18";
       "test:7:11-7:12 -> test:2:0-4:12";
       "test:7:4-7:5 -> test:6:0-9:18";
       "test:8:21-8:22 -> test:2:0-4:12";

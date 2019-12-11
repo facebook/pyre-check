@@ -844,6 +844,10 @@ let test_query context =
                types =
                  [
                    {
+                     Protocol.TypeQuery.location = create_location ~path:"test.py" 2 6 2 9;
+                     annotation = parse_annotation "typing.Type[test.Foo]";
+                   };
+                   {
                      Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
                      annotation = Type.literal_integer 1;
                    };

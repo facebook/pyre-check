@@ -152,6 +152,8 @@ module Visit = struct
           postcondition_visit target;
           annotation >>| store_annotation |> ignore;
           precondition_visit value
+      | Class { Class.name = { Node.value; location }; _ } ->
+          precondition_visit (Ast.Expression.from_reference ~location value)
       | Define { Define.signature = { parameters; decorators; return_annotation; _ }; _ } ->
           let visit_parameter { Node.value = { Parameter.annotation; value; name }; location } =
             Expression.Name (Name.Identifier name) |> Node.create ~location |> postcondition_visit;
