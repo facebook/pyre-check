@@ -169,7 +169,11 @@ class TimedStreamHandler(logging.StreamHandler):
         self._terminate = True
 
 
-def initialize(noninteractive: bool, log_directory: str = "/tmp/.pyre") -> None:
+def initialize(
+    noninteractive: bool,
+    log_directory: str = "/tmp/.pyre",
+    disable_file_logging: bool = False,
+) -> None:
     global __handler
     if noninteractive:
         stream_handler = logging.StreamHandler()
@@ -182,7 +186,7 @@ def initialize(noninteractive: bool, log_directory: str = "/tmp/.pyre") -> None:
 
     handlers = [stream_handler]  # type: List[logging.Handler]
 
-    if not noninteractive:
+    if not noninteractive and not disable_file_logging:
         if not os.path.exists(log_directory):
             os.makedirs(log_directory)
         file_handler = logging.FileHandler(os.path.join(log_directory, "pyre.stderr"))
