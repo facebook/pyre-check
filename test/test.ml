@@ -221,6 +221,7 @@ let collect_nodes_as_strings source =
       | Visit.Identifier { Node.value; location } -> Some (Identifier.sanitized value, location)
       | Visit.Parameter { Node.value = { Expression.Parameter.name; _ }; location } ->
           Some (Identifier.sanitized name, location)
+      | Visit.Reference { Node.value; location } -> Some (Reference.show value, location)
       | Visit.Substring { Node.value; location } -> Some (Expression.Substring.show value, location)
   end)
   in
@@ -1724,7 +1725,7 @@ let assert_equivalent_attributes ~context source expected =
     in
     let get_name_if_class { Node.value; _ } =
       match value with
-      | Statement.Class { Class.name; _ } -> Some (Reference.show name)
+      | Statement.Class { Class.name = { Node.value; _ }; _ } -> Some (Reference.show value)
       | _ -> None
     in
     List.map ~f:Source.statements expected

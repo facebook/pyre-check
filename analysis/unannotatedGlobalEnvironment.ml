@@ -389,7 +389,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       }
     in
     {
-      Class.name = Reference.create name;
+      Class.name = Node.create_with_default_location (Reference.create name);
       bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
       body;
       decorators = [];
@@ -460,7 +460,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
     | _ -> classes
   in
   let register new_annotations { Node.location; value = { Class.name; _ } as definition } =
-    let primitive = Reference.show name in
+    let primitive = Reference.show (Node.value name) in
     let definition =
       match primitive with
       | "type" ->
@@ -634,7 +634,7 @@ let collect_typecheck_units { Source.statements; _ } =
   (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
   let rec collect_from_statement ~ignore_class sofar { Node.value; location } =
     match value with
-    | Statement.Class { Class.name; body; _ } ->
+    | Statement.Class { Class.name = { Node.value = name; _ }; body; _ } ->
         if ignore_class then (
           Log.debug
             "Dropping the body of class %a as it is nested inside a function"

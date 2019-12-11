@@ -595,7 +595,7 @@ let test_class_definitions context =
     let classes =
       GlobalResolution.class_definitions resolution !&class_name
       >>| List.map ~f:(fun { Node.value = { Class.name; body; _ }; _ } ->
-              Reference.show name, List.length body)
+              Reference.show (Node.value name), List.length body)
       |> Option.value ~default:[]
     in
     let show_element (name, number_of_statements) =

@@ -359,7 +359,7 @@ let qualify
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
             skip = Set.add skip location;
           }
-      | Class { Class.name; _ } ->
+      | Class { Class.name = { Node.value = name; _ }; _ } ->
           { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
       | Define { Define.signature = { name; _ }; _ } when is_in_function ->
           qualify_function_name ~scope name |> fst
@@ -679,7 +679,10 @@ let qualify
         in
         original_scope_with_alias, { define with signature; body }
       in
-      let qualify_class ({ Class.name; bases; body; decorators; _ } as definition) =
+      let qualify_class
+          ( { Class.name = { Node.value = name; location }; bases; body; decorators; _ } as
+          definition )
+        =
         let scope = { scope with is_top_level = false } in
         let qualify_base ({ Call.Argument.value; _ } as argument) =
           {
@@ -738,7 +741,7 @@ let qualify
         {
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
-          Class.name = Reference.combine scope.qualifier name;
+          Class.name = { Node.location; value = Reference.combine scope.qualifier name };
           bases = List.map bases ~f:qualify_base;
           body;
           decorators;
@@ -768,7 +771,7 @@ let qualify
                 message;
                 origin;
               } )
-      | Class ({ name; _ } as definition) ->
+      | Class ({ name = { Node.value = name; _ }; _ } as definition) ->
           let scope =
             {
               scope with
@@ -1405,8 +1408,12 @@ let defines
 
 
     let predicate = function
-      | { Node.location; value = Statement.Class { Class.name; body; _ }; _ } when include_toplevels
-        ->
+      | {
+          Node.location;
+          value = Statement.Class { Class.name = { Node.value = name; _ }; body; _ };
+          _;
+        }
+        when include_toplevels ->
           Define.create_class_toplevel ~parent:name ~statements:body
           |> Node.create ~location
           |> Option.some
@@ -1691,7 +1698,7 @@ let expand_typed_dictionary_declarations
             ~total:(extract_totality argument_tail)
       | Class
           {
-            name = class_name;
+            name = { Node.value = class_name; _ };
             bases =
               {
                 Call.Argument.name = None;
@@ -1958,8 +1965,12 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
     in
     let value =
       match value with
-      | Statement.Assign { Assign.target = { Node.value = Name name; _ }; value = expression; _ }
-        -> (
+      | Statement.Assign
+          {
+            Assign.target = { Node.value = Name name; location = target_location };
+            value = expression;
+            _;
+          } -> (
           let name = name_to_reference name >>| Reference.delocalize in
           match extract_attributes expression, name with
           | Some attributes, Some name
@@ -1969,14 +1980,14 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               let attributes = tuple_attributes ~parent:name ~location attributes in
               Statement.Class
                 {
-                  Class.name;
+                  Class.name = Node.create ~location:target_location name;
                   bases = [tuple_base ~location];
                   body = constructors @ attributes;
                   decorators = [];
                   docstring = None;
                 }
           | _ -> value )
-      | Class ({ Class.name; bases; body; _ } as original) ->
+      | Class ({ Class.name = { Node.value = name; _ }; bases; body; _ } as original) ->
           let is_named_tuple_primitive = function
             | {
                 Call.Argument.value =
@@ -2094,7 +2105,10 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                         [
                           {
                             Call.Argument.value =
-                              { Node.value = String { StringLiteral.value = name; _ }; _ };
+                              {
+                                Node.value = String { StringLiteral.value = name; _ };
+                                location = name_location;
+                              };
                             _;
                           };
                           ( {
@@ -2136,7 +2150,7 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
           in
           Statement.Class
             {
-              Class.name;
+              Class.name = Node.create ~location:name_location name;
               bases = [base_argument];
               body = [constructor];
               decorators = [];

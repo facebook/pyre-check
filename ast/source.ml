@@ -347,7 +347,7 @@ let wildcard_exports_of { source_path = { SourcePath.qualifier; _ }; statements;
           public_values, Some (List.filter_map ~f:to_reference names)
       | Assign { Assign.target = { Node.value = Name target; _ }; _ } when is_simple_name target ->
           public_values @ filter_private [target |> name_to_reference_exn], dunder_all
-      | Class { Class.name; _ } -> public_values @ filter_private [name], dunder_all
+      | Class { Class.name; _ } -> public_values @ filter_private [Node.value name], dunder_all
       | Define { Define.signature = { name; _ }; _ } ->
           public_values @ filter_private [name], dunder_all
       | Import { Import.imports; _ } ->

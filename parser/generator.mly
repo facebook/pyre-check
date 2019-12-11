@@ -660,7 +660,7 @@ compound_statement:
       let location = Location.create ~start:definition ~stop:colon_position in
       let body_location, body = body in
       let location = { location with Location.stop = body_location.Location.stop } in
-      let _, name = name in
+      let name_location, name = name in
       let body =
         let rec transform_toplevel_statements = function
           | { Node.location; value = Statement.Assign assign } ->
@@ -697,7 +697,7 @@ compound_statement:
       {
         Node.location;
         value = Class {
-          Class.name;
+          Class.name = { Node.location = name_location; value = name };
           bases = List.map ~f:convert_argument bases;
           body;
           decorators = [];

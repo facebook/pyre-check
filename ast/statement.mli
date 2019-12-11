@@ -129,7 +129,7 @@ end
 
 and Class : sig
   type t = {
-    name: Reference.t;
+    name: Reference.t Node.t;
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;

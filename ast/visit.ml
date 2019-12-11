@@ -13,6 +13,7 @@ type node =
   | Statement of Statement.t
   | Identifier of Identifier.t Node.t
   | Parameter of Parameter.t
+  | Reference of Reference.t Node.t
   | Substring of Substring.t Node.t
 
 module type NodeVisitor = sig
@@ -135,7 +136,8 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Assert { Assert.test; message; _ } ->
           visit_expression test;
           Option.iter ~f:visit_expression message
-      | Class { Class.bases; body; decorators; _ } ->
+      | Class { Class.name; bases; body; decorators; _ } ->
+          visit_node ~state ~visitor (Reference name);
           List.iter bases ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.iter decorators ~f:visit_expression
@@ -398,6 +400,7 @@ let collect_locations source =
           | Statement node -> Some (Node.location node)
           | Identifier node -> Some (Node.location node)
           | Parameter node -> Some (Node.location node)
+          | Reference node -> Some (Node.location node)
           | Substring node -> Some (Node.location node)
       end)
   in

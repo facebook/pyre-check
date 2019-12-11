@@ -10,6 +10,7 @@ type node =
   | Statement of Statement.t
   | Identifier of Identifier.t Node.t
   | Parameter of Parameter.t
+  | Reference of Reference.t Node.t
   | Substring of Substring.t Node.t
 
 module type NodeVisitor = sig

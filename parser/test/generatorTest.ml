@@ -3329,7 +3329,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body = [+Statement.Pass];
            decorators = [!"bar"];
@@ -3341,7 +3341,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body = [+Statement.Pass];
            decorators = [];
@@ -3353,7 +3353,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body =
              [
@@ -3384,7 +3384,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body =
              [
@@ -3434,7 +3434,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo.bar";
+           Class.name = + !&"foo.bar";
            bases = [];
            body = [+Statement.Pass];
            decorators = [];
@@ -3446,7 +3446,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases =
              [
                { Call.Argument.name = None; value = +Expression.Integer 1 };
@@ -3462,7 +3462,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases =
              [
                { Call.Argument.name = None; value = +Expression.Integer 1 };
@@ -3478,7 +3478,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body =
              [
@@ -3499,7 +3499,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body =
              [
@@ -3520,7 +3520,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body =
              [
@@ -3541,7 +3541,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [{ Call.Argument.name = None; value = !"superfoo" }];
            body =
              [
@@ -3572,7 +3572,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body =
              [
@@ -3623,7 +3623,7 @@ let test_class _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body =
              [
@@ -4759,7 +4759,7 @@ let test_stubs _ =
     [
       +Statement.Class
          {
-           Class.name = !&"A";
+           Class.name = + !&"A";
            bases = [];
            body =
              [
@@ -4871,7 +4871,7 @@ let test_stubs _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
@@ -4883,7 +4883,7 @@ let test_stubs _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];
@@ -4895,7 +4895,7 @@ let test_stubs _ =
     [
       +Statement.Class
          {
-           Class.name = !&"foo";
+           Class.name = + !&"foo";
            bases = [];
            body = [+Statement.Expression (+Expression.Ellipsis)];
            decorators = [];

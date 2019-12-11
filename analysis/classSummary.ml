@@ -15,7 +15,9 @@ type t = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-let create ({ Ast.Statement.Class.name; bases; decorators; _ } as definition) =
+let create
+    ({ Ast.Statement.Class.name = { Node.value = name; _ }; bases; decorators; _ } as definition)
+  =
   { name; bases; decorators; attribute_components = Class.AttributeComponents.create definition }
 
 

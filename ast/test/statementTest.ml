@@ -284,7 +284,7 @@ let test_attributes _ =
       List.map expected ~f:attribute
     in
     let definition =
-      { Class.name = !&""; bases = []; body = []; decorators = []; docstring = None }
+      { Class.name = + !&""; bases = []; body = []; decorators = []; docstring = None }
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> Attribute.location_insensitive_compare left right = 0))

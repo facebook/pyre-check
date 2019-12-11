@@ -712,7 +712,7 @@ let create ~resolution ?path ~configuration ~verify ~rule_filter source =
             | None -> Callable.create_function name
           in
           [signature, location, call_target]
-      | { Node.value = Class { Class.name; bases; body; _ }; _ } ->
+      | { Node.value = Class { Class.name = { Node.value = name; _ }; bases; body; _ }; _ } ->
           begin
             match body with
             | [{ Node.value = Statement.Expression { Node.value = Expression.Ellipsis; _ }; _ }] ->

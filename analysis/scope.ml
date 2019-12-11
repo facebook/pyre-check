@@ -65,7 +65,7 @@ module Binding = struct
         [{ name; kind = Kind.AssignTarget (Some annotation); location }]
     | Statement.Assign { Assign.target; _ } ->
         of_unannotated_target ~kind:(Kind.AssignTarget None) target
-    | Statement.Class { Class.name; _ } ->
+    | Statement.Class { Class.name = { Node.value = name; _ }; _ } ->
         [{ kind = Kind.ClassName; name = Reference.show name; location }]
     | Statement.Define { Define.signature = { name; _ } as signature; _ } ->
         [{ kind = Kind.DefineName signature; name = Reference.show name; location }]

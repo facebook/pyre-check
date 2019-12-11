@@ -335,7 +335,7 @@ end
 
 and Class : sig
   type t = {
-    name: Reference.t;
+    name: Reference.t Node.t;
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;
@@ -375,7 +375,7 @@ and Class : sig
     Attribute.t Identifier.SerializableMap.t
 end = struct
   type t = {
-    name: Reference.t;
+    name: Reference.t Node.t;
     bases: Expression.Call.Argument.t list;
     body: Statement.t list;
     decorators: Expression.t list;
@@ -386,7 +386,7 @@ end = struct
   type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
-    match [%compare: Reference.t] left.name right.name with
+    match Node.location_insensitive_compare [%compare: Reference.t] left.name right.name with
     | x when not (Int.equal x 0) -> x
     | _ -> (
         match
@@ -478,7 +478,7 @@ end = struct
     List.exists decorators ~f:is_frozen_dataclass
 
 
-  let explicitly_assigned_attributes ({ name; body; _ } as definition) =
+  let explicitly_assigned_attributes ({ name = { Node.value = name; _ }; body; _ } as definition) =
     let assigned_attributes map { Node.location; value } =
       let open Expression in
       match value with
@@ -625,7 +625,7 @@ end = struct
     }
     [@@deriving compare, eq, sexp, show, hash]
 
-    let create ({ name; body; _ } as definition) =
+    let create ({ name = { Node.value = name; _ }; body; _ } as definition) =
       let merge _ left right =
         match right with
         | None -> left
@@ -758,7 +758,7 @@ end = struct
         let class_attributes =
           let callable_attributes map { Node.location; value } =
             match value with
-            | Statement.Class { name; _ } ->
+            | Statement.Class { name = { Node.value = name; _ }; _ } ->
                 let open Expression in
                 let annotation =
                   let meta_annotation =
@@ -2296,7 +2296,7 @@ module PrettyPrinter = struct
       pp_decorators
       decorators
       Reference.pp
-      name
+      (Node.value name)
       Expression.pp_expression_argument_list
       bases
       pp_statement_list

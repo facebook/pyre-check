@@ -145,7 +145,7 @@ let get_definition ~resolution = function
       |> GlobalResolution.class_definitions resolution
       >>= List.hd
       |> function
-      | Some { Node.location; value = { Class.name; body; _ }; _ } ->
+      | Some { Node.location; value = { Class.name = { Node.value = name; _ }; body; _ }; _ } ->
           Define.create_class_toplevel ~parent:name ~statements:body
           |> Node.create ~location
           |> Option.some

@@ -121,7 +121,7 @@ let test_superclasses context =
   in
   let ( ! ) name =
     {
-      StatementClass.name = !&name;
+      StatementClass.name = + !&name;
       bases = [];
       body = [+Statement.Pass];
       decorators = [];
@@ -416,7 +416,7 @@ let test_constructors context =
 let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol bases =
-      { StatementClass.name = !&"Derp"; bases; body = []; decorators = []; docstring = None }
+      { StatementClass.name = + !&"Derp"; bases; body = []; decorators = []; docstring = None }
       |> ClassSummary.create
       |> ClassSummary.is_protocol
     in
@@ -795,7 +795,7 @@ let test_constraints context =
       let { Source.statements; _ } = source in
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
-          when Reference.show name = target ->
+          when Reference.show (Node.value name) = target ->
             Some
               ( { Node.location; value = definition }
               |> Node.map ~f:ClassSummary.create
@@ -1077,7 +1077,7 @@ let test_metaclasses context =
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
-          when Reference.show name = target ->
+          when Reference.show (Node.value name) = target ->
             { Node.location; value = definition }
             |> Node.map ~f:ClassSummary.create
             |> Class.create

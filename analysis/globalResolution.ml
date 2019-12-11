@@ -189,7 +189,7 @@ let class_definitions resolution reference =
         containing_source resolution reference
         >>| Preprocessing.classes
         >>| List.filter ~f:(fun { Node.value = { Class.name; _ }; _ } ->
-                Reference.equal reference name)
+                Reference.equal reference (Node.value name))
         (* Prefer earlier definitions. *)
         >>| List.rev
       in
@@ -269,7 +269,7 @@ let is_invariance_mismatch resolution ~left ~right =
    difficulty of handling nested classes within test cases, etc., we use the heuristic that a class
    which inherits from unittest.TestCase indicates that the entire file is a test file. *)
 let source_is_unit_test resolution ~source =
-  let is_unittest { Node.value = { Class.name; _ }; _ } =
+  let is_unittest { Node.value = { Class.name = { Node.value = name; _ }; _ }; _ } =
     let annotation = parse_reference resolution name in
     less_or_equal resolution ~left:annotation ~right:(Type.Primitive "unittest.case.TestCase")
   in
