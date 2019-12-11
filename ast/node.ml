@@ -9,15 +9,13 @@ type 'node_type t = {
   location: Location.t;
   value: 'node_type;
 }
-[@@deriving sexp, show, hash, to_yojson, compare]
+[@@deriving sexp, show, hash, to_yojson, compare, equal]
 
 let create ~location value = { location; value }
 
 let create_with_default_location value = { location = Location.Reference.any; value }
 
 let pp print_node format { value; _ } = print_node format value
-
-let equal equal_value left right = equal_value left.value right.value
 
 let location_insensitive_compare compare_value left right = compare_value left.value right.value
 

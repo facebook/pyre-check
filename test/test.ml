@@ -238,12 +238,23 @@ let node ?(path = Reference.empty) ~start:(start_line, start_column) ~stop:(stop
   Node.create ~location
 
 
-let assert_source_equal left right =
+let assert_source_equal ?(location_insensitive = false) left right =
   let metadata = Source.Metadata.create_for_testing () in
   let left = { left with Source.metadata } in
   let right = { right with Source.metadata } in
+  let cmp =
+    if location_insensitive then
+      fun left right ->
+    Source.equal { left with statements = [] } { right with statements = [] }
+    && List.equal
+         (fun left right -> Statement.location_insensitive_compare left right = 0)
+         left.statements
+         right.statements
+    else
+      Source.equal
+  in
   assert_equal
-    ~cmp:Source.equal
+    ~cmp
     ~printer:(fun source -> Format.asprintf "%a" Source.pp source)
     ~pp_diff:(diff ~print:Source.pp)
     left

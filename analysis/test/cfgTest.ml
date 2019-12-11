@@ -125,8 +125,9 @@ let assert_cfg body expected =
     |> String.concat ~sep:"\n"
     |> String.pp formatter
   in
+  let cmp left right = Hashtbl.equal left right Node.location_insensitive_equal in
   assert_equal
-    ~cmp:equal
+    ~cmp
     ~printer:(fun cfg -> Format.asprintf "%a" pp cfg)
     ~pp_diff:(diff ~print:pp)
     (Int.Table.of_alist_exn expected)

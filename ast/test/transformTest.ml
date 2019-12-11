@@ -284,7 +284,7 @@ let test_expansion_with_stop _ =
     let modified =
       StoppingExpandingTransform.transform () (parse source) |> StoppingExpandingTransform.source
     in
-    assert_source_equal (parse expected_source) modified
+    assert_source_equal ~location_insensitive:true (parse expected_source) modified
   in
   assert_expanded_source_with_stop
     {|

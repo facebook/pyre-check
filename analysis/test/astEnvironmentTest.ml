@@ -717,9 +717,12 @@ let test_parse_repository context =
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)
     in
-    let equal (expected_handle, expected_source) (handle, { Ast.Source.statements; _ }) =
-      String.equal expected_handle handle
-      && Ast.Source.equal expected_source { expected_source with Ast.Source.statements }
+    let equal
+        (expected_handle, { Ast.Source.statements = expected_source; _ })
+        (handle, { Ast.Source.statements; _ })
+      =
+      let equal left right = Statement.location_insensitive_compare left right = 0 in
+      String.equal expected_handle handle && List.equal equal expected_source statements
     in
     let printer (handle, source) = Format.sprintf "%s: %s" handle (Ast.Source.show source) in
     let expected =

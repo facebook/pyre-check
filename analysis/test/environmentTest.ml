@@ -658,12 +658,12 @@ let test_populate context =
   let assert_global_with_environment environment actual expected =
     let global_resolution = GlobalResolution.create environment in
     assert_equal
-      ~cmp:(Option.equal (Node.equal Annotation.equal))
+      ~cmp:(Option.equal Annotation.equal)
       ~printer:(function
-        | Some global -> AnnotatedGlobalEnvironment.show_global global
+        | Some global -> Annotation.show global
         | None -> "None")
-      (expected >>| Node.create_with_default_location)
-      (GlobalResolution.global global_resolution !&actual)
+      expected
+      (GlobalResolution.global global_resolution !&actual >>| Node.value)
   in
   let assert_global =
     populate

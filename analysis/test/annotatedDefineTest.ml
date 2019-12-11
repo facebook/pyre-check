@@ -102,12 +102,14 @@ let test_decorate context =
     let expected = Test.parse_single_define expected in
     assert_equal
       ~printer:(List.to_string ~f:Expression.Parameter.show)
-      ~cmp:(List.equal Expression.Parameter.equal)
+      ~cmp:
+        (List.equal (fun left right ->
+             Expression.Parameter.location_insensitive_compare left right = 0))
       define.signature.parameters
       expected.signature.parameters;
     assert_equal
       ~printer:(fun x -> x >>| Expression.show |> Option.value ~default:"No anno")
-      ~cmp:(Option.equal Expression.equal)
+      ~cmp:(Option.equal (fun left right -> Expression.location_insensitive_compare left right = 0))
       define.signature.return_annotation
       expected.signature.return_annotation
   in

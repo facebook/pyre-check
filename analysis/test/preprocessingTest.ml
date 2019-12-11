@@ -14,7 +14,10 @@ open Test
 let test_expand_relative_imports _ =
   let assert_expand ~handle source expected =
     let parse = parse ~handle in
-    assert_source_equal (parse expected) (Preprocessing.expand_relative_imports (parse source))
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.expand_relative_imports (parse source))
   in
   assert_expand
     ~handle:"module/submodule/test.py"
@@ -53,7 +56,10 @@ let test_expand_relative_imports _ =
 let test_expand_string_annotations _ =
   let assert_expand ?(handle = "qualifier.py") source expected =
     let parse = parse ~handle in
-    assert_source_equal (parse expected) (Preprocessing.expand_string_annotations (parse source))
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.expand_string_annotations (parse source))
   in
   assert_expand
     {|
@@ -168,6 +174,7 @@ let test_expand_format_string _ =
   let assert_format_string source value expressions =
     let handle = "test.py" in
     assert_source_equal
+      ~location_insensitive:true
       (Source.create
          ~relative:handle
          [+Statement.Expression (+Expression.String (StringLiteral.create ~expressions value))])
@@ -309,7 +316,10 @@ let test_expand_format_string _ =
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
     let parse = parse ~handle in
-    assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.qualify (parse source))
   in
   (* Base cases for aliasing. *)
   assert_qualify "from a import b; b" "from a import b; a.b";
@@ -1319,6 +1329,7 @@ let test_qualify _ =
 let test_replace_version_specific_code _ =
   let assert_preprocessed ?(handle = "stub.pyi") source expected =
     assert_source_equal
+      ~location_insensitive:true
       (parse ~handle expected)
       (Preprocessing.replace_version_specific_code (parse ~handle source))
   in
@@ -1481,6 +1492,7 @@ let test_replace_version_specific_code _ =
 let test_replace_platform_specific_code _ =
   let assert_preprocessed ?(handle = "stub.pyi") source expected =
     assert_source_equal
+      ~location_insensitive:true
       (parse ~handle expected)
       (Preprocessing.replace_platform_specific_code (parse ~handle source))
   in
@@ -1618,7 +1630,10 @@ let test_replace_platform_specific_code _ =
 
 let test_expand_type_checking_imports _ =
   let assert_expanded source expected =
-    assert_source_equal (parse expected) (Preprocessing.expand_type_checking_imports (parse source))
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.expand_type_checking_imports (parse source))
   in
   assert_expanded {|
       if typing.TYPE_CHECKING:
@@ -1692,7 +1707,7 @@ let test_expand_wildcard_imports context =
       |> ScratchProject.parse_sources
     in
     assert_equal
-      ~cmp:(List.equal Statement.equal)
+      ~cmp:(List.equal (fun left right -> Statement.location_insensitive_compare left right = 0))
       ~printer:(fun statement_list -> List.map statement_list ~f:show |> String.concat ~sep:", ")
       (Source.statements (parse expected))
       (Source.statements
@@ -1763,11 +1778,15 @@ let test_expand_wildcard_imports context =
 
 let test_expand_implicit_returns _ =
   let assert_expand source expected =
-    assert_source_equal (parse expected) (Preprocessing.expand_implicit_returns (parse source))
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.expand_implicit_returns (parse source))
   in
   let assert_expand_implicit_returns source expected_body =
     let handle = "test.py" in
     assert_source_equal
+      ~location_insensitive:true
       (Preprocessing.expand_implicit_returns (parse ~handle source))
       (Source.create
          ~relative:handle
@@ -2157,7 +2176,10 @@ let test_replace_mypy_extensions_stub _ =
       def DefaultArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
     |}
   in
-  assert_source_equal expected (Preprocessing.replace_mypy_extensions_stub given)
+  assert_source_equal
+    ~location_insensitive:true
+    expected
+    (Preprocessing.replace_mypy_extensions_stub given)
 
 
 let test_expand_typed_dictionaries _ =
@@ -2168,7 +2190,7 @@ let test_expand_typed_dictionaries _ =
       |> Preprocessing.qualify
       |> Preprocessing.expand_typed_dictionary_declarations
     in
-    assert_source_equal expected actual
+    assert_source_equal ~location_insensitive:true expected actual
   in
   assert_expand
     {|
@@ -2339,7 +2361,10 @@ let test_expand_typed_dictionaries _ =
 let test_transform_ast _ =
   let assert_expand ?(handle = "qualifier.py") source expected =
     let parse source = parse source ~handle |> Preprocessing.preprocess in
-    assert_source_equal (parse expected) (Preprocessing.expand_named_tuples (parse source))
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.expand_named_tuples (parse source))
   in
   assert_expand
     {|

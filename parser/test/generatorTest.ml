@@ -19,7 +19,10 @@ let assert_parsed_equal source statements =
   if found_any then
     Printf.printf "\nLocation.any\n  found in parse of %s\n" source;
   assert_false found_any;
-  assert_source_equal (Source.create ~relative:handle statements) parsed_source
+  assert_source_equal
+    ~location_insensitive:true
+    (Source.create ~relative:handle statements)
+    parsed_source
 
 
 let test_lexer _ =

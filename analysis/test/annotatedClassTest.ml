@@ -179,9 +179,18 @@ let test_get_decorator context =
                  (GlobalResolution.ast_environment resolution)
                  ~decorator
           in
+          let equal_decorator left right =
+            let open AstEnvironment.ReadOnly in
+            String.equal left.name right.name
+            && Option.equal
+                 (List.equal (fun left right ->
+                      Call.Argument.location_insensitive_compare left right = 0))
+                 left.arguments
+                 right.arguments
+          in
           assert_equal
             ~printer:(List.to_string ~f:AstEnvironment.ReadOnly.show_decorator)
-            ~cmp:(List.equal AstEnvironment.ReadOnly.equal_decorator)
+            ~cmp:(List.equal equal_decorator)
             expected
             actual
       | _ -> assert_true (List.is_empty expected)
@@ -575,11 +584,13 @@ let test_class_attributes context =
       |> (fun a -> Option.value_exn a)
       |> Node.value
     in
-    assert_equal
-      ~cmp:Attribute.equal_attribute
-      ~printer:Attribute.show_attribute
-      expected_attribute
-      actual_attribute
+    let cmp left right =
+      Attribute.equal_attribute
+        { left with value = Node.create_with_default_location Expression.True }
+        { right with value = Node.create_with_default_location Expression.True }
+      && Expression.location_insensitive_compare left.value right.value = 0
+    in
+    assert_equal ~cmp ~printer:Attribute.show_attribute expected_attribute actual_attribute
   in
   let create_expected_attribute
       ?(property = false)

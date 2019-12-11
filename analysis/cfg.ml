@@ -23,7 +23,7 @@ module Node = struct
     | With of With.t
     | While of While.t
     | Yield
-  [@@deriving compare, eq, show, sexp]
+  [@@deriving compare, show, sexp, eq]
 
   type t = {
     id: int;
@@ -32,6 +32,26 @@ module Node = struct
     mutable successors: Int.Set.t;
   }
   [@@deriving compare, eq, sexp]
+
+  let location_insensitive_equal left right =
+    let equal_kind left right =
+      let compare_equal compare left right = Int.equal (compare left right) 0 in
+      match left, right with
+      | Block left, Block right ->
+          List.equal (compare_equal Statement.location_insensitive_compare) left right
+      | For left, For right -> compare_equal For.location_insensitive_compare left right
+      | If left, If right -> compare_equal If.location_insensitive_compare left right
+      | Try left, Try right -> compare_equal Try.location_insensitive_compare left right
+      | With left, With right -> compare_equal With.location_insensitive_compare left right
+      | While left, While right -> compare_equal While.location_insensitive_compare left right
+      | _ -> equal_kind left right
+    in
+
+    Int.equal left.id right.id
+    && equal_kind left.kind right.kind
+    && Int.Set.equal left.predecessors right.predecessors
+    && Int.Set.equal left.successors right.successors
+
 
   let pp format node =
     Format.fprintf

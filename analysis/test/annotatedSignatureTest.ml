@@ -190,11 +190,39 @@ let test_select context =
           NotFound { callable = parse_callable closest; reason }
       | `NotFound (closest, reason) -> NotFound { callable = parse_callable closest; reason }
     in
-    assert_equal
-      ~printer:AttributeResolution.show_sig_t
-      ~cmp:AttributeResolution.equal_sig_t
-      expected
-      signature
+    let cmp left right =
+      let default = AttributeResolution.equal_sig_t left right in
+      match left, right with
+      | ( AttributeResolution.NotFound { reason = Some left_reason; callable = left_callable },
+          AttributeResolution.NotFound { reason = Some right_reason; callable = right_callable } )
+        when Type.Callable.equal left_callable right_callable -> (
+          let equal_invalid_argument left right =
+            Expression.location_insensitive_compare
+              left.AttributeResolution.expression
+              right.AttributeResolution.expression
+            = 0
+            && Type.equal left.annotation right.annotation
+          in
+          let equal_mismatch_with_list_variadic_type_variable left right =
+            match left, right with
+            | AttributeResolution.NotDefiniteTuple left, AttributeResolution.NotDefiniteTuple right
+              ->
+                equal_invalid_argument left right
+            | _ -> AttributeResolution.equal_mismatch_with_list_variadic_type_variable left right
+          in
+          match left_reason, right_reason with
+          | InvalidKeywordArgument left, InvalidKeywordArgument right
+          | InvalidVariableArgument left, InvalidVariableArgument right ->
+              equal_invalid_argument left.value right.value
+          | Mismatch left, Mismatch right ->
+              AttributeResolution.equal_mismatch left.value right.value
+          | MismatchWithListVariadicTypeVariable left, MismatchWithListVariadicTypeVariable right ->
+              Type.OrderedTypes.equal left.variable right.variable
+              && equal_mismatch_with_list_variadic_type_variable left.mismatch right.mismatch
+          | _ -> default )
+      | _ -> default
+    in
+    assert_equal ~printer:AttributeResolution.show_sig_t ~cmp expected signature
   in
   (* Undefined callables always match. *)
   assert_select ~allow_undefined:true "[..., int]" "()" (`Found "[..., int]");

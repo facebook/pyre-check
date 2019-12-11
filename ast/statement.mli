@@ -94,18 +94,24 @@ and Attribute : sig
   }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type method_ = {
+    signatures: Define.Signature.t list;
+    static: bool;
+    final: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type property = {
+    async: bool;
+    class_property: bool;
+    kind: property_kind;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type kind =
     | Simple of simple
-    | Method of {
-        signatures: Define.Signature.t list;
-        static: bool;
-        final: bool;
-      }
-    | Property of {
-        async: bool;
-        class_property: bool;
-        kind: property_kind;
-      }
+    | Method of method_
+    | Property of property
   [@@deriving compare, eq, sexp, show, hash]
 
   type attribute = {
@@ -115,6 +121,10 @@ and Attribute : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
+
+  val location_insensitive_compare : t -> t -> int
+
+  val location_insensitive_compare_kind : kind -> kind -> int
 end
 
 and Class : sig

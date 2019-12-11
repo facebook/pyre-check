@@ -10,7 +10,10 @@ open Test
 let test_transform_ast _ =
   let assert_expand ?(handle = "qualifier.py") source expected =
     let parse = parse ~handle in
-    assert_source_equal (parse expected) (Preprocessing.expand_new_types (parse source))
+    assert_source_equal
+      ~location_insensitive:true
+      (parse expected)
+      (Preprocessing.expand_new_types (parse source))
   in
   assert_expand
     {|

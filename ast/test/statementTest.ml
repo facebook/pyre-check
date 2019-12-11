@@ -287,7 +287,7 @@ let test_attributes _ =
       { Class.name = !&""; bases = []; body = []; decorators = []; docstring = None }
     in
     assert_equal
-      ~cmp:(List.equal Attribute.equal)
+      ~cmp:(List.equal (fun left right -> Attribute.location_insensitive_compare left right = 0))
       ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
       expected
       ( parse_single_define source
@@ -457,11 +457,14 @@ let test_attributes _ =
       let equal_kind =
         match left, right with
         | Simple left, Simple right ->
-            Option.equal Expression.equal left.annotation right.annotation
-            && Option.equal Expression.equal left.value right.value
+            let expression_equal left right =
+              Expression.location_insensitive_compare left right = 0
+            in
+            Option.equal expression_equal left.annotation right.annotation
+            && Option.equal expression_equal left.value right.value
         | Method left, Method right ->
             Int.equal (left.signatures |> List.length) (right.signatures |> List.length)
-        | _ -> Attribute.equal_kind left right
+        | _ -> Attribute.location_insensitive_compare_kind left right = 0
       in
       equal_kind
       && String.equal left_name right_name
@@ -672,7 +675,7 @@ let test_preamble _ =
     in
     let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
     assert_equal
-      ~cmp:(List.equal Statement.equal)
+      ~cmp:(List.equal (fun left right -> Statement.location_insensitive_compare left right = 0))
       ~printer:(fun statements -> List.map ~f:show statements |> String.concat ~sep:", ")
       preamble
       (With.preamble block)
@@ -689,7 +692,7 @@ let test_preamble _ =
     in
     let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
     assert_equal
-      ~cmp:(List.equal Statement.equal)
+      ~cmp:(List.equal (fun left right -> Statement.location_insensitive_compare left right = 0))
       ~printer:(fun statements -> List.map ~f:show statements |> String.concat ~sep:", ")
       preamble
       [For.preamble block]
@@ -716,7 +719,9 @@ let test_preamble _ =
       |> String.concat ~sep:"\n"
     in
     assert_equal
-      ~cmp:(List.equal (List.equal Statement.equal))
+      ~cmp:
+        (List.equal
+           (List.equal (fun left right -> Statement.location_insensitive_compare left right = 0)))
       ~printer
       preambles
       (List.map handlers ~f:Try.preamble)

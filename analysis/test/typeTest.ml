@@ -486,7 +486,7 @@ let test_expression _ =
   let assert_expression annotation expression =
     assert_equal
       ~printer:Expression.show
-      ~cmp:Expression.equal
+      ~cmp:(fun left right -> Expression.location_insensitive_compare left right = 0)
       (parse_single_expression ~coerce_special_methods:true expression)
       (Type.expression annotation)
   in

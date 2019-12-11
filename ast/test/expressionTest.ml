@@ -14,11 +14,13 @@ let assert_expression_equal =
   assert_equal ~printer:Expression.show ~pp_diff:(diff ~print:Expression.pp)
 
 
+let location_insensitive_equal left right = Expression.location_insensitive_compare left right = 0
+
 let test_negate _ =
   let assert_negate ~expected ~negated =
     assert_equal
       ~printer:Expression.show
-      ~cmp:Expression.equal
+      ~cmp:location_insensitive_equal
       (parse_single_expression expected)
       (negate (parse_single_expression negated))
   in
@@ -319,16 +321,16 @@ let test_equality _ =
     }
   in
   compare_two_locations location_1 location_1 true true true;
-  compare_two_locations Location.Reference.any location_1 true false false;
-  compare_two_locations Location.Reference.any location_2 true false false;
-  compare_two_locations location_1 location_2 true false false
+  compare_two_locations Location.Reference.any location_1 false false false;
+  compare_two_locations Location.Reference.any location_2 false false false;
+  compare_two_locations location_1 location_2 false false false
 
 
 let test_delocalize _ =
   let assert_delocalized source expected =
     assert_equal
       ~printer:Expression.show
-      ~cmp:Expression.equal
+      ~cmp:location_insensitive_equal
       (parse_single_expression expected)
       (parse_single_expression source |> delocalize)
   in
@@ -345,7 +347,7 @@ let test_delocalize _ =
   let assert_delocalize_qualified source expected =
     assert_equal
       ~printer:Expression.show
-      ~cmp:Expression.equal
+      ~cmp:location_insensitive_equal
       (parse_single_expression expected)
       (parse_single_expression source |> delocalize_qualified)
   in
@@ -361,9 +363,10 @@ let test_comparison_operator_override _ =
     in
     assert_equal
       ~printer:(function
-        | Some expression -> Expression.show expression
+        | Some expression ->
+            Node.sexp_of_t Expression.sexp_of_expression expression |> Sexp.to_string_hum
         | _ -> "None")
-      ~cmp:(Option.equal Expression.equal)
+      ~cmp:(Option.equal (fun left right -> Expression.location_insensitive_compare left right = 0))
       (expected >>| parse_single_expression ~coerce_special_methods:true)
       (ComparisonOperator.override operator)
   in

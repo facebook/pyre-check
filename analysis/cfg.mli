@@ -26,6 +26,8 @@ module Node : sig
 
   type t [@@deriving compare, eq, sexp]
 
+  val location_insensitive_equal : t -> t -> bool
+
   val create : int -> kind -> Int.Set.t -> Int.Set.t -> t
 
   val statements : t -> Statement.t list

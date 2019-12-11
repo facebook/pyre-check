@@ -155,18 +155,24 @@ and Attribute : sig
   }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type method_ = {
+    signatures: Define.Signature.t list;
+    static: bool;
+    final: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type property = {
+    async: bool;
+    class_property: bool;
+    kind: property_kind;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type kind =
     | Simple of simple
-    | Method of {
-        signatures: Define.Signature.t list;
-        static: bool;
-        final: bool;
-      }
-    | Property of {
-        async: bool;
-        class_property: bool;
-        kind: property_kind;
-      }
+    | Method of method_
+    | Property of property
   [@@deriving compare, eq, sexp, show, hash]
 
   type attribute = {
@@ -190,6 +196,10 @@ and Attribute : sig
     t
 
   val name : parent:Reference.t -> Expression.t -> string option
+
+  val location_insensitive_compare : t -> t -> int
+
+  val location_insensitive_compare_kind : kind -> kind -> int
 end = struct
   type property_kind =
     | ReadOnly of { getter_annotation: Expression.t option }
@@ -209,18 +219,24 @@ end = struct
   }
   [@@deriving compare, eq, sexp, show, hash]
 
+  type method_ = {
+    signatures: Define.Signature.t list;
+    static: bool;
+    final: bool;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type property = {
+    async: bool;
+    class_property: bool;
+    kind: property_kind;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+
   type kind =
     | Simple of simple
-    | Method of {
-        signatures: Define.Signature.t list;
-        static: bool;
-        final: bool;
-      }
-    | Property of {
-        async: bool;
-        class_property: bool;
-        kind: property_kind;
-      }
+    | Method of method_
+    | Property of property
   [@@deriving compare, eq, sexp, show, hash]
 
   type attribute = {
@@ -230,6 +246,67 @@ end = struct
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
+
+  let location_insensitive_compare_property_kind left right =
+    match left, right with
+    | ReadOnly { getter_annotation = left }, ReadOnly { getter_annotation = right } ->
+        Option.compare Expression.location_insensitive_compare left right
+    | ( ReadWrite { getter_annotation = left_getter; setter_annotation = left_setter },
+        ReadWrite { getter_annotation = right_getter; setter_annotation = right_setter } ) -> (
+        match Option.compare Expression.location_insensitive_compare left_getter right_getter with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Option.compare Expression.location_insensitive_compare left_setter right_setter )
+    | _ -> -1
+
+
+  let location_insensitive_compare_property left right =
+    match Bool.compare left.async right.async with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+        match Bool.compare left.class_property right.class_property with
+        | x when not (Int.equal x 0) -> x
+        | _ -> location_insensitive_compare_property_kind left.kind right.kind )
+
+
+  let location_insensitive_compare_method left right =
+    match compare_method_ { left with signatures = [] } { right with signatures = [] } with
+    | x when not (Int.equal x 0) -> x
+    | _ ->
+        List.compare Define.Signature.location_insensitive_compare left.signatures right.signatures
+
+
+  let location_insensitive_compare_simple left right =
+    match
+      compare_simple
+        { left with annotation = None; value = None }
+        { right with annotation = None; value = None }
+    with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+        match
+          Option.compare Expression.location_insensitive_compare left.annotation right.annotation
+        with
+        | x when not (Int.equal x 0) -> x
+        | _ -> Option.compare Expression.location_insensitive_compare left.value right.value )
+
+
+  let location_insensitive_compare_kind left right =
+    match left, right with
+    | Simple left, Simple right -> location_insensitive_compare_simple left right
+    | Method left, Method right -> location_insensitive_compare_method left right
+    | Property left, Property right -> location_insensitive_compare_property left right
+    | _ -> -1
+
+
+  let location_insensitive_compare_attribute left right =
+    match [%compare: Identifier.t] left.name right.name with
+    | x when not (Int.equal x 0) -> x
+    | _ -> location_insensitive_compare_kind left.kind right.kind
+
+
+  let location_insensitive_compare =
+    Node.location_insensitive_compare location_insensitive_compare_attribute
+
 
   let create_simple
       ~location
@@ -249,8 +326,9 @@ end = struct
   let name ~parent target =
     let open Expression in
     match Node.value target with
-    | Expression.Name (Name.Attribute { base; attribute; _ })
-      when Expression.equal base (from_reference ~location:Location.Reference.any parent) ->
+    | Expression.Name
+        (Name.Attribute { base = { Node.value = Expression.Name name; _ }; attribute; _ })
+      when Option.equal Reference.equal (Some parent) (name_to_reference name) ->
         Some attribute
     | _ -> None
 end

@@ -123,7 +123,7 @@ end = struct
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.callee right.callee with
     | x when not (Int.equal x 0) -> x
-    | _ -> List.compare Argument.compare left.arguments right.arguments
+    | _ -> List.compare Argument.location_insensitive_compare left.arguments right.arguments
 end
 
 and ComparisonOperator : sig

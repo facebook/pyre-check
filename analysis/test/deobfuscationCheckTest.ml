@@ -5,7 +5,6 @@
 
 open Core
 open OUnit2
-open Ast
 open Analysis
 open Test
 
@@ -30,11 +29,7 @@ let assert_deobfuscation ~context source expected =
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in
-  let source_equal left right =
-    let metadata = Source.Metadata.create_for_testing () in
-    Source.equal { left with Source.metadata } { right with Source.metadata }
-  in
-  assert_equal ~cmp:source_equal ~printer:Source.show (parse ~handle expected) actual;
+  (assert_source_equal ~location_insensitive:true) (parse ~handle expected) actual;
   Memory.reset_shared_memory ()
 
 

@@ -15,8 +15,31 @@ let test_parse_query context =
   let { ScratchProject.configuration; _ } = ScratchProject.setup ~context [] in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let assert_parses serialized query =
+    let type_query_request_equal left right =
+      let expression_equal left right = Expression.location_insensitive_compare left right = 0 in
+      match left, right with
+      | ( TypeQuery.IsCompatibleWith (left_first, left_second),
+          TypeQuery.IsCompatibleWith (right_first, right_second) )
+      | Join (left_first, left_second), Join (right_first, right_second)
+      | LessOrEqual (left_first, left_second), LessOrEqual (right_first, right_second)
+      | Meet (left_first, left_second), Meet (right_first, right_second) ->
+          expression_equal left_first right_first && expression_equal left_second right_second
+      | Methods left, Methods right
+      | NormalizeType left, NormalizeType right
+      | Superclasses left, Superclasses right
+      | Type left, Type right ->
+          expression_equal left right
+      | _ -> TypeQuery.equal_request left right
+    in
+
+    let cmp left right =
+      match left, right with
+      | Request.TypeQueryRequest left, Request.TypeQueryRequest right ->
+          type_query_request_equal left right
+      | _ -> Request.equal left right
+    in
     assert_equal
-      ~cmp:Request.equal
+      ~cmp
       ~printer:Request.show
       (Request.TypeQueryRequest query)
       (Query.parse_query ~configuration serialized)
