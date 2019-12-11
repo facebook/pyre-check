@@ -200,6 +200,71 @@ let test_incremental_check context =
       ]
     ~expected:
       ["Revealed type [-1]: Revealed type for `b.foo` is `typing.Callable(foo)[[int], bool]`."];
+
+  assert_incremental_check_errors
+    ~context
+    ~initial_sources:
+      [
+        ( false,
+          "a.py",
+          {|
+           from q import Doggo
+
+           def bar() -> Doggo: ...
+
+           def foo(d: Doggo) -> None:
+               reveal_type(bar())
+               reveal_type(d)
+          |}
+        );
+        false, "q.py", "Doggo = int";
+      ]
+    ~updated_sources:[false, "q.py", "Doggo = str"]
+    ~expected:
+      [
+        "Revealed type [-1]: Revealed type for `d` is `str`.";
+        "Revealed type [-1]: Revealed type for `a.bar()` is `str`.";
+      ];
+
+  assert_incremental_check_errors
+    ~context
+    ~initial_sources:
+      [
+        ( false,
+          "a.py",
+          {|
+            # pyre-strict
+            from typing import Any, List
+            from dataclasses import dataclass
+
+            @dataclass(frozen=True)
+            class C:
+                # pyre-ignore
+                x: List[Any]
+          |}
+        );
+      ]
+    ~updated_sources:
+      [
+        ( false,
+          "a.py",
+          {|
+             # pyre-strict
+             from typing import Any, List
+             from dataclasses import dataclass
+
+             def foo() -> None:
+                 pass
+
+             @dataclass(frozen=True)
+             class C:
+                 # pyre-ignore
+                 x: List[Any]
+          |}
+        );
+      ]
+    ~expected:[];
+
   ()
 
 
