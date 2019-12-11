@@ -426,13 +426,24 @@ let run
         json_socket = { path = json_socket_path; _ };
         log_path;
         daemonize;
-        configuration;
+        configuration = { incremental_style; _ } as configuration;
         _;
       } as server_configuration )
   =
   (fun () ->
     try
-      Log.info "Starting up server...";
+      let () =
+        match incremental_style with
+        | Configuration.Analysis.FineGrained -> Log.info "Starting up server ..."
+        | Configuration.Analysis.Shallow ->
+            Log.warning
+              "Starting server in legacy incremental mode. Incremental Pyre check will only get \
+               triggered on changed files but not on any of their dependencies."
+        | Configuration.Analysis.Transitive ->
+            Log.warning
+              "Starting server in transitive incremental mode. Incremental Pyre check is likely \
+               going to take a long time."
+      in
       if daemonize then
         Version.log_version_banner ();
       if not (Lock.check (Path.absolute lock_path)) then
