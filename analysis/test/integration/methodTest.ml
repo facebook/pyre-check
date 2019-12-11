@@ -62,6 +62,72 @@ let test_check_method_returns context =
   assert_type_errors
     ~context
     {|
+      class C:
+          pass
+      class D(C):
+          pass
+      def foo() -> typing.Union[typing.List[C], int]:
+          return [C()]
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+          pass
+      class D(C):
+          pass
+      def foo() -> None:
+          x: typing.Union[typing.List[C], int] = [C()]
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+          pass
+      class D(C):
+          pass
+      def foo() -> None:
+          x: typing.Union[typing.List[C], int] = [D()]
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+          pass
+      class D(C):
+          pass
+      def foo() -> None:
+          x: typing.Union[typing.Dict[int, C], int] = {1: D()}
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+          pass
+      class D(C):
+          pass
+      def foo() -> None:
+          x: typing.Union[typing.Set[C], int] = {D()}
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
+      class C:
+          pass
+      class D(C):
+          pass
+      def foo() -> typing.Union[typing.List[C], int]:
+          return [D()]
+    |}
+    [];
+  assert_type_errors
+    ~context
+    {|
       def foo() -> typing.Dict[int, typing.Optional[bool]]:
         return {
           **{1: True},

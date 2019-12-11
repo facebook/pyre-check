@@ -1126,7 +1126,7 @@ let test_forward_statement context =
     ~postcondition_immutables:["x", (false, Type.union [Type.string; Type.integer])]
     []
     "x: typing.Union[int, str] = 1"
-    ["x", Type.literal_integer 1];
+    ["x", Type.union [Type.integer; Type.string]];
 
   (* Assignments with tuples. *)
   assert_forward

@@ -310,7 +310,7 @@ let test_resolve_mutable_literals context =
   assert_resolve_mutable_literals
     ~source:"1"
     ~against:"typing.Union[int, str]"
-    "typing_extensions.Literal[1]";
+    "typing.Union[int, str]";
   assert_resolve_mutable_literals
     ~source:"{test.C: 1, test.D: 2}"
     ~against:"typing.Dict[typing.Type[test.C], int]"
@@ -362,7 +362,7 @@ let test_resolve_mutable_literals context =
   ()
 
 
-let test_resolve_mutable_literals_to_optional context =
+let test_resolve_mutable_literal_to_complex_type context =
   let resolution = make_resolution ~context {|
       class C: ...
       class D(C): ...
@@ -386,6 +386,7 @@ let test_resolve_mutable_literals_to_optional context =
       (parse_annotation expected_output)
       (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected)
   in
+  (* Optionals. *)
   assert_resolve_mutable_literals
     ~source:"[test.D()]"
     ~against:"typing.Optional[typing.List[test.C]]"
@@ -410,6 +411,28 @@ let test_resolve_mutable_literals_to_optional context =
     ~source:"{test.D(): 2}"
     ~against:"typing.Optional[typing.Dict[test.C, int]]"
     "typing.Optional[typing.Dict[test.C, int]]";
+
+  (* Unions. *)
+  assert_resolve_mutable_literals
+    ~source:"[test.C()]"
+    ~against:"typing.Union[typing.List[test.C], int, str]"
+    "typing.Union[typing.List[test.C], int, str]";
+  assert_resolve_mutable_literals
+    ~source:"[test.D()]"
+    ~against:"typing.Union[typing.List[test.C], int, str]"
+    "typing.Union[typing.List[test.C], int, str]";
+  assert_resolve_mutable_literals
+    ~source:"[test.D()]"
+    ~against:"typing.Union[int, str]"
+    "typing.List[test.D]";
+  assert_resolve_mutable_literals
+    ~source:"{test.D()}"
+    ~against:"typing.Union[typing.Set[test.C], int, str]"
+    "typing.Union[typing.Set[test.C], int, str]";
+  assert_resolve_mutable_literals
+    ~source:"{1: test.D()}"
+    ~against:"typing.Union[typing.Dict[int, test.C], int, str]"
+    "typing.Union[typing.Dict[int, test.C], int, str]";
   ()
 
 
@@ -469,6 +492,10 @@ let test_resolve_mutable_literals_typed_dictionary context =
     ~against_type:movie_type
     movie_type;
   assert_resolve_mutable_literals
+    ~source:"{ 'name': 37, 'year': 1999 }"
+    ~against_type:movie_type
+    slightly_wrong_movie_type;
+  assert_resolve_mutable_literals
     ~source:"{ 'name': 'The Matrix', 'year': 1999, 'extra_key': 1 }"
     ~against_type:movie_type
     movie_type;
@@ -501,6 +528,18 @@ let test_resolve_mutable_literals_typed_dictionary context =
          (Type.TypedDictionary.anonymous
             ~total:true
             [{ name = "outer_foo"; annotation = Type.TypedDictionary.anonymous ~total:true [] }]));
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
+    ~against_type:(Type.union [movie_type; Type.integer])
+    (Type.union [movie_type; Type.integer]);
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 'The Matrix', 'year': 1999 }"
+    ~against_type:(Type.optional movie_type)
+    (Type.optional movie_type);
+  assert_resolve_mutable_literals
+    ~source:"{ 'name': 37, 'year': 1999 }"
+    ~against_type:(Type.optional movie_type)
+    slightly_wrong_movie_type;
   ()
 
 
@@ -653,7 +692,7 @@ let () =
          "resolve_literal" >:: test_resolve_literal;
          "resolve_exports" >:: test_resolve_exports;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;
-         "resolve_mutable_literals_to_optional" >:: test_resolve_mutable_literals_to_optional;
+         "resolve_mutable_literal_to_complex_type" >:: test_resolve_mutable_literal_to_complex_type;
          "resolve_mutable_literals_typed_dictionary"
          >:: test_resolve_mutable_literals_typed_dictionary;
          "function_definitions" >:: test_function_definitions;

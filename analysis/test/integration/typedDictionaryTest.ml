@@ -1095,6 +1095,16 @@ let test_check_typed_dictionary_inference context =
       "Incompatible parameter type [6]: Expected `Poppable` for 1st anonymous parameter to call \
        `expects_poppable` but got `TypedDict `Total` with fields (foo: int, bar: str)`.";
     ];
+  assert_test_typed_dictionary
+    {|
+      from typing import Dict, Optional
+      import mypy_extensions
+      class FooTypedDict(mypy_extensions.TypedDict):
+        foo: int
+        bar: str
+      data: Optional[FooTypedDict] = {'foo': 3, 'bar': 'hello'}
+    |}
+    [];
   ()
 
 
