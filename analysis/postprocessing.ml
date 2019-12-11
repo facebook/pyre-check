@@ -137,7 +137,8 @@ let run_on_source
 
 
 let run ~scheduler ~configuration ~environment sources =
-  Log.log ~section:`Progress "Postprocessing...";
+  let number_of_sources = List.length sources in
+  Log.log ~section:`Progress "Postprocessing %d sources..." number_of_sources;
   let map _ modules =
     let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     let run_on_module module_name =
@@ -159,14 +160,22 @@ let run ~scheduler ~configuration ~environment sources =
             in
             run_on_source ~configuration ~global_resolution ~source errors_by_define
     in
-    List.concat_map modules ~f:run_on_module
+    List.length modules, List.concat_map modules ~f:run_on_module
   in
-  Scheduler.map_reduce
-    scheduler
-    ~configuration
-    ~bucket_size:200
-    ~initial:[]
-    ~map
-    ~reduce:List.append
-    ~inputs:sources
-    ()
+  let reduce (left_count, left_errors) (right_count, right_errors) =
+    let number_sources = left_count + right_count in
+    Log.log ~section:`Progress "Postprocessed %d of %d sources" number_sources number_of_sources;
+    number_sources, List.append left_errors right_errors
+  in
+  let _, errors =
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~bucket_size:200
+      ~initial:(0, [])
+      ~map
+      ~reduce
+      ~inputs:sources
+      ()
+  in
+  errors
